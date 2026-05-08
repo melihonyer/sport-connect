@@ -742,59 +742,71 @@ export default function SporlaConnect() {
   );
 
   const TrainingCard = ({ training, onClick }) => {
-    const progress = training.attendee_count
-      ? (training.attendee_count / training.capacity) * 100
-      : 0;
+  const progress = training.attendee_count
+    ? (training.attendee_count / training.capacity) * 100
+    : 0;
 
-    return (
-      <div className="bg-white rounded-2xl border border-gray-100 hover:shadow-2xl transition-all overflow-hidden group cursor-pointer">
-        <div className="h-2 bg-gradient-to-r from-purple-500 to-pink-500"></div>
-        <div className="p-6" onClick={() => onClick(training.id)}>
-          <div className="flex items-center justify-between mb-4">
-            <span className="px-3 py-1 bg-purple-100 text-purple-600 rounded-full text-sm font-medium">
-              {training.team_sport || "Genel"}
-            </span>
-            <span className="px-3 py-1 bg-yellow-100 text-yellow-600 rounded-full text-sm font-medium">
-              {training.difficulty || "Orta"}
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 hover:shadow-2xl transition-all overflow-hidden group">
+      <div className="h-2 bg-gradient-to-r from-purple-500 to-pink-500"></div>
+      <div className="p-6 cursor-pointer" onClick={() => onClick(training.id)}>
+        <div className="flex items-center justify-between mb-4">
+          <span className="px-3 py-1 bg-purple-100 text-purple-600 rounded-full text-sm font-medium">
+            {training.team_sport || "Genel"}
+          </span>
+          <span className="px-3 py-1 bg-yellow-100 text-yellow-600 rounded-full text-sm font-medium">
+            {training.difficulty || "Orta"}
+          </span>
+        </div>
+
+        <h3 className="text-xl font-bold text-gray-900 mb-2">{training.title}</h3>
+        <p className="text-gray-600 text-sm mb-4 line-clamp-2">{training.description}</p>
+
+        <div className="space-y-2 mb-4">
+          <div className="flex items-center text-gray-600 text-sm">
+            <MapPin className="w-4 h-4 mr-2" />
+            {training.location_name}
+          </div>
+          <div className="flex items-center text-gray-600 text-sm">
+            <Calendar className="w-4 h-4 mr-2" />
+            {new Date(training.training_date).toLocaleDateString("tr-TR")}
+          </div>
+          <div className="flex items-center text-gray-600 text-sm">
+            <Clock className="w-4 h-4 mr-2" />
+            {training.training_time}
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <div className="flex justify-between text-sm mb-2">
+            <span className="text-gray-600">Katılımcılar</span>
+            <span className="font-semibold">
+              {training.attendee_count || 0}/{training.capacity}
             </span>
           </div>
-
-          <h3 className="text-xl font-bold text-gray-900 mb-2">{training.title}</h3>
-          <p className="text-gray-600 text-sm mb-4 line-clamp-2">{training.description}</p>
-
-          <div className="space-y-2 mb-4">
-            <div className="flex items-center text-gray-600 text-sm">
-              <MapPin className="w-4 h-4 mr-2" />
-              {training.location_name}
-            </div>
-            <div className="flex items-center text-gray-600 text-sm">
-              <Calendar className="w-4 h-4 mr-2" />
-              {new Date(training.training_date).toLocaleDateString("tr-TR")}
-            </div>
-            <div className="flex items-center text-gray-600 text-sm">
-              <Clock className="w-4 h-4 mr-2" />
-              {training.training_time}
-            </div>
-          </div>
-
-          <div className="mb-4">
-            <div className="flex justify-between text-sm mb-2">
-              <span className="text-gray-600">Katılımcılar</span>
-              <span className="font-semibold">
-                {training.attendee_count || 0}/{training.capacity}
-              </span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"
-                style={{ width: `${progress}%` }}
-              ></div>
-            </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div
+              className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"
+              style={{ width: `${progress}%` }}
+            ></div>
           </div>
         </div>
       </div>
-    );
-  };
+
+      <div className="px-6 pb-6">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleJoinTraining(training.id);
+          }}
+          className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+        >
+          Katıl
+        </button>
+      </div>
+    </div>
+  );
+};
 
   <button
             onClick={(e) => {
