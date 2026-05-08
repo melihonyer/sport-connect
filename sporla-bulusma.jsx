@@ -235,19 +235,21 @@ export default function SporlaConnect() {
   };
 
   const fetchTrainings = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const response = await fetch(`${API_URL}/trainings`, { headers });
+  try {
+    const token = localStorage.getItem("token");
+    const endpoint = token ? '/trainings' : '/trainings/public';
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    
+    const response = await fetch(`${API_URL}${endpoint}`, { headers });
 
-      if (response.ok) {
-        const data = await response.json();
-        setTrainings(data.trainings || []);
-      }
-    } catch (error) {
-      console.error("Fetch trainings error:", error);
+    if (response.ok) {
+      const data = await response.json();
+      setTrainings(data.trainings || []);
     }
-  };
+  } catch (error) {
+    console.error("Fetch trainings error:", error);
+  }
+};
 
   const fetchMyTrainings = async (token) => {
     try {

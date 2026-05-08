@@ -142,6 +142,70 @@ const updateUserStats = async (userId) => {
   }
 };
 
+// ============================================
+// PUBLIC TRAININGS (AUTH GEREKMİYOR)
+// ============================================
+app.get('/api/trainings/public', async (req, res) => {
+  try {
+    const { team_id, date_from, date_to, sport } = req.query;
+
+    let query = `
+      SELECT t.*, 
+             teams.name as team_name,
+             teams.sport as team_sport,
+             teams.avatar as team_avatar,
+             COUNT(DISTINCT ta.user_id) as attendee_count
+      FROM trainings t
+      JOIN teams ON t.team_id = teams.id
+      LEFT JOIN training_attendees ta ON t.id = ta.training_id
+      WHERE t.is_public = true
+  AND t.training_date >= CURRENT_DATE
+    `;
+
+    const params = [];
+    let paramCount = 0;
+
+    if (team_id) {
+      paramCount++;
+      query += ` AND t.team_id = $${paramCount}`;
+      params.push(team_id);
+    }
+
+    if (date_from) {
+      paramCount++;
+      query += ` AND t.training_date >= $${paramCount}`;
+      params.push(date_from);
+    }
+
+    if (date_to) {
+      paramCount++;
+      query += ` AND t.training_date <= $${paramCount}`;
+      params.push(date_to);
+    }
+
+    if (sport) {
+      paramCount++;
+      query += ` AND teams.sport = $${paramCount}`;
+      params.push(sport);
+    }
+
+    query += `
+      GROUP BY t.id, teams.name, teams.sport, teams.avatar
+      ORDER BY t.training_date ASC, t.training_time ASC
+    `;
+
+    const result = await pool.query(query, params);
+
+    res.json({
+      trainings: result.rows,
+      count: result.rows.length
+    });
+  } catch (error) {
+    console.error('Get public trainings error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // =====================================================
 // AUTH ROUTES
 // =====================================================
@@ -222,6 +286,7 @@ app.post('/api/auth/login', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 
 app.get('/api/auth/me', authenticateToken, async (req, res) => {
   try {
@@ -351,7 +416,7 @@ app.get('/api/teams', authenticateToken, async (req, res) => {
       ))
     `;
 
-    const params = [req.user.id];
+    const params = [req.user?.id || null];
     let paramCount = 1;
 
     if (sport) {
@@ -695,6 +760,7 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
   }
 });
 
+
 app.get('/api/trainings', authenticateToken, async (req, res) => {
   try {
     const { team_id, date_from, date_to, is_public, sport } = req.query;
@@ -709,8 +775,12 @@ app.get('/api/trainings', authenticateToken, async (req, res) => {
       JOIN teams ON t.team_id = teams.id
       LEFT JOIN training_attendees ta ON t.id = ta.training_id
       WHERE (t.is_public = true OR teams.id IN (
-        SELECT team_id FROM team_members WHERE user_id = $1
-      ))
+  SELECT team_id FROM team_members WHERE user_id = $1
+))
+AND (
+  t.training_date > CURRENT_DATE 
+  OR (t.training_date = CURRENT_DATE AND t.training_time >= CURRENT_TIME)
+)
     `;
 
     const params = [req.user.id];
