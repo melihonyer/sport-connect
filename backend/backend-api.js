@@ -16,9 +16,9 @@ if (!process.env.JWT_SECRET) {
   console.error('HATA: JWT_SECRET env var tanımlı değil.');
   process.exit(1);
 }
-// DB: ya DATABASE_URL ya da DB_PASSWORD olmalı
-if (!process.env.DATABASE_URL && !process.env.DB_PASSWORD) {
-  console.error('HATA: DATABASE_URL veya DB_PASSWORD env var tanımlı değil.');
+// DB: PGHOST, DATABASE_URL veya DB_PASSWORD'dan biri olmalı
+if (!process.env.PGHOST && !process.env.DATABASE_URL && !process.env.DB_PASSWORD) {
+  console.error('HATA: PGHOST, DATABASE_URL veya DB_PASSWORD env var tanımlı değil.');
   process.exit(1);
 }
 
@@ -77,16 +77,26 @@ const uploadAvatar = multer({
   },
 });
 
-// Railway PostgreSQL plugin otomatik DATABASE_URL sağlar, yoksa ayrı env'lere bak
-const pool = process.env.DATABASE_URL
-  ? new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } })
-  : new Pool({
-      user:     process.env.DB_USER     || 'postgres',
-      host:     process.env.DB_HOST     || 'localhost',
-      database: process.env.DB_NAME     || 'sporlaconnect',
-      password: process.env.DB_PASSWORD,
-      port:     parseInt(process.env.DB_PORT || '5432'),
-    });
+// DB bağlantısı: ayrı env var'lar öncelikli (şifredeki özel karakterler sorun çıkarmaz)
+// Render/Supabase için: PGHOST, PGPORT, PGDATABASE, PGUSER, PGPASSWORD set edin
+const pool = process.env.PGHOST
+  ? new Pool({
+      host:     process.env.PGHOST,
+      port:     parseInt(process.env.PGPORT || '5432'),
+      database: process.env.PGDATABASE || 'postgres',
+      user:     process.env.PGUSER,
+      password: process.env.PGPASSWORD,
+      ssl:      { rejectUnauthorized: false },
+    })
+  : process.env.DATABASE_URL
+    ? new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } })
+    : new Pool({
+        user:     process.env.DB_USER     || 'postgres',
+        host:     process.env.DB_HOST     || 'localhost',
+        database: process.env.DB_NAME     || 'sporlaconnect',
+        password: process.env.DB_PASSWORD,
+        port:     parseInt(process.env.DB_PORT || '5432'),
+      });
 
 // =====================================================
 // REAL-TIME: SSE (Server-Sent Events)
