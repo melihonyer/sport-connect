@@ -1,24 +1,294 @@
 // SporlaConnect Backend API - FULL VERSION
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const { Pool } = require('pg');
+const nodemailer = require('nodemailer');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Kritik env var kontrolü — eksikse başlatma
+if (!process.env.JWT_SECRET) {
+  console.error('HATA: JWT_SECRET env var tanımlı değil.');
+  process.exit(1);
+}
+// DB: ya DATABASE_URL ya da DB_PASSWORD olmalı
+if (!process.env.DATABASE_URL && !process.env.DB_PASSWORD) {
+  console.error('HATA: DATABASE_URL veya DB_PASSWORD env var tanımlı değil.');
+  process.exit(1);
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'sporlaconnect-secret-key-2024';
+const JWT_SECRET = process.env.JWT_SECRET;
+const APP_URL = process.env.APP_URL || 'http://localhost:5173';
 
 app.use(cors());
 app.use(express.json());
 
-const pool = new Pool({
-  user: 'postgres',
-  host: 'localhost',
-  database: 'sporlaconnect',
-  password: 'postgres123',
-  port: 5432,
+// Statik dosyalar (upload edilen görseller)
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+app.use('/uploads', express.static(uploadsDir));
+
+// Multer: banner görselleri için
+const bannerStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(__dirname, 'uploads/banners');
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `banner-${Date.now()}${ext}`);
+  },
 });
+const uploadBanner = multer({
+  storage: bannerStorage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: (req, file, cb) => {
+    if (/image\/(png|jpe?g|gif|webp|svg)/.test(file.mimetype)) cb(null, true);
+    else cb(new Error('Sadece görsel dosyaları yüklenebilir.'));
+  },
+});
+
+// Multer: kullanıcı avatar görselleri için
+const avatarStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(__dirname, 'uploads/avatars');
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `avatar-${req.user?.id || 'u'}-${Date.now()}${ext}`);
+  },
+});
+const uploadAvatar = multer({
+  storage: avatarStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    if (/image\/(png|jpe?g|gif|webp)/.test(file.mimetype)) cb(null, true);
+    else cb(new Error('Sadece PNG/JPEG/GIF/WEBP yüklenebilir.'));
+  },
+});
+
+// Railway PostgreSQL plugin otomatik DATABASE_URL sağlar, yoksa ayrı env'lere bak
+const pool = process.env.DATABASE_URL
+  ? new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } })
+  : new Pool({
+      user:     process.env.DB_USER     || 'postgres',
+      host:     process.env.DB_HOST     || 'localhost',
+      database: process.env.DB_NAME     || 'sporlaconnect',
+      password: process.env.DB_PASSWORD,
+      port:     parseInt(process.env.DB_PORT || '5432'),
+    });
+
+// =====================================================
+// REAL-TIME: SSE (Server-Sent Events)
+// =====================================================
+
+// userId → Set<Response> — aktif SSE bağlantıları
+const sseClients = new Map();
+
+function pushToUser(userId, payload) {
+  const conns = sseClients.get(userId);
+  if (!conns || conns.size === 0) return;
+  const line = `data: ${JSON.stringify(payload)}\n\n`;
+  conns.forEach(res => { try { res.write(line); } catch {} });
+}
+
+// Bildirim oluştur ve anlık ilet
+async function createNotif(userId, { title, message, type, refId = null, url = null }) {
+  try {
+    const r = await pool.query(
+      `INSERT INTO notifications (user_id, title, message, notification_type, reference_id, action_url)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [userId, title, message, type, refId, url]
+    );
+    pushToUser(userId, { event: 'notification', data: r.rows[0] });
+    return r.rows[0];
+  } catch (e) {
+    console.error('createNotif error:', e.message);
+  }
+}
+
+// =====================================================
+// EMAIL / NODEMAILER SETUP
+// =====================================================
+
+const mailTransporter = nodemailer.createTransport({
+  host: process.env.MAIL_HOST || 'smtp.gmail.com',
+  port: parseInt(process.env.MAIL_PORT || '587'),
+  secure: process.env.MAIL_SECURE === 'true',
+  auth: {
+    user: process.env.MAIL_USER,
+    pass: process.env.MAIL_PASS,
+  },
+});
+
+// Mail gönder – hata olursa konsola yaz, uygulamayı patlatma
+async function sendEmail({ to, subject, html }) {
+  if (!process.env.MAIL_USER || !process.env.MAIL_PASS || process.env.MAIL_PASS === 'your-gmail-app-password-here') {
+    console.log(`[EMAIL - MOCK] To: ${to} | Subject: ${subject}`);
+    return { mocked: true };
+  }
+  try {
+    const info = await mailTransporter.sendMail({
+      from: `"${process.env.MAIL_FROM_NAME || 'SporlaConnect'}" <${process.env.MAIL_FROM_EMAIL || process.env.MAIL_USER}>`,
+      to,
+      subject,
+      html,
+    });
+    console.log(`[EMAIL] Sent to ${to}: ${info.messageId}`);
+    return info;
+  } catch (err) {
+    console.error(`[EMAIL ERROR] Failed to send to ${to}:`, err.message);
+    return null;
+  }
+}
+
+// ─── HTML Şablonları ──────────────────────────────────
+
+function emailWrapper(content) {
+  return `<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SporlaConnect</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f6f9;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:40px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+        <!-- Header -->
+        <tr>
+          <td style="background:linear-gradient(135deg,#6366f1,#8b5cf6);padding:32px 40px;text-align:center;">
+            <div style="font-size:32px;margin-bottom:8px;">🏃‍♂️</div>
+            <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;letter-spacing:-0.5px;">SporlaConnect</h1>
+            <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">Spor topluluğun seni bekliyor</p>
+          </td>
+        </tr>
+        <!-- Content -->
+        <tr>
+          <td style="padding:40px;">
+            ${content}
+          </td>
+        </tr>
+        <!-- Footer -->
+        <tr>
+          <td style="background:#f8fafc;padding:24px 40px;text-align:center;border-top:1px solid #e2e8f0;">
+            <p style="margin:0;color:#94a3b8;font-size:13px;">Bu maili SporlaConnect üzerinden aldınız.</p>
+            <p style="margin:4px 0 0;color:#94a3b8;font-size:13px;">© 2026 SporlaConnect. Tüm hakları saklıdır.</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+}
+
+// Şablon 1: Takım daveti (kayıtlı kullanıcı)
+function inviteEmailExisting({ teamName, teamSport, inviterName, teamId, avatar }) {
+  return emailWrapper(`
+    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Takıma Davet Edildiniz! 🎉</h2>
+    <p style="margin:0 0 28px;color:#64748b;font-size:15px;line-height:1.6;">
+      <strong>${inviterName}</strong> sizi <strong>${teamName}</strong> takımına davet etti.
+    </p>
+
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:24px;margin-bottom:28px;">
+      <div style="display:flex;align-items:center;gap:16px;">
+        <div style="width:56px;height:56px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;text-align:center;line-height:56px;">${avatar || '🏃'}</div>
+        <div>
+          <div style="font-size:18px;font-weight:700;color:#1e293b;">${teamName}</div>
+          <div style="font-size:14px;color:#6366f1;margin-top:2px;">🏅 ${teamSport}</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align:center;">
+      <a href="${APP_URL}/teams/${teamId}"
+         style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#ffffff;text-decoration:none;
+                padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;letter-spacing:0.2px;">
+        Takıma Katıl →
+      </a>
+    </div>
+    <p style="text-align:center;margin:16px 0 0;color:#94a3b8;font-size:13px;">
+      Uygulamaya giriş yaparak daveti kabul edebilirsiniz.
+    </p>
+  `);
+}
+
+// Şablon 2: Takım daveti (yeni kullanıcı)
+function inviteEmailNew({ teamName, teamSport, inviterName, avatar }) {
+  return emailWrapper(`
+    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">SporlaConnect'e Davet Edildiniz! 🎉</h2>
+    <p style="margin:0 0 28px;color:#64748b;font-size:15px;line-height:1.6;">
+      <strong>${inviterName}</strong> sizi <strong>${teamName}</strong> takımına davet etti.
+      Katılmak için ücretsiz hesap oluşturun.
+    </p>
+
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:24px;margin-bottom:28px;">
+      <div style="font-size:32px;text-align:center;margin-bottom:12px;">${avatar || '🏃'}</div>
+      <div style="text-align:center;">
+        <div style="font-size:18px;font-weight:700;color:#1e293b;">${teamName}</div>
+        <div style="font-size:14px;color:#6366f1;margin-top:4px;">🏅 ${teamSport}</div>
+      </div>
+    </div>
+
+    <div style="text-align:center;">
+      <a href="${APP_URL}/register"
+         style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#ffffff;text-decoration:none;
+                padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
+        Hesap Oluştur →
+      </a>
+    </div>
+    <p style="text-align:center;margin:16px 0 0;color:#94a3b8;font-size:13px;">
+      Kayıt olduktan sonra takıma katılma daveti sizi bekliyor olacak.
+    </p>
+  `);
+}
+
+// Şablon 3: Duvar gönderisi bildirimi
+function wallPostEmail({ teamName, teamId, posterName, posterAvatar, message, postDate }) {
+  const truncated = message.length > 300 ? message.slice(0, 300) + '...' : message;
+  return emailWrapper(`
+    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">${teamName} Duvarında Yeni Gönderi 💬</h2>
+    <p style="margin:0 0 28px;color:#64748b;font-size:15px;">
+      <strong>${posterName}</strong> takım duvarına bir şey yazdı.
+    </p>
+
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:24px;margin-bottom:28px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+        <div style="width:40px;height:40px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:50%;
+                    display:flex;align-items:center;justify-content:center;font-size:18px;text-align:center;line-height:40px;color:white;font-weight:700;">
+          ${posterAvatar || posterName.charAt(0).toUpperCase()}
+        </div>
+        <div>
+          <div style="font-weight:600;color:#1e293b;font-size:15px;">${posterName}</div>
+          <div style="color:#94a3b8;font-size:13px;">${postDate}</div>
+        </div>
+      </div>
+      <div style="color:#334155;font-size:15px;line-height:1.7;white-space:pre-wrap;border-left:3px solid #6366f1;padding-left:16px;">
+        ${truncated}
+      </div>
+    </div>
+
+    <div style="text-align:center;">
+      <a href="${APP_URL}/teams/${teamId}"
+         style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#ffffff;text-decoration:none;
+                padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
+        Duvara Git →
+      </a>
+    </div>
+  `);
+}
 
 // =====================================================
 // MIDDLEWARE
@@ -41,12 +311,22 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-const isAdmin = (req, res, next) => {
-  const adminToken = req.headers.authorization;
-  if (!adminToken) {
-    return res.status(401).json({ error: 'Admin authentication required' });
-  }
-  next();
+const isAdmin = async (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Admin authentication required' });
+
+  jwt.verify(token, JWT_SECRET, async (err, decoded) => {
+    if (err) return res.status(403).json({ error: 'Invalid token' });
+    try {
+      const result = await pool.query('SELECT is_admin FROM users WHERE id = $1', [decoded.id]);
+      if (!result.rows[0]?.is_admin) return res.status(403).json({ error: 'Admin access required' });
+      req.user = decoded;
+      next();
+    } catch (e) {
+      res.status(500).json({ error: 'Server error' });
+    }
+  });
 };
 
 // =====================================================
@@ -95,18 +375,12 @@ const checkAndAwardBadges = async (userId) => {
           [userId, badge.id]
         ).then(async (result) => {
           if (result.rows.length > 0) {
-            // Create notification for new badge
-            await pool.query(
-              `INSERT INTO notifications (user_id, title, message, notification_type, reference_id)
-               VALUES ($1, $2, $3, $4, $5)`,
-              [
-                userId,
-                'Yeni Rozet! 🏆',
-                `"${badge.name}" rozetini kazandın!`,
-                'badge',
-                badge.id,
-              ]
-            );
+            await createNotif(userId, {
+              title: 'Yeni Rozet! 🏆',
+              message: `"${badge.name}" rozetini kazandın!`,
+              type: 'badge',
+              refId: badge.id,
+            });
           }
         });
       }
@@ -122,7 +396,7 @@ const updateUserStats = async (userId) => {
       `SELECT COUNT(*) as count
        FROM training_attendees ta
        JOIN trainings t ON ta.training_id = t.id
-       WHERE ta.user_id = $1 AND t.training_date < CURRENT_DATE`,
+       WHERE ta.user_id = $1 AND (t.training_date < CURRENT_DATE OR (t.training_date = CURRENT_DATE AND t.training_time < CURRENT_TIME))`,
       [userId]
     );
 
@@ -291,7 +565,7 @@ app.post('/api/auth/login', async (req, res) => {
 app.get('/api/auth/me', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, name, email, phone, avatar, created_at FROM users WHERE id = $1',
+      'SELECT id, name, email, phone, avatar, is_admin, created_at FROM users WHERE id = $1',
       [req.user.id]
     );
 
@@ -320,6 +594,23 @@ app.put('/api/auth/profile', authenticateToken, async (req, res) => {
     res.json({ message: 'Profile updated', user: result.rows[0] });
   } catch (error) {
     console.error('Update profile error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Avatar fotoğrafı yükleme
+app.post('/api/auth/avatar', authenticateToken, uploadAvatar.single('avatar'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Dosya yüklenmedi.' });
+    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+    const result = await pool.query(
+      `UPDATE users SET avatar = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2
+       RETURNING id, name, email, phone, avatar`,
+      [avatarUrl, req.user.id]
+    );
+    res.json({ message: 'Avatar güncellendi', user: result.rows[0] });
+  } catch (error) {
+    console.error('Avatar upload error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -402,18 +693,27 @@ app.post('/api/teams', authenticateToken, async (req, res) => {
 
 app.get('/api/teams', authenticateToken, async (req, res) => {
   try {
-    const { sport, search } = req.query;
+    const { sport, search, member_only } = req.query;
+
+    let whereClause;
+    if (member_only === 'true') {
+      // Sadece kullanıcının üye olduğu takımlar (profil sayfası için)
+      whereClause = `t.id IN (SELECT team_id FROM team_members WHERE user_id = $1)`;
+    } else {
+      // Tüm takımları göster (gizli olanlar da listede görünür, ama içine giremezler)
+      whereClause = `1=1`;
+    }
 
     let query = `
-      SELECT t.*, 
+      SELECT t.*,
              u.name as owner_name,
-             COUNT(DISTINCT tm.user_id) as member_count
+             COUNT(DISTINCT tm.user_id) as member_count,
+             my_role.role as my_role
       FROM teams t
       LEFT JOIN users u ON t.owner_id = u.id
       LEFT JOIN team_members tm ON t.id = tm.team_id
-      WHERE (t.is_private = false OR t.id IN (
-        SELECT team_id FROM team_members WHERE user_id = $1
-      ))
+      LEFT JOIN team_members my_role ON my_role.team_id = t.id AND my_role.user_id = $1
+      WHERE ${whereClause}
     `;
 
     const params = [req.user?.id || null];
@@ -431,7 +731,7 @@ app.get('/api/teams', authenticateToken, async (req, res) => {
       params.push(`%${search}%`);
     }
 
-    query += ' GROUP BY t.id, u.name ORDER BY t.created_at DESC';
+    query += ' GROUP BY t.id, u.name, my_role.role ORDER BY t.created_at DESC';
 
     const result = await pool.query(query, params);
 
@@ -532,11 +832,12 @@ app.post('/api/teams/:id/join', authenticateToken, async (req, res) => {
       [teamId, req.user.id, 'member']
     );
 
-    await pool.query(
-      `INSERT INTO notifications (user_id, title, message, notification_type, reference_id)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [team.owner_id, 'Yeni Üye!', `${req.user.email} takımınıza katıldı!`, 'team', teamId]
-    );
+    await createNotif(team.owner_id, {
+      title: 'Yeni Üye!',
+      message: `${req.user.email} takımınıza katıldı!`,
+      type: 'team',
+      refId: teamId,
+    });
 
     await updateUserStats(req.user.id);
 
@@ -552,15 +853,51 @@ app.post('/api/teams/:id/invite', authenticateToken, async (req, res) => {
     const teamId = req.params.id;
     const { email } = req.body;
 
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    // Rol kontrolü: owner veya coach davet edebilir
     const memberCheck = await pool.query(
       `SELECT role FROM team_members WHERE team_id = $1 AND user_id = $2`,
       [teamId, req.user.id]
     );
 
-    if (memberCheck.rows.length === 0 || !['owner', 'admin'].includes(memberCheck.rows[0].role)) {
-      return res.status(403).json({ error: 'Only team owners/admins can invite members' });
+    if (memberCheck.rows.length === 0 || !['owner', 'coach'].includes(memberCheck.rows[0].role)) {
+      return res.status(403).json({ error: 'Only team owners/coaches can invite members' });
     }
 
+    // Takım bilgilerini çek
+    const teamResult = await pool.query(
+      `SELECT t.name, t.sport, t.avatar, u.name as inviter_name
+       FROM teams t
+       JOIN users u ON u.id = $2
+       WHERE t.id = $1`,
+      [teamId, req.user.id]
+    );
+    const team = teamResult.rows[0];
+
+    // Daha önce davet var mı?
+    const existingInvite = await pool.query(
+      `SELECT id FROM team_invitations WHERE team_id = $1 AND invitee_email = $2`,
+      [teamId, email]
+    );
+    if (existingInvite.rows.length > 0) {
+      return res.status(409).json({ error: 'Bu e-posta adresi zaten davet edildi.' });
+    }
+
+    // Zaten üye mi?
+    const alreadyMember = await pool.query(
+      `SELECT tm.id FROM team_members tm
+       JOIN users u ON u.id = tm.user_id
+       WHERE tm.team_id = $1 AND u.email = $2`,
+      [teamId, email]
+    );
+    if (alreadyMember.rows.length > 0) {
+      return res.status(409).json({ error: 'Bu kullanıcı zaten takım üyesi.' });
+    }
+
+    // Daveti kaydet
     const result = await pool.query(
       `INSERT INTO team_invitations (team_id, inviter_id, invitee_email)
        VALUES ($1, $2, $3)
@@ -568,30 +905,103 @@ app.post('/api/teams/:id/invite', authenticateToken, async (req, res) => {
       [teamId, req.user.id, email]
     );
 
-    // Check if invited user exists
+    // Kullanıcı kayıtlı mı kontrol et
     const userResult = await pool.query(
-      'SELECT id FROM users WHERE email = $1',
+      'SELECT id, name FROM users WHERE email = $1',
       [email]
     );
 
-    if (userResult.rows.length > 0) {
-      await pool.query(
-        `INSERT INTO notifications (user_id, title, message, notification_type, reference_id, action_url)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
-        [
-          userResult.rows[0].id,
-          'Takım Daveti!',
-          `Bir takıma davet edildiniz!`,
-          'invitation',
-          teamId,
-          `/teams/${teamId}`,
-        ]
-      );
+    const isRegistered = userResult.rows.length > 0;
+
+    // Kayıtlı kullanıcıya in-app bildirim
+    if (isRegistered) {
+      await createNotif(userResult.rows[0].id, {
+        title: 'Takım Daveti! 🎉',
+        message: `${team.inviter_name} sizi "${team.name}" takımına davet etti.`,
+        type: 'invitation',
+        refId: teamId,
+        url: `/teams/${teamId}`,
+      });
     }
 
-    res.json({ message: 'Invitation sent', invitation: result.rows[0] });
+    // Her iki durumda da mail gönder
+    const emailHtml = isRegistered
+      ? inviteEmailExisting({
+          teamName: team.name,
+          teamSport: team.sport,
+          inviterName: team.inviter_name,
+          teamId,
+          avatar: team.avatar,
+        })
+      : inviteEmailNew({
+          teamName: team.name,
+          teamSport: team.sport,
+          inviterName: team.inviter_name,
+          avatar: team.avatar,
+        });
+
+    await sendEmail({
+      to: email,
+      subject: `${team.inviter_name} sizi "${team.name}" takımına davet etti! 🏃‍♂️`,
+      html: emailHtml,
+    });
+
+    res.json({
+      message: isRegistered
+        ? 'Davet gönderildi. Kullanıcıya bildirim ve e-posta iletildi.'
+        : 'Davet gönderildi. Kullanıcı kayıtlı değil — kayıt daveti e-postası iletildi.',
+      invitation: result.rows[0],
+      is_registered: isRegistered,
+    });
   } catch (error) {
     console.error('Invite error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.put('/api/teams/:id', authenticateToken, async (req, res) => {
+  try {
+    const teamId = req.params.id;
+    const { name, sport, description, location, is_private, avatar } = req.body;
+
+    const ownerCheck = await pool.query('SELECT owner_id FROM teams WHERE id = $1', [teamId]);
+    if (!ownerCheck.rows.length) return res.status(404).json({ error: 'Team not found' });
+    if (ownerCheck.rows[0].owner_id !== req.user.id) {
+      return res.status(403).json({ error: 'Only team owner can edit the team' });
+    }
+
+    // Takım gizli yapılırsa tüm antrenmanları da gizle
+    if (is_private === true) {
+      await pool.query('UPDATE trainings SET is_public = false WHERE team_id = $1', [teamId]);
+    }
+
+    const result = await pool.query(
+      `UPDATE teams SET name=$1, sport=$2, description=$3, location=$4, is_private=$5, avatar=$6, updated_at=CURRENT_TIMESTAMP
+       WHERE id=$7 RETURNING *`,
+      [name, sport, description, location, is_private, avatar, teamId]
+    );
+
+    res.json({ message: 'Team updated', team: result.rows[0] });
+  } catch (error) {
+    console.error('Update team error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.delete('/api/teams/:id', authenticateToken, async (req, res) => {
+  try {
+    const teamId = req.params.id;
+
+    const ownerCheck = await pool.query('SELECT owner_id FROM teams WHERE id = $1', [teamId]);
+    if (!ownerCheck.rows.length) return res.status(404).json({ error: 'Team not found' });
+    if (ownerCheck.rows[0].owner_id !== req.user.id) {
+      return res.status(403).json({ error: 'Only team owner can delete the team' });
+    }
+
+    await pool.query('DELETE FROM teams WHERE id = $1', [teamId]);
+    res.json({ message: 'Team deleted' });
+  } catch (error) {
+    console.error('Delete team error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -631,8 +1041,22 @@ app.delete('/api/teams/:teamId/members/:userId', authenticateToken, async (req, 
       [teamId]
     );
 
-    if (ownerCheck.rows[0].owner_id !== req.user.id && req.user.id !== parseInt(userId)) {
-      return res.status(403).json({ error: 'Only team owner can remove members' });
+    // Sahip, antrenör veya kendisi çıkabilir
+    const myRole = await pool.query(
+      'SELECT role FROM team_members WHERE team_id = $1 AND user_id = $2',
+      [teamId, req.user.id]
+    );
+    const isOwner = ownerCheck.rows[0].owner_id === req.user.id;
+    const isCoach = myRole.rows[0]?.role === 'coach';
+    const isSelf = req.user.id === parseInt(userId);
+
+    // Sahip çıkarılamaz
+    if (parseInt(userId) === ownerCheck.rows[0].owner_id) {
+      return res.status(403).json({ error: 'Takım sahibi çıkarılamaz.' });
+    }
+
+    if (!isOwner && !isCoach && !isSelf) {
+      return res.status(403).json({ error: 'Bu işlem için yetkiniz yok.' });
     }
 
     await pool.query(
@@ -652,8 +1076,16 @@ app.post('/api/teams/:id/posts', authenticateToken, async (req, res) => {
     const teamId = req.params.id;
     const { message } = req.body;
 
+    if (!message || !message.trim()) {
+      return res.status(400).json({ error: 'Mesaj boş olamaz.' });
+    }
+
+    // Üyelik kontrolü + göndericinin bilgilerini çek
     const memberCheck = await pool.query(
-      'SELECT id FROM team_members WHERE team_id = $1 AND user_id = $2',
+      `SELECT tm.id, u.name as user_name, u.avatar as user_avatar
+       FROM team_members tm
+       JOIN users u ON u.id = tm.user_id
+       WHERE tm.team_id = $1 AND tm.user_id = $2`,
       [teamId, req.user.id]
     );
 
@@ -661,14 +1093,70 @@ app.post('/api/teams/:id/posts', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Only team members can post' });
     }
 
+    const poster = memberCheck.rows[0];
+
+    // Takım bilgisini çek
+    const teamResult = await pool.query(
+      'SELECT id, name, sport FROM teams WHERE id = $1',
+      [teamId]
+    );
+    const team = teamResult.rows[0];
+
+    // Gönderiyi kaydet
     const result = await pool.query(
       `INSERT INTO team_posts (team_id, user_id, message)
        VALUES ($1, $2, $3)
        RETURNING *`,
-      [teamId, req.user.id, message]
+      [teamId, req.user.id, message.trim()]
     );
 
-    res.json({ post: result.rows[0] });
+    const post = result.rows[0];
+
+    // Diğer tüm üyeleri çek (göndericinin kendisi hariç)
+    const otherMembers = await pool.query(
+      `SELECT u.id, u.name, u.email
+       FROM team_members tm
+       JOIN users u ON u.id = tm.user_id
+       WHERE tm.team_id = $1 AND tm.user_id != $2`,
+      [teamId, req.user.id]
+    );
+
+    const postDate = new Date().toLocaleString('tr-TR', {
+      timeZone: 'Europe/Istanbul',
+      day: 'numeric', month: 'long', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    });
+
+    // Her üye için bildirim + mail (paralel, hata durumunda durmaz)
+    const notifAndMailPromises = otherMembers.rows.map(async (member) => {
+      // In-app bildirim
+      await createNotif(member.id, {
+        title: `${team.name} Duvarı 💬`,
+        message: `${poster.user_name}: ${message.trim().slice(0, 80)}${message.length > 80 ? '...' : ''}`,
+        type: 'team_post',
+        refId: teamId,
+        url: `/teams/${teamId}`,
+      });
+
+      // Mail
+      sendEmail({
+        to: member.email,
+        subject: `${team.name} takımında yeni gönderi var 💬`,
+        html: wallPostEmail({
+          teamName: team.name,
+          teamId,
+          posterName: poster.user_name,
+          posterAvatar: poster.user_avatar,
+          message: message.trim(),
+          postDate,
+        }),
+      });
+    });
+
+    // Bildirimleri bekle ama mail'i background'da çalıştır
+    await Promise.allSettled(notifAndMailPromises);
+
+    res.json({ post: { ...post, user_name: poster.user_name, user_avatar: poster.user_avatar } });
   } catch (error) {
     console.error('Post error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -706,9 +1194,14 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
       [team_id, req.user.id]
     );
 
-    if (memberCheck.rows.length === 0 || !['owner', 'admin'].includes(memberCheck.rows[0].role)) {
-      return res.status(403).json({ error: 'Only team owners/admins can create trainings' });
+    if (memberCheck.rows.length === 0 || !['owner', 'coach'].includes(memberCheck.rows[0].role)) {
+      return res.status(403).json({ error: 'Antrenman oluşturmak için sahip veya antrenör olmanız gerekiyor.' });
     }
+
+    // Gizli takımın antrenmanı asla public olamaz
+    const teamCheck = await pool.query('SELECT is_private FROM teams WHERE id = $1', [team_id]);
+    const teamIsPrivate = teamCheck.rows[0]?.is_private || false;
+    const finalIsPublic = teamIsPrivate ? false : (is_public !== undefined ? is_public : true);
 
     const result = await pool.query(
       `INSERT INTO trainings (
@@ -728,7 +1221,7 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
         location_lng,
         location_address,
         capacity || 20,
-        is_public !== undefined ? is_public : true,
+        finalIsPublic,
         difficulty || 'Orta',
       ]
     );
@@ -739,18 +1232,13 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
     );
 
     for (const member of members.rows) {
-      await pool.query(
-        `INSERT INTO notifications (user_id, title, message, notification_type, reference_id, action_url)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
-        [
-          member.user_id,
-          'Yeni Antrenman!',
-          `${title} antrenmanı eklendi.`,
-          'training',
-          result.rows[0].id,
-          `/trainings/${result.rows[0].id}`,
-        ]
-      );
+      await createNotif(member.user_id, {
+        title: 'Yeni Antrenman!',
+        message: `${title} antrenmanı eklendi.`,
+        type: 'training',
+        refId: result.rows[0].id,
+        url: `/trainings/${result.rows[0].id}`,
+      });
     }
 
     res.status(201).json({ message: 'Training created successfully', training: result.rows[0] });
@@ -827,6 +1315,60 @@ AND (
   }
 });
 
+app.get('/api/trainings/nearby', async (req, res) => {
+  try {
+    const { lat, lng, radius = 10 } = req.query;
+    if (!lat || !lng) return res.status(400).json({ error: 'lat ve lng gerekli' });
+
+    // Token varsa kullanıcıyı tanımla (opsiyonel auth)
+    let userId = null;
+    const authHeader = req.headers['authorization'];
+    if (authHeader) {
+      try {
+        const token = authHeader.split(' ')[1];
+        const decoded = require('jsonwebtoken').verify(token, JWT_SECRET);
+        userId = decoded.id;
+      } catch { /* geçersiz token, misafir olarak devam et */ }
+    }
+
+    // Gizlilik: giriş yapmamış → sadece public; giriş yapmış → public + kendi takımları
+    const privacyFilter = userId
+      ? `(t.is_public = true OR teams.id IN (SELECT team_id FROM team_members WHERE user_id = ${parseInt(userId)}))`
+      : `t.is_public = true`;
+
+    const result = await pool.query(
+      `SELECT * FROM (
+         SELECT t.*,
+           teams.name  AS team_name,
+           teams.sport AS team_sport,
+           teams.avatar AS team_avatar,
+           COALESCE(
+             (SELECT COUNT(*) FROM training_attendees ta WHERE ta.training_id = t.id),
+             0
+           ) AS attendee_count,
+           (6371 * acos(LEAST(1.0,
+             cos(radians($1)) * cos(radians(t.location_lat)) * cos(radians(t.location_lng) - radians($2))
+             + sin(radians($1)) * sin(radians(t.location_lat))
+           ))) AS distance
+         FROM trainings t
+         JOIN teams ON t.team_id = teams.id
+         WHERE t.location_lat IS NOT NULL
+           AND t.location_lng IS NOT NULL
+           AND t.training_date >= CURRENT_DATE
+           AND ${privacyFilter}
+       ) sub
+       WHERE distance <= $3
+       ORDER BY distance ASC`,
+      [parseFloat(lat), parseFloat(lng), parseFloat(radius)]
+    );
+
+    res.json({ trainings: result.rows });
+  } catch (error) {
+    console.error('Nearby trainings error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 app.get('/api/trainings/:id', authenticateToken, async (req, res) => {
   try {
     const trainingId = req.params.id;
@@ -851,6 +1393,17 @@ app.get('/api/trainings/:id', authenticateToken, async (req, res) => {
     }
 
     const training = trainingResult.rows[0];
+
+    // Gizlilik kontrolü: public değilse sadece takım üyesi görebilir
+    if (!training.is_public) {
+      const memberCheck = await pool.query(
+        'SELECT id FROM team_members WHERE team_id = $1 AND user_id = $2',
+        [training.team_id, req.user.id]
+      );
+      if (memberCheck.rows.length === 0) {
+        return res.status(403).json({ error: 'Bu antrenman gizli bir takıma ait. Erişim yetkiniz yok.' });
+      }
+    }
 
     const attendeesResult = await pool.query(
       `SELECT u.id, u.name, u.avatar, ta.status, ta.joined_at
@@ -893,6 +1446,17 @@ app.post('/api/trainings/:id/join', authenticateToken, async (req, res) => {
     }
 
     const training = trainingResult.rows[0];
+
+    // Gizlilik kontrolü: public değilse sadece takım üyesi katılabilir
+    if (!training.is_public) {
+      const memberCheck = await pool.query(
+        'SELECT id FROM team_members WHERE team_id = $1 AND user_id = $2',
+        [training.team_id, req.user.id]
+      );
+      if (memberCheck.rows.length === 0) {
+        return res.status(403).json({ error: 'Bu antrenman gizli bir takıma ait. Sadece takım üyeleri katılabilir.' });
+      }
+    }
 
     const attendeeCount = await pool.query(
       'SELECT COUNT(*) FROM training_attendees WHERE training_id = $1',
@@ -948,7 +1512,7 @@ app.post('/api/trainings/:id/comments', authenticateToken, async (req, res) => {
 app.put('/api/trainings/:id', authenticateToken, async (req, res) => {
   try {
     const trainingId = req.params.id;
-    const { title, description, training_date, training_time, location_name, capacity, difficulty } = req.body;
+    const { title, description, training_date, training_time, location_name, location_lat, location_lng, capacity, difficulty } = req.body;
 
     const trainingResult = await pool.query(
       'SELECT team_id FROM trainings WHERE id = $1',
@@ -971,10 +1535,11 @@ app.put('/api/trainings/:id', authenticateToken, async (req, res) => {
     const result = await pool.query(
       `UPDATE trainings
        SET title = $1, description = $2, training_date = $3, training_time = $4,
-           location_name = $5, capacity = $6, difficulty = $7, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $8
+           location_name = $5, location_lat = $6, location_lng = $7,
+           capacity = $8, difficulty = $9, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $10
        RETURNING *`,
-      [title, description, training_date, training_time, location_name, capacity, difficulty, trainingId]
+      [title, description, training_date, training_time, location_name, location_lat || null, location_lng || null, capacity, difficulty, trainingId]
     );
 
     res.json({ training: result.rows[0] });
@@ -1108,6 +1673,33 @@ app.get('/api/users/:id/activity', authenticateToken, async (req, res) => {
 // NOTIFICATIONS
 // =====================================================
 
+// SSE stream — token query param üzerinden auth (EventSource header desteklemez)
+app.get('/api/notifications/stream', (req, res) => {
+  const token = req.query.token;
+  if (!token) return res.status(401).end();
+  let userId;
+  try {
+    userId = require('jsonwebtoken').verify(token, JWT_SECRET).id;
+  } catch {
+    return res.status(401).end();
+  }
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  if (!sseClients.has(userId)) sseClients.set(userId, new Set());
+  sseClients.get(userId).add(res);
+  res.write(`data: ${JSON.stringify({ event: 'connected' })}\n\n`);
+
+  const hb = setInterval(() => { try { res.write(': hb\n\n'); } catch {} }, 25000);
+  req.on('close', () => {
+    clearInterval(hb);
+    sseClients.get(userId)?.delete(res);
+  });
+});
+
 app.get('/api/notifications', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
@@ -1218,20 +1810,25 @@ app.get('/api/search', authenticateToken, async (req, res) => {
 // ADMIN ROUTES
 // =====================================================
 
+// ─── ADMIN STATS ─────────────────────────────────────
 app.get('/api/admin/stats', isAdmin, async (req, res) => {
   try {
-    const userCount = await pool.query('SELECT COUNT(*) FROM users');
-    const trainingCount = await pool.query('SELECT COUNT(*) FROM trainings');
-    const teamCount = await pool.query('SELECT COUNT(*) FROM teams');
-    const completedTrainings = await pool.query(
-      "SELECT COUNT(*) FROM trainings WHERE training_date < CURRENT_DATE"
-    );
+    const [userCount, trainingCount, teamCount, completedTrainings, contactCount, recentUsers] = await Promise.all([
+      pool.query('SELECT COUNT(*) FROM users'),
+      pool.query('SELECT COUNT(*) FROM trainings'),
+      pool.query('SELECT COUNT(*) FROM teams'),
+      pool.query(`SELECT COUNT(*) FROM trainings WHERE training_date < CURRENT_DATE OR (training_date = CURRENT_DATE AND training_time < CURRENT_TIME)`),
+      pool.query("SELECT COUNT(*) FROM contact_messages WHERE is_read = false"),
+      pool.query("SELECT id, name, email, created_at FROM users ORDER BY created_at DESC LIMIT 5"),
+    ]);
 
     res.json({
       users: parseInt(userCount.rows[0].count),
       trainings: parseInt(trainingCount.rows[0].count),
       teams: parseInt(teamCount.rows[0].count),
       completedTrainings: parseInt(completedTrainings.rows[0].count),
+      unreadContact: parseInt(contactCount.rows[0].count),
+      recentUsers: recentUsers.rows,
     });
   } catch (error) {
     console.error('Admin stats error:', error);
@@ -1239,26 +1836,22 @@ app.get('/api/admin/stats', isAdmin, async (req, res) => {
   }
 });
 
+// ─── ADMIN USERS ─────────────────────────────────────
 app.get('/api/admin/users', isAdmin, async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT 
-        u.id, 
-        u.name, 
-        u.email, 
-        u.created_at,
+      SELECT
+        u.id, u.name, u.email, u.is_admin, u.created_at,
         COUNT(DISTINCT tm.team_id) as team_count,
         COUNT(DISTINCT ta.training_id) as training_count
       FROM users u
       LEFT JOIN team_members tm ON u.id = tm.user_id
       LEFT JOIN training_attendees ta ON u.id = ta.user_id
-      GROUP BY u.id, u.name, u.email, u.created_at
+      GROUP BY u.id, u.name, u.email, u.is_admin, u.created_at
       ORDER BY u.created_at DESC
     `);
-    
     res.json(result.rows);
   } catch (error) {
-    console.error('Admin users error:', error);
     res.status(500).json({ error: 'Failed to fetch users' });
   }
 });
@@ -1266,49 +1859,310 @@ app.get('/api/admin/users', isAdmin, async (req, res) => {
 app.delete('/api/admin/users/:id', isAdmin, async (req, res) => {
   try {
     const { id } = req.params;
+    if (parseInt(id) === req.user.id) return res.status(400).json({ error: 'Kendi hesabınızı silemezsiniz.' });
     await pool.query('DELETE FROM users WHERE id = $1', [id]);
-    res.json({ message: 'User deleted successfully' });
+    res.json({ message: 'Kullanıcı silindi.' });
   } catch (error) {
-    console.error('Delete user error:', error);
     res.status(500).json({ error: 'Failed to delete user' });
   }
 });
 
+app.put('/api/admin/users/:id/toggle-admin', isAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(
+      'UPDATE users SET is_admin = NOT is_admin WHERE id = $1 RETURNING id, name, is_admin',
+      [id]
+    );
+    res.json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to toggle admin' });
+  }
+});
+
+// ─── ADMIN TRAININGS ────────────────────────────────
 app.get('/api/admin/trainings', isAdmin, async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT 
-        t.*,
+      SELECT t.*, teams.name as team_name,
         COUNT(ta.user_id) as participant_count
       FROM trainings t
+      LEFT JOIN teams ON t.team_id = teams.id
       LEFT JOIN training_attendees ta ON t.id = ta.training_id
-      GROUP BY t.id
+      GROUP BY t.id, teams.name
       ORDER BY t.training_date DESC, t.training_time DESC
     `);
-    
     res.json(result.rows);
   } catch (error) {
-    console.error('Admin trainings error:', error);
     res.status(500).json({ error: 'Failed to fetch trainings' });
   }
 });
 
+app.delete('/api/admin/trainings/:id', isAdmin, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM trainings WHERE id = $1', [req.params.id]);
+    res.json({ message: 'Antrenman silindi.' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete training' });
+  }
+});
+
+// ─── ADMIN TEAMS ────────────────────────────────────
 app.get('/api/admin/teams', isAdmin, async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT 
-        t.*,
+      SELECT t.*, u.name as owner_name,
         COUNT(tm.user_id) as member_count
       FROM teams t
+      LEFT JOIN users u ON t.owner_id = u.id
       LEFT JOIN team_members tm ON t.id = tm.team_id
-      GROUP BY t.id
+      GROUP BY t.id, u.name
       ORDER BY t.created_at DESC
     `);
-    
     res.json(result.rows);
   } catch (error) {
-    console.error('Admin teams error:', error);
     res.status(500).json({ error: 'Failed to fetch teams' });
+  }
+});
+
+app.delete('/api/admin/teams/:id', isAdmin, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM teams WHERE id = $1', [req.params.id]);
+    res.json({ message: 'Takım silindi.' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete team' });
+  }
+});
+
+// ─── ADMIN CONTACT MESSAGES ─────────────────────────
+app.get('/api/admin/contact', isAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM contact_messages ORDER BY created_at DESC'
+    );
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch messages' });
+  }
+});
+
+app.put('/api/admin/contact/:id/read', isAdmin, async (req, res) => {
+  try {
+    await pool.query('UPDATE contact_messages SET is_read = true WHERE id = $1', [req.params.id]);
+    res.json({ message: 'Okundu.' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to mark as read' });
+  }
+});
+
+app.delete('/api/admin/contact/:id', isAdmin, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM contact_messages WHERE id = $1', [req.params.id]);
+    res.json({ message: 'Mesaj silindi.' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete message' });
+  }
+});
+
+// ─── PUBLIC: İLETİŞİM FORMU ────────────────────────
+app.post('/api/contact', async (req, res) => {
+  try {
+    const { name, email, subject, message } = req.body;
+    if (!name || !email || !subject || !message) {
+      return res.status(400).json({ error: 'Tüm alanlar zorunludur.' });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO contact_messages (name, email, subject, message)
+       VALUES ($1, $2, $3, $4) RETURNING *`,
+      [name.trim(), email.trim(), subject.trim(), message.trim()]
+    );
+
+    // Admin'e mail gönder
+    const adminResult = await pool.query('SELECT email FROM users WHERE is_admin = true LIMIT 1');
+    if (adminResult.rows[0]) {
+      sendEmail({
+        to: adminResult.rows[0].email,
+        subject: `📬 Yeni İletişim Mesajı: ${subject}`,
+        html: emailWrapper(`
+          <h2 style="margin:0 0 16px;color:#1e293b;">Yeni İletişim Formu Mesajı</h2>
+          <div style="background:#f8fafc;border-radius:12px;padding:20px;margin-bottom:20px;">
+            <p style="margin:0 0 8px;"><strong>Ad:</strong> ${name}</p>
+            <p style="margin:0 0 8px;"><strong>E-posta:</strong> ${email}</p>
+            <p style="margin:0 0 8px;"><strong>Konu:</strong> ${subject}</p>
+          </div>
+          <div style="background:#f8fafc;border-left:3px solid #6366f1;border-radius:8px;padding:20px;">
+            <p style="margin:0;color:#334155;line-height:1.7;white-space:pre-wrap;">${message}</p>
+          </div>
+          <div style="margin-top:24px;text-align:center;">
+            <a href="${APP_URL}?page=admin&tab=contact"
+               style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;">
+              Panelde Görüntüle →
+            </a>
+          </div>
+        `),
+      });
+    }
+
+    // Gönderene teşekkür maili
+    sendEmail({
+      to: email,
+      subject: 'Mesajınız alındı — SporlaConnect',
+      html: emailWrapper(`
+        <h2 style="margin:0 0 12px;color:#1e293b;">Mesajınız için teşekkürler, ${name}! 🎉</h2>
+        <p style="color:#64748b;line-height:1.7;margin:0 0 20px;">
+          Mesajınız başarıyla alındı. En kısa sürede size dönüş yapacağız.
+        </p>
+        <div style="background:#f8fafc;border-left:3px solid #6366f1;border-radius:8px;padding:20px;">
+          <p style="margin:0 0 8px;font-weight:600;color:#1e293b;">Konu: ${subject}</p>
+          <p style="margin:0;color:#64748b;font-size:14px;white-space:pre-wrap;">${message.slice(0, 200)}${message.length > 200 ? '...' : ''}</p>
+        </div>
+      `),
+    });
+
+    res.json({ message: 'Mesajınız başarıyla gönderildi.', id: result.rows[0].id });
+  } catch (error) {
+    console.error('Contact error:', error);
+    res.status(500).json({ error: 'Mesaj gönderilemedi.' });
+  }
+});
+
+// =====================================================
+// HEALTH CHECK
+// =====================================================
+
+// =====================================================
+// BANNER ROUTES
+// =====================================================
+
+// Public: aktif bannerları getir
+// ─── Platform İstatistikleri (public) ──────────────────────────────────────
+app.get('/api/platform-stats', async (req, res) => {
+  try {
+    const [users, trainings, teams, badges] = await Promise.all([
+      pool.query(`SELECT COUNT(*) FROM users`),
+      pool.query(`SELECT COUNT(*) FROM trainings`),
+      pool.query(`SELECT COUNT(*) FROM teams`),
+      pool.query(`SELECT COUNT(*) FROM user_badges`),
+    ]);
+    res.json({
+      users:     parseInt(users.rows[0].count),
+      trainings: parseInt(trainings.rows[0].count),
+      teams:     parseInt(teams.rows[0].count),
+      badges:    parseInt(badges.rows[0].count),
+    });
+  } catch (e) {
+    res.status(500).json({ error: 'İstatistikler alınamadı.' });
+  }
+});
+
+app.get('/api/banners', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT * FROM banners WHERE is_active = true ORDER BY order_index ASC, created_at ASC`
+    );
+    res.json(result.rows);
+  } catch (e) {
+    res.status(500).json({ error: 'Bannerlar alınamadı.' });
+  }
+});
+
+// Admin: tüm bannerları getir
+app.get('/api/admin/banners', isAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(`SELECT * FROM banners ORDER BY order_index ASC, created_at ASC`);
+    res.json(result.rows);
+  } catch (e) {
+    res.status(500).json({ error: 'Bannerlar alınamadı.' });
+  }
+});
+
+// Admin: banner oluştur
+app.post('/api/admin/banners', isAdmin, async (req, res) => {
+  try {
+    // mottos kolonunu ekle (yoksa)
+    await pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS mottos JSONB DEFAULT '[]'`);
+    const { title, subtitle, badge_text, cta_primary_text, cta_secondary_text,
+            cta_primary_url, cta_secondary_url,
+            gradient_from, gradient_via, gradient_to, order_index, is_active, mottos } = req.body;
+    const result = await pool.query(
+      `INSERT INTO banners (title, subtitle, badge_text, cta_primary_text, cta_secondary_text,
+        cta_primary_url, cta_secondary_url,
+        gradient_from, gradient_via, gradient_to, order_index, is_active, mottos)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
+      [title, subtitle, badge_text, cta_primary_text, cta_secondary_text,
+       cta_primary_url || '', cta_secondary_url || '',
+       gradient_from || '#0D0B26', gradient_via || '#1a1040', gradient_to || '#0f2044',
+       order_index || 0, is_active !== false,
+       JSON.stringify(Array.isArray(mottos) && mottos.length ? mottos : [])]
+    );
+    res.json(result.rows[0]);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Admin: banner güncelle
+app.put('/api/admin/banners/:id', isAdmin, async (req, res) => {
+  try {
+    await pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS mottos JSONB DEFAULT '[]'`);
+    const { title, subtitle, badge_text, cta_primary_text, cta_secondary_text,
+            cta_primary_url, cta_secondary_url,
+            gradient_from, gradient_via, gradient_to, order_index, is_active, mottos } = req.body;
+    const result = await pool.query(
+      `UPDATE banners SET title=$1, subtitle=$2, badge_text=$3,
+        cta_primary_text=$4, cta_secondary_text=$5,
+        cta_primary_url=$6, cta_secondary_url=$7,
+        gradient_from=$8, gradient_via=$9, gradient_to=$10,
+        order_index=$11, is_active=$12, mottos=$13
+       WHERE id=$14 RETURNING *`,
+      [title, subtitle, badge_text, cta_primary_text, cta_secondary_text,
+       cta_primary_url || '', cta_secondary_url || '',
+       gradient_from, gradient_via, gradient_to, order_index, is_active,
+       JSON.stringify(Array.isArray(mottos) && mottos.length ? mottos : []),
+       req.params.id]
+    );
+    res.json(result.rows[0]);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Admin: banner görseli yükle
+app.post('/api/admin/banners/:id/image', isAdmin, uploadBanner.single('image'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Dosya yüklenmedi.' });
+    const imageUrl = `/uploads/banners/${req.file.filename}`;
+
+    // Eski görseli sil
+    const old = await pool.query('SELECT image_url FROM banners WHERE id=$1', [req.params.id]);
+    if (old.rows[0]?.image_url) {
+      const oldPath = path.join(__dirname, old.rows[0].image_url);
+      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+    }
+
+    const result = await pool.query(
+      'UPDATE banners SET image_url=$1 WHERE id=$2 RETURNING *',
+      [imageUrl, req.params.id]
+    );
+    res.json(result.rows[0]);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Admin: banner sil
+app.delete('/api/admin/banners/:id', isAdmin, async (req, res) => {
+  try {
+    const old = await pool.query('SELECT image_url FROM banners WHERE id=$1', [req.params.id]);
+    if (old.rows[0]?.image_url) {
+      const oldPath = path.join(__dirname, old.rows[0].image_url);
+      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+    }
+    await pool.query('DELETE FROM banners WHERE id=$1', [req.params.id]);
+    res.json({ message: 'Banner silindi.' });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
   }
 });
 
@@ -1323,6 +2177,107 @@ app.get('/health', (req, res) => {
 // =====================================================
 // START SERVER
 // =====================================================
+
+// DB migrations
+pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS mottos JSONB DEFAULT '[]'`).catch(() => {});
+pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS cta_primary_url TEXT DEFAULT ''`).catch(() => {});
+pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS cta_secondary_url TEXT DEFAULT ''`).catch(() => {});
+pool.query(`
+  CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id         SERIAL PRIMARY KEY,
+    user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token      TEXT NOT NULL UNIQUE,
+    expires_at TIMESTAMPTZ NOT NULL,
+    used       BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+  )
+`).catch(() => {});
+
+// =====================================================
+// ŞİFRE SIFIRLAMA
+// =====================================================
+
+// Şifremi unuttum — token üret, e-posta gönder
+app.post('/api/auth/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'E-posta gerekli.' });
+  try {
+    const result = await pool.query('SELECT id, name FROM users WHERE email = $1', [email]);
+    // Güvenlik: kullanıcı bulunsun ya da bulunmasın aynı yanıtı dön
+    if (result.rows.length === 0) return res.json({ message: 'E-posta gönderildi.' });
+
+    const user = result.rows[0];
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 saat
+
+    // Önceki tokenları geçersiz kıl
+    await pool.query('DELETE FROM password_reset_tokens WHERE user_id = $1', [user.id]);
+    await pool.query(
+      'INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)',
+      [user.id, token, expiresAt]
+    );
+
+    const resetLink = `${APP_URL}?reset_token=${token}`;
+    await sendEmail({
+      to: email,
+      subject: 'SporlaConnect — Şifre Sıfırlama',
+      html: emailWrapper(`
+        <h2 style="color:#6366f1;margin:0 0 16px">Şifre Sıfırlama</h2>
+        <p style="color:#334155;margin:0 0 12px">Merhaba <strong>${user.name}</strong>,</p>
+        <p style="color:#334155;margin:0 0 24px">Şifrenizi sıfırlamak için aşağıdaki butona tıklayın. Link <strong>1 saat</strong> geçerlidir.</p>
+        <a href="${resetLink}"
+           style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border-radius:12px;text-decoration:none;font-weight:700;font-size:15px;">
+          Şifremi Sıfırla
+        </a>
+        <p style="color:#94a3b8;font-size:13px;margin:24px 0 0;">Bu isteği siz yapmadıysanız bu e-postayı görmezden gelebilirsiniz.</p>
+      `),
+    });
+    res.json({ message: 'E-posta gönderildi.' });
+  } catch (err) {
+    console.error('forgot-password error:', err);
+    res.status(500).json({ error: 'Sunucu hatası.' });
+  }
+});
+
+// Şifre sıfırla — token doğrula, şifreyi güncelle
+app.post('/api/auth/reset-password', async (req, res) => {
+  const { token, password } = req.body;
+  if (!token || !password) return res.status(400).json({ error: 'Token ve şifre gerekli.' });
+  if (password.length < 6) return res.status(400).json({ error: 'Şifre en az 6 karakter olmalı.' });
+  try {
+    const result = await pool.query(
+      `SELECT prt.user_id, prt.expires_at, prt.used
+       FROM password_reset_tokens prt
+       WHERE prt.token = $1`,
+      [token]
+    );
+    if (result.rows.length === 0) return res.status(400).json({ error: 'Geçersiz link.' });
+
+    const { user_id, expires_at, used } = result.rows[0];
+    if (used) return res.status(400).json({ error: 'Bu link daha önce kullanıldı.' });
+    if (new Date() > new Date(expires_at)) return res.status(400).json({ error: 'Linkin süresi doldu.' });
+
+    const hash = await bcrypt.hash(password, 10);
+    await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, user_id]);
+    await pool.query('UPDATE password_reset_tokens SET used = true WHERE token = $1', [token]);
+
+    res.json({ message: 'Şifre başarıyla güncellendi.' });
+  } catch (err) {
+    console.error('reset-password error:', err);
+    res.status(500).json({ error: 'Sunucu hatası.' });
+  }
+});
+
+// Production'da Vite build çıktısını servis et
+if (process.env.NODE_ENV === 'production') {
+  const distPath = path.join(__dirname, '../dist');
+  app.use(express.static(distPath, { maxAge: '1d' }));
+  app.get('*', (req, res) => {
+    if (!req.path.startsWith('/api') && !req.path.startsWith('/uploads')) {
+      res.sendFile(path.join(distPath, 'index.html'));
+    }
+  });
+}
 
 app.listen(PORT, () => {
   console.log(`

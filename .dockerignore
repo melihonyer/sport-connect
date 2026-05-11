@@ -1,0 +1,8 @@
+node_modules
+backend/node_modules
+dist
+.env
+.env.*
+*.md
+.DS_Store
+sporla-bulusma-YEDEK.jsx

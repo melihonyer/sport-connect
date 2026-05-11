@@ -1,41 +1,29 @@
-# Multi-stage build for optimal image size
-FROM node:18-alpine AS builder
-
+# ---- Stage 1: Frontend build ----
+FROM node:20-alpine AS frontend
 WORKDIR /app
-
-# Copy package files
 COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
 
-# Install dependencies
-RUN npm ci --only=production
-
-# Production stage
-FROM node:18-alpine
-
+# ---- Stage 2: Backend + built frontend ----
+FROM node:20-alpine
 WORKDIR /app
 
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
+# Backend bağımlılıkları
+COPY backend/package*.json ./backend/
+RUN cd backend && npm ci --omit=dev
 
-# Copy dependencies from builder
-COPY --from=builder /app/node_modules ./node_modules
+# Backend kaynak kodu
+COPY backend/ ./backend/
 
-# Copy application code
-COPY . .
+# Vite build çıktısı
+COPY --from=frontend /app/dist ./dist
 
-# Change ownership to non-root user
-RUN chown -R nodejs:nodejs /app
+# Uploads klasörü kalıcı olsun
+RUN mkdir -p backend/uploads
 
-# Switch to non-root user
-USER nodejs
-
-# Expose port
 EXPOSE 3000
+ENV NODE_ENV=production
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
-
-# Start application
-CMD ["node", "backend-api.js"]
+CMD ["node", "backend/backend-api.js"]
