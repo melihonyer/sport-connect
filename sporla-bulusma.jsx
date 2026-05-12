@@ -136,6 +136,11 @@ export default function SporlaConnect() {
   const currentBannerIdxRef = useRef(0);
   const goToRef = useRef(null);
   const [platformStats, setPlatformStats] = useState(null);
+  // AuthModal form state — parent'ta tutulmalı, yoksa banner re-render'da sıfırlanır
+  const [authFormData, setAuthFormData] = useState({ name: "", email: "", password: "" });
+  const [authError, setAuthError]   = useState("");
+  const [authSuccess, setAuthSuccess] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
 
   // Avatar'ı render et: URL ise <img>, değilse emoji/harf
   const renderAvatar = (avatar, name, className = "") => {
@@ -3389,10 +3394,14 @@ export default function SporlaConnect() {
   // =====================================================
 
   const AuthModal = () => {
-    const [formData, setFormData] = useState({ name: "", email: "", password: "" });
-    const [error, setError]   = useState("");
-    const [success, setSuccess] = useState("");
-    const [loading, setLoading] = useState(false);
+    const formData = authFormData;
+    const setFormData = setAuthFormData;
+    const error = authError;
+    const setError = setAuthError;
+    const success = authSuccess;
+    const setSuccess = setAuthSuccess;
+    const loading = authLoading;
+    const setLoading = setAuthLoading;
 
     const handleSubmit = async (e) => {
       e.preventDefault();
@@ -3428,7 +3437,7 @@ export default function SporlaConnect() {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
         <div className="bg-white rounded-3xl max-w-md w-full p-8 relative m-4">
-          <button onClick={() => { setIsAuthModalOpen(false); setAuthMode("login"); }} className="absolute top-4 right-4">
+          <button onClick={() => { setIsAuthModalOpen(false); setAuthMode("login"); setAuthFormData({ name: "", email: "", password: "" }); setAuthError(""); setAuthSuccess(""); }} className="absolute top-4 right-4">
             <X className="w-6 h-6" />
           </button>
 
