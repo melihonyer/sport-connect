@@ -91,29 +91,35 @@ const Typewriter = React.memo(({ mottos }) => {
   );
 });
 
-// Module-level — parent re-render'larında unmount olmaz, form focus korunur
-const AuthModal = ({
-  authMode, setAuthMode, onClose,
-  formData, setFormData,
-  error, setError,
-  success, setSuccess,
-  loading, setLoading,
-  handleLogin, handleRegister,
-}) => {
+// Module-level — uncontrolled inputs ile focus sorunu tamamen çözülür
+const AuthModal = ({ authMode, setAuthMode, onClose, handleLogin, handleRegister }) => {
+  const [error, setError]     = useState("");
+  const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
+  const nameRef  = useRef();
+  const emailRef = useRef();
+  const passRef  = useRef();
+
+  // authMode değişince error/success temizle
+  useEffect(() => { setError(""); setSuccess(""); }, [authMode]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(""); setSuccess("");
     setLoading(true);
+    const email = emailRef.current?.value || "";
+    const password = passRef.current?.value || "";
+    const name = nameRef.current?.value || "";
     if (authMode === "login") {
-      await handleLogin(formData.email, formData.password, setError);
+      await handleLogin(email, password, setError);
     } else if (authMode === "register") {
-      await handleRegister(formData.name, formData.email, formData.password, setError);
+      await handleRegister(name, email, password, setError);
     } else if (authMode === "forgot") {
       try {
         const res = await fetch(`${API_URL}/auth/forgot-password`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: formData.email }),
+          body: JSON.stringify({ email }),
         });
         if (res.ok) {
           setSuccess("Şifre sıfırlama linki e-postana gönderildi. Spam kutusunu da kontrol et.");
@@ -156,21 +162,18 @@ const AuthModal = ({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {authMode === "register" && (
-            <input type="text" placeholder="Ad Soyad" value={formData.name}
-              onChange={e => { setFormData({...formData, name: e.target.value}); setError(""); }}
+            <input ref={nameRef} type="text" placeholder="Ad Soyad"
               className="w-full px-4 py-3 border rounded-xl" required/>
           )}
-          <input type="email" placeholder="E-posta" value={formData.email}
-            onChange={e => { setFormData({...formData, email: e.target.value}); setError(""); setSuccess(""); }}
+          <input ref={emailRef} type="email" placeholder="E-posta"
             className={`w-full px-4 py-3 border rounded-xl ${error ? "border-red-300" : ""}`} required/>
           {authMode !== "forgot" && (
-            <input type="password" placeholder="Şifre" value={formData.password}
-              onChange={e => { setFormData({...formData, password: e.target.value}); setError(""); }}
+            <input ref={passRef} type="password" placeholder="Şifre"
               className={`w-full px-4 py-3 border rounded-xl ${error ? "border-red-300" : ""}`} required/>
           )}
           {authMode === "login" && (
             <div className="text-right -mt-1">
-              <button type="button" onClick={() => { setAuthMode("forgot"); setError(""); setSuccess(""); }}
+              <button type="button" onClick={() => setAuthMode("forgot")}
                 className="text-sm text-purple-600 hover:underline">
                 Şifremi unuttum
               </button>
@@ -185,13 +188,13 @@ const AuthModal = ({
 
         <div className="mt-4 flex flex-col items-center gap-2">
           {authMode !== "login" && (
-            <button onClick={() => { setAuthMode("login"); setError(""); setSuccess(""); }}
+            <button onClick={() => setAuthMode("login")}
               className="text-purple-600 text-sm hover:underline">
               ← Giriş yap
             </button>
           )}
           {authMode === "login" && (
-            <button onClick={() => { setAuthMode("register"); setError(""); }}
+            <button onClick={() => setAuthMode("register")}
               className="text-purple-600">
               Hesabın yok mu? Kaydol
             </button>
@@ -247,11 +250,6 @@ export default function SporlaConnect() {
   const currentBannerIdxRef = useRef(0);
   const goToRef = useRef(null);
   const [platformStats, setPlatformStats] = useState(null);
-  // AuthModal form state — parent'ta tutulmalı, yoksa banner re-render'da sıfırlanır
-  const [authFormData, setAuthFormData] = useState({ name: "", email: "", password: "" });
-  const [authError, setAuthError]   = useState("");
-  const [authSuccess, setAuthSuccess] = useState("");
-  const [authLoading, setAuthLoading] = useState(false);
 
   // Avatar'ı render et: URL ise <img>, değilse emoji/harf
   const renderAvatar = (avatar, name, className = "") => {
@@ -4221,11 +4219,7 @@ export default function SporlaConnect() {
 
       {isAuthModalOpen && <AuthModal
         authMode={authMode} setAuthMode={setAuthMode}
-        onClose={() => { setIsAuthModalOpen(false); setAuthMode("login"); setAuthFormData({ name: "", email: "", password: "" }); setAuthError(""); setAuthSuccess(""); }}
-        formData={authFormData} setFormData={setAuthFormData}
-        error={authError} setError={setAuthError}
-        success={authSuccess} setSuccess={setAuthSuccess}
-        loading={authLoading} setLoading={setAuthLoading}
+        onClose={() => { setIsAuthModalOpen(false); setAuthMode("login"); }}
         handleLogin={handleLogin} handleRegister={handleRegister}
       />}
       {showNotifications && <NotificationsPanel />}
