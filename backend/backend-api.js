@@ -1031,6 +1031,53 @@ app.post('/api/teams/:id/invite', authenticateToken, async (req, res) => {
   }
 });
 
+// Takımın bekleyen davetlerini getir (owner/coach görebilir)
+app.get('/api/teams/:id/invitations', authenticateToken, async (req, res) => {
+  try {
+    const teamId = req.params.id;
+    const memberCheck = await pool.query(
+      `SELECT role FROM team_members WHERE team_id = $1 AND user_id = $2`,
+      [teamId, req.user.id]
+    );
+    if (!memberCheck.rows.length || !['owner', 'coach'].includes(memberCheck.rows[0].role)) {
+      return res.status(403).json({ error: 'Yetki yok.' });
+    }
+    const result = await pool.query(
+      `SELECT ti.id, ti.invitee_email, ti.created_at,
+              u.name as inviter_name
+       FROM team_invitations ti
+       JOIN users u ON u.id = ti.inviter_id
+       WHERE ti.team_id = $1
+       ORDER BY ti.created_at DESC`,
+      [teamId]
+    );
+    res.json(result.rows);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Daveti iptal et (owner/coach yapabilir)
+app.delete('/api/teams/:id/invitations/:inviteId', authenticateToken, async (req, res) => {
+  try {
+    const { id: teamId, inviteId } = req.params;
+    const memberCheck = await pool.query(
+      `SELECT role FROM team_members WHERE team_id = $1 AND user_id = $2`,
+      [teamId, req.user.id]
+    );
+    if (!memberCheck.rows.length || !['owner', 'coach'].includes(memberCheck.rows[0].role)) {
+      return res.status(403).json({ error: 'Yetki yok.' });
+    }
+    await pool.query(
+      `DELETE FROM team_invitations WHERE id = $1 AND team_id = $2`,
+      [inviteId, teamId]
+    );
+    res.json({ message: 'Davet iptal edildi.' });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.put('/api/teams/:id', authenticateToken, async (req, res) => {
   try {
     const teamId = req.params.id;

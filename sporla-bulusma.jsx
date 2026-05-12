@@ -221,6 +221,7 @@ export default function SporlaConnect() {
   const [activityData, setActivityData] = useState([]);
   const [selectedTraining, setSelectedTraining] = useState(null);
   const [selectedTeam, setSelectedTeam] = useState(null);
+  const [pendingInvitations, setPendingInvitations] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [sportFilter, setSportFilter] = useState("");
   const [levelFilter, setLevelFilter] = useState("");
@@ -1063,6 +1064,13 @@ export default function SporlaConnect() {
         const data = await response.json();
         setSelectedTeam(data.team);
         setCurrentPage("team-detail");
+        // owner/coach ise bekleyen davetleri çek
+        const myRole = data.team?.members?.find(m => m.id === user?.id)?.role;
+        if (myRole === 'owner' || myRole === 'coach') {
+          fetchPendingInvitations(teamId, token);
+        } else {
+          setPendingInvitations([]);
+        }
       } else if (response.status === 403) {
         showToast("🔒 Bu gizli bir takım. Erişmek için davet edilmeniz gerekiyor.", "info");
       } else {
@@ -1070,6 +1078,32 @@ export default function SporlaConnect() {
       }
     } catch (error) {
       console.error("Fetch team details error:", error);
+    }
+  };
+
+  const fetchPendingInvitations = async (teamId, token) => {
+    try {
+      const res = await fetch(`${API_URL}/teams/${teamId}/invitations`, {
+        headers: { Authorization: `Bearer ${token || localStorage.getItem("token")}` },
+      });
+      if (res.ok) setPendingInvitations(await res.json());
+    } catch (e) { /* sessizce geç */ }
+  };
+
+  const handleCancelInvitation = async (teamId, inviteId) => {
+    if (!confirm("Daveti iptal etmek istediğinize emin misiniz?")) return;
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_URL}/teams/${teamId}/invitations/${inviteId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        setPendingInvitations(prev => prev.filter(i => i.id !== inviteId));
+        showToast("Davet iptal edildi.", "info");
+      }
+    } catch (e) {
+      showToast("Bir hata oluştu.", "error");
     }
   };
 
@@ -1154,6 +1188,7 @@ export default function SporlaConnect() {
         showToast("Davet gönderildi! 📧 Kullanıcı kayıtlı değil — kayıt daveti e-postası gönderildi.", "info");
       }
       setShowInviteModal(false);
+      fetchPendingInvitations(teamId);
     } catch (error) {
       console.error("Invite error:", error);
       showToast("Bir hata oluştu.", "error");
@@ -3026,6 +3061,39 @@ export default function SporlaConnect() {
                     </button>
                   )}
                 </div>
+
+                {/* Bekleyen davetler */}
+                {canManage && pendingInvitations.length > 0 && (
+                  <div className="mb-5">
+                    <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1">
+                      <span>⏳</span> Bekleyen Davetler ({pendingInvitations.length})
+                    </h4>
+                    <div className="space-y-2">
+                      {pendingInvitations.map(inv => (
+                        <div key={inv.id} className="flex items-center justify-between p-3 bg-yellow-50 border border-yellow-200 rounded-2xl">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-yellow-200 rounded-full flex items-center justify-center text-yellow-700 font-bold text-lg">
+                              ✉️
+                            </div>
+                            <div>
+                              <div className="font-medium text-gray-700 text-sm">{inv.invitee_email}</div>
+                              <div className="text-xs text-gray-400">
+                                {inv.inviter_name} tarafından davet edildi · {new Date(inv.created_at).toLocaleDateString("tr-TR")}
+                              </div>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleCancelInvitation(selectedTeam.id, inv.id)}
+                            className="px-3 py-1.5 text-xs bg-red-50 text-red-500 rounded-xl hover:bg-red-100 font-medium"
+                          >
+                            İptal
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="border-t border-gray-100 my-4" />
+                  </div>
+                )}
 
                 <div className="space-y-3">
                   {selectedTeam.members?.map((member) => {
