@@ -14,5 +14,12 @@ export default defineConfig({
   server: {
     port: 5173,
     open: true,
+    proxy: {
+      '/api': {
+        target: 'https://sport-connect-t07x.onrender.com',
+        changeOrigin: true,
+        secure: true,
+      },
+    },
   },
 })

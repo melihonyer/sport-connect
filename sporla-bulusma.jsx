@@ -234,6 +234,8 @@ export default function SporlaConnect() {
   const [selectedTraining, setSelectedTraining] = useState(null);
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [pendingInvitations, setPendingInvitations] = useState([]);
+  const [legalModal, setLegalModal] = useState(null); // 'kvkk' | 'gizlilik' | 'kullanim' | 'cerez'
+  const [cookieConsent, setCookieConsent] = useState(() => localStorage.getItem("cookieConsent") === "true");
   const [searchQuery, setSearchQuery] = useState("");
   const [sportFilter, setSportFilter] = useState("");
   const [levelFilter, setLevelFilter] = useState("");
@@ -4265,6 +4267,286 @@ export default function SporlaConnect() {
 
 
   // =====================================================
+  // LEGAL MODAL
+  // =====================================================
+  const legalContent = {
+    kvkk: {
+      title: "KVKK Aydınlatma Metni",
+      body: `
+<h3>Kişisel Verilerin İşlenmesi Hakkında Aydınlatma Metni</h3>
+<p>SALT KREATİF REKLAM TİC. LTD. ŞTİ. ("Şirket") olarak, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") kapsamında veri sorumlusu sıfatıyla kişisel verilerinizi aşağıda açıklanan amaçlar doğrultusunda işlemekteyiz.</p>
+
+<h4>1. Veri Sorumlusu</h4>
+<p>SALT KREATİF REKLAM TİC. LTD. ŞTİ.<br/>
+Çınarlı Mahallesi 1572 Sokak No:33 PK.35170 Konak, İzmir<br/>
+Vergi Dairesi: Karşıyaka V.D. | VN: 7420957827<br/>
+E-posta: <a href="mailto:info@sporlaconnect.com">info@sporlaconnect.com</a></p>
+
+<h4>2. İşlenen Kişisel Veriler</h4>
+<p>Ad, soyad, e-posta adresi, telefon numarası, profil fotoğrafı, konum bilgisi, uygulama kullanım verileri.</p>
+
+<h4>3. İşleme Amaçları</h4>
+<p>Üyelik ve kimlik doğrulama işlemleri, platform hizmetlerinin sunulması, antrenman ve takım özelliklerinin sağlanması, bildirim ve e-posta gönderimi, yasal yükümlülüklerin yerine getirilmesi.</p>
+
+<h4>4. Hukuki Dayanak</h4>
+<p>KVKK Madde 5/1 kapsamında açık rıza, Madde 5/2-c kapsamında sözleşmenin ifası, Madde 5/2-ç kapsamında hukuki yükümlülük.</p>
+
+<h4>5. Veri Aktarımı</h4>
+<p>Kişisel verileriniz; altyapı hizmet sağlayıcıları (Supabase, Render), e-posta hizmet sağlayıcıları ve yasal zorunluluk halinde kamu kurumlarıyla paylaşılabilir.</p>
+
+<h4>6. Saklama Süresi</h4>
+<p>Kişisel verileriniz, üyelik süresince ve üyeliğin sona ermesinden itibaren yasal süreler boyunca saklanır.</p>
+
+<h4>7. Haklarınız</h4>
+<p>KVKK Madde 11 kapsamında; verilerinize erişim, düzeltme, silme, işlemenin kısıtlanması, itiraz ve taşınabilirlik haklarına sahipsiniz. Talepleriniz için: <a href="mailto:info@sporlaconnect.com">info@sporlaconnect.com</a></p>
+      `
+    },
+    gizlilik: {
+      title: "Gizlilik Politikası",
+      body: `
+<h3>Gizlilik Politikası</h3>
+<p>Son güncelleme: Mayıs 2025</p>
+
+<h4>1. Toplanan Bilgiler</h4>
+<p>SporlaConnect olarak; kayıt sırasında sağladığınız bilgiler (ad, e-posta), platform kullanımı sırasında oluşan veriler (antrenmanlar, takımlar, konum) ve çerezler aracılığıyla teknik veriler toplarız.</p>
+
+<h4>2. Bilgilerin Kullanımı</h4>
+<p>Toplanan veriler; hesabınızı yönetmek, size özel içerik sunmak, platform güvenliğini sağlamak ve yasal yükümlülükleri yerine getirmek amacıyla kullanılır.</p>
+
+<h4>3. Veri Güvenliği</h4>
+<p>Verileriniz endüstri standardı şifreleme yöntemleriyle korunmaktadır. Şifreler hash'lenerek saklanır, hiçbir zaman düz metin olarak tutulmaz.</p>
+
+<h4>4. Üçüncü Taraflar</h4>
+<p>Verileriniz, hizmet sunumu için gerekli olan üçüncü taraf sağlayıcılarla (altyapı, e-posta) paylaşılabilir. Bu sağlayıcılar gizlilik yükümlülükleriyle bağlıdır.</p>
+
+<h4>5. Çerezler</h4>
+<p>Platform deneyiminizi iyileştirmek için çerez kullanılmaktadır. Detaylar için Çerez Politikamızı inceleyiniz.</p>
+
+<h4>6. İletişim</h4>
+<p>Gizlilik konularında: <a href="mailto:info@sporlaconnect.com">info@sporlaconnect.com</a></p>
+      `
+    },
+    kullanim: {
+      title: "Kullanım Koşulları",
+      body: `
+<h3>Kullanım Koşulları</h3>
+<p>Son güncelleme: Mayıs 2025</p>
+
+<h4>1. Kabul</h4>
+<p>SporlaConnect platformunu kullanarak bu koşulları kabul etmiş sayılırsınız. Koşulları kabul etmiyorsanız platformu kullanmayınız.</p>
+
+<h4>2. Üyelik</h4>
+<p>Platform hizmetlerinden yararlanmak için 18 yaşını doldurmuş olmanız ve doğru bilgilerle kayıt olmanız gerekmektedir. Hesap güvenliğinden siz sorumlusunuz.</p>
+
+<h4>3. Kullanım Kuralları</h4>
+<p>Platformda; yanıltıcı, hakaret içeren veya yasadışı içerik paylaşmak, başkalarını taciz etmek, platformun güvenliğini tehdit etmek yasaktır.</p>
+
+<h4>4. İçerik</h4>
+<p>Paylaştığınız içeriklerin sorumluluğu size aittir. Şirket, uygunsuz içerikleri kaldırma ve hesabı askıya alma hakkını saklı tutar.</p>
+
+<h4>5. Hizmet Değişiklikleri</h4>
+<p>Şirket, platformu önceden haber vermeksizin değiştirme, güncelleme veya durdurma hakkını saklı tutar.</p>
+
+<h4>6. Sorumluluk Sınırlaması</h4>
+<p>Platform "olduğu gibi" sunulmaktadır. Şirket, platformun kesintisiz çalışacağını garanti etmez.</p>
+
+<h4>7. Uygulanacak Hukuk</h4>
+<p>Bu koşullar Türkiye Cumhuriyeti hukukuna tabidir. Uyuşmazlıklarda İzmir mahkemeleri yetkilidir.</p>
+
+<h4>8. İletişim</h4>
+<p><a href="mailto:info@sporlaconnect.com">info@sporlaconnect.com</a></p>
+      `
+    },
+    cerez: {
+      title: "Çerez Politikası",
+      body: `
+<h3>Çerez Politikası</h3>
+<p>Son güncelleme: Mayıs 2025</p>
+
+<h4>Çerez Nedir?</h4>
+<p>Çerezler, tarayıcınız aracılığıyla cihazınıza kaydedilen küçük metin dosyalarıdır. Web sitelerinin sizi tanımasını ve tercihlerinizi hatırlamasını sağlar.</p>
+
+<h4>Kullandığımız Çerezler</h4>
+<p><strong>Zorunlu Çerezler:</strong> Platformun temel işlevleri için gereklidir. Oturum yönetimi, güvenlik. Devre dışı bırakılamaz.</p>
+<p><strong>İşlevsel Çerezler:</strong> Dil, tercih gibi ayarlarınızı hatırlamak için kullanılır.</p>
+<p><strong>Analitik Çerezler:</strong> Platform kullanımını anlamamıza yardımcı olur. Veriler anonim olarak işlenir.</p>
+
+<h4>Çerez Yönetimi</h4>
+<p>Tarayıcı ayarlarınızdan çerezleri yönetebilir veya silebilirsiniz. Zorunlu çerezlerin devre dışı bırakılması platform işlevselliğini olumsuz etkileyebilir.</p>
+
+<h4>Onayınız</h4>
+<p>Platformu kullanmaya devam ederek çerez kullanımını kabul etmiş sayılırsınız. Onayınızı geri almak için: <a href="mailto:info@sporlaconnect.com">info@sporlaconnect.com</a></p>
+      `
+    }
+  };
+
+  const LegalModal = () => {
+    if (!legalModal) return null;
+    const content = legalContent[legalModal];
+    return (
+      <div className="fixed inset-0 z-[300] flex items-center justify-center p-4" style={{background:"rgba(0,0,0,0.6)"}}>
+        <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+            <h2 className="text-lg font-bold text-slate-800">{content.title}</h2>
+            <button onClick={() => setLegalModal(null)} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-colors">
+              <X className="w-5 h-5 text-slate-500" />
+            </button>
+          </div>
+          <div
+            className="overflow-y-auto px-6 py-5 text-sm text-slate-600 leading-relaxed space-y-3 prose prose-sm max-w-none"
+            dangerouslySetInnerHTML={{__html: content.body}}
+            style={{"--tw-prose-headings":"#1e293b","--tw-prose-links":"#7c3aed"}}
+          />
+        </div>
+      </div>
+    );
+  };
+
+  // =====================================================
+  // COOKIE BANNER
+  // =====================================================
+  const CookieBanner = () => {
+    if (cookieConsent) return null;
+    return (
+      <div className="fixed bottom-0 left-0 right-0 z-[250] bg-slate-900/95 backdrop-blur-sm border-t border-slate-700 px-4 py-4 shadow-2xl">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="flex-1 text-sm text-slate-300 leading-relaxed">
+            <span className="font-semibold text-white">🍪 Çerez Bildirimi</span>
+            {" "}Platform deneyiminizi geliştirmek için çerezler kullanıyoruz.{" "}
+            <button onClick={() => setLegalModal("cerez")} className="text-violet-400 hover:text-violet-300 underline underline-offset-2 transition-colors">
+              Çerez Politikası
+            </button>
+          </div>
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <button
+              onClick={() => setLegalModal("cerez")}
+              className="px-4 py-2 rounded-xl text-sm font-medium text-slate-300 hover:text-white border border-slate-600 hover:border-slate-400 transition-colors"
+            >
+              Detaylar
+            </button>
+            <button
+              onClick={() => { setCookieConsent(true); localStorage.setItem("cookieConsent", "true"); }}
+              className="px-5 py-2 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90"
+              style={{background:"linear-gradient(135deg,#7C3AED,#4F46E5)"}}
+            >
+              Kabul Et
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // =====================================================
+  // FOOTER
+  // =====================================================
+  const Footer = () => {
+    const footerLinks = (items) => items.map(({label, action}) => (
+      <li key={label}>
+        <button onClick={action} className="text-slate-400 hover:text-white text-sm transition-colors duration-200">
+          {label}
+        </button>
+      </li>
+    ));
+
+    return (
+      <footer className="bg-slate-900 text-white mt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
+
+            {/* Kolon 1 — Marka */}
+            <div className="lg:col-span-1">
+              <button onClick={() => setCurrentPage("home")} className="flex items-center gap-2.5 mb-4 group">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-md" style={{background:"linear-gradient(135deg,#7C3AED,#4F46E5)"}}>
+                  <Activity className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-xl font-black tracking-tight" style={{background:"linear-gradient(90deg,#a78bfa,#818cf8)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
+                  SporlaConnect
+                </span>
+              </button>
+              <p className="text-slate-400 text-sm leading-relaxed mb-5">
+                Spor topluluğunu bir araya getiren platform. Takımlar kur, antrenmanlar planla, spor arkadaşları bul.
+              </p>
+              <div className="text-xs text-slate-500 space-y-1">
+                <p className="font-medium text-slate-400">SALT KREATİF REKLAM TİC. LTD. ŞTİ.</p>
+                <p>Çınarlı Mah. 1572 Sk. No:33</p>
+                <p>PK.35170 Konak, İzmir</p>
+                <p>Karşıyaka V.D. | VN: 7420957827</p>
+              </div>
+            </div>
+
+            {/* Kolon 2 — Uygulama */}
+            <div>
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4">Uygulama</h3>
+              <ul className="space-y-2.5">
+                {footerLinks([
+                  { label: "Ana Sayfa",     action: () => setCurrentPage("home") },
+                  { label: "Antrenmanlar",  action: () => setCurrentPage("trainings") },
+                  { label: "Takımlar",      action: () => setCurrentPage("teams") },
+                  { label: "Rozetler",      action: () => setCurrentPage("badges") },
+                  { label: "İletişim",      action: () => setCurrentPage("contact") },
+                ])}
+              </ul>
+            </div>
+
+            {/* Kolon 3 — Yasal */}
+            <div>
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4">Yasal</h3>
+              <ul className="space-y-2.5">
+                {footerLinks([
+                  { label: "KVKK Aydınlatma Metni",  action: () => setLegalModal("kvkk") },
+                  { label: "Gizlilik Politikası",      action: () => setLegalModal("gizlilik") },
+                  { label: "Kullanım Koşulları",       action: () => setLegalModal("kullanim") },
+                  { label: "Çerez Politikası",         action: () => setLegalModal("cerez") },
+                ])}
+              </ul>
+            </div>
+
+            {/* Kolon 4 — İletişim */}
+            <div>
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4">İletişim</h3>
+              <ul className="space-y-3">
+                <li className="flex items-start gap-2.5 text-sm text-slate-400">
+                  <Mail className="w-4 h-4 mt-0.5 flex-shrink-0 text-violet-400" />
+                  <a href="mailto:info@sporlaconnect.com" className="hover:text-white transition-colors">
+                    info@sporlaconnect.com {/* TODO: gerçek mail ile güncelle */}
+                  </a>
+                </li>
+                <li className="flex items-start gap-2.5 text-sm text-slate-400">
+                  <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-violet-400" />
+                  <span>Çınarlı Mah. 1572 Sk. No:33<br/>PK.35170 Konak, İzmir</span>
+                </li>
+              </ul>
+              <div className="mt-5">
+                <button
+                  onClick={() => setCurrentPage("contact")}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
+                  style={{background:"linear-gradient(135deg,#7C3AED,#4F46E5)"}}
+                >
+                  <MessageCircle className="w-4 h-4" /> Bize Ulaşın
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Alt çizgi */}
+          <div className="border-t border-slate-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p className="text-slate-500 text-xs">
+              © {new Date().getFullYear()} SALT KREATİF REKLAM TİC. LTD. ŞTİ. — Tüm hakları saklıdır.
+            </p>
+            <div className="flex items-center gap-4">
+              <button onClick={() => setLegalModal("kvkk")} className="text-slate-500 hover:text-slate-300 text-xs transition-colors">KVKK</button>
+              <button onClick={() => setLegalModal("gizlilik")} className="text-slate-500 hover:text-slate-300 text-xs transition-colors">Gizlilik</button>
+              <button onClick={() => setLegalModal("kullanim")} className="text-slate-500 hover:text-slate-300 text-xs transition-colors">Kullanım Koşulları</button>
+            </div>
+          </div>
+        </div>
+      </footer>
+    );
+  };
+
+  // =====================================================
   // MAIN RENDER
   // =====================================================
 
@@ -4308,7 +4590,10 @@ export default function SporlaConnect() {
       {showNotifications && <NotificationsPanel />}
       {showProfileEdit && <ProfileEditModal />}
       {showInviteModal && <InviteModal />}
+      <LegalModal />
+      <CookieBanner />
       <Toast />
+      <Footer />
     </div>
   );
 }
