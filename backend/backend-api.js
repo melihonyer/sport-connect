@@ -70,11 +70,13 @@ try {
 
 async function uploadToSupabase(bucket, fileName, buffer, mimetype) {
   if (!supabase) throw new Error('Supabase yapılandırılmadı.');
-  const { error } = await supabase.storage.from(bucket).upload(fileName, buffer, {
+  // Dosya adında sadece güvenli karakterler bırak
+  const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const { error } = await supabase.storage.from(bucket).upload(safeName, buffer, {
     contentType: mimetype, upsert: true,
   });
   if (error) throw error;
-  const { data } = supabase.storage.from(bucket).getPublicUrl(fileName);
+  const { data } = supabase.storage.from(bucket).getPublicUrl(safeName);
   return data.publicUrl;
 }
 
