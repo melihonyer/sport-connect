@@ -80,6 +80,7 @@ const pool = process.env.PGHOST
       user:     process.env.PGUSER,
       password: process.env.PGPASSWORD,
       ssl:      { rejectUnauthorized: false },
+      options:  '-c search_path=public',
     })
   : process.env.DATABASE_URL
     ? new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } })
