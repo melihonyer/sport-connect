@@ -142,6 +142,9 @@ const mailTransporter = nodemailer.createTransport({
     user: process.env.MAIL_USER,
     pass: process.env.MAIL_PASS,
   },
+  connectionTimeout: 5000,
+  greetingTimeout: 5000,
+  socketTimeout: 10000,
 });
 
 // Mail gönder – hata olursa konsola yaz, uygulamayı patlatma
