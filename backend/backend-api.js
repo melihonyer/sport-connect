@@ -59,7 +59,10 @@ const uploadAvatar = multer({
 let supabase = null;
 try {
   if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY) {
-    supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const ws = require('ws');
+    supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY, {
+      realtime: { transport: ws },
+    });
   }
 } catch (e) {
   console.warn('Supabase client başlatılamadı:', e.message);
