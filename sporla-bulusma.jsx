@@ -25,6 +25,18 @@ import {
   ChevronDown,
   Navigation2,
   Loader2,
+  CheckCircle,
+  XCircle,
+  Info,
+  MessageSquare,
+  Crown,
+  User,
+  Globe,
+  AlertTriangle,
+  Dumbbell,
+  Trophy,
+  Mail,
+  ShieldCheck,
 } from "lucide-react";
 import {
   BarChart,
@@ -151,12 +163,12 @@ const AuthModal = ({ authMode, setAuthMode, onClose, handleLogin, handleRegister
 
         {error && (
           <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm flex items-start gap-2">
-            <span className="mt-0.5">⚠️</span><span>{error}</span>
+            <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" /><span>{error}</span>
           </div>
         )}
         {success && (
           <div className="mb-4 px-4 py-3 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm flex items-start gap-2">
-            <span className="mt-0.5">✅</span><span>{success}</span>
+            <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" /><span>{success}</span>
           </div>
         )}
 
@@ -406,7 +418,7 @@ export default function SporlaConnect() {
         {/* Hata bildirimi */}
         {locationError && (
           <div className="flex items-start gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
-            <span className="flex-shrink-0 mt-0.5">⚠️</span>
+            <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
             <span>{locationError}</span>
             <button type="button" onClick={() => setLocationError(null)} className="ml-auto flex-shrink-0 text-red-400 hover:text-red-600">
               <X className="w-4 h-4" />
@@ -1910,7 +1922,7 @@ export default function SporlaConnect() {
         </div>
         <div className="relative max-w-7xl mx-auto px-4 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold text-violet-700 bg-violet-100 mb-4">
-            📍 GPS Destekli Arama
+            <MapPin className="w-4 h-4 inline mr-1" /> GPS Destekli Arama
           </div>
           <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-3 tracking-tight">Yakınındaki Antrenmanları Bul</h2>
           <p className="text-slate-500 mb-10 max-w-lg mx-auto">Konumuna göre sana en yakın etkinlikleri saniyeler içinde keşfet</p>
@@ -1986,7 +1998,7 @@ export default function SporlaConnect() {
       {!user && (
         <div className="py-20" style={{background:"linear-gradient(135deg,#0D0B26,#1a1040,#0f2044)"}}>
           <div className="max-w-3xl mx-auto px-4 text-center">
-            <div className="text-5xl mb-4">🏃‍♂️</div>
+            <div className="mb-4 flex justify-center"><Dumbbell className="w-14 h-14 text-violet-400" /></div>
             <h2 className="text-4xl font-black text-white mb-4 tracking-tight">Spor topluluğuna katıl!</h2>
             <p className="text-slate-300 text-lg mb-8 leading-relaxed">Ücretsiz kaydol, takımlar kur, antrenmanlar planla. Binlerce sporcu seni bekliyor.</p>
             <button
@@ -2611,7 +2623,7 @@ export default function SporlaConnect() {
             </h2>
             <p className="text-gray-600">Kazandığın rozetler</p>
           </div>
-          <div className="text-6xl">🏆</div>
+          <Trophy className="w-14 h-14 text-yellow-500" />
         </div>
       </div>
 
@@ -2917,9 +2929,9 @@ export default function SporlaConnect() {
     const sportTypes = ["Futbol","Basketbol","Tenis","Yüzme","Koşu","Bisiklet","Voleybol","Fitness","Yoga","Diğer"];
 
     const roleBadge = (role) => {
-      if (role === "owner")  return <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold flex items-center gap-1">🏆 Sahip</span>;
-      if (role === "coach")  return <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold flex items-center gap-1">🎯 Antrenör</span>;
-      return <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold flex items-center gap-1">👤 Üye</span>;
+      if (role === "owner")  return <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold flex items-center gap-1"><Crown className="w-3 h-3" /> Sahip</span>;
+      if (role === "coach")  return <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold flex items-center gap-1"><Target className="w-3 h-3" /> Antrenör</span>;
+      return <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold flex items-center gap-1"><User className="w-3 h-3" /> Üye</span>;
     };
 
     const handleSubmitPost = (e) => {
@@ -2933,9 +2945,9 @@ export default function SporlaConnect() {
     };
 
     const tabs = [
-      { id: "wall",    label: "Duvar",   icon: "💬", show: isMember },
-      { id: "members", label: "Üyeler",  icon: "👥", show: canSeeMembers },
-      { id: "settings",label: "Ayarlar", icon: "⚙️", show: isOwner },
+      { id: "wall",    label: "Duvar",   icon: <MessageSquare className="w-4 h-4" />, show: isMember },
+      { id: "members", label: "Üyeler",  icon: <Users className="w-4 h-4" />,        show: canSeeMembers },
+      { id: "settings",label: "Ayarlar", icon: <Settings className="w-4 h-4" />,     show: isOwner },
     ].filter((t) => t.show);
 
     return (
@@ -3066,14 +3078,14 @@ export default function SporlaConnect() {
                 {canManage && pendingInvitations.length > 0 && (
                   <div className="mb-5">
                     <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1">
-                      <span>⏳</span> Bekleyen Davetler ({pendingInvitations.length})
+                      <Clock className="w-3.5 h-3.5" /> Bekleyen Davetler ({pendingInvitations.length})
                     </h4>
                     <div className="space-y-2">
                       {pendingInvitations.map(inv => (
                         <div key={inv.id} className="flex items-center justify-between p-3 bg-yellow-50 border border-yellow-200 rounded-2xl">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 bg-yellow-200 rounded-full flex items-center justify-center text-yellow-700 font-bold text-lg">
-                              ✉️
+                              <Mail className="w-5 h-5 text-yellow-600" />
                             </div>
                             <div>
                               <div className="font-medium text-gray-700 text-sm">{inv.invitee_email}</div>
@@ -3210,7 +3222,7 @@ export default function SporlaConnect() {
                   {/* Gizlilik toggle */}
                   <div className={`flex items-center justify-between p-4 rounded-2xl border-2 ${editForm.is_private ? "border-gray-300 bg-gray-50" : "border-blue-200 bg-blue-50"}`}>
                     <div>
-                      <div className="font-semibold">{editForm.is_private ? "🔒 Gizli Takım" : "🌍 Herkese Açık Takım"}</div>
+                      <div className="font-semibold flex items-center gap-1">{editForm.is_private ? <><Lock className="w-4 h-4" /> Gizli Takım</> : <><Globe className="w-4 h-4" /> Herkese Açık Takım</>}</div>
                       <div className="text-sm text-gray-500 mt-0.5">
                         {editForm.is_private
                           ? "Sadece davet edilenler görebilir. Antrenmanlar otomatik gizli olur."
@@ -3316,7 +3328,7 @@ export default function SporlaConnect() {
 
           {myTeams.length === 0 && (
             <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
-              <p className="text-sm text-yellow-800">⚠️ Önce bir takım oluşturmalısınız!</p>
+              <p className="text-sm text-yellow-800 flex items-center gap-1.5"><AlertTriangle className="w-4 h-4 flex-shrink-0" /> Önce bir takım oluşturmalısınız!</p>
               <button
                 onClick={() => setCurrentPage("create-team")}
                 className="mt-2 text-purple-600 font-semibold"
@@ -3338,7 +3350,7 @@ export default function SporlaConnect() {
                 >
                   {myTeams.map((team) => (
                     <option key={team.id} value={team.id}>
-                      {team.name} {team.is_private ? "🔒" : "🌍"}
+                      {team.name} {team.is_private ? <Lock className="w-3.5 h-3.5 inline ml-1" /> : <Globe className="w-3.5 h-3.5 inline ml-1" />}
                     </option>
                   ))}
                 </select>
@@ -3352,7 +3364,7 @@ export default function SporlaConnect() {
                 ) : (
                   <div className="mt-2 flex items-center justify-between px-3 py-2 bg-purple-50 rounded-xl">
                     <span className="text-sm text-gray-700 flex items-center gap-2">
-                      🌍 <span>Herkese açık antrenman</span>
+                      <Globe className="w-4 h-4 text-purple-500" /> <span>Herkese açık antrenman</span>
                     </span>
                     <button
                       type="button"
@@ -3621,15 +3633,15 @@ export default function SporlaConnect() {
 
           {success ? (
             <div className="text-center py-4">
-              <div className="text-5xl mb-4">✅</div>
+              <div className="mb-4 flex justify-center"><CheckCircle className="w-14 h-14 text-green-500" /></div>
               <p className="text-green-700 font-semibold">Şifren başarıyla güncellendi!</p>
               <p className="text-slate-500 text-sm mt-1">Ana sayfaya yönlendiriliyorsun…</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
-                  ⚠️ {error}
+                <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 flex-shrink-0" /> {error}
                 </div>
               )}
               <input type="password" placeholder="Yeni şifre" value={password}
@@ -4117,7 +4129,7 @@ export default function SporlaConnect() {
         {/* Hero */}
         <div className="bg-gradient-to-br from-purple-600 via-purple-700 to-pink-600 text-white py-16">
           <div className="max-w-4xl mx-auto px-4 text-center">
-            <div className="text-5xl mb-4">💬</div>
+            <div className="mb-4 flex justify-center"><MessageCircle className="w-14 h-14 text-purple-200" /></div>
             <h1 className="text-4xl font-bold mb-3">Bizimle İletişime Geçin</h1>
             <p className="text-purple-100 text-lg">Sorularınız için buradayız. Size en kısa sürede dönüş yaparız.</p>
           </div>
@@ -4155,7 +4167,7 @@ export default function SporlaConnect() {
                 <h3 className="font-bold text-gray-900 text-lg mb-4">📬 İletişim</h3>
                 <div className="space-y-3">
                   <div className="flex items-center gap-3 text-sm">
-                    <span className="w-9 h-9 rounded-xl bg-purple-50 flex items-center justify-center text-base">✉️</span>
+                    <span className="w-9 h-9 rounded-xl bg-purple-50 flex items-center justify-center"><Mail className="w-5 h-5 text-purple-500" /></span>
                     <div>
                       <div className="text-gray-500 text-xs">E-posta</div>
                       <div className="font-medium text-gray-900">melihonyer@gmail.com</div>
@@ -4262,8 +4274,8 @@ export default function SporlaConnect() {
       toast.type === "success" ? "bg-emerald-600" :
       toast.type === "error" ? "bg-red-600" : "bg-indigo-600"
     }`}>
-      <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-base flex-shrink-0">
-        {toast.type === "success" ? "✅" : toast.type === "error" ? "❌" : "ℹ️"}
+      <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+        {toast.type === "success" ? <CheckCircle className="w-5 h-5" /> : toast.type === "error" ? <XCircle className="w-5 h-5" /> : <Info className="w-5 h-5" />}
       </div>
       <span className="flex-1 text-sm leading-snug">{toast.message}</span>
       <button onClick={() => setToast(null)} className="opacity-60 hover:opacity-100 flex-shrink-0 transition-opacity">
