@@ -91,6 +91,117 @@ const Typewriter = React.memo(({ mottos }) => {
   );
 });
 
+// Module-level — parent re-render'larında unmount olmaz, form focus korunur
+const AuthModal = ({
+  authMode, setAuthMode, onClose,
+  formData, setFormData,
+  error, setError,
+  success, setSuccess,
+  loading, setLoading,
+  handleLogin, handleRegister,
+}) => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(""); setSuccess("");
+    setLoading(true);
+    if (authMode === "login") {
+      await handleLogin(formData.email, formData.password, setError);
+    } else if (authMode === "register") {
+      await handleRegister(formData.name, formData.email, formData.password, setError);
+    } else if (authMode === "forgot") {
+      try {
+        const res = await fetch(`${API_URL}/auth/forgot-password`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: formData.email }),
+        });
+        if (res.ok) {
+          setSuccess("Şifre sıfırlama linki e-postana gönderildi. Spam kutusunu da kontrol et.");
+        } else {
+          const d = await res.json();
+          setError(d.error || "Bir hata oluştu.");
+        }
+      } catch {
+        setError("Sunucuya bağlanılamadı.");
+      }
+    }
+    setLoading(false);
+  };
+
+  const titles = { login: "Giriş Yap", register: "Kaydol", forgot: "Şifremi Unuttum" };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-3xl max-w-md w-full p-8 relative m-4">
+        <button onClick={onClose} className="absolute top-4 right-4">
+          <X className="w-6 h-6" />
+        </button>
+
+        <h2 className="text-3xl font-bold mb-2 text-center">{titles[authMode]}</h2>
+        {authMode === "forgot" && (
+          <p className="text-slate-500 text-sm text-center mb-5">E-postanı gir, sıfırlama linki gönderelim.</p>
+        )}
+        {authMode !== "forgot" && <div className="mb-6"/>}
+
+        {error && (
+          <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm flex items-start gap-2">
+            <span className="mt-0.5">⚠️</span><span>{error}</span>
+          </div>
+        )}
+        {success && (
+          <div className="mb-4 px-4 py-3 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm flex items-start gap-2">
+            <span className="mt-0.5">✅</span><span>{success}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {authMode === "register" && (
+            <input type="text" placeholder="Ad Soyad" value={formData.name}
+              onChange={e => { setFormData({...formData, name: e.target.value}); setError(""); }}
+              className="w-full px-4 py-3 border rounded-xl" required/>
+          )}
+          <input type="email" placeholder="E-posta" value={formData.email}
+            onChange={e => { setFormData({...formData, email: e.target.value}); setError(""); setSuccess(""); }}
+            className={`w-full px-4 py-3 border rounded-xl ${error ? "border-red-300" : ""}`} required/>
+          {authMode !== "forgot" && (
+            <input type="password" placeholder="Şifre" value={formData.password}
+              onChange={e => { setFormData({...formData, password: e.target.value}); setError(""); }}
+              className={`w-full px-4 py-3 border rounded-xl ${error ? "border-red-300" : ""}`} required/>
+          )}
+          {authMode === "login" && (
+            <div className="text-right -mt-1">
+              <button type="button" onClick={() => { setAuthMode("forgot"); setError(""); setSuccess(""); }}
+                className="text-sm text-purple-600 hover:underline">
+                Şifremi unuttum
+              </button>
+            </div>
+          )}
+          <button type="submit" disabled={loading}
+            className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold disabled:opacity-60 flex items-center justify-center gap-2">
+            {loading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>}
+            {authMode === "login" ? "Giriş Yap" : authMode === "register" ? "Kaydol" : "Link Gönder"}
+          </button>
+        </form>
+
+        <div className="mt-4 flex flex-col items-center gap-2">
+          {authMode !== "login" && (
+            <button onClick={() => { setAuthMode("login"); setError(""); setSuccess(""); }}
+              className="text-purple-600 text-sm hover:underline">
+              ← Giriş yap
+            </button>
+          )}
+          {authMode === "login" && (
+            <button onClick={() => { setAuthMode("register"); setError(""); }}
+              className="text-purple-600">
+              Hesabın yok mu? Kaydol
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function SporlaConnect() {
   const [currentPage, setCurrentPage] = useState("home");
   const [user, setUser] = useState(null);
@@ -3393,118 +3504,7 @@ export default function SporlaConnect() {
   // MODALS
   // =====================================================
 
-  const AuthModal = () => {
-    const formData = authFormData;
-    const setFormData = setAuthFormData;
-    const error = authError;
-    const setError = setAuthError;
-    const success = authSuccess;
-    const setSuccess = setAuthSuccess;
-    const loading = authLoading;
-    const setLoading = setAuthLoading;
-
-    const handleSubmit = async (e) => {
-      e.preventDefault();
-      setError(""); setSuccess("");
-      setLoading(true);
-
-      if (authMode === "login") {
-        await handleLogin(formData.email, formData.password, setError);
-      } else if (authMode === "register") {
-        await handleRegister(formData.name, formData.email, formData.password, setError);
-      } else if (authMode === "forgot") {
-        try {
-          const res = await fetch(`${API_URL}/auth/forgot-password`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: formData.email }),
-          });
-          if (res.ok) {
-            setSuccess("Şifre sıfırlama linki e-postana gönderildi. Spam kutusunu da kontrol et.");
-          } else {
-            const d = await res.json();
-            setError(d.error || "Bir hata oluştu.");
-          }
-        } catch {
-          setError("Sunucuya bağlanılamadı.");
-        }
-      }
-      setLoading(false);
-    };
-
-    const titles = { login: "Giriş Yap", register: "Kaydol", forgot: "Şifremi Unuttum" };
-
-    return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-3xl max-w-md w-full p-8 relative m-4">
-          <button onClick={() => { setIsAuthModalOpen(false); setAuthMode("login"); setAuthFormData({ name: "", email: "", password: "" }); setAuthError(""); setAuthSuccess(""); }} className="absolute top-4 right-4">
-            <X className="w-6 h-6" />
-          </button>
-
-          <h2 className="text-3xl font-bold mb-2 text-center">{titles[authMode]}</h2>
-          {authMode === "forgot" && (
-            <p className="text-slate-500 text-sm text-center mb-5">E-postanı gir, sıfırlama linki gönderelim.</p>
-          )}
-          {authMode !== "forgot" && <div className="mb-6"/>}
-
-          {error && (
-            <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm flex items-start gap-2">
-              <span className="mt-0.5">⚠️</span><span>{error}</span>
-            </div>
-          )}
-          {success && (
-            <div className="mb-4 px-4 py-3 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm flex items-start gap-2">
-              <span className="mt-0.5">✅</span><span>{success}</span>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {authMode === "register" && (
-              <input type="text" placeholder="Ad Soyad" value={formData.name}
-                onChange={e => { setFormData({...formData, name: e.target.value}); setError(""); }}
-                className="w-full px-4 py-3 border rounded-xl" required/>
-            )}
-            <input type="email" placeholder="E-posta" value={formData.email}
-              onChange={e => { setFormData({...formData, email: e.target.value}); setError(""); setSuccess(""); }}
-              className={`w-full px-4 py-3 border rounded-xl ${error ? "border-red-300" : ""}`} required/>
-            {authMode !== "forgot" && (
-              <input type="password" placeholder="Şifre" value={formData.password}
-                onChange={e => { setFormData({...formData, password: e.target.value}); setError(""); }}
-                className={`w-full px-4 py-3 border rounded-xl ${error ? "border-red-300" : ""}`} required/>
-            )}
-            {authMode === "login" && (
-              <div className="text-right -mt-1">
-                <button type="button" onClick={() => { setAuthMode("forgot"); setError(""); setSuccess(""); }}
-                  className="text-sm text-purple-600 hover:underline">
-                  Şifremi unuttum
-                </button>
-              </div>
-            )}
-            <button type="submit" disabled={loading}
-              className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold disabled:opacity-60 flex items-center justify-center gap-2">
-              {loading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>}
-              {authMode === "login" ? "Giriş Yap" : authMode === "register" ? "Kaydol" : "Link Gönder"}
-            </button>
-          </form>
-
-          <div className="mt-4 flex flex-col items-center gap-2">
-            {authMode !== "login" && (
-              <button onClick={() => { setAuthMode("login"); setError(""); setSuccess(""); }}
-                className="text-purple-600 text-sm hover:underline">
-                ← Giriş yap
-              </button>
-            )}
-            {authMode === "login" && (
-              <button onClick={() => { setAuthMode("register"); setError(""); }}
-                className="text-purple-600">
-                Hesabın yok mu? Kaydol
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
+  // AuthModal aşağıda module-level tanımlı — buradan kaldırıldı
 
   const ResetPasswordPage = () => {
     const [password, setPassword]   = useState("");
@@ -4219,7 +4219,15 @@ export default function SporlaConnect() {
       {currentPage === "contact" && <ContactPage />}
       {currentPage === "reset-password" && <ResetPasswordPage />}
 
-      {isAuthModalOpen && <AuthModal />}
+      {isAuthModalOpen && <AuthModal
+        authMode={authMode} setAuthMode={setAuthMode}
+        onClose={() => { setIsAuthModalOpen(false); setAuthMode("login"); setAuthFormData({ name: "", email: "", password: "" }); setAuthError(""); setAuthSuccess(""); }}
+        formData={authFormData} setFormData={setAuthFormData}
+        error={authError} setError={setAuthError}
+        success={authSuccess} setSuccess={setAuthSuccess}
+        loading={authLoading} setLoading={setAuthLoading}
+        handleLogin={handleLogin} handleRegister={handleRegister}
+      />}
       {showNotifications && <NotificationsPanel />}
       {showProfileEdit && <ProfileEditModal />}
       {showInviteModal && <InviteModal />}
