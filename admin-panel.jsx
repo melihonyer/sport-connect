@@ -7,8 +7,8 @@ import {
   Upload, GripVertical, ChevronUp, ChevronDown,
 } from "lucide-react";
 
-const API_URL  = import.meta.env.VITE_API_URL  ?? "http://localhost:3000/api";
-const BASE_URL = import.meta.env.VITE_BASE_URL ?? "http://localhost:3000";
+const API_URL  = import.meta.env.VITE_API_URL  ?? (import.meta.env.DEV ? "http://localhost:3000/api" : "/api");
+const BASE_URL = import.meta.env.VITE_BASE_URL ?? (import.meta.env.DEV ? "http://localhost:3000" : "");
 
 // ─── Yardımcı: tarih formatı ───────────────────────────────
 const fmt = (d) => d ? new Date(d).toLocaleDateString("tr-TR", { day:"numeric", month:"short", year:"numeric" }) : "—";

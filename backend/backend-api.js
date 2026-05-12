@@ -2281,10 +2281,8 @@ app.post('/api/auth/reset-password', async (req, res) => {
 // Production'da Vite build çıktısını servis et
 if (process.env.NODE_ENV === 'production') {
   const distPath = path.join(__dirname, '../dist');
-  app.use(express.static(distPath, { maxAge: '1d' }));
-  app.get('/admin', (req, res) => {
-    res.sendFile(path.join(distPath, 'admin.html'));
-  });
+  app.use(express.static(distPath, { maxAge: '1d', extensions: ['html'] }));
+  app.get('/admin', (req, res) => res.sendFile(path.join(distPath, 'admin.html')));
   app.get('*', (req, res) => {
     if (!req.path.startsWith('/api') && !req.path.startsWith('/uploads')) {
       res.sendFile(path.join(distPath, 'index.html'));
