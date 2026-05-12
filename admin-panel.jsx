@@ -306,8 +306,13 @@ export default function AdminPanel() {
       if (res.ok) {
         const updated = await res.json();
         setBanners(prev => prev.map(b => b.id === bannerId ? updated : b));
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(`Görsel yükleme hatası: ${err.error || res.status}`);
       }
-    } catch { /* sessiz */ }
+    } catch (e) {
+      alert(`Bağlantı hatası: ${e.message}`);
+    }
     finally { setUploadingId(null); }
   };
 
