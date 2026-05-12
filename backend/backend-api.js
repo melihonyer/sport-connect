@@ -1,5 +1,8 @@
 // SporlaConnect Backend API - FULL VERSION
 require('dotenv').config();
+// Render'da IPv6 üzerinden SMTP bağlantısı çalışmıyor — IPv4 öncelikli yap
+const dns = require('dns');
+dns.setDefaultResultOrder('ipv4first');
 const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
@@ -68,16 +71,36 @@ try {
   console.warn('Supabase client başlatılamadı:', e.message);
 }
 
+// Supabase Storage REST API — native fetch ile (Node 18+)
 async function uploadToSupabase(bucket, fileName, buffer, mimetype) {
-  if (!supabase) throw new Error('Supabase yapılandırılmadı.');
-  // Dosya adında sadece güvenli karakterler bırak
+  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
+    throw new Error('Supabase yapılandırılmadı.');
+  }
+  const baseUrl = process.env.SUPABASE_URL.replace(/\/+$/, '');
   const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
-  const { error } = await supabase.storage.from(bucket).upload(safeName, buffer, {
-    contentType: mimetype, upsert: true,
+  const safeType = (mimetype || 'application/octet-stream').split(';')[0].trim();
+  const uploadUrl = `${baseUrl}/storage/v1/object/${bucket}/${safeName}`;
+  process.stdout.write(`[Supabase] POST ${uploadUrl} type=${safeType} size=${buffer.length} keyLen=${process.env.SUPABASE_SERVICE_KEY.length}\n`);
+  const resp = await fetch(uploadUrl, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_KEY}`,
+      'Content-Type': safeType,
+      'x-upsert': 'true',
+      'Content-Length': String(buffer.length),
+    },
+    body: buffer,
   });
-  if (error) throw error;
-  const { data } = supabase.storage.from(bucket).getPublicUrl(safeName);
-  return data.publicUrl;
+  const text = await resp.text();
+  process.stdout.write(`[Supabase] status=${resp.status} body=${text}\n`);
+  if (!resp.ok) {
+    let msg = text;
+    try { msg = JSON.parse(text)?.message || JSON.parse(text)?.error || text; } catch {}
+    throw new Error(msg);
+  }
+  const publicUrl = `${baseUrl}/storage/v1/object/public/${bucket}/${safeName}`;
+  process.stdout.write(`[Supabase] publicUrl=${publicUrl}\n`);
+  return publicUrl;
 }
 
 // DB bağlantısı: ayrı env var'lar öncelikli (şifredeki özel karakterler sorun çıkarmaz)
@@ -147,13 +170,41 @@ const mailTransporter = nodemailer.createTransport({
     user: process.env.MAIL_USER,
     pass: process.env.MAIL_PASS,
   },
-  connectionTimeout: 5000,
-  greetingTimeout: 5000,
-  socketTimeout: 10000,
+  family: 4, // IPv4 zorla — Render IPv6 üzerinden SMTP'ye ulaşamıyor
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 15000,
 });
 
-// Mail gönder – hata olursa konsola yaz, uygulamayı patlatma
+// Mail gönder — Resend HTTP API (SMTP portu sorunu yok)
 async function sendEmail({ to, subject, html }) {
+  // Resend API key varsa Resend kullan
+  if (process.env.RESEND_API_KEY) {
+    try {
+      const fromName = process.env.MAIL_FROM_NAME || 'SporlaConnect';
+      // Resend ücretsiz planda sadece onboarding@resend.dev veya doğrulanmış domain
+      const fromEmail = process.env.MAIL_FROM_EMAIL || 'onboarding@resend.dev';
+      const resp = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ from: `${fromName} <${fromEmail}>`, to, subject, html }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        console.error(`[EMAIL ERROR] Resend hatası:`, JSON.stringify(data));
+        return null;
+      }
+      console.log(`[EMAIL] Resend ile gönderildi: ${data.id}`);
+      return data;
+    } catch (err) {
+      console.error(`[EMAIL ERROR] Resend istek hatası:`, err.message);
+      return null;
+    }
+  }
+  // SMTP fallback
   if (!process.env.MAIL_USER || !process.env.MAIL_PASS || process.env.MAIL_PASS === 'your-gmail-app-password-here') {
     console.log(`[EMAIL - MOCK] To: ${to} | Subject: ${subject}`);
     return { mocked: true };
@@ -161,14 +212,12 @@ async function sendEmail({ to, subject, html }) {
   try {
     const info = await mailTransporter.sendMail({
       from: `"${process.env.MAIL_FROM_NAME || 'SporlaConnect'}" <${process.env.MAIL_FROM_EMAIL || process.env.MAIL_USER}>`,
-      to,
-      subject,
-      html,
+      to, subject, html,
     });
-    console.log(`[EMAIL] Sent to ${to}: ${info.messageId}`);
+    console.log(`[EMAIL] SMTP ile gönderildi: ${info.messageId}`);
     return info;
   } catch (err) {
-    console.error(`[EMAIL ERROR] Failed to send to ${to}:`, err.message);
+    console.error(`[EMAIL ERROR] SMTP hatası: ${to}:`, err.message);
     return null;
   }
 }
@@ -2078,6 +2127,7 @@ app.get('/api/platform-stats', async (req, res) => {
     res.status(500).json({ error: 'İstatistikler alınamadı.' });
   }
 });
+
 
 app.get('/api/banners', async (req, res) => {
   try {
