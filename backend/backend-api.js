@@ -56,9 +56,14 @@ const uploadAvatar = multer({
 });
 
 // Supabase Storage client (avatar & banner upload için)
-const supabase = (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY)
-  ? createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY)
-  : null;
+let supabase = null;
+try {
+  if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY) {
+    supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+  }
+} catch (e) {
+  console.warn('Supabase client başlatılamadı:', e.message);
+}
 
 async function uploadToSupabase(bucket, fileName, buffer, mimetype) {
   if (!supabase) throw new Error('Supabase yapılandırılmadı.');
@@ -80,7 +85,6 @@ const pool = process.env.PGHOST
       user:     process.env.PGUSER,
       password: process.env.PGPASSWORD,
       ssl:      { rejectUnauthorized: false },
-      options:  '-c search_path=public',
     })
   : process.env.DATABASE_URL
     ? new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } })
@@ -91,6 +95,11 @@ const pool = process.env.PGHOST
         password: process.env.DB_PASSWORD,
         port:     parseInt(process.env.DB_PORT || '5432'),
       });
+
+// Her yeni bağlantıda search_path'i public yap
+pool.on('connect', client => {
+  client.query('SET search_path TO public').catch(() => {});
+});
 
 // =====================================================
 // REAL-TIME: SSE (Server-Sent Events)
