@@ -256,6 +256,9 @@ export default function SporlaConnect() {
     if (avatar?.startsWith("/uploads/")) {
       return <img src={`${BASE_URL}${avatar}`} alt="" className={`w-full h-full object-cover ${className}`} />;
     }
+    if (avatar?.startsWith("http")) {
+      return <img src={avatar} alt="" className={`w-full h-full object-cover ${className}`} />;
+    }
     return avatar || (name?.[0]?.toUpperCase() ?? "?");
   };
 
@@ -1971,8 +1974,8 @@ export default function SporlaConnect() {
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center space-x-4">
             <div className="w-20 h-20 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full overflow-hidden flex items-center justify-center text-white text-3xl font-bold shadow-md">
-              {user?.avatar?.startsWith("/uploads/") ? (
-                <img src={`${BASE_URL}${user.avatar}`} alt="avatar" className="w-full h-full object-cover" />
+              {(user?.avatar?.startsWith("/uploads/") || user?.avatar?.startsWith("http")) ? (
+                <img src={user.avatar.startsWith("http") ? user.avatar : `${BASE_URL}${user.avatar}`} alt="avatar" className="w-full h-full object-cover" />
               ) : (
                 user?.avatar || user?.name?.[0]?.toUpperCase()
               )}
@@ -3749,8 +3752,8 @@ export default function SporlaConnect() {
               <div className="flex flex-col items-center gap-3 pb-2">
                 <div className="relative">
                   <div className="w-24 h-24 rounded-full overflow-hidden bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
-                    {formData.avatar?.startsWith("/uploads/") ? (
-                      <img src={`${BASE_URL}${formData.avatar}`} alt="avatar" className="w-full h-full object-cover" />
+                    {(formData.avatar?.startsWith("/uploads/") || formData.avatar?.startsWith("http")) ? (
+                      <img src={formData.avatar.startsWith("http") ? formData.avatar : `${BASE_URL}${formData.avatar}`} alt="avatar" className="w-full h-full object-cover" />
                     ) : (
                       formData.avatar || user?.name?.[0]?.toUpperCase() || "?"
                     )}
@@ -3959,8 +3962,8 @@ export default function SporlaConnect() {
 
                   <button onClick={() => setCurrentPage("profile")} className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-xl hover:bg-slate-100 transition-colors">
                     <div className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center text-white font-bold text-sm shadow-sm flex-shrink-0" style={{background:"linear-gradient(135deg,#7C3AED,#4F46E5)"}}>
-                      {user.avatar?.startsWith("/uploads/") ? (
-                        <img src={`${BASE_URL}${user.avatar}`} alt="" className="w-full h-full object-cover" />
+                      {(user.avatar?.startsWith("/uploads/") || user.avatar?.startsWith("http")) ? (
+                        <img src={user.avatar.startsWith("http") ? user.avatar : `${BASE_URL}${user.avatar}`} alt="" className="w-full h-full object-cover" />
                       ) : (
                         user.avatar || user.name[0].toUpperCase()
                       )}

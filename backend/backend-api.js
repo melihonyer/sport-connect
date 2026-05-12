@@ -6,6 +6,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { Pool } = require('pg');
+const { createClient } = require('@supabase/supabase-js');
 const nodemailer = require('nodemailer');
 const multer = require('multer');
 const path = require('path');
@@ -36,46 +37,38 @@ if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 app.use('/uploads', express.static(uploadsDir));
 
 // Multer: banner görselleri için
-const bannerStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dir = path.join(__dirname, 'uploads/banners');
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    cb(null, dir);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `banner-${Date.now()}${ext}`);
-  },
-});
+// Multer: memory storage — dosyalar Supabase Storage'a yüklenir, diske yazılmaz
 const uploadBanner = multer({
-  storage: bannerStorage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (/image\/(png|jpe?g|gif|webp|svg)/.test(file.mimetype)) cb(null, true);
     else cb(new Error('Sadece görsel dosyaları yüklenebilir.'));
   },
 });
-
-// Multer: kullanıcı avatar görselleri için
-const avatarStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dir = path.join(__dirname, 'uploads/avatars');
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    cb(null, dir);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `avatar-${req.user?.id || 'u'}-${Date.now()}${ext}`);
-  },
-});
 const uploadAvatar = multer({
-  storage: avatarStorage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (/image\/(png|jpe?g|gif|webp)/.test(file.mimetype)) cb(null, true);
     else cb(new Error('Sadece PNG/JPEG/GIF/WEBP yüklenebilir.'));
   },
 });
+
+// Supabase Storage client (avatar & banner upload için)
+const supabase = (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY)
+  ? createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY)
+  : null;
+
+async function uploadToSupabase(bucket, fileName, buffer, mimetype) {
+  if (!supabase) throw new Error('Supabase yapılandırılmadı.');
+  const { error } = await supabase.storage.from(bucket).upload(fileName, buffer, {
+    contentType: mimetype, upsert: true,
+  });
+  if (error) throw error;
+  const { data } = supabase.storage.from(bucket).getPublicUrl(fileName);
+  return data.publicUrl;
+}
 
 // DB bağlantısı: ayrı env var'lar öncelikli (şifredeki özel karakterler sorun çıkarmaz)
 // Render/Supabase için: PGHOST, PGPORT, PGDATABASE, PGUSER, PGPASSWORD set edin
@@ -612,7 +605,9 @@ app.put('/api/auth/profile', authenticateToken, async (req, res) => {
 app.post('/api/auth/avatar', authenticateToken, uploadAvatar.single('avatar'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'Dosya yüklenmedi.' });
-    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+    const ext = path.extname(req.file.originalname) || '.jpg';
+    const fileName = `avatar-${req.user.id}-${Date.now()}${ext}`;
+    const avatarUrl = await uploadToSupabase('avatars', fileName, req.file.buffer, req.file.mimetype);
     const result = await pool.query(
       `UPDATE users SET avatar = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2
        RETURNING id, name, email, phone, avatar`,
@@ -621,7 +616,7 @@ app.post('/api/auth/avatar', authenticateToken, uploadAvatar.single('avatar'), a
     res.json({ message: 'Avatar güncellendi', user: result.rows[0] });
   } catch (error) {
     console.error('Avatar upload error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: error.message || 'Internal server error' });
   }
 });
 
@@ -2142,14 +2137,9 @@ app.put('/api/admin/banners/:id', isAdmin, async (req, res) => {
 app.post('/api/admin/banners/:id/image', isAdmin, uploadBanner.single('image'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'Dosya yüklenmedi.' });
-    const imageUrl = `/uploads/banners/${req.file.filename}`;
-
-    // Eski görseli sil
-    const old = await pool.query('SELECT image_url FROM banners WHERE id=$1', [req.params.id]);
-    if (old.rows[0]?.image_url) {
-      const oldPath = path.join(__dirname, old.rows[0].image_url);
-      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-    }
+    const ext = path.extname(req.file.originalname) || '.jpg';
+    const fileName = `banner-${req.params.id}-${Date.now()}${ext}`;
+    const imageUrl = await uploadToSupabase('banners', fileName, req.file.buffer, req.file.mimetype);
 
     const result = await pool.query(
       'UPDATE banners SET image_url=$1 WHERE id=$2 RETURNING *',
