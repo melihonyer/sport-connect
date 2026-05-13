@@ -4068,13 +4068,19 @@ export default function SporlaConnect() {
 
   const InviteModal = () => {
     const [email, setEmail] = useState("");
+    const [sending, setSending] = useState(false);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
       e.preventDefault();
-      if (selectedTeam && email) {
-        handleInviteToTeam(selectedTeam.id, email);
-        setEmail("");
+      if (!selectedTeam) {
+        showToast("Takım bilgisi bulunamadı.", "error");
+        return;
       }
+      if (!email) return;
+      setSending(true);
+      await handleInviteToTeam(selectedTeam.id, email);
+      setSending(false);
+      setEmail("");
     };
 
     return (
@@ -4100,9 +4106,10 @@ export default function SporlaConnect() {
             </div>
             <button
               type="submit"
-              className="w-full py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-semibold"
+              disabled={sending}
+              className="w-full py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Davet Gönder
+              {sending ? "Gönderiliyor…" : "Davet Gönder"}
             </button>
           </form>
         </div>
