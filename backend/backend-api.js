@@ -176,21 +176,35 @@ const mailTransporter = nodemailer.createTransport({
   socketTimeout: 15000,
 });
 
-// Mail gönder — Gmail SMTP
+// Mail gönder — Resend HTTP API (Render SMTP portlarını engelliyor)
 async function sendEmail({ to, subject, html }) {
-  if (!process.env.MAIL_USER || !process.env.MAIL_PASS || process.env.MAIL_PASS === 'your-gmail-app-password-here') {
+  if (!process.env.RESEND_API_KEY) {
     console.log(`[EMAIL - MOCK] To: ${to} | Subject: ${subject}`);
     return { mocked: true };
   }
   try {
-    const info = await mailTransporter.sendMail({
-      from: `"${process.env.MAIL_FROM_NAME || 'SporlaConnect'}" <${process.env.MAIL_FROM_EMAIL || process.env.MAIL_USER}>`,
-      to, subject, html,
+    const resp = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'SporlaConnect <onboarding@resend.dev>',
+        to,
+        subject,
+        html,
+      }),
     });
-    console.log(`[EMAIL] SMTP ile gönderildi: ${info.messageId}`);
-    return info;
+    const data = await resp.json();
+    if (!resp.ok) {
+      console.error(`[EMAIL ERROR] Resend:`, JSON.stringify(data));
+      return null;
+    }
+    console.log(`[EMAIL] Resend ile gönderildi: ${data.id}`);
+    return data;
   } catch (err) {
-    console.error(`[EMAIL ERROR] SMTP hatası: ${to}:`, err.message);
+    console.error(`[EMAIL ERROR] Resend istek hatası:`, err.message);
     return null;
   }
 }
@@ -2266,23 +2280,16 @@ app.get('/health', (req, res) => {
 app.get('/api/test-email', async (req, res) => {
   const to = req.query.to;
   if (!to) return res.status(400).json({ error: 'to query param gerekli' });
-  const cfg = {
-    MAIL_HOST: process.env.MAIL_HOST,
-    MAIL_PORT: process.env.MAIL_PORT,
-    MAIL_USER: process.env.MAIL_USER,
-    MAIL_PASS: process.env.MAIL_PASS ? '***set***' : '(boş)',
-    MAIL_FROM_EMAIL: process.env.MAIL_FROM_EMAIL,
-  };
+  const cfg = { RESEND_API_KEY: process.env.RESEND_API_KEY ? '***set***' : '(boş)' };
   try {
-    const info = await mailTransporter.sendMail({
-      from: `"SporlaConnect" <${process.env.MAIL_FROM_EMAIL || process.env.MAIL_USER}>`,
+    const result = await sendEmail({
       to,
       subject: 'SporlaConnect — Test Maili',
       html: '<p>Bu bir test mailidir.</p>',
     });
-    res.json({ ok: true, messageId: info.messageId, cfg });
+    res.json({ ok: !!result, result, cfg });
   } catch (err) {
-    res.json({ ok: false, error: err.message, code: err.code, cfg });
+    res.json({ ok: false, error: err.message, cfg });
   }
 });
 
