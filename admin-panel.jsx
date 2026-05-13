@@ -122,29 +122,29 @@ export default function AdminPanel() {
   // ─── LOGIN SAYFASI ──────────────────────────────────────
   if (!token) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "linear-gradient(135deg,#0D0B26 0%,#1a1040 50%,#0f2044 100%)" }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "linear-gradient(135deg,#f0fdf4 0%,#dcfce7 60%,#bbf7d0 100%)" }}>
         {/* Arka plan blob */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-[-100px] right-[-100px] w-[400px] h-[400px] rounded-full opacity-20" style={{ background: "radial-gradient(circle,#7C3AED,transparent 70%)" }} />
-          <div className="absolute bottom-[-100px] left-[-80px] w-[350px] h-[350px] rounded-full opacity-15" style={{ background: "radial-gradient(circle,#4F46E5,transparent 70%)" }} />
+          <div className="absolute top-[-100px] right-[-100px] w-[400px] h-[400px] rounded-full opacity-20" style={{ background: "radial-gradient(circle,#16A34A,transparent 70%)" }} />
+          <div className="absolute bottom-[-100px] left-[-80px] w-[350px] h-[350px] rounded-full opacity-15" style={{ background: "radial-gradient(circle,#15803D,transparent 70%)" }} />
           <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,.8) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.8) 1px,transparent 1px)", backgroundSize: "60px 60px" }} />
         </div>
 
         <div className="relative w-full max-w-md mx-4">
           {/* Logo */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl shadow-2xl mb-4" style={{ background: "linear-gradient(135deg,#7C3AED,#4F46E5)" }}>
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl shadow-xl mb-4" style={{ background: "linear-gradient(135deg,#16A34A,#15803D)" }}>
               <Shield className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-2xl font-black text-white tracking-tight">Admin Panel</h1>
-            <p className="text-slate-400 text-sm mt-1">SporlaConnect Yönetim Konsolu</p>
+            <h1 className="text-2xl font-black text-green-900 tracking-tight">Admin Panel</h1>
+            <p className="text-green-600 text-sm mt-1">SporlaConnect Yönetim Konsolu</p>
           </div>
 
           {/* Login kutusu */}
-          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-2xl">
+          <div className="bg-white border border-green-100 rounded-2xl p-8 shadow-xl">
             <form onSubmit={handleLogin} className="space-y-5">
               <div>
-                <label className="block text-slate-300 text-sm font-semibold mb-2">E-posta</label>
+                <label className="block text-slate-700 text-sm font-semibold mb-2">E-posta</label>
                 <input
                   type="email"
                   required
@@ -152,12 +152,12 @@ export default function AdminPanel() {
                   value={form.email}
                   onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
                   placeholder="admin@mail.com"
-                  className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-300 text-sm font-semibold mb-2">Şifre</label>
+                <label className="block text-slate-700 text-sm font-semibold mb-2">Şifre</label>
                 <div className="relative">
                   <input
                     type={showPass ? "text" : "password"}
@@ -165,17 +165,17 @@ export default function AdminPanel() {
                     value={form.password}
                     onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
                     placeholder="••••••••"
-                    className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 pr-11 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pr-11 text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
                   />
                   <button type="button" onClick={() => setShowPass(p => !p)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition">
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition">
                     {showPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
               </div>
 
               {loginError && (
-                <div className="flex items-center gap-2 px-4 py-3 bg-red-500/20 border border-red-500/30 rounded-xl text-red-300 text-sm">
+                <div className="flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
                   <AlertTriangle className="w-4 h-4 flex-shrink-0" />
                   {loginError}
                 </div>
@@ -185,7 +185,7 @@ export default function AdminPanel() {
                 type="submit"
                 disabled={loginLoading}
                 className="w-full py-3 rounded-xl font-bold text-white text-sm transition-all hover:opacity-90 hover:shadow-xl disabled:opacity-60 flex items-center justify-center gap-2"
-                style={{ background: "linear-gradient(135deg,#7C3AED,#4F46E5)" }}
+                style={{ background: "linear-gradient(135deg,#16A34A,#15803D)" }}
               >
                 {loginLoading ? (
                   <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Giriş yapılıyor…</>
@@ -195,7 +195,7 @@ export default function AdminPanel() {
               </button>
             </form>
 
-            <p className="text-center text-slate-500 text-xs mt-6">
+            <p className="text-center text-slate-400 text-xs mt-6">
               Bu panel yalnızca yetkili yöneticiler içindir.<br />
               Yetkisiz erişim girişimleri kayıt altına alınır.
             </p>
@@ -317,8 +317,8 @@ export default function AdminPanel() {
   };
 
   const statCards = stats ? [
-    { label: "Toplam Kullanıcı",   value: stats.users,            icon: Users,        grad: "from-violet-500 to-purple-600" },
-    { label: "Toplam Antrenman",   value: stats.trainings,        icon: Activity,     grad: "from-indigo-500 to-blue-600" },
+    { label: "Toplam Kullanıcı",   value: stats.users,            icon: Users,        grad: "from-green-500 to-green-700" },
+    { label: "Toplam Antrenman",   value: stats.trainings,        icon: Activity,     grad: "from-green-400 to-green-600" },
     { label: "Toplam Takım",       value: stats.teams,            icon: Shield,       grad: "from-cyan-500 to-teal-600" },
     { label: "Yeni Mesaj",         value: stats.unreadContact,    icon: MessageSquare,grad: "from-amber-500 to-orange-500" },
   ] : [];
@@ -333,15 +333,15 @@ export default function AdminPanel() {
   return (
     <div className="flex min-h-screen bg-slate-50 font-sans">
       {/* ── Sidebar ───────────────────────────────────────── */}
-      <aside className="w-64 flex-shrink-0 flex flex-col" style={{ background: "linear-gradient(160deg,#0D0B26,#1a1040)" }}>
+      <aside className="w-64 flex-shrink-0 flex flex-col bg-white border-r border-slate-100 shadow-sm">
         {/* Logo */}
-        <div className="flex items-center gap-3 px-6 py-5 border-b border-white/10">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "linear-gradient(135deg,#7C3AED,#4F46E5)" }}>
+        <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-100">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "linear-gradient(135deg,#16A34A,#15803D)" }}>
             <Shield className="w-5 h-5 text-white" />
           </div>
           <div>
-            <div className="text-white font-black text-sm tracking-tight">SporlaConnect</div>
-            <div className="text-violet-400 text-xs font-semibold">Admin Panel</div>
+            <div className="text-green-900 font-black text-sm tracking-tight">SporlaConnect</div>
+            <div className="text-green-500 text-xs font-semibold">Admin Panel</div>
           </div>
         </div>
 
@@ -353,10 +353,10 @@ export default function AdminPanel() {
               onClick={() => loadTab(id)}
               className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
                 tab === id
-                  ? "text-white shadow-lg"
-                  : "text-slate-400 hover:text-white hover:bg-white/5"
+                  ? "text-white shadow-md"
+                  : "text-slate-500 hover:text-green-700 hover:bg-green-50"
               }`}
-              style={tab === id ? { background: "linear-gradient(135deg,#7C3AED44,#4F46E544)", border: "1px solid #7C3AED55" } : {}}
+              style={tab === id ? { background: "linear-gradient(135deg,#16A34A,#15803D)" } : {}}
             >
               <span className="flex items-center gap-3">
                 <Icon className="w-4 h-4 flex-shrink-0" />
@@ -371,17 +371,17 @@ export default function AdminPanel() {
         </nav>
 
         {/* Çıkış */}
-        <div className="px-3 py-4 border-t border-white/10">
+        <div className="px-3 py-4 border-t border-slate-100">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-500 hover:text-red-600 hover:bg-red-50 transition-all"
           >
             <LogOut className="w-4 h-4" />
             Çıkış Yap
           </button>
           <a
             href="/"
-            className="mt-1 w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-500 hover:text-slate-200 hover:bg-white/5 transition-all"
+            className="mt-1 w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-500 hover:text-green-700 hover:bg-green-50 transition-all"
           >
             <TrendingUp className="w-4 h-4" />
             Uygulamaya Dön
@@ -407,7 +407,7 @@ export default function AdminPanel() {
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Ara…"
-                className="w-56 pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-violet-300 focus:bg-white transition"
+                className="w-56 pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-green-300 focus:bg-white transition"
               />
               {search && (
                 <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
@@ -421,7 +421,7 @@ export default function AdminPanel() {
         <div className="p-8">
           {loading && (
             <div className="flex items-center justify-center py-24">
-              <div className="w-8 h-8 border-2 border-violet-200 border-t-violet-600 rounded-full animate-spin" />
+              <div className="w-8 h-8 border-2 border-green-200 border-t-green-600 rounded-full animate-spin" />
             </div>
           )}
 
@@ -453,7 +453,7 @@ export default function AdminPanel() {
                       <div key={u.id} className="flex items-center justify-between px-6 py-3.5 hover:bg-slate-50 transition-colors">
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-sm flex-shrink-0"
-                            style={{ background: "linear-gradient(135deg,#7C3AED,#4F46E5)" }}>
+                            style={{ background: "linear-gradient(135deg,#16A34A,#15803D)" }}>
                             {u.name[0].toUpperCase()}
                           </div>
                           <div>
@@ -495,7 +495,7 @@ export default function AdminPanel() {
                         <td className="px-6 py-3.5">
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white font-bold text-xs flex-shrink-0"
-                              style={{ background: "linear-gradient(135deg,#7C3AED,#4F46E5)" }}>
+                              style={{ background: "linear-gradient(135deg,#16A34A,#15803D)" }}>
                               {u.name[0].toUpperCase()}
                             </div>
                             <span className="font-semibold text-slate-900">{u.name}</span>
@@ -506,7 +506,7 @@ export default function AdminPanel() {
                         <td className="px-4 py-3.5 text-center text-slate-700 font-semibold">{u.training_count ?? "—"}</td>
                         <td className="px-4 py-3.5 text-center">
                           {u.is_admin
-                            ? <span className="px-2.5 py-1 bg-violet-100 text-violet-700 rounded-lg text-xs font-bold">Admin</span>
+                            ? <span className="px-2.5 py-1 bg-green-100 text-green-700 rounded-lg text-xs font-bold">Admin</span>
                             : <span className="px-2.5 py-1 bg-slate-100 text-slate-500 rounded-lg text-xs">Üye</span>
                           }
                         </td>
@@ -616,7 +616,7 @@ export default function AdminPanel() {
                         <td className="px-6 py-3.5">
                           <div className="flex items-center gap-3">
                             <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-base flex-shrink-0 shadow-sm"
-                              style={{ background: "linear-gradient(135deg,#7C3AED,#4F46E5)" }}>
+                              style={{ background: "linear-gradient(135deg,#16A34A,#15803D)" }}>
                               {t.avatar || t.name[0]}
                             </div>
                             <span className="font-semibold text-slate-900">{t.name}</span>
@@ -660,7 +660,7 @@ export default function AdminPanel() {
                 <button
                   onClick={() => { setBannerForm(emptyBanner); setEditingBannerId(null); setShowBannerForm(true); }}
                   className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition hover:opacity-90 shadow-lg"
-                  style={{background:"linear-gradient(135deg,#7C3AED,#4F46E5)"}}
+                  style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}
                 >
                   <Plus className="w-4 h-4"/> Yeni Banner
                 </button>
@@ -668,10 +668,10 @@ export default function AdminPanel() {
 
               {/* Banner form (ekleme/düzenleme) */}
               {showBannerForm && (
-                <div className="bg-white rounded-2xl border border-violet-200 shadow-lg overflow-hidden">
+                <div className="bg-white rounded-2xl border border-green-200 shadow-lg overflow-hidden">
                   {/* Header */}
                   <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100"
-                    style={{background:"linear-gradient(90deg,#7C3AED11,#4F46E511)"}}>
+                    style={{background:"linear-gradient(90deg,#16A34A11,#15803D11)"}}>
                     <h3 className="font-bold text-slate-900">{editingBannerId ? "Banner Düzenle" : "Yeni Banner Ekle"}</h3>
                     <button onClick={() => setShowBannerForm(false)} className="text-slate-400 hover:text-slate-700">
                       <X className="w-5 h-5"/>
@@ -687,7 +687,7 @@ export default function AdminPanel() {
                         <div className="text-white/60 text-xs font-semibold mb-1">{bannerForm.badge_text || "Rozet metni"}</div>
                         <div className="text-white font-black text-xl leading-tight">
                           {bannerForm.title || "Başlık"}{" "}
-                          <span className="text-violet-300">{bannerForm.title_highlight || "Vurgulu metin"}</span>
+                          <span className="text-green-400">{bannerForm.title_highlight || "Vurgulu metin"}</span>
                         </div>
                       </div>
                     </div>
@@ -715,7 +715,7 @@ export default function AdminPanel() {
                               type="text"
                               value={bannerForm[key]}
                               onChange={e => setBannerForm(p => ({...p,[key]:e.target.value}))}
-                              className="w-24 text-center text-xs border border-slate-200 rounded-lg px-2 py-1 font-mono focus:outline-none focus:ring-2 focus:ring-violet-300"
+                              className="w-24 text-center text-xs border border-slate-200 rounded-lg px-2 py-1 font-mono focus:outline-none focus:ring-2 focus:ring-green-300"
                             />
                           </div>
                         ))}
@@ -729,7 +729,7 @@ export default function AdminPanel() {
                     <div className="flex items-center gap-2">
                       <button type="button" onClick={()=>setBannerForm(p=>({...p,is_active:!p.is_active}))}>
                         {bannerForm.is_active
-                          ? <ToggleRight className="w-8 h-8 text-violet-600"/>
+                          ? <ToggleRight className="w-8 h-8 text-green-600"/>
                           : <ToggleLeft className="w-8 h-8 text-slate-400"/>}
                       </button>
                       <span className="text-sm font-semibold text-slate-700">
@@ -743,13 +743,13 @@ export default function AdminPanel() {
                         <label className="block text-xs font-bold text-slate-500 mb-1.5">Başlık <span className="text-slate-400 font-normal">(sabit satır)</span></label>
                         <input value={bannerForm.title} onChange={e=>setBannerForm(p=>({...p,title:e.target.value}))}
                           placeholder="Sporla Buluş,"
-                          className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-violet-300"/>
+                          className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-green-300"/>
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-slate-500 mb-1.5">Rozet Metni</label>
                         <input value={bannerForm.badge_text} onChange={e=>setBannerForm(p=>({...p,badge_text:e.target.value}))}
                           placeholder="🏃 500+ Aktif Sporcu"
-                          className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-violet-300"/>
+                          className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-green-300"/>
                       </div>
                     </div>
 
@@ -757,7 +757,7 @@ export default function AdminPanel() {
                       <label className="block text-xs font-bold text-slate-500 mb-1.5">Alt Metin</label>
                       <textarea value={bannerForm.subtitle} onChange={e=>setBannerForm(p=>({...p,subtitle:e.target.value}))}
                         placeholder="Açıklama metni…" rows={2}
-                        className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-violet-300 resize-none"/>
+                        className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-green-300 resize-none"/>
                     </div>
 
                     {/* Butonlar */}
@@ -767,7 +767,7 @@ export default function AdminPanel() {
                       {/* Ana buton */}
                       <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
                         <div className="flex items-center gap-2 mb-2">
-                          <div className="w-2 h-2 rounded-full" style={{background:"linear-gradient(135deg,#6366F1,#8B5CF6)"}}/>
+                          <div className="w-2 h-2 rounded-full" style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}/>
                           <span className="text-xs font-bold text-slate-600">Ana Buton</span>
                           <span className="text-xs text-slate-400">(gradient, öne çıkan)</span>
                         </div>
@@ -776,13 +776,13 @@ export default function AdminPanel() {
                             <label className="block text-[11px] text-slate-400 mb-1">Buton Metni</label>
                             <input value={bannerForm.cta_primary_text} onChange={e=>setBannerForm(p=>({...p,cta_primary_text:e.target.value}))}
                               placeholder="Hemen Başla"
-                              className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-violet-300"/>
+                              className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-green-300"/>
                           </div>
                           <div>
                             <label className="block text-[11px] text-slate-400 mb-1">Link / URL</label>
                             <input value={bannerForm.cta_primary_url} onChange={e=>setBannerForm(p=>({...p,cta_primary_url:e.target.value}))}
                               placeholder="/antrenmanlar veya https://..."
-                              className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-violet-300"/>
+                              className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-green-300"/>
                           </div>
                         </div>
                       </div>
@@ -799,13 +799,13 @@ export default function AdminPanel() {
                             <label className="block text-[11px] text-slate-400 mb-1">Buton Metni</label>
                             <input value={bannerForm.cta_secondary_text} onChange={e=>setBannerForm(p=>({...p,cta_secondary_text:e.target.value}))}
                               placeholder="Antrenmanları Keşfet"
-                              className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-violet-300"/>
+                              className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-green-300"/>
                           </div>
                           <div>
                             <label className="block text-[11px] text-slate-400 mb-1">Link / URL</label>
                             <input value={bannerForm.cta_secondary_url} onChange={e=>setBannerForm(p=>({...p,cta_secondary_url:e.target.value}))}
                               placeholder="/takimlar veya https://..."
-                              className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-violet-300"/>
+                              className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-green-300"/>
                           </div>
                         </div>
                       </div>
@@ -821,7 +821,7 @@ export default function AdminPanel() {
                         <button
                           type="button"
                           onClick={() => setBannerForm(p => ({ ...p, mottos: [...(p.mottos||[""]), ""] }))}
-                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-violet-700 bg-violet-50 hover:bg-violet-100 transition"
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-green-700 bg-green-50 hover:bg-green-100 transition"
                         >
                           <Plus className="w-3 h-3"/> Motto Ekle
                         </button>
@@ -829,7 +829,7 @@ export default function AdminPanel() {
                       <div className="space-y-2">
                         {(bannerForm.mottos || [""]).map((m, mi) => (
                           <div key={mi} className="flex items-center gap-2">
-                            <span className="flex-shrink-0 w-5 h-5 rounded-full bg-violet-100 text-violet-600 text-[10px] font-bold flex items-center justify-center">{mi+1}</span>
+                            <span className="flex-shrink-0 w-5 h-5 rounded-full bg-green-100 text-green-600 text-[10px] font-bold flex items-center justify-center">{mi+1}</span>
                             <input
                               type="text"
                               value={m}
@@ -839,7 +839,7 @@ export default function AdminPanel() {
                                 setBannerForm(p => ({ ...p, mottos: arr }));
                               }}
                               placeholder={`Motto ${mi+1}…`}
-                              className="flex-1 text-sm border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-300"
+                              className="flex-1 text-sm border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-300"
                             />
                             {(bannerForm.mottos||[""]).length > 1 && (
                               <button
@@ -866,7 +866,7 @@ export default function AdminPanel() {
                       </button>
                       <button onClick={saveBanner} disabled={bannerSaving}
                         className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-60 transition hover:opacity-90"
-                        style={{background:"linear-gradient(135deg,#7C3AED,#4F46E5)"}}>
+                        style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}>
                         {bannerSaving ? <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"/>Kaydediliyor…</> : "Kaydet"}
                       </button>
                     </div>
@@ -902,7 +902,7 @@ export default function AdminPanel() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-bold text-slate-900 text-sm truncate">{b.title} {b.title_highlight}</span>
-                          {b.badge_text && <span className="text-xs bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full font-medium">{b.badge_text}</span>}
+                          {b.badge_text && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">{b.badge_text}</span>}
                           <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${b.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
                             {b.is_active ? "Aktif" : "Pasif"}
                           </span>
@@ -916,9 +916,9 @@ export default function AdminPanel() {
                         <label className="relative cursor-pointer">
                           <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only"
                             onChange={e => { if (e.target.files[0]) uploadBannerImage(b.id, e.target.files[0]); e.target.value=""; }}/>
-                          <span className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${uploadingId === b.id ? "bg-violet-100 text-violet-400" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
+                          <span className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${uploadingId === b.id ? "bg-green-100 text-green-500" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
                             {uploadingId === b.id
-                              ? <div className="w-3 h-3 border-2 border-violet-300 border-t-violet-600 rounded-full animate-spin"/>
+                              ? <div className="w-3 h-3 border-2 border-green-300 border-t-green-600 rounded-full animate-spin"/>
                               : <Upload className="w-3 h-3"/>}
                             Görsel
                           </span>
@@ -933,7 +933,7 @@ export default function AdminPanel() {
 
                         {/* Kopyala */}
                         <button onClick={() => copyBanner(b)}
-                          className="flex items-center gap-1.5 px-3 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-bold hover:bg-indigo-100 transition whitespace-nowrap">
+                          className="flex items-center gap-1.5 px-3 py-2 bg-green-50 text-green-600 rounded-xl text-xs font-bold hover:bg-green-100 transition whitespace-nowrap">
                           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
                           </svg>
@@ -969,25 +969,25 @@ export default function AdminPanel() {
                 </div>
               )}
               {filteredMessages.map(m => (
-                <div key={m.id} className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition-all ${m.is_read ? "border-slate-100" : "border-violet-200"}`}>
-                  {!m.is_read && <div className="h-1" style={{ background: "linear-gradient(90deg,#7C3AED,#4F46E5)" }} />}
+                <div key={m.id} className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition-all ${m.is_read ? "border-slate-100" : "border-green-200"}`}>
+                  {!m.is_read && <div className="h-1" style={{ background: "linear-gradient(90deg,#16A34A,#15803D)" }} />}
                   <div className="p-6">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap mb-1">
                           {!m.is_read && (
-                            <span className="px-2 py-0.5 bg-violet-100 text-violet-700 rounded-lg text-xs font-bold">Yeni</span>
+                            <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-lg text-xs font-bold">Yeni</span>
                           )}
                           <span className="font-bold text-slate-900">{m.name}</span>
                           <span className="text-slate-300 text-sm">·</span>
-                          <a href={`mailto:${m.email}`} className="text-violet-600 text-sm hover:underline">{m.email}</a>
+                          <a href={`mailto:${m.email}`} className="text-green-600 text-sm hover:underline">{m.email}</a>
                           <span className="text-slate-400 text-xs ml-auto">{fmtFull(m.created_at)}</span>
                         </div>
                         <div className="flex items-center gap-2 mb-3">
                           <Calendar className="w-3.5 h-3.5 text-slate-400" />
                           <span className="font-semibold text-slate-700 text-sm">{m.subject}</span>
                         </div>
-                        <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-wrap border-l-2 border-violet-200 pl-4">
+                        <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-wrap border-l-2 border-green-200 pl-4">
                           {m.message}
                         </p>
                       </div>
