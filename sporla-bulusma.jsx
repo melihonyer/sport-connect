@@ -37,6 +37,9 @@ import {
   Trophy,
   Mail,
   ShieldCheck,
+  Eye,
+  ZoomIn,
+  Image,
 } from "lucide-react";
 import {
   BarChart,
@@ -1914,6 +1917,162 @@ export default function SporlaConnect() {
     </div>
   );
 
+  // ── TAKİM ETKİNLİKLERİ (Haber Bölümü) ──────────────
+  const NewsSection = () => {
+    const newsItems = [
+      {
+        id:1, category:"Etkinlik", date:"12 Mayıs 2026",
+        title:"İzmir Plaj Voleybolu Turnuvası Başlıyor",
+        excerpt:"Bu hafta sonu İzmir sahillerinde düzenlenecek turnuvaya kayıtlar açıldı. 32 takım mücadele edecek.",
+        views:142, comments:8,
+        bg:"linear-gradient(135deg,#f0fdf4 0%,#bbf7d0 100%)", icon:"🏐",
+      },
+      {
+        id:2, category:"Antrenman", date:"10 Mayıs 2026",
+        title:"Sabah Koşusu Grubu Yeni Rota Açıkladı",
+        excerpt:"Her pazar sabahı 07:00'da buluşan koşu grubumuz Kordon'dan Bornova'ya uzanan yeni rotasını duyurdu.",
+        views:98, comments:14,
+        bg:"linear-gradient(135deg,#f0f9ff 0%,#bae6fd 100%)", icon:"🏃",
+      },
+      {
+        id:3, category:"Takım", date:"8 Mayıs 2026",
+        title:"Basketbol Takımımız Bölge Şampiyonu Oldu",
+        excerpt:"SporlaConnect üzerinden bir araya gelen takımımız amatör ligde şampiyonluğa ulaştı.",
+        views:256, comments:31,
+        bg:"linear-gradient(135deg,#fffbeb 0%,#fde68a 100%)", icon:"🏀",
+      },
+      {
+        id:4, category:"Sağlık", date:"5 Mayıs 2026",
+        title:"Açık Hava Yoga Atölyesi — Ücretsiz Kayıt",
+        excerpt:"Uzman eğitmenler eşliğinde gerçekleşecek yoga etkinliğine platform üyelerine ücretsiz kayıt imkânı.",
+        views:187, comments:22,
+        bg:"linear-gradient(135deg,#fdf4ff 0%,#e9d5ff 100%)", icon:"🧘",
+      },
+    ];
+    return (
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-12 gap-4">
+            <div>
+              <span className="text-xs font-semibold tracking-[0.3em] text-green-500 uppercase block mb-3">Topluluktan</span>
+              <h2 className="text-4xl md:text-5xl font-semibold text-slate-900 leading-tight">
+                Takım<br/>Etkinlikleri
+              </h2>
+            </div>
+            <button className="self-start md:self-auto flex items-center gap-2 px-5 py-2.5 text-sm font-medium border border-slate-200 text-slate-600 hover:border-green-300 hover:text-green-700 transition-colors rounded-none">
+              Tümünü Gör
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+            </button>
+          </div>
+
+          {/* 4-card grid */}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-0 border-l border-t border-slate-100">
+            {newsItems.map((item) => (
+              <article key={item.id}
+                className="group border-r border-b border-slate-100 cursor-pointer overflow-hidden flex flex-col">
+                {/* Image */}
+                <div className="relative overflow-hidden" style={{height:"200px", background:item.bg}}>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-7xl transition-transform duration-500 group-hover:scale-110">{item.icon}</span>
+                  </div>
+                  {/* Green top bar on hover */}
+                  <div className="absolute top-0 left-0 right-0 h-[3px] bg-green-500 origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300"/>
+                  {/* Dark overlay on hover */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300"/>
+                </div>
+                {/* Content */}
+                <div className="p-5 flex flex-col flex-1">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-green-600">{item.category}</span>
+                    <span className="text-slate-200">·</span>
+                    <span className="text-xs text-slate-400 font-light">{item.date}</span>
+                  </div>
+                  <h3 className="text-base font-semibold text-slate-800 leading-snug mb-2 group-hover:text-green-700 transition-colors line-clamp-2">{item.title}</h3>
+                  <p className="text-sm text-slate-400 leading-relaxed line-clamp-2 font-light flex-1">{item.excerpt}</p>
+                  <div className="flex items-center gap-4 mt-4 pt-4 border-t border-slate-50 text-slate-300 text-xs font-light">
+                    <span className="flex items-center gap-1.5"><Eye className="w-3.5 h-3.5"/> {item.views}</span>
+                    <span className="flex items-center gap-1.5"><MessageCircle className="w-3.5 h-3.5"/> {item.comments}</span>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  };
+
+  // ── GALERİ ───────────────────────────────────────────
+  const GallerySection = () => {
+    const photos = [
+      { id:1, caption:"İzmir Maratonu 2026",         bg:"linear-gradient(135deg,#052e16,#166534)", icon:"🏃", span:"lg-big" },
+      { id:2, caption:"Plaj Voleybolu Finali",        bg:"linear-gradient(135deg,#0c1a2e,#1e3a5f)", icon:"🏐", span:"normal" },
+      { id:3, caption:"Sabah Yoga Seansı",            bg:"linear-gradient(135deg,#1a0533,#3b0764)", icon:"🧘", span:"normal" },
+      { id:4, caption:"Basketbol Turnuvası",          bg:"linear-gradient(135deg,#431407,#7c2d12)", icon:"🏀", span:"normal" },
+      { id:5, caption:"Bisiklet Turu — Ege Sahilleri",bg:"linear-gradient(135deg,#082f49,#0c4a6e)", icon:"🚴", span:"normal" },
+      { id:6, caption:"Tenis Turnuvası",              bg:"linear-gradient(135deg,#14532d,#166534)", icon:"🎾", span:"wide" },
+      { id:7, caption:"Yüzme Yarışması",              bg:"linear-gradient(135deg,#0a2810,#1a4a20)", icon:"🏊", span:"normal" },
+    ];
+
+    return (
+      <section className="py-20 bg-slate-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-12 gap-4">
+            <div>
+              <span className="text-xs font-semibold tracking-[0.3em] text-green-400 uppercase block mb-3">Anlar</span>
+              <h2 className="text-4xl md:text-5xl font-semibold text-white leading-tight">
+                Spor<br/>Galerisi
+              </h2>
+            </div>
+            <button className="self-start md:self-auto flex items-center gap-2 px-5 py-2.5 text-sm font-medium border border-white/20 text-white/70 hover:border-white/50 hover:text-white transition-colors rounded-none">
+              Tüm Fotoğraflar
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+            </button>
+          </div>
+
+          {/* Masonry grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3" style={{gridAutoRows:"200px"}}>
+            {photos.map((p) => (
+              <div
+                key={p.id}
+                className="group relative overflow-hidden cursor-pointer"
+                style={{
+                  background: p.bg,
+                  gridColumn: p.span === "lg-big" ? "span 2" : p.span === "wide" ? "span 2" : "span 1",
+                  gridRow:    p.span === "lg-big" ? "span 2" : "span 1",
+                }}
+              >
+                {/* Icon / placeholder */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-6xl opacity-30 transition-transform duration-500 group-hover:scale-110 group-hover:opacity-20"
+                    style={{fontSize: p.span === "lg-big" ? "8rem" : "4rem"}}>
+                    {p.icon}
+                  </span>
+                </div>
+
+                {/* Hover overlay */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all duration-400 flex flex-col items-center justify-center">
+                  <ZoomIn className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0"/>
+                </div>
+
+                {/* Caption */}
+                <div className="absolute bottom-0 left-0 right-0 px-4 py-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300"
+                  style={{background:"linear-gradient(to top,rgba(0,0,0,0.75),transparent)"}}>
+                  <p className="text-white text-sm font-light tracking-wide">{p.caption}</p>
+                </div>
+
+                {/* Green corner accent */}
+                <div className="absolute top-0 left-0 w-0 h-[2px] bg-green-400 group-hover:w-full transition-all duration-500"/>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  };
+
   // =====================================================
   // PAGES
   // =====================================================
@@ -1922,6 +2081,8 @@ export default function SporlaConnect() {
     <>
       <HeroSection />
       <FeaturesSection />
+      <NewsSection />
+      <GallerySection />
 
       {/* ── GPS SEARCH — Dark Athletic Strip ── */}
       <div className="relative overflow-hidden py-20" style={{background:"linear-gradient(135deg,#f0fdf4 0%,#dcfce7 50%,#bbf7d0 100%)"}}>
