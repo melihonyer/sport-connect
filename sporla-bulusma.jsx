@@ -4276,95 +4276,97 @@ export default function SporlaConnect() {
       }
     };
 
+    const inputCls = "w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-violet-300 focus:bg-white transition";
+
     return (
-      <div className="min-h-screen bg-gray-50">
-        {/* Hero */}
-        <div className="bg-gradient-to-br from-purple-600 via-purple-700 to-pink-600 text-white py-16">
-          <div className="max-w-4xl mx-auto px-4 text-center">
-            <div className="mb-4 flex justify-center"><MessageCircle className="w-14 h-14 text-purple-200" /></div>
-            <h1 className="text-4xl font-bold mb-3">Bizimle İletişime Geçin</h1>
-            <p className="text-purple-100 text-lg">Sorularınız için buradayız. Size en kısa sürede dönüş yaparız.</p>
+      <div className="min-h-screen bg-slate-50">
+        {/* ── Dark header ── */}
+        <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#07070F 0%,#0D0B26 60%,#07070F 100%)"}}>
+          <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
+            style={{backgroundImage:"linear-gradient(rgba(255,255,255,.6) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.6) 1px,transparent 1px)", backgroundSize:"50px 50px"}}/>
+          <div className="absolute inset-0 pointer-events-none"
+            style={{background:"radial-gradient(ellipse at center,rgba(99,102,241,0.15) 0%,transparent 65%)"}}/>
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-8 py-14 text-center">
+            <div className="w-16 h-16 rounded-2xl mx-auto mb-5 flex items-center justify-center"
+              style={{background:"rgba(99,102,241,0.15)", border:"1px solid rgba(99,102,241,0.3)"}}>
+              <MessageCircle className="w-8 h-8" style={{color:"#818CF8"}}/>
+            </div>
+            <span className="text-xs font-black tracking-[0.35em] text-indigo-400 uppercase block mb-3">Destek</span>
+            <h1 className="text-5xl md:text-6xl font-black text-white tracking-tighter leading-none mb-4">İletişim</h1>
+            <p className="text-slate-400 text-base max-w-md mx-auto">Sorularınız için buradayız. En kısa sürede dönüş yaparız.</p>
           </div>
         </div>
 
-        <div className="max-w-6xl mx-auto px-4 py-12">
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 py-12">
           <div className="grid md:grid-cols-3 gap-8">
 
-            {/* Sol: İletişim Bilgileri */}
-            <div className="space-y-6">
-              {/* Sosyal Medya */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <h3 className="font-bold text-gray-900 text-lg mb-4">📱 Sosyal Medya</h3>
-                <div className="space-y-3">
+            {/* Sol: İletişim + Sosyal */}
+            <div className="space-y-5">
+              <div className="bg-white rounded-2xl p-6 border border-slate-100">
+                <div className="text-xs font-black tracking-[0.25em] text-slate-400 uppercase mb-4">İletişim</div>
+                <div className="space-y-4">
                   {[
-                    { icon: "📸", label: "Instagram", handle: "@sporlaconnect", url: "https://instagram.com/sporlaconnect", color: "text-pink-600 bg-pink-50" },
-                    { icon: "𝕏", label: "X (Twitter)", handle: "@sporlaconnect", url: "https://twitter.com/sporlaconnect", color: "text-gray-800 bg-gray-100" },
-                    { icon: "💼", label: "LinkedIn", handle: "SporlaConnect", url: "https://linkedin.com/company/sporlaconnect", color: "text-blue-600 bg-blue-50" },
-                    { icon: "▶️", label: "YouTube", handle: "SporlaConnect", url: "https://youtube.com/@sporlaconnect", color: "text-red-600 bg-red-50" },
-                  ].map((s) => (
-                    <a key={s.label} href={s.url} target="_blank" rel="noreferrer"
-                       className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors group">
-                      <span className={`w-10 h-10 rounded-xl ${s.color} flex items-center justify-center text-lg font-bold`}>{s.icon}</span>
-                      <div>
-                        <div className="font-semibold text-gray-900 text-sm">{s.label}</div>
-                        <div className="text-gray-500 text-xs">{s.handle}</div>
+                    {icon:<Mail className="w-4 h-4" style={{color:"#818CF8"}}/>, label:"E-posta", value:"info@sporlaconnect.com", href:"mailto:info@sporlaconnect.com"},
+                    {icon:<MapPin className="w-4 h-4" style={{color:"#34D399"}}/>, label:"Konum", value:"İzmir, Türkiye", href:null},
+                    {icon:<Clock className="w-4 h-4" style={{color:"#38BDF8"}}/>, label:"Yanıt Süresi", value:"24 saat içinde", href:null},
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{background:"#f8fafc", border:"1px solid #f1f5f9"}}>
+                        {item.icon}
                       </div>
-                    </a>
+                      <div>
+                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{item.label}</div>
+                        {item.href
+                          ? <a href={item.href} className="text-sm font-semibold text-slate-700 hover:text-violet-600 transition-colors">{item.value}</a>
+                          : <div className="text-sm font-semibold text-slate-700">{item.value}</div>}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
 
-              {/* İletişim Bilgileri */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <h3 className="font-bold text-gray-900 text-lg mb-4">📬 İletişim</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3 text-sm">
-                    <span className="w-9 h-9 rounded-xl bg-purple-50 flex items-center justify-center"><Mail className="w-5 h-5 text-purple-500" /></span>
-                    <div>
-                      <div className="text-gray-500 text-xs">E-posta</div>
-                      <div className="font-medium text-gray-900">melihonyer@gmail.com</div>
+              <div className="bg-white rounded-2xl p-6 border border-slate-100">
+                <div className="text-xs font-black tracking-[0.25em] text-slate-400 uppercase mb-4">Sosyal Medya</div>
+                <div className="space-y-2">
+                  {[
+                    {label:"Instagram", handle:"@sporlaconnect", bg:"#fdf2f8", color:"#db2777"},
+                    {label:"X (Twitter)", handle:"@sporlaconnect", bg:"#f8fafc", color:"#0f172a"},
+                    {label:"LinkedIn", handle:"SporlaConnect", bg:"#eff6ff", color:"#1d4ed8"},
+                  ].map((s) => (
+                    <div key={s.label} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer">
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black flex-shrink-0"
+                        style={{background:s.bg, color:s.color}}>{s.label[0]}</div>
+                      <div>
+                        <div className="text-sm font-bold text-slate-800">{s.label}</div>
+                        <div className="text-xs text-slate-400">{s.handle}</div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    <span className="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center text-base">📍</span>
-                    <div>
-                      <div className="text-gray-500 text-xs">Konum</div>
-                      <div className="font-medium text-gray-900">İzmir, Türkiye</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    <span className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center text-base">⏰</span>
-                    <div>
-                      <div className="text-gray-500 text-xs">Yanıt Süresi</div>
-                      <div className="font-medium text-gray-900">24 saat içinde</div>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
             </div>
 
-            {/* Orta + Sağ: Form + FAQ */}
-            <div className="md:col-span-2 space-y-8">
-              {/* İletişim Formu */}
-              <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-                <h3 className="font-bold text-gray-900 text-xl mb-6">✍️ Mesaj Gönderin</h3>
+            {/* Orta + Sağ */}
+            <div className="md:col-span-2 space-y-6">
+              {/* Form */}
+              <div className="bg-white rounded-2xl p-8 border border-slate-100">
+                <div className="text-xs font-black tracking-[0.25em] text-slate-400 uppercase mb-6">Mesaj Gönderin</div>
                 <form onSubmit={handleContactSubmit} className="space-y-4">
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-sm font-medium text-gray-700 mb-1 block">Adınız</label>
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Adınız</label>
                       <input value={contactForm.name} onChange={e => setContactForm(p => ({...p, name: e.target.value}))}
-                        placeholder="Adınız Soyadınız" className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
+                        placeholder="Adınız Soyadınız" className={inputCls}/>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-700 mb-1 block">E-posta</label>
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">E-posta</label>
                       <input type="email" value={contactForm.email} onChange={e => setContactForm(p => ({...p, email: e.target.value}))}
-                        placeholder="ornek@mail.com" className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
+                        placeholder="ornek@mail.com" className={inputCls}/>
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-700 mb-1 block">Konu</label>
-                    <select value={contactForm.subject} onChange={e => setContactForm(p => ({...p, subject: e.target.value}))}
-                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Konu</label>
+                    <select value={contactForm.subject} onChange={e => setContactForm(p => ({...p, subject: e.target.value}))} className={inputCls}>
                       <option value="">Konu seçin…</option>
                       <option>Üyelik & Hesap</option>
                       <option>Takım Kurma</option>
@@ -4376,32 +4378,32 @@ export default function SporlaConnect() {
                     </select>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-700 mb-1 block">Mesajınız</label>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Mesajınız</label>
                     <textarea value={contactForm.message} onChange={e => setContactForm(p => ({...p, message: e.target.value}))}
-                      rows={5} placeholder="Mesajınızı buraya yazın…"
-                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300 resize-none" />
+                      rows={5} placeholder="Mesajınızı buraya yazın…" className={`${inputCls} resize-none`}/>
                   </div>
                   <button type="submit" disabled={sending}
-                    className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:opacity-90 disabled:opacity-60 transition">
-                    {sending ? "Gönderiliyor…" : "Mesaj Gönder 📨"}
+                    className="w-full py-3.5 rounded-xl font-bold text-white text-sm transition-all hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-2"
+                    style={{background:"linear-gradient(135deg,#6366F1,#8B5CF6)", boxShadow:"0 8px 24px rgba(99,102,241,0.3)"}}>
+                    {sending ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/> Gönderiliyor…</> : <><Send className="w-4 h-4"/> Mesaj Gönder</>}
                   </button>
                 </form>
               </div>
 
               {/* SSS */}
-              <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-                <h3 className="font-bold text-gray-900 text-xl mb-6">❓ Sık Sorulan Sorular</h3>
-                <div className="space-y-3">
+              <div className="bg-white rounded-2xl p-8 border border-slate-100">
+                <div className="text-xs font-black tracking-[0.25em] text-slate-400 uppercase mb-6">Sık Sorulan Sorular</div>
+                <div className="space-y-2">
                   {faqs.map((faq, i) => (
-                    <div key={i} className="border border-gray-100 rounded-xl overflow-hidden">
+                    <div key={i} className="border border-slate-100 rounded-xl overflow-hidden">
                       <button onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                        className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors">
-                        <span className="font-medium text-gray-800 text-sm pr-4">{faq.q}</span>
-                        <span className={`text-purple-500 text-lg flex-shrink-0 transition-transform ${openFaq === i ? "rotate-180" : ""}`}>⌄</span>
+                        className="w-full flex items-center justify-between px-5 py-3.5 text-left hover:bg-slate-50 transition-colors">
+                        <span className="font-semibold text-slate-800 text-sm pr-4">{faq.q}</span>
+                        <ChevronDown className={`w-4 h-4 flex-shrink-0 text-violet-500 transition-transform duration-200 ${openFaq === i ? "rotate-180" : ""}`}/>
                       </button>
                       {openFaq === i && (
-                        <div className="px-4 pb-4">
-                          <p className="text-gray-600 text-sm leading-relaxed border-t border-gray-50 pt-3">{faq.a}</p>
+                        <div className="px-5 pb-4 border-t border-slate-50">
+                          <p className="text-slate-500 text-sm leading-relaxed pt-3">{faq.a}</p>
                         </div>
                       )}
                     </div>
