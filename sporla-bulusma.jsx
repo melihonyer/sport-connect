@@ -1409,55 +1409,55 @@ export default function SporlaConnect() {
       }
     };
 
-    // Tek slide içeriğini render et (golf template stili — tam ekran)
-    const renderSlide = (banner, animStyle, isMotto) => {
-      const hasImg = bannersLoaded && banner?.image_url && banner.image_url !== "";
-      const bgFrom = banner?.gradient_from || "#052e16";
-      const bgVia  = banner?.gradient_via  || "#14532d";
-      const bgTo   = banner?.gradient_to   || "#166534";
+    // Sol metin kolonu
+    const renderLeft = (banner, animStyle, isMotto) => {
+      const bgF = banner?.gradient_from || "#052e16";
       return (
-        <div className="bn-slide-content absolute inset-0 flex flex-col items-center justify-center text-center px-6" style={animStyle}>
-          {/* Rozet */}
-          {banner?.badge_text && (
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest mb-6 border"
-              style={{background:"rgba(255,255,255,0.08)", borderColor:"rgba(255,255,255,0.18)", color:"rgba(255,255,255,0.75)"}}>
-              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"/>
-              {banner.badge_text}
-            </div>
-          )}
+        <div className="bn-text-col z-10 space-y-7 pr-8 pb-28 flex flex-col justify-center" style={animStyle}>
+          {/* Rozet pill */}
+          <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full text-sm font-semibold border backdrop-blur-sm"
+            style={{background:"rgba(255,255,255,0.06)",borderColor:"rgba(255,255,255,0.12)",color:"rgba(186,230,253,0.9)"}}>
+            <span className="w-2 h-2 rounded-full animate-pulse" style={{background:"#4ADE80"}}/>
+            {banner?.badge_text || "500+ Aktif Sporcu"}
+            <span className="w-px h-3 bg-white/20"/>
+            <span className="text-white/50 font-normal text-xs">Türkiye geneli</span>
+          </div>
 
           {/* Başlık */}
-          <h1 className="bn-title text-white mb-6"
-            style={{fontFamily:"'Crimson Text', Georgia, serif", fontSize:"clamp(3rem,7vw,6rem)", fontWeight:600, lineHeight:1.1, letterSpacing:"0.01em", maxWidth:"820px"}}>
-            {banner?.title || "Sporla Buluş,"}{" "}
-            {isMotto
-              ? <Typewriter mottos={(banner?.mottos?.length > 0) ? banner.mottos : DEFAULT_MOTTOS} serif={true}/>
-              : <span style={{color:"rgba(134,239,172,0.9)"}}>{banner?.title_highlight || ""}</span>
-            }
-          </h1>
-
-          {/* Subtitle */}
-          <p className="bn-subtitle text-white/70 mb-10 max-w-xl mx-auto text-center leading-relaxed"
-            style={{fontFamily:"'Lato', sans-serif", fontSize:"clamp(1rem,1.5vw,1.2rem)", fontWeight:300}}>
-            {banner?.subtitle || "Çevrende spor yapan insanları bul, kendi takımını kur, antrenmanlar planla."}
-          </p>
+          <div>
+            <h1 className="bn-title text-white"
+              style={{fontSize:"clamp(2.8rem,5.5vw,4.5rem)", lineHeight:1.1, fontWeight:800}}>
+              {banner?.title || "Sporla Buluş,"}
+            </h1>
+            <h1 className="bn-title" style={{fontSize:"clamp(2.8rem,5.5vw,4.5rem)", lineHeight:1.15, fontWeight:800, minHeight:"1.2em"}}>
+              {isMotto
+                ? <Typewriter mottos={(banner?.mottos?.length > 0) ? banner.mottos : DEFAULT_MOTTOS}/>
+                : <span style={{color:"rgba(134,239,172,0.6)"}}>&nbsp;</span>
+              }
+            </h1>
+            <p className="mt-5 text-lg leading-relaxed max-w-md font-light" style={{color:"rgba(186,230,253,0.75)"}}>
+              {banner?.subtitle || "Çevrende spor yapan insanları bul, kendi takımını kur, antrenmanlar planla. GPS ile en yakın etkinlikleri saniyeler içinde keşfet."}
+            </p>
+          </div>
 
           {/* CTA butonları */}
           {isMotto && (
-            <div className="flex flex-wrap items-center justify-center gap-4">
+            <div className="flex flex-wrap items-center gap-4 pt-1">
               {!user ? (
                 <>
                   <button
                     onClick={() => handleCtaClick(banner?.cta_primary_url, () => { setAuthMode("register"); setIsAuthModalOpen(true); })}
-                    className="group flex items-center gap-2.5 px-9 py-4 font-semibold text-white tracking-widest uppercase text-sm transition-all duration-300 hover:bg-white hover:text-green-900"
-                    style={{border:"1px solid rgba(255,255,255,0.6)", fontFamily:"'Lato', sans-serif", letterSpacing:"0.12em"}}
+                    className="group relative flex items-center gap-2.5 px-7 py-3.5 font-bold text-white text-sm overflow-hidden transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl"
+                    style={{background:"linear-gradient(135deg,#16A34A,#15803D)", borderRadius:"14px", boxShadow:"0 8px 32px rgba(22,163,74,0.4)"}}
                   >
+                    <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-[14px]"/>
                     {banner?.cta_primary_text || "Hemen Başla"}
+                    <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
                   </button>
                   <button
                     onClick={() => { setAuthMode("login"); setIsAuthModalOpen(true); }}
-                    className="flex items-center gap-2.5 px-9 py-4 font-semibold text-white/70 tracking-widest uppercase text-sm transition-all duration-300 hover:text-white"
-                    style={{border:"1px solid rgba(255,255,255,0.2)", fontFamily:"'Lato', sans-serif", letterSpacing:"0.12em"}}
+                    className="flex items-center gap-2 px-7 py-3.5 font-semibold text-sm transition-all duration-300 hover:bg-white/10 rounded-[14px]"
+                    style={{color:"rgba(186,230,253,0.85)", border:"1px solid rgba(255,255,255,0.14)"}}
                   >
                     Giriş Yap
                   </button>
@@ -1466,16 +1466,18 @@ export default function SporlaConnect() {
                 <>
                   <button
                     onClick={() => handleCtaClick(banner?.cta_primary_url, () => setCurrentPage("trainings"))}
-                    className="flex items-center gap-2.5 px-9 py-4 font-semibold text-white tracking-widest uppercase text-sm transition-all duration-300 hover:bg-white hover:text-green-900"
-                    style={{border:"1px solid rgba(255,255,255,0.6)", fontFamily:"'Lato', sans-serif", letterSpacing:"0.12em"}}
+                    className="group relative flex items-center gap-2.5 px-7 py-3.5 font-bold text-white text-sm overflow-hidden transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl"
+                    style={{background:"linear-gradient(135deg,#16A34A,#15803D)", borderRadius:"14px", boxShadow:"0 8px 32px rgba(22,163,74,0.4)"}}
                   >
+                    <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-[14px]"/>
                     {banner?.cta_primary_text || "Antrenmanlar"}
+                    <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
                   </button>
                   {banner?.cta_secondary_text && (
                     <button
                       onClick={() => handleCtaClick(banner?.cta_secondary_url, () => setCurrentPage("teams"))}
-                      className="flex items-center gap-2.5 px-9 py-4 font-semibold text-white/70 tracking-widest uppercase text-sm transition-all duration-300 hover:text-white"
-                      style={{border:"1px solid rgba(255,255,255,0.2)", fontFamily:"'Lato', sans-serif", letterSpacing:"0.12em"}}
+                      className="flex items-center gap-2 px-7 py-3.5 font-semibold text-sm transition-all duration-300 hover:bg-white/10 rounded-[14px]"
+                      style={{color:"rgba(186,230,253,0.85)", border:"1px solid rgba(255,255,255,0.14)"}}
                     >
                       {banner.cta_secondary_text}
                     </button>
@@ -1484,87 +1486,146 @@ export default function SporlaConnect() {
               )}
             </div>
           )}
+
+          {/* Mini istatistikler */}
+          {isMotto && (
+            <div className="bn-stats flex items-center gap-6 pt-2">
+              <div className="flex items-center gap-3">
+                <div className="flex -space-x-2.5">
+                  {["#16A34A","#15803D","#EC4899","#06B6D4"].map((c,i) => (
+                    <div key={i} className="w-8 h-8 rounded-full border-2 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
+                      style={{background:c, borderColor:bgF}}>
+                      {["M","A","E","K"][i]}
+                    </div>
+                  ))}
+                </div>
+                <div>
+                  <div className="text-white text-sm font-bold">{fmtNum(platformStats?.users) || "—"}</div>
+                  <div className="text-xs" style={{color:"rgba(186,230,253,0.5)"}}>kayıtlı sporcu</div>
+                </div>
+              </div>
+              <div className="w-px h-10 bg-white/10"/>
+              {stats.slice(0,2).map((s,i) => (
+                <div key={i}>
+                  <div className={`text-xl font-black ${s.color}`}>{s.value}</div>
+                  <div className="text-xs" style={{color:"rgba(186,230,253,0.5)"}}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    // Sağ görsel kolonu
+    const renderRight = (banner, animStyle, noFloat = false) => {
+      const hasImg = bannersLoaded && banner?.image_url && banner.image_url !== "";
+      return (
+        <div className="bn-img-col relative">
+          <div className="absolute inset-0 flex items-end justify-center" style={{overflow:"visible", ...animStyle}}>
+            {hasImg ? (
+              <>
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[500px] h-[400px] rounded-full blur-3xl pointer-events-none"
+                  style={{background:"radial-gradient(ellipse,rgba(74,222,128,0.2) 0%,rgba(22,163,74,0.1) 55%,transparent 70%)"}}/>
+                <div className="relative z-10" style={{
+                  animation: noFloat ? "none" : "heroFloat 5s ease-in-out infinite",
+                  marginBottom:"-100px",
+                }}>
+                  <img
+                    src={`${BASE_URL}${banner.image_url}`}
+                    alt=""
+                    className="w-auto select-none pointer-events-none"
+                    style={{height:"700px", maxWidth:"none", objectFit:"contain", objectPosition:"bottom center", filter:"drop-shadow(0 40px 80px rgba(0,0,0,0.5))"}}
+                  />
+                </div>
+              </>
+            ) : null}
+          </div>
         </div>
       );
     };
 
     return (
-      <div className="relative overflow-hidden" style={{height:"100vh", minHeight:"600px", maxHeight:"900px"}}>
-        {/* Arka plan: görsel varsa tam kaplayan, yoksa gradyan */}
-        {(() => {
-          const hasImg = bannersLoaded && b?.image_url && b?.image_url !== "";
-          return (
-            <>
-              {hasImg ? (
-                <img src={`${BASE_URL}${b.image_url}`} alt="" className="absolute inset-0 w-full h-full object-cover object-center" style={{zIndex:0}}/>
-              ) : (
-                <div className="absolute inset-0" style={{background:`linear-gradient(160deg,${gFrom} 0%,${gVia} 55%,${gTo} 100%)`, zIndex:0, transition:"background 0.8s ease"}}/>
-              )}
-              {/* Koyu overlay — görsel üzerinde okunabilirlik */}
-              <div className="absolute inset-0" style={{background:"linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.55) 100%)", zIndex:1}}/>
-            </>
-          );
-        })()}
-
-        {/* Çıkan slide overlay */}
-        {exitB && (
-          <div className="absolute inset-0 z-10 pointer-events-none" style={{animation: exitTextAnim}}>
-            {renderSlide(exitB, {}, false)}
-          </div>
-        )}
-
-        {/* Aktif slide içeriği */}
-        <div className="absolute inset-0 z-20" style={{animation: isTransitioning ? enterTextAnim : undefined}}>
-          {renderSlide(b, {}, true)}
+      <div className="relative" style={{
+        background:`linear-gradient(115deg, ${gFrom} 0%, ${gVia} 45%, ${gTo} 100%)`,
+        transition:"background 0.7s ease",
+      }}>
+        {/* Arka plan dekorları */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute -left-32 top-1/4 w-[600px] h-[600px] rounded-full"
+            style={{background:"radial-gradient(circle,rgba(22,163,74,0.18) 0%,transparent 65%)"}}/>
+          <div className="absolute right-[-60px] top-[-40px] w-[700px] h-[700px] rounded-full"
+            style={{background:"radial-gradient(circle,rgba(74,222,128,0.1) 0%,transparent 60%)"}}/>
+          <div className="absolute inset-0 opacity-[0.03]"
+            style={{backgroundImage:"linear-gradient(rgba(255,255,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px)", backgroundSize:"64px 64px"}}/>
         </div>
 
-        {/* Sol ok */}
-        {banners.length > 1 && (
-          <button
-            onClick={() => goTo((currentBannerIdx - 1 + banners.length) % banners.length)}
-            className="absolute left-6 top-1/2 -translate-y-1/2 z-30 flex items-center justify-center transition-all duration-200 hover:scale-110"
-            style={{width:"52px",height:"52px",border:"1px solid rgba(255,255,255,0.35)",background:"rgba(0,0,0,0.25)",backdropFilter:"blur(4px)"}}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round"><path d="M15 18l-6-6 6-6"/></svg>
-          </button>
-        )}
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" style={{zIndex:2}}>
+          <div className="bn-grid relative" style={{display:"grid", gridTemplateColumns:"55% 45%", minHeight:"680px", paddingTop:"112px"}}>
 
-        {/* Sağ ok */}
-        {banners.length > 1 && (
-          <button
-            onClick={() => goTo((currentBannerIdx + 1) % banners.length)}
-            className="absolute right-6 top-1/2 -translate-y-1/2 z-30 flex items-center justify-center transition-all duration-200 hover:scale-110"
-            style={{width:"52px",height:"52px",border:"1px solid rgba(255,255,255,0.35)",background:"rgba(0,0,0,0.25)",backdropFilter:"blur(4px)"}}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
-          </button>
-        )}
+            {/* Çıkan banner */}
+            {exitB && (
+              <div className="bn-grid" style={{
+                position:"absolute", inset:0, paddingTop:"112px",
+                display:"grid", gridTemplateColumns:"55% 45%",
+                zIndex:10, pointerEvents:"none",
+              }}>
+                {renderLeft(exitB, {animation: exitTextAnim}, false)}
+                {renderRight(exitB, {animation: exitImgAnim}, true)}
+              </div>
+            )}
 
-        {/* Alt nokta navigasyon */}
+            {/* Giren banner */}
+            {renderLeft(b, {animation: isTransitioning ? enterTextAnim : undefined}, true)}
+            {renderRight(b, {animation: isTransitioning ? enterImgAnim : undefined})}
+          </div>
+        </div>
+
+        {/* Sağ dikey navigasyon */}
         {banners.length > 1 && (
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2.5">
+          <div className="bn-nav" style={{
+            position:"absolute", right:"28px", top:"50%", transform:"translateY(-50%)",
+            zIndex:30, display:"flex", flexDirection:"column", alignItems:"center", gap:"10px",
+          }}>
+            <button onClick={() => goTo((currentBannerIdx - 1 + banners.length) % banners.length)}
+              style={{width:"30px",height:"30px",borderRadius:"50%",border:"none",cursor:"pointer",background:"rgba(255,255,255,0.09)",display:"flex",alignItems:"center",justifyContent:"center",transition:"background 0.2s,transform 0.2s"}}
+              onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.2)";e.currentTarget.style.transform="scale(1.15)";}}
+              onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.09)";e.currentTarget.style.transform="scale(1)";}}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.75)" strokeWidth="2.5" strokeLinecap="round"><path d="M5 15l7-7 7 7"/></svg>
+            </button>
             {banners.map((_, i) => (
-              <button key={i} onClick={() => goTo(i)}
-                className="transition-all duration-300"
-                style={{
-                  width: i===currentBannerIdx ? "28px" : "8px",
-                  height:"8px", borderRadius:"4px", border:"none", cursor:"pointer",
-                  background: i===currentBannerIdx ? "white" : "rgba(255,255,255,0.4)",
-                }}
-              />
+              <button key={i} onClick={() => goTo(i)} style={{
+                width:"5px", height: i===currentBannerIdx?"22px":"5px",
+                borderRadius:"3px", border:"none", cursor:"pointer", padding:0,
+                background: i===currentBannerIdx?"linear-gradient(180deg,#4ADE80,#16A34A)":"rgba(255,255,255,0.28)",
+                transition:"all 0.38s cubic-bezier(0.34,1.56,0.64,1)",
+              }}/>
             ))}
+            <button onClick={() => goTo((currentBannerIdx + 1) % banners.length)}
+              style={{width:"30px",height:"30px",borderRadius:"50%",border:"none",cursor:"pointer",background:"rgba(255,255,255,0.09)",display:"flex",alignItems:"center",justifyContent:"center",transition:"background 0.2s,transform 0.2s"}}
+              onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.2)";e.currentTarget.style.transform="scale(1.15)";}}
+              onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.09)";e.currentTarget.style.transform="scale(1)";}}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.75)" strokeWidth="2.5" strokeLinecap="round"><path d="M19 9l-7 7-7-7"/></svg>
+            </button>
           </div>
         )}
 
         <style>{`
-          @keyframes bnEnterRight { from{opacity:0;transform:translateX(60px)} to{opacity:1;transform:translateX(0)} }
-          @keyframes bnEnterLeft  { from{opacity:0;transform:translateX(-60px)} to{opacity:1;transform:translateX(0)} }
-          @keyframes bnExitLeft   { from{opacity:1;transform:translateX(0)} to{opacity:0;transform:translateX(-60px)} }
-          @keyframes bnExitRight  { from{opacity:1;transform:translateX(0)} to{opacity:0;transform:translateX(60px)} }
-          @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
-          @media (max-width:767px) {
-            .bn-title { font-size: clamp(2.2rem,9vw,3.2rem) !important; }
-            .bn-subtitle { font-size: 0.95rem !important; }
+          @keyframes bnEnterRight { from{opacity:0;transform:translateX(70px)} to{opacity:1;transform:translateX(0)} }
+          @keyframes bnEnterLeft  { from{opacity:0;transform:translateX(-70px)} to{opacity:1;transform:translateX(0)} }
+          @keyframes bnExitLeft   { from{opacity:1;transform:translateX(0)} to{opacity:0;transform:translateX(-70px)} }
+          @keyframes bnExitRight  { from{opacity:1;transform:translateX(0)} to{opacity:0;transform:translateX(70px)} }
+          @keyframes heroFloat    { 0%,100%{transform:translateY(0)} 45%{transform:translateY(-14px)} 70%{transform:translateY(-8px)} }
+          @keyframes blink        { 0%,100%{opacity:1} 50%{opacity:0} }
+          @media (max-width: 767px) {
+            .bn-grid  { display:flex !important; flex-direction:column !important; min-height:auto !important; padding-top:88px !important; padding-bottom:40px; }
+            .bn-text-col { padding-right:0 !important; padding-bottom:0 !important; }
+            .bn-img-col  { display:none !important; }
+            .bn-nav      { display:none !important; }
+            .bn-title    { white-space:normal !important; font-size:clamp(2rem,9vw,2.8rem) !important; }
+            .bn-stats    { display:none !important; }
           }
         `}</style>
       </div>
