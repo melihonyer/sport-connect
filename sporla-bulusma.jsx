@@ -1634,34 +1634,6 @@ export default function SporlaConnect() {
 
 
   // ── SPORT CATEGORIES STRIP ──────────────────────────
-  const SportCategories = () => {
-    const sports = [
-      {label:"Koşu",icon:"🏃"},{label:"Futbol",icon:"⚽"},{label:"Basketbol",icon:"🏀"},
-      {label:"Tenis",icon:"🎾"},{label:"Yüzme",icon:"🏊"},{label:"Bisiklet",icon:"🚴"},
-      {label:"Voleybol",icon:"🏐"},{label:"Dövüş",icon:"🥊"},{label:"Yoga",icon:"🧘"},
-      {label:"Fitness",icon:"💪"},{label:"Diğer",icon:"⚡"},
-    ];
-    return (
-      <div className="bg-white border-b border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center gap-2 overflow-x-auto" style={{scrollbarWidth:"none"}}>
-            <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] whitespace-nowrap flex-shrink-0 pr-4 border-r border-slate-100 mr-2">
-              Sporlar
-            </span>
-            {sports.map((s, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrentPage("trainings")}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-semibold text-slate-500 hover:text-green-700 hover:bg-green-50 hover:border-green-200 transition-all whitespace-nowrap flex-shrink-0 border border-transparent"
-              >
-                <span className="text-base leading-none">{s.icon}</span> {s.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   // ── FEATURES SECTION — Editorial Split-Screen ────────
   const FeaturesSection = () => {
@@ -1949,7 +1921,6 @@ export default function SporlaConnect() {
   const HomePage = () => (
     <>
       <HeroSection />
-      <SportCategories />
       <FeaturesSection />
 
       {/* ── GPS SEARCH — Dark Athletic Strip ── */}
