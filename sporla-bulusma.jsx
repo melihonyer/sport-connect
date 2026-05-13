@@ -1432,7 +1432,7 @@ export default function SporlaConnect() {
               style={{fontSize:"clamp(2.8rem,5.5vw,4.5rem)", lineHeight:1.1, fontWeight:600}}>
               {banner?.title || "Sporla Buluş,"}
             </h1>
-            <h1 className="bn-title" style={{fontSize:"clamp(2.8rem,5.5vw,4.5rem)", lineHeight:1.15, fontWeight:600, minHeight:"1.2em"}}>
+            <h1 className="bn-title" style={{fontSize:"clamp(2.8rem,5.5vw,4.5rem)", lineHeight:1.15, fontWeight:600, minHeight:"1.2em", whiteSpace:"nowrap", overflow:"hidden"}}>
               {isMotto
                 ? <Typewriter mottos={(banner?.mottos?.length > 0) ? banner.mottos : DEFAULT_MOTTOS}/>
                 : <span style={{color:"rgba(134,239,172,0.6)"}}>&nbsp;</span>
