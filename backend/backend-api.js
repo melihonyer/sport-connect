@@ -176,35 +176,8 @@ const mailTransporter = nodemailer.createTransport({
   socketTimeout: 15000,
 });
 
-// Mail gönder — Resend HTTP API (SMTP portu sorunu yok)
+// Mail gönder — Gmail SMTP
 async function sendEmail({ to, subject, html }) {
-  // Resend API key varsa Resend kullan
-  if (process.env.RESEND_API_KEY) {
-    try {
-      const fromName = process.env.MAIL_FROM_NAME || 'SporlaConnect';
-      // Resend ücretsiz planda sadece onboarding@resend.dev veya doğrulanmış domain
-      const fromEmail = process.env.MAIL_FROM_EMAIL || 'onboarding@resend.dev';
-      const resp = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ from: `${fromName} <${fromEmail}>`, to, subject, html }),
-      });
-      const data = await resp.json();
-      if (!resp.ok) {
-        console.error(`[EMAIL ERROR] Resend hatası:`, JSON.stringify(data));
-        return null;
-      }
-      console.log(`[EMAIL] Resend ile gönderildi: ${data.id}`);
-      return data;
-    } catch (err) {
-      console.error(`[EMAIL ERROR] Resend istek hatası:`, err.message);
-      return null;
-    }
-  }
-  // SMTP fallback
   if (!process.env.MAIL_USER || !process.env.MAIL_PASS || process.env.MAIL_PASS === 'your-gmail-app-password-here') {
     console.log(`[EMAIL - MOCK] To: ${to} | Subject: ${subject}`);
     return { mocked: true };
