@@ -1356,12 +1356,12 @@ export default function SporlaConnect() {
 
   // ── HERO BANNER SLİDER ──────────────────────────────────────
   const HeroSection = () => {
-    const b    = banners[currentBannerIdx]    || null;
+    const b     = banners[currentBannerIdx]    || null;
     const exitB = exitingBannerIdx !== null ? (banners[exitingBannerIdx] || null) : null;
 
-    const gFrom = b?.gradient_from || "#080B1F";
-    const gVia  = b?.gradient_via  || "#0E1F4A";
-    const gTo   = b?.gradient_to   || "#0A3070";
+    const gFrom = b?.gradient_from || "#052e16";
+    const gVia  = b?.gradient_via  || "#14532d";
+    const gTo   = b?.gradient_to   || "#166534";
 
     // Giriş / çıkış animasyonları yöne göre
     const enterTextAnim = slideDir === "next"
@@ -1409,68 +1409,56 @@ export default function SporlaConnect() {
       }
     };
 
-    // Sol metin bloğunu verilen banner için render et
-    const renderLeft = (banner, animStyle, isMotto) => {
-      const bgF = banner?.gradient_from || "#080B1F";
+    // Tek slide içeriğini render et (golf template stili — tam ekran)
+    const renderSlide = (banner, animStyle, isMotto) => {
       const hasImg = bannersLoaded && banner?.image_url && banner.image_url !== "";
+      const bgFrom = banner?.gradient_from || "#052e16";
+      const bgVia  = banner?.gradient_via  || "#14532d";
+      const bgTo   = banner?.gradient_to   || "#166534";
       return (
-        <div className="bn-text-col z-10 space-y-7 pr-8 pb-28 flex flex-col justify-center" style={animStyle}>
-          {/* Rozet pill */}
-          <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full text-sm font-bold border backdrop-blur-sm"
-            style={{background:"rgba(255,255,255,0.06)",borderColor:"rgba(255,255,255,0.12)",color:"rgba(186,230,253,0.9)"}}>
-            <span className="w-2 h-2 rounded-full animate-pulse" style={{background:"#38BDF8"}}/>
-            {banner?.badge_text || "🏃 500+ Aktif Sporcu"}
-            <span className="w-px h-3 bg-white/20"/>
-            <span className="text-white/50 font-normal text-xs">Türkiye geneli</span>
-          </div>
-
-          {/* Başlık + typewriter */}
-          <div>
-            <div className="overflow-hidden">
-              <div className="bn-title font-black text-white whitespace-nowrap"
-                style={{fontSize:"clamp(2.8rem,5.5vw,4.5rem)",lineHeight:1.1,letterSpacing:"-0.02em"}}>
-                {banner?.title || "Sporla Buluş,"}
-              </div>
-              <div className="bn-title font-black whitespace-nowrap"
-                style={{fontSize:"clamp(2.8rem,5.5vw,4.5rem)",lineHeight:1.15,letterSpacing:"-0.02em",minHeight:"1.2em"}}>
-                {isMotto ? (
-                  <Typewriter mottos={(banner?.mottos?.length > 0) ? banner.mottos : DEFAULT_MOTTOS}/>
-                ) : (
-                  <span style={{background:"linear-gradient(90deg,#38BDF8 0%,#4ADE80 45%,#C084FC 85%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text",opacity:0.5}}>
-                    &nbsp;
-                  </span>
-                )}
-              </div>
+        <div className="bn-slide-content absolute inset-0 flex flex-col items-center justify-center text-center px-6" style={animStyle}>
+          {/* Rozet */}
+          {banner?.badge_text && (
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest mb-6 border"
+              style={{background:"rgba(255,255,255,0.08)", borderColor:"rgba(255,255,255,0.18)", color:"rgba(255,255,255,0.75)"}}>
+              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"/>
+              {banner.badge_text}
             </div>
-            <p className="mt-6 text-lg text-blue-200/70 leading-relaxed max-w-md font-light">
-              {banner?.subtitle || "Çevrende spor yapan insanları bul, kendi takımını kur, antrenmanlar planla. GPS ile en yakın etkinlikleri saniyeler içinde keşfet."}
-            </p>
-          </div>
+          )}
+
+          {/* Başlık */}
+          <h1 className="bn-title text-white mb-6"
+            style={{fontFamily:"'Crimson Text', Georgia, serif", fontSize:"clamp(3rem,7vw,6rem)", fontWeight:600, lineHeight:1.1, letterSpacing:"0.01em", maxWidth:"820px"}}>
+            {banner?.title || "Sporla Buluş,"}{" "}
+            {isMotto
+              ? <Typewriter mottos={(banner?.mottos?.length > 0) ? banner.mottos : DEFAULT_MOTTOS} serif={true}/>
+              : <span style={{color:"rgba(134,239,172,0.9)"}}>{banner?.title_highlight || ""}</span>
+            }
+          </h1>
+
+          {/* Subtitle */}
+          <p className="bn-subtitle text-white/70 mb-10 max-w-xl mx-auto text-center leading-relaxed"
+            style={{fontFamily:"'Lato', sans-serif", fontSize:"clamp(1rem,1.5vw,1.2rem)", fontWeight:300}}>
+            {banner?.subtitle || "Çevrende spor yapan insanları bul, kendi takımını kur, antrenmanlar planla."}
+          </p>
 
           {/* CTA butonları */}
           {isMotto && (
-            <div className="flex flex-wrap items-center gap-4 pt-1">
+            <div className="flex flex-wrap items-center justify-center gap-4">
               {!user ? (
                 <>
                   <button
                     onClick={() => handleCtaClick(banner?.cta_primary_url, () => { setAuthMode("register"); setIsAuthModalOpen(true); })}
-                    className="group relative flex items-center gap-2.5 px-7 py-3.5 rounded-2xl font-bold text-white text-sm overflow-hidden transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl"
-                    style={{background:"linear-gradient(135deg,#16A34A,#15803D)",boxShadow:"0 8px 32px rgba(22,163,74,0.4)"}}
+                    className="group flex items-center gap-2.5 px-9 py-4 font-semibold text-white tracking-widest uppercase text-sm transition-all duration-300 hover:bg-white hover:text-green-900"
+                    style={{border:"1px solid rgba(255,255,255,0.6)", fontFamily:"'Lato', sans-serif", letterSpacing:"0.12em"}}
                   >
-                    <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"/>
                     {banner?.cta_primary_text || "Hemen Başla"}
-                    <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3"/>
-                    </svg>
                   </button>
                   <button
                     onClick={() => { setAuthMode("login"); setIsAuthModalOpen(true); }}
-                    className="flex items-center gap-2 px-7 py-3.5 rounded-2xl font-semibold text-sm transition-all duration-300 hover:bg-white/10"
-                    style={{color:"rgba(186,230,253,0.85)",border:"1px solid rgba(255,255,255,0.14)"}}
+                    className="flex items-center gap-2.5 px-9 py-4 font-semibold text-white/70 tracking-widest uppercase text-sm transition-all duration-300 hover:text-white"
+                    style={{border:"1px solid rgba(255,255,255,0.2)", fontFamily:"'Lato', sans-serif", letterSpacing:"0.12em"}}
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
-                    </svg>
                     Giriş Yap
                   </button>
                 </>
@@ -1478,238 +1466,111 @@ export default function SporlaConnect() {
                 <>
                   <button
                     onClick={() => handleCtaClick(banner?.cta_primary_url, () => setCurrentPage("trainings"))}
-                    className="group relative flex items-center gap-2.5 px-7 py-3.5 rounded-2xl font-bold text-white text-sm overflow-hidden transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl"
-                    style={{background:"linear-gradient(135deg,#16A34A,#15803D)",boxShadow:"0 8px 32px rgba(22,163,74,0.4)"}}
+                    className="flex items-center gap-2.5 px-9 py-4 font-semibold text-white tracking-widest uppercase text-sm transition-all duration-300 hover:bg-white hover:text-green-900"
+                    style={{border:"1px solid rgba(255,255,255,0.6)", fontFamily:"'Lato', sans-serif", letterSpacing:"0.12em"}}
                   >
-                    <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"/>
-                    {banner?.cta_primary_text || "Hemen Başla"}
-                    <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3"/>
-                    </svg>
+                    {banner?.cta_primary_text || "Antrenmanlar"}
                   </button>
                   {banner?.cta_secondary_text && (
                     <button
                       onClick={() => handleCtaClick(banner?.cta_secondary_url, () => setCurrentPage("teams"))}
-                      className="flex items-center gap-2 px-7 py-3.5 rounded-2xl font-semibold text-sm transition-all duration-300 hover:bg-white/10"
-                      style={{color:"rgba(186,230,253,0.85)",border:"1px solid rgba(255,255,255,0.14)"}}
+                      className="flex items-center gap-2.5 px-9 py-4 font-semibold text-white/70 tracking-widest uppercase text-sm transition-all duration-300 hover:text-white"
+                      style={{border:"1px solid rgba(255,255,255,0.2)", fontFamily:"'Lato', sans-serif", letterSpacing:"0.12em"}}
                     >
                       {banner.cta_secondary_text}
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3"/>
-                      </svg>
                     </button>
                   )}
                 </>
               )}
             </div>
           )}
-
-          {/* İstatistik çubuğu */}
-          {isMotto && (
-            <div className="bn-stats flex items-center gap-6 pt-3">
-              <div className="flex items-center gap-3">
-                <div className="flex -space-x-2.5">
-                  {["#16A34A","#15803D","#EC4899","#06B6D4"].map((c,i) => (
-                    <div key={i} className="w-8 h-8 rounded-full border-2 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
-                      style={{background:c,borderColor:bgF}}>
-                      {["M","A","E","K"][i]}
-                    </div>
-                  ))}
-                </div>
-                <div>
-                  <div className="text-white text-sm font-bold">{fmtNum(platformStats?.users) || "—"}</div>
-                  <div className="text-blue-200/50 text-xs">kayıtlı sporcu</div>
-                </div>
-              </div>
-              <div className="w-px h-10 bg-white/10"/>
-              {stats.slice(0,2).map((s,i) => (
-                <div key={i}>
-                  <div className={`text-xl font-black ${s.color}`}>{s.value}</div>
-                  <div className="text-blue-200/50 text-xs">{s.label}</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      );
-    };
-
-    // Sağ görsel bloğunu render et. noFloat=true → çıkış overlay'inde float çalışmaz
-    const renderRight = (banner, animStyle, noFloat = false) => {
-      const hasImg = bannersLoaded && banner?.image_url && banner.image_url !== "";
-      return (
-        <div className="bn-img-col relative">
-          <div className="absolute inset-0 flex items-end justify-center" style={{overflow:"visible", ...animStyle}}>
-            {hasImg ? (
-              <>
-                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[500px] h-[400px] rounded-full blur-3xl pointer-events-none"
-                  style={{background:"radial-gradient(ellipse,rgba(56,189,248,0.25) 0%,rgba(22,163,74,0.12) 55%,transparent 70%)"}}/>
-                <div className="absolute top-16 right-0 w-36 h-36 rounded-full pointer-events-none"
-                  style={{border:"1px solid rgba(56,189,248,0.14)"}}/>
-                <div className="relative z-10" style={{
-                  animation: noFloat ? "none" : "heroFloat 5s ease-in-out infinite",
-                  marginBottom:"-100px",
-                }}>
-                  <img
-                    src={`${BASE_URL}${banner.image_url}`}
-                    alt=""
-                    className="w-auto select-none pointer-events-none"
-                    style={{height:"700px",maxWidth:"none",objectFit:"contain",objectPosition:"bottom center",filter:"drop-shadow(0 40px 100px rgba(8,11,31,0.85))"}}
-                  />
-                </div>
-              </>
-            ) : null}
-          </div>
         </div>
       );
     };
 
     return (
-      <div className="relative" style={{
-        background:`linear-gradient(115deg, ${gFrom} 0%, ${gVia} 45%, ${gTo} 100%)`,
-        transition:"background 0.7s ease",
-      }}>
-        {/* Arka plan dekorları */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -left-32 top-1/4 w-[600px] h-[600px] rounded-full"
-            style={{background:"radial-gradient(circle,rgba(22,163,74,0.18) 0%,transparent 65%)"}}/>
-          <div className="absolute right-[-60px] top-[-40px] w-[700px] h-[700px] rounded-full"
-            style={{background:"radial-gradient(circle,rgba(56,189,248,0.12) 0%,transparent 60%)"}}/>
-          <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full"
-            style={{background:"radial-gradient(circle,rgba(22,163,74,0.15) 0%,transparent 60%)"}}/>
-          <div className="absolute inset-0 opacity-[0.035]"
-            style={{backgroundImage:"linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px)",backgroundSize:"64px 64px"}}/>
-        </div>
+      <div className="relative overflow-hidden" style={{height:"100vh", minHeight:"600px", maxHeight:"900px"}}>
+        {/* Arka plan: görsel varsa tam kaplayan, yoksa gradyan */}
+        {(() => {
+          const hasImg = bannersLoaded && b?.image_url && b?.image_url !== "";
+          return (
+            <>
+              {hasImg ? (
+                <img src={`${BASE_URL}${b.image_url}`} alt="" className="absolute inset-0 w-full h-full object-cover object-center" style={{zIndex:0}}/>
+              ) : (
+                <div className="absolute inset-0" style={{background:`linear-gradient(160deg,${gFrom} 0%,${gVia} 55%,${gTo} 100%)`, zIndex:0, transition:"background 0.8s ease"}}/>
+              )}
+              {/* Koyu overlay — görsel üzerinde okunabilirlik */}
+              <div className="absolute inset-0" style={{background:"linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.55) 100%)", zIndex:1}}/>
+            </>
+          );
+        })()}
 
-        {/* ── Ana içerik — z-index:2 → dalganın üstünde ── */}
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" style={{zIndex:2}}>
-
-          {/* Grid: position:relative → exit overlay bu div'e göre hizalanır, padding eşleşir */}
-          <div className="bn-grid relative" style={{display:"grid", gridTemplateColumns:"55% 45%", minHeight:"680px", paddingTop:"112px"}}>
-
-            {/* Çıkan banner overlay — grid div'ine absolute, padding eşleşir */}
-            {exitB && (
-              <div className="bn-grid" style={{
-                position:"absolute", inset:0, paddingTop:"112px",
-                display:"grid", gridTemplateColumns:"55% 45%",
-                zIndex:10, pointerEvents:"none",
-              }}>
-                {renderLeft(exitB,  {animation: exitTextAnim}, false)}
-                {renderRight(exitB, {animation: exitImgAnim}, true)}
-              </div>
-            )}
-
-            {/* Giren banner — grid item'ları */}
-            {renderLeft(b,  {animation: isTransitioning ? enterTextAnim : undefined}, true)}
-            {renderRight(b, {animation: isTransitioning ? enterImgAnim  : undefined})}
-
-          </div>
-
-        </div>
-
-        {/* ── Sağ dikey navigasyon ── */}
-        {banners.length > 1 && (
-          <div className="bn-nav" style={{
-            position:"absolute", right:"28px", top:"50%", transform:"translateY(-50%)",
-            zIndex:30, display:"flex", flexDirection:"column", alignItems:"center", gap:"10px",
-          }}>
-            <button
-              onClick={() => goTo((currentBannerIdx - 1 + banners.length) % banners.length)}
-              style={{width:"30px",height:"30px",borderRadius:"50%",border:"none",cursor:"pointer",background:"rgba(255,255,255,0.09)",display:"flex",alignItems:"center",justifyContent:"center",transition:"background 0.2s,transform 0.2s"}}
-              onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.2)";e.currentTarget.style.transform="scale(1.15)";}}
-              onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.09)";e.currentTarget.style.transform="scale(1)";}}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.75)" strokeWidth="2.5" strokeLinecap="round"><path d="M5 15l7-7 7 7"/></svg>
-            </button>
-
-            {banners.map((_, i) => (
-              <button key={i} onClick={() => goTo(i)} style={{
-                width:"5px", height: i===currentBannerIdx?"22px":"5px",
-                borderRadius:"3px", border:"none", cursor:"pointer", padding:0,
-                background: i===currentBannerIdx?"linear-gradient(180deg,#38BDF8,#4ADE80)":"rgba(255,255,255,0.28)",
-                transition:"all 0.38s cubic-bezier(0.34,1.56,0.64,1)",
-              }}/>
-            ))}
-
-            <button
-              onClick={() => goTo((currentBannerIdx + 1) % banners.length)}
-              style={{width:"30px",height:"30px",borderRadius:"50%",border:"none",cursor:"pointer",background:"rgba(255,255,255,0.09)",display:"flex",alignItems:"center",justifyContent:"center",transition:"background 0.2s,transform 0.2s"}}
-              onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.2)";e.currentTarget.style.transform="scale(1.15)";}}
-              onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.09)";e.currentTarget.style.transform="scale(1)";}}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.75)" strokeWidth="2.5" strokeLinecap="round"><path d="M19 9l-7 7-7-7"/></svg>
-            </button>
+        {/* Çıkan slide overlay */}
+        {exitB && (
+          <div className="absolute inset-0 z-10 pointer-events-none" style={{animation: exitTextAnim}}>
+            {renderSlide(exitB, {}, false)}
           </div>
         )}
 
-        {/* Alt dalga — z:1, içerik z:2 → görsel dalgadan taşar */}
-        <div className="absolute bottom-0 left-0 right-0" style={{zIndex:1}}>
-          <svg viewBox="0 0 1440 100" className="w-full" preserveAspectRatio="none">
-            <path fill="#f8fafc" d="M0,50 C240,100 480,0 720,50 C960,100 1200,0 1440,50 L1440,100 L0,100 Z"/>
-          </svg>
+        {/* Aktif slide içeriği */}
+        <div className="absolute inset-0 z-20" style={{animation: isTransitioning ? enterTextAnim : undefined}}>
+          {renderSlide(b, {}, true)}
         </div>
 
-        <style>{`
-          /* Giriş animasyonları */
-          @keyframes bnEnterRight { from{opacity:0;transform:translateX(70px)} to{opacity:1;transform:translateX(0)} }
-          @keyframes bnEnterLeft  { from{opacity:0;transform:translateX(-70px)} to{opacity:1;transform:translateX(0)} }
-          /* Çıkış animasyonları */
-          @keyframes bnExitLeft   { from{opacity:1;transform:translateX(0)} to{opacity:0;transform:translateX(-70px)} }
-          @keyframes bnExitRight  { from{opacity:1;transform:translateX(0)} to{opacity:0;transform:translateX(70px)} }
-          /* Görsel salınım */
-          @keyframes heroFloat {
-            0%,100% { transform: translateY(0px); }
-            45%     { transform: translateY(-14px); }
-            70%     { transform: translateY(-8px); }
-          }
-          /* Typewriter imleci */
-          @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+        {/* Sol ok */}
+        {banners.length > 1 && (
+          <button
+            onClick={() => goTo((currentBannerIdx - 1 + banners.length) % banners.length)}
+            className="absolute left-6 top-1/2 -translate-y-1/2 z-30 flex items-center justify-center transition-all duration-200 hover:scale-110"
+            style={{width:"52px",height:"52px",border:"1px solid rgba(255,255,255,0.35)",background:"rgba(0,0,0,0.25)",backdropFilter:"blur(4px)"}}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+        )}
 
-          /* ── Mobil responsive ── */
-          @media (max-width: 767px) {
-            .bn-grid {
-              display: flex !important;
-              flex-direction: column !important;
-              min-height: auto !important;
-              padding-top: 88px !important;
-              padding-bottom: 40px;
-            }
-            .bn-text-col {
-              padding-right: 0 !important;
-              padding-bottom: 0 !important;
-            }
-            .bn-img-col { display: none !important; }
-            .bn-nav    { display: none !important; }
-            .bn-title  { white-space: normal !important; font-size: clamp(2rem,9vw,2.8rem) !important; }
-            .bn-stats  { display: none !important; }
+        {/* Sağ ok */}
+        {banners.length > 1 && (
+          <button
+            onClick={() => goTo((currentBannerIdx + 1) % banners.length)}
+            className="absolute right-6 top-1/2 -translate-y-1/2 z-30 flex items-center justify-center transition-all duration-200 hover:scale-110"
+            style={{width:"52px",height:"52px",border:"1px solid rgba(255,255,255,0.35)",background:"rgba(0,0,0,0.25)",backdropFilter:"blur(4px)"}}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+        )}
+
+        {/* Alt nokta navigasyon */}
+        {banners.length > 1 && (
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2.5">
+            {banners.map((_, i) => (
+              <button key={i} onClick={() => goTo(i)}
+                className="transition-all duration-300"
+                style={{
+                  width: i===currentBannerIdx ? "28px" : "8px",
+                  height:"8px", borderRadius:"4px", border:"none", cursor:"pointer",
+                  background: i===currentBannerIdx ? "white" : "rgba(255,255,255,0.4)",
+                }}
+              />
+            ))}
+          </div>
+        )}
+
+        <style>{`
+          @keyframes bnEnterRight { from{opacity:0;transform:translateX(60px)} to{opacity:1;transform:translateX(0)} }
+          @keyframes bnEnterLeft  { from{opacity:0;transform:translateX(-60px)} to{opacity:1;transform:translateX(0)} }
+          @keyframes bnExitLeft   { from{opacity:1;transform:translateX(0)} to{opacity:0;transform:translateX(-60px)} }
+          @keyframes bnExitRight  { from{opacity:1;transform:translateX(0)} to{opacity:0;transform:translateX(60px)} }
+          @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+          @media (max-width:767px) {
+            .bn-title { font-size: clamp(2.2rem,9vw,3.2rem) !important; }
+            .bn-subtitle { font-size: 0.95rem !important; }
           }
         `}</style>
       </div>
     );
   };
 
-  // ── STATS STRIP ──────────────────────────────────────
-  const StatsStrip = () => (
-    <div className="bg-green-700 border-y border-green-600">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="flex divide-x divide-green-600 overflow-x-auto">
-          {[
-            {val: fmtNum(platformStats?.users),     suffix:"+", label:"Kayıtlı Sporcu"},
-            {val: fmtNum(platformStats?.trainings), suffix:"+", label:"Tamamlanan Antrenman"},
-            {val: fmtNum(platformStats?.teams),     suffix:"",  label:"Aktif Takım"},
-            {val: "50",                              suffix:"+", label:"Spor Dalı"},
-          ].map((s, i) => (
-            <div key={i} className="flex-1 min-w-[140px] px-6 md:px-10 py-5 text-center select-none">
-              <div className="text-3xl md:text-4xl font-black text-white tracking-tighter leading-none">
-                {s.val || "—"}<span className="text-green-200">{s.suffix}</span>
-              </div>
-              <div className="text-[10px] text-green-200/70 mt-1.5 uppercase tracking-[0.22em] font-semibold">{s.label}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
 
   // ── SPORT CATEGORIES STRIP ──────────────────────────
   const SportCategories = () => {
@@ -2027,7 +1888,6 @@ export default function SporlaConnect() {
   const HomePage = () => (
     <>
       <HeroSection />
-      <StatsStrip />
       <SportCategories />
       <FeaturesSection />
 
