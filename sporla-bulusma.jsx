@@ -2425,8 +2425,7 @@ export default function SporlaConnect() {
     return (
       <div className="min-h-screen bg-slate-50">
         {/* ── Dark athletic page header ── */}
-        <div className="relative overflow-hidden" style={{
-}>
+        <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#f0fdf4 0%,#dcfce7 60%,#bbf7d0 100%)"}}>
           <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
             style={{backgroundImage:"linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px)", backgroundSize:"50px 50px"}}/>
           <div className="absolute right-0 top-0 w-[500px] h-full pointer-events-none"
@@ -2600,8 +2599,7 @@ export default function SporlaConnect() {
     return (
       <div className="min-h-screen bg-slate-50">
         {/* ── Dark athletic page header ── */}
-        <div className="relative overflow-hidden" style={{
-}>
+        <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#f0fdf4 0%,#dcfce7 60%,#bbf7d0 100%)"}}>
           <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
             style={{backgroundImage:"linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px)", backgroundSize:"50px 50px"}}/>
           <div className="absolute left-0 top-0 w-[500px] h-full pointer-events-none"
@@ -4254,8 +4252,7 @@ export default function SporlaConnect() {
     return (
       <div className="min-h-screen bg-slate-50">
         {/* ── Dark header ── */}
-        <div className="relative overflow-hidden" style={{
-}>
+        <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#f0fdf4 0%,#dcfce7 60%,#bbf7d0 100%)"}}>
           <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
             style={{backgroundImage:"linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px)", backgroundSize:"50px 50px"}}/>
           <div className="absolute inset-0 pointer-events-none"
