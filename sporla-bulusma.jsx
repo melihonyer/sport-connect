@@ -1991,23 +1991,32 @@ export default function SporlaConnect() {
   );
 
   const BadgeCard = ({ badge, earned }) => (
-    <div
-      className={`p-6 rounded-2xl border-2 ${
-        earned ? "border-yellow-400 bg-yellow-50" : "border-gray-200 bg-gray-50"
-      }`}
-    >
-      <div className="text-center mb-4">
-        <div className={`text-6xl mb-2 ${earned ? "" : "grayscale opacity-50"}`}>
-          {badge.icon}
-        </div>
-        <h3 className="font-bold text-lg">{badge.name}</h3>
-        <p className="text-sm text-gray-600">{badge.description}</p>
-      </div>
-      {earned && badge.earned_at && (
-        <div className="text-xs text-center text-gray-500">
-          {new Date(badge.earned_at).toLocaleDateString("tr-TR")}
+    <div className={`relative rounded-2xl p-5 border transition-all duration-300 overflow-hidden ${
+      earned
+        ? "border-amber-300/60 hover:border-amber-400 hover:shadow-lg hover:-translate-y-0.5"
+        : "border-slate-100 opacity-60"
+    }`}
+    style={earned
+      ? {background:"linear-gradient(135deg,#fffbeb,#fef3c7)"}
+      : {background:"#f8fafc"}}>
+      {earned && (
+        <div className="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center"
+          style={{background:"linear-gradient(135deg,#F59E0B,#FBBF24)"}}>
+          <svg className="w-3 h-3 text-white fill-current" viewBox="0 0 20 20">
+            <path d="M10 1l2.39 5.26L18 7.27l-4 4.14.94 5.59L10 14.27l-4.94 2.73L6 11.41 2 7.27l5.61-.99z"/>
+          </svg>
         </div>
       )}
+      <div className="text-center">
+        <div className={`text-5xl mb-3 leading-none ${earned ? "" : "grayscale opacity-40"}`}>{badge.icon}</div>
+        <h3 className={`font-black text-sm mb-1 ${earned ? "text-amber-900" : "text-slate-400"}`}>{badge.name}</h3>
+        <p className={`text-xs leading-relaxed ${earned ? "text-amber-700/70" : "text-slate-400"}`}>{badge.description}</p>
+        {earned && badge.earned_at && (
+          <div className="mt-2.5 text-[10px] font-bold text-amber-500/70 uppercase tracking-wider">
+            {new Date(badge.earned_at).toLocaleDateString("tr-TR")}
+          </div>
+        )}
+      </div>
     </div>
   );
 
@@ -2437,206 +2446,163 @@ export default function SporlaConnect() {
     };
 
     return (
-      <div className="max-w-7xl mx-auto px-4 py-12">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-4xl font-bold">Antrenmanlar</h1>
-          {user && (
-            <button
-              onClick={() => setCurrentPage("create-training")}
-              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full font-semibold flex items-center gap-2"
-            >
-              <Plus className="w-5 h-5" />
-              Yeni Oluştur
-            </button>
-          )}
-        </div>
-
-        {/* ARAMA + FİLTRELER */}
-        <div className="flex flex-wrap gap-3 mb-4">
-          <div className="flex-1 min-w-48 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Antrenman veya konum ara..."
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
-            />
-          </div>
-          <select
-            value={sportFilter}
-            onChange={(e) => setSportFilter(e.target.value)}
-            className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300 bg-white"
-          >
-            <option value="">Tüm Sporlar</option>
-            {sports.map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
-          <select
-            value={levelFilter}
-            onChange={(e) => setLevelFilter(e.target.value)}
-            className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300 bg-white"
-          >
-            <option value="">Tüm Seviyeler</option>
-            {difficulties.map((d) => <option key={d} value={d}>{d}</option>)}
-          </select>
-          {(searchQuery || sportFilter || levelFilter) && (
-            <button
-              onClick={() => { setSearchQuery(""); setSportFilter(""); setLevelFilter(""); }}
-              className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 rounded-xl text-sm text-gray-600 flex items-center gap-1"
-            >
-              <X className="w-4 h-4" /> Temizle
-            </button>
-          )}
-        </div>
-
-        {/* MANUEL KONUM ARAMA PANELİ */}
-        {showManualLocation && <ManualLocationSearch />}
-
-        {/* AKTİF KONUM BİLGİSİ */}
-        {nearbyMode && userLocation && !showManualLocation && (
-          <div className="mb-4 flex items-center gap-2 px-4 py-2.5 bg-green-50 border border-green-200 rounded-xl text-sm">
-            <MapPin className="w-4 h-4 text-green-600 flex-shrink-0" />
-            <span className="text-green-700 font-medium flex-1">
-              {manualLocationName || "Mevcut Konumum"}
-            </span>
-            <button
-              onClick={() => setShowManualLocation(true)}
-              className="text-xs text-purple-600 hover:underline flex-shrink-0"
-            >
-              Değiştir
-            </button>
-          </div>
-        )}
-
-        {/* KONUM FİLTRESİ */}
-        <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-5 mb-8 border border-purple-100">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex gap-2">
-              <button
-                onClick={handleExitNearby}
-                className={`px-4 py-2 rounded-full font-medium transition-all ${
-                  !nearbyMode
-                    ? "bg-purple-600 text-white shadow-md"
-                    : "bg-white text-gray-600 hover:bg-gray-50 border"
-                }`}
-              >
-                Tüm Antrenmanlar
-              </button>
-              <button
-                onClick={() => handleNearbySearch()}
-                disabled={locationLoading}
-                className={`px-4 py-2 rounded-full font-medium transition-all flex items-center gap-2 ${
-                  nearbyMode
-                    ? "bg-purple-600 text-white shadow-md"
-                    : "bg-white text-gray-600 hover:bg-gray-50 border"
-                } disabled:opacity-60`}
-              >
-                {locationLoading ? (
-                  <div className="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin" />
-                ) : (
-                  <MapPin className="w-4 h-4" />
-                )}
-                Yakınımda
-              </button>
-            </div>
-
-            {nearbyMode && (
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm text-gray-500 font-medium">Mesafe:</span>
-                {[5, 10, 25, 50].map((km) => (
-                  <button
-                    key={km}
-                    onClick={() => handleDistanceChange(km)}
-                    disabled={nearbyLoading}
-                    className={`px-3 py-1 rounded-full text-sm font-medium border transition-all disabled:opacity-60 ${
-                      nearbyDistance === km
-                        ? "border-purple-600 bg-purple-600 text-white"
-                        : "border-gray-300 text-gray-600 hover:border-purple-400 bg-white"
-                    }`}
-                  >
-                    {km} km
-                  </button>
-                ))}
-                {nearbyLoading && (
-                  <div className="w-4 h-4 border-2 border-purple-300 border-t-purple-600 rounded-full animate-spin" />
-                )}
+      <div className="min-h-screen bg-slate-50">
+        {/* ── Dark athletic page header ── */}
+        <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#07070F 0%,#0D0B26 60%,#07070F 100%)"}}>
+          <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
+            style={{backgroundImage:"linear-gradient(rgba(255,255,255,.6) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.6) 1px,transparent 1px)", backgroundSize:"50px 50px"}}/>
+          <div className="absolute right-0 top-0 w-[500px] h-full pointer-events-none"
+            style={{background:"radial-gradient(ellipse at right center,rgba(99,102,241,0.15) 0%,transparent 65%)"}}/>
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-8 py-12">
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+              <div>
+                <span className="text-xs font-black tracking-[0.35em] text-indigo-400 uppercase block mb-3">Keşfet</span>
+                <h1 className="text-5xl md:text-6xl font-black text-white tracking-tighter leading-none">Antrenmanlar</h1>
+                <p className="text-slate-400 mt-3 text-base">Katıl, yeni arkadaşlar edin, birlikte spor yap.</p>
               </div>
-            )}
-
-            {nearbyMode && userLocation && (
-              <span className="ml-auto text-sm text-green-600 font-medium flex items-center gap-1">
-                <MapPin className="w-4 h-4" />
-                {nearbyLoading ? "Aranıyor..." : `${nearbyTrainings.length} sonuç · ${nearbyDistance} km içinde`}
-              </span>
-            )}
+              {user && (
+                <button
+                  onClick={() => setCurrentPage("create-training")}
+                  className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white text-sm transition-all hover:opacity-90 flex-shrink-0"
+                  style={{background:"linear-gradient(135deg,#6366F1,#8B5CF6)", boxShadow:"0 8px 24px rgba(99,102,241,0.35)"}}
+                >
+                  <Plus className="w-4 h-4" /> Antrenman Oluştur
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
-        {nearbyLoading ? (
-          <div className="flex flex-col items-center justify-center py-24 gap-4">
-            <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin" />
-            <p className="text-gray-500 font-medium">{nearbyDistance} km içinde aranıyor...</p>
+        {/* ── Filter bar ── */}
+        <div className="bg-white border-b border-slate-100 sticky top-[68px] z-40">
+          <div className="max-w-7xl mx-auto px-4 sm:px-8 py-3">
+            <div className="flex flex-wrap gap-2.5 items-center">
+              {/* Search */}
+              <div className="flex-1 min-w-48 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Antrenman veya konum ara…"
+                  className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-violet-300 focus:bg-white transition"
+                />
+              </div>
+              {/* Sport filter */}
+              <select value={sportFilter} onChange={(e) => setSportFilter(e.target.value)}
+                className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-violet-300 focus:bg-white transition">
+                <option value="">Tüm Sporlar</option>
+                {sports.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+              {/* Level filter */}
+              <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)}
+                className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-violet-300 focus:bg-white transition">
+                <option value="">Tüm Seviyeler</option>
+                {difficulties.map((d) => <option key={d} value={d}>{d}</option>)}
+              </select>
+              {/* GPS toggle */}
+              <div className="flex items-center gap-1.5 border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
+                <button onClick={handleExitNearby}
+                  className="px-3 py-2.5 text-xs font-bold transition-all"
+                  style={!nearbyMode ? {background:"linear-gradient(135deg,#6366F1,#8B5CF6)", color:"#fff"} : {color:"#64748b"}}>
+                  Tümü
+                </button>
+                <button onClick={() => handleNearbySearch()} disabled={locationLoading}
+                  className="px-3 py-2.5 text-xs font-bold transition-all flex items-center gap-1.5 disabled:opacity-50"
+                  style={nearbyMode ? {background:"linear-gradient(135deg,#6366F1,#8B5CF6)", color:"#fff"} : {color:"#64748b"}}>
+                  {locationLoading
+                    ? <div className="w-3 h-3 border-2 border-current/30 border-t-current rounded-full animate-spin"/>
+                    : <MapPin className="w-3 h-3"/>}
+                  Yakınımda
+                </button>
+              </div>
+              {/* Distance pills (when nearby active) */}
+              {nearbyMode && [5,10,25,50].map(km => (
+                <button key={km} onClick={() => handleDistanceChange(km)} disabled={nearbyLoading}
+                  className="px-3 py-2 rounded-lg text-xs font-bold border transition-all disabled:opacity-50"
+                  style={nearbyDistance === km
+                    ? {background:"linear-gradient(135deg,#6366F1,#8B5CF6)", color:"#fff", border:"none"}
+                    : {borderColor:"#e2e8f0", color:"#64748b", background:"#fff"}}>
+                  {km} km
+                </button>
+              ))}
+              {/* Clear */}
+              {(searchQuery || sportFilter || levelFilter) && (
+                <button onClick={() => { setSearchQuery(""); setSportFilter(""); setLevelFilter(""); }}
+                  className="flex items-center gap-1 px-3 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-600 transition">
+                  <X className="w-3.5 h-3.5"/> Temizle
+                </button>
+              )}
+              {/* Nearby result count */}
+              {nearbyMode && userLocation && !nearbyLoading && (
+                <span className="ml-auto text-xs font-semibold text-emerald-600 flex items-center gap-1">
+                  <MapPin className="w-3 h-3"/> {nearbyTrainings.length} sonuç · {nearbyDistance} km içinde
+                </span>
+              )}
+            </div>
           </div>
-        ) : (
-          <div className="grid md:grid-cols-3 gap-6">
-            {displayedTrainings.map((training) => (
-              <TrainingCard key={training.id} training={training} onClick={fetchTrainingDetails} />
-            ))}
-          </div>
-        )}
+        </div>
 
-        {!nearbyLoading && displayedTrainings.length === 0 && (
-          <div className="text-center py-20">
-            <MapPin className="w-20 h-20 text-gray-300 mx-auto mb-4" />
-            {nearbyMode ? (
-              <>
-                <p className="text-gray-700 text-lg font-semibold mb-2">
-                  {nearbyDistance} km içinde antrenman bulunamadı
-                </p>
-                <p className="text-gray-400 text-sm mb-6 max-w-sm mx-auto">
-                  Yakınımda araması yalnızca GPS koordinatı eklenmiş antrenmanları gösterir.
-                  Antrenman oluştururken "Konum Ara" veya "Bulunduğum Konumu Kullan" ile koordinat ekleyin.
-                </p>
-                <div className="flex flex-wrap justify-center gap-3">
-                  {[10, 25, 50].filter(k => k > nearbyDistance).map(k => (
-                    <button
-                      key={k}
-                      onClick={() => handleDistanceChange(k)}
-                      className="px-5 py-2 bg-purple-100 text-purple-600 rounded-full font-medium hover:bg-purple-200"
-                    >
-                      {k} km'ye genişlet
-                    </button>
-                  ))}
+        {/* ── Content ── */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-10">
+          {showManualLocation && <ManualLocationSearch />}
+
+          {nearbyMode && userLocation && !showManualLocation && (
+            <div className="mb-5 flex items-center gap-2 px-4 py-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-sm">
+              <MapPin className="w-4 h-4 text-emerald-600 flex-shrink-0"/>
+              <span className="text-emerald-700 font-semibold flex-1">{manualLocationName || "Mevcut Konumum"}</span>
+              <button onClick={() => setShowManualLocation(true)} className="text-xs text-violet-600 hover:underline">Değiştir</button>
+            </div>
+          )}
+
+          {nearbyLoading ? (
+            <div className="flex flex-col items-center justify-center py-32 gap-5">
+              <div className="w-14 h-14 border-4 border-violet-100 rounded-full" style={{borderTopColor:"#6366F1", animation:"spin 0.8s linear infinite"}}/>
+              <p className="text-slate-500 font-semibold">{nearbyDistance} km içinde aranıyor…</p>
+            </div>
+          ) : displayedTrainings.length > 0 ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {displayedTrainings.map((training) => (
+                <TrainingCard key={training.id} training={training} onClick={fetchTrainingDetails} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-28">
+              {nearbyMode ? (
+                <>
+                  <div className="w-20 h-20 rounded-3xl mx-auto mb-5 flex items-center justify-center"
+                    style={{background:"rgba(99,102,241,0.08)", border:"1px solid rgba(99,102,241,0.15)"}}>
+                    <MapPin className="w-9 h-9" style={{color:"rgba(99,102,241,0.4)"}}/>
+                  </div>
+                  <p className="text-slate-800 font-black text-xl mb-2">{nearbyDistance} km içinde antrenman yok</p>
+                  <p className="text-slate-400 text-sm mb-7 max-w-sm mx-auto">Yakınımda araması sadece GPS koordinatı girilmiş antrenmanları gösterir.</p>
+                  <div className="flex flex-wrap justify-center gap-3">
+                    {[10,25,50].filter(k => k > nearbyDistance).map(k => (
+                      <button key={k} onClick={() => handleDistanceChange(k)}
+                        className="px-5 py-2.5 rounded-xl text-sm font-bold border border-slate-200 text-slate-600 hover:border-violet-300 hover:text-violet-700 transition">
+                        {k} km'ye genişlet
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="w-20 h-20 rounded-3xl mx-auto mb-5 flex items-center justify-center"
+                    style={{background:"rgba(99,102,241,0.08)", border:"1px solid rgba(99,102,241,0.15)"}}>
+                    <Activity className="w-9 h-9" style={{color:"rgba(99,102,241,0.4)"}}/>
+                  </div>
+                  <p className="text-slate-800 font-black text-xl mb-2">Henüz antrenman yok</p>
+                  <p className="text-slate-400 text-sm mb-7 max-w-xs mx-auto">İlk antrenmanı sen oluştur, spor arkadaşlarını topla!</p>
                   {user && (
-                    <button
-                      onClick={() => setCurrentPage("create-training")}
-                      className="px-5 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full font-medium"
-                    >
-                      + Koordinatlı Antrenman Oluştur
+                    <button onClick={() => setCurrentPage("create-training")}
+                      className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-bold text-white text-sm transition-all hover:opacity-90 hover:shadow-lg"
+                      style={{background:"linear-gradient(135deg,#6366F1,#8B5CF6)", boxShadow:"0 8px 24px rgba(99,102,241,0.3)"}}>
+                      <Plus className="w-4 h-4"/> Antrenman Oluştur
                     </button>
                   )}
-                </div>
-              </>
-            ) : (
-              <div className="text-center py-16">
-                <div className="w-20 h-20 rounded-2xl bg-violet-50 flex items-center justify-center mx-auto mb-4 border border-violet-100">
-                  <Activity className="w-9 h-9 text-violet-300" />
-                </div>
-                <p className="text-slate-700 font-bold text-lg mb-1">Henüz antrenman yok</p>
-                <p className="text-slate-400 text-sm mb-6 max-w-xs mx-auto">İlk antrenmanı sen oluştur ve spor arkadaşlarını topla!</p>
-                {user && (
-                  <button
-                    onClick={() => setCurrentPage("create-training")}
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white text-sm transition-all hover:opacity-90 hover:shadow-lg shadow-md"
-                    style={{background:"linear-gradient(135deg,#7C3AED,#4F46E5)"}}
-                  >
-                    <Plus className="w-4 h-4" /> Antrenman Oluştur
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+                </>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     );
   };
@@ -2655,136 +2621,155 @@ export default function SporlaConnect() {
 
     return (
       <div className="min-h-screen bg-slate-50">
-      {/* Teams Page Header */}
-      <div className="border-b border-slate-100 bg-white">
-        <div className="max-w-7xl mx-auto px-4 py-10">
-          <div className="flex justify-between items-end mb-6">
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold text-indigo-700 bg-indigo-100 mb-2">🛡️ Takımlar</div>
-              <h1 className="text-4xl font-black text-slate-900 tracking-tight">Takımları Keşfet</h1>
-              <p className="text-slate-500 mt-1">Sana uygun takımı bul ya da kendi takımını kur</p>
+        {/* ── Dark athletic page header ── */}
+        <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#07070F 0%,#0a1628 60%,#07070F 100%)"}}>
+          <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
+            style={{backgroundImage:"linear-gradient(rgba(255,255,255,.6) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.6) 1px,transparent 1px)", backgroundSize:"50px 50px"}}/>
+          <div className="absolute left-0 top-0 w-[500px] h-full pointer-events-none"
+            style={{background:"radial-gradient(ellipse at left center,rgba(56,189,248,0.12) 0%,transparent 65%)"}}/>
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-8 py-12">
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+              <div>
+                <span className="text-xs font-black tracking-[0.35em] text-cyan-400 uppercase block mb-3">Topluluk</span>
+                <h1 className="text-5xl md:text-6xl font-black text-white tracking-tighter leading-none">Takımlar</h1>
+                <p className="text-slate-400 mt-3 text-base">Sana uygun takımı bul ya da kendi takımını kur.</p>
+              </div>
+              {user && (
+                <button
+                  onClick={() => setCurrentPage("create-team")}
+                  className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white text-sm transition-all hover:opacity-90 flex-shrink-0"
+                  style={{background:"linear-gradient(135deg,#0EA5E9,#06B6D4)", boxShadow:"0 8px 24px rgba(14,165,233,0.3)"}}
+                >
+                  <Plus className="w-4 h-4" /> Takım Oluştur
+                </button>
+              )}
             </div>
-            {user && (
-              <button
-                onClick={() => setCurrentPage("create-team")}
-                className="flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-white text-sm transition-all hover:opacity-90 hover:shadow-lg shadow-md"
-                style={{background:"linear-gradient(135deg,#4F46E5,#06B6D4)"}}
-              >
-                <Plus className="w-4 h-4" />
-                Yeni Takım
-              </button>
-            )}
-          </div>
-
-          {/* Arama + Filtre */}
-          <div className="flex flex-wrap gap-3">
-            <div className="flex-1 min-w-48 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                value={teamSearch}
-                onChange={(e) => setTeamSearch(e.target.value)}
-                placeholder="Takım ara…"
-                className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-violet-300 focus:bg-white transition"
-              />
-            </div>
-            <select
-              value={teamSport}
-              onChange={(e) => setTeamSport(e.target.value)}
-              className="px-4 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-violet-300 focus:bg-white transition"
-            >
-              <option value="">Tüm Sporlar</option>
-              {sports.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
-            {(teamSearch || teamSport) && (
-              <button
-                onClick={() => { setTeamSearch(""); setTeamSport(""); }}
-                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-sm text-slate-600 flex items-center gap-1.5 transition"
-              >
-                <X className="w-4 h-4"/> Temizle
-              </button>
-            )}
           </div>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-10">
-        {filteredTeams.length > 0 ? (
-          <div className="grid md:grid-cols-3 gap-6">
-            {filteredTeams.map((team) => (
-              <TeamCard key={team.id} team={team} onClick={fetchTeamDetails} />
-            ))}
+        {/* ── Filter bar ── */}
+        <div className="bg-white border-b border-slate-100 sticky top-[68px] z-40">
+          <div className="max-w-7xl mx-auto px-4 sm:px-8 py-3">
+            <div className="flex flex-wrap gap-2.5 items-center">
+              <div className="flex-1 min-w-48 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"/>
+                <input type="text" value={teamSearch} onChange={(e) => setTeamSearch(e.target.value)}
+                  placeholder="Takım ara…"
+                  className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-300 focus:bg-white transition"/>
+              </div>
+              <select value={teamSport} onChange={(e) => setTeamSport(e.target.value)}
+                className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-300 focus:bg-white transition">
+                <option value="">Tüm Sporlar</option>
+                {sports.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+              {(teamSearch || teamSport) && (
+                <button onClick={() => { setTeamSearch(""); setTeamSport(""); }}
+                  className="flex items-center gap-1 px-3 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-600 transition">
+                  <X className="w-3.5 h-3.5"/> Temizle
+                </button>
+              )}
+              <span className="ml-auto text-xs text-slate-400 font-semibold">{filteredTeams.length} takım</span>
+            </div>
           </div>
-        ) : (
-          <div className="text-center py-20">
-            {teamSearch || teamSport ? (
-              <>
-                <div className="w-20 h-20 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
-                  <Search className="w-9 h-9 text-slate-300"/>
-                </div>
-                <p className="text-slate-700 font-bold text-lg mb-1">Sonuç bulunamadı</p>
-                <p className="text-slate-400 text-sm mb-5">Farklı bir arama veya spor dalı dene</p>
-                <button
-                  onClick={() => { setTeamSearch(""); setTeamSport(""); }}
-                  className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition"
-                >
+        </div>
+
+        {/* ── Content ── */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-10">
+          {filteredTeams.length > 0 ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {filteredTeams.map((team) => (
+                <TeamCard key={team.id} team={team} onClick={fetchTeamDetails} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-28">
+              <div className="w-20 h-20 rounded-3xl mx-auto mb-5 flex items-center justify-center"
+                style={{background:"rgba(14,165,233,0.08)", border:"1px solid rgba(14,165,233,0.15)"}}>
+                {teamSearch || teamSport
+                  ? <Search className="w-9 h-9" style={{color:"rgba(14,165,233,0.4)"}}/>
+                  : <Users className="w-9 h-9" style={{color:"rgba(14,165,233,0.4)"}}/>}
+              </div>
+              <p className="text-slate-800 font-black text-xl mb-2">
+                {teamSearch || teamSport ? "Sonuç bulunamadı" : "Henüz takım yok"}
+              </p>
+              <p className="text-slate-400 text-sm mb-7 max-w-xs mx-auto">
+                {teamSearch || teamSport ? "Farklı bir arama veya spor dalı dene." : "İlk takımı sen kur, üyeleri davet et ve birlikte spor yap!"}
+              </p>
+              {teamSearch || teamSport ? (
+                <button onClick={() => { setTeamSearch(""); setTeamSport(""); }}
+                  className="px-6 py-3 rounded-xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-50 transition">
                   Filtreleri Temizle
                 </button>
-              </>
-            ) : (
-              <>
-                <div className="w-20 h-20 rounded-2xl bg-indigo-50 flex items-center justify-center mx-auto mb-4 border border-indigo-100">
-                  <Users className="w-9 h-9 text-indigo-300"/>
-                </div>
-                <p className="text-slate-700 font-bold text-lg mb-1">Henüz takım yok</p>
-                <p className="text-slate-400 text-sm mb-6 max-w-xs mx-auto">İlk takımı sen kur, üyeleri davet et ve birlikte spor yap!</p>
-                {user && (
-                  <button
-                    onClick={() => setCurrentPage("create-team")}
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white text-sm transition-all hover:opacity-90 hover:shadow-lg shadow-md"
-                    style={{background:"linear-gradient(135deg,#4F46E5,#06B6D4)"}}
-                  >
-                    <Plus className="w-4 h-4" /> Takım Kur
-                  </button>
-                )}
-              </>
-            )}
-          </div>
-        )}
-      </div>
+              ) : user && (
+                <button onClick={() => setCurrentPage("create-team")}
+                  className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-bold text-white text-sm transition-all hover:opacity-90 hover:shadow-lg"
+                  style={{background:"linear-gradient(135deg,#0EA5E9,#06B6D4)", boxShadow:"0 8px 24px rgba(14,165,233,0.3)"}}>
+                  <Plus className="w-4 h-4"/> Takım Kur
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     );
   };
 
   const BadgesPage = () => (
-    <div className="max-w-6xl mx-auto px-4 py-12">
-      <button
-        onClick={() => setCurrentPage("profile")}
-        className="flex items-center text-purple-600 mb-6 hover:underline"
-      >
-        <ArrowLeft className="w-5 h-5 mr-2" />
-        Geri Dön
-      </button>
-
-      <h1 className="text-4xl font-bold mb-8">Rozetler</h1>
-
-      <div className="bg-white p-6 rounded-2xl border mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold">
-              {userBadges.length} / {badges.length} Rozet
-            </h2>
-            <p className="text-gray-600">Kazandığın rozetler</p>
+    <div className="min-h-screen bg-slate-50">
+      {/* ── Dark header ── */}
+      <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#0a0800 0%,#1a1000 50%,#0a0800 100%)"}}>
+        <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
+          style={{backgroundImage:"linear-gradient(rgba(255,255,255,.6) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.6) 1px,transparent 1px)", backgroundSize:"50px 50px"}}/>
+        <div className="absolute inset-0 pointer-events-none"
+          style={{background:"radial-gradient(ellipse at center,rgba(251,191,36,0.12) 0%,transparent 65%)"}}/>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-8 py-12">
+          <button onClick={() => setCurrentPage("profile")}
+            className="flex items-center gap-2 text-sm font-semibold mb-6 transition-colors"
+            style={{color:"rgba(251,191,36,0.6)"}}
+            onMouseEnter={e=>e.currentTarget.style.color="rgba(251,191,36,1)"}
+            onMouseLeave={e=>e.currentTarget.style.color="rgba(251,191,36,0.6)"}>
+            <ArrowLeft className="w-4 h-4"/> Profile Dön
+          </button>
+          <div className="flex items-end justify-between gap-6">
+            <div>
+              <span className="text-xs font-black tracking-[0.35em] text-amber-400 uppercase block mb-3">Başarılar</span>
+              <h1 className="text-5xl md:text-6xl font-black text-white tracking-tighter leading-none">Rozetler</h1>
+              <p className="text-slate-400 mt-3 text-base">Her antrenman yeni bir başarının kapısını aralar.</p>
+            </div>
+            {/* Progress summary */}
+            <div className="hidden md:flex items-center gap-4 pb-1">
+              <div className="text-right">
+                <div className="text-4xl font-black text-amber-400">{userBadges.length}<span className="text-slate-600 text-2xl">/{badges.length}</span></div>
+                <div className="text-xs text-slate-400 font-semibold uppercase tracking-wider mt-1">Kazanılan Rozet</div>
+              </div>
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
+                style={{background:"rgba(251,191,36,0.15)", border:"1px solid rgba(251,191,36,0.25)"}}>
+                <Trophy className="w-7 h-7 text-amber-400"/>
+              </div>
+            </div>
           </div>
-          <Trophy className="w-14 h-14 text-yellow-500" />
+          {/* Progress bar */}
+          <div className="mt-8 max-w-md">
+            <div className="flex justify-between text-xs font-bold text-slate-400 mb-2">
+              <span>İlerleme</span>
+              <span style={{color:"#FBBF24"}}>{badges.length > 0 ? Math.round((userBadges.length/badges.length)*100) : 0}%</span>
+            </div>
+            <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+              <div className="h-full rounded-full transition-all duration-700"
+                style={{width:`${badges.length > 0 ? (userBadges.length/badges.length)*100 : 0}%`, background:"linear-gradient(90deg,#F59E0B,#FBBF24)"}}/>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="grid md:grid-cols-4 gap-6">
-        {badges.map((badge) => {
-          const earned = userBadges.find((ub) => ub.id === badge.id);
-          return <BadgeCard key={badge.id} badge={earned || badge} earned={!!earned} />;
-        })}
+      {/* ── Badges grid ── */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 py-10">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {badges.map((badge) => {
+            const earned = userBadges.find((ub) => ub.id === badge.id);
+            return <BadgeCard key={badge.id} badge={earned || badge} earned={!!earned}/>;
+          })}
+        </div>
       </div>
     </div>
   );
@@ -4134,34 +4119,38 @@ export default function SporlaConnect() {
     const navLink = (page, label) => (
       <button
         onClick={() => setCurrentPage(page)}
-        className={`relative text-sm font-semibold transition-colors duration-200 ${
-          isActive(page) ? "text-violet-700" : "text-slate-600 hover:text-violet-600"
-        }`}
+        className="relative text-sm font-bold tracking-wide transition-all duration-200 group"
+        style={{color: isActive(page) ? "#fff" : "rgba(255,255,255,0.5)"}}
       >
         {label}
-        {isActive(page) && (
-          <span className="absolute -bottom-[22px] left-0 right-0 h-0.5 rounded-full" style={{background:"linear-gradient(90deg,#7C3AED,#4F46E5)"}}/>
-        )}
+        <span className="absolute -bottom-[24px] left-0 right-0 h-0.5 rounded-full transition-all duration-300"
+          style={{
+            background:"linear-gradient(90deg,#818CF8,#38BDF8)",
+            opacity: isActive(page) ? 1 : 0,
+            transform: isActive(page) ? "scaleX(1)" : "scaleX(0)",
+          }}/>
       </button>
     );
 
     return (
-      <nav className="bg-white/80 backdrop-blur-xl border-b border-slate-100 sticky top-0 z-50 shadow-sm">
+      <nav className="sticky top-0 z-50 backdrop-blur-xl border-b" style={{background:"rgba(7,7,15,0.92)", borderColor:"rgba(255,255,255,0.07)"}}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex justify-between items-center h-[68px]">
 
             {/* Logo */}
-            <button className="flex items-center gap-2.5 group" onClick={() => setCurrentPage("home")}>
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-md group-hover:scale-105 transition-transform" style={{background:"linear-gradient(135deg,#7C3AED,#4F46E5)"}}>
+            <button className="flex items-center gap-2.5 group flex-shrink-0" onClick={() => setCurrentPage("home")}>
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform"
+                style={{background:"linear-gradient(135deg,#6366F1,#8B5CF6)", boxShadow:"0 4px 16px rgba(99,102,241,0.4)"}}>
                 <Activity className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xl font-black tracking-tight" style={{background:"linear-gradient(90deg,#7C3AED,#4F46E5)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
+              <span className="text-xl font-black tracking-tight"
+                style={{background:"linear-gradient(90deg,#a78bfa,#818cf8)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent"}}>
                 SporlaConnect
               </span>
             </button>
 
-            {/* Orta nav linkleri */}
-            <div className="hidden md:flex items-center gap-8 h-16">
+            {/* Orta nav */}
+            <div className="hidden md:flex items-center gap-8 h-[68px]">
               {navLink("home", "Ana Sayfa")}
               {navLink("trainings", "Antrenmanlar")}
               {navLink("teams", "Takımlar")}
@@ -4169,23 +4158,23 @@ export default function SporlaConnect() {
             </div>
 
             {/* Sağ aksiyonlar */}
-            <div className="hidden md:flex items-center gap-3">
+            <div className="hidden md:flex items-center gap-2.5">
               {user ? (
                 <>
                   <button
                     onClick={() => setCurrentPage("create-training")}
                     className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 hover:shadow-lg"
-                    style={{background:"linear-gradient(135deg,#7C3AED,#4F46E5)"}}
+                    style={{background:"linear-gradient(135deg,#6366F1,#8B5CF6)", boxShadow:"0 4px 16px rgba(99,102,241,0.3)"}}
                   >
-                    <Plus className="w-4 h-4" />
-                    Antrenman
+                    <Plus className="w-4 h-4" /> Antrenman
                   </button>
 
                   <button
                     onClick={() => setShowNotifications(!showNotifications)}
-                    className="relative w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-colors"
+                    className="relative w-9 h-9 flex items-center justify-center rounded-xl transition-colors"
+                    style={{background:"rgba(255,255,255,0.06)"}}
                   >
-                    <Bell className="w-5 h-5 text-slate-600" />
+                    <Bell className="w-4.5 h-4.5" style={{color:"rgba(255,255,255,0.6)", width:"18px", height:"18px"}}/>
                     {unreadCount > 0 && (
                       <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                         {unreadCount}
@@ -4193,33 +4182,43 @@ export default function SporlaConnect() {
                     )}
                   </button>
 
-                  <button onClick={() => setCurrentPage("profile")} className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-xl hover:bg-slate-100 transition-colors">
-                    <div className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center text-white font-bold text-sm shadow-sm flex-shrink-0" style={{background:"linear-gradient(135deg,#7C3AED,#4F46E5)"}}>
+                  <button onClick={() => setCurrentPage("profile")}
+                    className="flex items-center gap-2 pl-1 pr-3 py-1.5 rounded-xl transition-colors"
+                    style={{background:"rgba(255,255,255,0.06)"}}>
+                    <div className="w-7 h-7 rounded-lg overflow-hidden flex items-center justify-center text-white font-bold text-xs flex-shrink-0"
+                      style={{background:"linear-gradient(135deg,#6366F1,#8B5CF6)"}}>
                       {(user.avatar?.startsWith("/uploads/") || user.avatar?.startsWith("http")) ? (
                         <img src={user.avatar.startsWith("http") ? user.avatar : `${BASE_URL}${user.avatar}`} alt="" className="w-full h-full object-cover" />
                       ) : (
                         user.avatar || user.name[0].toUpperCase()
                       )}
                     </div>
-                    <span className="text-sm font-semibold text-slate-700">{user.name.split(" ")[0]}</span>
+                    <span className="text-sm font-semibold" style={{color:"rgba(255,255,255,0.8)"}}>{user.name.split(" ")[0]}</span>
                   </button>
 
-                  <button onClick={handleLogout} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors">
-                    <LogOut className="w-4 h-4" />
+                  <button onClick={handleLogout}
+                    className="w-9 h-9 flex items-center justify-center rounded-xl transition-colors"
+                    style={{background:"rgba(255,255,255,0.04)"}}
+                    onMouseEnter={e=>e.currentTarget.style.background="rgba(239,68,68,0.15)"}
+                    onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,0.04)"}>
+                    <LogOut className="w-4 h-4" style={{color:"rgba(255,255,255,0.4)"}}/>
                   </button>
                 </>
               ) : (
                 <>
                   <button
                     onClick={() => { setAuthMode("login"); setIsAuthModalOpen(true); }}
-                    className="px-5 py-2 text-sm font-semibold text-slate-600 hover:text-violet-700 transition-colors"
+                    className="px-5 py-2 text-sm font-semibold transition-colors"
+                    style={{color:"rgba(255,255,255,0.55)"}}
+                    onMouseEnter={e=>e.currentTarget.style.color="rgba(255,255,255,0.9)"}
+                    onMouseLeave={e=>e.currentTarget.style.color="rgba(255,255,255,0.55)"}
                   >
                     Giriş Yap
                   </button>
                   <button
                     onClick={() => { setAuthMode("register"); setIsAuthModalOpen(true); }}
                     className="px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 hover:shadow-lg"
-                    style={{background:"linear-gradient(135deg,#7C3AED,#4F46E5)"}}
+                    style={{background:"linear-gradient(135deg,#6366F1,#8B5CF6)", boxShadow:"0 4px 16px rgba(99,102,241,0.3)"}}
                   >
                     Kaydol
                   </button>
