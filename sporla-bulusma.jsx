@@ -155,7 +155,7 @@ const AuthModal = ({ authMode, setAuthMode, onClose, handleLogin, handleRegister
           <X className="w-6 h-6" />
         </button>
 
-        <h2 className="text-3xl font-bold mb-2 text-center">{titles[authMode]}</h2>
+        <h2 className="text-3xl font-medium mb-2 text-center">{titles[authMode]}</h2>
         {authMode === "forgot" && (
           <p className="text-slate-500 text-sm text-center mb-5">E-postanı gir, sıfırlama linki gönderelim.</p>
         )}
@@ -1426,10 +1426,10 @@ export default function SporlaConnect() {
           {/* Başlık */}
           <div>
             <h1 className="bn-title text-white"
-              style={{fontSize:"clamp(2.8rem,5.5vw,4.5rem)", lineHeight:1.1, fontWeight:800}}>
+              style={{fontSize:"clamp(2.8rem,5.5vw,4.5rem)", lineHeight:1.1, fontWeight:600}}>
               {banner?.title || "Sporla Buluş,"}
             </h1>
-            <h1 className="bn-title" style={{fontSize:"clamp(2.8rem,5.5vw,4.5rem)", lineHeight:1.15, fontWeight:800, minHeight:"1.2em"}}>
+            <h1 className="bn-title" style={{fontSize:"clamp(2.8rem,5.5vw,4.5rem)", lineHeight:1.15, fontWeight:600, minHeight:"1.2em"}}>
               {isMotto
                 ? <Typewriter mottos={(banner?.mottos?.length > 0) ? banner.mottos : DEFAULT_MOTTOS}/>
                 : <span style={{color:"rgba(134,239,172,0.6)"}}>&nbsp;</span>
@@ -1447,7 +1447,7 @@ export default function SporlaConnect() {
                 <>
                   <button
                     onClick={() => handleCtaClick(banner?.cta_primary_url, () => { setAuthMode("register"); setIsAuthModalOpen(true); })}
-                    className="group relative flex items-center gap-2.5 px-7 py-3.5 font-bold text-white text-sm overflow-hidden transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl"
+                    className="group relative flex items-center gap-2.5 px-7 py-3.5 font-medium text-white text-sm overflow-hidden transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl"
                     style={{background:"linear-gradient(135deg,#16A34A,#15803D)", borderRadius:"14px", boxShadow:"0 8px 32px rgba(22,163,74,0.4)"}}
                   >
                     <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-[14px]"/>
@@ -1466,7 +1466,7 @@ export default function SporlaConnect() {
                 <>
                   <button
                     onClick={() => handleCtaClick(banner?.cta_primary_url, () => setCurrentPage("trainings"))}
-                    className="group relative flex items-center gap-2.5 px-7 py-3.5 font-bold text-white text-sm overflow-hidden transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl"
+                    className="group relative flex items-center gap-2.5 px-7 py-3.5 font-medium text-white text-sm overflow-hidden transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl"
                     style={{background:"linear-gradient(135deg,#16A34A,#15803D)", borderRadius:"14px", boxShadow:"0 8px 32px rgba(22,163,74,0.4)"}}
                   >
                     <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-[14px]"/>
@@ -1493,21 +1493,21 @@ export default function SporlaConnect() {
               <div className="flex items-center gap-3">
                 <div className="flex -space-x-2.5">
                   {["#16A34A","#15803D","#EC4899","#06B6D4"].map((c,i) => (
-                    <div key={i} className="w-8 h-8 rounded-full border-2 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
+                    <div key={i} className="w-8 h-8 rounded-full border-2 flex items-center justify-center text-white text-[10px] font-medium flex-shrink-0"
                       style={{background:c, borderColor:bgF}}>
                       {["M","A","E","K"][i]}
                     </div>
                   ))}
                 </div>
                 <div>
-                  <div className="text-white text-sm font-bold">{fmtNum(platformStats?.users) || "—"}</div>
+                  <div className="text-white text-sm font-medium">{fmtNum(platformStats?.users) || "—"}</div>
                   <div className="text-xs" style={{color:"rgba(186,230,253,0.5)"}}>kayıtlı sporcu</div>
                 </div>
               </div>
               <div className="w-px h-10 bg-white/10"/>
               {stats.slice(0,2).map((s,i) => (
                 <div key={i}>
-                  <div className={`text-xl font-black ${s.color}`}>{s.value}</div>
+                  <div className={`text-xl font-semibold ${s.color}`}>{s.value}</div>
                   <div className="text-xs" style={{color:"rgba(186,230,253,0.5)"}}>{s.label}</div>
                 </div>
               ))}
@@ -1670,8 +1670,8 @@ export default function SporlaConnect() {
         <div className="max-w-7xl mx-auto px-4 sm:px-8 pt-20 pb-8">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
             <div>
-              <span className="text-xs font-black tracking-[0.35em] text-green-500 uppercase block mb-3">Platform</span>
-              <h2 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter leading-[0.92]">
+              <span className="text-xs font-semibold tracking-[0.35em] text-green-500 uppercase block mb-3">Platform</span>
+              <h2 className="text-5xl md:text-7xl font-semibold text-slate-900 tracking-tighter leading-[0.92]">
                 Neden<br/>
                 <span style={{WebkitTextStroke:"2px #16A34A", color:"transparent"}}>SporlaConnect?</span>
               </h2>
@@ -1688,7 +1688,7 @@ export default function SporlaConnect() {
             {/* Color panel */}
             <div className="md:w-5/12 relative flex items-center justify-center py-14 px-10 overflow-hidden flex-shrink-0" style={{background: f.bg}}>
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden"
-                style={{fontSize:"clamp(120px,18vw,220px)", fontWeight:900, color:"rgba(21,128,61,0.08)", lineHeight:1, letterSpacing:"-0.05em"}}>
+                style={{fontSize:"clamp(120px,18vw,220px)", fontWeight:600, color:"rgba(21,128,61,0.08)", lineHeight:1, letterSpacing:"-0.05em"}}>
                 {f.num}
               </div>
               <div className="absolute inset-0 opacity-[0.04]"
@@ -1698,14 +1698,14 @@ export default function SporlaConnect() {
                   style={{background:`${f.accent}18`, border:`1.5px solid ${f.accent}35`}}>
                   <f.icon className="w-10 h-10" style={{color: f.accent}}/>
                 </div>
-                <div className="text-7xl font-black leading-none" style={{color: f.accent, letterSpacing:"-0.04em", opacity:0.9}}>{f.num}</div>
+                <div className="text-7xl font-semibold leading-none" style={{color: f.accent, letterSpacing:"-0.04em", opacity:0.9}}>{f.num}</div>
               </div>
             </div>
             {/* Text panel */}
             <div className="md:w-7/12 flex items-center px-8 md:px-14 py-12 bg-white">
               <div className="max-w-lg">
-                <div className="text-xs font-black tracking-[0.3em] text-slate-400 uppercase mb-4">{f.sub}</div>
-                <h3 className="text-3xl md:text-4xl font-black text-slate-900 mb-4 tracking-tight leading-tight">{f.title}</h3>
+                <div className="text-xs font-semibold tracking-[0.3em] text-slate-400 uppercase mb-4">{f.sub}</div>
+                <h3 className="text-3xl md:text-4xl font-semibold text-slate-900 mb-4 tracking-tight leading-tight">{f.title}</h3>
                 <p className="text-slate-500 text-base leading-relaxed mb-7">{f.desc}</p>
                 <ul className="space-y-3">
                   {f.points.map((p, j) => (
@@ -1761,7 +1761,7 @@ export default function SporlaConnect() {
       {/* Renkli sport header */}
       <div className="cursor-pointer" onClick={() => onClick(training.id)}>
         <div className="px-5 pt-5 pb-4 flex items-start justify-between gap-2">
-          <span className="px-3 py-1.5 rounded-xl text-xs font-bold tracking-wide text-green-700 bg-green-100">
+          <span className="px-3 py-1.5 rounded-xl text-xs font-medium tracking-wide text-green-700 bg-green-100">
             {training.team_sport || "Genel"}
           </span>
           <div className="flex items-center gap-2 flex-shrink-0">
@@ -1778,7 +1778,7 @@ export default function SporlaConnect() {
         </div>
 
         <div className="px-5 pb-4">
-          <h3 className="text-lg font-bold text-slate-900 mb-1 group-hover:text-green-700 transition-colors line-clamp-1">{training.title}</h3>
+          <h3 className="text-lg font-medium text-slate-900 mb-1 group-hover:text-green-700 transition-colors line-clamp-1">{training.title}</h3>
           <p className="text-slate-500 text-sm line-clamp-2 leading-relaxed">{training.description}</p>
         </div>
 
@@ -1820,7 +1820,7 @@ export default function SporlaConnect() {
         <button
           onClick={(e) => { e.stopPropagation(); handleJoinTraining(training.id); }}
           disabled={joiningTrainingId === training.id}
-          className="w-full py-2.5 rounded-xl text-sm font-bold text-white transition-all duration-300 hover:opacity-90 hover:shadow-lg disabled:opacity-60 flex items-center justify-center gap-2"
+          className="w-full py-2.5 rounded-xl text-sm font-medium text-white transition-all duration-300 hover:opacity-90 hover:shadow-lg disabled:opacity-60 flex items-center justify-center gap-2"
           style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}
         >
           {joiningTrainingId === training.id ? (
@@ -1847,7 +1847,7 @@ export default function SporlaConnect() {
               {team.avatar || "🏅"}
             </div>
             <div className="min-w-0">
-              <h3 className="font-bold text-slate-900 truncate group-hover:text-green-700 transition-colors">{team.name}</h3>
+              <h3 className="font-medium text-slate-900 truncate group-hover:text-green-700 transition-colors">{team.name}</h3>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <span className="px-2 py-0.5 bg-green-50 text-green-600 rounded-md text-xs font-semibold">{team.sport}</span>
                 {team.location && <span className="text-slate-400 text-xs truncate">📍 {team.location}</span>}
@@ -1872,7 +1872,7 @@ export default function SporlaConnect() {
             <span>üye</span>
           </div>
           {team.my_role && (
-            <span className="px-2.5 py-1 text-xs font-bold rounded-lg" style={{
+            <span className="px-2.5 py-1 text-xs font-medium rounded-lg" style={{
               background: team.my_role === 'owner' ? '#FEF3C7' : team.my_role === 'coach' ? '#EDE9FE' : '#F0FDF4',
               color: team.my_role === 'owner' ? '#92400E' : team.my_role === 'coach' ? '#5B21B6' : '#166534',
             }}>
@@ -1903,10 +1903,10 @@ export default function SporlaConnect() {
       )}
       <div className="text-center">
         <div className={`text-5xl mb-3 leading-none ${earned ? "" : "grayscale opacity-40"}`}>{badge.icon}</div>
-        <h3 className={`font-black text-sm mb-1 ${earned ? "text-amber-900" : "text-slate-400"}`}>{badge.name}</h3>
+        <h3 className={`font-semibold text-sm mb-1 ${earned ? "text-amber-900" : "text-slate-400"}`}>{badge.name}</h3>
         <p className={`text-xs leading-relaxed ${earned ? "text-amber-700/70" : "text-slate-400"}`}>{badge.description}</p>
         {earned && badge.earned_at && (
-          <div className="mt-2.5 text-[10px] font-bold text-amber-500/70 uppercase tracking-wider">
+          <div className="mt-2.5 text-[10px] font-medium text-amber-500/70 uppercase tracking-wider">
             {new Date(badge.earned_at).toLocaleDateString("tr-TR")}
           </div>
         )}
@@ -1935,11 +1935,11 @@ export default function SporlaConnect() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-10">
             {/* Left: text */}
             <div className="md:max-w-lg">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold border mb-5"
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium border mb-5"
                 style={{background:"rgba(22,163,74,0.1)", borderColor:"rgba(22,163,74,0.3)", color:"#15803D"}}>
                 <MapPin className="w-3.5 h-3.5"/> GPS Destekli Arama
               </div>
-              <h2 className="text-4xl md:text-5xl font-black text-green-900 mb-4 tracking-tight leading-tight">
+              <h2 className="text-4xl md:text-5xl font-semibold text-green-900 mb-4 tracking-tight leading-tight">
                 Yakınındaki<br/>Antrenmanları Bul
               </h2>
               <p className="text-green-700 text-base leading-relaxed">
@@ -1953,7 +1953,7 @@ export default function SporlaConnect() {
                   <button
                     key={km}
                     onClick={() => setNearbyDistance(km)}
-                    className="px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200"
+                    className="px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200"
                     style={nearbyDistance === km
                       ? {background:"linear-gradient(135deg,#16A34A,#15803D)", color:"#fff", boxShadow:"0 4px 20px rgba(22,163,74,0.35)"}
                       : {background:"white", color:"#15803D", border:"1px solid #bbf7d0"}}
@@ -1965,7 +1965,7 @@ export default function SporlaConnect() {
               <button
                 onClick={() => handleNearbySearch()}
                 disabled={locationLoading}
-                className="flex items-center gap-2.5 px-8 py-3.5 rounded-xl font-bold text-white text-sm transition-all duration-300 hover:opacity-90 hover:scale-105 disabled:opacity-50 disabled:scale-100"
+                className="flex items-center gap-2.5 px-8 py-3.5 rounded-xl font-medium text-white text-sm transition-all duration-300 hover:opacity-90 hover:scale-105 disabled:opacity-50 disabled:scale-100"
                 style={{background:"linear-gradient(135deg,#16A34A,#15803D)", boxShadow:"0 8px 32px rgba(22,163,74,0.35)"}}
               >
                 {locationLoading
@@ -1983,14 +1983,14 @@ export default function SporlaConnect() {
           {/* Header */}
           <div className="flex items-end justify-between mb-12">
             <div>
-              <span className="text-xs font-black tracking-[0.3em] text-green-500 uppercase block mb-3">Keşfet</span>
-              <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter leading-none">
+              <span className="text-xs font-semibold tracking-[0.3em] text-green-500 uppercase block mb-3">Keşfet</span>
+              <h2 className="text-4xl md:text-5xl font-semibold text-slate-900 tracking-tighter leading-none">
                 Yaklaşan<br/>Antrenmanlar
               </h2>
             </div>
             <button
               onClick={() => setCurrentPage("trainings")}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all hover:shadow-md"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all hover:shadow-md"
               style={{background:"linear-gradient(135deg,#16A34A,#15803D)", color:"#fff"}}
             >
               Tümünü Gör
@@ -2007,9 +2007,9 @@ export default function SporlaConnect() {
           ) : (
             <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-slate-200">
               <Activity className="w-12 h-12 text-slate-200 mx-auto mb-3" />
-              <p className="text-slate-500 font-bold mb-1">Antrenman bulunamadı</p>
+              <p className="text-slate-500 font-medium mb-1">Antrenman bulunamadı</p>
               <p className="text-slate-400 text-sm mb-5">Sunucu bağlantısı kontrol ediliyor…</p>
-              <button onClick={fetchTrainings} className="px-5 py-2.5 rounded-xl text-sm font-bold text-green-700 bg-green-100 hover:bg-green-200 transition-colors">
+              <button onClick={fetchTrainings} className="px-5 py-2.5 rounded-xl text-sm font-medium text-green-700 bg-green-100 hover:bg-green-200 transition-colors">
                 Tekrar Dene
               </button>
             </div>
@@ -2036,8 +2036,8 @@ export default function SporlaConnect() {
               <Dumbbell className="w-8 h-8" style={{color:"#4ADE80"}}/>
               <div className="h-px flex-1 max-w-20" style={{background:"linear-gradient(90deg,rgba(74,222,128,0.5),transparent)"}}/>
             </div>
-            <span className="text-xs font-black tracking-[0.4em] text-green-400 uppercase block mb-6">Topluluğa Katıl</span>
-            <h2 className="text-5xl md:text-7xl font-black text-white mb-6 tracking-tighter leading-[0.95]">
+            <span className="text-xs font-semibold tracking-[0.4em] text-green-400 uppercase block mb-6">Topluluğa Katıl</span>
+            <h2 className="text-5xl md:text-7xl font-semibold text-white mb-6 tracking-tighter leading-[0.95]">
               Spor seni<br/>
               <span style={{background:"linear-gradient(90deg,#4ADE80,#38BDF8)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent"}}>
                 bekliyor.
@@ -2049,7 +2049,7 @@ export default function SporlaConnect() {
             <div className="flex flex-wrap items-center justify-center gap-4">
               <button
                 onClick={() => { setAuthMode("register"); setIsAuthModalOpen(true); }}
-                className="inline-flex items-center gap-2.5 px-10 py-4 rounded-2xl font-black text-white text-base transition-all hover:scale-105 hover:shadow-2xl"
+                className="inline-flex items-center gap-2.5 px-10 py-4 rounded-2xl font-semibold text-white text-base transition-all hover:scale-105 hover:shadow-2xl"
                 style={{background:"linear-gradient(135deg,#16A34A,#15803D)", boxShadow:"0 12px 40px rgba(22,163,74,0.4)"}}
               >
                 Ücretsiz Başla
@@ -2081,7 +2081,7 @@ export default function SporlaConnect() {
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
             {/* Avatar + name */}
             <div className="flex items-center gap-5">
-              <div className="w-20 h-20 rounded-2xl overflow-hidden flex items-center justify-center text-white text-2xl font-black flex-shrink-0"
+              <div className="w-20 h-20 rounded-2xl overflow-hidden flex items-center justify-center text-white text-2xl font-semibold flex-shrink-0"
                 style={{background:"linear-gradient(135deg,#16A34A,#15803D)", boxShadow:"0 8px 24px rgba(22,163,74,0.4)"}}>
                 {(user?.avatar?.startsWith("/uploads/") || user?.avatar?.startsWith("http")) ? (
                   <img src={user.avatar.startsWith("http") ? user.avatar : `${BASE_URL}${user.avatar}`} alt="avatar" className="w-full h-full object-cover" />
@@ -2090,12 +2090,12 @@ export default function SporlaConnect() {
                 )}
               </div>
               <div>
-                <h1 className="text-3xl font-black text-green-900 tracking-tight">{user?.name}</h1>
+                <h1 className="text-3xl font-semibold text-green-900 tracking-tight">{user?.name}</h1>
                 <p className="text-slate-400 text-sm mt-0.5">{user?.email}</p>
               </div>
             </div>
             <button onClick={() => setShowProfileEdit(true)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all"
               style={{background:"white", color:"#15803D", border:"1px solid #bbf7d0"}}>
               <Settings className="w-4 h-4"/> Profili Düzenle
             </button>
@@ -2110,7 +2110,7 @@ export default function SporlaConnect() {
               {val: `${userStats?.total_distance || 0} km`, label:"Mesafe", accent:"#34D399"},
             ].map((s, i) => (
               <div key={i} className="px-6 py-5" style={{background:"rgba(22,163,74,0.15)"}}>
-                <div className="text-2xl font-black text-green-700">{s.val}</div>
+                <div className="text-2xl font-semibold text-green-700">{s.val}</div>
                 <div className="text-[10px] text-white/30 mt-1 uppercase tracking-widest font-semibold">{s.label}</div>
               </div>
             ))}
@@ -2124,14 +2124,14 @@ export default function SporlaConnect() {
 
           {/* Left: Quick actions */}
           <div className="space-y-3">
-            <div className="text-xs font-black tracking-[0.25em] text-slate-400 uppercase mb-4">Hızlı Erişim</div>
+            <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase mb-4">Hızlı Erişim</div>
             {[
               {label:"Antrenman Oluştur", icon:Plus, page:"create-training", grad:"linear-gradient(135deg,#16A34A,#15803D)", shadow:"rgba(22,163,74,0.3)"},
               {label:"Takım Oluştur", icon:Users, page:"create-team", grad:"linear-gradient(135deg,#0EA5E9,#06B6D4)", shadow:"rgba(14,165,233,0.3)"},
               {label:"Rozetlerim", icon:Trophy, page:"badges", grad:"linear-gradient(135deg,#F59E0B,#FBBF24)", shadow:"rgba(245,158,11,0.3)"},
             ].map((a) => (
               <button key={a.label} onClick={() => setCurrentPage(a.page)}
-                className="w-full flex items-center gap-3 px-5 py-3.5 rounded-xl font-bold text-white text-sm transition-all hover:opacity-90 hover:shadow-lg"
+                className="w-full flex items-center gap-3 px-5 py-3.5 rounded-xl font-medium text-white text-sm transition-all hover:opacity-90 hover:shadow-lg"
                 style={{background:a.grad, boxShadow:`0 6px 20px ${a.shadow}`}}>
                 <a.icon className="w-4 h-4"/> {a.label}
               </button>
@@ -2143,7 +2143,7 @@ export default function SporlaConnect() {
             {/* Chart */}
             {activityData.length > 0 && (
               <div className="bg-white rounded-2xl p-6 border border-slate-100">
-                <div className="text-xs font-black tracking-[0.25em] text-slate-400 uppercase mb-5">Haftalık Aktivite</div>
+                <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase mb-5">Haftalık Aktivite</div>
                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
                   <ResponsiveContainer width="100%" height={200}>
                     <BarChart data={activityData}>
@@ -2167,13 +2167,13 @@ export default function SporlaConnect() {
             {/* My Trainings */}
             {myTrainings.length > 0 && (
               <div className="bg-white rounded-2xl p-6 border border-slate-100">
-                <div className="text-xs font-black tracking-[0.25em] text-slate-400 uppercase mb-4">Antrenmanlarım</div>
+                <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase mb-4">Antrenmanlarım</div>
                 <div className="space-y-2">
                   {myTrainings.slice(0, 5).map((t) => (
                     <button key={t.id} onClick={() => fetchTrainingDetails(t.id)}
                       className="w-full flex items-center justify-between px-4 py-3 rounded-xl hover:bg-slate-50 transition-colors text-left border border-transparent hover:border-slate-100">
                       <div>
-                        <div className="font-bold text-slate-800 text-sm">{t.title}</div>
+                        <div className="font-medium text-slate-800 text-sm">{t.title}</div>
                         <div className="text-xs text-slate-400 mt-0.5 flex items-center gap-2">
                           <MapPin className="w-3 h-3"/> {t.location_name}
                           <span>·</span>
@@ -2190,7 +2190,7 @@ export default function SporlaConnect() {
             {/* My Teams */}
             {myTeams.length > 0 && (
               <div className="bg-white rounded-2xl p-6 border border-slate-100">
-                <div className="text-xs font-black tracking-[0.25em] text-slate-400 uppercase mb-4">Takımlarım</div>
+                <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase mb-4">Takımlarım</div>
                 <div className="grid sm:grid-cols-2 gap-3">
                   {myTeams.map((team) => (
                     <button key={team.id} onClick={() => fetchTeamDetails(team.id)}
@@ -2200,7 +2200,7 @@ export default function SporlaConnect() {
                         {team.avatar || "🏅"}
                       </div>
                       <div className="min-w-0">
-                        <div className="font-bold text-slate-800 text-sm truncate">{team.name}</div>
+                        <div className="font-medium text-slate-800 text-sm truncate">{team.name}</div>
                         <div className="text-xs text-slate-400">{team.sport} · {team.member_count} üye</div>
                       </div>
                     </button>
@@ -2325,14 +2325,14 @@ export default function SporlaConnect() {
           <div className="relative max-w-7xl mx-auto px-4 sm:px-8 py-12">
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
               <div>
-                <span className="text-xs font-black tracking-[0.35em] text-green-400 uppercase block mb-3">Keşfet</span>
-                <h1 className="text-5xl md:text-6xl font-black text-green-900 tracking-tighter leading-none">Antrenmanlar</h1>
+                <span className="text-xs font-semibold tracking-[0.35em] text-green-400 uppercase block mb-3">Keşfet</span>
+                <h1 className="text-5xl md:text-6xl font-semibold text-green-900 tracking-tighter leading-none">Antrenmanlar</h1>
                 <p className="text-slate-400 mt-3 text-base">Katıl, yeni arkadaşlar edin, birlikte spor yap.</p>
               </div>
               {user && (
                 <button
                   onClick={() => setCurrentPage("create-training")}
-                  className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white text-sm transition-all hover:opacity-90 flex-shrink-0"
+                  className="flex items-center gap-2 px-6 py-3 rounded-xl font-medium text-white text-sm transition-all hover:opacity-90 flex-shrink-0"
                   style={{background:"linear-gradient(135deg,#16A34A,#15803D)", boxShadow:"0 8px 24px rgba(22,163,74,0.35)"}}
                 >
                   <Plus className="w-4 h-4" /> Antrenman Oluştur
@@ -2370,12 +2370,12 @@ export default function SporlaConnect() {
               {/* GPS toggle */}
               <div className="flex items-center gap-1.5 border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
                 <button onClick={handleExitNearby}
-                  className="px-3 py-2.5 text-xs font-bold transition-all"
+                  className="px-3 py-2.5 text-xs font-medium transition-all"
                   style={!nearbyMode ? {background:"linear-gradient(135deg,#16A34A,#15803D)", color:"#fff"} : {color:"#64748b"}}>
                   Tümü
                 </button>
                 <button onClick={() => handleNearbySearch()} disabled={locationLoading}
-                  className="px-3 py-2.5 text-xs font-bold transition-all flex items-center gap-1.5 disabled:opacity-50"
+                  className="px-3 py-2.5 text-xs font-medium transition-all flex items-center gap-1.5 disabled:opacity-50"
                   style={nearbyMode ? {background:"linear-gradient(135deg,#16A34A,#15803D)", color:"#fff"} : {color:"#64748b"}}>
                   {locationLoading
                     ? <div className="w-3 h-3 border-2 border-current/30 border-t-current rounded-full animate-spin"/>
@@ -2386,7 +2386,7 @@ export default function SporlaConnect() {
               {/* Distance pills (when nearby active) */}
               {nearbyMode && [5,10,25,50].map(km => (
                 <button key={km} onClick={() => handleDistanceChange(km)} disabled={nearbyLoading}
-                  className="px-3 py-2 rounded-lg text-xs font-bold border transition-all disabled:opacity-50"
+                  className="px-3 py-2 rounded-lg text-xs font-medium border transition-all disabled:opacity-50"
                   style={nearbyDistance === km
                     ? {background:"linear-gradient(135deg,#16A34A,#15803D)", color:"#fff", border:"none"}
                     : {borderColor:"#e2e8f0", color:"#64748b", background:"#fff"}}>
@@ -2396,7 +2396,7 @@ export default function SporlaConnect() {
               {/* Clear */}
               {(searchQuery || sportFilter || levelFilter) && (
                 <button onClick={() => { setSearchQuery(""); setSportFilter(""); setLevelFilter(""); }}
-                  className="flex items-center gap-1 px-3 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-600 transition">
+                  className="flex items-center gap-1 px-3 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-medium text-slate-600 transition">
                   <X className="w-3.5 h-3.5"/> Temizle
                 </button>
               )}
@@ -2441,12 +2441,12 @@ export default function SporlaConnect() {
                     style={{background:"rgba(22,163,74,0.08)", border:"1px solid rgba(22,163,74,0.15)"}}>
                     <MapPin className="w-9 h-9" style={{color:"rgba(22,163,74,0.4)"}}/>
                   </div>
-                  <p className="text-slate-800 font-black text-xl mb-2">{nearbyDistance} km içinde antrenman yok</p>
+                  <p className="text-slate-800 font-semibold text-xl mb-2">{nearbyDistance} km içinde antrenman yok</p>
                   <p className="text-slate-400 text-sm mb-7 max-w-sm mx-auto">Yakınımda araması sadece GPS koordinatı girilmiş antrenmanları gösterir.</p>
                   <div className="flex flex-wrap justify-center gap-3">
                     {[10,25,50].filter(k => k > nearbyDistance).map(k => (
                       <button key={k} onClick={() => handleDistanceChange(k)}
-                        className="px-5 py-2.5 rounded-xl text-sm font-bold border border-slate-200 text-slate-600 hover:border-green-300 hover:text-green-700 transition">
+                        className="px-5 py-2.5 rounded-xl text-sm font-medium border border-slate-200 text-slate-600 hover:border-green-300 hover:text-green-700 transition">
                         {k} km'ye genişlet
                       </button>
                     ))}
@@ -2458,11 +2458,11 @@ export default function SporlaConnect() {
                     style={{background:"rgba(22,163,74,0.08)", border:"1px solid rgba(22,163,74,0.15)"}}>
                     <Activity className="w-9 h-9" style={{color:"rgba(22,163,74,0.4)"}}/>
                   </div>
-                  <p className="text-slate-800 font-black text-xl mb-2">Henüz antrenman yok</p>
+                  <p className="text-slate-800 font-semibold text-xl mb-2">Henüz antrenman yok</p>
                   <p className="text-slate-400 text-sm mb-7 max-w-xs mx-auto">İlk antrenmanı sen oluştur, spor arkadaşlarını topla!</p>
                   {user && (
                     <button onClick={() => setCurrentPage("create-training")}
-                      className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-bold text-white text-sm transition-all hover:opacity-90 hover:shadow-lg"
+                      className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-medium text-white text-sm transition-all hover:opacity-90 hover:shadow-lg"
                       style={{background:"linear-gradient(135deg,#16A34A,#15803D)", boxShadow:"0 8px 24px rgba(22,163,74,0.3)"}}>
                       <Plus className="w-4 h-4"/> Antrenman Oluştur
                     </button>
@@ -2499,14 +2499,14 @@ export default function SporlaConnect() {
           <div className="relative max-w-7xl mx-auto px-4 sm:px-8 py-12">
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
               <div>
-                <span className="text-xs font-black tracking-[0.35em] text-green-600 uppercase block mb-3">Topluluk</span>
-                <h1 className="text-5xl md:text-6xl font-black text-green-900 tracking-tighter leading-none">Takımlar</h1>
+                <span className="text-xs font-semibold tracking-[0.35em] text-green-600 uppercase block mb-3">Topluluk</span>
+                <h1 className="text-5xl md:text-6xl font-semibold text-green-900 tracking-tighter leading-none">Takımlar</h1>
                 <p className="text-slate-400 mt-3 text-base">Sana uygun takımı bul ya da kendi takımını kur.</p>
               </div>
               {user && (
                 <button
                   onClick={() => setCurrentPage("create-team")}
-                  className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white text-sm transition-all hover:opacity-90 flex-shrink-0"
+                  className="flex items-center gap-2 px-6 py-3 rounded-xl font-medium text-white text-sm transition-all hover:opacity-90 flex-shrink-0"
                   style={{background:"linear-gradient(135deg,#0EA5E9,#06B6D4)", boxShadow:"0 8px 24px rgba(14,165,233,0.3)"}}
                 >
                   <Plus className="w-4 h-4" /> Takım Oluştur
@@ -2533,7 +2533,7 @@ export default function SporlaConnect() {
               </select>
               {(teamSearch || teamSport) && (
                 <button onClick={() => { setTeamSearch(""); setTeamSport(""); }}
-                  className="flex items-center gap-1 px-3 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-600 transition">
+                  className="flex items-center gap-1 px-3 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-medium text-slate-600 transition">
                   <X className="w-3.5 h-3.5"/> Temizle
                 </button>
               )}
@@ -2558,7 +2558,7 @@ export default function SporlaConnect() {
                   ? <Search className="w-9 h-9" style={{color:"rgba(14,165,233,0.4)"}}/>
                   : <Users className="w-9 h-9" style={{color:"rgba(14,165,233,0.4)"}}/>}
               </div>
-              <p className="text-slate-800 font-black text-xl mb-2">
+              <p className="text-slate-800 font-semibold text-xl mb-2">
                 {teamSearch || teamSport ? "Sonuç bulunamadı" : "Henüz takım yok"}
               </p>
               <p className="text-slate-400 text-sm mb-7 max-w-xs mx-auto">
@@ -2566,12 +2566,12 @@ export default function SporlaConnect() {
               </p>
               {teamSearch || teamSport ? (
                 <button onClick={() => { setTeamSearch(""); setTeamSport(""); }}
-                  className="px-6 py-3 rounded-xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-50 transition">
+                  className="px-6 py-3 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 transition">
                   Filtreleri Temizle
                 </button>
               ) : user && (
                 <button onClick={() => setCurrentPage("create-team")}
-                  className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-bold text-white text-sm transition-all hover:opacity-90 hover:shadow-lg"
+                  className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-medium text-white text-sm transition-all hover:opacity-90 hover:shadow-lg"
                   style={{background:"linear-gradient(135deg,#0EA5E9,#06B6D4)", boxShadow:"0 8px 24px rgba(14,165,233,0.3)"}}>
                   <Plus className="w-4 h-4"/> Takım Kur
                 </button>
@@ -2601,14 +2601,14 @@ export default function SporlaConnect() {
           </button>
           <div className="flex items-end justify-between gap-6">
             <div>
-              <span className="text-xs font-black tracking-[0.35em] text-green-600 uppercase block mb-3">Başarılar</span>
-              <h1 className="text-5xl md:text-6xl font-black text-green-900 tracking-tighter leading-none">Rozetler</h1>
+              <span className="text-xs font-semibold tracking-[0.35em] text-green-600 uppercase block mb-3">Başarılar</span>
+              <h1 className="text-5xl md:text-6xl font-semibold text-green-900 tracking-tighter leading-none">Rozetler</h1>
               <p className="text-green-700 mt-3 text-base">Her antrenman yeni bir başarının kapısını aralar.</p>
             </div>
             {/* Progress summary */}
             <div className="hidden md:flex items-center gap-4 pb-1">
               <div className="text-right">
-                <div className="text-4xl font-black text-green-700">{userBadges.length}<span className="text-green-500 text-2xl">/{badges.length}</span></div>
+                <div className="text-4xl font-semibold text-green-700">{userBadges.length}<span className="text-green-500 text-2xl">/{badges.length}</span></div>
                 <div className="text-xs text-green-600 font-semibold uppercase tracking-wider mt-1">Kazanılan Rozet</div>
               </div>
               <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
@@ -2619,7 +2619,7 @@ export default function SporlaConnect() {
           </div>
           {/* Progress bar */}
           <div className="mt-8 max-w-md">
-            <div className="flex justify-between text-xs font-bold text-green-700 mb-2">
+            <div className="flex justify-between text-xs font-medium text-green-700 mb-2">
               <span>İlerleme</span>
               <span style={{color:"#15803D"}}>{badges.length > 0 ? Math.round((userBadges.length/badges.length)*100) : 0}%</span>
             </div>
@@ -2687,7 +2687,7 @@ export default function SporlaConnect() {
 
         <div className="bg-white rounded-2xl p-8 border">
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-3xl font-bold">{selectedTraining.title}</h1>
+            <h1 className="text-3xl font-medium">{selectedTraining.title}</h1>
             <div className="flex gap-2">
               <span className="px-3 py-1 bg-green-100 text-green-600 rounded-full text-sm font-medium">
                 {selectedTraining.team_sport || "Genel"}
@@ -2719,7 +2719,7 @@ export default function SporlaConnect() {
 
           {isOwner && editMode && (
             <form onSubmit={handleSubmitEdit} className="mb-8 p-6 bg-blue-50 rounded-2xl border border-blue-100 space-y-4">
-              <h3 className="text-lg font-bold text-blue-800">Antrenmanı Düzenle</h3>
+              <h3 className="text-lg font-medium text-blue-800">Antrenmanı Düzenle</h3>
 
               <div>
                 <label className="block text-sm font-medium mb-1">Başlık</label>
@@ -2825,12 +2825,12 @@ export default function SporlaConnect() {
 
           {isMyTraining && (
             <div className="mb-6">
-              <h3 className="text-xl font-bold mb-4">Katılımcılar</h3>
+              <h3 className="text-xl font-medium mb-4">Katılımcılar</h3>
               {selectedTraining.attendees && selectedTraining.attendees.length > 0 ? (
                 <div className="space-y-2">
                   {selectedTraining.attendees.map((attendee) => (
                     <div key={attendee.id} className="flex items-center p-3 bg-gray-50 rounded-xl">
-                      <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full overflow-hidden flex items-center justify-center text-white font-bold mr-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full overflow-hidden flex items-center justify-center text-white font-medium mr-3">
                         {renderAvatar(attendee.avatar, attendee.name)}
                       </div>
                       <div>
@@ -2849,7 +2849,7 @@ export default function SporlaConnect() {
           )}
 
           <div className="mb-6">
-            <h3 className="text-xl font-bold mb-4 flex items-center">
+            <h3 className="text-xl font-medium mb-4 flex items-center">
               <MessageCircle className="w-5 h-5 mr-2" />
               Yorumlar ({selectedTraining.comments?.length || 0})
             </h3>
@@ -2879,7 +2879,7 @@ export default function SporlaConnect() {
                 {selectedTraining.comments.map((c) => (
                   <div key={c.id} className="p-3 bg-gray-50 rounded-xl">
                     <div className="flex items-center mb-2">
-                      <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-full overflow-hidden flex items-center justify-center text-white font-bold mr-2">
+                      <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-full overflow-hidden flex items-center justify-center text-white font-medium mr-2">
                         {renderAvatar(c.user_avatar, c.user_name)}
                       </div>
                       <div>
@@ -2972,7 +2972,7 @@ export default function SporlaConnect() {
                   {selectedTeam.avatar || "🏅"}
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold">{selectedTeam.name}</h1>
+                  <h1 className="text-3xl font-medium">{selectedTeam.name}</h1>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
                     <span className="px-2 py-0.5 bg-white/20 rounded-full text-sm">{selectedTeam.sport}</span>
                     {selectedTeam.is_private
@@ -2995,7 +2995,7 @@ export default function SporlaConnect() {
             </div>
 
             <div className="flex gap-6 mt-6 text-sm">
-              <div><span className="font-bold text-lg">{selectedTeam.members?.length || 0}</span> <span className="opacity-80">üye</span></div>
+              <div><span className="font-medium text-lg">{selectedTeam.members?.length || 0}</span> <span className="opacity-80">üye</span></div>
               {selectedTeam.location && <div className="flex items-center gap-1 opacity-80"><MapPin className="w-4 h-4" />{selectedTeam.location}</div>}
             </div>
 
@@ -3045,7 +3045,7 @@ export default function SporlaConnect() {
                     {selectedTeam.posts.map((post) => (
                       <div key={post.id} className="p-4 bg-gray-50 rounded-2xl">
                         <div className="flex items-center gap-3 mb-2">
-                          <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-full overflow-hidden flex items-center justify-center text-white font-bold text-sm">
+                          <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-full overflow-hidden flex items-center justify-center text-white font-medium text-sm">
                             {renderAvatar(post.user_avatar, post.user_name)}
                           </div>
                           <div>
@@ -3070,7 +3070,7 @@ export default function SporlaConnect() {
             {activeTab === "members" && canSeeMembers && (
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-bold">Üyeler ({selectedTeam.members?.length || 0})</h3>
+                  <h3 className="text-xl font-medium">Üyeler ({selectedTeam.members?.length || 0})</h3>
                   {canManage && (
                     <button
                       onClick={() => setShowInviteModal(true)}
@@ -3091,7 +3091,7 @@ export default function SporlaConnect() {
                       {pendingInvitations.map(inv => (
                         <div key={inv.id} className="flex items-center justify-between p-3 bg-yellow-50 border border-yellow-200 rounded-2xl">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-yellow-200 rounded-full flex items-center justify-center text-yellow-700 font-bold text-lg">
+                            <div className="w-10 h-10 bg-yellow-200 rounded-full flex items-center justify-center text-yellow-700 font-medium text-lg">
                               <Mail className="w-5 h-5 text-yellow-600" />
                             </div>
                             <div>
@@ -3121,7 +3121,7 @@ export default function SporlaConnect() {
                     return (
                       <div key={member.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-colors">
                         <div className="flex items-center gap-3">
-                          <div className="w-11 h-11 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-full overflow-hidden flex items-center justify-center text-white font-bold">
+                          <div className="w-11 h-11 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-full overflow-hidden flex items-center justify-center text-white font-medium">
                             {renderAvatar(member.avatar, member.name)}
                           </div>
                           <div>
@@ -3331,7 +3331,7 @@ export default function SporlaConnect() {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12">
         <div className="bg-white rounded-2xl p-8 border">
-          <h1 className="text-3xl font-bold mb-6">Yeni Antrenman Oluştur</h1>
+          <h1 className="text-3xl font-medium mb-6">Yeni Antrenman Oluştur</h1>
 
           {myTeams.length === 0 && (
             <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
@@ -3505,7 +3505,7 @@ export default function SporlaConnect() {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12">
         <div className="bg-white rounded-2xl p-8 border">
-          <h1 className="text-3xl font-bold mb-6">Yeni Takım Oluştur</h1>
+          <h1 className="text-3xl font-medium mb-6">Yeni Takım Oluştur</h1>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -3634,7 +3634,7 @@ export default function SporlaConnect() {
               style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}>
               <Lock className="w-8 h-8 text-white"/>
             </div>
-            <h1 className="text-2xl font-bold text-slate-900">Yeni Şifre Belirle</h1>
+            <h1 className="text-2xl font-medium text-slate-900">Yeni Şifre Belirle</h1>
             <p className="text-slate-500 text-sm mt-1">En az 6 karakter olmalı.</p>
           </div>
 
@@ -3677,7 +3677,7 @@ export default function SporlaConnect() {
     return (
       <div className="fixed right-4 top-20 w-96 bg-white rounded-2xl shadow-2xl border z-50 max-h-[600px] overflow-hidden flex flex-col">
         <div className="p-4 border-b flex justify-between items-center">
-          <h3 className="font-bold text-lg">
+          <h3 className="font-medium text-lg">
             Bildirimler {unreadCount > 0 && `(${unreadCount})`}
           </h3>
           <button onClick={() => setShowNotifications(false)}>
@@ -3815,7 +3815,7 @@ export default function SporlaConnect() {
             <X className="w-6 h-6" />
           </button>
 
-          <h2 className="text-3xl font-bold mb-6">Ayarlar</h2>
+          <h2 className="text-3xl font-medium mb-6">Ayarlar</h2>
 
           {/* Sekmeler */}
           <div className="flex gap-2 mb-6 bg-gray-100 p-1 rounded-xl">
@@ -3838,7 +3838,7 @@ export default function SporlaConnect() {
               {/* Avatar fotoğrafı */}
               <div className="flex flex-col items-center gap-3 pb-2">
                 <div className="relative">
-                  <div className="w-24 h-24 rounded-full overflow-hidden bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
+                  <div className="w-24 h-24 rounded-full overflow-hidden bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-white text-3xl font-medium shadow-lg">
                     {(formData.avatar?.startsWith("/uploads/") || formData.avatar?.startsWith("http")) ? (
                       <img src={formData.avatar.startsWith("http") ? formData.avatar : `${BASE_URL}${formData.avatar}`} alt="avatar" className="w-full h-full object-cover" />
                     ) : (
@@ -3951,7 +3951,7 @@ export default function SporlaConnect() {
             <X className="w-6 h-6" />
           </button>
 
-          <h2 className="text-3xl font-bold mb-6">Takıma Davet Et</h2>
+          <h2 className="text-3xl font-medium mb-6">Takıma Davet Et</h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -3988,7 +3988,7 @@ export default function SporlaConnect() {
     const navLink = (page, label) => (
       <button
         onClick={() => setCurrentPage(page)}
-        className="relative text-sm font-bold tracking-wide transition-all duration-200"
+        className="relative text-sm font-medium tracking-wide transition-all duration-200"
         style={{color: isActive(page) ? "#15803D" : "#64748b"}}
         onMouseEnter={e=>{ if(!isActive(page)) e.currentTarget.style.color="#166534"; }}
         onMouseLeave={e=>{ if(!isActive(page)) e.currentTarget.style.color="#64748b"; }}
@@ -4014,7 +4014,7 @@ export default function SporlaConnect() {
                 style={{background:"linear-gradient(135deg,#16A34A,#15803D)", boxShadow:"0 4px 14px rgba(22,163,74,0.35)"}}>
                 <Activity className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xl font-black tracking-tight"
+              <span className="text-xl font-semibold tracking-tight"
                 style={{background:"linear-gradient(90deg,#166534,#16A34A)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent"}}>
                 SporlaConnect
               </span>
@@ -4034,7 +4034,7 @@ export default function SporlaConnect() {
                 <>
                   <button
                     onClick={() => setCurrentPage("create-training")}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 hover:shadow-lg"
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium text-white transition-all hover:opacity-90 hover:shadow-lg"
                     style={{background:"linear-gradient(135deg,#16A34A,#15803D)", boxShadow:"0 4px 14px rgba(22,163,74,0.3)"}}
                   >
                     <Plus className="w-4 h-4" /> Antrenman
@@ -4046,7 +4046,7 @@ export default function SporlaConnect() {
                   >
                     <Bell className="w-[18px] h-[18px] text-slate-500"/>
                     {unreadCount > 0 && (
-                      <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                      <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-medium rounded-full flex items-center justify-center">
                         {unreadCount}
                       </span>
                     )}
@@ -4054,7 +4054,7 @@ export default function SporlaConnect() {
 
                   <button onClick={() => setCurrentPage("profile")}
                     className="flex items-center gap-2 pl-1 pr-3 py-1.5 rounded-xl hover:bg-slate-100 transition-colors">
-                    <div className="w-7 h-7 rounded-lg overflow-hidden flex items-center justify-center text-white font-bold text-xs flex-shrink-0"
+                    <div className="w-7 h-7 rounded-lg overflow-hidden flex items-center justify-center text-white font-medium text-xs flex-shrink-0"
                       style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}>
                       {(user.avatar?.startsWith("/uploads/") || user.avatar?.startsWith("http")) ? (
                         <img src={user.avatar.startsWith("http") ? user.avatar : `${BASE_URL}${user.avatar}`} alt="" className="w-full h-full object-cover" />
@@ -4080,7 +4080,7 @@ export default function SporlaConnect() {
                   </button>
                   <button
                     onClick={() => { setAuthMode("register"); setIsAuthModalOpen(true); }}
-                    className="px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 hover:shadow-lg"
+                    className="px-5 py-2.5 rounded-xl text-sm font-medium text-white transition-all hover:opacity-90 hover:shadow-lg"
                     style={{background:"linear-gradient(135deg,#16A34A,#15803D)", boxShadow:"0 4px 14px rgba(22,163,74,0.3)"}}
                   >
                     Kaydol
@@ -4154,8 +4154,8 @@ export default function SporlaConnect() {
               style={{background:"rgba(22,163,74,0.15)", border:"1px solid rgba(22,163,74,0.3)"}}>
               <MessageCircle className="w-8 h-8" style={{color:"#4ADE80"}}/>
             </div>
-            <span className="text-xs font-black tracking-[0.35em] text-green-400 uppercase block mb-3">Destek</span>
-            <h1 className="text-5xl md:text-6xl font-black text-green-900 tracking-tighter leading-none mb-4">İletişim</h1>
+            <span className="text-xs font-semibold tracking-[0.35em] text-green-400 uppercase block mb-3">Destek</span>
+            <h1 className="text-5xl md:text-6xl font-semibold text-green-900 tracking-tighter leading-none mb-4">İletişim</h1>
             <p className="text-slate-400 text-base max-w-md mx-auto">Sorularınız için buradayız. En kısa sürede dönüş yaparız.</p>
           </div>
         </div>
@@ -4166,7 +4166,7 @@ export default function SporlaConnect() {
             {/* Sol: İletişim + Sosyal */}
             <div className="space-y-5">
               <div className="bg-white rounded-2xl p-6 border border-slate-100">
-                <div className="text-xs font-black tracking-[0.25em] text-slate-400 uppercase mb-4">İletişim</div>
+                <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase mb-4">İletişim</div>
                 <div className="space-y-4">
                   {[
                     {icon:<Mail className="w-4 h-4" style={{color:"#4ADE80"}}/>, label:"E-posta", value:"info@sporlaconnect.com", href:"mailto:info@sporlaconnect.com"},
@@ -4178,7 +4178,7 @@ export default function SporlaConnect() {
                         {item.icon}
                       </div>
                       <div>
-                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{item.label}</div>
+                        <div className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">{item.label}</div>
                         {item.href
                           ? <a href={item.href} className="text-sm font-semibold text-slate-700 hover:text-green-600 transition-colors">{item.value}</a>
                           : <div className="text-sm font-semibold text-slate-700">{item.value}</div>}
@@ -4189,7 +4189,7 @@ export default function SporlaConnect() {
               </div>
 
               <div className="bg-white rounded-2xl p-6 border border-slate-100">
-                <div className="text-xs font-black tracking-[0.25em] text-slate-400 uppercase mb-4">Sosyal Medya</div>
+                <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase mb-4">Sosyal Medya</div>
                 <div className="space-y-2">
                   {[
                     {label:"Instagram", handle:"@sporlaconnect", bg:"#fdf2f8", color:"#db2777"},
@@ -4197,10 +4197,10 @@ export default function SporlaConnect() {
                     {label:"LinkedIn", handle:"SporlaConnect", bg:"#eff6ff", color:"#1d4ed8"},
                   ].map((s) => (
                     <div key={s.label} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black flex-shrink-0"
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-semibold flex-shrink-0"
                         style={{background:s.bg, color:s.color}}>{s.label[0]}</div>
                       <div>
-                        <div className="text-sm font-bold text-slate-800">{s.label}</div>
+                        <div className="text-sm font-medium text-slate-800">{s.label}</div>
                         <div className="text-xs text-slate-400">{s.handle}</div>
                       </div>
                     </div>
@@ -4213,22 +4213,22 @@ export default function SporlaConnect() {
             <div className="md:col-span-2 space-y-6">
               {/* Form */}
               <div className="bg-white rounded-2xl p-8 border border-slate-100">
-                <div className="text-xs font-black tracking-[0.25em] text-slate-400 uppercase mb-6">Mesaj Gönderin</div>
+                <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase mb-6">Mesaj Gönderin</div>
                 <form onSubmit={handleContactSubmit} className="space-y-4">
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Adınız</label>
+                      <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5 block">Adınız</label>
                       <input value={contactForm.name} onChange={e => setContactForm(p => ({...p, name: e.target.value}))}
                         placeholder="Adınız Soyadınız" className={inputCls}/>
                     </div>
                     <div>
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">E-posta</label>
+                      <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5 block">E-posta</label>
                       <input type="email" value={contactForm.email} onChange={e => setContactForm(p => ({...p, email: e.target.value}))}
                         placeholder="ornek@mail.com" className={inputCls}/>
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Konu</label>
+                    <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5 block">Konu</label>
                     <select value={contactForm.subject} onChange={e => setContactForm(p => ({...p, subject: e.target.value}))} className={inputCls}>
                       <option value="">Konu seçin…</option>
                       <option>Üyelik & Hesap</option>
@@ -4241,12 +4241,12 @@ export default function SporlaConnect() {
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Mesajınız</label>
+                    <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5 block">Mesajınız</label>
                     <textarea value={contactForm.message} onChange={e => setContactForm(p => ({...p, message: e.target.value}))}
                       rows={5} placeholder="Mesajınızı buraya yazın…" className={`${inputCls} resize-none`}/>
                   </div>
                   <button type="submit" disabled={sending}
-                    className="w-full py-3.5 rounded-xl font-bold text-white text-sm transition-all hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-2"
+                    className="w-full py-3.5 rounded-xl font-medium text-white text-sm transition-all hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-2"
                     style={{background:"linear-gradient(135deg,#16A34A,#15803D)", boxShadow:"0 8px 24px rgba(22,163,74,0.3)"}}>
                     {sending ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/> Gönderiliyor…</> : <><Send className="w-4 h-4"/> Mesaj Gönder</>}
                   </button>
@@ -4255,7 +4255,7 @@ export default function SporlaConnect() {
 
               {/* SSS */}
               <div className="bg-white rounded-2xl p-8 border border-slate-100">
-                <div className="text-xs font-black tracking-[0.25em] text-slate-400 uppercase mb-6">Sık Sorulan Sorular</div>
+                <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase mb-6">Sık Sorulan Sorular</div>
                 <div className="space-y-2">
                   {faqs.map((faq, i) => (
                     <div key={i} className="border border-slate-100 rounded-xl overflow-hidden">
@@ -4402,7 +4402,7 @@ E-posta: <a href="mailto:info@sporlaconnect.com">info@sporlaconnect.com</a></p>
       <div className="fixed inset-0 z-[300] flex items-center justify-center p-4" style={{background:"rgba(0,0,0,0.6)"}}>
         <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col">
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-            <h2 className="text-lg font-bold text-slate-800">{content.title}</h2>
+            <h2 className="text-lg font-medium text-slate-800">{content.title}</h2>
             <button onClick={() => setLegalModal(null)} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-colors">
               <X className="w-5 h-5 text-slate-500" />
             </button>
@@ -4441,7 +4441,7 @@ E-posta: <a href="mailto:info@sporlaconnect.com">info@sporlaconnect.com</a></p>
             </button>
             <button
               onClick={() => { setCookieConsent(true); localStorage.setItem("cookieConsent", "true"); }}
-              className="px-5 py-2 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90"
+              className="px-5 py-2 rounded-xl text-sm font-medium text-white transition-all hover:opacity-90"
               style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}
             >
               Kabul Et
@@ -4475,7 +4475,7 @@ E-posta: <a href="mailto:info@sporlaconnect.com">info@sporlaconnect.com</a></p>
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-md" style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}>
                   <Activity className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-xl font-black tracking-tight" style={{background:"linear-gradient(90deg,#a78bfa,#818cf8)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
+                <span className="text-xl font-semibold tracking-tight" style={{background:"linear-gradient(90deg,#a78bfa,#818cf8)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
                   SporlaConnect
                 </span>
               </button>
@@ -4492,7 +4492,7 @@ E-posta: <a href="mailto:info@sporlaconnect.com">info@sporlaconnect.com</a></p>
 
             {/* Kolon 2 — Uygulama */}
             <div>
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4">Uygulama</h3>
+              <h3 className="text-sm font-medium text-white uppercase tracking-wider mb-4">Uygulama</h3>
               <ul className="space-y-2.5">
                 {footerLinks([
                   { label: "Ana Sayfa",     action: () => setCurrentPage("home") },
@@ -4506,7 +4506,7 @@ E-posta: <a href="mailto:info@sporlaconnect.com">info@sporlaconnect.com</a></p>
 
             {/* Kolon 3 — Yasal */}
             <div>
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4">Yasal</h3>
+              <h3 className="text-sm font-medium text-white uppercase tracking-wider mb-4">Yasal</h3>
               <ul className="space-y-2.5">
                 {footerLinks([
                   { label: "KVKK Aydınlatma Metni",  action: () => setLegalModal("kvkk") },
@@ -4519,7 +4519,7 @@ E-posta: <a href="mailto:info@sporlaconnect.com">info@sporlaconnect.com</a></p>
 
             {/* Kolon 4 — İletişim */}
             <div>
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4">İletişim</h3>
+              <h3 className="text-sm font-medium text-white uppercase tracking-wider mb-4">İletişim</h3>
               <ul className="space-y-3">
                 <li className="flex items-start gap-2.5 text-sm text-slate-400">
                   <Mail className="w-4 h-4 mt-0.5 flex-shrink-0 text-green-400" />

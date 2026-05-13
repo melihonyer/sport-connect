@@ -136,7 +136,7 @@ export default function AdminPanel() {
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl shadow-xl mb-4" style={{ background: "linear-gradient(135deg,#16A34A,#15803D)" }}>
               <Shield className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-2xl font-black text-green-900 tracking-tight">Admin Panel</h1>
+            <h1 className="text-2xl font-semibold text-green-900 tracking-tight">Admin Panel</h1>
             <p className="text-green-600 text-sm mt-1">SporlaConnect Yönetim Konsolu</p>
           </div>
 
@@ -184,7 +184,7 @@ export default function AdminPanel() {
               <button
                 type="submit"
                 disabled={loginLoading}
-                className="w-full py-3 rounded-xl font-bold text-white text-sm transition-all hover:opacity-90 hover:shadow-xl disabled:opacity-60 flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-xl font-medium text-white text-sm transition-all hover:opacity-90 hover:shadow-xl disabled:opacity-60 flex items-center justify-center gap-2"
                 style={{ background: "linear-gradient(135deg,#16A34A,#15803D)" }}
               >
                 {loginLoading ? (
@@ -340,7 +340,7 @@ export default function AdminPanel() {
             <Shield className="w-5 h-5 text-white" />
           </div>
           <div>
-            <div className="text-green-900 font-black text-sm tracking-tight">SporlaConnect</div>
+            <div className="text-green-900 font-semibold text-sm tracking-tight">SporlaConnect</div>
             <div className="text-green-500 text-xs font-semibold">Admin Panel</div>
           </div>
         </div>
@@ -363,7 +363,7 @@ export default function AdminPanel() {
                 {label}
               </span>
               {badge && (
-                <span className="w-5 h-5 bg-amber-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">{badge}</span>
+                <span className="w-5 h-5 bg-amber-500 text-white text-[10px] font-medium rounded-full flex items-center justify-center">{badge}</span>
               )}
               {tab === id && <ChevronRight className="w-3.5 h-3.5 opacity-60" />}
             </button>
@@ -394,7 +394,7 @@ export default function AdminPanel() {
         {/* Üst bar */}
         <header className="bg-white border-b border-slate-100 px-8 py-4 flex items-center justify-between sticky top-0 z-10">
           <div>
-            <h1 className="text-lg font-black text-slate-900">
+            <h1 className="text-lg font-semibold text-slate-900">
               {navItems.find(n => n.id === tab)?.label || "Panel"}
             </h1>
             <p className="text-slate-400 text-xs">SporlaConnect Yönetim Konsolu</p>
@@ -436,7 +436,7 @@ export default function AdminPanel() {
                       <s.icon className="w-6 h-6 opacity-80" />
                       <TrendingUp className="w-4 h-4 opacity-50" />
                     </div>
-                    <div className="text-4xl font-black mb-1">{s.value ?? "—"}</div>
+                    <div className="text-4xl font-semibold mb-1">{s.value ?? "—"}</div>
                     <div className="text-sm opacity-75 font-medium">{s.label}</div>
                   </div>
                 ))}
@@ -446,13 +446,13 @@ export default function AdminPanel() {
               {stats?.recentUsers?.length > 0 && (
                 <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                   <div className="px-6 py-4 border-b border-slate-50">
-                    <h2 className="font-bold text-slate-900">🆕 Son Kayıt Olan Kullanıcılar</h2>
+                    <h2 className="font-medium text-slate-900">🆕 Son Kayıt Olan Kullanıcılar</h2>
                   </div>
                   <div className="divide-y divide-slate-50">
                     {stats.recentUsers.map(u => (
                       <div key={u.id} className="flex items-center justify-between px-6 py-3.5 hover:bg-slate-50 transition-colors">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-sm flex-shrink-0"
+                          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-medium text-sm shadow-sm flex-shrink-0"
                             style={{ background: "linear-gradient(135deg,#16A34A,#15803D)" }}>
                             {u.name[0].toUpperCase()}
                           </div>
@@ -474,7 +474,7 @@ export default function AdminPanel() {
           {!loading && tab === "users" && (
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
               <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-                <h2 className="font-bold text-slate-900">Kullanıcılar <span className="text-slate-400 font-normal text-sm">({filteredUsers.length})</span></h2>
+                <h2 className="font-medium text-slate-900">Kullanıcılar <span className="text-slate-400 font-normal text-sm">({filteredUsers.length})</span></h2>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -494,7 +494,7 @@ export default function AdminPanel() {
                       <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
                         <td className="px-6 py-3.5">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white font-bold text-xs flex-shrink-0"
+                            <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white font-medium text-xs flex-shrink-0"
                               style={{ background: "linear-gradient(135deg,#16A34A,#15803D)" }}>
                               {u.name[0].toUpperCase()}
                             </div>
@@ -506,7 +506,7 @@ export default function AdminPanel() {
                         <td className="px-4 py-3.5 text-center text-slate-700 font-semibold">{u.training_count ?? "—"}</td>
                         <td className="px-4 py-3.5 text-center">
                           {u.is_admin
-                            ? <span className="px-2.5 py-1 bg-green-100 text-green-700 rounded-lg text-xs font-bold">Admin</span>
+                            ? <span className="px-2.5 py-1 bg-green-100 text-green-700 rounded-lg text-xs font-medium">Admin</span>
                             : <span className="px-2.5 py-1 bg-slate-100 text-slate-500 rounded-lg text-xs">Üye</span>
                           }
                         </td>
@@ -534,7 +534,7 @@ export default function AdminPanel() {
           {!loading && tab === "trainings" && (
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
               <div className="px-6 py-4 border-b border-slate-100">
-                <h2 className="font-bold text-slate-900">Antrenmanlar <span className="text-slate-400 font-normal text-sm">({filteredTrainings.length})</span></h2>
+                <h2 className="font-medium text-slate-900">Antrenmanlar <span className="text-slate-400 font-normal text-sm">({filteredTrainings.length})</span></h2>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -595,7 +595,7 @@ export default function AdminPanel() {
           {!loading && tab === "teams" && (
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
               <div className="px-6 py-4 border-b border-slate-100">
-                <h2 className="font-bold text-slate-900">Takımlar <span className="text-slate-400 font-normal text-sm">({filteredTeams.length})</span></h2>
+                <h2 className="font-medium text-slate-900">Takımlar <span className="text-slate-400 font-normal text-sm">({filteredTeams.length})</span></h2>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -615,7 +615,7 @@ export default function AdminPanel() {
                       <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
                         <td className="px-6 py-3.5">
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-base flex-shrink-0 shadow-sm"
+                            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-medium text-base flex-shrink-0 shadow-sm"
                               style={{ background: "linear-gradient(135deg,#16A34A,#15803D)" }}>
                               {t.avatar || t.name[0]}
                             </div>
@@ -654,12 +654,12 @@ export default function AdminPanel() {
               {/* Üst bar */}
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="font-bold text-slate-900 text-lg">Hero Bannerları</h2>
+                  <h2 className="font-medium text-slate-900 text-lg">Hero Bannerları</h2>
                   <p className="text-slate-400 text-sm mt-0.5">Anasayfadaki slider'ı buradan yönetebilirsiniz.</p>
                 </div>
                 <button
                   onClick={() => { setBannerForm(emptyBanner); setEditingBannerId(null); setShowBannerForm(true); }}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition hover:opacity-90 shadow-lg"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white transition hover:opacity-90 shadow-lg"
                   style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}
                 >
                   <Plus className="w-4 h-4"/> Yeni Banner
@@ -672,7 +672,7 @@ export default function AdminPanel() {
                   {/* Header */}
                   <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100"
                     style={{background:"linear-gradient(90deg,#16A34A11,#15803D11)"}}>
-                    <h3 className="font-bold text-slate-900">{editingBannerId ? "Banner Düzenle" : "Yeni Banner Ekle"}</h3>
+                    <h3 className="font-medium text-slate-900">{editingBannerId ? "Banner Düzenle" : "Yeni Banner Ekle"}</h3>
                     <button onClick={() => setShowBannerForm(false)} className="text-slate-400 hover:text-slate-700">
                       <X className="w-5 h-5"/>
                     </button>
@@ -685,7 +685,7 @@ export default function AdminPanel() {
                       <div className="absolute inset-0 opacity-[0.04]" style={{backgroundImage:"linear-gradient(rgba(255,255,255,.8) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.8) 1px,transparent 1px)",backgroundSize:"40px 40px"}}/>
                       <div className="relative">
                         <div className="text-white/60 text-xs font-semibold mb-1">{bannerForm.badge_text || "Rozet metni"}</div>
-                        <div className="text-white font-black text-xl leading-tight">
+                        <div className="text-white font-semibold text-xl leading-tight">
                           {bannerForm.title || "Başlık"}{" "}
                           <span className="text-green-400">{bannerForm.title_highlight || "Vurgulu metin"}</span>
                         </div>
@@ -694,7 +694,7 @@ export default function AdminPanel() {
 
                     {/* Renk seçiciler */}
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Arka Plan Gradyanı</label>
+                      <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-3">Arka Plan Gradyanı</label>
                       <div className="flex items-center gap-4">
                         {[
                           { key:"gradient_from", label:"Başlangıç" },
@@ -740,13 +740,13 @@ export default function AdminPanel() {
                     {/* Başlık + Alt metin */}
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-bold text-slate-500 mb-1.5">Başlık <span className="text-slate-400 font-normal">(sabit satır)</span></label>
+                        <label className="block text-xs font-medium text-slate-500 mb-1.5">Başlık <span className="text-slate-400 font-normal">(sabit satır)</span></label>
                         <input value={bannerForm.title} onChange={e=>setBannerForm(p=>({...p,title:e.target.value}))}
                           placeholder="Sporla Buluş,"
                           className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-green-300"/>
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-slate-500 mb-1.5">Rozet Metni</label>
+                        <label className="block text-xs font-medium text-slate-500 mb-1.5">Rozet Metni</label>
                         <input value={bannerForm.badge_text} onChange={e=>setBannerForm(p=>({...p,badge_text:e.target.value}))}
                           placeholder="🏃 500+ Aktif Sporcu"
                           className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-green-300"/>
@@ -754,7 +754,7 @@ export default function AdminPanel() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 mb-1.5">Alt Metin</label>
+                      <label className="block text-xs font-medium text-slate-500 mb-1.5">Alt Metin</label>
                       <textarea value={bannerForm.subtitle} onChange={e=>setBannerForm(p=>({...p,subtitle:e.target.value}))}
                         placeholder="Açıklama metni…" rows={2}
                         className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-green-300 resize-none"/>
@@ -762,13 +762,13 @@ export default function AdminPanel() {
 
                     {/* Butonlar */}
                     <div className="space-y-3">
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide">Butonlar</label>
+                      <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide">Butonlar</label>
 
                       {/* Ana buton */}
                       <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
                         <div className="flex items-center gap-2 mb-2">
                           <div className="w-2 h-2 rounded-full" style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}/>
-                          <span className="text-xs font-bold text-slate-600">Ana Buton</span>
+                          <span className="text-xs font-medium text-slate-600">Ana Buton</span>
                           <span className="text-xs text-slate-400">(gradient, öne çıkan)</span>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
@@ -791,7 +791,7 @@ export default function AdminPanel() {
                       <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
                         <div className="flex items-center gap-2 mb-2">
                           <div className="w-2 h-2 rounded-full bg-slate-400"/>
-                          <span className="text-xs font-bold text-slate-600">İkinci Buton</span>
+                          <span className="text-xs font-medium text-slate-600">İkinci Buton</span>
                           <span className="text-xs text-slate-400">(şeffaf, giriş yapanlara gösterilir)</span>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
@@ -814,14 +814,14 @@ export default function AdminPanel() {
                     {/* Motto listesi */}
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">
+                        <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">
                           Typewriter Mottoları
                           <span className="ml-2 text-slate-400 font-normal normal-case">(sırayla yazılıp silinir)</span>
                         </label>
                         <button
                           type="button"
                           onClick={() => setBannerForm(p => ({ ...p, mottos: [...(p.mottos||[""]), ""] }))}
-                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-green-700 bg-green-50 hover:bg-green-100 transition"
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 transition"
                         >
                           <Plus className="w-3 h-3"/> Motto Ekle
                         </button>
@@ -829,7 +829,7 @@ export default function AdminPanel() {
                       <div className="space-y-2">
                         {(bannerForm.mottos || [""]).map((m, mi) => (
                           <div key={mi} className="flex items-center gap-2">
-                            <span className="flex-shrink-0 w-5 h-5 rounded-full bg-green-100 text-green-600 text-[10px] font-bold flex items-center justify-center">{mi+1}</span>
+                            <span className="flex-shrink-0 w-5 h-5 rounded-full bg-green-100 text-green-600 text-[10px] font-medium flex items-center justify-center">{mi+1}</span>
                             <input
                               type="text"
                               value={m}
@@ -865,7 +865,7 @@ export default function AdminPanel() {
                         İptal
                       </button>
                       <button onClick={saveBanner} disabled={bannerSaving}
-                        className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-60 transition hover:opacity-90"
+                        className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-medium text-white disabled:opacity-60 transition hover:opacity-90"
                         style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}>
                         {bannerSaving ? <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"/>Kaydediliyor…</> : "Kaydet"}
                       </button>
@@ -901,7 +901,7 @@ export default function AdminPanel() {
                       {/* Bilgiler */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-bold text-slate-900 text-sm truncate">{b.title} {b.title_highlight}</span>
+                          <span className="font-medium text-slate-900 text-sm truncate">{b.title} {b.title_highlight}</span>
                           {b.badge_text && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">{b.badge_text}</span>}
                           <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${b.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
                             {b.is_active ? "Aktif" : "Pasif"}
@@ -916,7 +916,7 @@ export default function AdminPanel() {
                         <label className="relative cursor-pointer">
                           <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only"
                             onChange={e => { if (e.target.files[0]) uploadBannerImage(b.id, e.target.files[0]); e.target.value=""; }}/>
-                          <span className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${uploadingId === b.id ? "bg-green-100 text-green-500" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
+                          <span className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition whitespace-nowrap ${uploadingId === b.id ? "bg-green-100 text-green-500" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
                             {uploadingId === b.id
                               ? <div className="w-3 h-3 border-2 border-green-300 border-t-green-600 rounded-full animate-spin"/>
                               : <Upload className="w-3 h-3"/>}
@@ -926,14 +926,14 @@ export default function AdminPanel() {
 
                         {/* Aktif/Pasif toggle */}
                         <button onClick={() => toggleBannerActive(b)}
-                          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${b.is_active ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}>
+                          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition whitespace-nowrap ${b.is_active ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}>
                           {b.is_active ? <ToggleRight className="w-3.5 h-3.5"/> : <ToggleLeft className="w-3.5 h-3.5"/>}
                           {b.is_active ? "Aktif" : "Pasif"}
                         </button>
 
                         {/* Kopyala */}
                         <button onClick={() => copyBanner(b)}
-                          className="flex items-center gap-1.5 px-3 py-2 bg-green-50 text-green-600 rounded-xl text-xs font-bold hover:bg-green-100 transition whitespace-nowrap">
+                          className="flex items-center gap-1.5 px-3 py-2 bg-green-50 text-green-600 rounded-xl text-xs font-medium hover:bg-green-100 transition whitespace-nowrap">
                           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
                           </svg>
@@ -942,13 +942,13 @@ export default function AdminPanel() {
 
                         {/* Düzenle */}
                         <button onClick={() => startEditBanner(b)}
-                          className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-200 transition whitespace-nowrap">
+                          className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-600 rounded-xl text-xs font-medium hover:bg-slate-200 transition whitespace-nowrap">
                           <Edit2 className="w-3 h-3"/> Düzenle
                         </button>
 
                         {/* Sil */}
                         <button onClick={() => deleteBanner(b)}
-                          className="flex items-center gap-1.5 px-3 py-2 bg-red-50 text-red-500 rounded-xl text-xs font-bold hover:bg-red-100 transition whitespace-nowrap">
+                          className="flex items-center gap-1.5 px-3 py-2 bg-red-50 text-red-500 rounded-xl text-xs font-medium hover:bg-red-100 transition whitespace-nowrap">
                           <Trash2 className="w-3 h-3"/> Sil
                         </button>
                       </div>
@@ -976,9 +976,9 @@ export default function AdminPanel() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap mb-1">
                           {!m.is_read && (
-                            <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-lg text-xs font-bold">Yeni</span>
+                            <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-lg text-xs font-medium">Yeni</span>
                           )}
-                          <span className="font-bold text-slate-900">{m.name}</span>
+                          <span className="font-medium text-slate-900">{m.name}</span>
                           <span className="text-slate-300 text-sm">·</span>
                           <a href={`mailto:${m.email}`} className="text-green-600 text-sm hover:underline">{m.email}</a>
                           <span className="text-slate-400 text-xs ml-auto">{fmtFull(m.created_at)}</span>
@@ -995,16 +995,16 @@ export default function AdminPanel() {
                       <div className="flex flex-col gap-2 flex-shrink-0">
                         {!m.is_read && (
                           <button onClick={() => markRead(m.id)}
-                            className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-xs font-bold hover:bg-emerald-100 transition whitespace-nowrap">
+                            className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-xs font-medium hover:bg-emerald-100 transition whitespace-nowrap">
                             <CheckCheck className="w-3.5 h-3.5" /> Okundu
                           </button>
                         )}
                         <a href={`mailto:${m.email}?subject=Re: ${encodeURIComponent(m.subject)}`}
-                          className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-200 transition whitespace-nowrap">
+                          className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-medium hover:bg-slate-200 transition whitespace-nowrap">
                           <Mail className="w-3.5 h-3.5" /> Yanıtla
                         </a>
                         <button onClick={() => del(`/admin/contact/${m.id}`, m.subject, "messages")}
-                          className="flex items-center gap-1.5 px-3 py-2 bg-red-50 text-red-500 rounded-xl text-xs font-bold hover:bg-red-100 transition whitespace-nowrap">
+                          className="flex items-center gap-1.5 px-3 py-2 bg-red-50 text-red-500 rounded-xl text-xs font-medium hover:bg-red-100 transition whitespace-nowrap">
                           <Trash2 className="w-3.5 h-3.5" /> Sil
                         </button>
                       </div>
