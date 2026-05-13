@@ -2178,169 +2178,146 @@ export default function SporlaConnect() {
   );
 
   const ProfilePage = () => (
-    <div className="max-w-4xl mx-auto px-4 py-12">
-      <div className="bg-white rounded-2xl p-8 border">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
-            <div className="w-20 h-20 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full overflow-hidden flex items-center justify-center text-white text-3xl font-bold shadow-md">
-              {(user?.avatar?.startsWith("/uploads/") || user?.avatar?.startsWith("http")) ? (
-                <img src={user.avatar.startsWith("http") ? user.avatar : `${BASE_URL}${user.avatar}`} alt="avatar" className="w-full h-full object-cover" />
-              ) : (
-                user?.avatar || user?.name?.[0]?.toUpperCase()
-              )}
+    <div className="min-h-screen bg-slate-50">
+      {/* ── Profile hero header ── */}
+      <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#07070F 0%,#0D0B26 60%,#07070F 100%)"}}>
+        <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
+          style={{backgroundImage:"linear-gradient(rgba(255,255,255,.6) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.6) 1px,transparent 1px)", backgroundSize:"50px 50px"}}/>
+        <div className="absolute inset-0 pointer-events-none"
+          style={{background:"radial-gradient(ellipse at 30% center,rgba(99,102,241,0.18) 0%,transparent 65%)"}}/>
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-8 py-12">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
+            {/* Avatar + name */}
+            <div className="flex items-center gap-5">
+              <div className="w-20 h-20 rounded-2xl overflow-hidden flex items-center justify-center text-white text-2xl font-black flex-shrink-0"
+                style={{background:"linear-gradient(135deg,#6366F1,#8B5CF6)", boxShadow:"0 8px 24px rgba(99,102,241,0.4)"}}>
+                {(user?.avatar?.startsWith("/uploads/") || user?.avatar?.startsWith("http")) ? (
+                  <img src={user.avatar.startsWith("http") ? user.avatar : `${BASE_URL}${user.avatar}`} alt="avatar" className="w-full h-full object-cover" />
+                ) : (
+                  user?.avatar || user?.name?.[0]?.toUpperCase()
+                )}
+              </div>
+              <div>
+                <h1 className="text-3xl font-black text-white tracking-tight">{user?.name}</h1>
+                <p className="text-slate-400 text-sm mt-0.5">{user?.email}</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold">{user?.name}</h1>
-              <p className="text-gray-600">{user?.email}</p>
-            </div>
+            <button onClick={() => setShowProfileEdit(true)}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all"
+              style={{background:"rgba(255,255,255,0.08)", color:"rgba(255,255,255,0.7)", border:"1px solid rgba(255,255,255,0.1)"}}>
+              <Settings className="w-4 h-4"/> Profili Düzenle
+            </button>
           </div>
-          <button
-            onClick={() => setShowProfileEdit(true)}
-            className="px-4 py-2 bg-gray-100 rounded-full hover:bg-gray-200 flex items-center gap-2"
-          >
-            <Settings className="w-4 h-4" />
-            Ayarlar
-          </button>
+
+          {/* Stats strip */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-px mt-10 rounded-2xl overflow-hidden" style={{background:"rgba(255,255,255,0.06)"}}>
+            {[
+              {val: userStats?.total_trainings || 0, label:"Antrenman", accent:"#818CF8"},
+              {val: myTeams.length, label:"Takım", accent:"#38BDF8"},
+              {val: userBadges.length, label:"Rozet", accent:"#FBBF24"},
+              {val: `${userStats?.total_distance || 0} km`, label:"Mesafe", accent:"#34D399"},
+            ].map((s, i) => (
+              <div key={i} className="px-6 py-5" style={{background:"rgba(7,7,15,0.5)"}}>
+                <div className="text-2xl font-black" style={{color: s.accent}}>{s.val}</div>
+                <div className="text-[10px] text-white/30 mt-1 uppercase tracking-widest font-semibold">{s.label}</div>
+              </div>
+            ))}
+          </div>
         </div>
+      </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="p-4 bg-purple-50 rounded-xl">
-            <div className="text-3xl font-bold text-purple-600">
-              {userStats?.total_trainings || 0}
-            </div>
-            <div className="text-sm text-gray-600">Antrenman</div>
-          </div>
-          <div className="p-4 bg-pink-50 rounded-xl">
-            <div className="text-3xl font-bold text-pink-600">{myTeams.length}</div>
-            <div className="text-sm text-gray-600">Takım</div>
-          </div>
-          <div className="p-4 bg-blue-50 rounded-xl">
-            <div className="text-3xl font-bold text-blue-600">{userBadges.length}</div>
-            <div className="text-sm text-gray-600">Rozet</div>
-          </div>
-          <div className="p-4 bg-green-50 rounded-xl">
-            <div className="text-3xl font-bold text-green-600">
-              {userStats?.total_distance || 0} km
-            </div>
-            <div className="text-sm text-gray-600">Mesafe</div>
-          </div>
-        </div>
+      {/* ── Content ── */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-8 py-10">
+        <div className="grid md:grid-cols-3 gap-6">
 
-        {/* ACTIVITY CHART - YENİ! */}
-        {activityData.length > 0 && (
-          <div className="mb-8">
-            <h3 className="text-xl font-bold mb-4 flex items-center">
-              📊 Haftalık Aktivite
-            </h3>
-            <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-2xl border border-purple-100">
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={activityData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis 
-                    dataKey="day" 
-                    tick={{ fill: '#6b7280', fontSize: 12 }}
-                    axisLine={{ stroke: '#d1d5db' }}
-                  />
-                  <YAxis 
-                    tick={{ fill: '#6b7280', fontSize: 12 }}
-                    axisLine={{ stroke: '#d1d5db' }}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#fff', 
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '12px',
-                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-                    }}
-                    cursor={{ fill: 'rgba(147, 51, 234, 0.1)' }}
-                  />
-                  <Bar 
-                    dataKey="count" 
-                    fill="url(#colorGradient)" 
-                    radius={[8, 8, 0, 0]}
-                  />
-                  <defs>
-                    <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#9333ea" stopOpacity={1}/>
-                      <stop offset="100%" stopColor="#ec4899" stopOpacity={0.8}/>
-                    </linearGradient>
-                  </defs>
-                </BarChart>
-              </ResponsiveContainer>
-              <p className="text-sm text-gray-500 text-center mt-4">
-                Son 7 günlük antrenman aktivitesi
-              </p>
-            </div>
+          {/* Left: Quick actions */}
+          <div className="space-y-3">
+            <div className="text-xs font-black tracking-[0.25em] text-slate-400 uppercase mb-4">Hızlı Erişim</div>
+            {[
+              {label:"Antrenman Oluştur", icon:Plus, page:"create-training", grad:"linear-gradient(135deg,#6366F1,#8B5CF6)", shadow:"rgba(99,102,241,0.3)"},
+              {label:"Takım Oluştur", icon:Users, page:"create-team", grad:"linear-gradient(135deg,#0EA5E9,#06B6D4)", shadow:"rgba(14,165,233,0.3)"},
+              {label:"Rozetlerim", icon:Trophy, page:"badges", grad:"linear-gradient(135deg,#F59E0B,#FBBF24)", shadow:"rgba(245,158,11,0.3)"},
+            ].map((a) => (
+              <button key={a.label} onClick={() => setCurrentPage(a.page)}
+                className="w-full flex items-center gap-3 px-5 py-3.5 rounded-xl font-bold text-white text-sm transition-all hover:opacity-90 hover:shadow-lg"
+                style={{background:a.grad, boxShadow:`0 6px 20px ${a.shadow}`}}>
+                <a.icon className="w-4 h-4"/> {a.label}
+              </button>
+            ))}
           </div>
-        )}
 
-        <div className="space-y-4 mb-8">
-          <button
-            onClick={() => setCurrentPage("create-training")}
-            className="w-full px-6 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:shadow-lg flex items-center justify-center space-x-2"
-          >
-            <Plus className="w-5 h-5" />
-            <span>Yeni Antrenman Oluştur</span>
-          </button>
-          <button
-            onClick={() => setCurrentPage("create-team")}
-            className="w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-semibold hover:shadow-lg flex items-center justify-center space-x-2"
-          >
-            <Plus className="w-5 h-5" />
-            <span>Yeni Takım Oluştur</span>
-          </button>
-          <button
-            onClick={() => setCurrentPage("badges")}
-            className="w-full px-6 py-4 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-xl font-semibold hover:shadow-lg flex items-center justify-center space-x-2"
-          >
-            <Award className="w-5 h-5" />
-            <span>Rozetlerim</span>
-          </button>
-        </div>
-
-        {myTrainings.length > 0 && (
-          <div className="mt-8">
-            <h3 className="text-xl font-bold mb-4">Antrenmanlarım</h3>
-            <div className="space-y-4">
-              {myTrainings.slice(0, 5).map((training) => (
-                <div
-                  key={training.id}
-                  onClick={() => fetchTrainingDetails(training.id)}
-                  className="p-4 border rounded-xl hover:shadow-lg transition-all cursor-pointer flex justify-between items-center"
-                >
-                  <div>
-                    <h4 className="font-bold">{training.title}</h4>
-                    <p className="text-sm text-gray-600">{training.location_name}</p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {new Date(training.training_date).toLocaleDateString("tr-TR")} -{" "}
-                      {training.training_time}
-                    </p>
-                  </div>
-                  <ChevronDown className="w-5 h-5 text-gray-400 rotate-[-90deg]" />
+          {/* Right: Activity + Lists */}
+          <div className="md:col-span-2 space-y-6">
+            {/* Chart */}
+            {activityData.length > 0 && (
+              <div className="bg-white rounded-2xl p-6 border border-slate-100">
+                <div className="text-xs font-black tracking-[0.25em] text-slate-400 uppercase mb-5">Haftalık Aktivite</div>
+                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={activityData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9"/>
+                      <XAxis dataKey="day" tick={{fill:"#94a3b8", fontSize:11}} axisLine={{stroke:"#e2e8f0"}} tickLine={false}/>
+                      <YAxis tick={{fill:"#94a3b8", fontSize:11}} axisLine={false} tickLine={false}/>
+                      <Tooltip contentStyle={{backgroundColor:"#fff", border:"1px solid #e2e8f0", borderRadius:"12px", boxShadow:"0 4px 16px rgba(0,0,0,0.08)"}} cursor={{fill:"rgba(99,102,241,0.06)"}}/>
+                      <Bar dataKey="count" fill="url(#pgrd)" radius={[6,6,0,0]}/>
+                      <defs>
+                        <linearGradient id="pgrd" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#6366F1" stopOpacity={1}/>
+                          <stop offset="100%" stopColor="#8B5CF6" stopOpacity={0.7}/>
+                        </linearGradient>
+                      </defs>
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
+              </div>
+            )}
 
-        {myTeams.length > 0 && (
-          <div className="mt-8">
-            <h3 className="text-xl font-bold mb-4">Takımlarım</h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              {myTeams.map((team) => (
-                <div
-                  key={team.id}
-                  onClick={() => fetchTeamDetails(team.id)}
-                  className="p-4 border rounded-xl hover:shadow-lg transition-all cursor-pointer"
-                >
-                  <h4 className="font-bold">{team.name}</h4>
-                  <p className="text-sm text-gray-600">{team.sport}</p>
-                  <p className="text-xs text-gray-500 mt-1">{team.member_count} üye</p>
+            {/* My Trainings */}
+            {myTrainings.length > 0 && (
+              <div className="bg-white rounded-2xl p-6 border border-slate-100">
+                <div className="text-xs font-black tracking-[0.25em] text-slate-400 uppercase mb-4">Antrenmanlarım</div>
+                <div className="space-y-2">
+                  {myTrainings.slice(0, 5).map((t) => (
+                    <button key={t.id} onClick={() => fetchTrainingDetails(t.id)}
+                      className="w-full flex items-center justify-between px-4 py-3 rounded-xl hover:bg-slate-50 transition-colors text-left border border-transparent hover:border-slate-100">
+                      <div>
+                        <div className="font-bold text-slate-800 text-sm">{t.title}</div>
+                        <div className="text-xs text-slate-400 mt-0.5 flex items-center gap-2">
+                          <MapPin className="w-3 h-3"/> {t.location_name}
+                          <span>·</span>
+                          <Calendar className="w-3 h-3"/> {new Date(t.training_date).toLocaleDateString("tr-TR")}
+                        </div>
+                      </div>
+                      <ChevronDown className="w-4 h-4 text-slate-300 -rotate-90 flex-shrink-0"/>
+                    </button>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
+
+            {/* My Teams */}
+            {myTeams.length > 0 && (
+              <div className="bg-white rounded-2xl p-6 border border-slate-100">
+                <div className="text-xs font-black tracking-[0.25em] text-slate-400 uppercase mb-4">Takımlarım</div>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  {myTeams.map((team) => (
+                    <button key={team.id} onClick={() => fetchTeamDetails(team.id)}
+                      className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-100 hover:border-violet-200 hover:bg-violet-50/30 transition-all text-left">
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
+                        style={{background:"linear-gradient(135deg,rgba(99,102,241,0.1),rgba(139,92,246,0.1))", border:"1px solid rgba(99,102,241,0.15)"}}>
+                        {team.avatar || "🏅"}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-bold text-slate-800 text-sm truncate">{team.name}</div>
+                        <div className="text-xs text-slate-400">{team.sport} · {team.member_count} üye</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
