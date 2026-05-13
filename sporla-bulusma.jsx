@@ -253,6 +253,7 @@ export default function SporlaConnect() {
   const [locationLoading, setLocationLoading] = useState(false);
   const [nearbyLoading, setNearbyLoading] = useState(false);
   const [toast, setToast] = useState(null);
+  const [confirmModal, setConfirmModal] = useState(null); // {message, onConfirm, danger}
   const [resetToken, setResetToken] = useState(null); // URL'den gelen şifre sıfırlama token'ı
   const [joiningTrainingId, setJoiningTrainingId] = useState(null);
   const [joiningTeamId, setJoiningTeamId] = useState(null);
@@ -283,6 +284,42 @@ export default function SporlaConnect() {
   const showToast = (message, type = "success") => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3500);
+  };
+
+  const showConfirm = (message, onConfirm, { danger = false } = {}) => {
+    setConfirmModal({ message, onConfirm, danger });
+  };
+
+  const ConfirmModal = () => {
+    if (!confirmModal) return null;
+    const { message, onConfirm, danger } = confirmModal;
+    const close = () => setConfirmModal(null);
+    return (
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[200]">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 overflow-hidden">
+          <div className="p-6">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-4 ${danger ? "bg-red-50" : "bg-amber-50"}`}>
+              <svg className={`w-5 h-5 ${danger ? "text-red-500" : "text-amber-500"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+              </svg>
+            </div>
+            <p className="text-slate-700 text-sm leading-relaxed font-medium">{message}</p>
+          </div>
+          <div className="flex border-t border-slate-100">
+            <button onClick={close} className="flex-1 py-3.5 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+              Vazgeç
+            </button>
+            <div className="w-px bg-slate-100"/>
+            <button
+              onClick={() => { close(); onConfirm(); }}
+              className={`flex-1 py-3.5 text-sm font-semibold transition-colors ${danger ? "text-red-600 hover:bg-red-50" : "text-green-700 hover:bg-green-50"}`}
+            >
+              Evet, devam et
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   // ---- LOCATION PICKER (adres arama + benim konumum) ----
@@ -944,25 +981,24 @@ export default function SporlaConnect() {
     }
   };
 
-  const handleDeleteTraining = async (trainingId) => {
-    if (!confirm("Silmek istediğinize emin misiniz?")) return;
-
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_URL}/trainings/${trainingId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (response.ok) {
-        showToast("Antrenman silindi.", "info");
-        setCurrentPage("profile");
-        fetchTrainings();
-        fetchMyTrainings(token);
+  const handleDeleteTraining = (trainingId) => {
+    showConfirm("Antrenmanı silmek istediğinize emin misiniz?", async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(`${API_URL}/trainings/${trainingId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (response.ok) {
+          showToast("Antrenman silindi.", "info");
+          setCurrentPage("profile");
+          fetchTrainings();
+          fetchMyTrainings(token);
+        }
+      } catch (error) {
+        console.error("Delete error:", error);
       }
-    } catch (error) {
-      console.error("Delete error:", error);
-    }
+    }, { danger: true });
   };
 
   const handleAddComment = async (trainingId, comment) => {
@@ -1032,24 +1068,25 @@ export default function SporlaConnect() {
     } catch { showToast("Bağlantı hatası!", "error"); }
   };
 
-  const handleDeleteTeam = async (teamId) => {
-    if (!confirm("Takımı silmek istediğinize emin misiniz? Bu işlem geri alınamaz!")) return;
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_URL}/teams/${teamId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (response.ok) {
-        showToast("Takım silindi.", "info");
-        setCurrentPage("teams");
-        fetchTeams();
-        fetchMyTeams(token);
-      } else {
-        const data = await response.json();
-        showToast(data.error || "Silinemedi!", "error");
-      }
-    } catch { showToast("Bağlantı hatası!", "error"); }
+  const handleDeleteTeam = (teamId) => {
+    showConfirm("Takımı silmek istediğinize emin misiniz? Bu işlem geri alınamaz!", async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(`${API_URL}/teams/${teamId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (response.ok) {
+          showToast("Takım silindi.", "info");
+          setCurrentPage("teams");
+          fetchTeams();
+          fetchMyTeams(token);
+        } else {
+          const data = await response.json();
+          showToast(data.error || "Silinemedi!", "error");
+        }
+      } catch { showToast("Bağlantı hatası!", "error"); }
+    }, { danger: true });
   };
 
   const handleChangeMemberRole = async (teamId, userId, role) => {
@@ -1107,21 +1144,22 @@ export default function SporlaConnect() {
     } catch (e) { /* sessizce geç */ }
   };
 
-  const handleCancelInvitation = async (teamId, inviteId) => {
-    if (!confirm("Daveti iptal etmek istediğinize emin misiniz?")) return;
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API_URL}/teams/${teamId}/invitations/${inviteId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        setPendingInvitations(prev => prev.filter(i => i.id !== inviteId));
-        showToast("Davet iptal edildi.", "info");
+  const handleCancelInvitation = (teamId, inviteId) => {
+    showConfirm("Daveti iptal etmek istediğinize emin misiniz?", async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API_URL}/teams/${teamId}/invitations/${inviteId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          setPendingInvitations(prev => prev.filter(i => i.id !== inviteId));
+          showToast("Davet iptal edildi.", "info");
+        }
+      } catch (e) {
+        showToast("Bir hata oluştu.", "error");
       }
-    } catch (e) {
-      showToast("Bir hata oluştu.", "error");
-    }
+    });
   };
 
   const handleJoinTeam = async (teamId) => {
@@ -1212,20 +1250,20 @@ export default function SporlaConnect() {
     }
   };
 
-  const handleRemoveMember = async (teamId, userId) => {
-    if (!confirm("Üyeyi çıkarmak istediğinize emin misiniz?")) return;
-
-    try {
-      const token = localStorage.getItem("token");
-      await fetch(`${API_URL}/teams/${teamId}/members/${userId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      showToast("Üye çıkarıldı.", "info");
-      fetchTeamDetails(teamId);
-    } catch (error) {
-      console.error("Remove member error:", error);
-    }
+  const handleRemoveMember = (teamId, userId) => {
+    showConfirm("Üyeyi takımdan çıkarmak istediğinize emin misiniz?", async () => {
+      try {
+        const token = localStorage.getItem("token");
+        await fetch(`${API_URL}/teams/${teamId}/members/${userId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        showToast("Üye çıkarıldı.", "info");
+        fetchTeamDetails(teamId);
+      } catch (error) {
+        console.error("Remove member error:", error);
+      }
+    }, { danger: true });
   };
 
   const handleAddTeamPost = async (teamId, message) => {
@@ -3451,12 +3489,11 @@ export default function SporlaConnect() {
     const handleSubmit = (e) => {
       e.preventDefault();
       if (!formData.location_lat || !formData.location_lng) {
-        const devam = window.confirm(
-          "⚠️ GPS koordinatı eklemediniz!\n\n" +
-          "Koordinat olmadan bu antrenman \"Yakınımda\" aramasında görünmeyecek.\n\n" +
-          "Yine de koordinatsız devam etmek istiyor musunuz?"
+        showConfirm(
+          "GPS koordinatı eklemediniz. Koordinat olmadan bu antrenman \"Yakınımda\" aramasında görünmeyecek. Yine de koordinatsız devam etmek istiyor musunuz?",
+          () => handleCreateTraining(formData)
         );
-        if (!devam) return;
+        return;
       }
       handleCreateTraining(formData);
     };
@@ -4745,6 +4782,7 @@ E-posta: <a href="mailto:info@sporlaconnect.com">info@sporlaconnect.com</a></p>
       {showNotifications && <NotificationsPanel />}
       {showProfileEdit && <ProfileEditModal />}
       {showInviteModal && <InviteModal />}
+      <ConfirmModal />
       <LegalModal />
       <CookieBanner />
       <Toast />
