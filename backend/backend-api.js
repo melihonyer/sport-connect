@@ -2274,14 +2274,15 @@ app.get('/api/test-email', async (req, res) => {
     MAIL_FROM_EMAIL: process.env.MAIL_FROM_EMAIL,
   };
   try {
-    const result = await sendEmail({
+    const info = await mailTransporter.sendMail({
+      from: `"SporlaConnect" <${process.env.MAIL_FROM_EMAIL || process.env.MAIL_USER}>`,
       to,
       subject: 'SporlaConnect — Test Maili',
       html: '<p>Bu bir test mailidir.</p>',
     });
-    res.json({ ok: true, result, cfg });
+    res.json({ ok: true, messageId: info.messageId, cfg });
   } catch (err) {
-    res.json({ ok: false, error: err.message, cfg });
+    res.json({ ok: false, error: err.message, code: err.code, cfg });
   }
 });
 
