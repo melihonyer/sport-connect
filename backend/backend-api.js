@@ -2262,6 +2262,29 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date() });
 });
 
+// Test email endpoint — geçici debug
+app.get('/api/test-email', async (req, res) => {
+  const to = req.query.to;
+  if (!to) return res.status(400).json({ error: 'to query param gerekli' });
+  const cfg = {
+    MAIL_HOST: process.env.MAIL_HOST,
+    MAIL_PORT: process.env.MAIL_PORT,
+    MAIL_USER: process.env.MAIL_USER,
+    MAIL_PASS: process.env.MAIL_PASS ? '***set***' : '(boş)',
+    MAIL_FROM_EMAIL: process.env.MAIL_FROM_EMAIL,
+  };
+  try {
+    const result = await sendEmail({
+      to,
+      subject: 'SporlaConnect — Test Maili',
+      html: '<p>Bu bir test mailidir.</p>',
+    });
+    res.json({ ok: true, result, cfg });
+  } catch (err) {
+    res.json({ ok: false, error: err.message, cfg });
+  }
+});
+
 // =====================================================
 // START SERVER
 // =====================================================
