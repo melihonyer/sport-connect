@@ -1688,45 +1688,149 @@ export default function SporlaConnect() {
     );
   };
 
-  const FeaturesSection = () => (
-    <div className="py-24 bg-slate-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold text-violet-700 bg-violet-100 mb-4">
-            ✦ Özellikler
-          </div>
-          <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-4 tracking-tight">
-            Neden{" "}
-            <span style={{background:"linear-gradient(90deg,#7C3AED,#4F46E5)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
-              SporlaConnect?
-            </span>
-          </h2>
-          <p className="text-lg text-slate-500 max-w-2xl mx-auto leading-relaxed">
-            Spor yapmayı seven insanları bir araya getiren, akıllı ve sosyal spor platformu.
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {features.map((feature, index) => (
-            <div
-              key={index}
-              className="group relative bg-white rounded-2xl p-8 border border-slate-100 hover:border-violet-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-            >
-              {/* Numara arka planda */}
-              <div className="absolute top-6 right-6 text-6xl font-black text-slate-100 select-none leading-none">
-                {feature.num}
+  // ── STATS STRIP ──────────────────────────────────────
+  const StatsStrip = () => (
+    <div style={{background:"#07070F"}} className="border-y border-white/5">
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="flex divide-x divide-white/[0.07] overflow-x-auto">
+          {[
+            {val: fmtNum(platformStats?.users),     suffix:"+", label:"Kayıtlı Sporcu",   accent:"#818CF8"},
+            {val: fmtNum(platformStats?.trainings), suffix:"+", label:"Tamamlanan Antrenman", accent:"#38BDF8"},
+            {val: fmtNum(platformStats?.teams),     suffix:"",  label:"Aktif Takım",       accent:"#34D399"},
+            {val: "50",                              suffix:"+", label:"Spor Dalı",          accent:"#F472B6"},
+          ].map((s, i) => (
+            <div key={i} className="flex-1 min-w-[140px] px-6 md:px-10 py-6 text-center select-none">
+              <div className="text-3xl md:text-4xl font-black text-white tracking-tighter leading-none">
+                {s.val || "—"}<span style={{color: s.accent}}>{s.suffix}</span>
               </div>
-              <div className={`relative w-14 h-14 bg-gradient-to-br ${feature.color} rounded-2xl flex items-center justify-center mb-5 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                <feature.icon className="w-7 h-7 text-white" />
-              </div>
-              <h3 className="text-lg font-bold text-slate-900 mb-2">{feature.title}</h3>
-              <p className="text-slate-500 text-sm leading-relaxed">{feature.description}</p>
+              <div className="text-[10px] text-white/25 mt-2 uppercase tracking-[0.22em] font-semibold">{s.label}</div>
             </div>
           ))}
         </div>
       </div>
     </div>
   );
+
+  // ── SPORT CATEGORIES STRIP ──────────────────────────
+  const SportCategories = () => {
+    const sports = [
+      {label:"Koşu",icon:"🏃"},{label:"Futbol",icon:"⚽"},{label:"Basketbol",icon:"🏀"},
+      {label:"Tenis",icon:"🎾"},{label:"Yüzme",icon:"🏊"},{label:"Bisiklet",icon:"🚴"},
+      {label:"Voleybol",icon:"🏐"},{label:"Dövüş",icon:"🥊"},{label:"Yoga",icon:"🧘"},
+      {label:"Fitness",icon:"💪"},{label:"Diğer",icon:"⚡"},
+    ];
+    return (
+      <div className="bg-white border-b border-slate-100">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex items-center gap-2 overflow-x-auto" style={{scrollbarWidth:"none"}}>
+            <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] whitespace-nowrap flex-shrink-0 pr-4 border-r border-slate-100 mr-2">
+              Sporlar
+            </span>
+            {sports.map((s, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentPage("trainings")}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-semibold text-slate-500 hover:text-violet-700 hover:bg-violet-50 hover:border-violet-200 transition-all whitespace-nowrap flex-shrink-0 border border-transparent"
+              >
+                <span className="text-base leading-none">{s.icon}</span> {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ── FEATURES SECTION — Editorial Split-Screen ────────
+  const FeaturesSection = () => {
+    const editorialFeatures = [
+      {
+        num:"01", icon: MapPin, accent:"#818CF8",
+        bg:"linear-gradient(135deg,#0f0c29 0%,#1e1b4b 50%,#1e1348 100%)",
+        sub:"GPS Destekli Arama",
+        title:"Yakınındaki Etkinlikleri Bul",
+        desc:"Konumunu paylaş, çevrenizdeki antrenmanları saniyeler içinde keşfet. Mesafe filtresiyle en uygun etkinliği bul.",
+        points:["5–50 km aralığında filtreleme","Harita üzerinde görüntüleme","Anlık bildirimler"],
+      },
+      {
+        num:"02", icon: Users, accent:"#38BDF8",
+        bg:"linear-gradient(135deg,#0c1a2e 0%,#0f2d4a 50%,#0a2540 100%)",
+        sub:"Takım Yönetimi",
+        title:"Kendi Takımını Kur ve Yönet",
+        desc:"Spor takımını oluştur, antrenör ekle, üye davet et. Tüm takvimi ve iletişimi tek platformdan yönet.",
+        points:["Sınırsız üye kapasitesi","Rol tabanlı yönetim (Sahip / Antrenör / Üye)","Antrenman takvimi & duyurular"],
+      },
+      {
+        num:"03", icon: Trophy, accent:"#FBBF24",
+        bg:"linear-gradient(135deg,#0d0a00 0%,#1f1500 50%,#1a1000 100%)",
+        sub:"Başarı Sistemi",
+        title:"Rozetler Kazan, İlerlemeni Göster",
+        desc:"Her antrenmanla yeni başarılar aç. İstatistikler ve rozetlerinle sporcu profilini zenginleştir.",
+        points:["20+ farklı başarı rozeti","Haftalık aktivite grafikleri","Topluluk liderlik tablosu"],
+      },
+    ];
+
+    return (
+      <div className="bg-white overflow-hidden">
+        {/* Section header */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 pt-20 pb-8">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+            <div>
+              <span className="text-xs font-black tracking-[0.35em] text-violet-500 uppercase block mb-3">Platform</span>
+              <h2 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter leading-[0.92]">
+                Neden<br/>
+                <span style={{WebkitTextStroke:"2px #7C3AED", color:"transparent"}}>SporlaConnect?</span>
+              </h2>
+            </div>
+            <p className="md:max-w-xs text-slate-400 text-sm leading-relaxed md:pb-2">
+              Spor yapmayı seven insanları bir araya getiren, akıllı ve sosyal spor platformu.
+            </p>
+          </div>
+        </div>
+
+        {/* Alternating editorial rows */}
+        {editorialFeatures.map((f, i) => (
+          <div key={i} className={`flex flex-col ${i % 2 === 0 ? "md:flex-row" : "md:flex-row-reverse"} border-t border-slate-100`} style={{minHeight:"340px"}}>
+            {/* Color panel */}
+            <div className="md:w-5/12 relative flex items-center justify-center py-14 px-10 overflow-hidden flex-shrink-0" style={{background: f.bg}}>
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden"
+                style={{fontSize:"clamp(120px,18vw,220px)", fontWeight:900, color:"rgba(255,255,255,0.035)", lineHeight:1, letterSpacing:"-0.05em"}}>
+                {f.num}
+              </div>
+              <div className="absolute inset-0 opacity-[0.04]"
+                style={{backgroundImage:"linear-gradient(rgba(255,255,255,.8) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.8) 1px,transparent 1px)", backgroundSize:"40px 40px"}}/>
+              <div className="relative z-10 text-center">
+                <div className="w-20 h-20 rounded-3xl mx-auto mb-5 flex items-center justify-center"
+                  style={{background:`${f.accent}18`, border:`1.5px solid ${f.accent}35`}}>
+                  <f.icon className="w-10 h-10" style={{color: f.accent}}/>
+                </div>
+                <div className="text-7xl font-black leading-none" style={{color: f.accent, letterSpacing:"-0.04em", opacity:0.9}}>{f.num}</div>
+              </div>
+            </div>
+            {/* Text panel */}
+            <div className="md:w-7/12 flex items-center px-8 md:px-14 py-12 bg-white">
+              <div className="max-w-lg">
+                <div className="text-xs font-black tracking-[0.3em] text-slate-400 uppercase mb-4">{f.sub}</div>
+                <h3 className="text-3xl md:text-4xl font-black text-slate-900 mb-4 tracking-tight leading-tight">{f.title}</h3>
+                <p className="text-slate-500 text-base leading-relaxed mb-7">{f.desc}</p>
+                <ul className="space-y-3">
+                  {f.points.map((p, j) => (
+                    <li key={j} className="flex items-center gap-3 text-slate-700 font-semibold text-sm">
+                      <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                        style={{background:`${f.accent}20`}}>
+                        <div className="w-2 h-2 rounded-full" style={{background: f.accent}}/>
+                      </div>
+                      {p}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   const haversineKm = (lat1, lng1, lat2, lng2) => {
     const R = 6371;
@@ -1914,81 +2018,97 @@ export default function SporlaConnect() {
   const HomePage = () => (
     <>
       <HeroSection />
+      <StatsStrip />
+      <SportCategories />
       <FeaturesSection />
 
-      {/* YAKINIMDAKI ANTRENMANLAR */}
-      <div className="py-20 bg-white relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 right-0 w-96 h-96 rounded-full opacity-5" style={{background:"radial-gradient(circle,#7C3AED,transparent 70%)"}}/>
-          <div className="absolute bottom-0 left-0 w-72 h-72 rounded-full opacity-5" style={{background:"radial-gradient(circle,#4F46E5,transparent 70%)"}}/>
-        </div>
-        <div className="relative max-w-7xl mx-auto px-4 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold text-violet-700 bg-violet-100 mb-4">
-            <MapPin className="w-4 h-4 inline mr-1" /> GPS Destekli Arama
-          </div>
-          <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-3 tracking-tight">Yakınındaki Antrenmanları Bul</h2>
-          <p className="text-slate-500 mb-10 max-w-lg mx-auto">Konumuna göre sana en yakın etkinlikleri saniyeler içinde keşfet</p>
-
-          <div className="flex flex-wrap justify-center gap-2 mb-8">
-            {[5, 10, 25, 50].map((km) => (
+      {/* ── GPS SEARCH — Dark Athletic Strip ── */}
+      <div className="relative overflow-hidden py-20" style={{background:"linear-gradient(135deg,#07070F 0%,#0D0B26 50%,#07070F 100%)"}}>
+        {/* grid overlay */}
+        <div className="absolute inset-0 opacity-[0.045] pointer-events-none"
+          style={{backgroundImage:"linear-gradient(rgba(255,255,255,.7) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.7) 1px,transparent 1px)", backgroundSize:"56px 56px"}}/>
+        {/* glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] rounded-full pointer-events-none"
+          style={{background:"radial-gradient(ellipse,rgba(99,102,241,0.18) 0%,transparent 65%)"}}/>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-10">
+            {/* Left: text */}
+            <div className="md:max-w-lg">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold border mb-5"
+                style={{background:"rgba(99,102,241,0.12)", borderColor:"rgba(99,102,241,0.3)", color:"#818CF8"}}>
+                <MapPin className="w-3.5 h-3.5"/> GPS Destekli Arama
+              </div>
+              <h2 className="text-4xl md:text-5xl font-black text-white mb-4 tracking-tight leading-tight">
+                Yakınındaki<br/>Antrenmanları Bul
+              </h2>
+              <p className="text-slate-400 text-base leading-relaxed">
+                Konumunu paylaş, çevrenizdeki etkinlikleri saniyeler içinde keşfet. Mesafe filtresiyle en uygununu seç.
+              </p>
+            </div>
+            {/* Right: control */}
+            <div className="flex flex-col items-start md:items-end gap-5">
+              <div className="flex flex-wrap gap-2">
+                {[5, 10, 25, 50].map((km) => (
+                  <button
+                    key={km}
+                    onClick={() => setNearbyDistance(km)}
+                    className="px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200"
+                    style={nearbyDistance === km
+                      ? {background:"linear-gradient(135deg,#6366F1,#8B5CF6)", color:"#fff", boxShadow:"0 4px 20px rgba(99,102,241,0.4)"}
+                      : {background:"rgba(255,255,255,0.06)", color:"rgba(255,255,255,0.55)", border:"1px solid rgba(255,255,255,0.1)"}}
+                  >
+                    {km} km
+                  </button>
+                ))}
+              </div>
               <button
-                key={km}
-                onClick={() => setNearbyDistance(km)}
-                className={`px-5 py-2.5 rounded-xl text-sm font-bold border-2 transition-all duration-200 ${
-                  nearbyDistance === km
-                    ? "border-violet-600 text-white shadow-lg"
-                    : "border-slate-200 text-slate-600 hover:border-violet-400 bg-white hover:text-violet-600"
-                }`}
-                style={nearbyDistance === km ? {background:"linear-gradient(135deg,#7C3AED,#4F46E5)"} : {}}
+                onClick={() => handleNearbySearch()}
+                disabled={locationLoading}
+                className="flex items-center gap-2.5 px-8 py-3.5 rounded-xl font-bold text-white text-sm transition-all duration-300 hover:opacity-90 hover:scale-105 disabled:opacity-50 disabled:scale-100"
+                style={{background:"linear-gradient(135deg,#6366F1,#8B5CF6)", boxShadow:"0 8px 32px rgba(99,102,241,0.35)"}}
               >
-                {km} km
+                {locationLoading
+                  ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/> Konum alınıyor…</>
+                  : <><MapPin className="w-4 h-4"/> Yakınımda Ara</>}
               </button>
-            ))}
+            </div>
           </div>
-
-          <button
-            onClick={() => handleNearbySearch()}
-            disabled={locationLoading}
-            className="inline-flex items-center gap-2.5 px-8 py-4 rounded-xl font-bold text-white text-base transition-all duration-300 hover:opacity-90 hover:shadow-xl hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100 shadow-lg"
-            style={{background:"linear-gradient(135deg,#7C3AED,#4F46E5)"}}
-          >
-            {locationLoading ? (
-              <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"/> Konum alınıyor…</>
-            ) : (
-              <><MapPin className="w-5 h-5"/> Yakınımda Ara</>
-            )}
-          </button>
         </div>
       </div>
 
-      {/* YAKLAŞAN ANTRENMANLAR */}
+      {/* ── UPCOMING TRAININGS — Magazine Grid ── */}
       <div className="py-20 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex justify-between items-end mb-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8">
+          {/* Header */}
+          <div className="flex items-end justify-between mb-12">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold text-indigo-700 bg-indigo-100 mb-3">✦ Keşfet</div>
-              <h2 className="text-4xl font-black text-slate-900 tracking-tight">Yaklaşan Antrenmanlar</h2>
+              <span className="text-xs font-black tracking-[0.3em] text-violet-500 uppercase block mb-3">Keşfet</span>
+              <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter leading-none">
+                Yaklaşan<br/>Antrenmanlar
+              </h2>
             </div>
             <button
               onClick={() => setCurrentPage("trainings")}
-              className="flex items-center gap-1.5 text-sm font-bold text-violet-700 hover:text-violet-800 transition-colors"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all hover:shadow-md"
+              style={{background:"linear-gradient(135deg,#7C3AED,#4F46E5)", color:"#fff"}}
             >
               Tümünü Gör
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
             </button>
           </div>
+
           {trainings.length > 0 ? (
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
               {trainings.slice(0, 6).map((training) => (
                 <TrainingCard key={training.id} training={training} onClick={fetchTrainingDetails} />
               ))}
             </div>
           ) : (
-            <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200">
+            <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-slate-200">
               <Activity className="w-12 h-12 text-slate-200 mx-auto mb-3" />
-              <p className="text-slate-500 font-semibold mb-1">Antrenman yüklenemedi</p>
-              <p className="text-slate-400 text-sm">Backend sunucusunun çalıştığından emin olun</p>
-              <button onClick={fetchTrainings} className="mt-4 px-5 py-2 rounded-xl text-sm font-semibold text-violet-700 bg-violet-100 hover:bg-violet-200 transition-colors">
+              <p className="text-slate-500 font-bold mb-1">Antrenman bulunamadı</p>
+              <p className="text-slate-400 text-sm mb-5">Sunucu bağlantısı kontrol ediliyor…</p>
+              <button onClick={fetchTrainings} className="px-5 py-2.5 rounded-xl text-sm font-bold text-violet-700 bg-violet-100 hover:bg-violet-200 transition-colors">
                 Tekrar Dene
               </button>
             </div>
@@ -1996,21 +2116,52 @@ export default function SporlaConnect() {
         </div>
       </div>
 
-      {/* CTA BANNER */}
+      {/* ── CTA — Full Bleed Cinematic ── */}
       {!user && (
-        <div className="py-20" style={{background:"linear-gradient(135deg,#0D0B26,#1a1040,#0f2044)"}}>
-          <div className="max-w-3xl mx-auto px-4 text-center">
-            <div className="mb-4 flex justify-center"><Dumbbell className="w-14 h-14 text-violet-400" /></div>
-            <h2 className="text-4xl font-black text-white mb-4 tracking-tight">Spor topluluğuna katıl!</h2>
-            <p className="text-slate-300 text-lg mb-8 leading-relaxed">Ücretsiz kaydol, takımlar kur, antrenmanlar planla. Binlerce sporcu seni bekliyor.</p>
-            <button
-              onClick={() => { setAuthMode("register"); setIsAuthModalOpen(true); }}
-              className="inline-flex items-center gap-2 px-10 py-4 rounded-xl font-bold text-white text-lg transition-all hover:scale-105 hover:shadow-2xl shadow-lg"
-              style={{background:"linear-gradient(135deg,#7C3AED,#4F46E5)"}}
-            >
-              Ücretsiz Kaydol
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
-            </button>
+        <div className="relative overflow-hidden py-28" style={{background:"linear-gradient(135deg,#03020A 0%,#0D0B26 40%,#1a0f3a 70%,#0D0B26 100%)"}}>
+          {/* grid */}
+          <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
+            style={{backgroundImage:"linear-gradient(rgba(255,255,255,.6) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.6) 1px,transparent 1px)", backgroundSize:"60px 60px"}}/>
+          {/* glow orbs */}
+          <div className="absolute -left-32 top-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full pointer-events-none"
+            style={{background:"radial-gradient(circle,rgba(124,58,237,0.22) 0%,transparent 65%)"}}/>
+          <div className="absolute -right-32 top-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full pointer-events-none"
+            style={{background:"radial-gradient(circle,rgba(56,189,248,0.15) 0%,transparent 65%)"}}/>
+
+          <div className="relative max-w-4xl mx-auto px-4 text-center">
+            {/* Big line decoration */}
+            <div className="flex items-center justify-center gap-4 mb-8">
+              <div className="h-px flex-1 max-w-20" style={{background:"linear-gradient(90deg,transparent,rgba(129,140,248,0.4))"}}/>
+              <Dumbbell className="w-8 h-8" style={{color:"#818CF8"}}/>
+              <div className="h-px flex-1 max-w-20" style={{background:"linear-gradient(90deg,rgba(129,140,248,0.4),transparent)"}}/>
+            </div>
+            <span className="text-xs font-black tracking-[0.4em] text-violet-400 uppercase block mb-6">Topluluğa Katıl</span>
+            <h2 className="text-5xl md:text-7xl font-black text-white mb-6 tracking-tighter leading-[0.95]">
+              Spor seni<br/>
+              <span style={{background:"linear-gradient(90deg,#818CF8,#38BDF8)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent"}}>
+                bekliyor.
+              </span>
+            </h2>
+            <p className="text-slate-400 text-lg mb-10 max-w-xl mx-auto leading-relaxed">
+              Ücretsiz kaydol, takımlar kur, antrenmanlar planla. Binlerce sporcu seni bekliyor.
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-4">
+              <button
+                onClick={() => { setAuthMode("register"); setIsAuthModalOpen(true); }}
+                className="inline-flex items-center gap-2.5 px-10 py-4 rounded-2xl font-black text-white text-base transition-all hover:scale-105 hover:shadow-2xl"
+                style={{background:"linear-gradient(135deg,#6366F1,#8B5CF6)", boxShadow:"0 12px 40px rgba(99,102,241,0.4)"}}
+              >
+                Ücretsiz Başla
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+              </button>
+              <button
+                onClick={() => { setAuthMode("login"); setIsAuthModalOpen(true); }}
+                className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl font-semibold text-sm transition-all hover:bg-white/10"
+                style={{color:"rgba(186,230,253,0.8)", border:"1px solid rgba(255,255,255,0.12)"}}
+              >
+                Zaten hesabım var
+              </button>
+            </div>
           </div>
         </div>
       )}
