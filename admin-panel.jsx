@@ -47,7 +47,7 @@ function SimpleForm({ fields, onSave, onCancel, saving }) {
             </div>
           ) : f.type === "toggle" ? (
             <button type="button" onClick={()=>setData(d=>({...d,[f.key]:!d[f.key]}))}
-              className={`relative w-11 h-6 rounded-full transition-colors ${data[f.key]?"bg-green-500":"bg-slate-300"}`}>
+              className={`relative w-11 h-6 rounded-full transition-colors overflow-hidden ${data[f.key]?"bg-green-500":"bg-slate-300"}`}>
               <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${data[f.key]?"translate-x-6":"translate-x-1"}`}/>
             </button>
           ) : (
