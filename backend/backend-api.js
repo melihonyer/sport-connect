@@ -2350,6 +2350,16 @@ app.put('/api/admin/home-news/:id', isAdmin, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+app.post('/api/admin/home-news/:id/image', isAdmin, uploadBanner.single('image'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Dosya yok.' });
+    const fileName = `home-news-${req.params.id}-${Date.now()}.${req.file.originalname.split('.').pop()}`;
+    const imageUrl = await uploadToSupabase('banners', fileName, req.file.buffer, req.file.mimetype);
+    const r = await pool.query('UPDATE home_news SET image_url=$1 WHERE id=$2 RETURNING *', [imageUrl, req.params.id]);
+    res.json(r.rows[0]);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.delete('/api/admin/home-news/:id', isAdmin, async (req, res) => {
   try {
     await pool.query('DELETE FROM home_news WHERE id=$1', [req.params.id]);
@@ -2398,6 +2408,16 @@ app.put('/api/admin/home-gallery/:id', isAdmin, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+app.post('/api/admin/home-gallery/:id/image', isAdmin, uploadBanner.single('image'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Dosya yok.' });
+    const fileName = `home-gallery-${req.params.id}-${Date.now()}.${req.file.originalname.split('.').pop()}`;
+    const imageUrl = await uploadToSupabase('banners', fileName, req.file.buffer, req.file.mimetype);
+    const r = await pool.query('UPDATE home_gallery SET image_url=$1 WHERE id=$2 RETURNING *', [imageUrl, req.params.id]);
+    res.json(r.rows[0]);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.delete('/api/admin/home-gallery/:id', isAdmin, async (req, res) => {
   try {
     await pool.query('DELETE FROM home_gallery WHERE id=$1', [req.params.id]);
@@ -2442,6 +2462,8 @@ pool.query(`
     created_at  TIMESTAMPTZ DEFAULT NOW()
   )
 `).catch(() => {});
+pool.query(`ALTER TABLE home_news     ADD COLUMN IF NOT EXISTS image_url TEXT DEFAULT NULL`).catch(() => {});
+pool.query(`ALTER TABLE home_gallery  ADD COLUMN IF NOT EXISTS image_url TEXT DEFAULT NULL`).catch(() => {});
 pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS mottos JSONB DEFAULT '[]'`).catch(() => {});
 pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS cta_primary_url TEXT DEFAULT ''`).catch(() => {});
 pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS cta_secondary_url TEXT DEFAULT ''`).catch(() => {});

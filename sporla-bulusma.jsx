@@ -1983,22 +1983,16 @@ export default function Muuvlink() {
           {homeNews.map((item) => (
             <article key={item.id}
               className="group relative flex-1 overflow-hidden cursor-pointer"
-              style={{background: item.bg}}>
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <span className="text-8xl opacity-20 transition-transform duration-500 group-hover:scale-110">{item.icon}</span>
-              </div>
-              <div className="absolute inset-0" style={{background:"linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.3) 50%, transparent 100%)"}}/>
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300"/>
+              style={{background:"#1a2a1a"}}>
+              {item.image_url && (
+                <img src={item.image_url} alt={item.title}
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"/>
+              )}
+              <div className="absolute inset-0" style={{background:"linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.25) 55%, transparent 100%)"}}/>
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300"/>
               <div className="absolute bottom-0 left-0 right-0 p-5">
-                <h3 className="text-white font-semibold text-sm leading-snug mb-3 line-clamp-2">{item.title}</h3>
-                <div className="flex items-center gap-1 text-white/60 text-xs font-light">
-                  {item.date_label && <><span>Yayın {item.date_label}</span><span className="mx-1.5 text-white/30">/</span></>}
-                  <Eye className="w-3 h-3 inline"/>
-                  <span className="ml-0.5">{item.views}</span>
-                  <span className="mx-1.5 text-white/30">/</span>
-                  <MessageCircle className="w-3 h-3 inline"/>
-                  <span className="ml-0.5">{item.comments}</span>
-                </div>
+                <h3 className="text-white font-semibold text-sm leading-snug mb-1 line-clamp-2">{item.title}</h3>
+                {item.date_label && <p className="text-white/50 text-xs font-light">Yayın {item.date_label}</p>}
               </div>
             </article>
           ))}
@@ -2010,14 +2004,15 @@ export default function Muuvlink() {
   // ── GALERİ ────────────────────────────────────────────
   const GallerySection = () => {
     if (homeGallery.length === 0) return null;
+    const [lightbox, setLightbox] = useState(null);
 
     const GalleryItem = ({ p, style }) => (
-      <div className="group relative overflow-hidden cursor-pointer" style={{background: p.bg, ...style}}>
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <span className="text-7xl opacity-20 transition-transform duration-500 group-hover:scale-110">{p.icon}</span>
-        </div>
+      <div className="group relative overflow-hidden cursor-pointer bg-slate-900" style={style} onClick={()=>p.image_url&&setLightbox(p)}>
+        {p.image_url && (
+          <img src={p.image_url} alt="" className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"/>
+        )}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-center justify-center">
-          <ZoomIn className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300"/>
+          {p.image_url && <ZoomIn className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300"/>}
         </div>
       </div>
     );
@@ -2068,6 +2063,16 @@ export default function Muuvlink() {
               </div>
             )}
           </>
+        )}
+
+        {/* Lightbox */}
+        {lightbox && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90" onClick={()=>setLightbox(null)}>
+            <button className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition" onClick={()=>setLightbox(null)}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+            <img src={lightbox.image_url} alt="" className="max-w-[90vw] max-h-[90vh] object-contain rounded-xl shadow-2xl" onClick={e=>e.stopPropagation()}/>
+          </div>
         )}
       </section>
     );

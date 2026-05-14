@@ -10,95 +10,50 @@ import {
 const API_URL  = import.meta.env.VITE_API_URL  ?? (import.meta.env.DEV ? "http://localhost:3000/api" : "/api");
 const BASE_URL = import.meta.env.VITE_BASE_URL ?? (import.meta.env.DEV ? "http://localhost:3000" : "");
 
-// ─── Renk seçenekleri (haber/galeri arka plan) ──────────────
-const BG_PRESETS = [
-  { label:"Yeşil",  value:"linear-gradient(160deg,#1a3a2a 0%,#2d6a4f 100%)" },
-  { label:"Mavi",   value:"linear-gradient(160deg,#1a2a3a 0%,#2d4f6a 100%)" },
-  { label:"Turuncu",value:"linear-gradient(160deg,#3a2a1a 0%,#6a4f2d 100%)" },
-  { label:"Mor",    value:"linear-gradient(160deg,#2a1a3a 0%,#4f2d6a 100%)" },
-  { label:"Kırmızı",value:"linear-gradient(160deg,#3a1a1a 0%,#6a2d2d 100%)" },
-  { label:"Koyu Yeşil",value:"linear-gradient(160deg,#0a2010,#155a20)" },
-  { label:"Sarı",   value:"linear-gradient(160deg,#1a1a0a,#3a3a10)" },
-  { label:"Lacivert",value:"linear-gradient(160deg,#0a0a2a,#151540)" },
-];
-
-const ICONS = ["🏃","🏐","🏀","🚴","🎾","🧘","🏊","⚽","🏋️","🤸","🏈","🎯","🏆","🥊","⛷️","🏄"];
-
-function SimpleForm({ fields, onSave, onCancel, saving }) {
-  const [data, setData] = React.useState(fields.initial);
+// ─── Resim yükleme yardımcısı ───────────────────────────────
+function ImageUploadBtn({ itemId, endpoint, token, onUploaded, currentUrl }) {
+  const [uploading, setUploading] = React.useState(false);
+  const ref = React.useRef(null);
+  const handleFile = async (e) => {
+    const file = e.target.files?.[0]; if (!file) return;
+    setUploading(true);
+    try {
+      const fd = new FormData(); fd.append('image', file);
+      const res = await fetch(`${API_URL}${endpoint}`, { method:'POST', headers:{ Authorization:`Bearer ${token}` }, body:fd });
+      const data = await res.json();
+      if (data.image_url) onUploaded(data);
+    } finally { setUploading(false); e.target.value=''; }
+  };
   return (
-    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
-      {fields.inputs.map(f => (
-        <div key={f.key}>
-          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">{f.label}</label>
-          {f.type === "select" ? (
-            <select value={data[f.key]||""} onChange={e=>setData(d=>({...d,[f.key]:e.target.value}))}
-              className="w-full h-10 px-3 border border-slate-200 rounded-xl text-sm bg-white">
-              {f.options.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-          ) : f.type === "emoji" ? (
-            <div className="flex flex-wrap gap-2">
-              {ICONS.map(ic=>(
-                <button key={ic} type="button"
-                  onClick={()=>setData(d=>({...d,[f.key]:ic}))}
-                  className={`w-10 h-10 rounded-xl text-xl transition ${data[f.key]===ic?"ring-2 ring-green-500 bg-green-50":"bg-white border border-slate-200 hover:border-green-300"}`}
-                >{ic}</button>
-              ))}
-            </div>
-          ) : f.type === "toggle" ? (
-            <button type="button" onClick={()=>setData(d=>({...d,[f.key]:!d[f.key]}))}
-              className={`relative w-11 h-6 rounded-full transition-colors overflow-hidden ${data[f.key]?"bg-green-500":"bg-slate-300"}`}>
-              <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${data[f.key]?"translate-x-6":"translate-x-1"}`}/>
-            </button>
-          ) : (
-            <input type={f.type||"text"} value={data[f.key]||""} onChange={e=>setData(d=>({...d,[f.key]:e.target.value}))}
-              className="w-full h-10 px-3 border border-slate-200 rounded-xl text-sm bg-white"
-              placeholder={f.placeholder||""}/>
-          )}
-        </div>
-      ))}
-      <div className="flex gap-3 pt-2">
-        <button onClick={onCancel} className="px-4 py-2 text-sm text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50">İptal</button>
-        <button onClick={()=>onSave(data)} disabled={saving}
-          className="flex-1 py-2 text-sm font-semibold text-white rounded-xl disabled:opacity-50 transition hover:opacity-90"
-          style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}>
-          {saving ? "Kaydediliyor…" : "Kaydet"}
-        </button>
-      </div>
-    </div>
+    <>
+      <input ref={ref} type="file" accept="image/*" className="hidden" onChange={handleFile}/>
+      <button type="button" onClick={()=>ref.current?.click()} disabled={uploading}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 hover:bg-slate-50 transition text-slate-600 disabled:opacity-50">
+        <Upload className="w-3.5 h-3.5"/>
+        {uploading ? "Yükleniyor…" : currentUrl ? "Resmi Değiştir" : "Resim Yükle"}
+      </button>
+    </>
   );
 }
 
 // ─── Haberler sekmesi ────────────────────────────────────────
-function HomeNewsTab({ items, setItems, api }) {
+function HomeNewsTab({ items, setItems, api, token }) {
   const [showForm, setShowForm] = React.useState(false);
   const [editId, setEditId]   = React.useState(null);
   const [saving, setSaving]   = React.useState(false);
+  const [form, setForm]       = React.useState({ title:"", date_label:"", is_active:true, order_index:0 });
 
-  const emptyNews = { title:"", date_label:"", icon:"🏃", bg:BG_PRESETS[0].value, views:0, comments:0, is_active:true, order_index:0 };
+  const startNew  = () => { setForm({ title:"", date_label:"", is_active:true, order_index:items.length }); setEditId(null); setShowForm(true); };
+  const startEdit = (item) => { setForm({ title:item.title, date_label:item.date_label||"", is_active:item.is_active, order_index:item.order_index||0 }); setEditId(item.id); setShowForm(true); };
 
-  const fields = {
-    initial: editId ? (items.find(i=>i.id===editId)||emptyNews) : emptyNews,
-    inputs: [
-      { key:"title",      label:"Başlık",       type:"text",   placeholder:"Etkinlik başlığı" },
-      { key:"date_label", label:"Tarih",         type:"text",   placeholder:"12 Mayıs 2026" },
-      { key:"icon",       label:"İkon",          type:"emoji" },
-      { key:"bg",         label:"Arka Plan",     type:"select", options:BG_PRESETS },
-      { key:"views",      label:"Görüntülenme",  type:"number" },
-      { key:"comments",   label:"Yorum",         type:"number" },
-      { key:"order_index",label:"Sıra",          type:"number" },
-      { key:"is_active",  label:"Aktif",         type:"toggle" },
-    ],
-  };
-
-  const handleSave = async (data) => {
+  const handleSave = async () => {
     setSaving(true);
     try {
       if (editId) {
-        const r = await api(`/admin/home-news/${editId}`, { method:"PUT", body:JSON.stringify(data) });
+        const r = await api(`/admin/home-news/${editId}`, { method:"PUT", body:JSON.stringify(form) });
         if (r) setItems(prev=>prev.map(i=>i.id===editId?r:i));
       } else {
-        const r = await api("/admin/home-news", { method:"POST", body:JSON.stringify(data) });
+        const r = await api("/admin/home-news", { method:"POST", body:JSON.stringify(form) });
         if (r) setItems(prev=>[...prev,r]);
       }
       setShowForm(false); setEditId(null);
@@ -116,6 +71,9 @@ function HomeNewsTab({ items, setItems, api }) {
     if (r) setItems(prev=>prev.map(i=>i.id===item.id?r:i));
   };
 
+  const lbl = "block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5";
+  const inp = "w-full h-10 px-3 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-300";
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
@@ -123,7 +81,7 @@ function HomeNewsTab({ items, setItems, api }) {
           <h2 className="font-medium text-slate-900 text-lg">Takım Etkinlikleri</h2>
           <p className="text-slate-400 text-sm mt-0.5">Anasayfadaki haber kartlarını yönetin.</p>
         </div>
-        <button onClick={()=>{setEditId(null);setShowForm(true);}}
+        <button onClick={startNew}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white transition hover:opacity-90 shadow-lg"
           style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}>
           <Plus className="w-4 h-4"/> Yeni Haber
@@ -131,8 +89,25 @@ function HomeNewsTab({ items, setItems, api }) {
       </div>
 
       {showForm && (
-        <SimpleForm key={editId||"new"} fields={{...fields, initial: editId?(items.find(i=>i.id===editId)||emptyNews):emptyNews}}
-          onSave={handleSave} onCancel={()=>{setShowForm(false);setEditId(null);}} saving={saving}/>
+        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
+          <div><label className={lbl}>Başlık</label><input className={inp} value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))} placeholder="Etkinlik başlığı"/></div>
+          <div><label className={lbl}>Tarih</label><input className={inp} value={form.date_label} onChange={e=>setForm(f=>({...f,date_label:e.target.value}))} placeholder="12 Mayıs 2026"/></div>
+          <div className="flex items-center gap-3">
+            <label className={lbl + " mb-0"}>Aktif</label>
+            <button type="button" onClick={()=>setForm(f=>({...f,is_active:!f.is_active}))}
+              className={`relative w-11 h-6 rounded-full transition-colors overflow-hidden ${form.is_active?"bg-green-500":"bg-slate-300"}`}>
+              <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${form.is_active?"translate-x-6":"translate-x-1"}`}/>
+            </button>
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button onClick={()=>{setShowForm(false);setEditId(null);}} className="px-4 py-2 text-sm text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50">İptal</button>
+            <button onClick={handleSave} disabled={saving}
+              className="flex-1 py-2 text-sm font-semibold text-white rounded-xl disabled:opacity-50 transition hover:opacity-90"
+              style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}>
+              {saving?"Kaydediliyor…":"Kaydet"}
+            </button>
+          </div>
+        </div>
       )}
 
       <div className="grid md:grid-cols-2 gap-4">
@@ -144,21 +119,25 @@ function HomeNewsTab({ items, setItems, api }) {
         )}
         {items.map(item=>(
           <div key={item.id} className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
-            <div className="h-20 flex items-center justify-center relative" style={{background:item.bg}}>
-              <span className="text-4xl opacity-40">{item.icon}</span>
+            <div className="h-36 relative bg-slate-100 overflow-hidden">
+              {item.image_url
+                ? <img src={item.image_url} alt="" className="w-full h-full object-cover"/>
+                : <div className="w-full h-full flex items-center justify-center text-slate-300"><Upload className="w-8 h-8"/></div>}
               <span className={`absolute top-2 right-2 text-xs px-2 py-0.5 rounded-full font-medium ${item.is_active?"bg-green-100 text-green-700":"bg-slate-100 text-slate-500"}`}>
                 {item.is_active?"Aktif":"Pasif"}
               </span>
             </div>
             <div className="p-4">
               <p className="font-medium text-slate-800 text-sm line-clamp-2 mb-1">{item.title}</p>
-              <p className="text-xs text-slate-400 mb-3">{item.date_label} · {item.views} görüntülenme · {item.comments} yorum</p>
-              <div className="flex gap-2">
+              {item.date_label && <p className="text-xs text-slate-400 mb-3">{item.date_label}</p>}
+              <div className="flex gap-2 flex-wrap">
+                <ImageUploadBtn itemId={item.id} endpoint={`/admin/home-news/${item.id}/image`} token={token}
+                  currentUrl={item.image_url} onUploaded={r=>setItems(prev=>prev.map(i=>i.id===item.id?r:i))}/>
                 <button onClick={()=>toggleActive(item)}
-                  className="flex-1 py-1.5 text-xs font-medium rounded-lg border border-slate-200 hover:bg-slate-50 transition text-slate-600">
+                  className="py-1.5 px-3 text-xs font-medium rounded-lg border border-slate-200 hover:bg-slate-50 transition text-slate-600">
                   {item.is_active?"Pasife Al":"Aktife Al"}
                 </button>
-                <button onClick={()=>{setEditId(item.id);setShowForm(true);}}
+                <button onClick={()=>startEdit(item)}
                   className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 transition text-slate-600">
                   <Edit2 className="w-3.5 h-3.5"/>
                 </button>
@@ -176,31 +155,23 @@ function HomeNewsTab({ items, setItems, api }) {
 }
 
 // ─── Galeri sekmesi ──────────────────────────────────────────
-function HomeGalleryTab({ items, setItems, api }) {
+function HomeGalleryTab({ items, setItems, api, token }) {
   const [showForm, setShowForm] = React.useState(false);
   const [editId, setEditId]   = React.useState(null);
   const [saving, setSaving]   = React.useState(false);
+  const [form, setForm]       = React.useState({ is_active:true, order_index:0 });
 
-  const emptyItem = { icon:"🏃", bg:BG_PRESETS[0].value, is_active:true, order_index:0 };
+  const startNew  = () => { setForm({ is_active:true, order_index:items.length }); setEditId(null); setShowForm(true); };
+  const startEdit = (item) => { setForm({ is_active:item.is_active, order_index:item.order_index||0 }); setEditId(item.id); setShowForm(true); };
 
-  const fields = (initial) => ({
-    initial,
-    inputs: [
-      { key:"icon",       label:"İkon",      type:"emoji" },
-      { key:"bg",         label:"Arka Plan", type:"select", options:BG_PRESETS },
-      { key:"order_index",label:"Sıra",      type:"number" },
-      { key:"is_active",  label:"Aktif",     type:"toggle" },
-    ],
-  });
-
-  const handleSave = async (data) => {
+  const handleSave = async () => {
     setSaving(true);
     try {
       if (editId) {
-        const r = await api(`/admin/home-gallery/${editId}`, { method:"PUT", body:JSON.stringify(data) });
+        const r = await api(`/admin/home-gallery/${editId}`, { method:"PUT", body:JSON.stringify(form) });
         if (r) setItems(prev=>prev.map(i=>i.id===editId?r:i));
       } else {
-        const r = await api("/admin/home-gallery", { method:"POST", body:JSON.stringify(data) });
+        const r = await api("/admin/home-gallery", { method:"POST", body:JSON.stringify(form) });
         if (r) setItems(prev=>[...prev,r]);
       }
       setShowForm(false); setEditId(null);
@@ -218,6 +189,8 @@ function HomeGalleryTab({ items, setItems, api }) {
     if (r) setItems(prev=>prev.map(i=>i.id===item.id?r:i));
   };
 
+  const lbl = "block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5";
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
@@ -225,7 +198,7 @@ function HomeGalleryTab({ items, setItems, api }) {
           <h2 className="font-medium text-slate-900 text-lg">Galeri Kartları</h2>
           <p className="text-slate-400 text-sm mt-0.5">Anasayfadaki galeri bölümünü yönetin.</p>
         </div>
-        <button onClick={()=>{setEditId(null);setShowForm(true);}}
+        <button onClick={startNew}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white transition hover:opacity-90 shadow-lg"
           style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}>
           <Plus className="w-4 h-4"/> Yeni Kart
@@ -233,8 +206,24 @@ function HomeGalleryTab({ items, setItems, api }) {
       </div>
 
       {showForm && (
-        <SimpleForm key={editId||"new"} fields={fields(editId?(items.find(i=>i.id===editId)||emptyItem):emptyItem)}
-          onSave={handleSave} onCancel={()=>{setShowForm(false);setEditId(null);}} saving={saving}/>
+        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
+          <div className="flex items-center gap-3">
+            <label className={lbl + " mb-0"}>Aktif</label>
+            <button type="button" onClick={()=>setForm(f=>({...f,is_active:!f.is_active}))}
+              className={`relative w-11 h-6 rounded-full transition-colors overflow-hidden ${form.is_active?"bg-green-500":"bg-slate-300"}`}>
+              <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${form.is_active?"translate-x-6":"translate-x-1"}`}/>
+            </button>
+          </div>
+          <p className="text-xs text-slate-400">Kartı oluşturduktan sonra resim yükleyebilirsiniz.</p>
+          <div className="flex gap-3 pt-2">
+            <button onClick={()=>{setShowForm(false);setEditId(null);}} className="px-4 py-2 text-sm text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50">İptal</button>
+            <button onClick={handleSave} disabled={saving}
+              className="flex-1 py-2 text-sm font-semibold text-white rounded-xl disabled:opacity-50 transition hover:opacity-90"
+              style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}>
+              {saving?"Kaydediliyor…":"Kaydet"}
+            </button>
+          </div>
+        </div>
       )}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -246,25 +235,31 @@ function HomeGalleryTab({ items, setItems, api }) {
         )}
         {items.map(item=>(
           <div key={item.id} className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
-            <div className="h-28 flex items-center justify-center relative" style={{background:item.bg}}>
-              <span className="text-4xl opacity-40">{item.icon}</span>
+            <div className="h-28 relative bg-slate-100 overflow-hidden">
+              {item.image_url
+                ? <img src={item.image_url} alt="" className="w-full h-full object-cover"/>
+                : <div className="w-full h-full flex items-center justify-center text-slate-300"><Upload className="w-6 h-6"/></div>}
               <span className={`absolute top-2 right-2 text-xs px-2 py-0.5 rounded-full font-medium ${item.is_active?"bg-green-100 text-green-700":"bg-slate-100 text-slate-500"}`}>
                 {item.is_active?"Aktif":"Pasif"}
               </span>
             </div>
-            <div className="p-3 flex gap-2">
-              <button onClick={()=>toggleActive(item)}
-                className="flex-1 py-1.5 text-xs font-medium rounded-lg border border-slate-200 hover:bg-slate-50 transition text-slate-600">
-                {item.is_active?"Pasife Al":"Aktife Al"}
-              </button>
-              <button onClick={()=>{setEditId(item.id);setShowForm(true);}}
-                className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 transition text-slate-600">
-                <Edit2 className="w-3.5 h-3.5"/>
-              </button>
-              <button onClick={()=>handleDelete(item)}
-                className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 transition text-red-500">
-                <Trash2 className="w-3.5 h-3.5"/>
-              </button>
+            <div className="p-3 flex flex-col gap-2">
+              <ImageUploadBtn itemId={item.id} endpoint={`/admin/home-gallery/${item.id}/image`} token={token}
+                currentUrl={item.image_url} onUploaded={r=>setItems(prev=>prev.map(i=>i.id===item.id?r:i))}/>
+              <div className="flex gap-2">
+                <button onClick={()=>toggleActive(item)}
+                  className="flex-1 py-1.5 text-xs font-medium rounded-lg border border-slate-200 hover:bg-slate-50 transition text-slate-600">
+                  {item.is_active?"Pasif":"Aktif"}
+                </button>
+                <button onClick={()=>startEdit(item)}
+                  className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 transition text-slate-600">
+                  <Edit2 className="w-3.5 h-3.5"/>
+                </button>
+                <button onClick={()=>handleDelete(item)}
+                  className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 transition text-red-500">
+                  <Trash2 className="w-3.5 h-3.5"/>
+                </button>
+              </div>
             </div>
           </div>
         ))}
@@ -1231,14 +1226,14 @@ export default function AdminPanel() {
           {/* ── HOME NEWS ────────────────────────────────── */}
           {!loading && tab === "home-news" && (
             <HomeNewsTab
-              items={homeNews} setItems={setHomeNews} api={api}
+              items={homeNews} setItems={setHomeNews} api={api} token={token}
             />
           )}
 
           {/* ── HOME GALLERY ─────────────────────────────── */}
           {!loading && tab === "home-gallery" && (
             <HomeGalleryTab
-              items={homeGallery} setItems={setHomeGallery} api={api}
+              items={homeGallery} setItems={setHomeGallery} api={api} token={token}
             />
           )}
 
