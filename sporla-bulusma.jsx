@@ -3523,55 +3523,64 @@ export default function Muuvlink() {
       handleCreateTraining(formData);
     };
 
+    const inputCls = "w-full h-12 px-4 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-green-300 focus:border-green-400 transition-colors";
+    const selectCls = `${inputCls} appearance-none cursor-pointer`;
+    const labelCls = "block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5";
+
     return (
-      <div className="max-w-2xl mx-auto px-4 py-12">
-        <div className="bg-white rounded-2xl p-8 border">
-          <h1 className="text-3xl font-medium mb-6">Yeni Antrenman Oluştur</h1>
+      <form onSubmit={handleSubmit}>
+      <div className="min-h-screen bg-slate-50 py-10 px-4">
+        <div className="max-w-xl mx-auto">
+
+          {/* Başlık */}
+          <div className="mb-6">
+            <h1 className="text-2xl font-semibold text-slate-900">Yeni Antrenman</h1>
+            <p className="text-sm text-slate-400 mt-1">Takımın için antrenman planla</p>
+          </div>
 
           {myTeams.length === 0 && (
-            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
-              <p className="text-sm text-yellow-800 flex items-center gap-1.5"><AlertTriangle className="w-4 h-4 flex-shrink-0" /> Önce bir takım oluşturmalısınız!</p>
-              <button
-                onClick={() => setCurrentPage("create-team")}
-                className="mt-2 text-green-600 font-semibold"
-              >
-                Takım Oluştur →
-              </button>
+            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-amber-800">Önce bir takım oluşturmalısınız</p>
+                <button onClick={() => setCurrentPage("create-team")} className="text-sm text-green-600 font-semibold mt-1">Takım Oluştur →</button>
+              </div>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {myTeams.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium mb-2">Takım</label>
-                <select
-                  value={formData.team_id}
-                  onChange={(e) => handleTeamChange(e.target.value)}
-                  className="w-full px-4 py-3 border rounded-xl"
-                  required
-                >
-                  {myTeams.map((team) => (
-                    <option key={team.id} value={team.id}>
-                      {team.name} {team.is_private ? <Lock className="w-3.5 h-3.5 inline ml-1" /> : <Globe className="w-3.5 h-3.5 inline ml-1" />}
-                    </option>
-                  ))}
-                </select>
+          <div className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100">
 
-                {/* Gizlilik göstergesi */}
+            {/* Takım + Gizlilik */}
+            {myTeams.length > 0 && (
+              <div className="p-5 space-y-3">
+                <div>
+                  <label className={labelCls}>Takım</label>
+                  <select
+                    value={formData.team_id}
+                    onChange={(e) => handleTeamChange(e.target.value)}
+                    className={selectCls}
+                    required
+                  >
+                    {myTeams.map((team) => (
+                      <option key={team.id} value={team.id}>{team.name}</option>
+                    ))}
+                  </select>
+                </div>
+
                 {selectedTeamIsPrivate ? (
-                  <div className="mt-2 flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-xl text-sm text-gray-600">
-                    <Lock className="w-4 h-4 text-gray-500" />
-                    <span>Bu takım gizli — antrenman otomatik olarak <strong>sadece üyelere özel</strong> olacak</span>
+                  <div className="flex items-center gap-2.5 px-4 py-3 bg-slate-50 rounded-xl text-sm text-slate-500 border border-slate-200">
+                    <Lock className="w-4 h-4 flex-shrink-0" />
+                    <span>Gizli takım — antrenman otomatik olarak <strong className="text-slate-700">sadece üyelere özel</strong> olacak</span>
                   </div>
                 ) : (
-                  <div className="mt-2 flex items-center justify-between px-3 py-2 bg-green-50 rounded-xl">
-                    <span className="text-sm text-gray-700 flex items-center gap-2">
-                      <Globe className="w-4 h-4 text-green-500" /> <span>Herkese açık antrenman</span>
+                  <div className="flex items-center justify-between px-4 py-3 bg-green-50 rounded-xl border border-green-100">
+                    <span className="text-sm text-slate-700 flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-green-500" /> Herkese açık antrenman
                     </span>
                     <button
                       type="button"
                       onClick={() => setFormData((f) => ({ ...f, is_public: !f.is_public }))}
-                      className={`relative w-11 h-6 rounded-full transition-colors ${formData.is_public ? "bg-green-600" : "bg-gray-300"}`}
+                      className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${formData.is_public ? "bg-green-500" : "bg-slate-300"}`}
                     >
                       <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${formData.is_public ? "translate-x-6" : "translate-x-1"}`} />
                     </button>
@@ -3580,73 +3589,81 @@ export default function Muuvlink() {
               </div>
             )}
 
-            <div>
-              <label className="block text-sm font-medium mb-2">Başlık</label>
-              <input
-                type="text"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="w-full px-4 py-3 border rounded-xl"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">Açıklama</label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full px-4 py-3 border rounded-xl"
-                rows="3"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+            {/* Başlık + Açıklama */}
+            <div className="p-5 space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Tarih</label>
+                <label className={labelCls}>Başlık</label>
                 <input
-                  type="date"
-                  value={formData.training_date}
-                  onChange={(e) => setFormData({ ...formData, training_date: e.target.value })}
-                  className="w-full px-4 py-3 border rounded-xl"
+                  type="text"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  className={inputCls}
+                  placeholder="Örn: Pazartesi Koşusu"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Saat</label>
-                <div className="flex gap-2">
-                  <select
-                    value={formData.training_time ? formData.training_time.split(":")[0] : ""}
-                    onChange={(e) => {
-                      const min = formData.training_time ? formData.training_time.split(":")[1] : "00";
-                      setFormData({ ...formData, training_time: e.target.value ? `${e.target.value}:${min}` : "" });
-                    }}
-                    className="flex-1 px-4 py-3 border rounded-xl bg-white"
+                <label className={labelCls}>Açıklama <span className="normal-case font-normal text-slate-400">(isteğe bağlı)</span></label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-green-300 focus:border-green-400 transition-colors resize-none"
+                  rows="3"
+                  placeholder="Antrenman hakkında kısa bir açıklama…"
+                />
+              </div>
+            </div>
+
+            {/* Tarih + Saat */}
+            <div className="p-5">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls}>Tarih</label>
+                  <input
+                    type="date"
+                    value={formData.training_date}
+                    onChange={(e) => setFormData({ ...formData, training_date: e.target.value })}
+                    className={inputCls}
                     required
-                  >
-                    <option value="">Saat</option>
-                    {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0")).map(h => (
-                      <option key={h} value={h}>{h}</option>
-                    ))}
-                  </select>
-                  <select
-                    value={formData.training_time ? formData.training_time.split(":")[1] : "00"}
-                    onChange={(e) => {
-                      const hr = formData.training_time ? formData.training_time.split(":")[0] : "";
-                      if (hr) setFormData({ ...formData, training_time: `${hr}:${e.target.value}` });
-                    }}
-                    className="flex-1 px-4 py-3 border rounded-xl bg-white"
-                  >
-                    {["00","05","10","15","20","25","30","35","40","45","50","55"].map(m => (
-                      <option key={m} value={m}>{m}</option>
-                    ))}
-                  </select>
+                  />
+                </div>
+                <div>
+                  <label className={labelCls}>Saat</label>
+                  <div className="flex gap-2">
+                    <select
+                      value={formData.training_time ? formData.training_time.split(":")[0] : ""}
+                      onChange={(e) => {
+                        const min = formData.training_time ? formData.training_time.split(":")[1] : "00";
+                        setFormData({ ...formData, training_time: e.target.value ? `${e.target.value}:${min}` : "" });
+                      }}
+                      className={selectCls}
+                      required
+                    >
+                      <option value="">--</option>
+                      {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0")).map(h => (
+                        <option key={h} value={h}>{h}</option>
+                      ))}
+                    </select>
+                    <select
+                      value={formData.training_time ? formData.training_time.split(":")[1] : "00"}
+                      onChange={(e) => {
+                        const hr = formData.training_time ? formData.training_time.split(":")[0] : "";
+                        if (hr) setFormData({ ...formData, training_time: `${hr}:${e.target.value}` });
+                      }}
+                      className={selectCls}
+                    >
+                      {["00","05","10","15","20","25","30","35","40","45","50","55"].map(m => (
+                        <option key={m} value={m}>{m}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-2">Konum</label>
+            {/* Konum */}
+            <div className="p-5">
+              <label className={labelCls}>Konum</label>
               <LocationPicker
                 locationName={formData.location_name}
                 lat={formData.location_lat}
@@ -3657,50 +3674,57 @@ export default function Muuvlink() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Kapasite</label>
-                <input
-                  type="number"
-                  value={formData.capacity}
-                  onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value) })}
-                  className="w-full px-4 py-3 border rounded-xl"
-                  min="1"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Seviye</label>
-                <select
-                  value={formData.difficulty}
-                  onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
-                  className="w-full px-4 py-3 border rounded-xl"
-                >
-                  <option value="Kolay">Kolay</option>
-                  <option value="Orta">Orta</option>
-                  <option value="Zor">Zor</option>
-                </select>
+            {/* Kapasite + Seviye */}
+            <div className="p-5">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls}>Kapasite</label>
+                  <input
+                    type="number"
+                    value={formData.capacity}
+                    onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value) })}
+                    className={inputCls}
+                    min="1"
+                  />
+                </div>
+                <div>
+                  <label className={labelCls}>Seviye</label>
+                  <select
+                    value={formData.difficulty}
+                    onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
+                    className={selectCls}
+                  >
+                    <option value="Kolay">🟢 Kolay</option>
+                    <option value="Orta">🟡 Orta</option>
+                    <option value="Zor">🔴 Zor</option>
+                  </select>
+                </div>
               </div>
             </div>
 
-            <div className="flex gap-4">
-              <button
-                type="submit"
-                disabled={myTeams.length === 0}
-                className="flex-1 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:shadow-lg disabled:opacity-50"
-              >
-                Antrenman Oluştur
-              </button>
-              <button
-                type="button"
-                onClick={() => setCurrentPage("profile")}
-                className="px-6 py-4 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200"
-              >
-                İptal
-              </button>
-            </div>
-          </form>
+          </div>
+
+          {/* Butonlar */}
+          <div className="flex gap-3 mt-5">
+            <button
+              type="button"
+              onClick={() => setCurrentPage("profile")}
+              className="h-12 px-6 bg-white border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors"
+            >
+              İptal
+            </button>
+            <button
+              type="submit"
+              disabled={myTeams.length === 0}
+              className="flex-1 h-12 rounded-xl text-sm font-semibold text-white disabled:opacity-50 transition-all hover:opacity-90 hover:shadow-lg"
+              style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}
+            >
+              Antrenman Oluştur
+            </button>
+          </div>
         </div>
       </div>
+      </form>
     );
   };
 
