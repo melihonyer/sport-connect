@@ -270,7 +270,7 @@ function inviteEmailExisting({ teamName, teamSport, inviterName, teamId, avatar 
     </div>
 
     <div style="text-align:center;">
-      <a href="${APP_URL}/teams/${teamId}"
+      <a href="${APP_URL}?accept_invite=${teamId}"
          style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;letter-spacing:0.2px;">
         Takıma Katıl →
@@ -1073,6 +1073,32 @@ app.delete('/api/teams/:id/invitations/:inviteId', authenticateToken, async (req
       [inviteId, teamId]
     );
     res.json({ message: 'Davet iptal edildi.' });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Daveti kabul et (kayıtlı kullanıcı mail linkinden gelir)
+app.post('/api/teams/:id/accept-invite', authenticateToken, async (req, res) => {
+  try {
+    const teamId = req.params.id;
+    const userEmail = req.user.email;
+
+    const invite = await pool.query(
+      'SELECT id FROM team_invitations WHERE team_id = $1 AND invitee_email = $2',
+      [teamId, userEmail]
+    );
+    if (!invite.rows.length) {
+      return res.status(404).json({ error: 'Bekleyen davet bulunamadı.' });
+    }
+
+    await pool.query(
+      'INSERT INTO team_members (team_id, user_id, role) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING',
+      [teamId, req.user.id, 'member']
+    );
+    await pool.query('DELETE FROM team_invitations WHERE id = $1', [invite.rows[0].id]);
+
+    res.json({ message: 'Takıma başarıyla katıldınız!' });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

@@ -618,11 +618,12 @@ export default function Muuvlink() {
       .catch(() => {});
   }, []);
 
-  // URL'de reset_token veya auth=register varsa yönlendir
+  // URL'de reset_token / auth=register / accept_invite varsa yönlendir
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const t = params.get("reset_token");
     const auth = params.get("auth");
+    const acceptInvite = params.get("accept_invite");
     if (t) {
       setResetToken(t);
       setCurrentPage("reset-password");
@@ -631,6 +632,28 @@ export default function Muuvlink() {
       setAuthMode("register");
       setIsAuthModalOpen(true);
       window.history.replaceState({}, "", window.location.pathname);
+    } else if (acceptInvite) {
+      window.history.replaceState({}, "", window.location.pathname);
+      const token = localStorage.getItem("token");
+      if (token) {
+        fetch(`${API_URL}/teams/${acceptInvite}/accept-invite`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        }).then(r => r.json()).then(data => {
+          if (data.message) {
+            showToast("Takıma başarıyla katıldınız! 👥", "success");
+            fetchTeamDetails(acceptInvite);
+          } else {
+            showToast(data.error || "Davet bulunamadı.", "error");
+          }
+        }).catch(() => showToast("Bir hata oluştu.", "error"));
+      } else {
+        // Giriş yapılmamış — login modalı aç, sonra tekrar dene
+        localStorage.setItem("pendingInvite", acceptInvite);
+        setAuthMode("login");
+        setIsAuthModalOpen(true);
+        showToast("Daveti kabul etmek için giriş yapın.", "info");
+      }
     }
   }, []);
 
@@ -719,6 +742,16 @@ export default function Muuvlink() {
         fetchUserData(data.token);
         fetchTrainings();
         fetchTeams();
+        const pendingInvite = localStorage.getItem("pendingInvite");
+        if (pendingInvite) {
+          localStorage.removeItem("pendingInvite");
+          fetch(`${API_URL}/teams/${pendingInvite}/accept-invite`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${data.token}` },
+          }).then(r => r.json()).then(d => {
+            if (d.message) { showToast("Takıma başarıyla katıldınız! 👥", "success"); fetchTeamDetails(pendingInvite); }
+          });
+        }
       } else {
         const msg = data.error || "Giriş başarısız!";
         if (setError) setError(
