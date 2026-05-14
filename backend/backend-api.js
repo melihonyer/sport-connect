@@ -2308,6 +2308,104 @@ app.delete('/api/admin/banners/:id', isAdmin, async (req, res) => {
 });
 
 // =====================================================
+// HOME NEWS
+// =====================================================
+
+app.get('/api/home-news', async (req, res) => {
+  try {
+    const r = await pool.query(`SELECT * FROM home_news WHERE is_active=true ORDER BY order_index ASC, created_at DESC`);
+    res.json(r.rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/admin/home-news', isAdmin, async (req, res) => {
+  try {
+    const r = await pool.query(`SELECT * FROM home_news ORDER BY order_index ASC, created_at DESC`);
+    res.json(r.rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/admin/home-news', isAdmin, async (req, res) => {
+  const { title, date_label, icon, bg, views, comments, is_active, order_index } = req.body;
+  try {
+    const r = await pool.query(
+      `INSERT INTO home_news (title, date_label, icon, bg, views, comments, is_active, order_index)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
+      [title, date_label||'', icon||'🏃', bg||'linear-gradient(160deg,#0f2a1a,#1a4a2d)',
+       views||0, comments||0, is_active!==false, order_index||0]
+    );
+    res.json(r.rows[0]);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.put('/api/admin/home-news/:id', isAdmin, async (req, res) => {
+  const { title, date_label, icon, bg, views, comments, is_active, order_index } = req.body;
+  try {
+    const r = await pool.query(
+      `UPDATE home_news SET title=$1, date_label=$2, icon=$3, bg=$4, views=$5, comments=$6,
+       is_active=$7, order_index=$8 WHERE id=$9 RETURNING *`,
+      [title, date_label||'', icon||'🏃', bg, views||0, comments||0, is_active!==false, order_index||0, req.params.id]
+    );
+    res.json(r.rows[0]);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/admin/home-news/:id', isAdmin, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM home_news WHERE id=$1', [req.params.id]);
+    res.json({ message: 'Silindi.' });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// =====================================================
+// HOME GALLERY
+// =====================================================
+
+app.get('/api/home-gallery', async (req, res) => {
+  try {
+    const r = await pool.query(`SELECT * FROM home_gallery WHERE is_active=true ORDER BY order_index ASC, created_at DESC`);
+    res.json(r.rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/admin/home-gallery', isAdmin, async (req, res) => {
+  try {
+    const r = await pool.query(`SELECT * FROM home_gallery ORDER BY order_index ASC, created_at DESC`);
+    res.json(r.rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/admin/home-gallery', isAdmin, async (req, res) => {
+  const { icon, bg, is_active, order_index } = req.body;
+  try {
+    const r = await pool.query(
+      `INSERT INTO home_gallery (icon, bg, is_active, order_index)
+       VALUES ($1,$2,$3,$4) RETURNING *`,
+      [icon||'🏃', bg||'linear-gradient(160deg,#0f2a1a,#1a4a2d)', is_active!==false, order_index||0]
+    );
+    res.json(r.rows[0]);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.put('/api/admin/home-gallery/:id', isAdmin, async (req, res) => {
+  const { icon, bg, is_active, order_index } = req.body;
+  try {
+    const r = await pool.query(
+      `UPDATE home_gallery SET icon=$1, bg=$2, is_active=$3, order_index=$4 WHERE id=$5 RETURNING *`,
+      [icon||'🏃', bg, is_active!==false, order_index||0, req.params.id]
+    );
+    res.json(r.rows[0]);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/admin/home-gallery/:id', isAdmin, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM home_gallery WHERE id=$1', [req.params.id]);
+    res.json({ message: 'Silindi.' });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// =====================================================
 // HEALTH CHECK
 // =====================================================
 
@@ -2320,6 +2418,30 @@ app.get('/health', (req, res) => {
 // =====================================================
 
 // DB migrations
+pool.query(`
+  CREATE TABLE IF NOT EXISTS home_news (
+    id          SERIAL PRIMARY KEY,
+    title       TEXT NOT NULL,
+    date_label  TEXT DEFAULT '',
+    icon        TEXT DEFAULT '🏃',
+    bg          TEXT DEFAULT 'linear-gradient(160deg,#1a3a2a 0%,#2d6a4f 100%)',
+    views       INTEGER DEFAULT 0,
+    comments    INTEGER DEFAULT 0,
+    is_active   BOOLEAN DEFAULT true,
+    order_index INTEGER DEFAULT 0,
+    created_at  TIMESTAMPTZ DEFAULT NOW()
+  )
+`).catch(() => {});
+pool.query(`
+  CREATE TABLE IF NOT EXISTS home_gallery (
+    id          SERIAL PRIMARY KEY,
+    icon        TEXT DEFAULT '🏃',
+    bg          TEXT DEFAULT 'linear-gradient(160deg,#0f2a1a,#1a4a2d)',
+    is_active   BOOLEAN DEFAULT true,
+    order_index INTEGER DEFAULT 0,
+    created_at  TIMESTAMPTZ DEFAULT NOW()
+  )
+`).catch(() => {});
 pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS mottos JSONB DEFAULT '[]'`).catch(() => {});
 pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS cta_primary_url TEXT DEFAULT ''`).catch(() => {});
 pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS cta_secondary_url TEXT DEFAULT ''`).catch(() => {});

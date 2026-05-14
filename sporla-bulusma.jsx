@@ -263,6 +263,8 @@ export default function Muuvlink() {
   const [manualLocationName, setManualLocationName] = useState("");
   const [banners, setBanners] = useState([]);
   const [bannersLoaded, setBannersLoaded] = useState(false);
+  const [homeNews, setHomeNews] = useState([]);
+  const [homeGallery, setHomeGallery] = useState([]);
   const [currentBannerIdx, setCurrentBannerIdx] = useState(0);
   const [exitingBannerIdx, setExitingBannerIdx] = useState(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -610,6 +612,10 @@ export default function Muuvlink() {
         setBannersLoaded(true);
       })
       .catch(() => setBannersLoaded(true));
+
+    // Anasayfa haber ve galeri
+    fetch(`${API_URL}/home-news`).then(r=>r.ok?r.json():[]).then(d=>{ if(Array.isArray(d)) setHomeNews(d); }).catch(()=>{});
+    fetch(`${API_URL}/home-gallery`).then(r=>r.ok?r.json():[]).then(d=>{ if(Array.isArray(d)) setHomeGallery(d); }).catch(()=>{});
 
     // Platform istatistiklerini çek
     fetch(`${API_URL}/platform-stats`)
@@ -1963,16 +1969,9 @@ export default function Muuvlink() {
 
   // ── TAKİM ETKİNLİKLERİ — Leisure Club Activities stili ──
   const NewsSection = () => {
-    const newsItems = [
-      { id:1, date:"12 Mayıs 2026", title:"İzmir Plaj Voleybolu Turnuvası Başlıyor", views:142, comments:8,  bg:"linear-gradient(160deg,#1a3a2a 0%,#2d6a4f 100%)", icon:"🏐" },
-      { id:2, date:"10 Mayıs 2026", title:"Sabah Koşusu Grubu Yeni Rota Açıkladı",  views:98,  comments:14, bg:"linear-gradient(160deg,#1a2a3a 0%,#2d4f6a 100%)", icon:"🏃" },
-      { id:3, date:"8 Mayıs 2026",  title:"Basketbol Takımımız Bölge Şampiyonu Oldu", views:256, comments:31, bg:"linear-gradient(160deg,#3a2a1a 0%,#6a4f2d 100%)", icon:"🏀" },
-      { id:4, date:"5 Mayıs 2026",  title:"Açık Hava Yoga Atölyesi — Ücretsiz Kayıt", views:187, comments:22, bg:"linear-gradient(160deg,#2a1a3a 0%,#4f2d6a 100%)", icon:"🧘" },
-      { id:5, date:"2 Mayıs 2026",  title:"Tenis Kortları Bu Hafta Ücretsiz Açılıyor", views:134, comments:11, bg:"linear-gradient(160deg,#1a3a1a 0%,#2d6a2d 100%)", icon:"🎾" },
-    ];
+    if (homeNews.length === 0) return null;
     return (
       <section style={{background:"#f2f2f2"}} className="pt-16 pb-20">
-        {/* Ortalanmış başlık */}
         <div className="text-center mb-10 px-4">
           <h2 className="text-3xl md:text-4xl font-semibold text-slate-900 tracking-widest uppercase mb-3">
             Takım Etkinlikleri
@@ -1980,26 +1979,20 @@ export default function Muuvlink() {
           <p className="text-slate-400 font-light italic text-base">Muuvlink topluluğundan etkinlik haberleri</p>
         </div>
 
-        {/* 5 kart — tam genişlik, boşluksuz */}
         <div className="flex w-full" style={{height:"320px"}}>
-          {newsItems.map((item) => (
+          {homeNews.map((item) => (
             <article key={item.id}
               className="group relative flex-1 overflow-hidden cursor-pointer"
               style={{background: item.bg}}>
-              {/* Emoji arka plan */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <span className="text-8xl opacity-20 transition-transform duration-500 group-hover:scale-110">{item.icon}</span>
               </div>
-              {/* Daima görünen koyu alt gradient */}
               <div className="absolute inset-0" style={{background:"linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.3) 50%, transparent 100%)"}}/>
-              {/* Hover'da ek koyulaşma */}
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300"/>
-              {/* İçerik — alta yapışık */}
               <div className="absolute bottom-0 left-0 right-0 p-5">
                 <h3 className="text-white font-semibold text-sm leading-snug mb-3 line-clamp-2">{item.title}</h3>
                 <div className="flex items-center gap-1 text-white/60 text-xs font-light">
-                  <span>Yayın {item.date}</span>
-                  <span className="mx-1.5 text-white/30">/</span>
+                  {item.date_label && <><span>Yayın {item.date_label}</span><span className="mx-1.5 text-white/30">/</span></>}
                   <Eye className="w-3 h-3 inline"/>
                   <span className="ml-0.5">{item.views}</span>
                   <span className="mx-1.5 text-white/30">/</span>
@@ -2010,31 +2003,16 @@ export default function Muuvlink() {
             </article>
           ))}
         </div>
-
-        {/* VIEW ALL NEWS butonu */}
-        <div className="text-center mt-12">
-          <button className="px-10 py-3 border border-slate-700 text-slate-700 text-xs font-semibold tracking-[0.2em] uppercase hover:bg-slate-700 hover:text-white transition-colors duration-200">
-            TÜM HABERLERİ GÖR
-          </button>
-        </div>
       </section>
     );
   };
 
-  // ── GALERİ — Golf template birebir ───────────────────
+  // ── GALERİ ────────────────────────────────────────────
   const GallerySection = () => {
-    const photos = [
-      { id:1, bg:"linear-gradient(160deg,#0f2a1a,#1a4a2d)", icon:"🏃" },
-      { id:2, bg:"linear-gradient(160deg,#0a1e2e,#163352)", icon:"🏐" },
-      { id:3, bg:"linear-gradient(160deg,#2a0a0a,#4a1515)", icon:"🏀" },
-      { id:4, bg:"linear-gradient(160deg,#0a2010,#155a20)", icon:"🚴" },
-      { id:5, bg:"linear-gradient(160deg,#1a1a0a,#3a3a10)", icon:"🎾" },
-      { id:6, bg:"linear-gradient(160deg,#0a0a2a,#151540)", icon:"🧘" },
-      { id:7, bg:"linear-gradient(160deg,#0a1a2a,#103050)", icon:"🏊" },
-    ];
+    if (homeGallery.length === 0) return null;
 
-    const GalleryItem = ({ p, className, style }) => (
-      <div className={`group relative overflow-hidden cursor-pointer ${className}`} style={{background: p.bg, ...style}}>
+    const GalleryItem = ({ p, style }) => (
+      <div className="group relative overflow-hidden cursor-pointer" style={{background: p.bg, ...style}}>
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <span className="text-7xl opacity-20 transition-transform duration-500 group-hover:scale-110">{p.icon}</span>
         </div>
@@ -2044,16 +2022,16 @@ export default function Muuvlink() {
       </div>
     );
 
+    const total = homeGallery.length;
+
     return (
       <section className="bg-white pt-16 pb-0">
-        {/* Ortalanmış başlık */}
         <div className="text-center mb-10 px-4">
           <h2 className="text-3xl md:text-4xl font-semibold text-slate-900 tracking-widest uppercase mb-3">Galeri</h2>
           <p className="text-slate-400 font-light italic text-base mb-6">Muuvlink etkinliklerinden kareler</p>
-          {/* X süsleme — golf template gibi */}
           <div className="flex items-center justify-center gap-0 max-w-lg mx-auto">
             <div className="flex-1 border-t border-dashed border-slate-300"/>
-            <div className="mx-4 text-slate-400" style={{fontSize:"22px", lineHeight:1}}>
+            <div className="mx-4">
               <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
                 <line x1="4" y1="28" x2="28" y2="4" stroke="#94a3b8" strokeWidth="1.5"/>
                 <line x1="4" y1="4" x2="28" y2="28" stroke="#94a3b8" strokeWidth="1.5"/>
@@ -2065,26 +2043,32 @@ export default function Muuvlink() {
           </div>
         </div>
 
-        {/* Grid — tam ekran genişliği, boşluksuz
-            Üst satır: [1/4 tall] [2/4 tall x2] [1/4 top] [1/4 bottom]
-            Alt satır: [1/3] [1/3] [1/3]
-        */}
-        <div style={{display:"grid", gridTemplateColumns:"1fr 2fr 1fr", gridTemplateRows:"280px 280px"}}>
-          {/* Üst-sol: satır boyunca uzun */}
-          <GalleryItem p={photos[0]} style={{gridColumn:"1", gridRow:"1 / 3"}}/>
-          {/* Merkez: büyük */}
-          <GalleryItem p={photos[1]} style={{gridColumn:"2", gridRow:"1 / 3"}}/>
-          {/* Sağ üst */}
-          <GalleryItem p={photos[2]} style={{gridColumn:"3", gridRow:"1"}}/>
-          {/* Sağ alt */}
-          <GalleryItem p={photos[3]} style={{gridColumn:"3", gridRow:"2"}}/>
-        </div>
-        {/* Alt satır: 3 eşit */}
-        <div style={{display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gridTemplateRows:"240px"}}>
-          <GalleryItem p={photos[4]}/>
-          <GalleryItem p={photos[5]}/>
-          <GalleryItem p={photos[6]}/>
-        </div>
+        {total <= 3 ? (
+          <div style={{display:"grid", gridTemplateColumns:`repeat(${total},1fr)`, gridTemplateRows:"280px"}}>
+            {homeGallery.map(p => <GalleryItem key={p.id} p={p}/>)}
+          </div>
+        ) : total <= 4 ? (
+          <div style={{display:"grid", gridTemplateColumns:"1fr 2fr 1fr", gridTemplateRows:"280px 280px"}}>
+            <GalleryItem p={homeGallery[0]} style={{gridColumn:"1", gridRow:"1 / 3"}}/>
+            <GalleryItem p={homeGallery[1]} style={{gridColumn:"2", gridRow:"1 / 3"}}/>
+            <GalleryItem p={homeGallery[2]} style={{gridColumn:"3", gridRow:"1"}}/>
+            {homeGallery[3] && <GalleryItem p={homeGallery[3]} style={{gridColumn:"3", gridRow:"2"}}/>}
+          </div>
+        ) : (
+          <>
+            <div style={{display:"grid", gridTemplateColumns:"1fr 2fr 1fr", gridTemplateRows:"280px 280px"}}>
+              <GalleryItem p={homeGallery[0]} style={{gridColumn:"1", gridRow:"1 / 3"}}/>
+              <GalleryItem p={homeGallery[1]} style={{gridColumn:"2", gridRow:"1 / 3"}}/>
+              <GalleryItem p={homeGallery[2]} style={{gridColumn:"3", gridRow:"1"}}/>
+              <GalleryItem p={homeGallery[3]} style={{gridColumn:"3", gridRow:"2"}}/>
+            </div>
+            {homeGallery.slice(4).length > 0 && (
+              <div style={{display:"grid", gridTemplateColumns:`repeat(${Math.min(homeGallery.slice(4).length,3)},1fr)`, gridTemplateRows:"240px"}}>
+                {homeGallery.slice(4,7).map(p => <GalleryItem key={p.id} p={p}/>)}
+              </div>
+            )}
+          </>
+        )}
       </section>
     );
   };

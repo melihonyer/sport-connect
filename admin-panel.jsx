@@ -4,11 +4,274 @@ import {
   LogOut, Trash2, Eye, EyeOff, CheckCheck, Mail,
   TrendingUp, Calendar, AlertTriangle, Search, X,
   ChevronRight, Lock, Globe, Image, Plus, Edit2, ToggleLeft, ToggleRight,
-  Upload, GripVertical, ChevronUp, ChevronDown,
+  Upload, GripVertical, ChevronUp, ChevronDown, Newspaper, GalleryHorizontal,
 } from "lucide-react";
 
 const API_URL  = import.meta.env.VITE_API_URL  ?? (import.meta.env.DEV ? "http://localhost:3000/api" : "/api");
 const BASE_URL = import.meta.env.VITE_BASE_URL ?? (import.meta.env.DEV ? "http://localhost:3000" : "");
+
+// ─── Renk seçenekleri (haber/galeri arka plan) ──────────────
+const BG_PRESETS = [
+  { label:"Yeşil",  value:"linear-gradient(160deg,#1a3a2a 0%,#2d6a4f 100%)" },
+  { label:"Mavi",   value:"linear-gradient(160deg,#1a2a3a 0%,#2d4f6a 100%)" },
+  { label:"Turuncu",value:"linear-gradient(160deg,#3a2a1a 0%,#6a4f2d 100%)" },
+  { label:"Mor",    value:"linear-gradient(160deg,#2a1a3a 0%,#4f2d6a 100%)" },
+  { label:"Kırmızı",value:"linear-gradient(160deg,#3a1a1a 0%,#6a2d2d 100%)" },
+  { label:"Koyu Yeşil",value:"linear-gradient(160deg,#0a2010,#155a20)" },
+  { label:"Sarı",   value:"linear-gradient(160deg,#1a1a0a,#3a3a10)" },
+  { label:"Lacivert",value:"linear-gradient(160deg,#0a0a2a,#151540)" },
+];
+
+const ICONS = ["🏃","🏐","🏀","🚴","🎾","🧘","🏊","⚽","🏋️","🤸","🏈","🎯","🏆","🥊","⛷️","🏄"];
+
+function SimpleForm({ fields, onSave, onCancel, saving }) {
+  const [data, setData] = React.useState(fields.initial);
+  return (
+    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
+      {fields.inputs.map(f => (
+        <div key={f.key}>
+          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">{f.label}</label>
+          {f.type === "select" ? (
+            <select value={data[f.key]||""} onChange={e=>setData(d=>({...d,[f.key]:e.target.value}))}
+              className="w-full h-10 px-3 border border-slate-200 rounded-xl text-sm bg-white">
+              {f.options.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          ) : f.type === "emoji" ? (
+            <div className="flex flex-wrap gap-2">
+              {ICONS.map(ic=>(
+                <button key={ic} type="button"
+                  onClick={()=>setData(d=>({...d,[f.key]:ic}))}
+                  className={`w-10 h-10 rounded-xl text-xl transition ${data[f.key]===ic?"ring-2 ring-green-500 bg-green-50":"bg-white border border-slate-200 hover:border-green-300"}`}
+                >{ic}</button>
+              ))}
+            </div>
+          ) : f.type === "toggle" ? (
+            <button type="button" onClick={()=>setData(d=>({...d,[f.key]:!d[f.key]}))}
+              className={`relative w-11 h-6 rounded-full transition-colors ${data[f.key]?"bg-green-500":"bg-slate-300"}`}>
+              <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${data[f.key]?"translate-x-6":"translate-x-1"}`}/>
+            </button>
+          ) : (
+            <input type={f.type||"text"} value={data[f.key]||""} onChange={e=>setData(d=>({...d,[f.key]:e.target.value}))}
+              className="w-full h-10 px-3 border border-slate-200 rounded-xl text-sm bg-white"
+              placeholder={f.placeholder||""}/>
+          )}
+        </div>
+      ))}
+      <div className="flex gap-3 pt-2">
+        <button onClick={onCancel} className="px-4 py-2 text-sm text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50">İptal</button>
+        <button onClick={()=>onSave(data)} disabled={saving}
+          className="flex-1 py-2 text-sm font-semibold text-white rounded-xl disabled:opacity-50 transition hover:opacity-90"
+          style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}>
+          {saving ? "Kaydediliyor…" : "Kaydet"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Haberler sekmesi ────────────────────────────────────────
+function HomeNewsTab({ items, setItems, api }) {
+  const [showForm, setShowForm] = React.useState(false);
+  const [editId, setEditId]   = React.useState(null);
+  const [saving, setSaving]   = React.useState(false);
+
+  const emptyNews = { title:"", date_label:"", icon:"🏃", bg:BG_PRESETS[0].value, views:0, comments:0, is_active:true, order_index:0 };
+
+  const fields = {
+    initial: editId ? (items.find(i=>i.id===editId)||emptyNews) : emptyNews,
+    inputs: [
+      { key:"title",      label:"Başlık",       type:"text",   placeholder:"Etkinlik başlığı" },
+      { key:"date_label", label:"Tarih",         type:"text",   placeholder:"12 Mayıs 2026" },
+      { key:"icon",       label:"İkon",          type:"emoji" },
+      { key:"bg",         label:"Arka Plan",     type:"select", options:BG_PRESETS },
+      { key:"views",      label:"Görüntülenme",  type:"number" },
+      { key:"comments",   label:"Yorum",         type:"number" },
+      { key:"order_index",label:"Sıra",          type:"number" },
+      { key:"is_active",  label:"Aktif",         type:"toggle" },
+    ],
+  };
+
+  const handleSave = async (data) => {
+    setSaving(true);
+    try {
+      if (editId) {
+        const r = await api(`/admin/home-news/${editId}`, { method:"PUT", body:JSON.stringify(data) });
+        if (r) setItems(prev=>prev.map(i=>i.id===editId?r:i));
+      } else {
+        const r = await api("/admin/home-news", { method:"POST", body:JSON.stringify(data) });
+        if (r) setItems(prev=>[...prev,r]);
+      }
+      setShowForm(false); setEditId(null);
+    } finally { setSaving(false); }
+  };
+
+  const handleDelete = async (item) => {
+    if (!window.confirm(`"${item.title}" silinecek. Emin misiniz?`)) return;
+    await api(`/admin/home-news/${item.id}`, { method:"DELETE" });
+    setItems(prev=>prev.filter(i=>i.id!==item.id));
+  };
+
+  const toggleActive = async (item) => {
+    const r = await api(`/admin/home-news/${item.id}`, { method:"PUT", body:JSON.stringify({...item,is_active:!item.is_active}) });
+    if (r) setItems(prev=>prev.map(i=>i.id===item.id?r:i));
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="font-medium text-slate-900 text-lg">Takım Etkinlikleri</h2>
+          <p className="text-slate-400 text-sm mt-0.5">Anasayfadaki haber kartlarını yönetin.</p>
+        </div>
+        <button onClick={()=>{setEditId(null);setShowForm(true);}}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white transition hover:opacity-90 shadow-lg"
+          style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}>
+          <Plus className="w-4 h-4"/> Yeni Haber
+        </button>
+      </div>
+
+      {showForm && (
+        <SimpleForm key={editId||"new"} fields={{...fields, initial: editId?(items.find(i=>i.id===editId)||emptyNews):emptyNews}}
+          onSave={handleSave} onCancel={()=>{setShowForm(false);setEditId(null);}} saving={saving}/>
+      )}
+
+      <div className="grid md:grid-cols-2 gap-4">
+        {items.length === 0 && !showForm && (
+          <div className="col-span-2 text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200 text-slate-400">
+            <Newspaper className="w-10 h-10 mx-auto mb-3 opacity-30"/>
+            <p>Henüz haber eklenmedi</p>
+          </div>
+        )}
+        {items.map(item=>(
+          <div key={item.id} className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
+            <div className="h-20 flex items-center justify-center relative" style={{background:item.bg}}>
+              <span className="text-4xl opacity-40">{item.icon}</span>
+              <span className={`absolute top-2 right-2 text-xs px-2 py-0.5 rounded-full font-medium ${item.is_active?"bg-green-100 text-green-700":"bg-slate-100 text-slate-500"}`}>
+                {item.is_active?"Aktif":"Pasif"}
+              </span>
+            </div>
+            <div className="p-4">
+              <p className="font-medium text-slate-800 text-sm line-clamp-2 mb-1">{item.title}</p>
+              <p className="text-xs text-slate-400 mb-3">{item.date_label} · {item.views} görüntülenme · {item.comments} yorum</p>
+              <div className="flex gap-2">
+                <button onClick={()=>toggleActive(item)}
+                  className="flex-1 py-1.5 text-xs font-medium rounded-lg border border-slate-200 hover:bg-slate-50 transition text-slate-600">
+                  {item.is_active?"Pasife Al":"Aktife Al"}
+                </button>
+                <button onClick={()=>{setEditId(item.id);setShowForm(true);}}
+                  className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 transition text-slate-600">
+                  <Edit2 className="w-3.5 h-3.5"/>
+                </button>
+                <button onClick={()=>handleDelete(item)}
+                  className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 transition text-red-500">
+                  <Trash2 className="w-3.5 h-3.5"/>
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Galeri sekmesi ──────────────────────────────────────────
+function HomeGalleryTab({ items, setItems, api }) {
+  const [showForm, setShowForm] = React.useState(false);
+  const [editId, setEditId]   = React.useState(null);
+  const [saving, setSaving]   = React.useState(false);
+
+  const emptyItem = { icon:"🏃", bg:BG_PRESETS[0].value, is_active:true, order_index:0 };
+
+  const fields = (initial) => ({
+    initial,
+    inputs: [
+      { key:"icon",       label:"İkon",      type:"emoji" },
+      { key:"bg",         label:"Arka Plan", type:"select", options:BG_PRESETS },
+      { key:"order_index",label:"Sıra",      type:"number" },
+      { key:"is_active",  label:"Aktif",     type:"toggle" },
+    ],
+  });
+
+  const handleSave = async (data) => {
+    setSaving(true);
+    try {
+      if (editId) {
+        const r = await api(`/admin/home-gallery/${editId}`, { method:"PUT", body:JSON.stringify(data) });
+        if (r) setItems(prev=>prev.map(i=>i.id===editId?r:i));
+      } else {
+        const r = await api("/admin/home-gallery", { method:"POST", body:JSON.stringify(data) });
+        if (r) setItems(prev=>[...prev,r]);
+      }
+      setShowForm(false); setEditId(null);
+    } finally { setSaving(false); }
+  };
+
+  const handleDelete = async (item) => {
+    if (!window.confirm("Bu galeri kartı silinecek. Emin misiniz?")) return;
+    await api(`/admin/home-gallery/${item.id}`, { method:"DELETE" });
+    setItems(prev=>prev.filter(i=>i.id!==item.id));
+  };
+
+  const toggleActive = async (item) => {
+    const r = await api(`/admin/home-gallery/${item.id}`, { method:"PUT", body:JSON.stringify({...item,is_active:!item.is_active}) });
+    if (r) setItems(prev=>prev.map(i=>i.id===item.id?r:i));
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="font-medium text-slate-900 text-lg">Galeri Kartları</h2>
+          <p className="text-slate-400 text-sm mt-0.5">Anasayfadaki galeri bölümünü yönetin.</p>
+        </div>
+        <button onClick={()=>{setEditId(null);setShowForm(true);}}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white transition hover:opacity-90 shadow-lg"
+          style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}>
+          <Plus className="w-4 h-4"/> Yeni Kart
+        </button>
+      </div>
+
+      {showForm && (
+        <SimpleForm key={editId||"new"} fields={fields(editId?(items.find(i=>i.id===editId)||emptyItem):emptyItem)}
+          onSave={handleSave} onCancel={()=>{setShowForm(false);setEditId(null);}} saving={saving}/>
+      )}
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {items.length === 0 && !showForm && (
+          <div className="col-span-4 text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200 text-slate-400">
+            <GalleryHorizontal className="w-10 h-10 mx-auto mb-3 opacity-30"/>
+            <p>Henüz galeri kartı eklenmedi</p>
+          </div>
+        )}
+        {items.map(item=>(
+          <div key={item.id} className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
+            <div className="h-28 flex items-center justify-center relative" style={{background:item.bg}}>
+              <span className="text-4xl opacity-40">{item.icon}</span>
+              <span className={`absolute top-2 right-2 text-xs px-2 py-0.5 rounded-full font-medium ${item.is_active?"bg-green-100 text-green-700":"bg-slate-100 text-slate-500"}`}>
+                {item.is_active?"Aktif":"Pasif"}
+              </span>
+            </div>
+            <div className="p-3 flex gap-2">
+              <button onClick={()=>toggleActive(item)}
+                className="flex-1 py-1.5 text-xs font-medium rounded-lg border border-slate-200 hover:bg-slate-50 transition text-slate-600">
+                {item.is_active?"Pasife Al":"Aktife Al"}
+              </button>
+              <button onClick={()=>{setEditId(item.id);setShowForm(true);}}
+                className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 transition text-slate-600">
+                <Edit2 className="w-3.5 h-3.5"/>
+              </button>
+              <button onClick={()=>handleDelete(item)}
+                className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 transition text-red-500">
+                <Trash2 className="w-3.5 h-3.5"/>
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // ─── Yardımcı: tarih formatı ───────────────────────────────
 const fmt = (d) => d ? new Date(d).toLocaleDateString("tr-TR", { day:"numeric", month:"short", year:"numeric" }) : "—";
@@ -30,6 +293,8 @@ export default function AdminPanel() {
   const [teams, setTeams]       = useState([]);
   const [messages, setMessages] = useState([]);
   const [banners, setBanners]   = useState([]);
+  const [homeNews, setHomeNews] = useState([]);
+  const [homeGallery, setHomeGallery] = useState([]);
   const [loading, setLoading]   = useState(false);
   const [search, setSearch]     = useState("");
 
@@ -99,7 +364,9 @@ export default function AdminPanel() {
       else if (t === "trainings") setTrainings(await api("/admin/trainings") || []);
       else if (t === "teams") setTeams(await api("/admin/teams") || []);
       else if (t === "messages") setMessages(await api("/admin/contact") || []);
-      else if (t === "banners") setBanners(await api("/admin/banners") || []);
+      else if (t === "banners")  setBanners(await api("/admin/banners") || []);
+      else if (t === "home-news") setHomeNews(await api("/admin/home-news") || []);
+      else if (t === "home-gallery") setHomeGallery(await api("/admin/home-gallery") || []);
     } catch { /* sessiz */ }
     finally { setLoading(false); }
   }, [api]);
@@ -213,7 +480,9 @@ export default function AdminPanel() {
     { id: "teams",     label: "Takımlar",     icon: Shield },
     { id: "messages",  label: "Mesajlar",     icon: MessageSquare,
       badge: stats?.unreadContact > 0 ? stats.unreadContact : null },
-    { id: "banners",   label: "Bannerlar",    icon: Image },
+    { id: "banners",      label: "Bannerlar",    icon: Image },
+    { id: "home-news",    label: "Haberler",     icon: Newspaper },
+    { id: "home-gallery", label: "Galeri",       icon: GalleryHorizontal },
   ];
 
   // ─── Banner helpers ──────────────────────────────────────
@@ -957,6 +1226,20 @@ export default function AdminPanel() {
                 ))}
               </div>
             </div>
+          )}
+
+          {/* ── HOME NEWS ────────────────────────────────── */}
+          {!loading && tab === "home-news" && (
+            <HomeNewsTab
+              items={homeNews} setItems={setHomeNews} api={api}
+            />
+          )}
+
+          {/* ── HOME GALLERY ─────────────────────────────── */}
+          {!loading && tab === "home-gallery" && (
+            <HomeGalleryTab
+              items={homeGallery} setItems={setHomeGallery} api={api}
+            />
           )}
 
           {/* ── MESSAGES ─────────────────────────────────── */}
