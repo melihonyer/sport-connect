@@ -300,7 +300,7 @@ function inviteEmailNew({ teamName, teamSport, inviterName, avatar }) {
     </div>
 
     <div style="text-align:center;">
-      <a href="${APP_URL}/register"
+      <a href="${APP_URL}?auth=register"
          style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
         Hesap Oluştur →
@@ -573,6 +573,19 @@ app.post('/api/auth/register', async (req, res) => {
     const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, {
       expiresIn: '30d',
     });
+
+    // Bekleyen takım davetlerini otomatik kabul et
+    const invites = await pool.query(
+      'SELECT * FROM team_invitations WHERE invitee_email = $1',
+      [email]
+    );
+    for (const inv of invites.rows) {
+      await pool.query(
+        'INSERT INTO team_members (team_id, user_id, role) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING',
+        [inv.team_id, user.id, 'member']
+      );
+      await pool.query('DELETE FROM team_invitations WHERE id = $1', [inv.id]);
+    }
 
     res.status(201).json({ message: 'User registered successfully', user, token });
   } catch (error) {

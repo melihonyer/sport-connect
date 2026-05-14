@@ -618,13 +618,18 @@ export default function Muuvlink() {
       .catch(() => {});
   }, []);
 
-  // URL'de reset_token varsa şifre sıfırlama sayfasına yönlendir
+  // URL'de reset_token veya auth=register varsa yönlendir
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const t = params.get("reset_token");
+    const auth = params.get("auth");
     if (t) {
       setResetToken(t);
       setCurrentPage("reset-password");
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (auth === "register") {
+      setAuthMode("register");
+      setIsAuthModalOpen(true);
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, []);
