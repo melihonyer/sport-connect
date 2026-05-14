@@ -1954,10 +1954,10 @@ export default function Muuvlink() {
           </div>
           {team.my_role && (
             <span className="px-2.5 py-1 text-xs font-medium rounded-lg" style={{
-              background: team.my_role === 'owner' ? '#FEF3C7' : team.my_role === 'coach' ? '#EDE9FE' : '#F0FDF4',
-              color: team.my_role === 'owner' ? '#92400E' : team.my_role === 'coach' ? '#5B21B6' : '#166534',
+              background: team.my_role === 'owner' ? '#FEF3C7' : team.my_role === 'coach' ? '#EDE9FE' : team.my_role === 'captain' ? '#DCFCE7' : '#F0FDF4',
+              color: team.my_role === 'owner' ? '#92400E' : team.my_role === 'coach' ? '#5B21B6' : team.my_role === 'captain' ? '#166534' : '#166534',
             }}>
-              {team.my_role === 'owner' ? '🏆 Sahip' : team.my_role === 'coach' ? '🎯 Antrenör' : '👤 Üye'}
+              {team.my_role === 'owner' ? '🏆 Sahip' : team.my_role === 'coach' ? '🎯 Antrenör' : team.my_role === 'captain' ? '⚓ Kaptan' : '👤 Üye'}
             </span>
           )}
         </div>
@@ -3148,8 +3148,9 @@ export default function Muuvlink() {
     const sportTypes = ["Futbol","Basketbol","Tenis","Yüzme","Koşu","Bisiklet","Voleybol","Fitness","Yoga","Diğer"];
 
     const roleBadge = (role) => {
-      if (role === "owner")  return <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold flex items-center gap-1"><Crown className="w-3 h-3" /> Sahip</span>;
-      if (role === "coach")  return <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold flex items-center gap-1"><Target className="w-3 h-3" /> Antrenör</span>;
+      if (role === "owner")   return <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold flex items-center gap-1"><Crown className="w-3 h-3" /> Sahip</span>;
+      if (role === "coach")   return <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold flex items-center gap-1"><Target className="w-3 h-3" /> Antrenör</span>;
+      if (role === "captain") return <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-semibold flex items-center gap-1"><ShieldCheck className="w-3 h-3" /> Kaptan</span>;
       return <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold flex items-center gap-1"><User className="w-3 h-3" /> Üye</span>;
     };
 
@@ -3354,6 +3355,7 @@ export default function Muuvlink() {
                               className="text-sm px-3 py-1.5 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white"
                             >
                               <option value="member">👤 Üye</option>
+                              <option value="captain">⚓ Kaptan</option>
                               <option value="coach">🎯 Antrenör</option>
                               <option value="owner">🏆 Sahip</option>
                             </select>
