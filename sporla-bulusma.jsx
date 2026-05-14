@@ -2955,9 +2955,33 @@ export default function Muuvlink() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Saat</label>
-                  <input type="time" value={editData.training_time}
-                    onChange={(e) => setEditData((d) => ({ ...d, training_time: e.target.value }))}
-                    className="w-full px-4 py-2 border rounded-xl" required />
+                  <div className="flex gap-2">
+                    <select
+                      value={editData.training_time ? editData.training_time.split(":")[0] : ""}
+                      onChange={(e) => {
+                        const min = editData.training_time ? editData.training_time.split(":")[1] : "00";
+                        setEditData((d) => ({ ...d, training_time: e.target.value ? `${e.target.value}:${min}` : "" }));
+                      }}
+                      className="flex-1 px-3 py-2 border rounded-xl bg-white" required
+                    >
+                      <option value="">Saat</option>
+                      {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0")).map(h => (
+                        <option key={h} value={h}>{h}</option>
+                      ))}
+                    </select>
+                    <select
+                      value={editData.training_time ? editData.training_time.split(":")[1] : "00"}
+                      onChange={(e) => {
+                        const hr = editData.training_time ? editData.training_time.split(":")[0] : "";
+                        if (hr) setEditData((d) => ({ ...d, training_time: `${hr}:${e.target.value}` }));
+                      }}
+                      className="flex-1 px-3 py-2 border rounded-xl bg-white"
+                    >
+                      {["00","05","10","15","20","25","30","35","40","45","50","55"].map(m => (
+                        <option key={m} value={m}>{m}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
 
@@ -3633,13 +3657,34 @@ export default function Muuvlink() {
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">Saat</label>
-                <input
-                  type="time"
-                  value={formData.training_time}
-                  onChange={(e) => setFormData({ ...formData, training_time: e.target.value })}
-                  className="w-full px-4 py-3 border rounded-xl"
-                  required
-                />
+                <div className="flex gap-2">
+                  <select
+                    value={formData.training_time ? formData.training_time.split(":")[0] : ""}
+                    onChange={(e) => {
+                      const min = formData.training_time ? formData.training_time.split(":")[1] : "00";
+                      setFormData({ ...formData, training_time: e.target.value ? `${e.target.value}:${min}` : "" });
+                    }}
+                    className="flex-1 px-4 py-3 border rounded-xl bg-white"
+                    required
+                  >
+                    <option value="">Saat</option>
+                    {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0")).map(h => (
+                      <option key={h} value={h}>{h}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={formData.training_time ? formData.training_time.split(":")[1] : "00"}
+                    onChange={(e) => {
+                      const hr = formData.training_time ? formData.training_time.split(":")[0] : "";
+                      if (hr) setFormData({ ...formData, training_time: `${hr}:${e.target.value}` });
+                    }}
+                    className="flex-1 px-4 py-3 border rounded-xl bg-white"
+                  >
+                    {["00","05","10","15","20","25","30","35","40","45","50","55"].map(m => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
 
