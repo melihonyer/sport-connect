@@ -3355,6 +3355,7 @@ export default function Muuvlink() {
                             >
                               <option value="member">👤 Üye</option>
                               <option value="coach">🎯 Antrenör</option>
+                              <option value="owner">🏆 Sahip</option>
                             </select>
                             <button
                               onClick={() => handleRemoveMember(selectedTeam.id, member.id)}
