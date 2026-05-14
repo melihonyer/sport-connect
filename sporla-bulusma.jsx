@@ -1160,7 +1160,7 @@ export default function Muuvlink() {
         setCurrentPage("team-detail");
         // owner/coach ise bekleyen davetleri çek
         const myRole = data.team?.members?.find(m => m.id === user?.id)?.role;
-        if (myRole === 'owner' || myRole === 'coach') {
+        if (myRole === 'owner' || myRole === 'coach' || myRole === 'captain') {
           fetchPendingInvitations(teamId, token);
         } else {
           setPendingInvitations([]);
@@ -3130,7 +3130,7 @@ export default function Muuvlink() {
     const myRole = myMembership?.role || null;
     const isMember = !!myMembership;
     const isCoach = myRole === "coach";
-    const canManage = isOwner || isCoach; // antrenman ekleyip düzenleyebilir
+    const canManage = isOwner || isCoach || myRole === "captain";
     const canSeeMembers = !selectedTeam.is_private || isMember;
 
     const [message, setMessage] = useState("");
