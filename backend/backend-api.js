@@ -190,7 +190,7 @@ async function sendEmail({ to, subject, html }) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Muuvlink <onboarding@resend.dev>',
+        from: 'Muuvlink <noreply@muuvlink.app>',
         to,
         subject,
         html,
