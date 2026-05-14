@@ -247,6 +247,7 @@ export default function Muuvlink() {
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [teamActiveTab, setTeamActiveTab] = useState("wall");
+  const teamActiveTabRef = useRef("wall");
   const [nearbyMode, setNearbyMode] = useState(false);
   const [nearbyDistance, setNearbyDistance] = useState(10);
   const [nearbyTrainings, setNearbyTrainings] = useState([]);
@@ -3095,8 +3096,8 @@ export default function Muuvlink() {
     const canSeeMembers = !selectedTeam.is_private || isMember;
 
     const [message, setMessage] = useState("");
-    const activeTab = teamActiveTab;
-    const setActiveTab = setTeamActiveTab;
+    const [activeTab, setActiveTabState] = useState(teamActiveTabRef.current);
+    const setActiveTab = (tab) => { teamActiveTabRef.current = tab; setActiveTabState(tab); setTeamActiveTab(tab); };
     const [editForm, setEditForm] = useState({
       name: selectedTeam.name,
       sport: selectedTeam.sport,
