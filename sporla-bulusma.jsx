@@ -1817,97 +1817,60 @@ export default function Muuvlink() {
   };
 
   const TrainingCard = ({ training, onClick }) => {
-  const progress = training.attendee_count
-    ? (training.attendee_count / training.capacity) * 100
-    : 0;
-  const isOwner = user && training.team_owner_id === user.id;
   const hasCoords = training.location_lat && training.location_lng;
-
-  // Mesafeyi backend'den al ya da client-side hesapla
   const distanceKm = training.distance != null
     ? Number(training.distance)
     : (userLocation && hasCoords
         ? haversineKm(userLocation.lat, userLocation.lng, Number(training.location_lat), Number(training.location_lng))
         : null);
 
-  const difficultyConfig = {
-    "Kolay":   { cls: "bg-emerald-100 text-emerald-700", dot: "bg-emerald-500" },
-    "Orta":    { cls: "bg-amber-100 text-amber-700",   dot: "bg-amber-500" },
-    "Zor":     { cls: "bg-rose-100 text-rose-700",     dot: "bg-rose-500" },
-  };
-  const diff = difficultyConfig[training.difficulty] || difficultyConfig["Orta"];
+  const dateObj = new Date(training.training_date);
+  const day = String(dateObj.getUTCDate()).padStart(2, "0");
+  const monthNames = ["OCA","ŞUB","MAR","NİS","MAY","HAZ","TEM","AĞU","EYL","EKİ","KAS","ARA"];
+  const month = monthNames[dateObj.getUTCMonth()];
+
+  const difficultyColor = { "Kolay": "#6ee7b7", "Orta": "#fcd34d", "Zor": "#fca5a5" };
+  const accentColor = difficultyColor[training.difficulty] || "#6ee7b7";
 
   return (
-    <div className="group bg-white rounded-2xl border border-slate-100 hover:border-green-200 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 overflow-hidden flex flex-col">
-      {/* Renkli sport header */}
-      <div className="cursor-pointer" onClick={() => onClick(training.id)}>
-        <div className="px-5 pt-5 pb-4 flex items-start justify-between gap-2">
-          <span className="px-3 py-1.5 rounded-xl text-xs font-medium tracking-wide text-green-700 bg-green-100">
-            {training.team_sport || "Genel"}
-          </span>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {isOwner && !hasCoords && (
-              <span title="GPS yok" className="px-2 py-1 bg-orange-100 text-orange-600 rounded-lg text-xs flex items-center gap-1">
-                <MapPin className="w-3 h-3"/> GPS yok
-              </span>
-            )}
-            <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 ${diff.cls}`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${diff.dot}`}/>
-              {training.difficulty || "Orta"}
-            </span>
-          </div>
-        </div>
-
-        <div className="px-5 pb-4">
-          <h3 className="text-lg font-medium text-slate-900 mb-1 group-hover:text-green-700 transition-colors line-clamp-1">{training.title}</h3>
-          <p className="text-slate-500 text-sm line-clamp-2 leading-relaxed">{training.description}</p>
-        </div>
-
-        <div className="mx-5 mb-4 bg-slate-50 rounded-xl p-3 space-y-2">
-          <div className="flex items-center text-slate-600 text-xs gap-2">
-            <MapPin className="w-3.5 h-3.5 text-green-500 flex-shrink-0"/>
-            <span className="truncate">{training.location_name}</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center text-slate-600 text-xs gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-green-500"/>
-              {new Date(training.training_date).toLocaleDateString("tr-TR")}
-            </div>
-            <div className="flex items-center text-slate-600 text-xs gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-green-500"/>
-              {training.training_time}
-            </div>
-          </div>
-          {distanceKm != null && (
-            <div className="flex items-center text-emerald-600 text-xs font-semibold gap-1.5">
-              <Navigation2 className="w-3.5 h-3.5"/>
-              {distanceKm < 1 ? `${Math.round(distanceKm * 1000)} m uzakta` : `${distanceKm.toFixed(1)} km uzakta`}
-            </div>
-          )}
-        </div>
-
-        <div className="px-5 pb-5">
-          <div className="flex justify-between text-xs text-slate-500 mb-1.5">
-            <span>Katılımcılar</span>
-            <span className="font-semibold text-slate-700">{training.attendee_count || 0}/{training.capacity}</span>
-          </div>
-          <div className="w-full bg-slate-100 rounded-full h-1.5">
-            <div className="h-full rounded-full transition-all" style={{width:`${progress}%`, background:"linear-gradient(90deg,#16A34A,#15803D)"}}/>
-          </div>
-        </div>
+    <div
+      onClick={() => onClick(training.id)}
+      className="group flex items-stretch gap-0 bg-white border-b border-dashed border-slate-200 cursor-pointer hover:bg-slate-50 transition-colors duration-200 py-6 px-2"
+    >
+      {/* Sol: Takvim tarihi */}
+      <div className="flex flex-col items-center justify-center w-20 flex-shrink-0 pr-5">
+        <span className="text-5xl font-bold leading-none" style={{color: accentColor, fontVariantNumeric:"tabular-nums"}}>{day}</span>
+        <span className="text-[10px] font-bold tracking-[0.2em] mt-1.5 text-slate-400 uppercase">{month}</span>
       </div>
 
-      <div className="px-5 pb-5 mt-auto">
-        <button
-          onClick={(e) => { e.stopPropagation(); handleJoinTraining(training.id); }}
-          disabled={joiningTrainingId === training.id}
-          className="w-full py-2.5 rounded-xl text-sm font-medium text-white transition-all duration-300 hover:opacity-90 hover:shadow-lg disabled:opacity-60 flex items-center justify-center gap-2"
-          style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}
-        >
-          {joiningTrainingId === training.id ? (
-            <><Loader2 className="w-4 h-4 animate-spin"/> Katılınıyor…</>
-          ) : "Katıl →"}
-        </button>
+      {/* Dikey ayraç */}
+      <div className="w-px bg-slate-200 self-stretch flex-shrink-0"/>
+
+      {/* Sağ: İçerik */}
+      <div className="flex-1 pl-5 flex flex-col justify-center gap-1 min-w-0">
+        <h3 className="text-base font-bold text-slate-900 group-hover:text-green-700 transition-colors line-clamp-1 leading-snug">
+          {training.title}
+        </h3>
+        <p className="text-sm text-slate-400 italic">
+          {training.training_time && <span>{training.training_time}</span>}
+          {training.training_time && (training.team_name || training.location_name) && <span className="mx-2">·</span>}
+          {training.team_name && <span className="not-italic font-medium text-green-700">{training.team_name}</span>}
+          {training.team_name && training.location_name && <span className="mx-2">-</span>}
+          {training.location_name && <span>{training.location_name}</span>}
+        </p>
+        {distanceKm != null && (
+          <p className="text-xs text-emerald-600 font-medium flex items-center gap-1">
+            <Navigation2 className="w-3 h-3"/>
+            {distanceKm < 1 ? `${Math.round(distanceKm * 1000)} m uzakta` : `${distanceKm.toFixed(1)} km uzakta`}
+          </p>
+        )}
+      </div>
+
+      {/* Sağ ok */}
+      <div className="flex items-center pl-4 flex-shrink-0">
+        <svg className="w-4 h-4 text-slate-300 group-hover:text-green-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/>
+        </svg>
       </div>
     </div>
   );
@@ -2131,43 +2094,30 @@ export default function Muuvlink() {
     <>
       <HeroSection />
       <FeaturesSection />
-      <NewsSection />
-      <GallerySection />
 
-      {/* ── GPS SEARCH — Dark Athletic Strip ── */}
-      <div className="relative overflow-hidden py-20" style={{background:"linear-gradient(135deg,#f0fdf4 0%,#dcfce7 50%,#bbf7d0 100%)"}}>
-        {/* grid overlay */}
-        <div className="absolute inset-0 opacity-[0.045] pointer-events-none"
-          style={{backgroundImage:"linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px)", backgroundSize:"56px 56px"}}/>
-        {/* glow */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] rounded-full pointer-events-none"
-          style={{background:"radial-gradient(ellipse,rgba(22,163,74,0.18) 0%,transparent 65%)"}}/>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-10">
-            {/* Left: text */}
-            <div className="md:max-w-lg">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium border mb-5"
-                style={{background:"rgba(22,163,74,0.1)", borderColor:"rgba(22,163,74,0.3)", color:"#15803D"}}>
-                <MapPin className="w-3.5 h-3.5"/> GPS Destekli Arama
-              </div>
-              <h2 className="text-4xl md:text-5xl font-semibold text-green-900 mb-4 tracking-tight leading-tight">
+      {/* ── GPS SEARCH + UPCOMING TRAININGS — yan yana ── */}
+      <div className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8">
+          <div className="flex flex-col lg:flex-row gap-12">
+
+            {/* Sol: GPS arama */}
+            <div className="lg:w-72 flex-shrink-0">
+              <span className="text-xs font-semibold tracking-[0.3em] text-green-500 uppercase block mb-3">GPS Arama</span>
+              <h2 className="text-2xl font-semibold text-slate-900 tracking-tight leading-snug mb-3">
                 Yakınındaki<br/>Antrenmanları Bul
               </h2>
-              <p className="text-green-700 text-base leading-relaxed">
-                Konumunu paylaş, çevrenizdeki etkinlikleri saniyeler içinde keşfet. Mesafe filtresiyle en uygununu seç.
+              <p className="text-slate-500 text-sm leading-relaxed mb-6">
+                Konumunu paylaş, çevrenizdeki etkinlikleri saniyeler içinde keşfet.
               </p>
-            </div>
-            {/* Right: control */}
-            <div className="flex flex-col items-start md:items-end gap-5">
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 mb-4">
                 {[5, 10, 25, 50].map((km) => (
                   <button
                     key={km}
                     onClick={() => setNearbyDistance(km)}
-                    className="px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200"
+                    className="px-4 py-2 rounded-xl text-xs font-medium transition-all duration-200"
                     style={nearbyDistance === km
                       ? {background:"linear-gradient(135deg,#16A34A,#15803D)", color:"#fff", boxShadow:"0 4px 20px rgba(22,163,74,0.35)"}
-                      : {background:"white", color:"#15803D", border:"1px solid #bbf7d0"}}
+                      : {background:"#f0fdf4", color:"#15803D", border:"1px solid #bbf7d0"}}
                   >
                     {km} km
                   </button>
@@ -2176,57 +2126,61 @@ export default function Muuvlink() {
               <button
                 onClick={() => handleNearbySearch()}
                 disabled={locationLoading}
-                className="flex items-center gap-2.5 px-8 py-3.5 rounded-xl font-medium text-white text-sm transition-all duration-300 hover:opacity-90 hover:scale-105 disabled:opacity-50 disabled:scale-100"
-                style={{background:"linear-gradient(135deg,#16A34A,#15803D)", boxShadow:"0 8px 32px rgba(22,163,74,0.35)"}}
+                className="flex items-center gap-2 px-6 py-3 rounded-xl font-medium text-white text-sm transition-all duration-300 hover:opacity-90 hover:scale-105 disabled:opacity-50 disabled:scale-100"
+                style={{background:"linear-gradient(135deg,#16A34A,#15803D)", boxShadow:"0 6px 24px rgba(22,163,74,0.3)"}}
               >
                 {locationLoading
                   ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/> Konum alınıyor…</>
                   : <><MapPin className="w-4 h-4"/> Yakınımda Ara</>}
               </button>
             </div>
+
+            {/* Dikey ayraç */}
+            <div className="hidden lg:block w-px bg-slate-100 self-stretch"/>
+
+            {/* Sağ: Antrenman listesi */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <span className="text-xs font-semibold tracking-[0.3em] text-green-500 uppercase block mb-3">Keşfet</span>
+                  <h2 className="text-2xl font-semibold text-slate-900 tracking-tight leading-snug">
+                    Yaklaşan Antrenmanlar
+                  </h2>
+                </div>
+                <button
+                  onClick={() => setCurrentPage("trainings")}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium transition-all hover:shadow-md flex-shrink-0"
+                  style={{background:"linear-gradient(135deg,#16A34A,#15803D)", color:"#fff"}}
+                >
+                  Tümünü Gör
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                </button>
+              </div>
+
+              {trainings.length > 0 ? (
+                <div className="divide-y-0">
+                  {trainings.slice(0, 6).map((training) => (
+                    <TrainingCard key={training.id} training={training} onClick={fetchTrainingDetails} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-16 bg-slate-50 rounded-2xl border border-dashed border-slate-200 mt-6">
+                  <Activity className="w-10 h-10 text-slate-200 mx-auto mb-3" />
+                  <p className="text-slate-500 font-medium mb-1">Antrenman bulunamadı</p>
+                  <p className="text-slate-400 text-sm mb-4">Sunucu bağlantısı kontrol ediliyor…</p>
+                  <button onClick={fetchTrainings} className="px-5 py-2.5 rounded-xl text-sm font-medium text-green-700 bg-green-100 hover:bg-green-200 transition-colors">
+                    Tekrar Dene
+                  </button>
+                </div>
+              )}
+            </div>
+
           </div>
         </div>
       </div>
 
-      {/* ── UPCOMING TRAININGS — Magazine Grid ── */}
-      <div className="py-20 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8">
-          {/* Header */}
-          <div className="flex items-end justify-between mb-12">
-            <div>
-              <span className="text-xs font-semibold tracking-[0.3em] text-green-500 uppercase block mb-3">Keşfet</span>
-              <h2 className="text-4xl md:text-5xl font-semibold text-slate-900 tracking-tighter leading-none">
-                Yaklaşan<br/>Antrenmanlar
-              </h2>
-            </div>
-            <button
-              onClick={() => setCurrentPage("trainings")}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all hover:shadow-md"
-              style={{background:"linear-gradient(135deg,#16A34A,#15803D)", color:"#fff"}}
-            >
-              Tümünü Gör
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
-            </button>
-          </div>
-
-          {trainings.length > 0 ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {trainings.slice(0, 6).map((training) => (
-                <TrainingCard key={training.id} training={training} onClick={fetchTrainingDetails} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-slate-200">
-              <Activity className="w-12 h-12 text-slate-200 mx-auto mb-3" />
-              <p className="text-slate-500 font-medium mb-1">Antrenman bulunamadı</p>
-              <p className="text-slate-400 text-sm mb-5">Sunucu bağlantısı kontrol ediliyor…</p>
-              <button onClick={fetchTrainings} className="px-5 py-2.5 rounded-xl text-sm font-medium text-green-700 bg-green-100 hover:bg-green-200 transition-colors">
-                Tekrar Dene
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
+      <NewsSection />
+      <GallerySection />
 
       {/* ── CTA — Full Bleed Cinematic ── */}
       {!user && (
