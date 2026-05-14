@@ -3423,8 +3423,8 @@ export default function Muuvlink() {
                     </div>
                     <button type="button"
                       onClick={() => setEditForm((f) => ({ ...f, is_private: !f.is_private }))}
-                      className={`relative w-12 h-6 rounded-full transition-colors ml-4 flex-shrink-0 overflow-hidden ${editForm.is_private ? "bg-gray-400" : "bg-blue-500"}`}>
-                      <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${editForm.is_private ? "translate-x-1" : "translate-x-7"}`} />
+                      className={`relative w-12 h-6 rounded-full transition-colors ml-4 flex-shrink-0 ${editForm.is_private ? "bg-gray-400" : "bg-blue-500"}`}>
+                      <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${editForm.is_private ? "left-1" : "left-7"}`} />
                     </button>
                   </div>
 
@@ -3569,9 +3569,9 @@ export default function Muuvlink() {
                     <button
                       type="button"
                       onClick={() => setFormData((f) => ({ ...f, is_public: !f.is_public }))}
-                      className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 overflow-hidden ${formData.is_public ? "bg-green-500" : "bg-slate-300"}`}
+                      className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${formData.is_public ? "bg-green-500" : "bg-slate-300"}`}
                     >
-                      <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${formData.is_public ? "translate-x-6" : "translate-x-1"}`} />
+                      <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${formData.is_public ? "left-6" : "left-1"}`} />
                     </button>
                   </div>
                 )}

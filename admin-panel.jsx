@@ -103,8 +103,8 @@ function HomeNewsTab({ items, setItems, api, token, showToast }) {
           <div className="flex items-center gap-3">
             <label className={lbl + " mb-0"}>Aktif</label>
             <button type="button" onClick={()=>setForm(f=>({...f,is_active:!f.is_active}))}
-              className={`relative w-11 h-6 rounded-full transition-colors overflow-hidden ${form.is_active?"bg-green-500":"bg-slate-300"}`}>
-              <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${form.is_active?"translate-x-6":"translate-x-1"}`}/>
+              className={`relative w-11 h-6 rounded-full transition-colors ${form.is_active?"bg-green-500":"bg-slate-300"}`}>
+              <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${form.is_active?"left-6":"left-1"}`}/>
             </button>
           </div>
           <div className="flex gap-3 pt-2">
@@ -218,8 +218,8 @@ function HomeGalleryTab({ items, setItems, api, token, showToast }) {
           <div className="flex items-center gap-3">
             <label className={lbl + " mb-0"}>Aktif</label>
             <button type="button" onClick={()=>setForm(f=>({...f,is_active:!f.is_active}))}
-              className={`relative w-11 h-6 rounded-full transition-colors overflow-hidden ${form.is_active?"bg-green-500":"bg-slate-300"}`}>
-              <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${form.is_active?"translate-x-6":"translate-x-1"}`}/>
+              className={`relative w-11 h-6 rounded-full transition-colors ${form.is_active?"bg-green-500":"bg-slate-300"}`}>
+              <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${form.is_active?"left-6":"left-1"}`}/>
             </button>
           </div>
           <p className="text-xs text-slate-400">Kartı oluşturduktan sonra resim yükleyebilirsiniz.</p>
