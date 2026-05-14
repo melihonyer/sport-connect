@@ -11,7 +11,7 @@ const API_URL  = import.meta.env.VITE_API_URL  ?? (import.meta.env.DEV ? "http:/
 const BASE_URL = import.meta.env.VITE_BASE_URL ?? (import.meta.env.DEV ? "http://localhost:3000" : "");
 
 // ─── Resim yükleme yardımcısı ───────────────────────────────
-function ImageUploadBtn({ itemId, endpoint, token, onUploaded, currentUrl }) {
+function ImageUploadBtn({ itemId, endpoint, token, onUploaded, onError, currentUrl }) {
   const [uploading, setUploading] = React.useState(false);
   const ref = React.useRef(null);
   const handleFile = async (e) => {
@@ -20,8 +20,16 @@ function ImageUploadBtn({ itemId, endpoint, token, onUploaded, currentUrl }) {
     try {
       const fd = new FormData(); fd.append('image', file);
       const res = await fetch(`${API_URL}${endpoint}`, { method:'POST', headers:{ Authorization:`Bearer ${token}` }, body:fd });
-      const data = await res.json();
-      if (data.image_url) onUploaded(data);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.image_url) onUploaded(data);
+        onError?.('Görsel yüklendi.', 'success');
+      } else {
+        const err = await res.json().catch(()=>({}));
+        onError?.(err.error || `Yükleme hatası (${res.status})`, 'error');
+      }
+    } catch(e) {
+      onError?.(`Bağlantı hatası: ${e.message}`, 'error');
     } finally { setUploading(false); e.target.value=''; }
   };
   return (
@@ -37,7 +45,7 @@ function ImageUploadBtn({ itemId, endpoint, token, onUploaded, currentUrl }) {
 }
 
 // ─── Haberler sekmesi ────────────────────────────────────────
-function HomeNewsTab({ items, setItems, api, token }) {
+function HomeNewsTab({ items, setItems, api, token, showToast }) {
   const [showForm, setShowForm] = React.useState(false);
   const [editId, setEditId]   = React.useState(null);
   const [saving, setSaving]   = React.useState(false);
@@ -132,7 +140,7 @@ function HomeNewsTab({ items, setItems, api, token }) {
               {item.date_label && <p className="text-xs text-slate-400 mb-3">{item.date_label}</p>}
               <div className="flex gap-2 flex-wrap">
                 <ImageUploadBtn itemId={item.id} endpoint={`/admin/home-news/${item.id}/image`} token={token}
-                  currentUrl={item.image_url} onUploaded={r=>setItems(prev=>prev.map(i=>i.id===item.id?r:i))}/>
+                  currentUrl={item.image_url} onUploaded={r=>setItems(prev=>prev.map(i=>i.id===item.id?r:i))} onError={showToast}/>
                 <button onClick={()=>toggleActive(item)}
                   className="py-1.5 px-3 text-xs font-medium rounded-lg border border-slate-200 hover:bg-slate-50 transition text-slate-600">
                   {item.is_active?"Pasife Al":"Aktife Al"}
@@ -155,7 +163,7 @@ function HomeNewsTab({ items, setItems, api, token }) {
 }
 
 // ─── Galeri sekmesi ──────────────────────────────────────────
-function HomeGalleryTab({ items, setItems, api, token }) {
+function HomeGalleryTab({ items, setItems, api, token, showToast }) {
   const [showForm, setShowForm] = React.useState(false);
   const [editId, setEditId]   = React.useState(null);
   const [saving, setSaving]   = React.useState(false);
@@ -245,7 +253,7 @@ function HomeGalleryTab({ items, setItems, api, token }) {
             </div>
             <div className="p-3 flex flex-col gap-2">
               <ImageUploadBtn itemId={item.id} endpoint={`/admin/home-gallery/${item.id}/image`} token={token}
-                currentUrl={item.image_url} onUploaded={r=>setItems(prev=>prev.map(i=>i.id===item.id?r:i))}/>
+                currentUrl={item.image_url} onUploaded={r=>setItems(prev=>prev.map(i=>i.id===item.id?r:i))} onError={showToast}/>
               <div className="flex gap-2">
                 <button onClick={()=>toggleActive(item)}
                   className="flex-1 py-1.5 text-xs font-medium rounded-lg border border-slate-200 hover:bg-slate-50 transition text-slate-600">
@@ -272,10 +280,28 @@ function HomeGalleryTab({ items, setItems, api, token }) {
 const fmt = (d) => d ? new Date(d).toLocaleDateString("tr-TR", { day:"numeric", month:"short", year:"numeric" }) : "—";
 const fmtFull = (d) => d ? new Date(d).toLocaleString("tr-TR") : "—";
 
+// ─── Toast bildirimi ────────────────────────────────────────
+function AdminToast({ toasts }) {
+  return (
+    <div className="fixed bottom-6 right-6 z-[9999] flex flex-col gap-2 pointer-events-none">
+      {toasts.map(t => (
+        <div key={t.id} className={`flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl text-sm font-medium text-white pointer-events-auto transition-all
+          ${t.type==='error'?'bg-red-500':'bg-green-600'}`}>
+          {t.type==='error'
+            ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+            : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M20 6L9 17l-5-5"/></svg>}
+          {t.message}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ─── Ana bileşen ────────────────────────────────────────────
 export default function AdminPanel() {
   const [token, setToken]       = useState(() => sessionStorage.getItem("admin_token") || "");
   const [loginError, setLoginError] = useState("");
+  const [toasts, setToasts]     = useState([]);
   const [loginLoading, setLoginLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [form, setForm]         = useState({ email: "", password: "" });
@@ -336,6 +362,13 @@ export default function AdminPanel() {
     sessionStorage.removeItem("admin_token");
     setToken("");
     setForm({ email: "", password: "" });
+  };
+
+  // ─── Toast helper ───────────────────────────────────────
+  const showToast = (message, type = 'success') => {
+    const id = Date.now();
+    setToasts(p => [...p, { id, message, type }]);
+    setTimeout(() => setToasts(p => p.filter(t => t.id !== id)), 3500);
   };
 
   // ─── API helper ─────────────────────────────────────────
@@ -570,12 +603,13 @@ export default function AdminPanel() {
       if (res.ok) {
         const updated = await res.json();
         setBanners(prev => prev.map(b => b.id === bannerId ? updated : b));
+        showToast('Görsel yüklendi.');
       } else {
         const err = await res.json().catch(() => ({}));
-        alert(`Görsel yükleme hatası: ${err.error || res.status}`);
+        showToast(err.error || `Yükleme hatası (${res.status})`, 'error');
       }
     } catch (e) {
-      alert(`Bağlantı hatası: ${e.message}`);
+      showToast(`Bağlantı hatası: ${e.message}`, 'error');
     }
     finally { setUploadingId(null); }
   };
@@ -596,6 +630,7 @@ export default function AdminPanel() {
 
   return (
     <div className="flex min-h-screen bg-slate-50 font-sans">
+      <AdminToast toasts={toasts}/>
       {/* ── Sidebar ───────────────────────────────────────── */}
       <aside className="w-64 flex-shrink-0 flex flex-col bg-white border-r border-slate-100 shadow-sm">
         {/* Logo */}
@@ -1226,14 +1261,14 @@ export default function AdminPanel() {
           {/* ── HOME NEWS ────────────────────────────────── */}
           {!loading && tab === "home-news" && (
             <HomeNewsTab
-              items={homeNews} setItems={setHomeNews} api={api} token={token}
+              items={homeNews} setItems={setHomeNews} api={api} token={token} showToast={showToast}
             />
           )}
 
           {/* ── HOME GALLERY ─────────────────────────────── */}
           {!loading && tab === "home-gallery" && (
             <HomeGalleryTab
-              items={homeGallery} setItems={setHomeGallery} api={api} token={token}
+              items={homeGallery} setItems={setHomeGallery} api={api} token={token} showToast={showToast}
             />
           )}
 
