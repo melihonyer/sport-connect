@@ -61,8 +61,8 @@ const DEFAULT_MOTTOS = [
   "En İyini Keşfet!",
 ];
 
-// Module-level component — SporlaConnect içinde OLMAMALI.
-// SporlaConnect her 55ms'de re-render ederdi (typewriter state),
+// Module-level component — Muuvlink içinde OLMAMALI.
+// Muuvlink her 55ms'de re-render ederdi (typewriter state),
 // bu da AuthModal gibi nested component'lerin unmount/remount olmasına
 // ve form alanlarının sıfırlanmasına yol açıyordu.
 const Typewriter = React.memo(({ mottos }) => {
@@ -220,7 +220,7 @@ const AuthModal = ({ authMode, setAuthMode, onClose, handleLogin, handleRegister
   );
 };
 
-export default function SporlaConnect() {
+export default function Muuvlink() {
   const [currentPage, setCurrentPage] = useState("home");
   const [user, setUser] = useState(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -648,17 +648,17 @@ export default function SporlaConnect() {
   // Sayfa değişince document.title güncelle
   useEffect(() => {
     const titles = {
-      home: "SporlaConnect — Spor Arkadaşı Bul",
-      trainings: "Antrenmanlar — SporlaConnect",
-      teams: "Takımlar — SporlaConnect",
-      profile: "Profilim — SporlaConnect",
-      "create-training": "Antrenman Oluştur — SporlaConnect",
-      "create-team": "Takım Kur — SporlaConnect",
-      contact: "İletişim — SporlaConnect",
-      badges: "Rozetlerim — SporlaConnect",
-      "reset-password": "Şifre Sıfırla — SporlaConnect",
+      home: "Muuvlink — Spor Arkadaşı Bul",
+      trainings: "Antrenmanlar — Muuvlink",
+      teams: "Takımlar — Muuvlink",
+      profile: "Profilim — Muuvlink",
+      "create-training": "Antrenman Oluştur — Muuvlink",
+      "create-team": "Takım Kur — Muuvlink",
+      contact: "İletişim — Muuvlink",
+      badges: "Rozetlerim — Muuvlink",
+      "reset-password": "Şifre Sıfırla — Muuvlink",
     };
-    document.title = titles[currentPage] || "SporlaConnect";
+    document.title = titles[currentPage] || "Muuvlink";
   }, [currentPage]);
 
   // currentBannerIdx ref'i güncel tut (interval stale closure'dan kaçınmak için)
@@ -1714,7 +1714,7 @@ export default function SporlaConnect() {
               <span className="text-xs font-semibold tracking-[0.35em] text-green-500 uppercase block mb-3">Platform</span>
               <h2 className="text-5xl md:text-7xl font-semibold text-slate-900 tracking-tighter leading-[0.92]">
                 Neden<br/>
-                <span style={{WebkitTextStroke:"2px #16A34A", color:"transparent"}}>SporlaConnect?</span>
+                <span style={{WebkitTextStroke:"2px #16A34A", color:"transparent"}}>Muuvlink?</span>
               </h2>
             </div>
             <p className="md:max-w-xs text-slate-400 text-sm leading-relaxed md:pb-2">
@@ -1971,7 +1971,7 @@ export default function SporlaConnect() {
           <h2 className="text-3xl md:text-4xl font-semibold text-slate-900 tracking-widest uppercase mb-3">
             Takım Etkinlikleri
           </h2>
-          <p className="text-slate-400 font-light italic text-base">SporlaConnect topluluğundan etkinlik haberleri</p>
+          <p className="text-slate-400 font-light italic text-base">Muuvlink topluluğundan etkinlik haberleri</p>
         </div>
 
         {/* 5 kart — tam genişlik, boşluksuz */}
@@ -2043,7 +2043,7 @@ export default function SporlaConnect() {
         {/* Ortalanmış başlık */}
         <div className="text-center mb-10 px-4">
           <h2 className="text-3xl md:text-4xl font-semibold text-slate-900 tracking-widest uppercase mb-3">Galeri</h2>
-          <p className="text-slate-400 font-light italic text-base mb-6">SporlaConnect etkinliklerinden kareler</p>
+          <p className="text-slate-400 font-light italic text-base mb-6">Muuvlink etkinliklerinden kareler</p>
           {/* X süsleme — golf template gibi */}
           <div className="flex items-center justify-center gap-0 max-w-lg mx-auto">
             <div className="flex-1 border-t border-dashed border-slate-300"/>
@@ -4193,7 +4193,7 @@ export default function SporlaConnect() {
               </div>
               <span className="text-xl font-semibold tracking-tight"
                 style={{background:"linear-gradient(90deg,#166534,#16A34A)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent"}}>
-                SporlaConnect
+                Muuvlink
               </span>
             </button>
 
@@ -4280,13 +4280,13 @@ export default function SporlaConnect() {
     const [openFaq, setOpenFaq] = React.useState(null);
 
     const faqs = [
-      { q: "SporlaConnect'e nasıl üye olurum?", a: "Sağ üst köşedeki 'Kaydol' butonuna tıklayarak adınızı, e-posta adresinizi ve şifrenizi girerek ücretsiz üye olabilirsiniz." },
+      { q: "Muuvlink'e nasıl üye olurum?", a: "Sağ üst köşedeki 'Kaydol' butonuna tıklayarak adınızı, e-posta adresinizi ve şifrenizi girerek ücretsiz üye olabilirsiniz." },
       { q: "Takım nasıl kurarım?", a: "'Takımlar' sayfasına gidin ve '+ Takım Oluştur' butonuna tıklayın. Takım adı, spor branşı ve gizlilik ayarını belirleyerek dakikalar içinde takımınızı oluşturabilirsiniz." },
       { q: "Antrenman nasıl oluştururum?", a: "Üst menüdeki '+ Antrenman' butonuna tıklayın. Tarih, saat, konum ve kapasite bilgilerini doldurarak antrenmanınızı yayınlayabilirsiniz." },
       { q: "Gizli takım nedir?", a: "Gizli takımlar sadece davet edilen üyeler tarafından görülebilir. Antrenmanlar da otomatik olarak gizli olur ve dışarıdan kimse katılamaz." },
       { q: "Takıma nasıl üye eklerim?", a: "Takım detay sayfasında 'Üyeler' sekmesine gidin ve 'Davet Et' butonuyla e-posta adresi aracılığıyla üye ekleyebilirsiniz. Davet edilen kişiye e-posta gönderilir." },
       { q: "Antrenman kartındaki km bilgisi nasıl hesaplanır?", a: "Tarayıcınızın konum iznine göre bulunduğunuz yere olan mesafe Haversine formülüyle hesaplanır. Konum iznini tarayıcınızdan verebilirsiniz." },
-      { q: "Üyelik ücretli mi?", a: "SporlaConnect tamamen ücretsizdir. Temel tüm özellikler herkes için açıktır." },
+      { q: "Üyelik ücretli mi?", a: "Muuvlink tamamen ücretsizdir. Temel tüm özellikler herkes için açıktır." },
       { q: "Şifremi unuttum, ne yapmalıyım?", a: "Şu an için 'Profil' > 'Şifre Değiştir' bölümünden şifrenizi güncelleyebilirsiniz. Şifre sıfırlama maili yakında eklenecek." },
     ];
 
@@ -4371,7 +4371,7 @@ export default function SporlaConnect() {
                   {[
                     {label:"Instagram", handle:"@sporlaconnect", bg:"#fdf2f8", color:"#db2777"},
                     {label:"X (Twitter)", handle:"@sporlaconnect", bg:"#f8fafc", color:"#0f172a"},
-                    {label:"LinkedIn", handle:"SporlaConnect", bg:"#eff6ff", color:"#1d4ed8"},
+                    {label:"LinkedIn", handle:"Muuvlink", bg:"#eff6ff", color:"#1d4ed8"},
                   ].map((s) => (
                     <div key={s.label} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer">
                       <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-semibold flex-shrink-0"
@@ -4500,7 +4500,7 @@ E-posta: <a href="mailto:info@sporlaconnect.com">info@sporlaconnect.com</a></p>
 <p>Son güncelleme: Mayıs 2025</p>
 
 <h4>1. Toplanan Bilgiler</h4>
-<p>SporlaConnect olarak; kayıt sırasında sağladığınız bilgiler (ad, e-posta), platform kullanımı sırasında oluşan veriler (antrenmanlar, takımlar, konum) ve çerezler aracılığıyla teknik veriler toplarız.</p>
+<p>Muuvlink olarak; kayıt sırasında sağladığınız bilgiler (ad, e-posta), platform kullanımı sırasında oluşan veriler (antrenmanlar, takımlar, konum) ve çerezler aracılığıyla teknik veriler toplarız.</p>
 
 <h4>2. Bilgilerin Kullanımı</h4>
 <p>Toplanan veriler; hesabınızı yönetmek, size özel içerik sunmak, platform güvenliğini sağlamak ve yasal yükümlülükleri yerine getirmek amacıyla kullanılır.</p>
@@ -4525,7 +4525,7 @@ E-posta: <a href="mailto:info@sporlaconnect.com">info@sporlaconnect.com</a></p>
 <p>Son güncelleme: Mayıs 2025</p>
 
 <h4>1. Kabul</h4>
-<p>SporlaConnect platformunu kullanarak bu koşulları kabul etmiş sayılırsınız. Koşulları kabul etmiyorsanız platformu kullanmayınız.</p>
+<p>Muuvlink platformunu kullanarak bu koşulları kabul etmiş sayılırsınız. Koşulları kabul etmiyorsanız platformu kullanmayınız.</p>
 
 <h4>2. Üyelik</h4>
 <p>Platform hizmetlerinden yararlanmak için 18 yaşını doldurmuş olmanız ve doğru bilgilerle kayıt olmanız gerekmektedir. Hesap güvenliğinden siz sorumlusunuz.</p>
@@ -4653,7 +4653,7 @@ E-posta: <a href="mailto:info@sporlaconnect.com">info@sporlaconnect.com</a></p>
                   <Activity className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-xl font-semibold tracking-tight" style={{background:"linear-gradient(90deg,#a78bfa,#818cf8)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
-                  SporlaConnect
+                  Muuvlink
                 </span>
               </button>
               <p className="text-slate-400 text-sm leading-relaxed mb-5">

@@ -137,7 +137,7 @@ export default function AdminPanel() {
               <Shield className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-2xl font-semibold text-green-900 tracking-tight">Admin Panel</h1>
-            <p className="text-green-600 text-sm mt-1">SporlaConnect Yönetim Konsolu</p>
+            <p className="text-green-600 text-sm mt-1">Muuvlink Yönetim Konsolu</p>
           </div>
 
           {/* Login kutusu */}
@@ -340,7 +340,7 @@ export default function AdminPanel() {
             <Shield className="w-5 h-5 text-white" />
           </div>
           <div>
-            <div className="text-green-900 font-semibold text-sm tracking-tight">SporlaConnect</div>
+            <div className="text-green-900 font-semibold text-sm tracking-tight">Muuvlink</div>
             <div className="text-green-500 text-xs font-semibold">Admin Panel</div>
           </div>
         </div>
@@ -397,7 +397,7 @@ export default function AdminPanel() {
             <h1 className="text-lg font-semibold text-slate-900">
               {navItems.find(n => n.id === tab)?.label || "Panel"}
             </h1>
-            <p className="text-slate-400 text-xs">SporlaConnect Yönetim Konsolu</p>
+            <p className="text-slate-400 text-xs">Muuvlink Yönetim Konsolu</p>
           </div>
           {/* Arama */}
           {tab !== "dashboard" && (

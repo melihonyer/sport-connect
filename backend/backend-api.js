@@ -1,4 +1,4 @@
-// SporlaConnect Backend API - FULL VERSION
+// Muuvlink Backend API - FULL VERSION
 require('dotenv').config();
 // Render'da IPv6 üzerinden SMTP bağlantısı çalışmıyor — IPv4 öncelikli yap
 const dns = require('dns');
@@ -190,7 +190,7 @@ async function sendEmail({ to, subject, html }) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'SporlaConnect <onboarding@resend.dev>',
+        from: 'Muuvlink <onboarding@resend.dev>',
         to,
         subject,
         html,
@@ -217,7 +217,7 @@ function emailWrapper(content) {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SporlaConnect</title>
+  <title>Muuvlink</title>
 </head>
 <body style="margin:0;padding:0;background:#f4f6f9;font-family:'Segoe UI',Arial,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:40px 0;">
@@ -227,7 +227,7 @@ function emailWrapper(content) {
         <tr>
           <td style="background:linear-gradient(135deg,#6366f1,#8b5cf6);padding:32px 40px;text-align:center;">
             <div style="font-size:32px;margin-bottom:8px;">🏃‍♂️</div>
-            <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;letter-spacing:-0.5px;">SporlaConnect</h1>
+            <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;letter-spacing:-0.5px;">Muuvlink</h1>
             <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">Spor topluluğun seni bekliyor</p>
           </td>
         </tr>
@@ -240,8 +240,8 @@ function emailWrapper(content) {
         <!-- Footer -->
         <tr>
           <td style="background:#f8fafc;padding:24px 40px;text-align:center;border-top:1px solid #e2e8f0;">
-            <p style="margin:0;color:#94a3b8;font-size:13px;">Bu maili SporlaConnect üzerinden aldınız.</p>
-            <p style="margin:4px 0 0;color:#94a3b8;font-size:13px;">© 2026 SporlaConnect. Tüm hakları saklıdır.</p>
+            <p style="margin:0;color:#94a3b8;font-size:13px;">Bu maili Muuvlink üzerinden aldınız.</p>
+            <p style="margin:4px 0 0;color:#94a3b8;font-size:13px;">© 2026 Muuvlink. Tüm hakları saklıdır.</p>
           </td>
         </tr>
       </table>
@@ -285,7 +285,7 @@ function inviteEmailExisting({ teamName, teamSport, inviterName, teamId, avatar 
 // Şablon 2: Takım daveti (yeni kullanıcı)
 function inviteEmailNew({ teamName, teamSport, inviterName, avatar }) {
   return emailWrapper(`
-    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">SporlaConnect'e Davet Edildiniz! 🎉</h2>
+    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Muuvlink'e Davet Edildiniz! 🎉</h2>
     <p style="margin:0 0 28px;color:#64748b;font-size:15px;line-height:1.6;">
       <strong>${inviterName}</strong> sizi <strong>${teamName}</strong> takımına davet etti.
       Katılmak için ücretsiz hesap oluşturun.
@@ -2113,7 +2113,7 @@ app.post('/api/contact', async (req, res) => {
     // Gönderene teşekkür maili
     sendEmail({
       to: email,
-      subject: 'Mesajınız alındı — SporlaConnect',
+      subject: 'Mesajınız alındı — Muuvlink',
       html: emailWrapper(`
         <h2 style="margin:0 0 12px;color:#1e293b;">Mesajınız için teşekkürler, ${name}! 🎉</h2>
         <p style="color:#64748b;line-height:1.7;margin:0 0 20px;">
@@ -2276,23 +2276,6 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date() });
 });
 
-// Test email endpoint — geçici debug
-app.get('/api/test-email', async (req, res) => {
-  const to = req.query.to;
-  if (!to) return res.status(400).json({ error: 'to query param gerekli' });
-  const cfg = { RESEND_API_KEY: process.env.RESEND_API_KEY ? '***set***' : '(boş)' };
-  try {
-    const result = await sendEmail({
-      to,
-      subject: 'SporlaConnect — Test Maili',
-      html: '<p>Bu bir test mailidir.</p>',
-    });
-    res.json({ ok: !!result, result, cfg });
-  } catch (err) {
-    res.json({ ok: false, error: err.message, cfg });
-  }
-});
-
 // =====================================================
 // START SERVER
 // =====================================================
@@ -2339,7 +2322,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     const resetLink = `${APP_URL}?reset_token=${token}`;
     await sendEmail({
       to: email,
-      subject: 'SporlaConnect — Şifre Sıfırlama',
+      subject: 'Muuvlink — Şifre Sıfırlama',
       html: emailWrapper(`
         <h2 style="color:#6366f1;margin:0 0 16px">Şifre Sıfırlama</h2>
         <p style="color:#334155;margin:0 0 12px">Merhaba <strong>${user.name}</strong>,</p>
@@ -2401,7 +2384,7 @@ if (process.env.NODE_ENV === 'production') {
 
 app.listen(PORT, () => {
   console.log(`
-  ⚡ SporlaConnect Backend API - FULL VERSION
+  ⚡ Muuvlink Backend API - FULL VERSION
   🚀 Server running on port ${PORT}
   📡 Environment: ${process.env.NODE_ENV || 'development'}
   💾 Database: PostgreSQL

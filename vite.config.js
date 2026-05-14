@@ -16,7 +16,7 @@ export default defineConfig({
     open: true,
     proxy: {
       '/api': {
-        target: 'https://sport-connect-t07x.onrender.com',
+        target: 'https://muuvlink.app',
         changeOrigin: true,
         secure: true,
       },
