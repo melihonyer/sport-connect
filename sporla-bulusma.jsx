@@ -40,6 +40,8 @@ import {
   Eye,
   ZoomIn,
   Image,
+  Menu,
+  ChevronUp,
 } from "lucide-react";
 import {
   BarChart,
@@ -4220,6 +4222,7 @@ export default function Muuvlink() {
   const Navigation = () => {
     const unreadCount = notifications.filter((n) => !n.is_read).length;
     const isActive = (page) => currentPage === page;
+    const [mobileOpen, setMobileOpen] = React.useState(false);
 
     const navLink = (page, label) => (
       <button
@@ -4236,6 +4239,21 @@ export default function Muuvlink() {
             opacity: isActive(page) ? 1 : 0,
             transform: isActive(page) ? "scaleX(1)" : "scaleX(0)",
           }}/>
+      </button>
+    );
+
+    const mobileNavLink = (page, label, icon) => (
+      <button
+        key={page}
+        onClick={() => { setCurrentPage(page); setMobileOpen(false); }}
+        className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-sm font-medium transition-colors"
+        style={{
+          background: isActive(page) ? "linear-gradient(135deg,#f0fdf4,#dcfce7)" : "transparent",
+          color: isActive(page) ? "#15803D" : "#475569",
+        }}
+      >
+        {icon}
+        {label}
       </button>
     );
 
@@ -4256,7 +4274,7 @@ export default function Muuvlink() {
               </span>
             </button>
 
-            {/* Orta nav */}
+            {/* Orta nav — desktop */}
             <div className="hidden md:flex items-center gap-8 h-[68px]">
               {navLink("home", "Ana Sayfa")}
               {navLink("trainings", "Antrenmanlar")}
@@ -4264,7 +4282,7 @@ export default function Muuvlink() {
               {navLink("contact", "İletişim")}
             </div>
 
-            {/* Sağ aksiyonlar */}
+            {/* Sağ aksiyonlar — desktop */}
             <div className="hidden md:flex items-center gap-2.5">
               {user ? (
                 <>
@@ -4324,8 +4342,91 @@ export default function Muuvlink() {
                 </>
               )}
             </div>
+
+            {/* Hamburger — mobile */}
+            <div className="flex md:hidden items-center gap-2">
+              {user && (
+                <button
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  className="relative w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-colors"
+                >
+                  <Bell className="w-[18px] h-[18px] text-slate-500"/>
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-medium rounded-full flex items-center justify-center">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+              )}
+              <button
+                onClick={() => setMobileOpen(o => !o)}
+                className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-colors"
+              >
+                {mobileOpen ? <X className="w-5 h-5 text-slate-600"/> : <Menu className="w-5 h-5 text-slate-600"/>}
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* Mobile menü paneli */}
+        {mobileOpen && (
+          <div className="md:hidden border-t border-slate-100 bg-white px-4 py-3 shadow-lg">
+            <div className="flex flex-col gap-1">
+              {mobileNavLink("home",      "Ana Sayfa",    <Activity className="w-4 h-4"/>)}
+              {mobileNavLink("trainings", "Antrenmanlar", <Dumbbell className="w-4 h-4"/>)}
+              {mobileNavLink("teams",     "Takımlar",     <Users className="w-4 h-4"/>)}
+              {mobileNavLink("contact",   "İletişim",     <Mail className="w-4 h-4"/>)}
+
+              <div className="my-2 border-t border-slate-100"/>
+
+              {user ? (
+                <>
+                  <button
+                    onClick={() => { setCurrentPage("create-training"); setMobileOpen(false); }}
+                    className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-sm font-medium text-white transition-all"
+                    style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}
+                  >
+                    <Plus className="w-4 h-4"/> Antrenman Oluştur
+                  </button>
+                  <button
+                    onClick={() => { setCurrentPage("profile"); setMobileOpen(false); }}
+                    className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+                  >
+                    <div className="w-5 h-5 rounded-md overflow-hidden flex items-center justify-center text-white text-[10px] font-medium flex-shrink-0"
+                      style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}>
+                      {(user.avatar?.startsWith("/uploads/") || user.avatar?.startsWith("http")) ? (
+                        <img src={user.avatar.startsWith("http") ? user.avatar : `${BASE_URL}${user.avatar}`} alt="" className="w-full h-full object-cover" />
+                      ) : (user.avatar || user.name[0].toUpperCase())}
+                    </div>
+                    {user.name.split(" ")[0]} — Profil
+                  </button>
+                  <button
+                    onClick={() => { handleLogout(); setMobileOpen(false); }}
+                    className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
+                  >
+                    <LogOut className="w-4 h-4"/> Çıkış Yap
+                  </button>
+                </>
+              ) : (
+                <div className="flex gap-2 pt-1">
+                  <button
+                    onClick={() => { setAuthMode("login"); setIsAuthModalOpen(true); setMobileOpen(false); }}
+                    className="flex-1 py-3 rounded-xl text-sm font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition-colors"
+                  >
+                    Giriş Yap
+                  </button>
+                  <button
+                    onClick={() => { setAuthMode("register"); setIsAuthModalOpen(true); setMobileOpen(false); }}
+                    className="flex-1 py-3 rounded-xl text-sm font-medium text-white transition-all"
+                    style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}
+                  >
+                    Kaydol
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </nav>
     );
   };
