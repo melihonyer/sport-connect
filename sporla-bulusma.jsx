@@ -3177,332 +3177,330 @@ export default function Muuvlink() {
       { id: "settings",label: "Ayarlar", icon: <Settings className="w-4 h-4" />,     show: isOwner },
     ].filter((t) => t.show);
 
+    const iCls = "w-full h-11 px-4 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-green-300 focus:border-green-400 transition-colors";
+    const lCls = "block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5";
+
     return (
-      <div className="max-w-4xl mx-auto px-4 py-12">
-        <button onClick={() => setCurrentPage("teams")} className="flex items-center text-green-600 mb-6 hover:underline">
-          <ArrowLeft className="w-5 h-5 mr-2" /> Geri Dön
+      <div className="max-w-4xl mx-auto px-4 py-10">
+        <button onClick={() => setCurrentPage("teams")} className="flex items-center gap-1.5 text-green-600 font-medium mb-6 hover:text-green-700 transition-colors">
+          <ArrowLeft className="w-4 h-4" /> Takımlara Dön
         </button>
 
-        <div className="bg-white rounded-2xl border overflow-hidden">
-          {/* HEADER */}
-          <div className="bg-gradient-to-r from-blue-600 to-cyan-600 p-8 text-white">
-            <div className="flex items-start justify-between">
+        {/* HEADER KARTI */}
+        <div className="relative rounded-3xl overflow-hidden mb-4 shadow-sm">
+          <div className="bg-gradient-to-br from-green-600 via-emerald-600 to-teal-600 px-8 pt-8 pb-6 text-white">
+            {/* üst satır */}
+            <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center text-3xl">
+                <div className="w-16 h-16 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center text-3xl flex-shrink-0 shadow-inner">
                   {selectedTeam.avatar || "🏅"}
                 </div>
                 <div>
-                  <h1 className="text-3xl font-medium">{selectedTeam.name}</h1>
-                  <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    <span className="px-2 py-0.5 bg-white/20 rounded-full text-sm">{selectedTeam.sport}</span>
+                  <h1 className="text-2xl font-bold tracking-tight">{selectedTeam.name}</h1>
+                  <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                    <span className="px-2.5 py-0.5 bg-white/20 rounded-full text-xs font-medium">{selectedTeam.sport}</span>
                     {selectedTeam.is_private
-                      ? <span className="px-2 py-0.5 bg-white/20 rounded-full text-sm flex items-center gap-1"><Lock className="w-3 h-3" /> Gizli Takım</span>
-                      : <span className="px-2 py-0.5 bg-white/20 rounded-full text-sm">🌍 Herkese Açık</span>}
-                    {myRole && roleBadge(myRole)}
+                      ? <span className="px-2.5 py-0.5 bg-white/20 rounded-full text-xs font-medium flex items-center gap-1"><Lock className="w-3 h-3" /> Gizli</span>
+                      : <span className="px-2.5 py-0.5 bg-white/20 rounded-full text-xs font-medium flex items-center gap-1"><Globe className="w-3 h-3" /> Herkese Açık</span>}
+                    {myRole && (() => {
+                      const badges = { owner:"👑 Sahip", coach:"🎯 Antrenör", captain:"⚓ Kaptan", member:"👤 Üye" };
+                      return <span className="px-2.5 py-0.5 bg-white/30 rounded-full text-xs font-semibold">{badges[myRole] || myRole}</span>;
+                    })()}
                   </div>
                 </div>
               </div>
-              <div className="flex gap-2 flex-shrink-0">
-                {canManage && (
-                  <button
-                    onClick={() => { setShowInviteModal(true); }}
-                    className="px-3 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-sm font-medium flex items-center gap-1"
-                  >
-                    <UserPlus className="w-4 h-4" /> Davet
-                  </button>
-                )}
-              </div>
+              {canManage && (
+                <button onClick={() => setShowInviteModal(true)}
+                  className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-sm font-semibold transition-colors backdrop-blur">
+                  <UserPlus className="w-4 h-4" /> Davet Et
+                </button>
+              )}
             </div>
 
-            <div className="flex gap-6 mt-6 text-sm">
-              <div><span className="font-medium text-lg">{selectedTeam.members?.length || 0}</span> <span className="opacity-80">üye</span></div>
-              {selectedTeam.location && <div className="flex items-center gap-1 opacity-80"><MapPin className="w-4 h-4" />{selectedTeam.location}</div>}
+            {/* istatistikler */}
+            <div className="flex items-center gap-5 mt-5 text-sm">
+              <div className="flex items-center gap-1.5">
+                <Users className="w-4 h-4 opacity-80" />
+                <span className="font-semibold">{selectedTeam.members?.length || 0}</span>
+                <span className="opacity-75">üye</span>
+              </div>
+              {selectedTeam.location && (
+                <div className="flex items-center gap-1.5 opacity-85">
+                  <MapPin className="w-4 h-4" />
+                  <span>{selectedTeam.location}</span>
+                </div>
+              )}
             </div>
 
             {selectedTeam.description && (
-              <p className="mt-4 opacity-90 text-sm">{selectedTeam.description}</p>
+              <p className="mt-3 text-sm text-white/85 leading-relaxed">{selectedTeam.description}</p>
             )}
           </div>
 
-          {/* SEKMELER */}
-          {tabs.length > 0 && (
-            <div className="flex border-b bg-gray-50">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex-1 py-3 text-sm font-medium flex items-center justify-center gap-1 border-b-2 transition-colors ${
-                    activeTab === tab.id
-                      ? "border-blue-600 text-blue-600 bg-white"
-                      : "border-transparent text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  {tab.icon} {tab.label}
-                </button>
-              ))}
+          {/* dekoratif daire */}
+          <div className="absolute -top-8 -right-8 w-40 h-40 bg-white/5 rounded-full pointer-events-none" />
+          <div className="absolute -bottom-12 -left-6 w-32 h-32 bg-white/5 rounded-full pointer-events-none" />
+        </div>
+
+        {/* SEKMELER */}
+        {tabs.length > 0 && (
+          <div className="flex gap-1 bg-slate-100 p-1 rounded-2xl mb-4">
+            {tabs.map((tab) => (
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                  activeTab === tab.id
+                    ? "bg-white text-green-700 shadow-sm"
+                    : "text-slate-500 hover:text-slate-700"
+                }`}>
+                {tab.icon} {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* İÇERİK */}
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+
+          {/* DUVAR */}
+          {activeTab === "wall" && isMember && (
+            <div>
+              <form onSubmit={handleSubmitPost} className="mb-6">
+                <div className="flex gap-2">
+                  <input type="text" value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder="Takımla bir şey paylaş..."
+                    className={`flex-1 ${iCls}`} />
+                  <button type="submit"
+                    className="px-5 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors flex items-center justify-center">
+                    <Send className="w-4 h-4" />
+                  </button>
+                </div>
+              </form>
+
+              {selectedTeam.posts?.length > 0 ? (
+                <div className="space-y-3">
+                  {selectedTeam.posts.map((post) => (
+                    <div key={post.id} className="p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-colors">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-9 h-9 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full overflow-hidden flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                          {renderAvatar(post.user_avatar, post.user_name)}
+                        </div>
+                        <div>
+                          <div className="font-semibold text-sm text-slate-800">{post.user_name}</div>
+                          <div className="text-xs text-slate-400">{new Date(post.created_at).toLocaleDateString("tr-TR")}</div>
+                        </div>
+                      </div>
+                      <p className="text-slate-700 text-sm leading-relaxed">{post.message}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-14">
+                  <div className="w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <MessageCircle className="w-8 h-8 text-green-400" />
+                  </div>
+                  <p className="font-semibold text-slate-600">Henüz mesaj yok</p>
+                  <p className="text-sm text-slate-400 mt-1">İlk mesajı sen at!</p>
+                </div>
+              )}
             </div>
           )}
 
-          <div className="p-8">
-            {/* DUVAR SEKMESİ */}
-            {activeTab === "wall" && isMember && (
-              <div>
-                <form onSubmit={handleSubmitPost} className="mb-6">
-                  <div className="flex gap-2">
-                    <input
-                      type="text" value={message}
-                      onChange={(e) => setMessage(e.target.value)}
-                      placeholder="Takımla bir şey paylaş..."
-                      className="flex-1 px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300"
-                    />
-                    <button type="submit" className="px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700">
-                      <Send className="w-5 h-5" />
-                    </button>
-                  </div>
-                </form>
-                {selectedTeam.posts?.length > 0 ? (
-                  <div className="space-y-4">
-                    {selectedTeam.posts.map((post) => (
-                      <div key={post.id} className="p-4 bg-gray-50 rounded-2xl">
-                        <div className="flex items-center gap-3 mb-2">
-                          <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-full overflow-hidden flex items-center justify-center text-white font-medium text-sm">
-                            {renderAvatar(post.user_avatar, post.user_name)}
+          {/* ÜYELER */}
+          {activeTab === "members" && canSeeMembers && (
+            <div>
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="font-bold text-slate-800 text-lg">Üyeler <span className="text-slate-400 font-normal text-base">({selectedTeam.members?.length || 0})</span></h3>
+                {canManage && (
+                  <button onClick={() => setShowInviteModal(true)}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-green-50 text-green-700 rounded-xl text-sm font-semibold hover:bg-green-100 transition-colors">
+                    <UserPlus className="w-4 h-4" /> Davet Et
+                  </button>
+                )}
+              </div>
+
+              {/* Bekleyen davetler */}
+              {canManage && pendingInvitations.length > 0 && (
+                <div className="mb-5">
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5" /> Bekleyen Davetler ({pendingInvitations.length})
+                  </p>
+                  <div className="space-y-2">
+                    {pendingInvitations.map(inv => (
+                      <div key={inv.id} className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-2xl">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 bg-amber-100 rounded-full flex items-center justify-center">
+                            <Mail className="w-4 h-4 text-amber-600" />
                           </div>
                           <div>
-                            <div className="font-semibold text-sm">{post.user_name}</div>
-                            <div className="text-xs text-gray-400">{new Date(post.created_at).toLocaleDateString("tr-TR")}</div>
+                            <div className="font-semibold text-slate-700 text-sm">{inv.invitee_email}</div>
+                            <div className="text-xs text-slate-400">{inv.inviter_name} · {new Date(inv.created_at).toLocaleDateString("tr-TR")}</div>
                           </div>
                         </div>
-                        <p className="text-gray-700">{post.message}</p>
+                        <button onClick={() => handleCancelInvitation(selectedTeam.id, inv.id)}
+                          className="text-xs px-3 py-1.5 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 font-semibold transition-colors">
+                          İptal
+                        </button>
                       </div>
                     ))}
                   </div>
-                ) : (
-                  <div className="text-center py-12 text-gray-400">
-                    <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-40" />
-                    <p>Henüz mesaj yok. İlk mesajı sen at!</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* ÜYELER SEKMESİ */}
-            {activeTab === "members" && canSeeMembers && (
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-medium">Üyeler ({selectedTeam.members?.length || 0})</h3>
-                  {canManage && (
-                    <button
-                      onClick={() => setShowInviteModal(true)}
-                      className="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-sm font-medium hover:bg-blue-100 flex items-center gap-1"
-                    >
-                      <UserPlus className="w-4 h-4" /> Davet Et
-                    </button>
-                  )}
+                  <div className="border-t border-slate-100 my-5" />
                 </div>
+              )}
 
-                {/* Bekleyen davetler */}
-                {canManage && pendingInvitations.length > 0 && (
-                  <div className="mb-5">
-                    <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5" /> Bekleyen Davetler ({pendingInvitations.length})
-                    </h4>
-                    <div className="space-y-2">
-                      {pendingInvitations.map(inv => (
-                        <div key={inv.id} className="flex items-center justify-between p-3 bg-yellow-50 border border-yellow-200 rounded-2xl">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-yellow-200 rounded-full flex items-center justify-center text-yellow-700 font-medium text-lg">
-                              <Mail className="w-5 h-5 text-yellow-600" />
-                            </div>
-                            <div>
-                              <div className="font-medium text-gray-700 text-sm">{inv.invitee_email}</div>
-                              <div className="text-xs text-gray-400">
-                                {inv.inviter_name} tarafından davet edildi · {new Date(inv.created_at).toLocaleDateString("tr-TR")}
-                              </div>
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => handleCancelInvitation(selectedTeam.id, inv.id)}
-                            className="px-3 py-1.5 text-xs bg-red-50 text-red-500 rounded-xl hover:bg-red-100 font-medium"
-                          >
-                            İptal
-                          </button>
+              <div className="space-y-2">
+                {selectedTeam.members?.map((member) => {
+                  const isThisOwner = member.id === selectedTeam.owner_id;
+                  const isMe = member.id === user?.id;
+                  return (
+                    <div key={member.id}
+                      className="flex items-center justify-between p-3.5 rounded-2xl border border-transparent hover:bg-slate-50 hover:border-slate-100 transition-all">
+                      <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full overflow-hidden flex items-center justify-center text-white font-semibold flex-shrink-0">
+                          {renderAvatar(member.avatar, member.name)}
                         </div>
-                      ))}
-                    </div>
-                    <div className="border-t border-gray-100 my-4" />
-                  </div>
-                )}
-
-                <div className="space-y-3">
-                  {selectedTeam.members?.map((member) => {
-                    const isThisOwner = member.id === selectedTeam.owner_id;
-                    const isMe = member.id === user?.id;
-                    return (
-                      <div key={member.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <div className="w-11 h-11 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-full overflow-hidden flex items-center justify-center text-white font-medium">
-                            {renderAvatar(member.avatar, member.name)}
+                        <div>
+                          <div className="font-semibold text-slate-800 flex items-center gap-1.5">
+                            {member.name}
+                            {isMe && <span className="text-xs text-slate-400 font-normal">(sen)</span>}
                           </div>
-                          <div>
-                            <div className="font-semibold flex items-center gap-2">
-                              {member.name}
-                              {isMe && <span className="text-xs text-gray-400">(sen)</span>}
-                            </div>
-                            <div className="mt-0.5">{roleBadge(member.role)}</div>
-                          </div>
+                          <div className="mt-0.5">{roleBadge(member.role)}</div>
                         </div>
+                      </div>
 
-                        {/* Sahip: rol değiştir + çıkar */}
-                        {isOwner && !isThisOwner && (
-                          <div className="flex items-center gap-2">
-                            <select
-                              value={member.role}
-                              onChange={(e) => handleChangeMemberRole(selectedTeam.id, member.id, e.target.value)}
-                              className="text-sm px-3 py-1.5 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white"
-                            >
-                              <option value="member">👤 Üye</option>
-                              <option value="captain">⚓ Kaptan</option>
-                              <option value="coach">🎯 Antrenör</option>
-                              <option value="owner">🏆 Sahip</option>
-                            </select>
-                            <button
-                              onClick={() => handleRemoveMember(selectedTeam.id, member.id)}
-                              className="p-2 bg-red-50 text-red-500 rounded-xl hover:bg-red-100"
-                              title="Çıkar"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        )}
-
-                        {/* Antrenör: çıkar (sadece üyeleri) */}
-                        {isCoach && !isThisOwner && !isMe && member.role === "member" && (
-                          <button
-                            onClick={() => handleRemoveMember(selectedTeam.id, member.id)}
-                            className="p-2 bg-red-50 text-red-500 rounded-xl hover:bg-red-100"
-                            title="Çıkar"
-                          >
+                      {isOwner && !isThisOwner && (
+                        <div className="flex items-center gap-2">
+                          <select value={member.role}
+                            onChange={(e) => handleChangeMemberRole(selectedTeam.id, member.id, e.target.value)}
+                            className="text-sm h-9 px-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-300 bg-white text-slate-700">
+                            <option value="member">👤 Üye</option>
+                            <option value="captain">⚓ Kaptan</option>
+                            <option value="coach">🎯 Antrenör</option>
+                            <option value="owner">🏆 Sahip</option>
+                          </select>
+                          <button onClick={() => handleRemoveMember(selectedTeam.id, member.id)}
+                            className="w-9 h-9 flex items-center justify-center bg-red-50 text-red-400 rounded-xl hover:bg-red-100 transition-colors">
                             <Trash2 className="w-4 h-4" />
                           </button>
-                        )}
+                        </div>
+                      )}
 
-                        {/* Kendim: ayrıl (sahip değilsem) */}
-                        {isMe && !isThisOwner && (
-                          <button
-                            onClick={() => handleRemoveMember(selectedTeam.id, user.id)}
-                            className="px-3 py-1.5 text-sm bg-red-50 text-red-500 rounded-xl hover:bg-red-100"
-                          >
-                            Ayrıl
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
+                      {isCoach && !isThisOwner && !isMe && member.role === "member" && (
+                        <button onClick={() => handleRemoveMember(selectedTeam.id, member.id)}
+                          className="w-9 h-9 flex items-center justify-center bg-red-50 text-red-400 rounded-xl hover:bg-red-100 transition-colors">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+
+                      {isMe && !isThisOwner && (
+                        <button onClick={() => handleRemoveMember(selectedTeam.id, user.id)}
+                          className="px-3 py-1.5 text-sm bg-red-50 text-red-500 rounded-xl hover:bg-red-100 font-semibold transition-colors">
+                          Ayrıl
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* AYARLAR */}
+          {activeTab === "settings" && isOwner && (
+            <form onSubmit={handleEditSubmit} className="space-y-5">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={lCls}>Takım Adı</label>
+                  <input type="text" value={editForm.name} required
+                    onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
+                    className={iCls} />
+                </div>
+                <div>
+                  <label className={lCls}>Spor Dalı</label>
+                  <select value={editForm.sport}
+                    onChange={(e) => setEditForm((f) => ({ ...f, sport: e.target.value }))}
+                    className={`${iCls} appearance-none cursor-pointer`}>
+                    {sportTypes.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
                 </div>
               </div>
-            )}
 
-            {/* AYARLAR SEKMESİ - sadece sahip */}
-            {activeTab === "settings" && isOwner && (
               <div>
-                <form onSubmit={handleEditSubmit} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Takım Adı</label>
-                      <input type="text" value={editForm.name} required
-                        onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
-                        className="w-full px-4 py-2.5 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Spor</label>
-                      <select value={editForm.sport}
-                        onChange={(e) => setEditForm((f) => ({ ...f, sport: e.target.value }))}
-                        className="w-full px-4 py-2.5 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300">
-                        {sportTypes.map((s) => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Açıklama</label>
-                    <textarea value={editForm.description} rows={3}
-                      onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))}
-                      className="w-full px-4 py-2.5 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300" />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Konum</label>
-                      <input type="text" value={editForm.location}
-                        onChange={(e) => setEditForm((f) => ({ ...f, location: e.target.value }))}
-                        placeholder="İstanbul, Türkiye"
-                        className="w-full px-4 py-2.5 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Avatar (Emoji)</label>
-                      <input type="text" value={editForm.avatar}
-                        onChange={(e) => setEditForm((f) => ({ ...f, avatar: e.target.value }))}
-                        placeholder="🏅"
-                        className="w-full px-4 py-2.5 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300" />
-                    </div>
-                  </div>
-
-                  {/* Gizlilik toggle */}
-                  <div className={`flex items-center justify-between p-4 rounded-2xl border-2 ${editForm.is_private ? "border-gray-300 bg-gray-50" : "border-blue-200 bg-blue-50"}`}>
-                    <div>
-                      <div className="font-semibold flex items-center gap-1">{editForm.is_private ? <><Lock className="w-4 h-4" /> Gizli Takım</> : <><Globe className="w-4 h-4" /> Herkese Açık Takım</>}</div>
-                      <div className="text-sm text-gray-500 mt-0.5">
-                        {editForm.is_private
-                          ? "Sadece davet edilenler görebilir. Antrenmanlar otomatik gizli olur."
-                          : "Herkes takımı görebilir ve katılma isteği gönderebilir."}
-                      </div>
-                    </div>
-                    <button type="button"
-                      onClick={() => setEditForm((f) => ({ ...f, is_private: !f.is_private }))}
-                      className={`relative w-12 h-6 rounded-full transition-colors ml-4 flex-shrink-0 ${editForm.is_private ? "bg-gray-400" : "bg-blue-500"}`}>
-                      <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${editForm.is_private ? "left-1" : "left-7"}`} />
-                    </button>
-                  </div>
-
-                  <div className="flex gap-3 pt-2">
-                    <button type="submit"
-                      className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-semibold hover:shadow-lg">
-                      Kaydet
-                    </button>
-                    <button type="button"
-                      onClick={() => handleDeleteTeam(selectedTeam.id)}
-                      className="px-6 py-3 bg-red-50 text-red-600 rounded-xl font-semibold hover:bg-red-100 flex items-center gap-2">
-                      <Trash2 className="w-4 h-4" /> Takımı Sil
-                    </button>
-                  </div>
-                </form>
+                <label className={lCls}>Açıklama</label>
+                <textarea value={editForm.description} rows={3}
+                  onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))}
+                  className={`${iCls} h-auto py-3 resize-none`} />
               </div>
-            )}
 
-            {/* GİZLİ TAKIM - üye değil */}
-            {!isMember && !canSeeMembers && (
-              <div className="text-center py-12">
-                <Lock className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 font-medium">Bu gizli bir takım. Üyeleri görmek için katılmanız gerekiyor.</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={lCls}>Konum</label>
+                  <input type="text" value={editForm.location}
+                    onChange={(e) => setEditForm((f) => ({ ...f, location: e.target.value }))}
+                    placeholder="İstanbul, Türkiye"
+                    className={iCls} />
+                </div>
+                <div>
+                  <label className={lCls}>Avatar (Emoji)</label>
+                  <input type="text" value={editForm.avatar}
+                    onChange={(e) => setEditForm((f) => ({ ...f, avatar: e.target.value }))}
+                    placeholder="🏅"
+                    className={iCls} />
+                </div>
               </div>
-            )}
 
-            {/* KATIL butonu */}
-            {!isMember && !selectedTeam.is_private && (
-              <div className="mt-6">
-                <button
-                  onClick={() => handleJoinTeam(selectedTeam.id)}
-                  disabled={joiningTeamId === selectedTeam.id}
-                  className="w-full py-4 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-semibold hover:shadow-lg disabled:opacity-70 flex items-center justify-center gap-2"
-                >
-                  {joiningTeamId === selectedTeam.id
-                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Katılınıyor...</>
-                    : "Takıma Katıl"}
+              <div className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-colors ${editForm.is_private ? "border-slate-200 bg-slate-50" : "border-green-200 bg-green-50"}`}>
+                <div>
+                  <div className="font-semibold text-slate-800 flex items-center gap-1.5 text-sm">
+                    {editForm.is_private ? <><Lock className="w-4 h-4 text-slate-500" /> Gizli Takım</> : <><Globe className="w-4 h-4 text-green-600" /> Herkese Açık Takım</>}
+                  </div>
+                  <div className="text-xs text-slate-500 mt-1">
+                    {editForm.is_private ? "Sadece davet edilenler görebilir." : "Herkes görebilir ve katılabilir."}
+                  </div>
+                </div>
+                <button type="button"
+                  onClick={() => setEditForm((f) => ({ ...f, is_private: !f.is_private }))}
+                  className={`relative w-11 h-6 rounded-full transition-colors ml-4 flex-shrink-0 ${editForm.is_private ? "bg-slate-300" : "bg-green-500"}`}>
+                  <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${editForm.is_private ? "left-1" : "left-6"}`} />
                 </button>
               </div>
-            )}
-          </div>
+
+              <div className="flex gap-3 pt-1">
+                <button type="submit"
+                  className="flex-1 h-12 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold transition-colors">
+                  Kaydet
+                </button>
+                <button type="button" onClick={() => handleDeleteTeam(selectedTeam.id)}
+                  className="px-6 h-12 bg-red-50 text-red-600 rounded-xl font-semibold hover:bg-red-100 transition-colors flex items-center gap-2">
+                  <Trash2 className="w-4 h-4" /> Sil
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* GİZLİ TAKIM - üye değil */}
+          {!isMember && !canSeeMembers && (
+            <div className="text-center py-14">
+              <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Lock className="w-8 h-8 text-slate-400" />
+              </div>
+              <p className="font-semibold text-slate-700">Gizli Takım</p>
+              <p className="text-sm text-slate-400 mt-1">Üyeleri görmek için katılmanız gerekiyor.</p>
+            </div>
+          )}
+
+          {/* KATIL butonu */}
+          {!isMember && !selectedTeam.is_private && (
+            <div className="mt-6">
+              <button onClick={() => handleJoinTeam(selectedTeam.id)}
+                disabled={joiningTeamId === selectedTeam.id}
+                className="w-full h-12 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
+                {joiningTeamId === selectedTeam.id
+                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Katılınıyor...</>
+                  : <><UserPlus className="w-4 h-4" /> Takıma Katıl</>}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );
