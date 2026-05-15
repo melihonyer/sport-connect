@@ -991,12 +991,49 @@ app.post('/api/teams/:id/join', authenticateToken, async (req, res) => {
       [teamId, req.user.id, 'member']
     );
 
-    await createNotif(team.owner_id, {
-      title: 'Yeni Üye!',
-      message: `${req.user.email} takımınıza katıldı!`,
-      type: 'team',
-      refId: teamId,
-    });
+    // Katılan kullanıcının adını al
+    const joinerRes = await pool.query('SELECT name, email FROM users WHERE id = $1', [req.user.id]);
+    const joinerName = joinerRes.rows[0]?.name || req.user.email;
+
+    // Sahip, antrenör ve kaptan rolündeki üyeleri bul
+    const leadersRes = await pool.query(
+      `SELECT tm.user_id, u.email, u.name FROM team_members tm
+       JOIN users u ON u.id = tm.user_id
+       WHERE tm.team_id = $1 AND tm.role IN ('owner', 'coach', 'captain')`,
+      [teamId]
+    );
+
+    for (const leader of leadersRes.rows) {
+      await createNotif(leader.user_id, {
+        title: 'Yeni Üye Katıldı!',
+        message: `${joinerName}, ${team.name} takımına katıldı.`,
+        type: 'team',
+        refId: teamId,
+        url: `/takimlar`,
+      });
+
+      sendEmail({
+        to: leader.email,
+        subject: `${team.name} — Yeni Üye: ${joinerName}`,
+        html: emailWrapper(`
+          <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Takımınıza Yeni Üye Katıldı! 🎉</h2>
+          <p style="margin:0 0 28px;color:#64748b;font-size:15px;line-height:1.6;">
+            <strong>${joinerName}</strong>, <strong>${team.name}</strong> takımına yeni üye olarak katıldı.
+          </p>
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:24px;margin-bottom:28px;text-align:center;">
+            <div style="font-size:48px;margin-bottom:8px;">👤</div>
+            <div style="font-size:18px;font-weight:700;color:#15803d;">${joinerName}</div>
+          </div>
+          <div style="text-align:center;">
+            <a href="${process.env.APP_URL || 'https://muuvlink.app'}/takimlar"
+               style="display:inline-block;background:linear-gradient(135deg,#16a34a,#15803d);color:#ffffff;text-decoration:none;
+                      padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
+              Takımı Görüntüle →
+            </a>
+          </div>
+        `),
+      }).catch(e => console.error('Join email error:', e.message));
+    }
 
     await updateUserStats(req.user.id);
 
