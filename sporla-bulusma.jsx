@@ -666,13 +666,12 @@ export default function Muuvlink() {
 
   // Avatar'ı render et: URL ise <img>, değilse emoji/harf
   const renderAvatar = (avatar, name, className = "") => {
-    if (avatar?.startsWith("/uploads/")) {
-      return <img src={`${BASE_URL}${avatar}`} alt="" className={`w-full h-full object-cover ${className}`} />;
+    if (avatar?.startsWith("/uploads/") || avatar?.startsWith("http")) {
+      const src = avatar.startsWith("http") ? avatar : `${BASE_URL}${avatar}`;
+      return <img src={src} alt="" className={`w-full h-full object-cover ${className}`} />;
     }
-    if (avatar?.startsWith("http")) {
-      return <img src={avatar} alt="" className={`w-full h-full object-cover ${className}`} />;
-    }
-    return avatar || (name?.[0]?.toUpperCase() ?? "?");
+    const letter = name?.[0]?.toUpperCase() ?? "?";
+    return <span className="text-inherit font-bold">{letter}</span>;
   };
 
   const showToast = (message, type = "success") => {
@@ -2015,9 +2014,11 @@ export default function Muuvlink() {
       <div className="p-5">
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center text-xl shadow-md flex-shrink-0"
-              style={{background:"linear-gradient(135deg,#16A34A22,#15803D22)",border:"1.5px solid #16A34A33"}}>
-              {team.avatar || "🏅"}
+            <div className="w-12 h-12 rounded-xl overflow-hidden flex items-center justify-center text-white text-lg font-bold flex-shrink-0"
+              style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}>
+              {(team.avatar?.startsWith("/uploads/") || team.avatar?.startsWith("http"))
+                ? <img src={team.avatar.startsWith("http") ? team.avatar : `${BASE_URL}${team.avatar}`} alt="" className="w-full h-full object-cover" />
+                : (team.name?.[0]?.toUpperCase() || "T")}
             </div>
             <div className="min-w-0">
               <h3 className="font-medium text-slate-900 truncate group-hover:text-green-700 transition-colors">{team.name}</h3>
@@ -2259,13 +2260,18 @@ export default function Muuvlink() {
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
             {/* Avatar + name */}
             <div className="flex items-center gap-5">
-              <div className="w-20 h-20 rounded-2xl overflow-hidden flex items-center justify-center text-white text-2xl font-semibold flex-shrink-0"
-                style={{background:"linear-gradient(135deg,#16A34A,#15803D)", boxShadow:"0 8px 24px rgba(22,163,74,0.4)"}}>
-                {(user?.avatar?.startsWith("/uploads/") || user?.avatar?.startsWith("http")) ? (
-                  <img src={user.avatar.startsWith("http") ? user.avatar : `${BASE_URL}${user.avatar}`} alt="avatar" className="w-full h-full object-cover" />
-                ) : (
-                  user?.avatar || user?.name?.[0]?.toUpperCase()
-                )}
+              <div className="relative cursor-pointer group" onClick={() => setShowProfileEdit(true)} title="Profili düzenle">
+                <div className="w-20 h-20 rounded-2xl overflow-hidden flex items-center justify-center text-white text-2xl font-bold flex-shrink-0"
+                  style={{background:"linear-gradient(135deg,#16A34A,#15803D)", boxShadow:"0 8px 24px rgba(22,163,74,0.4)"}}>
+                  {(user?.avatar?.startsWith("/uploads/") || user?.avatar?.startsWith("http")) ? (
+                    <img src={user.avatar.startsWith("http") ? user.avatar : `${BASE_URL}${user.avatar}`} alt="avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    user?.name?.[0]?.toUpperCase() || "?"
+                  )}
+                </div>
+                <div className="absolute inset-0 rounded-2xl bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <Image className="w-5 h-5 text-white" />
+                </div>
               </div>
               <div>
                 <h1 className="text-3xl font-semibold text-green-900 tracking-tight">{user?.name}</h1>
@@ -3192,8 +3198,31 @@ export default function Muuvlink() {
             {/* üst satır */}
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center text-3xl flex-shrink-0 shadow-inner">
-                  {selectedTeam.avatar || "🏅"}
+                <div className="relative w-16 h-16 flex-shrink-0">
+                  <div className="w-16 h-16 bg-white/20 backdrop-blur rounded-2xl overflow-hidden flex items-center justify-center text-white text-2xl font-bold shadow-inner">
+                    {(selectedTeam.avatar?.startsWith("/uploads/") || selectedTeam.avatar?.startsWith("http"))
+                      ? <img src={selectedTeam.avatar.startsWith("http") ? selectedTeam.avatar : `${BASE_URL}${selectedTeam.avatar}`} alt="" className="w-full h-full object-cover" />
+                      : (selectedTeam.name?.[0]?.toUpperCase() || "T")}
+                  </div>
+                  {isOwner && (
+                    <label className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center cursor-pointer shadow-md hover:bg-green-50 transition-colors" title="Fotoğraf yükle">
+                      <Image className="w-3 h-3 text-green-600" />
+                      <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const fd = new FormData();
+                        fd.append("avatar", file);
+                        const token = localStorage.getItem("token");
+                        const res = await fetch(`${API_URL}/teams/${selectedTeam.id}/avatar`, { method:"POST", headers:{ Authorization:`Bearer ${token}` }, body:fd });
+                        if (res.ok) {
+                          const data = await res.json();
+                          setSelectedTeam(t => ({ ...t, avatar: data.avatar }));
+                          setTeams(ts => ts.map(t => t.id === selectedTeam.id ? { ...t, avatar: data.avatar } : t));
+                          showToast("Takım fotoğrafı güncellendi!", "success");
+                        } else showToast("Yükleme başarısız!", "error");
+                      }} />
+                    </label>
+                  )}
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold tracking-tight">{selectedTeam.name}</h1>
@@ -3441,11 +3470,28 @@ export default function Muuvlink() {
                     className={iCls} />
                 </div>
                 <div>
-                  <label className={lCls}>Avatar (Emoji)</label>
-                  <input type="text" value={editForm.avatar}
-                    onChange={(e) => setEditForm((f) => ({ ...f, avatar: e.target.value }))}
-                    placeholder="🏅"
-                    className={iCls} />
+                  <label className={lCls}>Takım Fotoğrafı</label>
+                  <label className="flex items-center gap-3 h-11 px-4 border border-slate-200 rounded-xl bg-white cursor-pointer hover:border-green-400 transition-colors">
+                    <Image className="w-4 h-4 text-green-600 flex-shrink-0" />
+                    <span className="text-sm text-slate-500 truncate">
+                      {(editForm.avatar?.startsWith("/uploads/") || editForm.avatar?.startsWith("http")) ? "Fotoğraf yüklendi ✓" : "Fotoğraf seç..."}
+                    </span>
+                    <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const fd = new FormData();
+                      fd.append("avatar", file);
+                      const token = localStorage.getItem("token");
+                      const res = await fetch(`${API_URL}/teams/${selectedTeam.id}/avatar`, { method:"POST", headers:{ Authorization:`Bearer ${token}` }, body:fd });
+                      if (res.ok) {
+                        const data = await res.json();
+                        setEditForm(f => ({ ...f, avatar: data.avatar }));
+                        setSelectedTeam(t => ({ ...t, avatar: data.avatar }));
+                        setTeams(ts => ts.map(t => t.id === selectedTeam.id ? { ...t, avatar: data.avatar } : t));
+                        showToast("Takım fotoğrafı güncellendi!", "success");
+                      } else showToast("Yükleme başarısız!", "error");
+                    }} />
+                  </label>
                 </div>
               </div>
 
@@ -4102,27 +4148,24 @@ export default function Muuvlink() {
               {/* Avatar fotoğrafı */}
               <div className="flex flex-col items-center gap-3 pb-2">
                 <div className="relative">
-                  <div className="w-24 h-24 rounded-full overflow-hidden bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-white text-3xl font-medium shadow-lg">
+                  <div className="w-24 h-24 rounded-2xl overflow-hidden flex items-center justify-center text-white text-3xl font-bold shadow-lg"
+                    style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}>
                     {(formData.avatar?.startsWith("/uploads/") || formData.avatar?.startsWith("http")) ? (
                       <img src={formData.avatar.startsWith("http") ? formData.avatar : `${BASE_URL}${formData.avatar}`} alt="avatar" className="w-full h-full object-cover" />
                     ) : (
-                      formData.avatar || user?.name?.[0]?.toUpperCase() || "?"
+                      user?.name?.[0]?.toUpperCase() || "?"
                     )}
                   </div>
                   {avatarLoading && (
-                    <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center">
+                    <div className="absolute inset-0 rounded-2xl bg-black/40 flex items-center justify-center">
                       <Loader2 className="w-6 h-6 text-white animate-spin" />
                     </div>
                   )}
                 </div>
                 <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
-                <button
-                  type="button"
-                  onClick={() => avatarInputRef.current?.click()}
-                  disabled={avatarLoading}
-                  className="px-4 py-2 text-sm font-semibold rounded-xl border border-purple-200 text-green-600 hover:bg-green-50 transition disabled:opacity-50"
-                >
-                  Fotoğraf Değiştir
+                <button type="button" onClick={() => avatarInputRef.current?.click()} disabled={avatarLoading}
+                  className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl border border-green-200 text-green-700 hover:bg-green-50 transition-colors disabled:opacity-50">
+                  <Image className="w-3.5 h-3.5" /> Fotoğraf Değiştir
                 </button>
               </div>
 

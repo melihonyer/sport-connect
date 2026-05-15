@@ -771,6 +771,33 @@ app.post('/api/auth/avatar', authenticateToken, uploadAvatar.single('avatar'), a
   }
 });
 
+app.post('/api/teams/:id/avatar', authenticateToken, uploadAvatar.single('avatar'), async (req, res) => {
+  try {
+    const teamId = req.params.id;
+    if (!req.file) return res.status(400).json({ error: 'Dosya yüklenmedi.' });
+
+    const ownerCheck = await pool.query(
+      'SELECT owner_id FROM teams WHERE id = $1',
+      [teamId]
+    );
+    if (ownerCheck.rows.length === 0) return res.status(404).json({ error: 'Takım bulunamadı.' });
+    if (ownerCheck.rows[0].owner_id !== req.user.id) return res.status(403).json({ error: 'Sadece takım sahibi fotoğraf yükleyebilir.' });
+
+    const ext = path.extname(req.file.originalname) || '.jpg';
+    const fileName = `team-${teamId}-${Date.now()}${ext}`;
+    const avatarUrl = await uploadToSupabase('avatars', fileName, req.file.buffer, req.file.mimetype);
+
+    const result = await pool.query(
+      'UPDATE teams SET avatar = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *',
+      [avatarUrl, teamId]
+    );
+    res.json({ message: 'Takım fotoğrafı güncellendi', avatar: avatarUrl, team: result.rows[0] });
+  } catch (error) {
+    console.error('Team avatar upload error:', error);
+    res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
 app.put('/api/auth/password', authenticateToken, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
