@@ -794,9 +794,11 @@ export default function AdminPanel() {
                       <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
                         <td className="px-6 py-3.5">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white font-medium text-xs flex-shrink-0"
+                            <div className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center text-white font-bold text-xs flex-shrink-0"
                               style={{ background: "linear-gradient(135deg,#16A34A,#15803D)" }}>
-                              {u.name[0].toUpperCase()}
+                              {(u.avatar?.startsWith("/uploads/") || u.avatar?.startsWith("http"))
+                                ? <img src={u.avatar.startsWith("http") ? u.avatar : `${BASE_URL}${u.avatar}`} alt="" className="w-full h-full object-cover" />
+                                : u.name[0].toUpperCase()}
                             </div>
                             <span className="font-semibold text-slate-900">{u.name}</span>
                           </div>
@@ -915,9 +917,11 @@ export default function AdminPanel() {
                       <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
                         <td className="px-6 py-3.5">
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-medium text-base flex-shrink-0 shadow-sm"
+                            <div className="w-9 h-9 rounded-xl overflow-hidden flex items-center justify-center text-white font-bold text-base flex-shrink-0 shadow-sm"
                               style={{ background: "linear-gradient(135deg,#16A34A,#15803D)" }}>
-                              {t.avatar || t.name[0]}
+                              {(t.avatar?.startsWith("/uploads/") || t.avatar?.startsWith("http"))
+                                ? <img src={t.avatar.startsWith("http") ? t.avatar : `${BASE_URL}${t.avatar}`} alt="" className="w-full h-full object-cover" />
+                                : t.name[0].toUpperCase()}
                             </div>
                             <span className="font-semibold text-slate-900">{t.name}</span>
                           </div>
