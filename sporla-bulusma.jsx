@@ -966,6 +966,9 @@ export default function Muuvlink() {
     "Voleybol",
     "Tenis",
     "Triatlon",
+    "Padel",
+    "Kürek",
+    "Kano",
   ];
 
   useEffect(() => {
@@ -2399,7 +2402,7 @@ export default function Muuvlink() {
   );
 
   const TrainingsPage = () => {
-    const sports = ["Futbol", "Basketbol", "Tenis", "Yüzme", "Koşu", "Bisiklet", "Voleybol", "Fitness", "Yoga", "Diğer"];
+    const sports = ["Futbol", "Basketbol", "Tenis", "Yüzme", "Koşu", "Bisiklet", "Voleybol", "Fitness", "Yoga", "Triatlon", "Padel", "Kürek", "Kano", "Diğer"];
     const difficulties = ["Kolay", "Orta", "Zor"];
 
     // Manuel konum arama (GPS çalışmadığında)
@@ -2661,7 +2664,7 @@ export default function Muuvlink() {
   };
 
   const TeamsPage = () => {
-    const sports = ["Futbol", "Basketbol", "Tenis", "Yüzme", "Koşu", "Bisiklet", "Voleybol", "Fitness", "Yoga", "Diğer"];
+    const sports = ["Futbol", "Basketbol", "Tenis", "Yüzme", "Koşu", "Bisiklet", "Voleybol", "Fitness", "Yoga", "Triatlon", "Padel", "Kürek", "Kano", "Diğer"];
     const [teamSearch, setTeamSearch] = useState("");
     const [teamSport, setTeamSport] = useState("");
 
@@ -3158,7 +3161,7 @@ export default function Muuvlink() {
       is_private: selectedTeam.is_private || false,
     });
 
-    const sportTypes = ["Futbol","Basketbol","Tenis","Yüzme","Koşu","Bisiklet","Voleybol","Fitness","Yoga","Diğer"];
+    const sportTypes = ["Futbol","Basketbol","Tenis","Yüzme","Koşu","Bisiklet","Voleybol","Fitness","Yoga","Triatlon","Padel","Kürek","Kano","Diğer"];
 
     const roleBadge = (role) => {
       if (role === "owner")   return <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold flex items-center gap-1"><Crown className="w-3 h-3" /> Sahip</span>;
