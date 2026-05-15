@@ -2166,13 +2166,13 @@ app.get('/api/admin/users', isAdmin, async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT
-        u.id, u.name, u.email, u.is_admin, u.created_at,
+        u.id, u.name, u.email, u.avatar, u.is_admin, u.created_at,
         COUNT(DISTINCT tm.team_id) as team_count,
         COUNT(DISTINCT ta.training_id) as training_count
       FROM users u
       LEFT JOIN team_members tm ON u.id = tm.user_id
       LEFT JOIN training_attendees ta ON u.id = ta.user_id
-      GROUP BY u.id, u.name, u.email, u.is_admin, u.created_at
+      GROUP BY u.id, u.name, u.email, u.avatar, u.is_admin, u.created_at
       ORDER BY u.created_at DESC
     `);
     res.json(result.rows);
