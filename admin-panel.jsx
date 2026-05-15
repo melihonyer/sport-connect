@@ -49,10 +49,10 @@ function HomeNewsTab({ items, setItems, api, token, showToast }) {
   const [showForm, setShowForm] = React.useState(false);
   const [editId, setEditId]   = React.useState(null);
   const [saving, setSaving]   = React.useState(false);
-  const [form, setForm]       = React.useState({ title:"", date_label:"", is_active:true, order_index:0 });
+  const [form, setForm]       = React.useState({ title:"", description:"", date_label:"", is_active:true, order_index:0 });
 
-  const startNew  = () => { setForm({ title:"", date_label:"", is_active:true, order_index:items.length }); setEditId(null); setShowForm(true); };
-  const startEdit = (item) => { setForm({ title:item.title, date_label:item.date_label||"", is_active:item.is_active, order_index:item.order_index||0 }); setEditId(item.id); setShowForm(true); };
+  const startNew  = () => { setForm({ title:"", description:"", date_label:"", is_active:true, order_index:items.length }); setEditId(null); setShowForm(true); };
+  const startEdit = (item) => { setForm({ title:item.title, description:item.description||"", date_label:item.date_label||"", is_active:item.is_active, order_index:item.order_index||0 }); setEditId(item.id); setShowForm(true); };
 
   const handleSave = async () => {
     setSaving(true);
@@ -99,6 +99,7 @@ function HomeNewsTab({ items, setItems, api, token, showToast }) {
       {showForm && (
         <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
           <div><label className={lbl}>Başlık</label><input className={inp} value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))} placeholder="Etkinlik başlığı"/></div>
+          <div><label className={lbl}>Açıklama <span className="normal-case font-normal text-slate-400">(isteğe bağlı)</span></label><textarea className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-300 resize-none" rows="3" value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))} placeholder="Etkinlik hakkında kısa bir açıklama…"/></div>
           <div><label className={lbl}>Tarih</label><input className={inp} value={form.date_label} onChange={e=>setForm(f=>({...f,date_label:e.target.value}))} placeholder="12 Mayıs 2026"/></div>
           <div className="flex items-center gap-3">
             <label className={lbl + " mb-0"}>Aktif</label>

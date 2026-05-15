@@ -224,6 +224,7 @@ const AuthModal = ({ authMode, setAuthMode, onClose, handleLogin, handleRegister
 
 // ── Haber kartı ────────────────────────────────────────────
 function NewsSection({ items }) {
+  const [lightbox, setLightbox] = useState(null);
   if (!items || items.length === 0) return null;
   return (
     <section style={{background:"#f2f2f2"}} className="pt-16 pb-20">
@@ -236,6 +237,7 @@ function NewsSection({ items }) {
       <div className="flex w-full" style={{height:"320px"}}>
         {items.map((item) => (
           <article key={item.id}
+            onClick={() => setLightbox(item)}
             className="group relative flex-1 overflow-hidden cursor-pointer"
             style={{background:"#1a2a1a"}}>
             {item.image_url && (
@@ -243,7 +245,9 @@ function NewsSection({ items }) {
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"/>
             )}
             <div className="absolute inset-0" style={{background:"linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.25) 55%, transparent 100%)"}}/>
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300"/>
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-center justify-center">
+              <ZoomIn className="w-7 h-7 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300"/>
+            </div>
             <div className="absolute bottom-0 left-0 right-0 p-5">
               <h3 className="text-white font-semibold text-sm leading-snug mb-1 line-clamp-2">{item.title}</h3>
               {item.date_label && <p className="text-white/50 text-xs font-light">Yayın {item.date_label}</p>}
@@ -251,6 +255,34 @@ function NewsSection({ items }) {
           </article>
         ))}
       </div>
+
+      {/* Lightbox */}
+      {lightbox && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/85 p-4"
+          onClick={() => setLightbox(null)}>
+          <div className="relative bg-white rounded-2xl overflow-hidden shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col"
+            onClick={e => e.stopPropagation()}>
+            <button
+              className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 flex items-center justify-center text-white transition"
+              onClick={() => setLightbox(null)}>
+              <X className="w-4 h-4"/>
+            </button>
+            {lightbox.image_url && (
+              <img src={lightbox.image_url} alt={lightbox.title}
+                className="w-full object-cover" style={{maxHeight:"420px"}}/>
+            )}
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-slate-900 mb-1">{lightbox.title}</h3>
+              {lightbox.date_label && (
+                <p className="text-xs text-slate-400 mb-3">Yayın {lightbox.date_label}</p>
+              )}
+              {lightbox.description && (
+                <p className="text-sm text-slate-600 leading-relaxed">{lightbox.description}</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

@@ -2326,12 +2326,12 @@ app.get('/api/admin/home-news', isAdmin, async (req, res) => {
 });
 
 app.post('/api/admin/home-news', isAdmin, async (req, res) => {
-  const { title, date_label, icon, bg, views, comments, is_active, order_index } = req.body;
+  const { title, description, date_label, icon, bg, views, comments, is_active, order_index } = req.body;
   try {
     const r = await pool.query(
-      `INSERT INTO home_news (title, date_label, icon, bg, views, comments, is_active, order_index)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
-      [title, date_label||'', icon||'🏃', bg||'linear-gradient(160deg,#0f2a1a,#1a4a2d)',
+      `INSERT INTO home_news (title, description, date_label, icon, bg, views, comments, is_active, order_index)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+      [title, description||'', date_label||'', icon||'🏃', bg||'linear-gradient(160deg,#0f2a1a,#1a4a2d)',
        views||0, comments||0, is_active!==false, order_index||0]
     );
     res.json(r.rows[0]);
@@ -2339,12 +2339,12 @@ app.post('/api/admin/home-news', isAdmin, async (req, res) => {
 });
 
 app.put('/api/admin/home-news/:id', isAdmin, async (req, res) => {
-  const { title, date_label, icon, bg, views, comments, is_active, order_index } = req.body;
+  const { title, description, date_label, icon, bg, views, comments, is_active, order_index } = req.body;
   try {
     const r = await pool.query(
-      `UPDATE home_news SET title=$1, date_label=$2, icon=$3, bg=$4, views=$5, comments=$6,
-       is_active=$7, order_index=$8 WHERE id=$9 RETURNING *`,
-      [title, date_label||'', icon||'🏃', bg, views||0, comments||0, is_active!==false, order_index||0, req.params.id]
+      `UPDATE home_news SET title=$1, description=$2, date_label=$3, icon=$4, bg=$5, views=$6, comments=$7,
+       is_active=$8, order_index=$9 WHERE id=$10 RETURNING *`,
+      [title, description||'', date_label||'', icon||'🏃', bg, views||0, comments||0, is_active!==false, order_index||0, req.params.id]
     );
     res.json(r.rows[0]);
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -2462,7 +2462,8 @@ pool.query(`
     created_at  TIMESTAMPTZ DEFAULT NOW()
   )
 `).catch(() => {});
-pool.query(`ALTER TABLE home_news     ADD COLUMN IF NOT EXISTS image_url TEXT DEFAULT NULL`).catch(() => {});
+pool.query(`ALTER TABLE home_news     ADD COLUMN IF NOT EXISTS image_url    TEXT DEFAULT NULL`).catch(() => {});
+pool.query(`ALTER TABLE home_news     ADD COLUMN IF NOT EXISTS description  TEXT DEFAULT ''`).catch(() => {});
 pool.query(`ALTER TABLE home_gallery  ADD COLUMN IF NOT EXISTS image_url TEXT DEFAULT NULL`).catch(() => {});
 pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS mottos JSONB DEFAULT '[]'`).catch(() => {});
 pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS cta_primary_url TEXT DEFAULT ''`).catch(() => {});
