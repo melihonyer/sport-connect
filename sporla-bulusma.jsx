@@ -594,7 +594,31 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
 }
 
 export default function Muuvlink() {
-  const [currentPage, setCurrentPage] = useState("home");
+  // ── URL ↔ sayfa eşlemesi ─────────────────────────────
+  const PAGE_TO_PATH = {
+    home:              "/",
+    trainings:         "/antrenmanlar",
+    teams:             "/takimlar",
+    contact:           "/iletisim",
+    profile:           "/profil",
+    "create-training": "/antrenman-ekle",
+    "create-team":     "/takim-kur",
+    badges:            "/rozetlerim",
+  };
+  const PATH_TO_PAGE = Object.fromEntries(Object.entries(PAGE_TO_PATH).map(([k,v])=>[v,k]));
+
+  const PAGE_META = {
+    home:              { title:"Muuvlink — Spor Arkadaşı Bul, Takım Kur",        desc:"Çevrende spor yapan insanları bul, kendi takımını kur, antrenmanlar planla. GPS ile en yakın etkinlikleri saniyeler içinde keşfet." },
+    trainings:         { title:"Antrenmanlar — Muuvlink",                          desc:"Yakınındaki spor antrenmanlarını bul ve katıl. Koşu, bisiklet, yüzme, futbol ve daha fazlası seni bekliyor." },
+    teams:             { title:"Takımlar — Muuvlink",                              desc:"Spor takımlarını keşfet veya kendi takımını kur. Takım arkadaşı bul, birlikte daha güçlü ol." },
+    contact:           { title:"İletişim — Muuvlink",                              desc:"Muuvlink ekibiyle iletişime geç. Sorularını sor, geri bildirim ver." },
+    profile:           { title:"Profilim — Muuvlink",                              desc:"Muuvlink profil sayfan." },
+    "create-training": { title:"Antrenman Oluştur — Muuvlink",                    desc:"Yeni bir antrenman oluştur, konum ve zaman ayarla, sporcuları davet et." },
+    "create-team":     { title:"Takım Kur — Muuvlink",                             desc:"Kendi spor takımını kur ve üyeleri davet et." },
+    badges:            { title:"Rozetlerim — Muuvlink",                            desc:"Kazandığın spor rozetlerini görüntüle." },
+  };
+
+  const [currentPage, setCurrentPage] = useState(() => PATH_TO_PAGE[window.location.pathname] || "home");
   const [user, setUser] = useState(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState("login");
@@ -1047,21 +1071,43 @@ export default function Muuvlink() {
     return () => es.close();
   }, [user?.id]);
 
-  // Sayfa değişince document.title güncelle
+  // Sayfa değişince URL + title + meta güncelle
   useEffect(() => {
-    const titles = {
-      home: "Muuvlink — Spor Arkadaşı Bul",
-      trainings: "Antrenmanlar — Muuvlink",
-      teams: "Takımlar — Muuvlink",
-      profile: "Profilim — Muuvlink",
-      "create-training": "Antrenman Oluştur — Muuvlink",
-      "create-team": "Takım Kur — Muuvlink",
-      contact: "İletişim — Muuvlink",
-      badges: "Rozetlerim — Muuvlink",
-      "reset-password": "Şifre Sıfırla — Muuvlink",
-    };
-    document.title = titles[currentPage] || "Muuvlink";
+    const meta  = PAGE_META[currentPage];
+    const path  = PAGE_TO_PATH[currentPage];
+    const title = meta?.title || "Muuvlink";
+    const desc  = meta?.desc  || "Spor arkadaşı bul, antrenman planla, takım kur.";
+    const url   = `https://muuvlink.app${path || "/"}`;
+
+    document.title = title;
+
+    if (path && window.location.pathname !== path) {
+      window.history.pushState({ page: currentPage }, title, path);
+    }
+
+    const setMeta = (sel, attr, val) => { const el = document.querySelector(sel); if (el) el.setAttribute(attr, val); };
+    setMeta('meta[name="description"]',          "content", desc);
+    setMeta('meta[property="og:title"]',          "content", title);
+    setMeta('meta[property="og:description"]',    "content", desc);
+    setMeta('meta[property="og:url"]',            "content", url);
+    setMeta('meta[name="twitter:title"]',         "content", title);
+    setMeta('meta[name="twitter:description"]',   "content", desc);
+    setMeta('meta[name="twitter:url"]',           "content", url);
+
+    let canonical = document.querySelector('link[rel="canonical"]');
+    if (!canonical) { canonical = document.createElement("link"); canonical.rel = "canonical"; document.head.appendChild(canonical); }
+    canonical.href = url;
   }, [currentPage]);
+
+  // Tarayıcı geri/ileri tuşu
+  useEffect(() => {
+    const onPop = () => {
+      const page = PATH_TO_PAGE[window.location.pathname] || "home";
+      setCurrentPage(page);
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
 
 
 

@@ -9,7 +9,15 @@ export default defineConfig({
         main: 'index.html',
         admin: 'admin.html',
       },
+      output: {
+        manualChunks: {
+          react:    ['react', 'react-dom'],
+          recharts: ['recharts'],
+          lucide:   ['lucide-react'],
+        },
+      },
     },
+    chunkSizeWarningLimit: 800,
   },
   server: {
     port: 5173,

@@ -1,11 +1,11 @@
 {
-  "name": "SporlaConnect",
-  "short_name": "SporlaConnect",
+  "name": "Muuvlink",
+  "short_name": "Muuvlink",
   "description": "Spor arkadaşı bul, antrenman planla, takım kur. Türkiye'nin spor sosyal platformu.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#080B1F",
-  "theme_color": "#7C3AED",
+  "background_color": "#f8fafc",
+  "theme_color": "#16A34A",
   "orientation": "portrait-primary",
   "lang": "tr",
   "categories": ["sports", "social"],
@@ -22,13 +22,13 @@
     {
       "name": "Antrenmanlar",
       "short_name": "Antrenmanlar",
-      "url": "/?page=trainings",
+      "url": "/antrenmanlar",
       "icons": [{ "src": "/icons/icon.svg", "sizes": "any" }]
     },
     {
       "name": "Takımlar",
       "short_name": "Takımlar",
-      "url": "/?page=teams",
+      "url": "/takimlar",
       "icons": [{ "src": "/icons/icon.svg", "sizes": "any" }]
     }
   ]
