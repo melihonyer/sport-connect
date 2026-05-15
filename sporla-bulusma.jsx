@@ -513,7 +513,7 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                               src={`${BASE_URL}${banner.image_url}`}
                               alt=""
                               className="w-auto select-none pointer-events-none"
-                              style={{height:"700px", maxWidth:"none", objectFit:"contain", objectPosition:"bottom center", filter:"drop-shadow(0 40px 80px rgba(0,0,0,0.5))"}}
+                              style={{height:"700px", maxWidth:"none", objectFit:"contain", objectPosition:"bottom center", filter:"drop-shadow(0 8px 24px rgba(0,0,0,0.18))"}}
                             />
                           </div>
                         </>
