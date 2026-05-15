@@ -347,6 +347,79 @@ function wallPostEmail({ teamName, teamId, posterName, posterAvatar, message, po
   `);
 }
 
+// Şablon 4: Yeni antrenman bildirimi
+function newTrainingEmail({ teamName, trainingTitle, trainingDate, trainingTime, location, description, upcomingTrainings }) {
+  const upcoming = (upcomingTrainings || []).slice(0, 3).map(t => `
+    <tr>
+      <td style="padding:10px 0;border-bottom:1px solid #f1f5f9;">
+        <div style="font-weight:600;color:#1e293b;font-size:14px;">${t.title}</div>
+        <div style="color:#64748b;font-size:13px;margin-top:2px;">📅 ${t.training_date} ${t.training_time ? '• ' + t.training_time.slice(0,5) : ''} ${t.location_name ? '• 📍 ' + t.location_name : ''}</div>
+      </td>
+    </tr>
+  `).join('');
+
+  return emailWrapper(`
+    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Yeni Antrenman Eklendi! 🏋️</h2>
+    <p style="margin:0 0 28px;color:#64748b;font-size:15px;line-height:1.6;">
+      <strong>${teamName}</strong> takımına yeni bir antrenman eklendi.
+    </p>
+
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:24px;margin-bottom:28px;">
+      <div style="font-size:20px;font-weight:700;color:#15803d;margin-bottom:12px;">${trainingTitle}</div>
+      <table style="width:100%;border-collapse:collapse;">
+        <tr><td style="padding:4px 0;color:#64748b;font-size:14px;">📅 Tarih</td><td style="padding:4px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingDate}</td></tr>
+        ${trainingTime ? `<tr><td style="padding:4px 0;color:#64748b;font-size:14px;">🕐 Saat</td><td style="padding:4px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingTime.slice(0,5)}</td></tr>` : ''}
+        ${location ? `<tr><td style="padding:4px 0;color:#64748b;font-size:14px;">📍 Konum</td><td style="padding:4px 0;color:#1e293b;font-size:14px;font-weight:600;">${location}</td></tr>` : ''}
+        ${description ? `<tr><td colspan="2" style="padding:12px 0 4px;color:#334155;font-size:14px;line-height:1.6;">${description}</td></tr>` : ''}
+      </table>
+    </div>
+
+    ${upcoming ? `
+    <div style="margin-bottom:28px;">
+      <div style="font-weight:700;color:#1e293b;font-size:15px;margin-bottom:12px;">Yaklaşan Diğer Antrenmanlar</div>
+      <table style="width:100%;border-collapse:collapse;">${upcoming}</table>
+    </div>` : ''}
+
+    <div style="text-align:center;">
+      <a href="${process.env.APP_URL || 'https://muuvlink.app'}/antrenmanlar"
+         style="display:inline-block;background:linear-gradient(135deg,#16a34a,#15803d);color:#ffffff;text-decoration:none;
+                padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
+        Antrenmanları Gör →
+      </a>
+    </div>
+  `);
+}
+
+// Şablon 5: Antrenman hatırlatma
+function trainingReminderEmail({ teamName, trainingTitle, trainingDate, trainingTime, location, daysLeft }) {
+  const urgency = daysLeft === 1 ? '⏰ Yarın!' : `🗓️ ${daysLeft} gün kaldı`;
+  const color   = daysLeft === 1 ? '#dc2626' : '#d97706';
+  return emailWrapper(`
+    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Antrenmanınız Yaklaşıyor ${daysLeft === 1 ? '⏰' : '🔔'}</h2>
+    <p style="margin:0 0 28px;color:#64748b;font-size:15px;line-height:1.6;">
+      <strong>${teamName}</strong> takımınızın antrenmanına az kaldı.
+    </p>
+
+    <div style="background:#fffbeb;border:2px solid ${color};border-radius:12px;padding:24px;margin-bottom:28px;">
+      <div style="font-size:13px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">${urgency}</div>
+      <div style="font-size:20px;font-weight:700;color:#1e293b;margin-bottom:12px;">${trainingTitle}</div>
+      <table style="width:100%;border-collapse:collapse;">
+        <tr><td style="padding:4px 0;color:#64748b;font-size:14px;">📅 Tarih</td><td style="padding:4px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingDate}</td></tr>
+        ${trainingTime ? `<tr><td style="padding:4px 0;color:#64748b;font-size:14px;">🕐 Saat</td><td style="padding:4px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingTime.slice(0,5)}</td></tr>` : ''}
+        ${location ? `<tr><td style="padding:4px 0;color:#64748b;font-size:14px;">📍 Konum</td><td style="padding:4px 0;color:#1e293b;font-size:14px;font-weight:600;">${location}</td></tr>` : ''}
+      </table>
+    </div>
+
+    <div style="text-align:center;">
+      <a href="${process.env.APP_URL || 'https://muuvlink.app'}/antrenmanlar"
+         style="display:inline-block;background:linear-gradient(135deg,#16a34a,#15803d);color:#ffffff;text-decoration:none;
+                padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
+        Antrenmanı Görüntüle →
+      </a>
+    </div>
+  `);
+}
+
 // =====================================================
 // MIDDLEWARE
 // =====================================================
@@ -1385,22 +1458,51 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
       ]
     );
 
+    const training = result.rows[0];
+
+    // Takım adını al
+    const teamRow = await pool.query('SELECT name FROM teams WHERE id = $1', [team_id]);
+    const teamName = teamRow.rows[0]?.name || 'Takımınız';
+
+    // Yaklaşan diğer antrenmanları al (yeni oluşturulan hariç)
+    const upcomingRes = await pool.query(
+      `SELECT title, training_date, training_time, location_name FROM trainings
+       WHERE team_id = $1 AND id != $2 AND training_date >= CURRENT_DATE
+       ORDER BY training_date, training_time LIMIT 3`,
+      [team_id, training.id]
+    );
+
     const members = await pool.query(
-      'SELECT user_id FROM team_members WHERE team_id = $1 AND user_id != $2',
+      'SELECT tm.user_id, u.email, u.name FROM team_members tm JOIN users u ON u.id = tm.user_id WHERE tm.team_id = $1 AND tm.user_id != $2',
       [team_id, req.user.id]
     );
 
     for (const member of members.rows) {
+      // In-app bildirim
       await createNotif(member.user_id, {
         title: 'Yeni Antrenman!',
-        message: `${title} antrenmanı eklendi.`,
+        message: `${teamName}: ${title} antrenmanı eklendi.`,
         type: 'training',
-        refId: result.rows[0].id,
-        url: `/trainings/${result.rows[0].id}`,
+        refId: training.id,
+        url: `/antrenmanlar`,
       });
+      // E-posta
+      sendEmail({
+        to: member.email,
+        subject: `${teamName} — Yeni Antrenman: ${title}`,
+        html: newTrainingEmail({
+          teamName,
+          trainingTitle: title,
+          trainingDate: training.training_date,
+          trainingTime: training.training_time,
+          location: location_name,
+          description,
+          upcomingTrainings: upcomingRes.rows,
+        }),
+      }).catch(e => console.error('Training email error:', e.message));
     }
 
-    res.status(201).json({ message: 'Training created successfully', training: result.rows[0] });
+    res.status(201).json({ message: 'Training created successfully', training });
   } catch (error) {
     console.error('Create training error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -1421,16 +1523,16 @@ app.get('/api/trainings', optionalAuth, async (req, res) => {
       FROM trainings t
       JOIN teams ON t.team_id = teams.id
       LEFT JOIN training_attendees ta ON t.id = ta.training_id
-      WHERE (t.is_public = true OR teams.id IN (
-  SELECT team_id FROM team_members WHERE user_id = $1
-))
-AND (
-  t.training_date > CURRENT_DATE 
-  OR (t.training_date = CURRENT_DATE AND t.training_time >= CURRENT_TIME)
-)
+      WHERE (t.is_public = true OR ($1::int IS NOT NULL AND teams.id IN (
+        SELECT team_id FROM team_members WHERE user_id = $1
+      )))
+      AND (
+        t.training_date > CURRENT_DATE
+        OR (t.training_date = CURRENT_DATE AND t.training_time >= CURRENT_TIME)
+      )
     `;
 
-    const params = [req.user.id];
+    const params = [req.user?.id || null];
     let paramCount = 1;
 
     if (team_id) {
@@ -2567,6 +2669,88 @@ app.post('/api/auth/reset-password', async (req, res) => {
     res.status(500).json({ error: 'Sunucu hatası.' });
   }
 });
+
+// =====================================================
+// ANTRENMAN HATIRLATMA CRON JOB (her gün 09:00'da çalışır)
+// =====================================================
+
+async function sendTrainingReminders() {
+  try {
+    const today = new Date();
+
+    for (const daysLeft of [3, 1]) {
+      const targetDate = new Date(today);
+      targetDate.setDate(today.getDate() + daysLeft);
+      const dateStr = targetDate.toISOString().slice(0, 10);
+
+      const trainings = await pool.query(
+        `SELECT t.*, teams.name as team_name
+         FROM trainings t
+         JOIN teams ON teams.id = t.team_id
+         WHERE t.training_date = $1`,
+        [dateStr]
+      );
+
+      for (const training of trainings.rows) {
+        const members = await pool.query(
+          'SELECT tm.user_id, u.email, u.name FROM team_members tm JOIN users u ON u.id = tm.user_id WHERE tm.team_id = $1',
+          [training.team_id]
+        );
+
+        for (const member of members.rows) {
+          const notifTitle = daysLeft === 1 ? 'Yarın Antrenman Var!' : '3 Gün Sonra Antrenman!';
+          const notifMsg = `${training.team_name}: ${training.title} — ${training.training_date}`;
+
+          // Aynı bildirim daha önce gönderildi mi kontrol et
+          const exists = await pool.query(
+            `SELECT id FROM notifications WHERE user_id = $1 AND reference_id = $2 AND title = $3`,
+            [member.user_id, training.id, notifTitle]
+          );
+          if (exists.rows.length > 0) continue;
+
+          await createNotif(member.user_id, {
+            title: notifTitle,
+            message: notifMsg,
+            type: 'training_reminder',
+            refId: training.id,
+            url: `/antrenmanlar`,
+          });
+
+          sendEmail({
+            to: member.email,
+            subject: `${training.team_name} — ${daysLeft === 1 ? 'Yarın' : '3 Gün Sonra'}: ${training.title}`,
+            html: trainingReminderEmail({
+              teamName: training.team_name,
+              trainingTitle: training.title,
+              trainingDate: training.training_date,
+              trainingTime: training.training_time,
+              location: training.location_name,
+              daysLeft,
+            }),
+          }).catch(e => console.error('Reminder email error:', e.message));
+        }
+      }
+    }
+    console.log('[REMINDER] Antrenman hatırlatmaları gönderildi.');
+  } catch (err) {
+    console.error('[REMINDER] Hata:', err.message);
+  }
+}
+
+// Her gün 09:00'da çalıştır
+function scheduleDailyReminders() {
+  const now = new Date();
+  const next9am = new Date(now);
+  next9am.setHours(9, 0, 0, 0);
+  if (next9am <= now) next9am.setDate(next9am.getDate() + 1);
+  const msUntil9am = next9am - now;
+  setTimeout(() => {
+    sendTrainingReminders();
+    setInterval(sendTrainingReminders, 24 * 60 * 60 * 1000);
+  }, msUntil9am);
+  console.log(`[REMINDER] İlk çalışma: ${next9am.toLocaleString('tr-TR')} (${Math.round(msUntil9am/60000)} dk sonra)`);
+}
+scheduleDailyReminders();
 
 // Production'da Vite build çıktısını servis et
 if (process.env.NODE_ENV === 'production') {
