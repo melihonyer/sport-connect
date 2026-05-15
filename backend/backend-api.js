@@ -368,6 +368,17 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
+// Token varsa decode eder, yoksa anonim olarak devam eder
+const optionalAuth = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) return next();
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (!err) req.user = user;
+    next();
+  });
+};
+
 const isAdmin = async (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -763,7 +774,7 @@ app.post('/api/teams', authenticateToken, async (req, res) => {
   }
 });
 
-app.get('/api/teams', authenticateToken, async (req, res) => {
+app.get('/api/teams', optionalAuth, async (req, res) => {
   try {
     const { sport, search, member_only } = req.query;
 
@@ -1394,7 +1405,7 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
 });
 
 
-app.get('/api/trainings', authenticateToken, async (req, res) => {
+app.get('/api/trainings', optionalAuth, async (req, res) => {
   try {
     const { team_id, date_from, date_to, is_public, sport } = req.query;
 
