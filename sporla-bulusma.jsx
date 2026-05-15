@@ -4527,7 +4527,7 @@ export default function Muuvlink() {
       { q: "Gizli takım nedir?", a: "Gizli takımlar sadece davet edilen üyeler tarafından görülebilir. Antrenmanlar da otomatik olarak gizli olur ve dışarıdan kimse katılamaz." },
       { q: "Takıma nasıl üye eklerim?", a: "Takım detay sayfasında 'Üyeler' sekmesine gidin ve 'Davet Et' butonuyla e-posta adresi aracılığıyla üye ekleyebilirsiniz. Davet edilen kişiye e-posta gönderilir." },
       { q: "Antrenman kartındaki km bilgisi nasıl hesaplanır?", a: "Tarayıcınızın konum iznine göre bulunduğunuz yere olan mesafe Haversine formülüyle hesaplanır. Konum iznini tarayıcınızdan verebilirsiniz." },
-      { q: "Üyelik ücretli mi?", a: "Muuvlink tamamen ücretsizdir. Temel tüm özellikler herkes için açıktır." },
+      { q: "Üyelik ücretli mi?", a: "Şu an için Muuvlink tamamen ücretsizdir. Temel tüm özellikler herkes için açıktır. İleride ek özellikler sunan premium bir plan gelebilir, ancak mevcut özellikler ücretsiz kalmaya devam edecektir." },
       { q: "Şifremi unuttum, ne yapmalıyım?", a: "Şu an için 'Profil' > 'Şifre Değiştir' bölümünden şifrenizi güncelleyebilirsiniz. Şifre sıfırlama maili yakında eklenecek." },
     ];
 
