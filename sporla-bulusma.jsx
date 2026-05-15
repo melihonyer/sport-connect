@@ -4523,12 +4523,13 @@ export default function Muuvlink() {
     const faqs = [
       { q: "Muuvlink'e nasıl üye olurum?", a: "Sağ üst köşedeki 'Kaydol' butonuna tıklayarak adınızı, e-posta adresinizi ve şifrenizi girerek ücretsiz üye olabilirsiniz." },
       { q: "Takım nasıl kurarım?", a: "'Takımlar' sayfasına gidin ve '+ Takım Oluştur' butonuna tıklayın. Takım adı, spor branşı ve gizlilik ayarını belirleyerek dakikalar içinde takımınızı oluşturabilirsiniz." },
-      { q: "Antrenman nasıl oluştururum?", a: "Üst menüdeki '+ Antrenman' butonuna tıklayın. Tarih, saat, konum ve kapasite bilgilerini doldurarak antrenmanınızı yayınlayabilirsiniz." },
-      { q: "Gizli takım nedir?", a: "Gizli takımlar sadece davet edilen üyeler tarafından görülebilir. Antrenmanlar da otomatik olarak gizli olur ve dışarıdan kimse katılamaz." },
-      { q: "Takıma nasıl üye eklerim?", a: "Takım detay sayfasında 'Üyeler' sekmesine gidin ve 'Davet Et' butonuyla e-posta adresi aracılığıyla üye ekleyebilirsiniz. Davet edilen kişiye e-posta gönderilir." },
-      { q: "Antrenman kartındaki km bilgisi nasıl hesaplanır?", a: "Tarayıcınızın konum iznine göre bulunduğunuz yere olan mesafe Haversine formülüyle hesaplanır. Konum iznini tarayıcınızdan verebilirsiniz." },
+      { q: "Antrenman nasıl oluştururum?", a: "Bir takıma sahip veya antrenör olarak kayıtlı olmanız gerekiyor. Ardından 'Antrenman Oluştur' butonuna tıklayıp tarih, saat, konum ve kapasite bilgilerini doldurarak antrenmanınızı yayınlayabilirsiniz. Takım üyelerine otomatik olarak bildirim ve e-posta gönderilir." },
+      { q: "Gizli takım nedir?", a: "Gizli takımlar listede görünmez, sadece davet edilen üyeler katılabilir. Gizli takımların antrenmanları da otomatik olarak yalnızca üyelere özel olur." },
+      { q: "Takıma nasıl üye eklerim?", a: "Takım detay sayfasında 'Üyeler' sekmesine gidin ve 'Davet Et' butonuyla e-posta adresi aracılığıyla üye ekleyebilirsiniz. Muuvlink üyesiyse davet bildirimi, değilse kayıt daveti e-postası gönderilir." },
+      { q: "Antrenman bildirimleri nasıl çalışır?", a: "Takımınızda yeni bir antrenman oluşturulduğunda hem uygulama içi bildirim hem de e-posta alırsınız. Ayrıca antrenmanınızdan 3 gün ve 1 gün önce otomatik hatırlatma bildirimi gelir." },
+      { q: "Antrenman kartındaki km bilgisi nasıl hesaplanır?", a: "Tarayıcınızın konum iznine göre bulunduğunuz yere olan mesafe hesaplanır. Konum iznini tarayıcı adres çubuğundaki kilit ikonundan verebilirsiniz." },
       { q: "Üyelik ücretli mi?", a: "Şu an için Muuvlink tamamen ücretsizdir. Temel tüm özellikler herkes için açıktır. İleride ek özellikler sunan premium bir plan gelebilir, ancak mevcut özellikler ücretsiz kalmaya devam edecektir." },
-      { q: "Şifremi unuttum, ne yapmalıyım?", a: "Şu an için 'Profil' > 'Şifre Değiştir' bölümünden şifrenizi güncelleyebilirsiniz. Şifre sıfırlama maili yakında eklenecek." },
+      { q: "Şifremi unuttum, ne yapmalıyım?", a: "Giriş ekranındaki 'Şifremi Unuttum' bağlantısına tıklayın. E-posta adresinize şifre sıfırlama linki gönderilecektir." },
     ];
 
     const handleContactSubmit = async (e) => {
