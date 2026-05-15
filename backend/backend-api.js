@@ -782,9 +782,12 @@ app.get('/api/teams', optionalAuth, async (req, res) => {
     if (member_only === 'true') {
       // Sadece kullanıcının üye olduğu takımlar (profil sayfası için)
       whereClause = `t.id IN (SELECT team_id FROM team_members WHERE user_id = $1)`;
+    } else if (!req.user) {
+      // Giriş yapmamış kullanıcılar sadece herkese açık takımları görebilir
+      whereClause = `t.is_private = false`;
     } else {
-      // Tüm takımları göster (gizli olanlar da listede görünür, ama içine giremezler)
-      whereClause = `1=1`;
+      // Giriş yapmış kullanıcılar: herkese açık + üye oldukları gizli takımlar
+      whereClause = `(t.is_private = false OR t.id IN (SELECT team_id FROM team_members WHERE user_id = $1))`;
     }
 
     let query = `
