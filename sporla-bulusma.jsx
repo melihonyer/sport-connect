@@ -2382,9 +2382,11 @@ export default function Muuvlink() {
                   {myTeams.map((team) => (
                     <button key={team.id} onClick={() => fetchTeamDetails(team.id)}
                       className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-100 hover:border-green-200 hover:bg-green-50/30 transition-all text-left">
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
-                        style={{background:"linear-gradient(135deg,rgba(22,163,74,0.1),rgba(139,92,246,0.1))", border:"1px solid rgba(22,163,74,0.15)"}}>
-                        {team.avatar || "🏅"}
+                      <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center text-white text-base font-bold flex-shrink-0"
+                        style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}>
+                        {(team.avatar?.startsWith("/uploads/") || team.avatar?.startsWith("http"))
+                          ? <img src={team.avatar.startsWith("http") ? team.avatar : `${BASE_URL}${team.avatar}`} alt="" className="w-full h-full object-cover" />
+                          : (team.name?.[0]?.toUpperCase() || "T")}
                       </div>
                       <div className="min-w-0">
                         <div className="font-medium text-slate-800 text-sm truncate">{team.name}</div>
