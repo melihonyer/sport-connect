@@ -375,7 +375,7 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
   const gTo   = activeBanner?.gradient_to   || "#166534";
 
   return (
-    <div className="relative overflow-x-hidden" style={{
+    <div className="relative" style={{
       background: `linear-gradient(115deg, ${gFrom} 0%, ${gVia} 45%, ${gTo} 100%)`,
       transition: "background 1s ease",
     }}>
