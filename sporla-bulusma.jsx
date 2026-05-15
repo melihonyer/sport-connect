@@ -2817,100 +2817,116 @@ export default function Muuvlink() {
             </div>
           )}
 
-          {isOwner && editMode && (
-            <form onSubmit={handleSubmitEdit} className="mb-8 p-6 bg-blue-50 rounded-2xl border border-blue-100 space-y-4">
-              <h3 className="text-lg font-medium text-blue-800">Antrenmanı Düzenle</h3>
+          {isOwner && editMode && (() => {
+            const iCls = "w-full h-12 px-4 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-green-300 focus:border-green-400 transition-colors";
+            const sCls = `${iCls} appearance-none cursor-pointer`;
+            const lCls = "block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5";
+            return (
+              <form onSubmit={handleSubmitEdit} className="mb-8 space-y-5">
+                <h3 className="text-base font-semibold text-slate-700 flex items-center gap-2">
+                  <Edit className="w-4 h-4 text-green-600"/> Antrenmanı Düzenle
+                </h3>
 
-              <div>
-                <label className="block text-sm font-medium mb-1">Başlık</label>
-                <input type="text" value={editData.title}
-                  onChange={(e) => setEditData((d) => ({ ...d, title: e.target.value }))}
-                  className="w-full px-4 py-2 border rounded-xl" required />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Açıklama</label>
-                <textarea value={editData.description}
-                  onChange={(e) => setEditData((d) => ({ ...d, description: e.target.value }))}
-                  className="w-full px-4 py-2 border rounded-xl" rows="2" />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Tarih</label>
-                  <input type="date" value={editData.training_date}
-                    onChange={(e) => setEditData((d) => ({ ...d, training_date: e.target.value }))}
-                    className="w-full px-4 py-2 border rounded-xl" required />
+                {/* Başlık */}
+                <div className="bg-white border border-slate-100 rounded-2xl p-5">
+                  <label className={lCls}>Başlık</label>
+                  <input type="text" value={editData.title}
+                    onChange={(e) => setEditData((d) => ({ ...d, title: e.target.value }))}
+                    className={iCls} placeholder="Örn: Pazartesi Koşusu" required />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Saat</label>
-                  <div className="flex gap-2">
-                    <select
-                      value={editData.training_time ? editData.training_time.split(":")[0] : ""}
-                      onChange={(e) => {
-                        const min = editData.training_time ? editData.training_time.split(":")[1] : "00";
-                        setEditData((d) => ({ ...d, training_time: e.target.value ? `${e.target.value}:${min}` : "" }));
-                      }}
-                      className="flex-1 px-3 py-2 border rounded-xl bg-white" required
-                    >
-                      <option value="">Saat</option>
-                      {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0")).map(h => (
-                        <option key={h} value={h}>{h}</option>
-                      ))}
-                    </select>
-                    <select
-                      value={editData.training_time ? editData.training_time.split(":")[1] : "00"}
-                      onChange={(e) => {
-                        const hr = editData.training_time ? editData.training_time.split(":")[0] : "";
-                        if (hr) setEditData((d) => ({ ...d, training_time: `${hr}:${e.target.value}` }));
-                      }}
-                      className="flex-1 px-3 py-2 border rounded-xl bg-white"
-                    >
-                      {["00","05","10","15","20","25","30","35","40","45","50","55"].map(m => (
-                        <option key={m} value={m}>{m}</option>
-                      ))}
-                    </select>
+
+                {/* Açıklama */}
+                <div className="bg-white border border-slate-100 rounded-2xl p-5">
+                  <label className={lCls}>Açıklama <span className="normal-case font-normal text-slate-400">(isteğe bağlı)</span></label>
+                  <textarea value={editData.description}
+                    onChange={(e) => setEditData((d) => ({ ...d, description: e.target.value }))}
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-green-300 focus:border-green-400 transition-colors resize-none"
+                    rows="3" placeholder="Antrenman hakkında kısa bir açıklama…"/>
+                </div>
+
+                {/* Tarih + Saat */}
+                <div className="bg-white border border-slate-100 rounded-2xl p-5">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className={lCls}>Tarih</label>
+                      <input type="date" value={editData.training_date}
+                        onChange={(e) => setEditData((d) => ({ ...d, training_date: e.target.value }))}
+                        className={iCls} required />
+                    </div>
+                    <div>
+                      <label className={lCls}>Saat</label>
+                      <div className="flex gap-2">
+                        <select
+                          value={editData.training_time ? editData.training_time.split(":")[0] : ""}
+                          onChange={(e) => {
+                            const min = editData.training_time ? editData.training_time.split(":")[1] : "00";
+                            setEditData((d) => ({ ...d, training_time: e.target.value ? `${e.target.value}:${min}` : "" }));
+                          }}
+                          className={sCls} required>
+                          <option value="">--</option>
+                          {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0")).map(h => (
+                            <option key={h} value={h}>{h}</option>
+                          ))}
+                        </select>
+                        <select
+                          value={editData.training_time ? editData.training_time.split(":")[1] : "00"}
+                          onChange={(e) => {
+                            const hr = editData.training_time ? editData.training_time.split(":")[0] : "";
+                            if (hr) setEditData((d) => ({ ...d, training_time: `${hr}:${e.target.value}` }));
+                          }}
+                          className={sCls}>
+                          {["00","05","10","15","20","25","30","35","40","45","50","55"].map(m => (
+                            <option key={m} value={m}>{m}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">Konum</label>
-                <LocationPicker
-                  locationName={editData.location_name}
-                  lat={editData.location_lat}
-                  lng={editData.location_lng}
-                  onLocationName={(v) => setEditData((d) => ({ ...d, location_name: v }))}
-                  onLat={(v) => setEditData((d) => ({ ...d, location_lat: v }))}
-                  onLng={(v) => setEditData((d) => ({ ...d, location_lng: v }))}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Kapasite</label>
-                  <input type="number" value={editData.capacity} min="1"
-                    onChange={(e) => setEditData((d) => ({ ...d, capacity: parseInt(e.target.value) }))}
-                    className="w-full px-4 py-2 border rounded-xl" />
+                {/* Konum */}
+                <div className="bg-white border border-slate-100 rounded-2xl p-5">
+                  <label className={lCls}>Konum</label>
+                  <LocationPicker
+                    locationName={editData.location_name}
+                    lat={editData.location_lat}
+                    lng={editData.location_lng}
+                    onLocationName={(v) => setEditData((d) => ({ ...d, location_name: v }))}
+                    onLat={(v) => setEditData((d) => ({ ...d, location_lat: v }))}
+                    onLng={(v) => setEditData((d) => ({ ...d, location_lng: v }))}
+                  />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Seviye</label>
-                  <select value={editData.difficulty}
-                    onChange={(e) => setEditData((d) => ({ ...d, difficulty: e.target.value }))}
-                    className="w-full px-4 py-2 border rounded-xl">
-                    <option value="Kolay">Kolay</option>
-                    <option value="Orta">Orta</option>
-                    <option value="Zor">Zor</option>
-                  </select>
-                </div>
-              </div>
 
-              <button type="submit"
-                className="w-full py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-semibold hover:shadow-lg">
-                Kaydet
-              </button>
-            </form>
-          )}
+                {/* Kapasite + Seviye */}
+                <div className="bg-white border border-slate-100 rounded-2xl p-5">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className={lCls}>Kapasite</label>
+                      <input type="number" value={editData.capacity} min="1"
+                        onChange={(e) => setEditData((d) => ({ ...d, capacity: parseInt(e.target.value) }))}
+                        className={iCls} />
+                    </div>
+                    <div>
+                      <label className={lCls}>Seviye</label>
+                      <select value={editData.difficulty}
+                        onChange={(e) => setEditData((d) => ({ ...d, difficulty: e.target.value }))}
+                        className={sCls}>
+                        <option value="Kolay">🟢 Kolay</option>
+                        <option value="Orta">🟡 Orta</option>
+                        <option value="Zor">🔴 Zor</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <button type="submit"
+                  className="w-full h-12 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 hover:shadow-lg"
+                  style={{background:"linear-gradient(135deg,#16A34A,#15803D)", boxShadow:"0 4px 14px rgba(22,163,74,0.3)"}}>
+                  Kaydet
+                </button>
+              </form>
+            );
+          })()}
 
           <p className="text-gray-600 mb-6">{selectedTraining.description}</p>
 
