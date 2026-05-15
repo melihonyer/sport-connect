@@ -2298,7 +2298,7 @@ export default function Muuvlink() {
             ].map((s, i) => (
               <div key={i} className="px-6 py-5" style={{background:"rgba(22,163,74,0.15)"}}>
                 <div className="text-2xl font-semibold text-green-700">{s.val}</div>
-                <div className="text-[10px] text-white/30 mt-1 uppercase tracking-widest font-semibold">{s.label}</div>
+                <div className="text-[10px] text-green-600 mt-1 uppercase tracking-widest font-semibold">{s.label}</div>
               </div>
             ))}
           </div>
