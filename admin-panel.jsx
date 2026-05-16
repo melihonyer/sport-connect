@@ -4,7 +4,7 @@ import {
   LogOut, Trash2, Eye, EyeOff, CheckCheck, Mail,
   TrendingUp, Calendar, AlertTriangle, Search, X,
   ChevronRight, Lock, Globe, Image, Plus, Edit2, ToggleLeft, ToggleRight,
-  Upload, GripVertical, ChevronUp, ChevronDown, Newspaper, GalleryHorizontal,
+  Upload, GripVertical, ChevronUp, ChevronDown, Newspaper, GalleryHorizontal, Menu,
 } from "lucide-react";
 
 const API_URL  = import.meta.env.VITE_API_URL  ?? (import.meta.env.DEV ? "http://localhost:3000/api" : "/api");
@@ -320,6 +320,8 @@ export default function AdminPanel() {
   const [loading, setLoading]   = useState(false);
   const [search, setSearch]     = useState("");
 
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
   // Banner form state
   const emptyBanner = { title:"", subtitle:"", badge_text:"", cta_primary_text:"Hemen Başla", cta_primary_url:"", cta_secondary_text:"Antrenmanları Keşfet", cta_secondary_url:"", gradient_from:"#0D0B26", gradient_via:"#1a1040", gradient_to:"#0f2044", is_active:true, order_index:0, mottos:[""] };
   const [bannerForm, setBannerForm] = useState(emptyBanner);
@@ -632,25 +634,37 @@ export default function AdminPanel() {
   return (
     <div className="flex min-h-screen bg-slate-50 font-sans">
       <AdminToast toasts={toasts}/>
+
+      {/* ── Mobil overlay ─────────────────────────────────── */}
+      {mobileNavOpen && (
+        <div className="fixed inset-0 z-30 bg-black/40 md:hidden" onClick={() => setMobileNavOpen(false)}/>
+      )}
+
       {/* ── Sidebar ───────────────────────────────────────── */}
-      <aside className="w-64 flex-shrink-0 flex flex-col bg-white border-r border-slate-100 shadow-sm">
+      <aside className={`fixed inset-y-0 left-0 z-40 w-64 flex-shrink-0 flex flex-col bg-white border-r border-slate-100 shadow-sm
+        transform transition-transform duration-200 ease-in-out
+        ${mobileNavOpen ? "translate-x-0" : "-translate-x-full"} md:relative md:translate-x-0`}>
+
         {/* Logo */}
         <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-100">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "linear-gradient(135deg,#16A34A,#15803D)" }}>
             <Shield className="w-5 h-5 text-white" />
           </div>
-          <div>
+          <div className="flex-1">
             <div className="text-green-900 font-semibold text-sm tracking-tight">Muuvlink</div>
             <div className="text-green-500 text-xs font-semibold">Admin Panel</div>
           </div>
+          <button className="md:hidden p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 transition" onClick={() => setMobileNavOpen(false)}>
+            <X className="w-4 h-4"/>
+          </button>
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-3 py-4 space-y-1">
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {navItems.map(({ id, label, icon: Icon, badge }) => (
             <button
               key={id}
-              onClick={() => loadTab(id)}
+              onClick={() => { loadTab(id); setMobileNavOpen(false); }}
               className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
                 tab === id
                   ? "text-white shadow-md"
@@ -690,24 +704,28 @@ export default function AdminPanel() {
       </aside>
 
       {/* ── İçerik ────────────────────────────────────────── */}
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto min-w-0">
         {/* Üst bar */}
-        <header className="bg-white border-b border-slate-100 px-8 py-4 flex items-center justify-between sticky top-0 z-10">
-          <div>
-            <h1 className="text-lg font-semibold text-slate-900">
+        <header className="bg-white border-b border-slate-100 px-4 md:px-8 py-4 flex items-center gap-3 sticky top-0 z-10">
+          {/* Hamburger (mobil) */}
+          <button className="md:hidden flex-shrink-0 p-2 rounded-xl hover:bg-slate-100 transition" onClick={() => setMobileNavOpen(true)}>
+            <Menu className="w-5 h-5 text-slate-600"/>
+          </button>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-base md:text-lg font-semibold text-slate-900 truncate">
               {navItems.find(n => n.id === tab)?.label || "Panel"}
             </h1>
-            <p className="text-slate-400 text-xs">Muuvlink Yönetim Konsolu</p>
+            <p className="text-slate-400 text-xs hidden sm:block">Muuvlink Yönetim Konsolu</p>
           </div>
           {/* Arama */}
           {tab !== "dashboard" && (
-            <div className="relative">
+            <div className="relative flex-shrink-0">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Ara…"
-                className="w-56 pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-green-300 focus:bg-white transition"
+                className="w-36 sm:w-56 pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-green-300 focus:bg-white transition"
               />
               {search && (
                 <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
@@ -718,7 +736,7 @@ export default function AdminPanel() {
           )}
         </header>
 
-        <div className="p-8">
+        <div className="p-4 md:p-8">
           {loading && (
             <div className="flex items-center justify-center py-24">
               <div className="w-8 h-8 border-2 border-green-200 border-t-green-600 rounded-full animate-spin" />
@@ -773,10 +791,51 @@ export default function AdminPanel() {
           {/* ── USERS ────────────────────────────────────── */}
           {!loading && tab === "users" && (
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+              <div className="px-4 md:px-6 py-4 border-b border-slate-100">
                 <h2 className="font-medium text-slate-900">Kullanıcılar <span className="text-slate-400 font-normal text-sm">({filteredUsers.length})</span></h2>
               </div>
-              <div className="overflow-x-auto">
+
+              {/* Mobil kart listesi */}
+              <div className="sm:hidden divide-y divide-slate-50">
+                {filteredUsers.length === 0 && (
+                  <div className="text-center py-12 text-slate-400 text-sm">Kullanıcı bulunamadı</div>
+                )}
+                {filteredUsers.map(u => (
+                  <div key={u.id} className="flex items-center gap-3 px-4 py-3.5">
+                    <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+                      style={{ background: "linear-gradient(135deg,#16A34A,#15803D)" }}>
+                      {(u.avatar?.startsWith("/uploads/") || u.avatar?.startsWith("http"))
+                        ? <img src={u.avatar.startsWith("http") ? u.avatar : `${BASE_URL}${u.avatar}`} alt="" className="w-full h-full object-cover" />
+                        : u.name[0].toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-slate-900 text-sm">{u.name}</span>
+                        {u.is_admin
+                          ? <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-lg text-[10px] font-medium">Admin</span>
+                          : <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded-lg text-[10px]">Üye</span>}
+                      </div>
+                      <div className="text-slate-400 text-xs truncate">{u.email}</div>
+                      <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-400">
+                        <span>{u.team_count ?? 0} takım</span>
+                        <span>·</span>
+                        <span>{u.training_count ?? 0} antrenman</span>
+                        <span>·</span>
+                        <span>{fmt(u.created_at)}</span>
+                      </div>
+                    </div>
+                    {!u.is_admin && (
+                      <button onClick={() => del(`/admin/users/${u.id}`, u.name, "users")}
+                        className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Masaüstü tablo */}
+              <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-slate-50 text-xs text-slate-500 uppercase tracking-wide">
                     <tr>
@@ -835,10 +894,54 @@ export default function AdminPanel() {
           {/* ── TRAININGS ────────────────────────────────── */}
           {!loading && tab === "trainings" && (
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-100">
+              <div className="px-4 md:px-6 py-4 border-b border-slate-100">
                 <h2 className="font-medium text-slate-900">Antrenmanlar <span className="text-slate-400 font-normal text-sm">({filteredTrainings.length})</span></h2>
               </div>
-              <div className="overflow-x-auto">
+
+              {/* Mobil kart listesi */}
+              <div className="sm:hidden divide-y divide-slate-50">
+                {filteredTrainings.length === 0 && (
+                  <div className="text-center py-12 text-slate-400 text-sm">Antrenman bulunamadı</div>
+                )}
+                {filteredTrainings.map(t => {
+                  const trainingDateObj = new Date(t.training_date);
+                  const localDateStr = trainingDateObj.toLocaleDateString('en-CA');
+                  const timeStr = t.training_time?.slice(0, 5) || "00:00";
+                  const trainingDateTime = new Date(`${localDateStr}T${timeStr}:00`);
+                  const isPast = trainingDateTime < new Date();
+                  return (
+                    <div key={t.id} className="flex items-start gap-3 px-4 py-3.5">
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                        style={{ background: "linear-gradient(135deg,#16A34A,#15803D)" }}>
+                        <Activity className="w-5 h-5 text-white"/>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-slate-900 text-sm truncate">{t.title}</div>
+                        <div className="text-slate-400 text-xs">{t.team_name || "—"}</div>
+                        <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-400 flex-wrap">
+                          <span>{fmt(t.training_date)}</span>
+                          <span>·</span>
+                          <span>{t.training_time?.slice(0,5) || "—"}</span>
+                          <span>·</span>
+                          <span>{t.participant_count}/{t.capacity} kişi</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold ${isPast ? "bg-slate-100 text-slate-500" : "bg-emerald-100 text-emerald-700"}`}>
+                          {isPast ? "Bitti" : "Aktif"}
+                        </span>
+                        <button onClick={() => del(`/admin/trainings/${t.id}`, t.title, "trainings")}
+                          className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Masaüstü tablo */}
+              <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-slate-50 text-xs text-slate-500 uppercase tracking-wide">
                     <tr>
@@ -853,11 +956,9 @@ export default function AdminPanel() {
                   </thead>
                   <tbody className="divide-y divide-slate-50">
                     {filteredTrainings.map(t => {
-                      // Tarih + saat birlikte karşılaştır — UTC→yerel dönüşümü doğru yap
                       const trainingDateObj = new Date(t.training_date);
-                      // Yerel takvimde gün/ay/yıl al (Türkiye saati için doğru tarih)
-                      const localDateStr = trainingDateObj.toLocaleDateString('en-CA'); // "2026-05-09"
-                      const timeStr = t.training_time?.slice(0, 5) || "00:00"; // "16:12"
+                      const localDateStr = trainingDateObj.toLocaleDateString('en-CA');
+                      const timeStr = t.training_time?.slice(0, 5) || "00:00";
                       const trainingDateTime = new Date(`${localDateStr}T${timeStr}:00`);
                       const isPast = trainingDateTime < new Date();
                       return (
@@ -896,10 +997,44 @@ export default function AdminPanel() {
           {/* ── TEAMS ────────────────────────────────────── */}
           {!loading && tab === "teams" && (
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-100">
+              <div className="px-4 md:px-6 py-4 border-b border-slate-100">
                 <h2 className="font-medium text-slate-900">Takımlar <span className="text-slate-400 font-normal text-sm">({filteredTeams.length})</span></h2>
               </div>
-              <div className="overflow-x-auto">
+
+              {/* Mobil kart listesi */}
+              <div className="sm:hidden divide-y divide-slate-50">
+                {filteredTeams.length === 0 && (
+                  <div className="text-center py-12 text-slate-400 text-sm">Takım bulunamadı</div>
+                )}
+                {filteredTeams.map(t => (
+                  <div key={t.id} className="flex items-center gap-3 px-4 py-3.5">
+                    <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-sm"
+                      style={{ background: "linear-gradient(135deg,#16A34A,#15803D)" }}>
+                      {(t.avatar?.startsWith("/uploads/") || t.avatar?.startsWith("http"))
+                        ? <img src={t.avatar.startsWith("http") ? t.avatar : `${BASE_URL}${t.avatar}`} alt="" className="w-full h-full object-cover" />
+                        : t.name[0].toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-slate-900 text-sm truncate">{t.name}</div>
+                      <div className="text-slate-400 text-xs">{t.sport} · {t.owner_name}</div>
+                      <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-400 flex-wrap">
+                        <span>{t.member_count} üye</span>
+                        <span>·</span>
+                        <span className={`flex items-center gap-0.5 ${t.is_private ? "text-slate-500" : "text-emerald-600"}`}>
+                          {t.is_private ? <><Lock className="w-3 h-3"/> Gizli</> : <><Globe className="w-3 h-3"/> Açık</>}
+                        </span>
+                      </div>
+                    </div>
+                    <button onClick={() => del(`/admin/teams/${t.id}`, t.name, "teams")}
+                      className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Masaüstü tablo */}
+              <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-slate-50 text-xs text-slate-500 uppercase tracking-wide">
                     <tr>
@@ -1193,7 +1328,7 @@ export default function AdminPanel() {
                     {/* Gradyan şerit */}
                     <div className="h-2" style={{background:`linear-gradient(90deg,${b.gradient_from},${b.gradient_via || b.gradient_to},${b.gradient_to})`}}/>
 
-                    <div className="p-5 flex items-center gap-5">
+                    <div className="p-4 md:p-5 flex items-start md:items-center gap-4 flex-wrap md:flex-nowrap">
                       {/* Küçük önizleme */}
                       <div className="flex-shrink-0 w-20 h-14 rounded-xl flex items-center justify-center relative overflow-hidden border border-slate-100"
                         style={{background:`linear-gradient(135deg,${b.gradient_from},${b.gradient_via || b.gradient_to},${b.gradient_to})`}}>
@@ -1215,7 +1350,7 @@ export default function AdminPanel() {
                       </div>
 
                       {/* Aksiyonlar */}
-                      <div className="flex items-center gap-2 flex-shrink-0">
+                      <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
                         {/* Görsel yükle */}
                         <label className="relative cursor-pointer">
                           <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only"
@@ -1289,8 +1424,8 @@ export default function AdminPanel() {
               {filteredMessages.map(m => (
                 <div key={m.id} className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition-all ${m.is_read ? "border-slate-100" : "border-green-200"}`}>
                   {!m.is_read && <div className="h-1" style={{ background: "linear-gradient(90deg,#16A34A,#15803D)" }} />}
-                  <div className="p-6">
-                    <div className="flex items-start justify-between gap-4">
+                  <div className="p-4 md:p-6">
+                    <div className="flex items-start justify-between gap-3 flex-wrap md:flex-nowrap">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap mb-1">
                           {!m.is_read && (
@@ -1310,7 +1445,7 @@ export default function AdminPanel() {
                         </p>
                       </div>
 
-                      <div className="flex flex-col gap-2 flex-shrink-0">
+                      <div className="flex flex-row md:flex-col gap-2 flex-shrink-0 flex-wrap">
                         {!m.is_read && (
                           <button onClick={() => markRead(m.id)}
                             className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-xs font-medium hover:bg-emerald-100 transition whitespace-nowrap">
