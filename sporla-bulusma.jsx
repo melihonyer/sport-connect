@@ -509,21 +509,6 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                     </div>
 
                     <div className="bn-stats flex items-center gap-6 pt-2">
-                      <div className="flex items-center gap-3">
-                        <div className="flex -space-x-2.5">
-                          {["#16A34A","#15803D","#EC4899","#06B6D4"].map((c,ci) => (
-                            <div key={ci} className="w-8 h-8 rounded-full border-2 flex items-center justify-center text-white text-[10px] font-medium flex-shrink-0"
-                              style={{background:c, borderColor:bgF}}>
-                              {["M","A","E","K"][ci]}
-                            </div>
-                          ))}
-                        </div>
-                        <div>
-                          <div className="text-white text-sm font-medium">{fmtNum(platformStats?.users) || "—"}</div>
-                          <div className="text-xs" style={{color:"rgba(186,230,253,0.5)"}}>kayıtlı sporcu</div>
-                        </div>
-                      </div>
-                      <div className="w-px h-10 bg-white/10"/>
                       {stats.slice(0,2).map((s,si) => (
                         <div key={si}>
                           <div className={`text-xl font-semibold ${s.color}`}>{s.value}</div>
