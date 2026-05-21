@@ -1363,6 +1363,34 @@ export default function Muuvlink() {
     }
   };
 
+  const handleLeaveTraining = async (trainingId) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      setJoiningTrainingId(trainingId);
+      const response = await fetch(`${API_URL}/trainings/${trainingId}/leave`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        showToast("Antrenman kaydın silindi.", "success");
+        fetchTrainings();
+        fetchMyTrainings(token);
+        if (selectedTraining?.id === trainingId) {
+          fetchTrainingDetails(trainingId);
+        }
+      } else {
+        const data = await response.json();
+        showToast(data.error || "Ayrılma başarısız!", "error");
+      }
+    } catch (error) {
+      console.error("Leave training error:", error);
+      showToast("Bağlantı hatası!", "error");
+    } finally {
+      setJoiningTrainingId(null);
+    }
+  };
+
   const handleCreateTraining = async (formData) => {
     try {
       const token = localStorage.getItem("token");
@@ -2819,10 +2847,9 @@ export default function Muuvlink() {
   const TrainingDetailPage = () => {
     if (!selectedTraining) return null;
 
-    const isOwner = user && selectedTraining.team_owner_id === user.id;
     const isParticipant = user && selectedTraining.attendees?.some(a => a.id === user.id);
     const isFull = (selectedTraining.attendees?.length || 0) >= selectedTraining.capacity;
-    const isMyTraining = isOwner; // sadece antrenmanı oluşturan takımın sahibi
+    const isMyTraining = false; // herkes join/leave yapabilir
     const [comment, setComment] = useState("");
     const [editMode, setEditMode] = useState(false);
     const [editData, setEditData] = useState({
@@ -3114,27 +3141,44 @@ export default function Muuvlink() {
             )}
           </div>
 
-          {!isMyTraining && (
-            isParticipant ? (
-              <div className="w-full py-4 rounded-xl font-semibold text-center text-green-700 bg-green-50 border border-green-200">
+          {!user ? (
+            <button
+              onClick={() => { setAuthMode("login"); setIsAuthModalOpen(true); }}
+              className="w-full py-4 font-semibold text-white rounded-xl transition hover:opacity-90 hover:shadow-lg"
+              style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}
+            >
+              Katılmak için Giriş Yap
+            </button>
+          ) : isParticipant ? (
+            <div className="flex gap-3">
+              <div className="flex-1 py-4 rounded-xl font-semibold text-center text-green-700 bg-green-50 border border-green-200">
                 ✓ Katıldın
               </div>
-            ) : isFull ? (
-              <div className="w-full py-4 rounded-xl font-semibold text-center text-slate-500 bg-slate-100 border border-slate-200">
-                Kapasite Dolu
-              </div>
-            ) : (
               <button
-                onClick={() => handleJoinTraining(selectedTraining.id)}
+                onClick={() => handleLeaveTraining(selectedTraining.id)}
                 disabled={joiningTrainingId === selectedTraining.id}
-                className="w-full py-4 font-semibold text-white rounded-xl transition hover:opacity-90 hover:shadow-lg disabled:opacity-60"
-                style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}
+                className="px-6 py-4 rounded-xl font-semibold text-red-600 bg-red-50 border border-red-200 hover:bg-red-100 transition disabled:opacity-60"
               >
                 {joiningTrainingId === selectedTraining.id
-                  ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>Katılıyor…</span>
-                  : "Antrenmana Katıl"}
+                  ? <span className="w-4 h-4 border-2 border-red-200 border-t-red-500 rounded-full animate-spin inline-block"/>
+                  : "Ayrıl"}
               </button>
-            )
+            </div>
+          ) : isFull ? (
+            <div className="w-full py-4 rounded-xl font-semibold text-center text-slate-500 bg-slate-100 border border-slate-200">
+              Kapasite Dolu
+            </div>
+          ) : (
+            <button
+              onClick={() => handleJoinTraining(selectedTraining.id)}
+              disabled={joiningTrainingId === selectedTraining.id}
+              className="w-full py-4 font-semibold text-white rounded-xl transition hover:opacity-90 hover:shadow-lg disabled:opacity-60"
+              style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}
+            >
+              {joiningTrainingId === selectedTraining.id
+                ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>Katılıyor…</span>
+                : "Antrenmana Katıl"}
+            </button>
           )}
         </div>
       </div>
