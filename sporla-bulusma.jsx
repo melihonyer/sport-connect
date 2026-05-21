@@ -3150,13 +3150,53 @@ export default function Muuvlink() {
           </div>
 
           {!user ? (
-            <button
-              onClick={() => { setAuthMode("login"); setIsAuthModalOpen(true); }}
-              className="w-full py-4 font-semibold text-white rounded-xl transition hover:opacity-90 hover:shadow-lg"
-              style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}
-            >
-              Katılmak için Giriş Yap
-            </button>
+            <div className="rounded-2xl overflow-hidden border border-green-100 shadow-sm">
+              {/* Üst gradient şerit */}
+              <div className="h-1.5" style={{background:"linear-gradient(90deg,#16A34A,#4ADE80,#16A34A)"}}/>
+              <div className="p-6 bg-gradient-to-br from-green-50 to-emerald-50">
+                <div className="text-center mb-5">
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-md"
+                    style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}>
+                    <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-800 mb-1">Spor topluluğuna katıl</h3>
+                  <p className="text-sm text-slate-500">Ücretsiz hesap aç, antrenmanlara katıl ve yeni spor arkadaşları edin.</p>
+                </div>
+
+                {/* Özellikler */}
+                <div className="grid grid-cols-3 gap-3 mb-5">
+                  {[
+                    { icon:"🏃", label:"Antrenmanlara katıl" },
+                    { icon:"🛡️", label:"Takım kur veya katıl" },
+                    { icon:"🤝", label:"Spor arkadaşı edin" },
+                  ].map(f => (
+                    <div key={f.label} className="bg-white rounded-xl p-3 text-center border border-green-100 shadow-sm">
+                      <div className="text-2xl mb-1">{f.icon}</div>
+                      <div className="text-xs font-medium text-slate-600 leading-tight">{f.label}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Butonlar */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => { setAuthMode("register"); setIsAuthModalOpen(true); }}
+                    className="flex-1 py-3 font-semibold text-white text-sm rounded-xl transition hover:opacity-90 hover:shadow-lg"
+                    style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}
+                  >
+                    Ücretsiz Kayıt Ol
+                  </button>
+                  <button
+                    onClick={() => { setAuthMode("login"); setIsAuthModalOpen(true); }}
+                    className="flex-1 py-3 font-semibold text-green-700 text-sm rounded-xl border border-green-300 bg-white hover:bg-green-50 transition"
+                  >
+                    Giriş Yap
+                  </button>
+                </div>
+              </div>
+            </div>
           ) : isParticipant ? (
             <div className="flex gap-3">
               <div className="flex-1 py-4 rounded-xl font-semibold text-center text-green-700 bg-green-50 border border-green-200">
