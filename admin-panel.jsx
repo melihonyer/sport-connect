@@ -381,7 +381,9 @@ export default function AdminPanel() {
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", ...(opts.headers || {}) },
     });
     if (res.status === 401 || res.status === 403) { handleLogout(); return null; }
-    return res.json();
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error || `Sunucu hatası (${res.status})`);
+    return data;
   }, [token]);
 
   // ─── Veri yükleme ───────────────────────────────────────
@@ -554,7 +556,10 @@ export default function AdminPanel() {
       setShowBannerForm(false);
       setEditingBannerId(null);
       setBannerForm(emptyBanner);
-    } catch { /* sessiz */ }
+      showToast("Banner kaydedildi ✓");
+    } catch (e) {
+      showToast(e.message || "Banner kaydedilemedi.", "error");
+    }
     finally { setBannerSaving(false); }
   };
 

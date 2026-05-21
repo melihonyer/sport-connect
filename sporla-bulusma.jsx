@@ -441,13 +441,13 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
 
                   {/* Sol: metin */}
                   <div className="bn-text-col z-10 space-y-7 pr-8 pb-28 flex flex-col justify-center">
-                    <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full text-sm font-semibold border backdrop-blur-sm"
-                      style={{background:"rgba(255,255,255,0.06)",borderColor:"rgba(255,255,255,0.12)",color:"rgba(186,230,253,0.9)"}}>
-                      <span className="w-2 h-2 rounded-full animate-pulse" style={{background:"#4ADE80"}}/>
-                      {banner?.badge_text || "500+ Aktif Sporcu"}
-                      <span className="w-px h-3 bg-white/20"/>
-                      <span className="text-white/50 font-normal text-xs">Türkiye geneli</span>
-                    </div>
+                    {banner?.badge_text && (
+                      <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full text-sm font-semibold border backdrop-blur-sm"
+                        style={{background:"rgba(255,255,255,0.06)",borderColor:"rgba(255,255,255,0.12)",color:"rgba(186,230,253,0.9)"}}>
+                        <span className="w-2 h-2 rounded-full animate-pulse" style={{background:"#4ADE80"}}/>
+                        {banner.badge_text}
+                      </div>
+                    )}
 
                     <div>
                       <h1 className="bn-title text-white" style={{fontSize:"clamp(2.8rem,5.5vw,4.5rem)", lineHeight:1.1, fontWeight:600}}>
