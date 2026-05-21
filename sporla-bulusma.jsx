@@ -2448,51 +2448,84 @@ export default function Muuvlink() {
       };
 
       return (
-        <div className="mb-6 p-5 bg-orange-50 border border-orange-200 rounded-2xl">
-          <div className="flex items-start gap-3 mb-4">
-            <span className="text-2xl">📍</span>
-            <div>
-              <p className="font-semibold text-orange-800">GPS konumu alınamadı</p>
-              <p className="text-sm text-orange-600">Yakınımda araması için mahallenizi veya şehrinizi yazın</p>
+        <div className="mb-6 bg-orange-50 border border-orange-200 rounded-2xl overflow-hidden">
+          {/* Header */}
+          <div className="flex items-start gap-3 p-4 pb-3">
+            <div className="w-9 h-9 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0">
+              <MapPin className="w-5 h-5 text-orange-500" />
             </div>
-            <button onClick={() => setShowManualLocation(false)} className="ml-auto text-gray-400 hover:text-gray-600">
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-orange-800 text-sm">Konum izni alınamadı</p>
+              <p className="text-xs text-orange-600 mt-0.5">Tarayıcınız konum erişimini engellemiş olabilir</p>
+            </div>
+            <button onClick={() => setShowManualLocation(false)} className="text-gray-400 hover:text-gray-600 flex-shrink-0">
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && search()}
-              placeholder="Örn: Bornova İzmir, Kadıköy İstanbul..."
-              className="flex-1 px-4 py-2.5 border border-orange-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white"
-              autoFocus
-            />
+          {/* Permission hint */}
+          <div className="mx-4 mb-3 p-3 bg-white border border-orange-100 rounded-xl text-xs text-gray-600 leading-relaxed">
+            🔒 <span className="font-medium">Konum iznini nasıl açarım?</span>
+            <br/>Tarayıcınızın adres çubuğundaki <span className="font-medium">kilit / konum ikonuna</span> tıklayıp <span className="font-medium">"Konum → İzin Ver"</span> seçeneğini etkinleştirin, ardından tekrar deneyin.
+          </div>
+
+          {/* Retry button */}
+          <div className="px-4 mb-4">
             <button
-              onClick={search}
-              disabled={searching}
-              className="px-4 py-2.5 bg-orange-500 text-white rounded-xl hover:bg-orange-600 disabled:opacity-60 flex items-center gap-1"
+              onClick={() => handleNearbySearch()}
+              disabled={locationLoading}
+              className="w-full py-2.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white text-sm font-semibold rounded-xl flex items-center justify-center gap-2 transition-colors"
             >
-              {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+              {locationLoading ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Konum alınıyor...</>
+              ) : (
+                <><MapPin className="w-4 h-4" /> Tekrar Dene</>
+              )}
             </button>
           </div>
 
-          {results.length > 0 && (
-            <div className="mt-2 border border-orange-200 rounded-xl overflow-hidden bg-white shadow">
-              {results.map((r) => (
-                <button
-                  key={r.place_id}
-                  onClick={() => applyNearbyLocation(parseFloat(r.lat), parseFloat(r.lon), r.display_name.split(",").slice(0, 2).join(", "))}
-                  className="w-full text-left px-4 py-3 hover:bg-orange-50 text-sm border-b last:border-0 flex items-center gap-2"
-                >
-                  <MapPin className="w-4 h-4 text-orange-400 flex-shrink-0" />
-                  <span className="line-clamp-1">{r.display_name}</span>
-                </button>
-              ))}
+          {/* Divider */}
+          <div className="flex items-center gap-3 px-4 mb-3">
+            <div className="flex-1 h-px bg-orange-200" />
+            <span className="text-xs text-orange-400 font-medium">veya adres girin</span>
+            <div className="flex-1 h-px bg-orange-200" />
+          </div>
+
+          {/* Manual search */}
+          <div className="px-4 pb-4">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && search()}
+                placeholder="Örn: Bornova İzmir, Kadıköy İstanbul..."
+                className="flex-1 px-4 py-2.5 border border-orange-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white"
+              />
+              <button
+                onClick={search}
+                disabled={searching}
+                className="px-4 py-2.5 bg-orange-100 text-orange-600 border border-orange-300 rounded-xl hover:bg-orange-200 disabled:opacity-60 flex items-center gap-1"
+              >
+                {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+              </button>
             </div>
-          )}
+
+            {results.length > 0 && (
+              <div className="mt-2 border border-orange-200 rounded-xl overflow-hidden bg-white shadow">
+                {results.map((r) => (
+                  <button
+                    key={r.place_id}
+                    onClick={() => applyNearbyLocation(parseFloat(r.lat), parseFloat(r.lon), r.display_name.split(",").slice(0, 2).join(", "))}
+                    className="w-full text-left px-4 py-3 hover:bg-orange-50 text-sm border-b last:border-0 flex items-center gap-2"
+                  >
+                    <MapPin className="w-4 h-4 text-orange-400 flex-shrink-0" />
+                    <span className="line-clamp-1">{r.display_name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       );
     };
