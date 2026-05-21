@@ -642,6 +642,7 @@ export default function Muuvlink() {
   const [joiningTrainingId, setJoiningTrainingId] = useState(null);
   const [joiningTeamId, setJoiningTeamId] = useState(null);
   const [showManualLocation, setShowManualLocation] = useState(false);
+  const [gpsErrorCode, setGpsErrorCode] = useState(null); // 1=denied, 2=unavailable, 3=timeout
   const [manualLocationName, setManualLocationName] = useState("");
   const [banners, setBanners] = useState([]);
   const [bannersLoaded, setBannersLoaded] = useState(false);
@@ -1273,9 +1274,11 @@ export default function Muuvlink() {
   const handleNearbySearch = (distanceOverride) => {
     setLocationLoading(true);
     setShowManualLocation(false);
+    setGpsErrorCode(null);
 
     if (!navigator.geolocation) {
       setLocationLoading(false);
+      setGpsErrorCode(2);
       setShowManualLocation(true);
       setCurrentPage("trainings");
       return;
@@ -1283,15 +1286,16 @@ export default function Muuvlink() {
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        setGpsErrorCode(null);
         applyNearbyLocation(position.coords.latitude, position.coords.longitude, "Mevcut Konumum", distanceOverride);
       },
-      () => {
-        // GPS çalışmıyor → adres arama modunu göster
+      (err) => {
         setLocationLoading(false);
+        setGpsErrorCode(err.code); // 1=denied, 2=unavailable, 3=timeout
         setShowManualLocation(true);
         setCurrentPage("trainings");
       },
-      { timeout: 8000, enableHighAccuracy: false }
+      { timeout: 15000, enableHighAccuracy: false }
     );
   };
 
@@ -2455,18 +2459,31 @@ export default function Muuvlink() {
               <MapPin className="w-5 h-5 text-orange-500" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-orange-800 text-sm">Konum izni alınamadı</p>
-              <p className="text-xs text-orange-600 mt-0.5">Tarayıcınız konum erişimini engellemiş olabilir</p>
+              <p className="font-semibold text-orange-800 text-sm">
+                {gpsErrorCode === 1 ? "Konum izni reddedildi" :
+                 gpsErrorCode === 3 ? "Konum alınamadı (zaman aşımı)" :
+                 "Konum alınamadı"}
+              </p>
+              <p className="text-xs text-orange-600 mt-0.5">
+                {gpsErrorCode === 1 ? "Tarayıcı konum erişimine izin vermiyor" :
+                 gpsErrorCode === 3 ? "Bağlantı yavaş olabilir, tekrar deneyin" :
+                 "Cihaz konum servislerini desteklemiyor olabilir"}
+              </p>
             </div>
             <button onClick={() => setShowManualLocation(false)} className="text-gray-400 hover:text-gray-600 flex-shrink-0">
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Permission hint */}
+          {/* Contextual hint */}
           <div className="mx-4 mb-3 p-3 bg-white border border-orange-100 rounded-xl text-xs text-gray-600 leading-relaxed">
-            🔒 <span className="font-medium">Konum iznini nasıl açarım?</span>
-            <br/>Tarayıcınızın adres çubuğundaki <span className="font-medium">kilit / konum ikonuna</span> tıklayıp <span className="font-medium">"Konum → İzin Ver"</span> seçeneğini etkinleştirin, ardından tekrar deneyin.
+            {gpsErrorCode === 1 ? (
+              <>🔒 <span className="font-medium">İzni nasıl açarım?</span><br/>Adres çubuğundaki <span className="font-medium">kilit / konum ikonuna</span> tıklayıp <span className="font-medium">"Konum → İzin Ver"</span> seçin, sonra tekrar deneyin.</>
+            ) : gpsErrorCode === 3 ? (
+              <>⏱ <span className="font-medium">Zaman aşımı.</span> WiFi veya mobil bağlantınız üzerinden konum alınmaya çalışılıyor. <span className="font-medium">Tekrar dene</span> butonuna basın ya da aşağıdan adresinizi girin.</>
+            ) : (
+              <>📡 <span className="font-medium">Konum servisi çalışmıyor.</span> Cihazınızın konum ayarlarını kontrol edin ya da aşağıdan adresinizi girerek devam edin.</>
+            )}
           </div>
 
           {/* Retry button */}
@@ -2552,6 +2569,7 @@ export default function Muuvlink() {
       setNearbyMode(false);
       setNearbyTrainings([]);
       setShowManualLocation(false);
+      setGpsErrorCode(null);
     };
 
     return (
