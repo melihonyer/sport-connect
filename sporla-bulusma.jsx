@@ -1317,13 +1317,20 @@ export default function Muuvlink() {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(`${API_URL}/trainings/${trainingId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
       if (response.ok) {
         const data = await response.json();
         setSelectedTraining(data.training);
         setCurrentPage("training-detail");
+      } else {
+        const data = await response.json().catch(() => ({}));
+        // Giriş gerektiren içerik → login modal aç
+        if (response.status === 401 || data.requiresAuth) {
+          setAuthMode("login");
+          setIsAuthModalOpen(true);
+        }
       }
     } catch (error) {
       console.error("Fetch training details error:", error);

@@ -1694,7 +1694,7 @@ app.get('/api/trainings/nearby', async (req, res) => {
   }
 });
 
-app.get('/api/trainings/:id', authenticateToken, async (req, res) => {
+app.get('/api/trainings/:id', optionalAuth, async (req, res) => {
   try {
     const trainingId = req.params.id;
 
@@ -1721,6 +1721,9 @@ app.get('/api/trainings/:id', authenticateToken, async (req, res) => {
 
     // Gizlilik kontrolü: public değilse sadece takım üyesi görebilir
     if (!training.is_public) {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Bu antrenmanı görmek için giriş yapmanız gerekiyor.', requiresAuth: true });
+      }
       const memberCheck = await pool.query(
         'SELECT id FROM team_members WHERE team_id = $1 AND user_id = $2',
         [training.team_id, req.user.id]
