@@ -1226,21 +1226,18 @@ export default function Muuvlink() {
   };
 
   const fetchTrainings = async () => {
-  try {
-    const token = localStorage.getItem("token");
-    const endpoint = token ? '/trainings' : '/trainings/public';
-    const headers = token ? { Authorization: `Bearer ${token}` } : {};
-
-    const response = await fetch(`${API_URL}${endpoint}`, { headers });
-
-    if (response.ok) {
-      const data = await response.json();
-      setTrainings(data.trainings || []);
+    try {
+      const token = localStorage.getItem("token");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const response = await fetch(`${API_URL}/trainings`, { headers });
+      if (response.ok) {
+        const data = await response.json();
+        setTrainings(data.trainings || []);
+      }
+    } catch (error) {
+      console.error("Fetch trainings error:", error);
     }
-  } catch (error) {
-    console.error("Fetch trainings error:", error);
-  }
-};
+  };
 
   const fetchNearbyTrainings = async (lat, lng, radius) => {
     setNearbyLoading(true);
