@@ -1587,9 +1587,13 @@ app.get('/api/trainings', optionalAuth, async (req, res) => {
       FROM trainings t
       JOIN teams ON t.team_id = teams.id
       LEFT JOIN training_attendees ta ON t.id = ta.training_id
-      WHERE (t.is_public = true OR ($1::int IS NOT NULL AND teams.id IN (
-        SELECT team_id FROM team_members WHERE user_id = $1
-      )))
+      WHERE (
+        teams.is_private = false
+        OR t.is_public = true
+        OR ($1::int IS NOT NULL AND teams.id IN (
+          SELECT team_id FROM team_members WHERE user_id = $1
+        ))
+      )
       AND (
         t.training_date > CURRENT_DATE
         OR (t.training_date = CURRENT_DATE AND t.training_time >= CURRENT_TIME)
@@ -1704,12 +1708,13 @@ app.get('/api/trainings/:id', optionalAuth, async (req, res) => {
               teams.sport as team_sport,
               teams.avatar as team_avatar,
               teams.owner_id as team_owner_id,
+              teams.is_private as team_is_private,
               COUNT(DISTINCT ta.user_id) as attendee_count
        FROM trainings t
        JOIN teams ON t.team_id = teams.id
        LEFT JOIN training_attendees ta ON t.id = ta.training_id
        WHERE t.id = $1
-       GROUP BY t.id, teams.name, teams.sport, teams.avatar, teams.owner_id`,
+       GROUP BY t.id, teams.name, teams.sport, teams.avatar, teams.owner_id, teams.is_private`,
       [trainingId]
     );
 
@@ -1719,8 +1724,9 @@ app.get('/api/trainings/:id', optionalAuth, async (req, res) => {
 
     const training = trainingResult.rows[0];
 
-    // Gizlilik kontrolü: public değilse sadece takım üyesi görebilir
-    if (!training.is_public) {
+    // Gizlilik kontrolü: takım herkese açıksa veya antrenman public ise herkes görebilir
+    const isPubliclyVisible = !training.team_is_private || training.is_public;
+    if (!isPubliclyVisible) {
       if (!req.user) {
         return res.status(401).json({ error: 'Bu antrenmanı görmek için giriş yapmanız gerekiyor.', requiresAuth: true });
       }
