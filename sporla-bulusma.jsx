@@ -3067,30 +3067,30 @@ export default function Muuvlink() {
             </div>
           </div>
 
-          {isMyTraining && (
-            <div className="mb-6">
-              <h3 className="text-xl font-medium mb-4">Katılımcılar</h3>
-              {selectedTraining.attendees && selectedTraining.attendees.length > 0 ? (
-                <div className="space-y-2">
-                  {selectedTraining.attendees.map((attendee) => (
-                    <div key={attendee.id} className="flex items-center p-3 bg-gray-50 rounded-xl">
-                      <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full overflow-hidden flex items-center justify-center text-white font-medium mr-3">
-                        {renderAvatar(attendee.avatar, attendee.name)}
-                      </div>
-                      <div>
-                        <div className="font-semibold">{attendee.name}</div>
-                        <div className="text-sm text-gray-600">
-                          {new Date(attendee.joined_at).toLocaleDateString("tr-TR")}
-                        </div>
+          <div className="mb-6">
+            <h3 className="text-xl font-medium mb-4">
+              Katılımcılar ({selectedTraining.attendees?.length || 0})
+            </h3>
+            {selectedTraining.attendees && selectedTraining.attendees.length > 0 ? (
+              <div className="space-y-2">
+                {selectedTraining.attendees.map((attendee) => (
+                  <div key={attendee.id} className="flex items-center p-3 bg-gray-50 rounded-xl">
+                    <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full overflow-hidden flex items-center justify-center text-white font-medium mr-3">
+                      {renderAvatar(attendee.avatar, attendee.name)}
+                    </div>
+                    <div>
+                      <div className="font-semibold">{attendee.name}</div>
+                      <div className="text-sm text-gray-600">
+                        {new Date(attendee.joined_at).toLocaleDateString("tr-TR")}
                       </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500">Henüz katılımcı yok</p>
-              )}
-            </div>
-          )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500">Henüz katılımcı yok</p>
+            )}
+          </div>
 
           <div className="mb-6">
             <h3 className="text-xl font-medium mb-4 flex items-center">
