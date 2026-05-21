@@ -2847,6 +2847,7 @@ export default function Muuvlink() {
   const TrainingDetailPage = () => {
     if (!selectedTraining) return null;
 
+    const isOwner = user && selectedTraining.team_owner_id === user.id;
     const isParticipant = user && selectedTraining.attendees?.some(a => a.id === user.id);
     const isFull = (selectedTraining.attendees?.length || 0) >= selectedTraining.capacity;
     const isMyTraining = false; // herkes join/leave yapabilir
