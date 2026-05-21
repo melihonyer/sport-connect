@@ -2518,6 +2518,7 @@ export default function Muuvlink() {
     const handleExitNearby = () => {
       setNearbyMode(false);
       setNearbyTrainings([]);
+      setShowManualLocation(false);
     };
 
     return (
