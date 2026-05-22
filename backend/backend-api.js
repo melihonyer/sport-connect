@@ -2955,8 +2955,8 @@ app.get('/api/admin/analytics', isAdmin, async (req, res) => {
         GROUP BY day ORDER BY day ASC
       `),
       pool.query(`
-        SELECT DATE(created_at AT TIME ZONE 'Europe/Istanbul') as day, COUNT(*) as count
-        FROM training_attendees WHERE created_at >= NOW() - INTERVAL '30 days'
+        SELECT DATE(COALESCE(created_at, NOW()) AT TIME ZONE 'Europe/Istanbul') as day, COUNT(*) as count
+        FROM training_attendees WHERE COALESCE(created_at, NOW()) >= NOW() - INTERVAL '30 days'
         GROUP BY day ORDER BY day ASC
       `),
       pool.query(`
@@ -2975,8 +2975,8 @@ app.get('/api/admin/analytics', isAdmin, async (req, res) => {
         GROUP BY week ORDER BY week ASC
       `),
       pool.query(`
-        SELECT DATE_TRUNC('week', created_at AT TIME ZONE 'Europe/Istanbul') as week, COUNT(*) as count
-        FROM training_attendees WHERE created_at >= NOW() - INTERVAL '12 weeks'
+        SELECT DATE_TRUNC('week', COALESCE(created_at, NOW()) AT TIME ZONE 'Europe/Istanbul') as week, COUNT(*) as count
+        FROM training_attendees WHERE COALESCE(created_at, NOW()) >= NOW() - INTERVAL '12 weeks'
         GROUP BY week ORDER BY week ASC
       `),
       pool.query(`
@@ -2995,8 +2995,8 @@ app.get('/api/admin/analytics', isAdmin, async (req, res) => {
         GROUP BY month ORDER BY month ASC
       `),
       pool.query(`
-        SELECT DATE_TRUNC('month', created_at AT TIME ZONE 'Europe/Istanbul') as month, COUNT(*) as count
-        FROM training_attendees WHERE created_at >= NOW() - INTERVAL '12 months'
+        SELECT DATE_TRUNC('month', COALESCE(created_at, NOW()) AT TIME ZONE 'Europe/Istanbul') as month, COUNT(*) as count
+        FROM training_attendees WHERE COALESCE(created_at, NOW()) >= NOW() - INTERVAL '12 months'
         GROUP BY month ORDER BY month ASC
       `),
       pool.query(`
@@ -3010,9 +3010,9 @@ app.get('/api/admin/analytics', isAdmin, async (req, res) => {
           (SELECT COUNT(*) FROM users     WHERE created_at >= DATE_TRUNC('month', NOW())) as month_users,
           (SELECT COUNT(*) FROM teams     WHERE created_at >= DATE_TRUNC('month', NOW())) as month_teams,
           (SELECT COUNT(*) FROM trainings WHERE created_at >= DATE_TRUNC('month', NOW())) as month_trainings,
-          (SELECT COUNT(*) FROM training_attendees WHERE created_at >= CURRENT_DATE) as today_joins,
-          (SELECT COUNT(*) FROM training_attendees WHERE created_at >= DATE_TRUNC('week',NOW())) as week_joins,
-          (SELECT COUNT(*) FROM training_attendees WHERE created_at >= DATE_TRUNC('month',NOW())) as month_joins
+          (SELECT COUNT(*) FROM training_attendees WHERE COALESCE(created_at,NOW()) >= CURRENT_DATE) as today_joins,
+          (SELECT COUNT(*) FROM training_attendees WHERE COALESCE(created_at,NOW()) >= DATE_TRUNC('week',NOW())) as week_joins,
+          (SELECT COUNT(*) FROM training_attendees WHERE COALESCE(created_at,NOW()) >= DATE_TRUNC('month',NOW())) as month_joins
       `),
     ]);
 
@@ -3094,6 +3094,9 @@ pool.query(`
 // source_ref sütunu yoksa ekle (eski kurulumlar için)
 pool.query(`ALTER TABLE activity_logs ADD COLUMN IF NOT EXISTS source_ref TEXT`).catch(() => {});
 pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS activity_logs_source_ref_idx ON activity_logs(source_ref) WHERE source_ref IS NOT NULL`).catch(() => {});
+// training_attendees ve team_members tablolarına created_at ekle (yoksa)
+pool.query(`ALTER TABLE training_attendees ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW()`).catch(() => {});
+pool.query(`ALTER TABLE team_members      ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW()`).catch(() => {});
 
 async function logActivity(event_type, user_id, user_name, meta = {}) {
   try {
@@ -3136,7 +3139,7 @@ async function backfillActivityLogs() {
       INSERT INTO activity_logs (event_type, user_id, user_name, meta, created_at, source_ref)
       SELECT 'team_join', tm.user_id, u.name,
              json_build_object('team_name', t.name),
-             tm.created_at,
+             COALESCE(tm.created_at, t.created_at, NOW()),
              'team_join_' || tm.id
       FROM team_members tm
       JOIN users u ON u.id = tm.user_id
@@ -3164,7 +3167,7 @@ async function backfillActivityLogs() {
       INSERT INTO activity_logs (event_type, user_id, user_name, meta, created_at, source_ref)
       SELECT 'training_join', ta.user_id, u.name,
              json_build_object('training_title', tr.title),
-             ta.created_at,
+             COALESCE(ta.created_at, NOW()),
              'training_join_' || ta.id
       FROM training_attendees ta
       JOIN users u ON u.id = ta.user_id
