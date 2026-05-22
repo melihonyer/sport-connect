@@ -949,6 +949,7 @@ export default function Muuvlink() {
     "Yüzme",
     "Yoga",
     "Pilates",
+    "Trekking",
     "Futbol",
     "Basketbol",
     "Voleybol",
@@ -2477,7 +2478,7 @@ export default function Muuvlink() {
   );
 
   const TrainingsPage = () => {
-    const sports = ["Futbol", "Basketbol", "Tenis", "Yüzme", "Koşu", "Bisiklet", "Voleybol", "Fitness", "Yoga", "Triatlon", "Padel", "Kürek", "Kano", "Diğer"];
+    const sports = ["Futbol", "Basketbol", "Tenis", "Yüzme", "Koşu", "Bisiklet", "Voleybol", "Fitness", "Yoga", "Trekking", "Triatlon", "Padel", "Kürek", "Kano", "Diğer"];
     const difficulties = ["Kolay", "Orta", "Zor"];
 
     // Manuel konum arama (GPS çalışmadığında)
@@ -2787,7 +2788,7 @@ export default function Muuvlink() {
   };
 
   const TeamsPage = () => {
-    const sports = ["Futbol", "Basketbol", "Tenis", "Yüzme", "Koşu", "Bisiklet", "Voleybol", "Fitness", "Yoga", "Triatlon", "Padel", "Kürek", "Kano", "Diğer"];
+    const sports = ["Futbol", "Basketbol", "Tenis", "Yüzme", "Koşu", "Bisiklet", "Voleybol", "Fitness", "Yoga", "Trekking", "Triatlon", "Padel", "Kürek", "Kano", "Diğer"];
     const [teamSearch, setTeamSearch] = useState("");
     const [teamSport, setTeamSport] = useState("");
 
@@ -3357,7 +3358,7 @@ export default function Muuvlink() {
       is_private: selectedTeam.is_private || false,
     });
 
-    const sportTypes = ["Futbol","Basketbol","Tenis","Yüzme","Koşu","Bisiklet","Voleybol","Fitness","Yoga","Triatlon","Padel","Kürek","Kano","Diğer"];
+    const sportTypes = ["Futbol","Basketbol","Tenis","Yüzme","Koşu","Bisiklet","Voleybol","Fitness","Yoga","Trekking","Triatlon","Padel","Kürek","Kano","Diğer"];
 
     const roleBadge = (role) => {
       if (role === "owner")   return <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold flex items-center gap-1"><Crown className="w-3 h-3" /> Sahip</span>;
@@ -4011,89 +4012,123 @@ export default function Muuvlink() {
       handleCreateTeam(formData);
     };
 
+    const inputCls = "w-full h-12 px-4 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-green-300 focus:border-green-400 transition-colors";
+    const selectCls = `${inputCls} appearance-none cursor-pointer`;
+    const labelCls = "block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5";
+
     return (
-      <div className="max-w-2xl mx-auto px-4 py-12">
-        <div className="bg-white rounded-2xl p-8 border">
-          <h1 className="text-3xl font-medium mb-6">Yeni Takım Oluştur</h1>
+      <form onSubmit={handleSubmit}>
+        <div className="min-h-screen bg-slate-50 py-10 px-4">
+          <div className="max-w-xl mx-auto">
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Takım Adı</label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-3 border rounded-xl"
-                required
-              />
+            {/* Başlık */}
+            <div className="mb-6">
+              <h1 className="text-2xl font-semibold text-slate-900">Yeni Takım</h1>
+              <p className="text-sm text-slate-400 mt-1">Bir spor topluluğu kur, üyeleri davet et</p>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-2">Spor</label>
-              <select
-                value={formData.sport}
-                onChange={(e) => setFormData({ ...formData, sport: e.target.value })}
-                className="w-full px-4 py-3 border rounded-xl"
-                required
-              >
-                <option value="">Seçin</option>
-                {sportTypes.map((sport) => (
-                  <option key={sport} value={sport}>
-                    {sport}
-                  </option>
-                ))}
-              </select>
+            <div className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100">
+
+              {/* Takım Adı + Spor */}
+              <div className="p-5 space-y-4">
+                <div>
+                  <label className={labelCls}>Takım Adı</label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className={inputCls}
+                    placeholder="Örn: Bornova Koşucuları"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className={labelCls}>Spor Dalı</label>
+                  <select
+                    value={formData.sport}
+                    onChange={(e) => setFormData({ ...formData, sport: e.target.value })}
+                    className={selectCls}
+                    required
+                  >
+                    <option value="">Seçin</option>
+                    {sportTypes.map((sport) => (
+                      <option key={sport} value={sport}>{sport}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Açıklama */}
+              <div className="p-5">
+                <label className={labelCls}>Açıklama <span className="normal-case font-normal text-slate-400">(isteğe bağlı)</span></label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-green-300 focus:border-green-400 transition-colors resize-none"
+                  rows="3"
+                  placeholder="Takım hakkında kısa bir açıklama…"
+                />
+              </div>
+
+              {/* Konum */}
+              <div className="p-5">
+                <label className={labelCls}>Konum <span className="normal-case font-normal text-slate-400">(isteğe bağlı)</span></label>
+                <input
+                  type="text"
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  className={inputCls}
+                  placeholder="Örn: İzmir"
+                />
+              </div>
+
+              {/* Gizlilik */}
+              <div className="p-5">
+                <label className={labelCls}>Gizlilik</label>
+                <button
+                  type="button"
+                  onClick={() => setFormData((f) => ({ ...f, is_private: !f.is_private }))}
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-colors ${
+                    formData.is_private
+                      ? "bg-slate-50 border-slate-200"
+                      : "bg-green-50 border-green-100"
+                  }`}
+                >
+                  <span className="text-sm text-slate-700 flex items-center gap-2">
+                    {formData.is_private
+                      ? <><Lock className="w-4 h-4 text-slate-400" /> Özel Takım — sadece davet ile katılım</>
+                      : <><Globe className="w-4 h-4 text-green-500" /> Herkese Açık — herkes katılabilir</>
+                    }
+                  </span>
+                  <div className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${formData.is_private ? "bg-slate-400" : "bg-green-500"}`}>
+                    <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${formData.is_private ? "left-6" : "left-1"}`} />
+                  </div>
+                </button>
+              </div>
+
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-2">Açıklama</label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full px-4 py-3 border rounded-xl"
-                rows="3"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">Konum</label>
-              <input
-                type="text"
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                className="w-full px-4 py-3 border rounded-xl"
-                placeholder="Örn: İzmir"
-              />
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                checked={formData.is_private}
-                onChange={(e) => setFormData({ ...formData, is_private: e.target.checked })}
-                className="w-4 h-4"
-              />
-              <label className="text-sm font-medium">Özel Takım (Sadece davet ile)</label>
-            </div>
-
-            <div className="flex gap-4">
-              <button
-                type="submit"
-                className="flex-1 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-semibold hover:shadow-lg"
-              >
-                Takım Oluştur
-              </button>
+            {/* Butonlar */}
+            <div className="flex gap-3 mt-5">
               <button
                 type="button"
                 onClick={() => setCurrentPage("profile")}
-                className="px-6 py-4 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200"
+                className="h-12 px-6 bg-white border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors"
               >
                 İptal
               </button>
+              <button
+                type="submit"
+                className="flex-1 h-12 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 hover:shadow-lg"
+                style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}
+              >
+                Takım Oluştur
+              </button>
             </div>
-          </form>
+
+          </div>
         </div>
-      </div>
+      </form>
     );
   };
 
