@@ -601,9 +601,10 @@ export default function Muuvlink() {
     "create-training": { title:"Antrenman Oluştur — Muuvlink",                    desc:"Yeni bir antrenman oluştur, konum ve zaman ayarla, sporcuları davet et." },
     "create-team":     { title:"Takım Kur — Muuvlink",                             desc:"Kendi spor takımını kur ve üyeleri davet et." },
     badges:            { title:"Rozetlerim — Muuvlink",                            desc:"Kazandığın spor rozetlerini görüntüle." },
+    "not-found":       { title:"Sayfa Bulunamadı — Muuvlink",                      desc:"Aradığın sayfa bulunamadı." },
   };
 
-  const [currentPage, setCurrentPage] = useState(() => PATH_TO_PAGE[window.location.pathname] || "home");
+  const [currentPage, setCurrentPage] = useState(() => PATH_TO_PAGE[window.location.pathname] ?? (window.location.pathname === "/" ? "home" : "not-found"));
   const [user, setUser] = useState(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState("login");
@@ -1094,7 +1095,7 @@ export default function Muuvlink() {
   // Tarayıcı geri/ileri tuşu
   useEffect(() => {
     const onPop = () => {
-      const page = PATH_TO_PAGE[window.location.pathname] || "home";
+      const page = PATH_TO_PAGE[window.location.pathname] ?? (window.location.pathname === "/" ? "home" : "not-found");
       setCurrentPage(page);
     };
     window.addEventListener("popstate", onPop);
@@ -5219,6 +5220,52 @@ E-posta: <a href="mailto:info@sporlaconnect.com">info@sporlaconnect.com</a></p>
   };
 
   // =====================================================
+  // 404 NOT FOUND PAGE
+  // =====================================================
+
+  const NotFoundPage = () => (
+    <div className="min-h-[80vh] flex items-center justify-center px-4 py-16">
+      <div className="text-center max-w-md mx-auto">
+        {/* Büyük 404 */}
+        <div className="relative mb-8">
+          <div className="text-[10rem] font-black leading-none select-none"
+            style={{ background: "linear-gradient(135deg, #7C3AED 0%, #16A34A 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+            404
+          </div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-5xl animate-bounce mt-4">🏃</div>
+          </div>
+        </div>
+
+        {/* Mesaj */}
+        <h1 className="text-2xl font-bold text-slate-800 mb-3">
+          Sayfa bulunamadı
+        </h1>
+        <p className="text-slate-500 mb-8 leading-relaxed">
+          Aradığın sayfa taşınmış, silinmiş ya da hiç olmamış olabilir.<br />
+          Ama spor seni bekliyor!
+        </p>
+
+        {/* Butonlar */}
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <button
+            onClick={() => setCurrentPage("home")}
+            className="px-6 py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white font-semibold transition-all shadow-lg shadow-green-200 hover:shadow-green-300 hover:-translate-y-0.5 active:translate-y-0"
+          >
+            Ana Sayfaya Dön
+          </button>
+          <button
+            onClick={() => setCurrentPage("trainings")}
+            className="px-6 py-3 rounded-xl bg-white border border-slate-200 hover:border-green-300 text-slate-700 font-semibold transition-all hover:-translate-y-0.5 active:translate-y-0 shadow-sm"
+          >
+            🏋️ Antrenmanları Keşfet
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // =====================================================
   // MAIN RENDER
   // =====================================================
 
@@ -5253,6 +5300,7 @@ E-posta: <a href="mailto:info@sporlaconnect.com">info@sporlaconnect.com</a></p>
       {currentPage === "create-team" && <CreateTeamPage />}
       {currentPage === "contact" && <ContactPage />}
       {currentPage === "reset-password" && <ResetPasswordPage />}
+      {currentPage === "not-found" && <NotFoundPage />}
 
       {isAuthModalOpen && <AuthModal
         authMode={authMode} setAuthMode={setAuthMode}
