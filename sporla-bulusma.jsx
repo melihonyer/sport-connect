@@ -1930,7 +1930,12 @@ export default function Muuvlink() {
               <span className="text-xs font-semibold tracking-[0.35em] text-brand-500 uppercase block mb-3">Platform</span>
               <h2 className="text-5xl md:text-7xl font-semibold text-slate-900 tracking-tighter leading-[0.92]">
                 Neden<br/>
-                <span style={{WebkitTextStroke:"2px #00b7ba", color:"transparent"}}>Muuvlink?</span>
+                <svg viewBox="0 0 520 90" className="w-full max-w-[520px] overflow-visible" style={{display:"block"}}>
+                  <text x="0" y="78" fontFamily="Montserrat, sans-serif" fontWeight="700" fontSize="88"
+                    fill="none" stroke="#00b7ba" strokeWidth="2" paintOrder="stroke">
+                    Muuvlink?
+                  </text>
+                </svg>
               </h2>
             </div>
             <p className="md:max-w-xs text-slate-400 text-sm leading-relaxed md:pb-2">
@@ -4575,11 +4580,11 @@ export default function Muuvlink() {
           <div className="flex justify-between items-center h-[68px]">
 
             {/* Logo */}
-            <button className="flex items-center group flex-shrink-0 hover:opacity-85 transition-opacity" onClick={() => setCurrentPage("home")}>
-              {/* Desktop: amblem + yatay metin */}
-              <img src="/icons/logo-yatay.svg" alt="Muuvlink" className="hidden md:block h-8 w-auto" />
-              {/* Mobile: sadece amblem */}
-              <img src="/icons/amblem.svg" alt="Muuvlink" className="md:hidden h-9 w-auto" />
+            <button className="flex items-center gap-2 group flex-shrink-0 hover:opacity-85 transition-opacity" onClick={() => setCurrentPage("home")}>
+              {/* Amblem her zaman görünür */}
+              <img src="/icons/amblem.svg" alt="" className="h-7 w-auto flex-shrink-0" />
+              {/* Metin: desktop'ta görünür */}
+              <img src="/icons/logo-yatay.svg" alt="Muuvlink" className="hidden md:block h-5 w-auto" />
             </button>
 
             {/* Orta nav — desktop */}
