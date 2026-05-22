@@ -313,6 +313,21 @@ function inviteEmailNew({ teamName, teamSport, inviterName, avatar }) {
 }
 
 // Şablon 3: Duvar gönderisi bildirimi
+// Avatar URL'sini <img> tag'ine, değilse baş harfe çevirir
+function avatarHtml(avatarValue, name, size = 40, gradient = 'linear-gradient(135deg,#6366f1,#8b5cf6)') {
+  const isUrl = avatarValue && (avatarValue.startsWith('http') || avatarValue.startsWith('/uploads/'));
+  const src = isUrl ? (avatarValue.startsWith('/uploads/') ? `${APP_URL}${avatarValue}` : avatarValue) : null;
+  if (src) {
+    return `<img src="${src}" width="${size}" height="${size}"
+              style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;display:block;" />`;
+  }
+  return `<div style="width:${size}px;height:${size}px;background:${gradient};border-radius:50%;
+                display:flex;align-items:center;justify-content:center;font-size:${Math.round(size*0.45)}px;
+                text-align:center;line-height:${size}px;color:white;font-weight:700;">
+            ${name.charAt(0).toUpperCase()}
+          </div>`;
+}
+
 function wallPostEmail({ teamName, teamId, posterName, posterAvatar, message, postDate }) {
   const truncated = message.length > 300 ? message.slice(0, 300) + '...' : message;
   return emailWrapper(`
@@ -323,10 +338,7 @@ function wallPostEmail({ teamName, teamId, posterName, posterAvatar, message, po
 
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:24px;margin-bottom:28px;">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-        <div style="width:40px;height:40px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:50%;
-                    display:flex;align-items:center;justify-content:center;font-size:18px;text-align:center;line-height:40px;color:white;font-weight:700;">
-          ${posterAvatar || posterName.charAt(0).toUpperCase()}
-        </div>
+        ${avatarHtml(posterAvatar, posterName, 40, 'linear-gradient(135deg,#6366f1,#8b5cf6)')}
         <div>
           <div style="font-weight:600;color:#1e293b;font-size:15px;">${posterName}</div>
           <div style="color:#94a3b8;font-size:13px;">${postDate}</div>
@@ -368,10 +380,7 @@ function trainingCommentEmail({ commenterName, commenterAvatar, trainingTitle, t
 
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin-bottom:28px;">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-        <div style="width:36px;height:36px;background:linear-gradient(135deg,#16a34a,#15803d);border-radius:50%;
-                    display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:16px;">
-          ${commenterAvatar || commenterName.charAt(0).toUpperCase()}
-        </div>
+        ${avatarHtml(commenterAvatar, commenterName, 36, 'linear-gradient(135deg,#16a34a,#15803d)')}
         <div>
           <div style="font-weight:600;color:#1e293b;font-size:15px;">${commenterName}</div>
           <div style="color:#94a3b8;font-size:13px;">${postDate}</div>
@@ -381,6 +390,36 @@ function trainingCommentEmail({ commenterName, commenterAvatar, trainingTitle, t
         ${truncated}
       </div>
     </div>
+
+    <div style="text-align:center;">
+      <a href="${APP_URL}/antrenmanlar"
+         style="display:inline-block;background:linear-gradient(135deg,#16a34a,#15803d);color:#ffffff;text-decoration:none;
+                padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
+        Antrenmanı Gör →
+      </a>
+    </div>
+  `);
+}
+
+// Şablon: Antrenman güncelleme bildirimi
+function trainingUpdateEmail({ teamName, trainingTitle, trainingDate, trainingTime, location, description, updaterName }) {
+  return emailWrapper(`
+    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Antrenman Güncellendi 📝</h2>
+    <p style="margin:0 0 28px;color:#64748b;font-size:15px;line-height:1.6;">
+      <strong>${teamName}</strong> takımının <strong>${trainingTitle}</strong> antrenmanında değişiklik yapıldı.
+    </p>
+
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:24px;margin-bottom:28px;">
+      <div style="font-size:18px;font-weight:700;color:#15803d;margin-bottom:16px;">📋 Güncel Bilgiler</div>
+      <table style="width:100%;border-collapse:collapse;">
+        <tr><td style="padding:6px 0;color:#64748b;font-size:14px;width:80px;">📅 Tarih</td><td style="padding:6px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingDate}</td></tr>
+        ${trainingTime ? `<tr><td style="padding:6px 0;color:#64748b;font-size:14px;">🕐 Saat</td><td style="padding:6px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingTime.slice(0,5)}</td></tr>` : ''}
+        ${location ? `<tr><td style="padding:6px 0;color:#64748b;font-size:14px;">📍 Konum</td><td style="padding:6px 0;color:#1e293b;font-size:14px;font-weight:600;">${location}</td></tr>` : ''}
+        ${description ? `<tr><td colspan="2" style="padding:12px 0 4px;color:#334155;font-size:14px;line-height:1.6;border-top:1px solid #dcfce7;margin-top:8px;">${description}</td></tr>` : ''}
+      </table>
+    </div>
+
+    ${updaterName ? `<p style="color:#94a3b8;font-size:13px;margin:0 0 24px;">Güncelleyen: <strong style="color:#64748b;">${updaterName}</strong></p>` : ''}
 
     <div style="text-align:center;">
       <a href="${APP_URL}/antrenmanlar"
@@ -2070,7 +2109,57 @@ app.put('/api/trainings/:id', authenticateToken, async (req, res) => {
       [title, description, training_date, training_time, location_name, location_lat || null, location_lng || null, capacity, difficulty, trainingId]
     );
 
-    res.json({ training: result.rows[0] });
+    const updated = result.rows[0];
+
+    // Güncelleyenin adını çek
+    const updaterResult = await pool.query('SELECT name FROM users WHERE id = $1', [req.user.id]);
+    const updaterName = updaterResult.rows[0]?.name;
+
+    // Takım adını çek
+    const teamNameResult = await pool.query('SELECT name FROM teams WHERE id = $1', [trainingResult.rows[0].team_id]);
+    const teamName = teamNameResult.rows[0]?.name;
+
+    // Katılımcılar (güncelleyen hariç)
+    const attendeesResult = await pool.query(
+      `SELECT u.id, u.name, u.email
+       FROM training_attendees ta
+       JOIN users u ON u.id = ta.user_id
+       WHERE ta.training_id = $1 AND ta.user_id != $2`,
+      [trainingId, req.user.id]
+    );
+
+    const trainingDate = new Date(training_date).toLocaleDateString('tr-TR', {
+      day: 'numeric', month: 'long', year: 'numeric',
+    });
+
+    attendeesResult.rows.forEach(async (attendee) => {
+      try {
+        await createNotif(attendee.id, {
+          title: `${updated.title} güncellendi 📝`,
+          message: `${updaterName || 'Antrenör'} antrenman bilgilerini güncelledi.`,
+          type: 'training_update',
+          refId: trainingId,
+          url: `/antrenmanlar`,
+        });
+        sendEmail({
+          to: attendee.email,
+          subject: `${updated.title} antrenmanında değişiklik var 📝`,
+          html: trainingUpdateEmail({
+            teamName: teamName || '',
+            trainingTitle: updated.title,
+            trainingDate,
+            trainingTime: training_time,
+            location: location_name,
+            description,
+            updaterName,
+          }),
+        });
+      } catch (notifErr) {
+        console.error('Training update notif error for', attendee.email, notifErr);
+      }
+    });
+
+    res.json({ training: updated });
   } catch (error) {
     console.error('Update training error:', error);
     res.status(500).json({ error: 'Internal server error' });
