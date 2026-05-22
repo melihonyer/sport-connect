@@ -2950,8 +2950,8 @@ app.get('/api/admin/analytics', isAdmin, async (req, res) => {
         GROUP BY day ORDER BY day ASC
       `),
       pool.query(`
-        SELECT DATE(COALESCE(created_at, NOW()) AT TIME ZONE 'Europe/Istanbul') as day, COUNT(*) as count
-        FROM team_members WHERE COALESCE(created_at, NOW()) >= NOW() - INTERVAL '30 days'
+        SELECT DATE(created_at AT TIME ZONE 'Europe/Istanbul') as day, COUNT(*) as count
+        FROM activity_logs WHERE event_type = 'team_join' AND created_at >= NOW() - INTERVAL '30 days'
         GROUP BY day ORDER BY day ASC
       `),
       pool.query(`
@@ -2975,8 +2975,8 @@ app.get('/api/admin/analytics', isAdmin, async (req, res) => {
         GROUP BY week ORDER BY week ASC
       `),
       pool.query(`
-        SELECT DATE_TRUNC('week', COALESCE(created_at, NOW()) AT TIME ZONE 'Europe/Istanbul') as week, COUNT(*) as count
-        FROM team_members WHERE COALESCE(created_at, NOW()) >= NOW() - INTERVAL '12 weeks'
+        SELECT DATE_TRUNC('week', created_at AT TIME ZONE 'Europe/Istanbul') as week, COUNT(*) as count
+        FROM activity_logs WHERE event_type = 'team_join' AND created_at >= NOW() - INTERVAL '12 weeks'
         GROUP BY week ORDER BY week ASC
       `),
       pool.query(`
@@ -3000,8 +3000,8 @@ app.get('/api/admin/analytics', isAdmin, async (req, res) => {
         GROUP BY month ORDER BY month ASC
       `),
       pool.query(`
-        SELECT DATE_TRUNC('month', COALESCE(created_at, NOW()) AT TIME ZONE 'Europe/Istanbul') as month, COUNT(*) as count
-        FROM team_members WHERE COALESCE(created_at, NOW()) >= NOW() - INTERVAL '12 months'
+        SELECT DATE_TRUNC('month', created_at AT TIME ZONE 'Europe/Istanbul') as month, COUNT(*) as count
+        FROM activity_logs WHERE event_type = 'team_join' AND created_at >= NOW() - INTERVAL '12 months'
         GROUP BY month ORDER BY month ASC
       `),
       pool.query(`
@@ -3018,15 +3018,15 @@ app.get('/api/admin/analytics', isAdmin, async (req, res) => {
         SELECT
           (SELECT COUNT(*) FROM users     WHERE created_at >= CURRENT_DATE) as today_users,
           (SELECT COUNT(*) FROM teams     WHERE created_at >= CURRENT_DATE) as today_teams,
-          (SELECT COUNT(*) FROM team_members WHERE COALESCE(created_at,NOW()) >= CURRENT_DATE) as today_team_joins,
+          (SELECT COUNT(*) FROM activity_logs WHERE event_type='team_join' AND created_at >= CURRENT_DATE) as today_team_joins,
           (SELECT COUNT(*) FROM trainings WHERE created_at >= CURRENT_DATE) as today_trainings,
           (SELECT COUNT(*) FROM users     WHERE created_at >= DATE_TRUNC('week',  NOW())) as week_users,
           (SELECT COUNT(*) FROM teams     WHERE created_at >= DATE_TRUNC('week',  NOW())) as week_teams,
-          (SELECT COUNT(*) FROM team_members WHERE COALESCE(created_at,NOW()) >= DATE_TRUNC('week',NOW())) as week_team_joins,
+          (SELECT COUNT(*) FROM activity_logs WHERE event_type='team_join' AND created_at >= DATE_TRUNC('week',NOW())) as week_team_joins,
           (SELECT COUNT(*) FROM trainings WHERE created_at >= DATE_TRUNC('week',  NOW())) as week_trainings,
           (SELECT COUNT(*) FROM users     WHERE created_at >= DATE_TRUNC('month', NOW())) as month_users,
           (SELECT COUNT(*) FROM teams     WHERE created_at >= DATE_TRUNC('month', NOW())) as month_teams,
-          (SELECT COUNT(*) FROM team_members WHERE COALESCE(created_at,NOW()) >= DATE_TRUNC('month',NOW())) as month_team_joins,
+          (SELECT COUNT(*) FROM activity_logs WHERE event_type='team_join' AND created_at >= DATE_TRUNC('month',NOW())) as month_team_joins,
           (SELECT COUNT(*) FROM trainings WHERE created_at >= DATE_TRUNC('month', NOW())) as month_trainings,
           (SELECT COUNT(*) FROM training_attendees WHERE COALESCE(created_at,NOW()) >= CURRENT_DATE) as today_joins,
           (SELECT COUNT(*) FROM training_attendees WHERE COALESCE(created_at,NOW()) >= DATE_TRUNC('week',NOW())) as week_joins,
@@ -3158,19 +3158,10 @@ async function backfillActivityLogs() {
       WHERE NOT EXISTS (SELECT 1 FROM activity_logs al WHERE al.source_ref = 'team_create_' || t.id::text)
     `);
 
-    // Takıma katılma (üye, owner değil)
-    await pool.query(`
-      INSERT INTO activity_logs (event_type, user_id, user_name, meta, created_at, source_ref)
-      SELECT 'team_join', tm.user_id, u.name,
-             json_build_object('team_name', t.name),
-             COALESCE(tm.created_at, t.created_at, NOW()),
-             'team_join_' || tm.id
-      FROM team_members tm
-      JOIN users u ON u.id = tm.user_id
-      JOIN teams t ON t.id = tm.team_id
-      WHERE tm.role != 'owner'
-        AND NOT EXISTS (SELECT 1 FROM activity_logs al WHERE al.source_ref = 'team_join_' || tm.id::text)
-    `);
+    // Takıma katılma: team_members.created_at güvenilir değil (ALTER TABLE sırasında atandı)
+    // Bu yüzden backfill yapılmıyor; gerçek zamanlı logActivity() kayıtları kullanılıyor.
+    // Yanlış timestamp'li eski backfill kayıtlarını temizle:
+    await pool.query(`DELETE FROM activity_logs WHERE source_ref LIKE 'team_join_%'`).catch(() => {});
 
     // Antrenman oluşturma
     await pool.query(`
