@@ -6,6 +6,10 @@ import {
   ChevronRight, Lock, Globe, Image, Plus, Edit2, ToggleLeft, ToggleRight,
   Upload, GripVertical, ChevronUp, ChevronDown, Newspaper, GalleryHorizontal, Menu,
 } from "lucide-react";
+import {
+  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  Legend, ResponsiveContainer,
+} from "recharts";
 
 const API_URL  = import.meta.env.VITE_API_URL  ?? (import.meta.env.DEV ? "http://localhost:3000/api" : "/api");
 const BASE_URL = import.meta.env.VITE_BASE_URL ?? (import.meta.env.DEV ? "http://localhost:3000" : "");
@@ -317,6 +321,10 @@ export default function AdminPanel() {
   const [banners, setBanners]   = useState([]);
   const [homeNews, setHomeNews] = useState([]);
   const [homeGallery, setHomeGallery] = useState([]);
+  const [logs, setLogs]         = useState([]);
+  const [analytics, setAnalytics] = useState(null);
+  const [logFilter, setLogFilter] = useState("all");
+  const [chartPeriod, setChartPeriod] = useState("daily");
   const [loading, setLoading]   = useState(false);
   const [search, setSearch]     = useState("");
 
@@ -400,6 +408,14 @@ export default function AdminPanel() {
       else if (t === "banners")  setBanners(await api("/admin/banners") || []);
       else if (t === "home-news") setHomeNews(await api("/admin/home-news") || []);
       else if (t === "home-gallery") setHomeGallery(await api("/admin/home-gallery") || []);
+      else if (t === "logs") {
+        const [logsData, analyticsData] = await Promise.all([
+          api("/admin/logs"),
+          api("/admin/analytics"),
+        ]);
+        setLogs(logsData || []);
+        setAnalytics(analyticsData || null);
+      }
     } catch { /* sessiz */ }
     finally { setLoading(false); }
   }, [api]);
@@ -511,6 +527,7 @@ export default function AdminPanel() {
     { id: "users",     label: "Kullanıcılar", icon: Users },
     { id: "trainings", label: "Antrenmanlar", icon: Activity },
     { id: "teams",     label: "Takımlar",     icon: Shield },
+    { id: "logs",      label: "Loglar",       icon: Activity },
     { id: "messages",  label: "Mesajlar",     icon: MessageSquare,
       badge: stats?.unreadContact > 0 ? stats.unreadContact : null },
     { id: "banners",      label: "Bannerlar",    icon: Image },
@@ -620,6 +637,205 @@ export default function AdminPanel() {
       showToast(`Bağlantı hatası: ${e.message}`, 'error');
     }
     finally { setUploadingId(null); }
+  };
+
+  // ─── Relative time helper ───────────────────────────────
+  const relativeTime = (dateStr) => {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins  = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days  = Math.floor(diff / 86400000);
+    if (mins  < 1)  return "az önce";
+    if (mins  < 60) return `${mins} dakika önce`;
+    if (hours < 24) return `${hours} saat önce`;
+    if (days  < 30) return `${days} gün önce`;
+    return fmt(dateStr);
+  };
+
+  const EVENT_CONFIG = {
+    user_register:    { icon: "👤", label: "Üye Oldu",              color: "bg-blue-100 text-blue-700"   },
+    team_create:      { icon: "🏆", label: "Takım Kurdu",           color: "bg-purple-100 text-purple-700" },
+    team_join:        { icon: "👥", label: "Takıma Katıldı",        color: "bg-indigo-100 text-indigo-700" },
+    training_create:  { icon: "📋", label: "Antrenman Oluşturdu",   color: "bg-green-100 text-green-700"  },
+    training_join:    { icon: "✅", label: "Antrenmana Katıldı",    color: "bg-emerald-100 text-emerald-700" },
+    training_leave:   { icon: "🚪", label: "Antrenman Ayrıldı",     color: "bg-orange-100 text-orange-700" },
+  };
+
+  const LOG_FILTERS = [
+    { id: "all",            label: "Tümü" },
+    { id: "user_register",  label: "Üye Kayıt" },
+    { id: "team_create",    label: "Takım" },
+    { id: "team_join",      label: "Takım Katıl" },
+    { id: "training_create",label: "Antrenman" },
+    { id: "training_join",  label: "Katılım" },
+  ];
+
+  const PERIOD_LABELS = { daily: "Günlük", weekly: "Haftalık", monthly: "Aylık" };
+
+  const LogsPage = () => {
+    const chartData = analytics?.[chartPeriod] || [];
+    const filteredLogs = logFilter === "all"
+      ? logs.slice(0, 100)
+      : logs.filter(l => l.event_type === logFilter).slice(0, 100);
+
+    const periodKey = chartPeriod === "monthly" ? 7 : 5; // label slice length
+
+    return (
+      <div className="space-y-6">
+        {/* ── Stats summary ───────────────────────────── */}
+        {analytics && (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { label: "Yeni Üye",       key: "users",     grad: "from-blue-500 to-blue-700",    icon: "👤" },
+              { label: "Yeni Takım",     key: "teams",     grad: "from-purple-500 to-purple-700", icon: "🏆" },
+              { label: "Yeni Antrenman", key: "trainings", grad: "from-green-500 to-green-700",   icon: "📋" },
+              { label: "Katılım",        key: "joins",     grad: "from-amber-500 to-orange-500",  icon: "✅" },
+            ].map(({ label, key, grad, icon }) => (
+              <div key={key} className={`bg-gradient-to-br ${grad} rounded-2xl p-5 text-white shadow-lg`}>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-2xl">{icon}</span>
+                  <span className="text-xs opacity-75 font-medium bg-white/20 px-2 py-0.5 rounded-lg">bugün</span>
+                </div>
+                <div className="text-3xl font-semibold mb-0.5">{analytics.totals.today[key] ?? 0}</div>
+                <div className="text-sm opacity-80 font-medium">{label}</div>
+                <div className="mt-2 flex gap-3 text-xs opacity-70">
+                  <span>Bu hafta: <strong className="opacity-100">{analytics.totals.week[key] ?? 0}</strong></span>
+                  <span>Bu ay: <strong className="opacity-100">{analytics.totals.month[key] ?? 0}</strong></span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── Chart ───────────────────────────────────── */}
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+          <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
+            <h2 className="font-semibold text-slate-900">Büyüme Grafiği</h2>
+            <div className="flex gap-1 bg-slate-100 rounded-xl p-1">
+              {Object.entries(PERIOD_LABELS).map(([p, lbl]) => (
+                <button key={p} onClick={() => setChartPeriod(p)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    chartPeriod === p ? "bg-white shadow text-slate-900" : "text-slate-500 hover:text-slate-700"
+                  }`}>
+                  {lbl}
+                </button>
+              ))}
+            </div>
+          </div>
+          {chartData.length === 0 ? (
+            <div className="flex items-center justify-center h-48 text-slate-400 text-sm">Henüz veri yok</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={280}>
+              <AreaChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="gUsers"     x1="0" y1="0" x2="0" y2="1"><stop offset="5%"  stopColor="#3B82F6" stopOpacity={0.3}/><stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/></linearGradient>
+                  <linearGradient id="gTeams"     x1="0" y1="0" x2="0" y2="1"><stop offset="5%"  stopColor="#8B5CF6" stopOpacity={0.3}/><stop offset="95%" stopColor="#8B5CF6" stopOpacity={0}/></linearGradient>
+                  <linearGradient id="gTrainings" x1="0" y1="0" x2="0" y2="1"><stop offset="5%"  stopColor="#16A34A" stopOpacity={0.3}/><stop offset="95%" stopColor="#16A34A" stopOpacity={0}/></linearGradient>
+                  <linearGradient id="gJoins"     x1="0" y1="0" x2="0" y2="1"><stop offset="5%"  stopColor="#F59E0B" stopOpacity={0.3}/><stop offset="95%" stopColor="#F59E0B" stopOpacity={0}/></linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#94a3b8" }}
+                  tickFormatter={v => v.slice(periodKey === 7 ? 0 : 5)} />
+                <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} allowDecimals={false} />
+                <Tooltip contentStyle={{ borderRadius: "12px", border: "1px solid #e2e8f0", fontSize: 12 }} />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+                <Area type="monotone" dataKey="users"     name="Üye"        stroke="#3B82F6" fill="url(#gUsers)"     strokeWidth={2} dot={false} />
+                <Area type="monotone" dataKey="teams"     name="Takım"      stroke="#8B5CF6" fill="url(#gTeams)"     strokeWidth={2} dot={false} />
+                <Area type="monotone" dataKey="trainings" name="Antrenman"  stroke="#16A34A" fill="url(#gTrainings)" strokeWidth={2} dot={false} />
+                <Area type="monotone" dataKey="joins"     name="Katılım"    stroke="#F59E0B" fill="url(#gJoins)"     strokeWidth={2} dot={false} />
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        {/* ── Activity Feed ───────────────────────────── */}
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between flex-wrap gap-3">
+            <h2 className="font-semibold text-slate-900">Aktivite Akışı
+              <span className="ml-2 text-slate-400 font-normal text-sm">({filteredLogs.length})</span>
+            </h2>
+            <div className="flex flex-wrap gap-1.5">
+              {LOG_FILTERS.map(f => (
+                <button key={f.id} onClick={() => setLogFilter(f.id)}
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                    logFilter === f.id
+                      ? "bg-green-600 text-white"
+                      : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                  }`}>
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="sm:hidden divide-y divide-slate-50">
+            {filteredLogs.length === 0 && (
+              <div className="text-center py-12 text-slate-400 text-sm">Henüz aktivite yok</div>
+            )}
+            {filteredLogs.map(log => {
+              const cfg = EVENT_CONFIG[log.event_type] || { icon: "•", label: log.event_type, color: "bg-slate-100 text-slate-600" };
+              const meta = log.meta || {};
+              const detail = meta.team_name || meta.training_title || meta.email || "";
+              return (
+                <div key={log.id} className="flex items-start gap-3 px-4 py-3.5">
+                  <span className="text-xl flex-shrink-0 mt-0.5">{cfg.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold ${cfg.color}`}>{cfg.label}</span>
+                      <span className="text-slate-500 text-xs font-medium truncate">{log.user_name || log.user_email || "—"}</span>
+                    </div>
+                    {detail && <div className="text-slate-400 text-xs mt-0.5 truncate">{detail}</div>}
+                  </div>
+                  <span className="text-slate-300 text-xs flex-shrink-0 text-right">{relativeTime(log.created_at)}</span>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden sm:block overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 text-xs text-slate-500 uppercase tracking-wide">
+                <tr>
+                  <th className="text-left px-5 py-3">Zaman</th>
+                  <th className="text-left px-4 py-3">Olay</th>
+                  <th className="text-left px-4 py-3">Kullanıcı</th>
+                  <th className="text-left px-4 py-3">Detay</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {filteredLogs.length === 0 && (
+                  <tr><td colSpan={4} className="text-center py-12 text-slate-400">Henüz aktivite yok</td></tr>
+                )}
+                {filteredLogs.map(log => {
+                  const cfg = EVENT_CONFIG[log.event_type] || { icon: "•", label: log.event_type, color: "bg-slate-100 text-slate-600" };
+                  const meta = log.meta || {};
+                  const detail = meta.team_name || meta.training_title || meta.email || "";
+                  return (
+                    <tr key={log.id} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="px-5 py-3 text-slate-400 text-xs whitespace-nowrap">{relativeTime(log.created_at)}</td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold ${cfg.color}`}>
+                          {cfg.icon} {cfg.label}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-slate-700 font-medium text-sm">
+                        {log.user_name || <span className="text-slate-400">{log.user_email || "—"}</span>}
+                        {log.user_email && log.user_name && (
+                          <div className="text-slate-400 text-xs font-normal">{log.user_email}</div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-slate-500 text-xs">{detail || "—"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const statCards = stats ? [
@@ -1407,6 +1623,9 @@ export default function AdminPanel() {
               items={homeGallery} setItems={setHomeGallery} api={api} token={token} showToast={showToast}
             />
           )}
+
+          {/* ── LOGS ─────────────────────────────────────── */}
+          {!loading && tab === "logs" && <LogsPage />}
 
           {/* ── MESSAGES ─────────────────────────────────── */}
           {!loading && tab === "messages" && (

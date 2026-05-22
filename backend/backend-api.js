@@ -755,6 +755,7 @@ app.post('/api/auth/register', async (req, res) => {
       await pool.query('DELETE FROM team_invitations WHERE id = $1', [inv.id]);
     }
 
+    logActivity('user_register', user.id, user.name, { email });
     res.status(201).json({ message: 'User registered successfully', user, token });
   } catch (error) {
     console.error('Register error:', error);
@@ -951,6 +952,7 @@ app.post('/api/teams', authenticateToken, async (req, res) => {
 
     await updateUserStats(req.user.id);
 
+    logActivity('team_create', req.user.id, null, { team_name: name, sport });
     res.status(201).json({ message: 'Team created successfully', team });
   } catch (error) {
     console.error('Create team error:', error);
@@ -1148,6 +1150,7 @@ app.post('/api/teams/:id/join', authenticateToken, async (req, res) => {
 
     await updateUserStats(req.user.id);
 
+    logActivity('team_join', req.user.id, joinerName, { team_name: team.name });
     res.json({ message: 'Successfully joined the team' });
   } catch (error) {
     console.error('Join team error:', error);
@@ -1650,6 +1653,7 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
       }).catch(e => console.error('Training email error:', e.message));
     }
 
+    logActivity('training_create', req.user.id, null, { training_title: title, team_name: teamName });
     res.status(201).json({ message: 'Training created successfully', training });
   } catch (error) {
     console.error('Create training error:', error);
@@ -1960,6 +1964,7 @@ app.post('/api/trainings/:id/join', authenticateToken, async (req, res) => {
 
     await updateUserStats(req.user.id);
 
+    logActivity('training_join', req.user.id, null, { training_title: training.title });
     res.json({ message: 'Successfully joined the training' });
   } catch (error) {
     console.error('Join training error:', error);
@@ -1971,6 +1976,8 @@ app.post('/api/trainings/:id/join', authenticateToken, async (req, res) => {
 app.delete('/api/trainings/:id/leave', authenticateToken, async (req, res) => {
   try {
     const trainingId = req.params.id;
+    const trainingRow = await pool.query('SELECT title FROM trainings WHERE id = $1', [trainingId]);
+    const trainingTitle = trainingRow.rows[0]?.title || '';
     const result = await pool.query(
       'DELETE FROM training_attendees WHERE training_id = $1 AND user_id = $2 RETURNING id',
       [trainingId, req.user.id]
@@ -1979,6 +1986,7 @@ app.delete('/api/trainings/:id/leave', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Bu antrenmana zaten kayıtlı değilsiniz.' });
     }
     await updateUserStats(req.user.id);
+    logActivity('training_leave', req.user.id, null, { training_title: trainingTitle });
     res.json({ message: 'Antrenman kaydınız silindi.' });
   } catch (error) {
     console.error('Leave training error:', error);
@@ -2898,6 +2906,153 @@ app.delete('/api/admin/home-gallery/:id', isAdmin, async (req, res) => {
 });
 
 // =====================================================
+// ADMIN: LOGS & ANALYTICS
+// =====================================================
+
+app.get('/api/admin/logs', isAdmin, async (req, res) => {
+  try {
+    const { event_type, limit: limitParam } = req.query;
+    const limit = Math.min(parseInt(limitParam) || 200, 500);
+    let query = `
+      SELECT al.*, u.email as user_email
+      FROM activity_logs al
+      LEFT JOIN users u ON u.id = al.user_id
+    `;
+    const params = [];
+    if (event_type && event_type !== 'all') {
+      params.push(event_type);
+      query += ` WHERE al.event_type = $${params.length}`;
+    }
+    params.push(limit);
+    query += ` ORDER BY al.created_at DESC LIMIT $${params.length}`;
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (e) {
+    console.error('admin logs error:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/admin/analytics', isAdmin, async (req, res) => {
+  try {
+    const [usersDaily, teamsDaily, trainingsDaily, joinsDaily,
+           usersWeekly, teamsWeekly, trainingsWeekly,
+           usersMonthly, teamsMonthly, trainingsMonthly,
+           totals] = await Promise.all([
+      pool.query(`
+        SELECT DATE(created_at AT TIME ZONE 'Europe/Istanbul') as day, COUNT(*) as count
+        FROM users WHERE created_at >= NOW() - INTERVAL '30 days'
+        GROUP BY day ORDER BY day ASC
+      `),
+      pool.query(`
+        SELECT DATE(created_at AT TIME ZONE 'Europe/Istanbul') as day, COUNT(*) as count
+        FROM teams WHERE created_at >= NOW() - INTERVAL '30 days'
+        GROUP BY day ORDER BY day ASC
+      `),
+      pool.query(`
+        SELECT DATE(created_at AT TIME ZONE 'Europe/Istanbul') as day, COUNT(*) as count
+        FROM trainings WHERE created_at >= NOW() - INTERVAL '30 days'
+        GROUP BY day ORDER BY day ASC
+      `),
+      pool.query(`
+        SELECT DATE(created_at AT TIME ZONE 'Europe/Istanbul') as day, COUNT(*) as count
+        FROM activity_logs WHERE event_type = 'training_join' AND created_at >= NOW() - INTERVAL '30 days'
+        GROUP BY day ORDER BY day ASC
+      `),
+      pool.query(`
+        SELECT DATE_TRUNC('week', created_at AT TIME ZONE 'Europe/Istanbul') as week, COUNT(*) as count
+        FROM users WHERE created_at >= NOW() - INTERVAL '12 weeks'
+        GROUP BY week ORDER BY week ASC
+      `),
+      pool.query(`
+        SELECT DATE_TRUNC('week', created_at AT TIME ZONE 'Europe/Istanbul') as week, COUNT(*) as count
+        FROM teams WHERE created_at >= NOW() - INTERVAL '12 weeks'
+        GROUP BY week ORDER BY week ASC
+      `),
+      pool.query(`
+        SELECT DATE_TRUNC('week', created_at AT TIME ZONE 'Europe/Istanbul') as week, COUNT(*) as count
+        FROM trainings WHERE created_at >= NOW() - INTERVAL '12 weeks'
+        GROUP BY week ORDER BY week ASC
+      `),
+      pool.query(`
+        SELECT DATE_TRUNC('month', created_at AT TIME ZONE 'Europe/Istanbul') as month, COUNT(*) as count
+        FROM users WHERE created_at >= NOW() - INTERVAL '12 months'
+        GROUP BY month ORDER BY month ASC
+      `),
+      pool.query(`
+        SELECT DATE_TRUNC('month', created_at AT TIME ZONE 'Europe/Istanbul') as month, COUNT(*) as count
+        FROM teams WHERE created_at >= NOW() - INTERVAL '12 months'
+        GROUP BY month ORDER BY month ASC
+      `),
+      pool.query(`
+        SELECT DATE_TRUNC('month', created_at AT TIME ZONE 'Europe/Istanbul') as month, COUNT(*) as count
+        FROM trainings WHERE created_at >= NOW() - INTERVAL '12 months'
+        GROUP BY month ORDER BY month ASC
+      `),
+      pool.query(`
+        SELECT
+          (SELECT COUNT(*) FROM users     WHERE created_at >= CURRENT_DATE) as today_users,
+          (SELECT COUNT(*) FROM teams     WHERE created_at >= CURRENT_DATE) as today_teams,
+          (SELECT COUNT(*) FROM trainings WHERE created_at >= CURRENT_DATE) as today_trainings,
+          (SELECT COUNT(*) FROM users     WHERE created_at >= DATE_TRUNC('week',  NOW())) as week_users,
+          (SELECT COUNT(*) FROM teams     WHERE created_at >= DATE_TRUNC('week',  NOW())) as week_teams,
+          (SELECT COUNT(*) FROM trainings WHERE created_at >= DATE_TRUNC('week',  NOW())) as week_trainings,
+          (SELECT COUNT(*) FROM users     WHERE created_at >= DATE_TRUNC('month', NOW())) as month_users,
+          (SELECT COUNT(*) FROM teams     WHERE created_at >= DATE_TRUNC('month', NOW())) as month_teams,
+          (SELECT COUNT(*) FROM trainings WHERE created_at >= DATE_TRUNC('month', NOW())) as month_trainings,
+          (SELECT COUNT(*) FROM activity_logs WHERE event_type='training_join' AND created_at >= CURRENT_DATE) as today_joins,
+          (SELECT COUNT(*) FROM activity_logs WHERE event_type='training_join' AND created_at >= DATE_TRUNC('week',NOW())) as week_joins,
+          (SELECT COUNT(*) FROM activity_logs WHERE event_type='training_join' AND created_at >= DATE_TRUNC('month',NOW())) as month_joins
+      `),
+    ]);
+
+    // Build daily array (last 30 days)
+    const dailyMap = {};
+    const now = new Date();
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      dailyMap[key] = { date: key, users: 0, teams: 0, trainings: 0, joins: 0 };
+    }
+    const toKey = (val) => val?.toISOString?.()?.slice(0,10) || String(val).slice(0,10);
+    usersDaily.rows.forEach(r    => { const k = toKey(r.day);   if (dailyMap[k]) dailyMap[k].users     = parseInt(r.count); });
+    teamsDaily.rows.forEach(r    => { const k = toKey(r.day);   if (dailyMap[k]) dailyMap[k].teams     = parseInt(r.count); });
+    trainingsDaily.rows.forEach(r => { const k = toKey(r.day);  if (dailyMap[k]) dailyMap[k].trainings = parseInt(r.count); });
+    joinsDaily.rows.forEach(r    => { const k = toKey(r.day);   if (dailyMap[k]) dailyMap[k].joins     = parseInt(r.count); });
+
+    // Weekly map
+    const weeklyMap = {};
+    const toWeekKey = (val) => val?.toISOString?.()?.slice(0,10) || String(val).slice(0,10);
+    usersWeekly.rows.forEach(r     => { const k = toWeekKey(r.week);  weeklyMap[k] = weeklyMap[k] || { date: k, users: 0, teams: 0, trainings: 0, joins: 0 }; weeklyMap[k].users     = parseInt(r.count); });
+    teamsWeekly.rows.forEach(r     => { const k = toWeekKey(r.week);  weeklyMap[k] = weeklyMap[k] || { date: k, users: 0, teams: 0, trainings: 0, joins: 0 }; weeklyMap[k].teams     = parseInt(r.count); });
+    trainingsWeekly.rows.forEach(r => { const k = toWeekKey(r.week);  weeklyMap[k] = weeklyMap[k] || { date: k, users: 0, teams: 0, trainings: 0, joins: 0 }; weeklyMap[k].trainings = parseInt(r.count); });
+
+    // Monthly map
+    const monthlyMap = {};
+    const toMonthKey = (val) => val?.toISOString?.()?.slice(0,7) || String(val).slice(0,7);
+    usersMonthly.rows.forEach(r     => { const k = toMonthKey(r.month); monthlyMap[k] = monthlyMap[k] || { date: k, users: 0, teams: 0, trainings: 0, joins: 0 }; monthlyMap[k].users     = parseInt(r.count); });
+    teamsMonthly.rows.forEach(r     => { const k = toMonthKey(r.month); monthlyMap[k] = monthlyMap[k] || { date: k, users: 0, teams: 0, trainings: 0, joins: 0 }; monthlyMap[k].teams     = parseInt(r.count); });
+    trainingsMonthly.rows.forEach(r => { const k = toMonthKey(r.month); monthlyMap[k] = monthlyMap[k] || { date: k, users: 0, teams: 0, trainings: 0, joins: 0 }; monthlyMap[k].trainings = parseInt(r.count); });
+
+    const t = totals.rows[0];
+    res.json({
+      daily:   Object.values(dailyMap),
+      weekly:  Object.values(weeklyMap).sort((a,b)  => a.date.localeCompare(b.date)),
+      monthly: Object.values(monthlyMap).sort((a,b) => a.date.localeCompare(b.date)),
+      totals: {
+        today: { users: parseInt(t.today_users), teams: parseInt(t.today_teams), trainings: parseInt(t.today_trainings), joins: parseInt(t.today_joins) },
+        week:  { users: parseInt(t.week_users),  teams: parseInt(t.week_teams),  trainings: parseInt(t.week_trainings),  joins: parseInt(t.week_joins)  },
+        month: { users: parseInt(t.month_users), teams: parseInt(t.month_teams), trainings: parseInt(t.month_trainings), joins: parseInt(t.month_joins) },
+      },
+    });
+  } catch (e) {
+    console.error('admin analytics error:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// =====================================================
 // HEALTH CHECK
 // =====================================================
 
@@ -2910,6 +3065,26 @@ app.get('/health', (req, res) => {
 // =====================================================
 
 // DB migrations
+pool.query(`
+  CREATE TABLE IF NOT EXISTS activity_logs (
+    id         SERIAL PRIMARY KEY,
+    event_type TEXT NOT NULL,
+    user_id    INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    user_name  TEXT,
+    meta       JSONB DEFAULT '{}',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+  )
+`).catch(() => {});
+
+async function logActivity(event_type, user_id, user_name, meta = {}) {
+  try {
+    await pool.query(
+      'INSERT INTO activity_logs (event_type, user_id, user_name, meta) VALUES ($1, $2, $3, $4)',
+      [event_type, user_id || null, user_name || null, JSON.stringify(meta)]
+    );
+  } catch (e) { /* sessiz */ }
+}
+
 pool.query(`
   CREATE TABLE IF NOT EXISTS home_news (
     id          SERIAL PRIMARY KEY,
