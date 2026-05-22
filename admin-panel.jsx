@@ -725,26 +725,50 @@ export default function AdminPanel() {
           {chartData.length === 0 ? (
             <div className="flex items-center justify-center h-48 text-slate-400 text-sm">Henüz veri yok</div>
           ) : (
-            <ResponsiveContainer width="100%" height={280}>
-              <AreaChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="gUsers"     x1="0" y1="0" x2="0" y2="1"><stop offset="5%"  stopColor="#3B82F6" stopOpacity={0.3}/><stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/></linearGradient>
-                  <linearGradient id="gTeams"     x1="0" y1="0" x2="0" y2="1"><stop offset="5%"  stopColor="#8B5CF6" stopOpacity={0.3}/><stop offset="95%" stopColor="#8B5CF6" stopOpacity={0}/></linearGradient>
-                  <linearGradient id="gTrainings" x1="0" y1="0" x2="0" y2="1"><stop offset="5%"  stopColor="#16A34A" stopOpacity={0.3}/><stop offset="95%" stopColor="#16A34A" stopOpacity={0}/></linearGradient>
-                  <linearGradient id="gJoins"     x1="0" y1="0" x2="0" y2="1"><stop offset="5%"  stopColor="#F59E0B" stopOpacity={0.3}/><stop offset="95%" stopColor="#F59E0B" stopOpacity={0}/></linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#94a3b8" }}
-                  tickFormatter={v => v.slice(periodKey === 7 ? 0 : 5)} />
-                <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} allowDecimals={false} />
-                <Tooltip contentStyle={{ borderRadius: "12px", border: "1px solid #e2e8f0", fontSize: 12 }} />
-                <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Area type="monotone" dataKey="users"     name="Üye"        stroke="#3B82F6" fill="url(#gUsers)"     strokeWidth={2} dot={false} />
-                <Area type="monotone" dataKey="teams"     name="Takım"      stroke="#8B5CF6" fill="url(#gTeams)"     strokeWidth={2} dot={false} />
-                <Area type="monotone" dataKey="trainings" name="Antrenman"  stroke="#16A34A" fill="url(#gTrainings)" strokeWidth={2} dot={false} />
-                <Area type="monotone" dataKey="joins"     name="Katılım"    stroke="#F59E0B" fill="url(#gJoins)"     strokeWidth={2} dot={false} />
-              </AreaChart>
-            </ResponsiveContainer>
+            {(() => {
+              // Filtre → hangi serilerin gösterileceği
+              const FILTER_SERIES = {
+                all:             ["users","teams","trainings","joins"],
+                user_register:   ["users"],
+                team_create:     ["teams"],
+                team_join:       ["teams"],
+                training_create: ["trainings"],
+                training_join:   ["joins"],
+              };
+              const activeSeries = FILTER_SERIES[logFilter] || ["users","teams","trainings","joins"];
+              const show = (key) => activeSeries.includes(key);
+              const dim  = (key) => !show(key);
+              const sw   = (key) => show(key) ? 2.5 : 0;
+              const fillOpacity = (key) => show(key) ? 1 : 0;
+
+              return (
+                <ResponsiveContainer width="100%" height={280}>
+                  <AreaChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="gUsers"     x1="0" y1="0" x2="0" y2="1"><stop offset="5%"  stopColor="#3B82F6" stopOpacity={show("users")     ? 0.35 : 0}/><stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/></linearGradient>
+                      <linearGradient id="gTeams"     x1="0" y1="0" x2="0" y2="1"><stop offset="5%"  stopColor="#8B5CF6" stopOpacity={show("teams")     ? 0.35 : 0}/><stop offset="95%" stopColor="#8B5CF6" stopOpacity={0}/></linearGradient>
+                      <linearGradient id="gTrainings" x1="0" y1="0" x2="0" y2="1"><stop offset="5%"  stopColor="#16A34A" stopOpacity={show("trainings") ? 0.35 : 0}/><stop offset="95%" stopColor="#16A34A" stopOpacity={0}/></linearGradient>
+                      <linearGradient id="gJoins"     x1="0" y1="0" x2="0" y2="1"><stop offset="5%"  stopColor="#F59E0B" stopOpacity={show("joins")     ? 0.35 : 0}/><stop offset="95%" stopColor="#F59E0B" stopOpacity={0}/></linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                    <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#94a3b8" }}
+                      tickFormatter={v => v.slice(periodKey === 7 ? 0 : 5)} />
+                    <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} allowDecimals={false} />
+                    <Tooltip contentStyle={{ borderRadius: "12px", border: "1px solid #e2e8f0", fontSize: 12 }}
+                      formatter={(value, name) => {
+                        const keyMap = { "Üye": "users", "Takım": "teams", "Antrenman": "trainings", "Katılım": "joins" };
+                        return dim(keyMap[name]) ? [null, null] : [value, name];
+                      }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: 12 }} />
+                    <Area type="monotone" dataKey="users"     name="Üye"       stroke={show("users")     ? "#3B82F6" : "#e2e8f0"} fill="url(#gUsers)"     strokeWidth={sw("users")}     dot={false} fillOpacity={fillOpacity("users")} />
+                    <Area type="monotone" dataKey="teams"     name="Takım"     stroke={show("teams")     ? "#8B5CF6" : "#e2e8f0"} fill="url(#gTeams)"     strokeWidth={sw("teams")}     dot={false} fillOpacity={fillOpacity("teams")} />
+                    <Area type="monotone" dataKey="trainings" name="Antrenman" stroke={show("trainings") ? "#16A34A" : "#e2e8f0"} fill="url(#gTrainings)" strokeWidth={sw("trainings")} dot={false} fillOpacity={fillOpacity("trainings")} />
+                    <Area type="monotone" dataKey="joins"     name="Katılım"   stroke={show("joins")     ? "#F59E0B" : "#e2e8f0"} fill="url(#gJoins)"     strokeWidth={sw("joins")}     dot={false} fillOpacity={fillOpacity("joins")} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              );
+            })()}
           )}
         </div>
 
