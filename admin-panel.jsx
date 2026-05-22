@@ -84,7 +84,7 @@ function HomeNewsTab({ items, setItems, api, token, showToast }) {
   };
 
   const lbl = "block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5";
-  const inp = "w-full h-10 px-3 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-300";
+  const inp = "w-full h-10 px-3 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-300";
 
   return (
     <div className="space-y-5">
@@ -95,7 +95,7 @@ function HomeNewsTab({ items, setItems, api, token, showToast }) {
         </div>
         <button onClick={startNew}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white transition hover:opacity-90 shadow-lg"
-          style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}>
+          style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}>
           <Plus className="w-4 h-4"/> Yeni Haber
         </button>
       </div>
@@ -103,12 +103,12 @@ function HomeNewsTab({ items, setItems, api, token, showToast }) {
       {showForm && (
         <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
           <div><label className={lbl}>Başlık</label><input className={inp} value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))} placeholder="Etkinlik başlığı"/></div>
-          <div><label className={lbl}>Açıklama <span className="normal-case font-normal text-slate-400">(isteğe bağlı)</span></label><textarea className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-300 resize-none" rows="3" value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))} placeholder="Etkinlik hakkında kısa bir açıklama…"/></div>
+          <div><label className={lbl}>Açıklama <span className="normal-case font-normal text-slate-400">(isteğe bağlı)</span></label><textarea className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-300 resize-none" rows="3" value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))} placeholder="Etkinlik hakkında kısa bir açıklama…"/></div>
           <div><label className={lbl}>Tarih</label><input className={inp} value={form.date_label} onChange={e=>setForm(f=>({...f,date_label:e.target.value}))} placeholder="12 Mayıs 2026"/></div>
           <div className="flex items-center gap-3">
             <label className={lbl + " mb-0"}>Aktif</label>
             <button type="button" onClick={()=>setForm(f=>({...f,is_active:!f.is_active}))}
-              className={`relative w-11 h-6 rounded-full transition-colors ${form.is_active?"bg-green-500":"bg-slate-300"}`}>
+              className={`relative w-11 h-6 rounded-full transition-colors ${form.is_active?"bg-brand-500":"bg-slate-300"}`}>
               <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${form.is_active?"left-6":"left-1"}`}/>
             </button>
           </div>
@@ -116,7 +116,7 @@ function HomeNewsTab({ items, setItems, api, token, showToast }) {
             <button onClick={()=>{setShowForm(false);setEditId(null);}} className="px-4 py-2 text-sm text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50">İptal</button>
             <button onClick={handleSave} disabled={saving}
               className="flex-1 py-2 text-sm font-semibold text-white rounded-xl disabled:opacity-50 transition hover:opacity-90"
-              style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}>
+              style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}>
               {saving?"Kaydediliyor…":"Kaydet"}
             </button>
           </div>
@@ -136,7 +136,7 @@ function HomeNewsTab({ items, setItems, api, token, showToast }) {
               {item.image_url
                 ? <img src={item.image_url} alt="" className="w-full h-full object-cover"/>
                 : <div className="w-full h-full flex items-center justify-center text-slate-300"><Upload className="w-8 h-8"/></div>}
-              <span className={`absolute top-2 right-2 text-xs px-2 py-0.5 rounded-full font-medium ${item.is_active?"bg-green-100 text-green-700":"bg-slate-100 text-slate-500"}`}>
+              <span className={`absolute top-2 right-2 text-xs px-2 py-0.5 rounded-full font-medium ${item.is_active?"bg-brand-100 text-brand-700":"bg-slate-100 text-slate-500"}`}>
                 {item.is_active?"Aktif":"Pasif"}
               </span>
             </div>
@@ -213,7 +213,7 @@ function HomeGalleryTab({ items, setItems, api, token, showToast }) {
         </div>
         <button onClick={startNew}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white transition hover:opacity-90 shadow-lg"
-          style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}>
+          style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}>
           <Plus className="w-4 h-4"/> Yeni Kart
         </button>
       </div>
@@ -223,7 +223,7 @@ function HomeGalleryTab({ items, setItems, api, token, showToast }) {
           <div className="flex items-center gap-3">
             <label className={lbl + " mb-0"}>Aktif</label>
             <button type="button" onClick={()=>setForm(f=>({...f,is_active:!f.is_active}))}
-              className={`relative w-11 h-6 rounded-full transition-colors ${form.is_active?"bg-green-500":"bg-slate-300"}`}>
+              className={`relative w-11 h-6 rounded-full transition-colors ${form.is_active?"bg-brand-500":"bg-slate-300"}`}>
               <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${form.is_active?"left-6":"left-1"}`}/>
             </button>
           </div>
@@ -232,7 +232,7 @@ function HomeGalleryTab({ items, setItems, api, token, showToast }) {
             <button onClick={()=>{setShowForm(false);setEditId(null);}} className="px-4 py-2 text-sm text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50">İptal</button>
             <button onClick={handleSave} disabled={saving}
               className="flex-1 py-2 text-sm font-semibold text-white rounded-xl disabled:opacity-50 transition hover:opacity-90"
-              style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}>
+              style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}>
               {saving?"Kaydediliyor…":"Kaydet"}
             </button>
           </div>
@@ -252,7 +252,7 @@ function HomeGalleryTab({ items, setItems, api, token, showToast }) {
               {item.image_url
                 ? <img src={item.image_url} alt="" className="w-full h-full object-cover"/>
                 : <div className="w-full h-full flex items-center justify-center text-slate-300"><Upload className="w-6 h-6"/></div>}
-              <span className={`absolute top-2 right-2 text-xs px-2 py-0.5 rounded-full font-medium ${item.is_active?"bg-green-100 text-green-700":"bg-slate-100 text-slate-500"}`}>
+              <span className={`absolute top-2 right-2 text-xs px-2 py-0.5 rounded-full font-medium ${item.is_active?"bg-brand-100 text-brand-700":"bg-slate-100 text-slate-500"}`}>
                 {item.is_active?"Aktif":"Pasif"}
               </span>
             </div>
@@ -291,7 +291,7 @@ function AdminToast({ toasts }) {
     <div className="fixed bottom-6 right-6 z-[9999] flex flex-col gap-2 pointer-events-none">
       {toasts.map(t => (
         <div key={t.id} className={`flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl text-sm font-medium text-white pointer-events-auto transition-all
-          ${t.type==='error'?'bg-red-500':'bg-green-600'}`}>
+          ${t.type==='error'?'bg-red-500':'bg-brand-600'}`}>
           {t.type==='error'
             ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
             : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M20 6L9 17l-5-5"/></svg>}
@@ -438,11 +438,11 @@ export default function AdminPanel() {
   // ─── LOGIN SAYFASI ──────────────────────────────────────
   if (!token) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "linear-gradient(135deg,#f0fdf4 0%,#dcfce7 60%,#bbf7d0 100%)" }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "linear-gradient(135deg,#f0fdf4 0%,#e5f9f9 60%,#bbf7d0 100%)" }}>
         {/* Arka plan blob */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-[-100px] right-[-100px] w-[400px] h-[400px] rounded-full opacity-20" style={{ background: "radial-gradient(circle,#16A34A,transparent 70%)" }} />
-          <div className="absolute bottom-[-100px] left-[-80px] w-[350px] h-[350px] rounded-full opacity-15" style={{ background: "radial-gradient(circle,#15803D,transparent 70%)" }} />
+          <div className="absolute top-[-100px] right-[-100px] w-[400px] h-[400px] rounded-full opacity-20" style={{ background: "radial-gradient(circle,#00b7ba,transparent 70%)" }} />
+          <div className="absolute bottom-[-100px] left-[-80px] w-[350px] h-[350px] rounded-full opacity-15" style={{ background: "radial-gradient(circle,#009295,transparent 70%)" }} />
           <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,.8) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.8) 1px,transparent 1px)", backgroundSize: "60px 60px" }} />
         </div>
 
@@ -455,7 +455,7 @@ export default function AdminPanel() {
           </div>
 
           {/* Login kutusu */}
-          <div className="bg-white border border-green-100 rounded-2xl p-8 shadow-xl">
+          <div className="bg-white border border-brand-100 rounded-2xl p-8 shadow-xl">
             <form onSubmit={handleLogin} className="space-y-5">
               <div>
                 <label className="block text-slate-700 text-sm font-semibold mb-2">E-posta</label>
@@ -466,7 +466,7 @@ export default function AdminPanel() {
                   value={form.email}
                   onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
                   placeholder="admin@mail.com"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
                 />
               </div>
 
@@ -479,7 +479,7 @@ export default function AdminPanel() {
                     value={form.password}
                     onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
                     placeholder="••••••••"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pr-11 text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pr-11 text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
                   />
                   <button type="button" onClick={() => setShowPass(p => !p)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition">
@@ -499,7 +499,7 @@ export default function AdminPanel() {
                 type="submit"
                 disabled={loginLoading}
                 className="w-full py-3 rounded-xl font-medium text-white text-sm transition-all hover:opacity-90 hover:shadow-xl disabled:opacity-60 flex items-center justify-center gap-2"
-                style={{ background: "linear-gradient(135deg,#16A34A,#15803D)" }}
+                style={{ background: "linear-gradient(135deg,#00b7ba,#009295)" }}
               >
                 {loginLoading ? (
                   <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Giriş yapılıyor…</>
@@ -654,8 +654,8 @@ export default function AdminPanel() {
     user_register:    { icon: "👤", label: "Üye Oldu",              color: "bg-blue-100 text-blue-700"   },
     team_create:      { icon: "🏆", label: "Takım Kurdu",           color: "bg-purple-100 text-purple-700" },
     team_join:        { icon: "👥", label: "Takıma Katıldı",        color: "bg-indigo-100 text-indigo-700" },
-    training_create:  { icon: "📋", label: "Antrenman Oluşturdu",   color: "bg-green-100 text-green-700"  },
-    training_join:    { icon: "✅", label: "Antrenmana Katıldı",    color: "bg-emerald-100 text-emerald-700" },
+    training_create:  { icon: "📋", label: "Antrenman Oluşturdu",   color: "bg-brand-100 text-brand-700"  },
+    training_join:    { icon: "✅", label: "Antrenmana Katıldı",    color: "bg-brand-100 text-brand-700" },
     training_leave:   { icon: "🚪", label: "Antrenman Ayrıldı",     color: "bg-orange-100 text-orange-700" },
   };
 
@@ -702,7 +702,7 @@ export default function AdminPanel() {
               { label: "Yeni Üye",        key: "users",     grad: "from-blue-500 to-blue-700",     icon: "👤" },
               { label: "Takım Kuruldu",   key: "teams",     grad: "from-purple-500 to-purple-700",  icon: "🏆" },
               { label: "Takıma Katılım",  key: "teamJoins", grad: "from-indigo-500 to-indigo-700",  icon: "👥" },
-              { label: "Yeni Antrenman",  key: "trainings", grad: "from-green-500 to-green-700",    icon: "📋" },
+              { label: "Yeni Antrenman",  key: "trainings", grad: "from-brand-500 to-brand-700",    icon: "📋" },
               { label: "Antrenmana Kat.", key: "joins",     grad: "from-amber-500 to-orange-500",   icon: "✅" },
             ].map(({ label, key, grad, icon }) => (
               <div key={key} className={`bg-gradient-to-br ${grad} rounded-2xl p-5 text-white shadow-lg`}>
@@ -745,7 +745,7 @@ export default function AdminPanel() {
                   <linearGradient id="gUsers"     x1="0" y1="0" x2="0" y2="1"><stop offset="5%"  stopColor="#3B82F6" stopOpacity={show("users")     ? 0.35 : 0}/><stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/></linearGradient>
                   <linearGradient id="gTeams"     x1="0" y1="0" x2="0" y2="1"><stop offset="5%"  stopColor="#8B5CF6" stopOpacity={show("teams")     ? 0.35 : 0}/><stop offset="95%" stopColor="#8B5CF6" stopOpacity={0}/></linearGradient>
                   <linearGradient id="gTeamJoins" x1="0" y1="0" x2="0" y2="1"><stop offset="5%"  stopColor="#6366F1" stopOpacity={show("teamJoins") ? 0.35 : 0}/><stop offset="95%" stopColor="#6366F1" stopOpacity={0}/></linearGradient>
-                  <linearGradient id="gTrainings" x1="0" y1="0" x2="0" y2="1"><stop offset="5%"  stopColor="#16A34A" stopOpacity={show("trainings") ? 0.35 : 0}/><stop offset="95%" stopColor="#16A34A" stopOpacity={0}/></linearGradient>
+                  <linearGradient id="gTrainings" x1="0" y1="0" x2="0" y2="1"><stop offset="5%"  stopColor="#00b7ba" stopOpacity={show("trainings") ? 0.35 : 0}/><stop offset="95%" stopColor="#00b7ba" stopOpacity={0}/></linearGradient>
                   <linearGradient id="gJoins"     x1="0" y1="0" x2="0" y2="1"><stop offset="5%"  stopColor="#F59E0B" stopOpacity={show("joins")     ? 0.35 : 0}/><stop offset="95%" stopColor="#F59E0B" stopOpacity={0}/></linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -757,7 +757,7 @@ export default function AdminPanel() {
                 <Area type="monotone" dataKey="users"     name="Üye"           stroke={seriesStroke("users",     "#3B82F6")} fill="url(#gUsers)"     strokeWidth={seriesWidth("users")}     dot={false} fillOpacity={seriesFill("users")} />
                 <Area type="monotone" dataKey="teams"     name="Takım Kuruldu" stroke={seriesStroke("teams",     "#8B5CF6")} fill="url(#gTeams)"     strokeWidth={seriesWidth("teams")}     dot={false} fillOpacity={seriesFill("teams")} />
                 <Area type="monotone" dataKey="teamJoins" name="Takıma Katılım" stroke={seriesStroke("teamJoins", "#6366F1")} fill="url(#gTeamJoins)" strokeWidth={seriesWidth("teamJoins")} dot={false} fillOpacity={seriesFill("teamJoins")} />
-                <Area type="monotone" dataKey="trainings" name="Antrenman"      stroke={seriesStroke("trainings", "#16A34A")} fill="url(#gTrainings)" strokeWidth={seriesWidth("trainings")} dot={false} fillOpacity={seriesFill("trainings")} />
+                <Area type="monotone" dataKey="trainings" name="Antrenman"      stroke={seriesStroke("trainings", "#00b7ba")} fill="url(#gTrainings)" strokeWidth={seriesWidth("trainings")} dot={false} fillOpacity={seriesFill("trainings")} />
                 <Area type="monotone" dataKey="joins"     name="Antrenmana Kat." stroke={seriesStroke("joins",    "#F59E0B")} fill="url(#gJoins)"     strokeWidth={seriesWidth("joins")}     dot={false} fillOpacity={seriesFill("joins")} />
               </AreaChart>
             </ResponsiveContainer>
@@ -775,7 +775,7 @@ export default function AdminPanel() {
                 <button key={f.id} onClick={() => setLogFilter(f.id)}
                   className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
                     logFilter === f.id
-                      ? "bg-green-600 text-white"
+                      ? "bg-brand-600 text-white"
                       : "bg-slate-100 text-slate-500 hover:bg-slate-200"
                   }`}>
                   {f.label}
@@ -855,8 +855,8 @@ export default function AdminPanel() {
   };
 
   const statCards = stats ? [
-    { label: "Toplam Kullanıcı",   value: stats.users,            icon: Users,        grad: "from-green-500 to-green-700" },
-    { label: "Toplam Antrenman",   value: stats.trainings,        icon: Activity,     grad: "from-green-400 to-green-600" },
+    { label: "Toplam Kullanıcı",   value: stats.users,            icon: Users,        grad: "from-brand-500 to-brand-700" },
+    { label: "Toplam Antrenman",   value: stats.trainings,        icon: Activity,     grad: "from-brand-400 to-brand-600" },
     { label: "Toplam Takım",       value: stats.teams,            icon: Shield,       grad: "from-cyan-500 to-teal-600" },
     { label: "Yeni Mesaj",         value: stats.unreadContact,    icon: MessageSquare,grad: "from-amber-500 to-orange-500" },
   ] : [];
@@ -903,9 +903,9 @@ export default function AdminPanel() {
               className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
                 tab === id
                   ? "text-white shadow-md"
-                  : "text-slate-500 hover:text-green-700 hover:bg-green-50"
+                  : "text-slate-500 hover:text-brand-700 hover:bg-brand-50"
               }`}
-              style={tab === id ? { background: "linear-gradient(135deg,#16A34A,#15803D)" } : {}}
+              style={tab === id ? { background: "linear-gradient(135deg,#00b7ba,#009295)" } : {}}
             >
               <span className="flex items-center gap-3">
                 <Icon className="w-4 h-4 flex-shrink-0" />
@@ -930,7 +930,7 @@ export default function AdminPanel() {
           </button>
           <a
             href="/"
-            className="mt-1 w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-500 hover:text-green-700 hover:bg-green-50 transition-all"
+            className="mt-1 w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-500 hover:text-brand-700 hover:bg-brand-50 transition-all"
           >
             <TrendingUp className="w-4 h-4" />
             Uygulamaya Dön
@@ -960,7 +960,7 @@ export default function AdminPanel() {
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Ara…"
-                className="w-36 sm:w-56 pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-green-300 focus:bg-white transition"
+                className="w-36 sm:w-56 pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand-300 focus:bg-white transition"
               />
               {search && (
                 <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
@@ -974,7 +974,7 @@ export default function AdminPanel() {
         <div className="p-4 md:p-8">
           {loading && (
             <div className="flex items-center justify-center py-24">
-              <div className="w-8 h-8 border-2 border-green-200 border-t-green-600 rounded-full animate-spin" />
+              <div className="w-8 h-8 border-2 border-brand-200 border-t-brand-600 rounded-full animate-spin" />
             </div>
           )}
 
@@ -1006,7 +1006,7 @@ export default function AdminPanel() {
                       <div key={u.id} className="flex items-center justify-between px-6 py-3.5 hover:bg-slate-50 transition-colors">
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-medium text-sm shadow-sm flex-shrink-0"
-                            style={{ background: "linear-gradient(135deg,#16A34A,#15803D)" }}>
+                            style={{ background: "linear-gradient(135deg,#00b7ba,#009295)" }}>
                             {u.name[0].toUpperCase()}
                           </div>
                           <div>
@@ -1038,7 +1038,7 @@ export default function AdminPanel() {
                 {filteredUsers.map(u => (
                   <div key={u.id} className="flex items-center gap-3 px-4 py-3.5">
                     <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
-                      style={{ background: "linear-gradient(135deg,#16A34A,#15803D)" }}>
+                      style={{ background: "linear-gradient(135deg,#00b7ba,#009295)" }}>
                       {(u.avatar?.startsWith("/uploads/") || u.avatar?.startsWith("http"))
                         ? <img src={u.avatar.startsWith("http") ? u.avatar : `${BASE_URL}${u.avatar}`} alt="" className="w-full h-full object-cover" />
                         : u.name[0].toUpperCase()}
@@ -1047,7 +1047,7 @@ export default function AdminPanel() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-semibold text-slate-900 text-sm">{u.name}</span>
                         {u.is_admin
-                          ? <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-lg text-[10px] font-medium">Admin</span>
+                          ? <span className="px-2 py-0.5 bg-brand-100 text-brand-700 rounded-lg text-[10px] font-medium">Admin</span>
                           : <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded-lg text-[10px]">Üye</span>}
                       </div>
                       <div className="text-slate-400 text-xs truncate">{u.email}</div>
@@ -1089,7 +1089,7 @@ export default function AdminPanel() {
                         <td className="px-6 py-3.5">
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center text-white font-bold text-xs flex-shrink-0"
-                              style={{ background: "linear-gradient(135deg,#16A34A,#15803D)" }}>
+                              style={{ background: "linear-gradient(135deg,#00b7ba,#009295)" }}>
                               {(u.avatar?.startsWith("/uploads/") || u.avatar?.startsWith("http"))
                                 ? <img src={u.avatar.startsWith("http") ? u.avatar : `${BASE_URL}${u.avatar}`} alt="" className="w-full h-full object-cover" />
                                 : u.name[0].toUpperCase()}
@@ -1102,7 +1102,7 @@ export default function AdminPanel() {
                         <td className="px-4 py-3.5 text-center text-slate-700 font-semibold">{u.training_count ?? "—"}</td>
                         <td className="px-4 py-3.5 text-center">
                           {u.is_admin
-                            ? <span className="px-2.5 py-1 bg-green-100 text-green-700 rounded-lg text-xs font-medium">Admin</span>
+                            ? <span className="px-2.5 py-1 bg-brand-100 text-brand-700 rounded-lg text-xs font-medium">Admin</span>
                             : <span className="px-2.5 py-1 bg-slate-100 text-slate-500 rounded-lg text-xs">Üye</span>
                           }
                         </td>
@@ -1147,7 +1147,7 @@ export default function AdminPanel() {
                   return (
                     <div key={t.id} className="flex items-start gap-3 px-4 py-3.5">
                       <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                        style={{ background: "linear-gradient(135deg,#16A34A,#15803D)" }}>
+                        style={{ background: "linear-gradient(135deg,#00b7ba,#009295)" }}>
                         <Activity className="w-5 h-5 text-white"/>
                       </div>
                       <div className="flex-1 min-w-0">
@@ -1162,7 +1162,7 @@ export default function AdminPanel() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold ${isPast ? "bg-slate-100 text-slate-500" : "bg-emerald-100 text-emerald-700"}`}>
+                        <span className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold ${isPast ? "bg-slate-100 text-slate-500" : "bg-brand-100 text-brand-700"}`}>
                           {isPast ? "Bitti" : "Aktif"}
                         </span>
                         <button onClick={() => del(`/admin/trainings/${t.id}`, t.title, "trainings")}
@@ -1207,7 +1207,7 @@ export default function AdminPanel() {
                             <span className="text-slate-400">/{t.capacity}</span>
                           </td>
                           <td className="px-4 py-3.5 text-center">
-                            <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${isPast ? "bg-slate-100 text-slate-500" : "bg-emerald-100 text-emerald-700"}`}>
+                            <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${isPast ? "bg-slate-100 text-slate-500" : "bg-brand-100 text-brand-700"}`}>
                               {isPast ? "Tamamlandı" : "Aktif"}
                             </span>
                           </td>
@@ -1244,7 +1244,7 @@ export default function AdminPanel() {
                 {filteredTeams.map(t => (
                   <div key={t.id} className="flex items-center gap-3 px-4 py-3.5">
                     <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-sm"
-                      style={{ background: "linear-gradient(135deg,#16A34A,#15803D)" }}>
+                      style={{ background: "linear-gradient(135deg,#00b7ba,#009295)" }}>
                       {(t.avatar?.startsWith("/uploads/") || t.avatar?.startsWith("http"))
                         ? <img src={t.avatar.startsWith("http") ? t.avatar : `${BASE_URL}${t.avatar}`} alt="" className="w-full h-full object-cover" />
                         : t.name[0].toUpperCase()}
@@ -1255,7 +1255,7 @@ export default function AdminPanel() {
                       <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-400 flex-wrap">
                         <span>{t.member_count} üye</span>
                         <span>·</span>
-                        <span className={`flex items-center gap-0.5 ${t.is_private ? "text-slate-500" : "text-emerald-600"}`}>
+                        <span className={`flex items-center gap-0.5 ${t.is_private ? "text-slate-500" : "text-brand-600"}`}>
                           {t.is_private ? <><Lock className="w-3 h-3"/> Gizli</> : <><Globe className="w-3 h-3"/> Açık</>}
                         </span>
                       </div>
@@ -1288,7 +1288,7 @@ export default function AdminPanel() {
                         <td className="px-6 py-3.5">
                           <div className="flex items-center gap-3">
                             <div className="w-9 h-9 rounded-xl overflow-hidden flex items-center justify-center text-white font-bold text-base flex-shrink-0 shadow-sm"
-                              style={{ background: "linear-gradient(135deg,#16A34A,#15803D)" }}>
+                              style={{ background: "linear-gradient(135deg,#00b7ba,#009295)" }}>
                               {(t.avatar?.startsWith("/uploads/") || t.avatar?.startsWith("http"))
                                 ? <img src={t.avatar.startsWith("http") ? t.avatar : `${BASE_URL}${t.avatar}`} alt="" className="w-full h-full object-cover" />
                                 : t.name[0].toUpperCase()}
@@ -1300,7 +1300,7 @@ export default function AdminPanel() {
                         <td className="px-4 py-3.5 text-slate-600">{t.owner_name}</td>
                         <td className="px-4 py-3.5 text-center font-semibold text-slate-700">{t.member_count}</td>
                         <td className="px-4 py-3.5 text-center">
-                          <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${t.is_private ? "bg-slate-100 text-slate-600" : "bg-emerald-100 text-emerald-700"}`}>
+                          <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${t.is_private ? "bg-slate-100 text-slate-600" : "bg-brand-100 text-brand-700"}`}>
                             <span className="flex items-center gap-1">{t.is_private ? <><Lock className="w-3 h-3" /> Gizli</> : <><Globe className="w-3 h-3" /> Açık</>}</span>
                           </span>
                         </td>
@@ -1334,7 +1334,7 @@ export default function AdminPanel() {
                 <button
                   onClick={() => { setBannerForm(emptyBanner); setEditingBannerId(null); setShowBannerForm(true); }}
                   className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white transition hover:opacity-90 shadow-lg"
-                  style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}
+                  style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}
                 >
                   <Plus className="w-4 h-4"/> Yeni Banner
                 </button>
@@ -1342,10 +1342,10 @@ export default function AdminPanel() {
 
               {/* Banner form (ekleme/düzenleme) */}
               {showBannerForm && (
-                <div className="bg-white rounded-2xl border border-green-200 shadow-lg overflow-hidden">
+                <div className="bg-white rounded-2xl border border-brand-200 shadow-lg overflow-hidden">
                   {/* Header */}
                   <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100"
-                    style={{background:"linear-gradient(90deg,#16A34A11,#15803D11)"}}>
+                    style={{background:"linear-gradient(90deg,#00b7ba11,#00929511)"}}>
                     <h3 className="font-medium text-slate-900">{editingBannerId ? "Banner Düzenle" : "Yeni Banner Ekle"}</h3>
                     <button onClick={() => setShowBannerForm(false)} className="text-slate-400 hover:text-slate-700">
                       <X className="w-5 h-5"/>
@@ -1361,7 +1361,7 @@ export default function AdminPanel() {
                         <div className="text-white/60 text-xs font-semibold mb-1">{bannerForm.badge_text || "Rozet metni"}</div>
                         <div className="text-white font-semibold text-xl leading-tight">
                           {bannerForm.title || "Başlık"}{" "}
-                          <span className="text-green-400">{bannerForm.title_highlight || "Vurgulu metin"}</span>
+                          <span className="text-brand-400">{bannerForm.title_highlight || "Vurgulu metin"}</span>
                         </div>
                       </div>
                     </div>
@@ -1389,7 +1389,7 @@ export default function AdminPanel() {
                               type="text"
                               value={bannerForm[key]}
                               onChange={e => setBannerForm(p => ({...p,[key]:e.target.value}))}
-                              className="w-24 text-center text-xs border border-slate-200 rounded-lg px-2 py-1 font-mono focus:outline-none focus:ring-2 focus:ring-green-300"
+                              className="w-24 text-center text-xs border border-slate-200 rounded-lg px-2 py-1 font-mono focus:outline-none focus:ring-2 focus:ring-brand-300"
                             />
                           </div>
                         ))}
@@ -1403,7 +1403,7 @@ export default function AdminPanel() {
                     <div className="flex items-center gap-2">
                       <button type="button" onClick={()=>setBannerForm(p=>({...p,is_active:!p.is_active}))}>
                         {bannerForm.is_active
-                          ? <ToggleRight className="w-8 h-8 text-green-600"/>
+                          ? <ToggleRight className="w-8 h-8 text-brand-600"/>
                           : <ToggleLeft className="w-8 h-8 text-slate-400"/>}
                       </button>
                       <span className="text-sm font-semibold text-slate-700">
@@ -1417,13 +1417,13 @@ export default function AdminPanel() {
                         <label className="block text-xs font-medium text-slate-500 mb-1.5">Başlık <span className="text-slate-400 font-normal">(sabit satır)</span></label>
                         <input value={bannerForm.title} onChange={e=>setBannerForm(p=>({...p,title:e.target.value}))}
                           placeholder="Sporla Buluş,"
-                          className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-green-300"/>
+                          className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-300"/>
                       </div>
                       <div>
                         <label className="block text-xs font-medium text-slate-500 mb-1.5">Rozet Metni</label>
                         <input value={bannerForm.badge_text} onChange={e=>setBannerForm(p=>({...p,badge_text:e.target.value}))}
                           placeholder="🏃 500+ Aktif Sporcu"
-                          className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-green-300"/>
+                          className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-300"/>
                       </div>
                     </div>
 
@@ -1431,7 +1431,7 @@ export default function AdminPanel() {
                       <label className="block text-xs font-medium text-slate-500 mb-1.5">Alt Metin</label>
                       <textarea value={bannerForm.subtitle} onChange={e=>setBannerForm(p=>({...p,subtitle:e.target.value}))}
                         placeholder="Açıklama metni…" rows={2}
-                        className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-green-300 resize-none"/>
+                        className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-300 resize-none"/>
                     </div>
 
                     {/* Butonlar */}
@@ -1441,7 +1441,7 @@ export default function AdminPanel() {
                       {/* Ana buton */}
                       <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
                         <div className="flex items-center gap-2 mb-2">
-                          <div className="w-2 h-2 rounded-full" style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}/>
+                          <div className="w-2 h-2 rounded-full" style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}/>
                           <span className="text-xs font-medium text-slate-600">Ana Buton</span>
                           <span className="text-xs text-slate-400">(gradient, öne çıkan)</span>
                         </div>
@@ -1450,13 +1450,13 @@ export default function AdminPanel() {
                             <label className="block text-[11px] text-slate-400 mb-1">Buton Metni</label>
                             <input value={bannerForm.cta_primary_text} onChange={e=>setBannerForm(p=>({...p,cta_primary_text:e.target.value}))}
                               placeholder="Hemen Başla"
-                              className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-green-300"/>
+                              className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-300"/>
                           </div>
                           <div>
                             <label className="block text-[11px] text-slate-400 mb-1">Link / URL</label>
                             <input value={bannerForm.cta_primary_url} onChange={e=>setBannerForm(p=>({...p,cta_primary_url:e.target.value}))}
                               placeholder="/antrenmanlar veya https://..."
-                              className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-green-300"/>
+                              className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-300"/>
                           </div>
                         </div>
                       </div>
@@ -1473,13 +1473,13 @@ export default function AdminPanel() {
                             <label className="block text-[11px] text-slate-400 mb-1">Buton Metni</label>
                             <input value={bannerForm.cta_secondary_text} onChange={e=>setBannerForm(p=>({...p,cta_secondary_text:e.target.value}))}
                               placeholder="Antrenmanları Keşfet"
-                              className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-green-300"/>
+                              className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-300"/>
                           </div>
                           <div>
                             <label className="block text-[11px] text-slate-400 mb-1">Link / URL</label>
                             <input value={bannerForm.cta_secondary_url} onChange={e=>setBannerForm(p=>({...p,cta_secondary_url:e.target.value}))}
                               placeholder="/takimlar veya https://..."
-                              className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-green-300"/>
+                              className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-300"/>
                           </div>
                         </div>
                       </div>
@@ -1495,7 +1495,7 @@ export default function AdminPanel() {
                         <button
                           type="button"
                           onClick={() => setBannerForm(p => ({ ...p, mottos: [...(p.mottos||[""]), ""] }))}
-                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 transition"
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 transition"
                         >
                           <Plus className="w-3 h-3"/> Motto Ekle
                         </button>
@@ -1503,7 +1503,7 @@ export default function AdminPanel() {
                       <div className="space-y-2">
                         {(bannerForm.mottos || [""]).map((m, mi) => (
                           <div key={mi} className="flex items-center gap-2">
-                            <span className="flex-shrink-0 w-5 h-5 rounded-full bg-green-100 text-green-600 text-[10px] font-medium flex items-center justify-center">{mi+1}</span>
+                            <span className="flex-shrink-0 w-5 h-5 rounded-full bg-brand-100 text-brand-600 text-[10px] font-medium flex items-center justify-center">{mi+1}</span>
                             <input
                               type="text"
                               value={m}
@@ -1513,7 +1513,7 @@ export default function AdminPanel() {
                                 setBannerForm(p => ({ ...p, mottos: arr }));
                               }}
                               placeholder={`Motto ${mi+1}…`}
-                              className="flex-1 text-sm border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-300"
+                              className="flex-1 text-sm border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-300"
                             />
                             {(bannerForm.mottos||[""]).length > 1 && (
                               <button
@@ -1540,7 +1540,7 @@ export default function AdminPanel() {
                       </button>
                       <button onClick={saveBanner} disabled={bannerSaving}
                         className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-medium text-white disabled:opacity-60 transition hover:opacity-90"
-                        style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}>
+                        style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}>
                         {bannerSaving ? <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"/>Kaydediliyor…</> : "Kaydet"}
                       </button>
                     </div>
@@ -1575,8 +1575,8 @@ export default function AdminPanel() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="font-medium text-slate-900 text-sm truncate max-w-[140px] md:max-w-none">{b.title} {b.title_highlight}</span>
-                            {b.badge_text && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">{b.badge_text}</span>}
-                            <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${b.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
+                            {b.badge_text && <span className="text-xs bg-brand-100 text-brand-700 px-2 py-0.5 rounded-full font-medium">{b.badge_text}</span>}
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${b.is_active ? "bg-brand-100 text-brand-700" : "bg-slate-100 text-slate-500"}`}>
                               {b.is_active ? "Aktif" : "Pasif"}
                             </span>
                           </div>
@@ -1589,20 +1589,20 @@ export default function AdminPanel() {
                         <label className="relative cursor-pointer">
                           <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only"
                             onChange={e => { if (e.target.files[0]) uploadBannerImage(b.id, e.target.files[0]); e.target.value=""; }}/>
-                          <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition whitespace-nowrap ${uploadingId === b.id ? "bg-green-100 text-green-500" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
+                          <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition whitespace-nowrap ${uploadingId === b.id ? "bg-brand-100 text-brand-500" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
                             {uploadingId === b.id
-                              ? <div className="w-3 h-3 border-2 border-green-300 border-t-green-600 rounded-full animate-spin"/>
+                              ? <div className="w-3 h-3 border-2 border-brand-300 border-t-brand-600 rounded-full animate-spin"/>
                               : <Upload className="w-3 h-3"/>}
                             Görsel
                           </span>
                         </label>
                         <button onClick={() => toggleBannerActive(b)}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition whitespace-nowrap ${b.is_active ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}>
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition whitespace-nowrap ${b.is_active ? "bg-brand-50 text-brand-700 hover:bg-brand-100" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}>
                           {b.is_active ? <ToggleRight className="w-3.5 h-3.5"/> : <ToggleLeft className="w-3.5 h-3.5"/>}
                           {b.is_active ? "Aktif" : "Pasif"}
                         </button>
                         <button onClick={() => copyBanner(b)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-600 rounded-xl text-xs font-medium hover:bg-green-100 transition whitespace-nowrap">
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-50 text-brand-600 rounded-xl text-xs font-medium hover:bg-brand-100 transition whitespace-nowrap">
                           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
                           </svg>
@@ -1651,25 +1651,25 @@ export default function AdminPanel() {
                 </div>
               )}
               {filteredMessages.map(m => (
-                <div key={m.id} className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition-all ${m.is_read ? "border-slate-100" : "border-green-200"}`}>
-                  {!m.is_read && <div className="h-1" style={{ background: "linear-gradient(90deg,#16A34A,#15803D)" }} />}
+                <div key={m.id} className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition-all ${m.is_read ? "border-slate-100" : "border-brand-200"}`}>
+                  {!m.is_read && <div className="h-1" style={{ background: "linear-gradient(90deg,#00b7ba,#009295)" }} />}
                   <div className="p-4 md:p-6">
                     <div className="flex items-start justify-between gap-3 flex-wrap md:flex-nowrap">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap mb-1">
                           {!m.is_read && (
-                            <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-lg text-xs font-medium">Yeni</span>
+                            <span className="px-2 py-0.5 bg-brand-100 text-brand-700 rounded-lg text-xs font-medium">Yeni</span>
                           )}
                           <span className="font-medium text-slate-900">{m.name}</span>
                           <span className="text-slate-300 text-sm">·</span>
-                          <a href={`mailto:${m.email}`} className="text-green-600 text-sm hover:underline">{m.email}</a>
+                          <a href={`mailto:${m.email}`} className="text-brand-600 text-sm hover:underline">{m.email}</a>
                           <span className="text-slate-400 text-xs ml-auto">{fmtFull(m.created_at)}</span>
                         </div>
                         <div className="flex items-center gap-2 mb-3">
                           <Calendar className="w-3.5 h-3.5 text-slate-400" />
                           <span className="font-semibold text-slate-700 text-sm">{m.subject}</span>
                         </div>
-                        <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-wrap border-l-2 border-green-200 pl-4">
+                        <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-wrap border-l-2 border-brand-200 pl-4">
                           {m.message}
                         </p>
                       </div>
@@ -1677,7 +1677,7 @@ export default function AdminPanel() {
                       <div className="flex flex-row md:flex-col gap-2 flex-shrink-0 flex-wrap">
                         {!m.is_read && (
                           <button onClick={() => markRead(m.id)}
-                            className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-xs font-medium hover:bg-emerald-100 transition whitespace-nowrap">
+                            className="flex items-center gap-1.5 px-3 py-2 bg-brand-50 text-brand-700 rounded-xl text-xs font-medium hover:bg-brand-100 transition whitespace-nowrap">
                             <CheckCheck className="w-3.5 h-3.5" /> Okundu
                           </button>
                         )}

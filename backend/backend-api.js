@@ -374,26 +374,26 @@ function trainingCommentEmail({ commenterName, commenterAvatar, trainingTitle, t
     </p>
 
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px 20px;margin-bottom:20px;">
-      <div style="font-size:13px;color:#15803d;font-weight:600;">🏋️ ${trainingTitle}</div>
+      <div style="font-size:13px;color:#009295;font-weight:600;">🏋️ ${trainingTitle}</div>
       <div style="font-size:13px;color:#64748b;margin-top:2px;">📅 ${trainingDate}</div>
     </div>
 
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin-bottom:28px;">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-        ${avatarHtml(commenterAvatar, commenterName, 36, 'linear-gradient(135deg,#16a34a,#15803d)')}
+        ${avatarHtml(commenterAvatar, commenterName, 36, 'linear-gradient(135deg,#00b7ba,#009295)')}
         <div>
           <div style="font-weight:600;color:#1e293b;font-size:15px;">${commenterName}</div>
           <div style="color:#94a3b8;font-size:13px;">${postDate}</div>
         </div>
       </div>
-      <div style="color:#334155;font-size:15px;line-height:1.7;white-space:pre-wrap;border-left:3px solid #16a34a;padding-left:16px;">
+      <div style="color:#334155;font-size:15px;line-height:1.7;white-space:pre-wrap;border-left:3px solid #00b7ba;padding-left:16px;">
         ${truncated}
       </div>
     </div>
 
     <div style="text-align:center;">
       <a href="${APP_URL}/antrenmanlar"
-         style="display:inline-block;background:linear-gradient(135deg,#16a34a,#15803d);color:#ffffff;text-decoration:none;
+         style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
         Antrenmanı Gör →
       </a>
@@ -410,12 +410,12 @@ function trainingUpdateEmail({ teamName, trainingTitle, trainingDate, trainingTi
     </p>
 
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:24px;margin-bottom:28px;">
-      <div style="font-size:18px;font-weight:700;color:#15803d;margin-bottom:16px;">📋 Güncel Bilgiler</div>
+      <div style="font-size:18px;font-weight:700;color:#009295;margin-bottom:16px;">📋 Güncel Bilgiler</div>
       <table style="width:100%;border-collapse:collapse;">
         <tr><td style="padding:6px 0;color:#64748b;font-size:14px;width:80px;">📅 Tarih</td><td style="padding:6px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingDate}</td></tr>
         ${trainingTime ? `<tr><td style="padding:6px 0;color:#64748b;font-size:14px;">🕐 Saat</td><td style="padding:6px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingTime.slice(0,5)}</td></tr>` : ''}
         ${location ? `<tr><td style="padding:6px 0;color:#64748b;font-size:14px;">📍 Konum</td><td style="padding:6px 0;color:#1e293b;font-size:14px;font-weight:600;">${location}</td></tr>` : ''}
-        ${description ? `<tr><td colspan="2" style="padding:12px 0 4px;color:#334155;font-size:14px;line-height:1.6;border-top:1px solid #dcfce7;margin-top:8px;">${description}</td></tr>` : ''}
+        ${description ? `<tr><td colspan="2" style="padding:12px 0 4px;color:#334155;font-size:14px;line-height:1.6;border-top:1px solid #e5f9f9;margin-top:8px;">${description}</td></tr>` : ''}
       </table>
     </div>
 
@@ -423,7 +423,7 @@ function trainingUpdateEmail({ teamName, trainingTitle, trainingDate, trainingTi
 
     <div style="text-align:center;">
       <a href="${APP_URL}/antrenmanlar"
-         style="display:inline-block;background:linear-gradient(135deg,#16a34a,#15803d);color:#ffffff;text-decoration:none;
+         style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
         Antrenmanı Gör →
       </a>
@@ -449,7 +449,7 @@ function newTrainingEmail({ teamName, trainingTitle, trainingDate, trainingTime,
     </p>
 
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:24px;margin-bottom:28px;">
-      <div style="font-size:20px;font-weight:700;color:#15803d;margin-bottom:12px;">${trainingTitle}</div>
+      <div style="font-size:20px;font-weight:700;color:#009295;margin-bottom:12px;">${trainingTitle}</div>
       <table style="width:100%;border-collapse:collapse;">
         <tr><td style="padding:4px 0;color:#64748b;font-size:14px;">📅 Tarih</td><td style="padding:4px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingDate}</td></tr>
         ${trainingTime ? `<tr><td style="padding:4px 0;color:#64748b;font-size:14px;">🕐 Saat</td><td style="padding:4px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingTime.slice(0,5)}</td></tr>` : ''}
@@ -466,7 +466,7 @@ function newTrainingEmail({ teamName, trainingTitle, trainingDate, trainingTime,
 
     <div style="text-align:center;">
       <a href="${process.env.APP_URL || 'https://muuvlink.app'}/antrenmanlar"
-         style="display:inline-block;background:linear-gradient(135deg,#16a34a,#15803d);color:#ffffff;text-decoration:none;
+         style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
         Antrenmanları Gör →
       </a>
@@ -496,7 +496,7 @@ function trainingReminderEmail({ teamName, trainingTitle, trainingDate, training
 
     <div style="text-align:center;">
       <a href="${process.env.APP_URL || 'https://muuvlink.app'}/antrenmanlar"
-         style="display:inline-block;background:linear-gradient(135deg,#16a34a,#15803d);color:#ffffff;text-decoration:none;
+         style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
         Antrenmanı Görüntüle →
       </a>
@@ -1135,11 +1135,11 @@ app.post('/api/teams/:id/join', authenticateToken, async (req, res) => {
           </p>
           <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:24px;margin-bottom:28px;text-align:center;">
             <div style="font-size:48px;margin-bottom:8px;">👤</div>
-            <div style="font-size:18px;font-weight:700;color:#15803d;">${joinerName}</div>
+            <div style="font-size:18px;font-weight:700;color:#009295;">${joinerName}</div>
           </div>
           <div style="text-align:center;">
             <a href="${process.env.APP_URL || 'https://muuvlink.app'}/takimlar"
-               style="display:inline-block;background:linear-gradient(135deg,#16a34a,#15803d);color:#ffffff;text-decoration:none;
+               style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#ffffff;text-decoration:none;
                       padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
               Takımı Görüntüle →
             </a>
