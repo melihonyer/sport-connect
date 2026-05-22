@@ -5122,13 +5122,9 @@ E-posta: <a href="mailto:info@sporlaconnect.com">info@sporlaconnect.com</a></p>
 
             {/* Kolon 1 — Marka */}
             <div className="lg:col-span-1">
-              <button onClick={() => setCurrentPage("home")} className="flex items-center gap-2.5 mb-4 group">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-md" style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}>
-                  <Activity className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-xl font-semibold tracking-tight" style={{background:"linear-gradient(90deg,#a78bfa,#818cf8)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
-                  Muuvlink
-                </span>
+              <button onClick={() => setCurrentPage("home")} className="flex items-center gap-2 mb-4 group hover:opacity-80 transition-opacity">
+                <img src="/icons/amblem.svg" alt="" className="h-8 w-auto flex-shrink-0" />
+                <img src="/icons/logo-yatay.svg" alt="Muuvlink" className="h-5 w-auto" style={{filter:"brightness(0) invert(1)"}} />
               </button>
               <p className="text-slate-400 text-sm leading-relaxed mb-5">
                 Spor topluluğunu bir araya getiren platform. Takımlar kur, antrenmanlar planla, spor arkadaşları bul.
@@ -5179,10 +5175,6 @@ E-posta: <a href="mailto:info@sporlaconnect.com">info@sporlaconnect.com</a></p>
                   </a>
                 </li>
                 <li className="flex items-start gap-2.5 text-sm text-slate-400">
-                  <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-brand-400" />
-                  <span>Çınarlı Mah. 1572 Sk. No:33<br/>PK.35170 Konak, İzmir</span>
-                </li>
-                <li className="flex items-start gap-2.5 text-sm text-slate-400">
                   <svg className="w-4 h-4 mt-0.5 flex-shrink-0 text-brand-400" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
                   </svg>
@@ -5205,15 +5197,10 @@ E-posta: <a href="mailto:info@sporlaconnect.com">info@sporlaconnect.com</a></p>
           </div>
 
           {/* Alt çizgi */}
-          <div className="border-t border-slate-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="border-t border-slate-800 pt-6 text-center">
             <p className="text-slate-500 text-xs">
               © {new Date().getFullYear()} SALT KREATİF REKLAM TİC. LTD. ŞTİ. — Tüm hakları saklıdır.
             </p>
-            <div className="flex items-center gap-4">
-              <button onClick={() => setLegalModal("kvkk")} className="text-slate-500 hover:text-slate-300 text-xs transition-colors">KVKK</button>
-              <button onClick={() => setLegalModal("gizlilik")} className="text-slate-500 hover:text-slate-300 text-xs transition-colors">Gizlilik</button>
-              <button onClick={() => setLegalModal("kullanim")} className="text-slate-500 hover:text-slate-300 text-xs transition-colors">Kullanım Koşulları</button>
-            </div>
           </div>
         </div>
       </footer>
