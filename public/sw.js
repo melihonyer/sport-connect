@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'muuvlink-v2';
+const CACHE_VERSION = 'muuvlink-v3';
 const STATIC_CACHE  = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 
