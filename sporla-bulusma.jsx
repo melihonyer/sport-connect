@@ -1099,7 +1099,16 @@ export default function Muuvlink() {
     return () => window.removeEventListener("popstate", onPop);
   }, []);
 
-
+  // Profil sayfasına her gelindiğinde verileri taze çek
+  useEffect(() => {
+    if (currentPage === "profile") {
+      const token = localStorage.getItem("token");
+      if (token) {
+        fetchMyTrainings(token);
+        fetchMyTeams(token);
+      }
+    }
+  }, [currentPage]);
 
   const fetchUserData = async (token) => {
     try {
@@ -1145,7 +1154,7 @@ export default function Muuvlink() {
             method: "POST",
             headers: { Authorization: `Bearer ${data.token}` },
           }).then(r => r.json()).then(d => {
-            if (d.message) { showToast("Takıma başarıyla katıldınız! 👥", "success"); fetchTeamDetails(pendingInvite); }
+            if (d.message) { showToast("Takıma başarıyla katıldınız! 👥", "success"); fetchTeamDetails(pendingInvite); fetchMyTeams(data.token); fetchMyTrainings(data.token); }
           });
         }
       } else {
@@ -1559,6 +1568,7 @@ export default function Muuvlink() {
           setCurrentPage("teams");
           fetchTeams();
           fetchMyTeams(token);
+          fetchMyTrainings(token);
         } else {
           const data = await response.json();
           showToast(data.error || "Silinemedi!", "error");
@@ -1658,6 +1668,7 @@ export default function Muuvlink() {
         showToast("Takıma katıldın! 👥", "success");
         fetchTeams();
         fetchMyTeams(token);
+        fetchMyTrainings(token);
         if (selectedTeam?.id === teamId) {
           fetchTeamDetails(teamId);
         }
@@ -1690,6 +1701,7 @@ export default function Muuvlink() {
         setCurrentPage("profile");
         fetchTeams();
         fetchMyTeams(token);
+        fetchMyTrainings(token);
       }
     } catch (error) {
       console.error("Create team error:", error);
