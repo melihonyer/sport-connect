@@ -347,6 +347,51 @@ function wallPostEmail({ teamName, teamId, posterName, posterAvatar, message, po
   `);
 }
 
+// Şablon: Antrenman yorumu bildirimi
+function trainingCommentEmail({ commenterName, commenterAvatar, trainingTitle, trainingDate, comment, trainingId }) {
+  const truncated = comment.length > 300 ? comment.slice(0, 300) + '...' : comment;
+  const postDate = new Date().toLocaleString('tr-TR', {
+    timeZone: 'Europe/Istanbul',
+    day: 'numeric', month: 'long', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
+  return emailWrapper(`
+    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Antrenmana Yorum Yapıldı 💬</h2>
+    <p style="margin:0 0 20px;color:#64748b;font-size:15px;">
+      <strong>${commenterName}</strong>, <strong>${trainingTitle}</strong> antrenmanına yorum yaptı.
+    </p>
+
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px 20px;margin-bottom:20px;">
+      <div style="font-size:13px;color:#15803d;font-weight:600;">🏋️ ${trainingTitle}</div>
+      <div style="font-size:13px;color:#64748b;margin-top:2px;">📅 ${trainingDate}</div>
+    </div>
+
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin-bottom:28px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <div style="width:36px;height:36px;background:linear-gradient(135deg,#16a34a,#15803d);border-radius:50%;
+                    display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:16px;">
+          ${commenterAvatar || commenterName.charAt(0).toUpperCase()}
+        </div>
+        <div>
+          <div style="font-weight:600;color:#1e293b;font-size:15px;">${commenterName}</div>
+          <div style="color:#94a3b8;font-size:13px;">${postDate}</div>
+        </div>
+      </div>
+      <div style="color:#334155;font-size:15px;line-height:1.7;white-space:pre-wrap;border-left:3px solid #16a34a;padding-left:16px;">
+        ${truncated}
+      </div>
+    </div>
+
+    <div style="text-align:center;">
+      <a href="${APP_URL}/antrenmanlar"
+         style="display:inline-block;background:linear-gradient(135deg,#16a34a,#15803d);color:#ffffff;text-decoration:none;
+                padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
+        Antrenmanı Gör →
+      </a>
+    </div>
+  `);
+}
+
 // Şablon 4: Yeni antrenman bildirimi
 function newTrainingEmail({ teamName, trainingTitle, trainingDate, trainingTime, location, description, upcomingTrainings }) {
   const upcoming = (upcomingTrainings || []).slice(0, 3).map(t => `
@@ -1907,12 +1952,83 @@ app.post('/api/trainings/:id/comments', authenticateToken, async (req, res) => {
     const trainingId = req.params.id;
     const { comment } = req.body;
 
+    if (!comment || !comment.trim()) {
+      return res.status(400).json({ error: 'Yorum boş olamaz.' });
+    }
+
+    // Yorumu kaydet
     const result = await pool.query(
       `INSERT INTO training_comments (training_id, user_id, comment)
        VALUES ($1, $2, $3)
        RETURNING *`,
-      [trainingId, req.user.id, comment]
+      [trainingId, req.user.id, comment.trim()]
     );
+
+    // Yorumu yapanın bilgilerini çek
+    const commenterResult = await pool.query(
+      'SELECT name, avatar FROM users WHERE id = $1',
+      [req.user.id]
+    );
+    const commenter = commenterResult.rows[0];
+
+    // Antrenman + takım bilgilerini çek
+    const trainingResult = await pool.query(
+      `SELECT t.title, t.training_date, t.team_id, teams.name as team_name
+       FROM trainings t
+       JOIN teams ON t.team_id = teams.id
+       WHERE t.id = $1`,
+      [trainingId]
+    );
+    const training = trainingResult.rows[0];
+
+    if (training && commenter) {
+      const trainingDate = new Date(training.training_date).toLocaleDateString('tr-TR', {
+        day: 'numeric', month: 'long', year: 'numeric',
+      });
+
+      // Katılımcılar + takım sahibi (yorumcu hariç, tekrarsız)
+      const recipientsResult = await pool.query(
+        `SELECT DISTINCT u.id, u.name, u.email
+         FROM users u
+         WHERE u.id IN (
+           -- Antrenmana kayıtlı kişiler
+           SELECT user_id FROM training_attendees WHERE training_id = $1
+           UNION
+           -- Takım sahibi / adminler
+           SELECT user_id FROM team_members WHERE team_id = $2 AND role IN ('owner','admin')
+         )
+         AND u.id != $3`,
+        [trainingId, training.team_id, req.user.id]
+      );
+
+      // Bildirim + mail (paralel, hata durumunda ana akışı kesmez)
+      recipientsResult.rows.forEach(async (recipient) => {
+        try {
+          await createNotif(recipient.id, {
+            title: `${training.title} — Yeni Yorum 💬`,
+            message: `${commenter.name}: ${comment.trim().slice(0, 80)}${comment.length > 80 ? '...' : ''}`,
+            type: 'training_comment',
+            refId: trainingId,
+            url: `/antrenmanlar`,
+          });
+
+          sendEmail({
+            to: recipient.email,
+            subject: `${training.title} antrenmanına yorum yapıldı 💬`,
+            html: trainingCommentEmail({
+              commenterName: commenter.name,
+              commenterAvatar: commenter.avatar,
+              trainingTitle: training.title,
+              trainingDate,
+              comment: comment.trim(),
+              trainingId,
+            }),
+          });
+        } catch (notifErr) {
+          console.error('Training comment notif error for', recipient.email, notifErr);
+        }
+      });
+    }
 
     res.json({ comment: result.rows[0] });
   } catch (error) {
