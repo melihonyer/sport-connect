@@ -1644,6 +1644,65 @@ app.get('/api/trainings', optionalAuth, async (req, res) => {
   }
 });
 
+// Kullanıcının kayıt olduğu yaklaşan antrenmanlar
+app.get('/api/trainings/my-joined', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT t.*,
+             teams.name as team_name,
+             teams.sport as team_sport,
+             teams.avatar as team_avatar,
+             COUNT(DISTINCT ta2.user_id) as attendee_count
+      FROM trainings t
+      JOIN teams ON t.team_id = teams.id
+      JOIN training_attendees ta ON t.id = ta.training_id AND ta.user_id = $1
+      LEFT JOIN training_attendees ta2 ON t.id = ta2.training_id
+      WHERE (
+        t.training_date > CURRENT_DATE
+        OR (t.training_date = CURRENT_DATE AND t.training_time >= CURRENT_TIME)
+      )
+      GROUP BY t.id, teams.name, teams.sport, teams.avatar
+      ORDER BY t.training_date ASC, t.training_time ASC
+    `, [req.user.id]);
+    res.json({ trainings: result.rows });
+  } catch (error) {
+    console.error('my-joined trainings error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Kullanıcının üye olduğu takımların yaklaşan antrenmanları (katılmadıkları)
+app.get('/api/trainings/my-team-trainings', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT t.*,
+             teams.name as team_name,
+             teams.sport as team_sport,
+             teams.avatar as team_avatar,
+             COUNT(DISTINCT ta.user_id) as attendee_count
+      FROM trainings t
+      JOIN teams ON t.team_id = teams.id
+      LEFT JOIN training_attendees ta ON t.id = ta.training_id
+      WHERE teams.id IN (
+        SELECT team_id FROM team_members WHERE user_id = $1
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM training_attendees WHERE training_id = t.id AND user_id = $1
+      )
+      AND (
+        t.training_date > CURRENT_DATE
+        OR (t.training_date = CURRENT_DATE AND t.training_time >= CURRENT_TIME)
+      )
+      GROUP BY t.id, teams.name, teams.sport, teams.avatar
+      ORDER BY t.training_date ASC, t.training_time ASC
+    `, [req.user.id]);
+    res.json({ trainings: result.rows });
+  } catch (error) {
+    console.error('my-team-trainings error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 app.get('/api/trainings/nearby', async (req, res) => {
   try {
     const { lat, lng, radius = 10 } = req.query;

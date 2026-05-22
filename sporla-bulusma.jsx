@@ -610,6 +610,8 @@ export default function Muuvlink() {
   const [trainings, setTrainings] = useState([]);
   const [teams, setTeams] = useState([]);
   const [myTrainings, setMyTrainings] = useState([]);
+  const [joinedTrainings, setJoinedTrainings] = useState([]);
+  const [myTeamTrainings, setMyTeamTrainings] = useState([]);
   const [myTeams, setMyTeams] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [badges, setBadges] = useState([]);
@@ -1195,6 +1197,8 @@ export default function Muuvlink() {
     localStorage.removeItem("token");
     setUser(null);
     setMyTrainings([]);
+    setJoinedTrainings([]);
+    setMyTeamTrainings([]);
     setMyTeams([]);
     setNotifications([]);
     setUserBadges([]);
@@ -1301,13 +1305,18 @@ export default function Muuvlink() {
 
   const fetchMyTrainings = async (token) => {
     try {
-      const response = await fetch(`${API_URL}/trainings`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setMyTrainings(data.trainings || []);
+      const headers = { Authorization: `Bearer ${token}` };
+      const [joinedRes, teamRes] = await Promise.all([
+        fetch(`${API_URL}/trainings/my-joined`, { headers }),
+        fetch(`${API_URL}/trainings/my-team-trainings`, { headers }),
+      ]);
+      if (joinedRes.ok) {
+        const data = await joinedRes.json();
+        setJoinedTrainings(data.trainings || []);
+      }
+      if (teamRes.ok) {
+        const data = await teamRes.json();
+        setMyTeamTrainings(data.trainings || []);
       }
     } catch (error) {
       console.error("Fetch my trainings error:", error);
@@ -2372,23 +2381,54 @@ export default function Muuvlink() {
               </div>
             )}
 
-            {/* My Trainings */}
-            {myTrainings.length > 0 && (
+            {/* Joined Trainings */}
+            {joinedTrainings.length > 0 && (
               <div className="bg-white rounded-2xl p-6 border border-slate-100">
-                <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase mb-4">Antrenmanlarım</div>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-2 h-2 rounded-full bg-green-500" />
+                  <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase">Katılacağım Antrenmanlar</div>
+                  <span className="ml-auto text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">{joinedTrainings.length}</span>
+                </div>
                 <div className="space-y-2">
-                  {myTrainings.slice(0, 5).map((t) => (
+                  {joinedTrainings.slice(0, 5).map((t) => (
                     <button key={t.id} onClick={() => fetchTrainingDetails(t.id)}
-                      className="w-full flex items-center justify-between px-4 py-3 rounded-xl hover:bg-slate-50 transition-colors text-left border border-transparent hover:border-slate-100">
-                      <div>
-                        <div className="font-medium text-slate-800 text-sm">{t.title}</div>
+                      className="w-full flex items-center justify-between px-4 py-3 rounded-xl hover:bg-green-50/50 transition-colors text-left border border-transparent hover:border-green-100">
+                      <div className="min-w-0">
+                        <div className="font-medium text-slate-800 text-sm truncate">{t.title}</div>
                         <div className="text-xs text-slate-400 mt-0.5 flex items-center gap-2">
-                          <MapPin className="w-3 h-3"/> {t.location_name}
+                          <MapPin className="w-3 h-3 flex-shrink-0"/> <span className="truncate">{t.location_name}</span>
                           <span>·</span>
-                          <Calendar className="w-3 h-3"/> {new Date(t.training_date).toLocaleDateString("tr-TR")}
+                          <Calendar className="w-3 h-3 flex-shrink-0"/> {new Date(t.training_date).toLocaleDateString("tr-TR")}
                         </div>
                       </div>
-                      <ChevronDown className="w-4 h-4 text-slate-300 -rotate-90 flex-shrink-0"/>
+                      <ChevronDown className="w-4 h-4 text-slate-300 -rotate-90 flex-shrink-0 ml-2"/>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Team Trainings */}
+            {myTeamTrainings.length > 0 && (
+              <div className="bg-white rounded-2xl p-6 border border-slate-100">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-2 h-2 rounded-full bg-blue-400" />
+                  <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase">Takımınızın Antrenmanları</div>
+                  <span className="ml-auto text-xs font-semibold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">{myTeamTrainings.length}</span>
+                </div>
+                <div className="space-y-2">
+                  {myTeamTrainings.slice(0, 5).map((t) => (
+                    <button key={t.id} onClick={() => fetchTrainingDetails(t.id)}
+                      className="w-full flex items-center justify-between px-4 py-3 rounded-xl hover:bg-blue-50/50 transition-colors text-left border border-transparent hover:border-blue-100">
+                      <div className="min-w-0">
+                        <div className="font-medium text-slate-800 text-sm truncate">{t.title}</div>
+                        <div className="text-xs text-slate-400 mt-0.5 flex items-center gap-2">
+                          <span className="truncate font-medium text-blue-400">{t.team_name}</span>
+                          <span>·</span>
+                          <Calendar className="w-3 h-3 flex-shrink-0"/> {new Date(t.training_date).toLocaleDateString("tr-TR")}
+                        </div>
+                      </div>
+                      <ChevronDown className="w-4 h-4 text-slate-300 -rotate-90 flex-shrink-0 ml-2"/>
                     </button>
                   ))}
                 </div>
