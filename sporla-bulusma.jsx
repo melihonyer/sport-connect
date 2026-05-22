@@ -4575,15 +4575,11 @@ export default function Muuvlink() {
           <div className="flex justify-between items-center h-[68px]">
 
             {/* Logo */}
-            <button className="flex items-center gap-2.5 group flex-shrink-0" onClick={() => setCurrentPage("home")}>
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform"
-                style={{background:"linear-gradient(135deg,#16A34A,#15803D)", boxShadow:"0 4px 14px rgba(22,163,74,0.35)"}}>
-                <Activity className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-semibold tracking-tight"
-                style={{background:"linear-gradient(90deg,#166534,#16A34A)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent"}}>
-                Muuvlink
-              </span>
+            <button className="flex items-center group flex-shrink-0 hover:opacity-85 transition-opacity" onClick={() => setCurrentPage("home")}>
+              {/* Desktop: amblem + yatay metin */}
+              <img src="/icons/logo-yatay.svg" alt="Muuvlink" className="hidden md:block h-8 w-auto" />
+              {/* Mobile: sadece amblem */}
+              <img src="/icons/amblem.svg" alt="Muuvlink" className="md:hidden h-9 w-auto" />
             </button>
 
             {/* Orta nav — desktop */}

@@ -449,11 +449,9 @@ export default function AdminPanel() {
         <div className="relative w-full max-w-md mx-4">
           {/* Logo */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl shadow-xl mb-4" style={{ background: "linear-gradient(135deg,#16A34A,#15803D)" }}>
-              <Shield className="w-8 h-8 text-white" />
-            </div>
-            <h1 className="text-2xl font-semibold text-green-900 tracking-tight">Admin Panel</h1>
-            <p className="text-green-600 text-sm mt-1">Muuvlink Yönetim Konsolu</p>
+            <img src="/icons/logo-yatay.svg" alt="Muuvlink" className="h-10 w-auto mx-auto mb-4" />
+            <h1 className="text-2xl font-semibold text-slate-800 tracking-tight">Admin Panel</h1>
+            <p className="text-slate-500 text-sm mt-1">Yönetim Konsolu</p>
           </div>
 
           {/* Login kutusu */}
@@ -886,12 +884,10 @@ export default function AdminPanel() {
 
         {/* Logo */}
         <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-100">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "linear-gradient(135deg,#16A34A,#15803D)" }}>
-            <Shield className="w-5 h-5 text-white" />
-          </div>
+          <img src="/icons/amblem.svg" alt="Muuvlink" className="h-8 w-auto flex-shrink-0" />
           <div className="flex-1">
-            <div className="text-green-900 font-semibold text-sm tracking-tight">Muuvlink</div>
-            <div className="text-green-500 text-xs font-semibold">Admin Panel</div>
+            <div className="text-slate-800 font-semibold text-sm tracking-tight">Muuvlink</div>
+            <div className="text-slate-400 text-xs font-medium">Admin Panel</div>
           </div>
           <button className="md:hidden p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 transition" onClick={() => setMobileNavOpen(false)}>
             <X className="w-4 h-4"/>
