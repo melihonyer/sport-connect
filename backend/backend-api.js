@@ -2935,9 +2935,9 @@ app.get('/api/admin/logs', isAdmin, async (req, res) => {
 
 app.get('/api/admin/analytics', isAdmin, async (req, res) => {
   try {
-    const [usersDaily, teamsDaily, trainingsDaily, joinsDaily,
-           usersWeekly, teamsWeekly, trainingsWeekly, joinsWeekly,
-           usersMonthly, teamsMonthly, trainingsMonthly, joinsMonthly,
+    const [usersDaily, teamsDaily, teamJoinsDaily, trainingsDaily, joinsDaily,
+           usersWeekly, teamsWeekly, teamJoinsWeekly, trainingsWeekly, joinsWeekly,
+           usersMonthly, teamsMonthly, teamJoinsMonthly, trainingsMonthly, joinsMonthly,
            totals] = await Promise.all([
       pool.query(`
         SELECT DATE(created_at AT TIME ZONE 'Europe/Istanbul') as day, COUNT(*) as count
@@ -2947,6 +2947,11 @@ app.get('/api/admin/analytics', isAdmin, async (req, res) => {
       pool.query(`
         SELECT DATE(created_at AT TIME ZONE 'Europe/Istanbul') as day, COUNT(*) as count
         FROM teams WHERE created_at >= NOW() - INTERVAL '30 days'
+        GROUP BY day ORDER BY day ASC
+      `),
+      pool.query(`
+        SELECT DATE(COALESCE(created_at, NOW()) AT TIME ZONE 'Europe/Istanbul') as day, COUNT(*) as count
+        FROM team_members WHERE COALESCE(created_at, NOW()) >= NOW() - INTERVAL '30 days'
         GROUP BY day ORDER BY day ASC
       `),
       pool.query(`
@@ -2970,6 +2975,11 @@ app.get('/api/admin/analytics', isAdmin, async (req, res) => {
         GROUP BY week ORDER BY week ASC
       `),
       pool.query(`
+        SELECT DATE_TRUNC('week', COALESCE(created_at, NOW()) AT TIME ZONE 'Europe/Istanbul') as week, COUNT(*) as count
+        FROM team_members WHERE COALESCE(created_at, NOW()) >= NOW() - INTERVAL '12 weeks'
+        GROUP BY week ORDER BY week ASC
+      `),
+      pool.query(`
         SELECT DATE_TRUNC('week', created_at AT TIME ZONE 'Europe/Istanbul') as week, COUNT(*) as count
         FROM trainings WHERE created_at >= NOW() - INTERVAL '12 weeks'
         GROUP BY week ORDER BY week ASC
@@ -2990,6 +3000,11 @@ app.get('/api/admin/analytics', isAdmin, async (req, res) => {
         GROUP BY month ORDER BY month ASC
       `),
       pool.query(`
+        SELECT DATE_TRUNC('month', COALESCE(created_at, NOW()) AT TIME ZONE 'Europe/Istanbul') as month, COUNT(*) as count
+        FROM team_members WHERE COALESCE(created_at, NOW()) >= NOW() - INTERVAL '12 months'
+        GROUP BY month ORDER BY month ASC
+      `),
+      pool.query(`
         SELECT DATE_TRUNC('month', created_at AT TIME ZONE 'Europe/Istanbul') as month, COUNT(*) as count
         FROM trainings WHERE created_at >= NOW() - INTERVAL '12 months'
         GROUP BY month ORDER BY month ASC
@@ -3003,12 +3018,15 @@ app.get('/api/admin/analytics', isAdmin, async (req, res) => {
         SELECT
           (SELECT COUNT(*) FROM users     WHERE created_at >= CURRENT_DATE) as today_users,
           (SELECT COUNT(*) FROM teams     WHERE created_at >= CURRENT_DATE) as today_teams,
+          (SELECT COUNT(*) FROM team_members WHERE COALESCE(created_at,NOW()) >= CURRENT_DATE) as today_team_joins,
           (SELECT COUNT(*) FROM trainings WHERE created_at >= CURRENT_DATE) as today_trainings,
           (SELECT COUNT(*) FROM users     WHERE created_at >= DATE_TRUNC('week',  NOW())) as week_users,
           (SELECT COUNT(*) FROM teams     WHERE created_at >= DATE_TRUNC('week',  NOW())) as week_teams,
+          (SELECT COUNT(*) FROM team_members WHERE COALESCE(created_at,NOW()) >= DATE_TRUNC('week',NOW())) as week_team_joins,
           (SELECT COUNT(*) FROM trainings WHERE created_at >= DATE_TRUNC('week',  NOW())) as week_trainings,
           (SELECT COUNT(*) FROM users     WHERE created_at >= DATE_TRUNC('month', NOW())) as month_users,
           (SELECT COUNT(*) FROM teams     WHERE created_at >= DATE_TRUNC('month', NOW())) as month_teams,
+          (SELECT COUNT(*) FROM team_members WHERE COALESCE(created_at,NOW()) >= DATE_TRUNC('month',NOW())) as month_team_joins,
           (SELECT COUNT(*) FROM trainings WHERE created_at >= DATE_TRUNC('month', NOW())) as month_trainings,
           (SELECT COUNT(*) FROM training_attendees WHERE COALESCE(created_at,NOW()) >= CURRENT_DATE) as today_joins,
           (SELECT COUNT(*) FROM training_attendees WHERE COALESCE(created_at,NOW()) >= DATE_TRUNC('week',NOW())) as week_joins,
@@ -3023,31 +3041,34 @@ app.get('/api/admin/analytics', isAdmin, async (req, res) => {
       const d = new Date(now);
       d.setDate(d.getDate() - i);
       const key = d.toISOString().slice(0, 10);
-      dailyMap[key] = { date: key, users: 0, teams: 0, trainings: 0, joins: 0 };
+      dailyMap[key] = { date: key, users: 0, teams: 0, teamJoins: 0, trainings: 0, joins: 0 };
     }
     const toKey = (val) => val?.toISOString?.()?.slice(0,10) || String(val).slice(0,10);
-    usersDaily.rows.forEach(r    => { const k = toKey(r.day);   if (dailyMap[k]) dailyMap[k].users     = parseInt(r.count); });
-    teamsDaily.rows.forEach(r    => { const k = toKey(r.day);   if (dailyMap[k]) dailyMap[k].teams     = parseInt(r.count); });
-    trainingsDaily.rows.forEach(r => { const k = toKey(r.day);  if (dailyMap[k]) dailyMap[k].trainings = parseInt(r.count); });
-    joinsDaily.rows.forEach(r    => { const k = toKey(r.day);   if (dailyMap[k]) dailyMap[k].joins     = parseInt(r.count); });
+    usersDaily.rows.forEach(r      => { const k = toKey(r.day);  if (dailyMap[k]) dailyMap[k].users     = parseInt(r.count); });
+    teamsDaily.rows.forEach(r      => { const k = toKey(r.day);  if (dailyMap[k]) dailyMap[k].teams     = parseInt(r.count); });
+    teamJoinsDaily.rows.forEach(r  => { const k = toKey(r.day);  if (dailyMap[k]) dailyMap[k].teamJoins = parseInt(r.count); });
+    trainingsDaily.rows.forEach(r  => { const k = toKey(r.day);  if (dailyMap[k]) dailyMap[k].trainings = parseInt(r.count); });
+    joinsDaily.rows.forEach(r      => { const k = toKey(r.day);  if (dailyMap[k]) dailyMap[k].joins     = parseInt(r.count); });
 
     // Weekly map
     const weeklyMap = {};
     const toWeekKey = (val) => val?.toISOString?.()?.slice(0,10) || String(val).slice(0,10);
-    const ensureWeek  = (k) => { weeklyMap[k]  = weeklyMap[k]  || { date: k, users: 0, teams: 0, trainings: 0, joins: 0 }; };
-    usersWeekly.rows.forEach(r     => { const k = toWeekKey(r.week); ensureWeek(k); weeklyMap[k].users     = parseInt(r.count); });
-    teamsWeekly.rows.forEach(r     => { const k = toWeekKey(r.week); ensureWeek(k); weeklyMap[k].teams     = parseInt(r.count); });
-    trainingsWeekly.rows.forEach(r => { const k = toWeekKey(r.week); ensureWeek(k); weeklyMap[k].trainings = parseInt(r.count); });
-    joinsWeekly.rows.forEach(r     => { const k = toWeekKey(r.week); ensureWeek(k); weeklyMap[k].joins     = parseInt(r.count); });
+    const ensureWeek  = (k) => { weeklyMap[k]  = weeklyMap[k]  || { date: k, users: 0, teams: 0, teamJoins: 0, trainings: 0, joins: 0 }; };
+    usersWeekly.rows.forEach(r      => { const k = toWeekKey(r.week); ensureWeek(k); weeklyMap[k].users     = parseInt(r.count); });
+    teamsWeekly.rows.forEach(r      => { const k = toWeekKey(r.week); ensureWeek(k); weeklyMap[k].teams     = parseInt(r.count); });
+    teamJoinsWeekly.rows.forEach(r  => { const k = toWeekKey(r.week); ensureWeek(k); weeklyMap[k].teamJoins = parseInt(r.count); });
+    trainingsWeekly.rows.forEach(r  => { const k = toWeekKey(r.week); ensureWeek(k); weeklyMap[k].trainings = parseInt(r.count); });
+    joinsWeekly.rows.forEach(r      => { const k = toWeekKey(r.week); ensureWeek(k); weeklyMap[k].joins     = parseInt(r.count); });
 
     // Monthly map
     const monthlyMap = {};
     const toMonthKey = (val) => val?.toISOString?.()?.slice(0,7) || String(val).slice(0,7);
-    const ensureMonth = (k) => { monthlyMap[k] = monthlyMap[k] || { date: k, users: 0, teams: 0, trainings: 0, joins: 0 }; };
-    usersMonthly.rows.forEach(r     => { const k = toMonthKey(r.month); ensureMonth(k); monthlyMap[k].users     = parseInt(r.count); });
-    teamsMonthly.rows.forEach(r     => { const k = toMonthKey(r.month); ensureMonth(k); monthlyMap[k].teams     = parseInt(r.count); });
-    trainingsMonthly.rows.forEach(r => { const k = toMonthKey(r.month); ensureMonth(k); monthlyMap[k].trainings = parseInt(r.count); });
-    joinsMonthly.rows.forEach(r     => { const k = toMonthKey(r.month); ensureMonth(k); monthlyMap[k].joins     = parseInt(r.count); });
+    const ensureMonth = (k) => { monthlyMap[k] = monthlyMap[k] || { date: k, users: 0, teams: 0, teamJoins: 0, trainings: 0, joins: 0 }; };
+    usersMonthly.rows.forEach(r      => { const k = toMonthKey(r.month); ensureMonth(k); monthlyMap[k].users     = parseInt(r.count); });
+    teamsMonthly.rows.forEach(r      => { const k = toMonthKey(r.month); ensureMonth(k); monthlyMap[k].teams     = parseInt(r.count); });
+    teamJoinsMonthly.rows.forEach(r  => { const k = toMonthKey(r.month); ensureMonth(k); monthlyMap[k].teamJoins = parseInt(r.count); });
+    trainingsMonthly.rows.forEach(r  => { const k = toMonthKey(r.month); ensureMonth(k); monthlyMap[k].trainings = parseInt(r.count); });
+    joinsMonthly.rows.forEach(r      => { const k = toMonthKey(r.month); ensureMonth(k); monthlyMap[k].joins     = parseInt(r.count); });
 
     const t = totals.rows[0];
     res.json({
@@ -3055,9 +3076,9 @@ app.get('/api/admin/analytics', isAdmin, async (req, res) => {
       weekly:  Object.values(weeklyMap).sort((a,b)  => a.date.localeCompare(b.date)),
       monthly: Object.values(monthlyMap).sort((a,b) => a.date.localeCompare(b.date)),
       totals: {
-        today: { users: parseInt(t.today_users), teams: parseInt(t.today_teams), trainings: parseInt(t.today_trainings), joins: parseInt(t.today_joins) },
-        week:  { users: parseInt(t.week_users),  teams: parseInt(t.week_teams),  trainings: parseInt(t.week_trainings),  joins: parseInt(t.week_joins)  },
-        month: { users: parseInt(t.month_users), teams: parseInt(t.month_teams), trainings: parseInt(t.month_trainings), joins: parseInt(t.month_joins) },
+        today: { users: parseInt(t.today_users), teams: parseInt(t.today_teams), teamJoins: parseInt(t.today_team_joins), trainings: parseInt(t.today_trainings), joins: parseInt(t.today_joins) },
+        week:  { users: parseInt(t.week_users),  teams: parseInt(t.week_teams),  teamJoins: parseInt(t.week_team_joins),  trainings: parseInt(t.week_trainings),  joins: parseInt(t.week_joins)  },
+        month: { users: parseInt(t.month_users), teams: parseInt(t.month_teams), teamJoins: parseInt(t.month_team_joins), trainings: parseInt(t.month_trainings), joins: parseInt(t.month_joins) },
       },
     });
   } catch (e) {

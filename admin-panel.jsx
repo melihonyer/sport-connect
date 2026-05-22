@@ -682,14 +682,14 @@ export default function AdminPanel() {
 
     // Filtre → grafik serisi eşleştirmesi
     const FILTER_SERIES = {
-      all:             ["users","teams","trainings","joins"],
+      all:             ["users","teams","teamJoins","trainings","joins"],
       user_register:   ["users"],
       team_create:     ["teams"],
-      team_join:       ["teams"],
+      team_join:       ["teamJoins"],
       training_create: ["trainings"],
       training_join:   ["joins"],
     };
-    const activeSeries = FILTER_SERIES[logFilter] || ["users","teams","trainings","joins"];
+    const activeSeries = FILTER_SERIES[logFilter] || ["users","teams","teamJoins","trainings","joins"];
     const show = (key) => activeSeries.includes(key);
     const seriesStroke = (key, color) => show(key) ? color : "#e2e8f0";
     const seriesWidth  = (key) => show(key) ? 2.5 : 0;
@@ -699,12 +699,13 @@ export default function AdminPanel() {
       <div className="space-y-6">
         {/* ── Stats summary ───────────────────────────── */}
         {analytics && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
             {[
-              { label: "Yeni Üye",       key: "users",     grad: "from-blue-500 to-blue-700",    icon: "👤" },
-              { label: "Yeni Takım",     key: "teams",     grad: "from-purple-500 to-purple-700", icon: "🏆" },
-              { label: "Yeni Antrenman", key: "trainings", grad: "from-green-500 to-green-700",   icon: "📋" },
-              { label: "Katılım",        key: "joins",     grad: "from-amber-500 to-orange-500",  icon: "✅" },
+              { label: "Yeni Üye",        key: "users",     grad: "from-blue-500 to-blue-700",     icon: "👤" },
+              { label: "Takım Kuruldu",   key: "teams",     grad: "from-purple-500 to-purple-700",  icon: "🏆" },
+              { label: "Takıma Katılım",  key: "teamJoins", grad: "from-indigo-500 to-indigo-700",  icon: "👥" },
+              { label: "Yeni Antrenman",  key: "trainings", grad: "from-green-500 to-green-700",    icon: "📋" },
+              { label: "Antrenmana Kat.", key: "joins",     grad: "from-amber-500 to-orange-500",   icon: "✅" },
             ].map(({ label, key, grad, icon }) => (
               <div key={key} className={`bg-gradient-to-br ${grad} rounded-2xl p-5 text-white shadow-lg`}>
                 <div className="flex items-center justify-between mb-3">
@@ -745,6 +746,7 @@ export default function AdminPanel() {
                 <defs>
                   <linearGradient id="gUsers"     x1="0" y1="0" x2="0" y2="1"><stop offset="5%"  stopColor="#3B82F6" stopOpacity={show("users")     ? 0.35 : 0}/><stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/></linearGradient>
                   <linearGradient id="gTeams"     x1="0" y1="0" x2="0" y2="1"><stop offset="5%"  stopColor="#8B5CF6" stopOpacity={show("teams")     ? 0.35 : 0}/><stop offset="95%" stopColor="#8B5CF6" stopOpacity={0}/></linearGradient>
+                  <linearGradient id="gTeamJoins" x1="0" y1="0" x2="0" y2="1"><stop offset="5%"  stopColor="#6366F1" stopOpacity={show("teamJoins") ? 0.35 : 0}/><stop offset="95%" stopColor="#6366F1" stopOpacity={0}/></linearGradient>
                   <linearGradient id="gTrainings" x1="0" y1="0" x2="0" y2="1"><stop offset="5%"  stopColor="#16A34A" stopOpacity={show("trainings") ? 0.35 : 0}/><stop offset="95%" stopColor="#16A34A" stopOpacity={0}/></linearGradient>
                   <linearGradient id="gJoins"     x1="0" y1="0" x2="0" y2="1"><stop offset="5%"  stopColor="#F59E0B" stopOpacity={show("joins")     ? 0.35 : 0}/><stop offset="95%" stopColor="#F59E0B" stopOpacity={0}/></linearGradient>
                 </defs>
@@ -754,10 +756,11 @@ export default function AdminPanel() {
                 <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} allowDecimals={false} />
                 <Tooltip contentStyle={{ borderRadius: "12px", border: "1px solid #e2e8f0", fontSize: 12 }} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Area type="monotone" dataKey="users"     name="Üye"       stroke={seriesStroke("users",     "#3B82F6")} fill="url(#gUsers)"     strokeWidth={seriesWidth("users")}     dot={false} fillOpacity={seriesFill("users")} />
-                <Area type="monotone" dataKey="teams"     name="Takım"     stroke={seriesStroke("teams",     "#8B5CF6")} fill="url(#gTeams)"     strokeWidth={seriesWidth("teams")}     dot={false} fillOpacity={seriesFill("teams")} />
-                <Area type="monotone" dataKey="trainings" name="Antrenman" stroke={seriesStroke("trainings", "#16A34A")} fill="url(#gTrainings)" strokeWidth={seriesWidth("trainings")} dot={false} fillOpacity={seriesFill("trainings")} />
-                <Area type="monotone" dataKey="joins"     name="Katılım"   stroke={seriesStroke("joins",     "#F59E0B")} fill="url(#gJoins)"     strokeWidth={seriesWidth("joins")}     dot={false} fillOpacity={seriesFill("joins")} />
+                <Area type="monotone" dataKey="users"     name="Üye"           stroke={seriesStroke("users",     "#3B82F6")} fill="url(#gUsers)"     strokeWidth={seriesWidth("users")}     dot={false} fillOpacity={seriesFill("users")} />
+                <Area type="monotone" dataKey="teams"     name="Takım Kuruldu" stroke={seriesStroke("teams",     "#8B5CF6")} fill="url(#gTeams)"     strokeWidth={seriesWidth("teams")}     dot={false} fillOpacity={seriesFill("teams")} />
+                <Area type="monotone" dataKey="teamJoins" name="Takıma Katılım" stroke={seriesStroke("teamJoins", "#6366F1")} fill="url(#gTeamJoins)" strokeWidth={seriesWidth("teamJoins")} dot={false} fillOpacity={seriesFill("teamJoins")} />
+                <Area type="monotone" dataKey="trainings" name="Antrenman"      stroke={seriesStroke("trainings", "#16A34A")} fill="url(#gTrainings)" strokeWidth={seriesWidth("trainings")} dot={false} fillOpacity={seriesFill("trainings")} />
+                <Area type="monotone" dataKey="joins"     name="Antrenmana Kat." stroke={seriesStroke("joins",    "#F59E0B")} fill="url(#gJoins)"     strokeWidth={seriesWidth("joins")}     dot={false} fillOpacity={seriesFill("joins")} />
               </AreaChart>
             </ResponsiveContainer>
           )}
