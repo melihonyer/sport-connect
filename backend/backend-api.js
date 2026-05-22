@@ -3110,6 +3110,9 @@ async function logActivity(event_type, user_id, user_name, meta = {}) {
 // ── Geçmiş verilerini activity_logs'a yükle (idempotent) ──────────────────
 async function backfillActivityLogs() {
   try {
+    // Unique index'in hazır olmasını bekle
+    await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS activity_logs_source_ref_idx ON activity_logs(source_ref) WHERE source_ref IS NOT NULL`).catch(() => {});
+
     // Kullanıcı kayıtları
     await pool.query(`
       INSERT INTO activity_logs (event_type, user_id, user_name, meta, created_at, source_ref)
@@ -3118,7 +3121,7 @@ async function backfillActivityLogs() {
              u.created_at,
              'user_register_' || u.id
       FROM users u
-      ON CONFLICT (source_ref) DO NOTHING
+      WHERE NOT EXISTS (SELECT 1 FROM activity_logs al WHERE al.source_ref = 'user_register_' || u.id::text)
     `);
 
     // Takım oluşturma (owner)
@@ -3131,7 +3134,7 @@ async function backfillActivityLogs() {
       FROM teams t
       JOIN team_members tm ON tm.team_id = t.id AND tm.role = 'owner'
       JOIN users u ON u.id = tm.user_id
-      ON CONFLICT (source_ref) DO NOTHING
+      WHERE NOT EXISTS (SELECT 1 FROM activity_logs al WHERE al.source_ref = 'team_create_' || t.id::text)
     `);
 
     // Takıma katılma (üye, owner değil)
@@ -3145,7 +3148,7 @@ async function backfillActivityLogs() {
       JOIN users u ON u.id = tm.user_id
       JOIN teams t ON t.id = tm.team_id
       WHERE tm.role != 'owner'
-      ON CONFLICT (source_ref) DO NOTHING
+        AND NOT EXISTS (SELECT 1 FROM activity_logs al WHERE al.source_ref = 'team_join_' || tm.id::text)
     `);
 
     // Antrenman oluşturma
@@ -3159,7 +3162,7 @@ async function backfillActivityLogs() {
       JOIN teams t ON t.id = tr.team_id
       JOIN team_members tm ON tm.team_id = t.id AND tm.role = 'owner'
       JOIN users u ON u.id = tm.user_id
-      ON CONFLICT (source_ref) DO NOTHING
+      WHERE NOT EXISTS (SELECT 1 FROM activity_logs al WHERE al.source_ref = 'training_create_' || tr.id::text)
     `);
 
     // Antrenmana katılma
@@ -3172,7 +3175,7 @@ async function backfillActivityLogs() {
       FROM training_attendees ta
       JOIN users u ON u.id = ta.user_id
       JOIN trainings tr ON tr.id = ta.training_id
-      ON CONFLICT (source_ref) DO NOTHING
+      WHERE NOT EXISTS (SELECT 1 FROM activity_logs al WHERE al.source_ref = 'training_join_' || ta.id::text)
     `);
 
     console.log('[backfill] activity_logs güncellendi.');
