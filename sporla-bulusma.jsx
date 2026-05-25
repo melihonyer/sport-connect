@@ -630,8 +630,8 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
           .bn-text-col { padding-right:0 !important; padding-bottom:0 !important; }
           .bn-img-col  { display:none !important; }
           .bn-nav      { display:flex !important; }
-          .bn-title:not(.bn-motto) { white-space:normal !important; font-size:clamp(2rem,9vw,2.8rem) !important; }
-          .bn-motto    { white-space:normal !important; font-size:7rem !important; line-height:1.05 !important; }
+          .bn-title    { white-space:normal !important; font-size:4.5rem !important; line-height:1.08 !important; word-break:break-word !important; }
+          .bn-motto    { white-space:normal !important; font-size:4.5rem !important; line-height:1.08 !important; word-break:break-word !important; }
           .bn-stats    { display:none !important; }
         }
       `}</style>
