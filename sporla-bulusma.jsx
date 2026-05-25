@@ -2040,56 +2040,63 @@ export default function Muuvlink() {
     return (
       <div className="bg-white overflow-hidden">
         {/* Section header */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 pt-20 pb-8">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 pt-24 pb-12">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8">
             <div>
-              <span className="text-xs font-semibold tracking-[0.35em] text-brand-500 uppercase block mb-3">Platform</span>
-              <h2 className="text-5xl md:text-7xl font-semibold text-slate-900 tracking-tighter leading-[0.92]">
-                Neden<br/>
-                <svg viewBox="0 0 520 90" className="w-full max-w-[520px] overflow-visible" style={{display:"block"}}>
-                  <text x="0" y="78" fontFamily="Montserrat, sans-serif" fontWeight="700" fontSize="88"
-                    fill="none" stroke="#00b7ba" strokeWidth="2" paintOrder="stroke">
-                    Muuvlink?
-                  </text>
-                </svg>
+              <span className="text-[11px] font-bold tracking-[0.4em] uppercase block mb-5"
+                style={{color:"#00b7ba"}}>Platform</span>
+              <h2 className="font-bold tracking-tight leading-[0.88]"
+                style={{fontSize:"clamp(3.2rem,7vw,5.5rem)"}}>
+                <span className="text-slate-900 block">Neden</span>
+                <span style={{
+                  background:"linear-gradient(90deg,#00b7ba 0%,#009295 100%)",
+                  WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text",
+                }}>Muuvlink?</span>
               </h2>
             </div>
-            <p className="md:max-w-xs text-slate-400 text-sm leading-relaxed md:pb-2">
-              Spor yapmayı seven insanları bir araya getiren, akıllı ve sosyal spor platformu.
-            </p>
+            <div className="md:max-w-sm md:pb-3">
+              <p className="text-slate-500 text-base leading-relaxed">
+                Spor yapmayı seven insanları bir araya getiren, akıllı ve sosyal spor platformu.
+              </p>
+            </div>
           </div>
         </div>
 
         {/* Alternating editorial rows */}
         {editorialFeatures.map((f, i) => (
-          <div key={i} className={`flex flex-col ${i % 2 === 0 ? "md:flex-row" : "md:flex-row-reverse"} border-t border-slate-100`} style={{minHeight:"340px"}}>
-            {/* Color panel */}
-            <div className="md:w-5/12 relative flex items-center justify-center py-14 px-10 overflow-hidden flex-shrink-0" style={{background: f.bg}}>
+          <div key={i} className={`flex flex-col ${i % 2 === 0 ? "md:flex-row" : "md:flex-row-reverse"}`}
+            style={{borderTop:"1px solid #f1f5f9", minHeight:"360px"}}>
+            {/* Renkli panel */}
+            <div className="md:w-5/12 relative flex items-center justify-center py-16 px-10 overflow-hidden flex-shrink-0"
+              style={{background: f.bg}}>
+              {/* Büyük numara — dekoratif */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden"
-                style={{fontSize:"clamp(120px,18vw,220px)", fontWeight:600, color:"rgba(21,128,61,0.08)", lineHeight:1, letterSpacing:"-0.05em"}}>
+                style={{fontSize:"clamp(140px,20vw,240px)", fontWeight:800, color:`${f.accent}12`, lineHeight:1, letterSpacing:"-0.06em"}}>
                 {f.num}
               </div>
-              <div className="absolute inset-0 opacity-[0.04]"
-                style={{backgroundImage:"linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px)", backgroundSize:"40px 40px"}}/>
-              <div className="relative z-10 text-center">
-                <div className="w-20 h-20 rounded-3xl mx-auto mb-5 flex items-center justify-center"
-                  style={{background:`${f.accent}18`, border:`1.5px solid ${f.accent}35`}}>
-                  <f.icon className="w-10 h-10" style={{color: f.accent}}/>
+              <div className="relative z-10 flex flex-col items-center gap-4">
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
+                  style={{background:`${f.accent}18`, border:`1.5px solid ${f.accent}30`}}>
+                  <f.icon className="w-8 h-8" style={{color: f.accent}}/>
                 </div>
-                <div className="text-7xl font-semibold leading-none" style={{color: f.accent, letterSpacing:"-0.04em", opacity:0.9}}>{f.num}</div>
+                <div className="font-black leading-none" style={{fontSize:"5rem", color: f.accent, letterSpacing:"-0.04em", opacity:0.85}}>
+                  {f.num}
+                </div>
               </div>
             </div>
-            {/* Text panel */}
-            <div className="md:w-7/12 flex items-center px-8 md:px-14 py-12 bg-white">
+            {/* Metin paneli */}
+            <div className="md:w-7/12 flex items-center px-8 md:px-16 py-14 bg-white">
               <div className="max-w-lg">
-                <div className="text-xs font-semibold tracking-[0.3em] text-slate-400 uppercase mb-4">{f.sub}</div>
-                <h3 className="text-3xl md:text-4xl font-semibold text-slate-900 mb-4 tracking-tight leading-tight">{f.title}</h3>
-                <p className="text-slate-500 text-base leading-relaxed mb-7">{f.desc}</p>
+                <div className="text-[11px] font-bold tracking-[0.35em] uppercase mb-5"
+                  style={{color: f.accent}}>{f.sub}</div>
+                <h3 className="font-bold text-slate-900 mb-4 tracking-tight leading-tight"
+                  style={{fontSize:"clamp(1.6rem,3vw,2.1rem)"}}>{f.title}</h3>
+                <p className="text-slate-500 leading-relaxed mb-8" style={{fontSize:"0.95rem"}}>{f.desc}</p>
                 <ul className="space-y-3">
                   {f.points.map((p, j) => (
                     <li key={j} className="flex items-center gap-3 text-slate-700 font-semibold text-sm">
                       <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-                        style={{background:`${f.accent}20`}}>
+                        style={{background:`${f.accent}18`}}>
                         <div className="w-2 h-2 rounded-full" style={{background: f.accent}}/>
                       </div>
                       {p}
