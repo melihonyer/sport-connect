@@ -581,23 +581,24 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                   </div>
 
                   {/* Sağ: görsel */}
-                  <div className="bn-img-col relative">
-                    <div className="absolute inset-0 flex items-end justify-center" style={{overflow:"visible"}}>
-                      {hasImg && (
-                        <>
-                          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[500px] h-[400px] rounded-full blur-3xl pointer-events-none"
-                            style={{background:"radial-gradient(ellipse,rgba(0,183,186,0.2) 0%,rgba(0,183,186,0.1) 55%,transparent 70%)"}}/>
-                          <div className="relative z-10" style={{animation:"heroFloat 5s ease-in-out infinite", marginBottom:"-100px"}}>
-                            <img
-                              src={`${BASE_URL}${banner.image_url}`}
-                              alt=""
-                              className="w-auto select-none pointer-events-none"
-                              style={{height:"700px", maxWidth:"none", objectFit:"contain", objectPosition:"bottom center", filter:"drop-shadow(0 8px 24px rgba(0,0,0,0.18))"}}
-                            />
-                          </div>
-                        </>
-                      )}
-                    </div>
+                  <div className="bn-img-col relative" style={{overflow:"hidden"}}>
+                    {hasImg && (
+                      <>
+                        {/* Glow */}
+                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[500px] h-[400px] rounded-full blur-3xl pointer-events-none"
+                          style={{background:"radial-gradient(ellipse,rgba(0,183,186,0.2) 0%,rgba(0,183,186,0.1) 55%,transparent 70%)"}}/>
+                        {/* Görsel: bottom:-44px → float max 14px yukarı çıksa da alt kenar hiç görünmez */}
+                        <div className="absolute inset-x-0 flex justify-center items-end"
+                          style={{bottom:"-44px", animation:"heroFloat 5s ease-in-out infinite"}}>
+                          <img
+                            src={`${BASE_URL}${banner.image_url}`}
+                            alt=""
+                            className="select-none pointer-events-none"
+                            style={{height:"620px", width:"auto", maxWidth:"100%", objectFit:"contain", objectPosition:"bottom center", filter:"drop-shadow(0 8px 24px rgba(0,0,0,0.18))"}}
+                          />
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
