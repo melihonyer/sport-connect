@@ -498,7 +498,15 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                 <div className="bn-grid" style={{display:"grid", gridTemplateColumns:"55% 45%", minHeight:"680px", paddingTop:"112px"}}>
 
                   {/* Sol: metin */}
-                  <div className="bn-text-col z-10 space-y-7 pr-8 pb-28 flex flex-col justify-center">
+                  <div className="bn-text-col z-10 space-y-7 pr-8 pb-28 flex flex-col justify-center"
+                    style={{
+                      background:"rgba(0,0,0,0.18)",
+                      backdropFilter:"blur(18px)",
+                      WebkitBackdropFilter:"blur(18px)",
+                      borderRadius:"24px",
+                      padding:"40px 40px 48px 40px",
+                      border:"1px solid rgba(255,255,255,0.08)",
+                    }}>
                     {banner?.badge_text && (
                       <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full text-sm font-semibold border backdrop-blur-sm"
                         style={{background:"rgba(255,255,255,0.06)",borderColor:"rgba(255,255,255,0.12)",color:"rgba(186,230,253,0.9)"}}>
