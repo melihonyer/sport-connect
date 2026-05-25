@@ -67,44 +67,41 @@ const DEFAULT_MOTTOS = [
 // Muuvlink her 55ms'de re-render ederdi (typewriter state),
 // bu da AuthModal gibi nested component'lerin unmount/remount olmasına
 // ve form alanlarının sıfırlanmasına yol açıyordu.
-const Typewriter = React.memo(({ mottos }) => {
-  const [idx, setIdx]       = useState(0);
-  const [text, setText]     = useState("");
+const Typewriter = React.memo(({ mottos, color1 = "#00b7ba", color2 = "#981dd8" }) => {
+  const [idx, setIdx]         = useState(0);
+  const [visible, setVisible] = useState(true);
+  const [key, setKey]         = useState(0); // animasyonu yeniden tetiklemek için
 
   useEffect(() => {
-    const target = mottos[idx % mottos.length];
-    let pos = 0, deleting = false, timer;
-    const tick = () => {
-      if (!deleting) {
-        pos++;
-        setText(target.slice(0, pos));
-        if (pos < target.length) { timer = setTimeout(tick, 55); }
-        else { timer = setTimeout(() => { deleting = true; tick(); }, 1400); }
-      } else {
-        pos--;
-        setText(target.slice(0, pos));
-        if (pos > 0) { timer = setTimeout(tick, 38); }
-        else { timer = setTimeout(() => setIdx(p => (p + 1) % mottos.length), 220); }
-      }
-    };
-    setText("");
-    timer = setTimeout(tick, 300);
-    return () => clearTimeout(timer);
-  }, [idx]); // eslint-disable-line react-hooks/exhaustive-deps
+    const hold = setTimeout(() => {
+      setVisible(false);
+      const swap = setTimeout(() => {
+        setIdx(i => (i + 1) % mottos.length);
+        setVisible(true);
+        setKey(k => k + 1);
+      }, 480);
+      return () => clearTimeout(swap);
+    }, 2400);
+    return () => clearTimeout(hold);
+  }, [key, mottos.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const grad = `linear-gradient(90deg,${color1},${color2})`;
 
   return (
-    <>
-      <span style={{
-        background:"linear-gradient(90deg,#00b7ba 0%,#981dd8 55%,#00b7ba 100%)",
-        WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text",
-      }}>{text}</span>
-      <span style={{
-        display:"inline-block", width:"3px", height:"0.75em",
-        marginLeft:"3px", marginBottom:"1px", verticalAlign:"middle",
-        background:"linear-gradient(180deg,#00b7ba,#981dd8)",
-        borderRadius:"2px", animation:"blink 1s step-end infinite",
-      }}/>
-    </>
+    <span style={{
+      background: grad,
+      WebkitBackgroundClip: "text",
+      WebkitTextFillColor: "transparent",
+      backgroundClip: "text",
+      display: "inline-block",
+      ...(visible
+        ? { animation: "mottoIn 0.55s cubic-bezier(0.16,1,0.3,1) both" }
+        : { opacity: 0, filter: "blur(10px)", transform: "translateY(-8px)",
+            transition: "opacity 0.4s ease, filter 0.4s ease, transform 0.4s ease" }
+      ),
+    }}>
+      {mottos[idx % mottos.length]}
+    </span>
   );
 });
 
@@ -483,10 +480,14 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                       <h1 className="bn-title text-white" style={{fontSize:"clamp(2.8rem,5.5vw,4.5rem)", lineHeight:1.1, fontWeight:600}}>
                         {banner?.title || "Sporla Buluş,"}
                       </h1>
-                      <h1 className="bn-title" style={{fontSize:"clamp(2.8rem,5.5vw,4.5rem)", lineHeight:1.15, fontWeight:600, minHeight:"1.2em", whiteSpace:"nowrap", overflow:"hidden"}}>
+                      <h1 className="bn-title" style={{fontSize:"clamp(2.8rem,5.5vw,4.5rem)", lineHeight:1.15, fontWeight:600, minHeight:"1.25em"}}>
                         {isActive
-                          ? <Typewriter mottos={(banner?.mottos?.length > 0) ? banner.mottos : DEFAULT_MOTTOS}/>
-                          : <span style={{color:"rgba(134,239,172,0.6)"}}>&nbsp;</span>
+                          ? <Typewriter
+                              mottos={(banner?.mottos?.length > 0) ? banner.mottos : DEFAULT_MOTTOS}
+                              color1={banner?.motto_color_1 || "#00b7ba"}
+                              color2={banner?.motto_color_2 || "#981dd8"}
+                            />
+                          : <span>&nbsp;</span>
                         }
                       </h1>
                       <p className="mt-5 text-lg leading-relaxed max-w-md font-light" style={{color:"rgba(186,230,253,0.75)"}}>

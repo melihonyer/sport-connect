@@ -2706,21 +2706,26 @@ app.get('/api/admin/banners', isAdmin, async (req, res) => {
 // Admin: banner oluştur
 app.post('/api/admin/banners', isAdmin, async (req, res) => {
   try {
-    // mottos kolonunu ekle (yoksa)
+    // mottos ve renk kolonlarını ekle (yoksa)
     await pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS mottos JSONB DEFAULT '[]'`);
+    await pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS motto_color_1 TEXT DEFAULT '#00b7ba'`);
+    await pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS motto_color_2 TEXT DEFAULT '#981dd8'`);
     const { title, subtitle, badge_text, cta_primary_text, cta_secondary_text,
             cta_primary_url, cta_secondary_url,
-            gradient_from, gradient_via, gradient_to, order_index, is_active, mottos } = req.body;
+            gradient_from, gradient_via, gradient_to, order_index, is_active, mottos,
+            motto_color_1, motto_color_2 } = req.body;
     const result = await pool.query(
       `INSERT INTO banners (title, subtitle, badge_text, cta_primary_text, cta_secondary_text,
         cta_primary_url, cta_secondary_url,
-        gradient_from, gradient_via, gradient_to, order_index, is_active, mottos)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
+        gradient_from, gradient_via, gradient_to, order_index, is_active, mottos,
+        motto_color_1, motto_color_2)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING *`,
       [title, subtitle, badge_text, cta_primary_text, cta_secondary_text,
        cta_primary_url || '', cta_secondary_url || '',
        gradient_from || '#0D0B26', gradient_via || '#1a1040', gradient_to || '#0f2044',
        order_index || 0, is_active !== false,
-       JSON.stringify(Array.isArray(mottos) && mottos.length ? mottos : [])]
+       JSON.stringify(Array.isArray(mottos) && mottos.length ? mottos : []),
+       motto_color_1 || '#00b7ba', motto_color_2 || '#981dd8']
     );
     res.json(result.rows[0]);
   } catch (e) {
@@ -2732,20 +2737,25 @@ app.post('/api/admin/banners', isAdmin, async (req, res) => {
 app.put('/api/admin/banners/:id', isAdmin, async (req, res) => {
   try {
     await pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS mottos JSONB DEFAULT '[]'`);
+    await pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS motto_color_1 TEXT DEFAULT '#00b7ba'`);
+    await pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS motto_color_2 TEXT DEFAULT '#981dd8'`);
     const { title, subtitle, badge_text, cta_primary_text, cta_secondary_text,
             cta_primary_url, cta_secondary_url,
-            gradient_from, gradient_via, gradient_to, order_index, is_active, mottos } = req.body;
+            gradient_from, gradient_via, gradient_to, order_index, is_active, mottos,
+            motto_color_1, motto_color_2 } = req.body;
     const result = await pool.query(
       `UPDATE banners SET title=$1, subtitle=$2, badge_text=$3,
         cta_primary_text=$4, cta_secondary_text=$5,
         cta_primary_url=$6, cta_secondary_url=$7,
         gradient_from=$8, gradient_via=$9, gradient_to=$10,
-        order_index=$11, is_active=$12, mottos=$13
-       WHERE id=$14 RETURNING *`,
+        order_index=$11, is_active=$12, mottos=$13,
+        motto_color_1=$14, motto_color_2=$15
+       WHERE id=$16 RETURNING *`,
       [title, subtitle, badge_text, cta_primary_text, cta_secondary_text,
        cta_primary_url || '', cta_secondary_url || '',
        gradient_from, gradient_via, gradient_to, order_index, is_active,
        JSON.stringify(Array.isArray(mottos) && mottos.length ? mottos : []),
+       motto_color_1 || '#00b7ba', motto_color_2 || '#981dd8',
        req.params.id]
     );
     res.json(result.rows[0]);
@@ -3229,6 +3239,8 @@ pool.query(`ALTER TABLE home_gallery  ADD COLUMN IF NOT EXISTS image_url TEXT DE
 pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS mottos JSONB DEFAULT '[]'`).catch(() => {});
 pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS cta_primary_url TEXT DEFAULT ''`).catch(() => {});
 pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS cta_secondary_url TEXT DEFAULT ''`).catch(() => {});
+pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS motto_color_1 TEXT DEFAULT '#00b7ba'`).catch(() => {});
+pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS motto_color_2 TEXT DEFAULT '#981dd8'`).catch(() => {});
 pool.query(`
   CREATE TABLE IF NOT EXISTS password_reset_tokens (
     id         SERIAL PRIMARY KEY,

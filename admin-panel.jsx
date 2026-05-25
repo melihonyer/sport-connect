@@ -331,7 +331,7 @@ export default function AdminPanel() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   // Banner form state
-  const emptyBanner = { title:"", subtitle:"", badge_text:"", cta_primary_text:"Hemen Başla", cta_primary_url:"", cta_secondary_text:"Antrenmanları Keşfet", cta_secondary_url:"", gradient_from:"#0D0B26", gradient_via:"#1a1040", gradient_to:"#0f2044", is_active:true, order_index:0, mottos:[""] };
+  const emptyBanner = { title:"", subtitle:"", badge_text:"", cta_primary_text:"Hemen Başla", cta_primary_url:"", cta_secondary_text:"Antrenmanları Keşfet", cta_secondary_url:"", gradient_from:"#0D0B26", gradient_via:"#1a1040", gradient_to:"#0f2044", is_active:true, order_index:0, mottos:[""], motto_color_1:"#00b7ba", motto_color_2:"#981dd8" };
   const [bannerForm, setBannerForm] = useState(emptyBanner);
   const [editingBannerId, setEditingBannerId] = useState(null);
   const [showBannerForm, setShowBannerForm] = useState(false);
@@ -552,6 +552,8 @@ export default function AdminPanel() {
       is_active: b.is_active !== false,
       order_index: b.order_index || 0,
       mottos: (Array.isArray(b.mottos) && b.mottos.length > 0) ? b.mottos : [""],
+      motto_color_1: b.motto_color_1 || "#00b7ba",
+      motto_color_2: b.motto_color_2 || "#981dd8",
     });
     setEditingBannerId(b.id);
     setShowBannerForm(true);
@@ -598,6 +600,8 @@ export default function AdminPanel() {
         is_active: false,          // kopya pasif başlasın
         order_index: banners.length,
         mottos: b.mottos || [],
+        motto_color_1: b.motto_color_1 || "#00b7ba",
+        motto_color_2: b.motto_color_2 || "#981dd8",
       }),
     });
     if (created) setBanners(prev => [...prev, created]);
@@ -1532,6 +1536,42 @@ export default function AdminPanel() {
                             )}
                           </div>
                         ))}
+                      </div>
+                    </div>
+
+                    {/* Motto gradyan renkleri */}
+                    <div>
+                      <label className="text-xs font-medium text-slate-500 uppercase tracking-wide block mb-2">
+                        Motto Gradyan Renkleri
+                        <span className="ml-2 text-slate-400 font-normal normal-case">(yazı rengi geçişi)</span>
+                      </label>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 flex-1 border border-slate-200 rounded-xl px-3 py-2">
+                          <input type="color" value={bannerForm.motto_color_1 || "#00b7ba"}
+                            onChange={e => setBannerForm(p => ({ ...p, motto_color_1: e.target.value }))}
+                            className="w-8 h-8 rounded-lg border-0 cursor-pointer p-0"
+                          />
+                          <span className="text-xs text-slate-500 font-mono">{bannerForm.motto_color_1 || "#00b7ba"}</span>
+                          <span className="text-xs text-slate-400 ml-auto">Başlangıç</span>
+                        </div>
+                        <div className="flex items-center justify-center w-6 flex-shrink-0">
+                          <div className="h-0.5 w-4 rounded" style={{background:`linear-gradient(90deg,${bannerForm.motto_color_1||"#00b7ba"},${bannerForm.motto_color_2||"#981dd8"})`}}/>
+                        </div>
+                        <div className="flex items-center gap-2 flex-1 border border-slate-200 rounded-xl px-3 py-2">
+                          <input type="color" value={bannerForm.motto_color_2 || "#981dd8"}
+                            onChange={e => setBannerForm(p => ({ ...p, motto_color_2: e.target.value }))}
+                            className="w-8 h-8 rounded-lg border-0 cursor-pointer p-0"
+                          />
+                          <span className="text-xs text-slate-500 font-mono">{bannerForm.motto_color_2 || "#981dd8"}</span>
+                          <span className="text-xs text-slate-400 ml-auto">Bitiş</span>
+                        </div>
+                      </div>
+                      {/* Önizleme */}
+                      <div className="mt-2 text-center text-base font-semibold" style={{
+                        background:`linear-gradient(90deg,${bannerForm.motto_color_1||"#00b7ba"},${bannerForm.motto_color_2||"#981dd8"})`,
+                        WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text"
+                      }}>
+                        {(bannerForm.mottos?.[0]) || "Motto önizlemesi"}
                       </div>
                     </div>
 
