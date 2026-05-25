@@ -130,16 +130,6 @@ const Typewriter = React.memo(({ mottos, color1 = "#00b7ba", color2 = "#981dd8" 
           </span>
         );
       })}
-      {/* İmleç */}
-      <span style={{
-        display:"inline-block", width:"3px", height:"0.82em",
-        marginLeft:"3px", marginBottom:"-2px", verticalAlign:"text-bottom",
-        background:`linear-gradient(180deg,${color1},${color2})`,
-        borderRadius:"2px",
-        animation:"blink 1s step-end infinite",
-        opacity: fading ? 0 : 1,
-        transition:"opacity .3s ease",
-      }}/>
     </span>
   );
 });
@@ -519,7 +509,7 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                       <h1 className="bn-title text-white" style={{fontSize:"clamp(2.6rem,5.5vw,4.5rem)", lineHeight:1.1, fontWeight:600}}>
                         {banner?.title || "Sporla Buluş,"}
                       </h1>
-                      <h1 className="bn-title" style={{fontSize:"clamp(3.4rem,8vw,5.5rem)", lineHeight:1.1, fontWeight:700, minHeight:"1.2em"}}>
+                      <h1 className="bn-title bn-motto">
                         {isActive
                           ? <Typewriter
                               mottos={(banner?.mottos?.length > 0) ? banner.mottos : DEFAULT_MOTTOS}

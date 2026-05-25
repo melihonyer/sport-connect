@@ -11,3 +11,9 @@
   0%, 100% { opacity: 1; }
   50%       { opacity: 0; }
 }
+
+/* Motto font: mobilde biraz büyük, masaüstünde başlıkla aynı */
+.bn-motto { font-size: clamp(2.8rem, 8vw, 3.4rem); font-weight: 700; line-height: 1.1; min-height: 1.2em; }
+@media (min-width: 768px) {
+  .bn-motto { font-size: clamp(2.8rem, 5.5vw, 4.5rem); }
+}
