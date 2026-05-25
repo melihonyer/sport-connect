@@ -95,13 +95,13 @@ const Typewriter = React.memo(({ mottos }) => {
   return (
     <>
       <span style={{
-        background:"linear-gradient(90deg,#38BDF8 0%,#4ADE80 45%,#C084FC 85%)",
+        background:"linear-gradient(90deg,#00b7ba 0%,#981dd8 55%,#00b7ba 100%)",
         WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text",
       }}>{text}</span>
       <span style={{
         display:"inline-block", width:"3px", height:"0.75em",
         marginLeft:"3px", marginBottom:"1px", verticalAlign:"middle",
-        background:"linear-gradient(180deg,#38BDF8,#4ADE80)",
+        background:"linear-gradient(180deg,#00b7ba,#981dd8)",
         borderRadius:"2px", animation:"blink 1s step-end infinite",
       }}/>
     </>
@@ -154,68 +154,98 @@ const AuthModal = ({ authMode, setAuthMode, onClose, handleLogin, handleRegister
   const titles = { login: "Giriş Yap", register: "Kaydol", forgot: "Şifremi Unuttum" };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-3xl max-w-md w-full p-8 relative m-4">
-        <button onClick={onClose} className="absolute top-4 right-4">
-          <X className="w-6 h-6" />
-        </button>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-3xl max-w-md w-full relative overflow-hidden shadow-2xl">
 
-        <h2 className="text-3xl font-medium mb-2 text-center">{titles[authMode]}</h2>
-        {authMode === "forgot" && (
-          <p className="text-slate-500 text-sm text-center mb-5">E-postanı gir, sıfırlama linki gönderelim.</p>
-        )}
-        {authMode !== "forgot" && <div className="mb-6"/>}
+        {/* Üst gradient şerit */}
+        <div className="h-1.5" style={{background:"linear-gradient(90deg,#00b7ba,#981dd8)"}}/>
 
-        {error && (
-          <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm flex items-start gap-2">
-            <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" /><span>{error}</span>
+        <div className="px-8 pt-7 pb-8">
+          {/* Kapat butonu */}
+          <button onClick={onClose}
+            className="absolute top-5 right-5 w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+
+          {/* Logo */}
+          <div className="flex items-center justify-center gap-2.5 mb-6">
+            <img src="/icons/favicon.png" alt="" className="h-8 w-auto"/>
+            <img src="/icons/logo-yatay.svg" alt="Muuvlink" className="h-5 w-auto"/>
           </div>
-        )}
-        {success && (
-          <div className="mb-4 px-4 py-3 bg-brand-50 border border-brand-200 rounded-xl text-brand-700 text-sm flex items-start gap-2">
-            <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" /><span>{success}</span>
-          </div>
-        )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {authMode === "register" && (
-            <input ref={nameRef} type="text" placeholder="Ad Soyad"
-              className="w-full px-4 py-3 border rounded-xl" required/>
+          {/* Başlık */}
+          <h2 className="text-2xl font-bold text-slate-900 text-center mb-1 tracking-tight">
+            {titles[authMode]}
+          </h2>
+          {authMode === "forgot" ? (
+            <p className="text-slate-400 text-sm text-center mb-6">E-postanı gir, sıfırlama linki gönderelim.</p>
+          ) : (
+            <p className="text-slate-400 text-sm text-center mb-6">
+              {authMode === "login" ? "Hesabına giriş yap" : "Yeni hesap oluştur"}
+            </p>
           )}
-          <input ref={emailRef} type="email" placeholder="E-posta"
-            className={`w-full px-4 py-3 border rounded-xl ${error ? "border-red-300" : ""}`} required/>
-          {authMode !== "forgot" && (
-            <input ref={passRef} type="password" placeholder="Şifre"
-              className={`w-full px-4 py-3 border rounded-xl ${error ? "border-red-300" : ""}`} required/>
-          )}
-          {authMode === "login" && (
-            <div className="text-right -mt-1">
-              <button type="button" onClick={() => setAuthMode("forgot")}
-                className="text-sm text-brand-600 hover:underline">
-                Şifremi unuttum
-              </button>
+
+          {/* Hata / Başarı */}
+          {error && (
+            <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" /><span>{error}</span>
             </div>
           )}
-          <button type="submit" disabled={loading}
-            className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold disabled:opacity-60 flex items-center justify-center gap-2">
-            {loading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>}
-            {authMode === "login" ? "Giriş Yap" : authMode === "register" ? "Kaydol" : "Link Gönder"}
-          </button>
-        </form>
+          {success && (
+            <div className="mb-4 px-4 py-3 bg-brand-50 border border-brand-200 rounded-xl text-brand-700 text-sm flex items-start gap-2">
+              <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" /><span>{success}</span>
+            </div>
+          )}
 
-        <div className="mt-4 flex flex-col items-center gap-2">
-          {authMode !== "login" && (
-            <button onClick={() => setAuthMode("login")}
-              className="text-brand-600 text-sm hover:underline">
-              ← Giriş yap
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-3">
+            {authMode === "register" && (
+              <input ref={nameRef} type="text" placeholder="Ad Soyad"
+                className="w-full px-4 py-3.5 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 text-sm font-medium outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 transition-all"
+                required/>
+            )}
+            <input ref={emailRef} type="email" placeholder="E-posta"
+              className={`w-full px-4 py-3.5 border rounded-xl text-slate-800 placeholder-slate-400 text-sm font-medium outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 transition-all ${error ? "border-red-300 bg-red-50/50" : "border-slate-200"}`}
+              required/>
+            {authMode !== "forgot" && (
+              <input ref={passRef} type="password" placeholder="Şifre"
+                className={`w-full px-4 py-3.5 border rounded-xl text-slate-800 placeholder-slate-400 text-sm font-medium outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 transition-all ${error ? "border-red-300 bg-red-50/50" : "border-slate-200"}`}
+                required/>
+            )}
+            {authMode === "login" && (
+              <div className="text-right">
+                <button type="button" onClick={() => setAuthMode("forgot")}
+                  className="text-xs text-brand-600 hover:text-brand-700 font-medium hover:underline">
+                  Şifremi unuttum
+                </button>
+              </div>
+            )}
+            <button type="submit" disabled={loading}
+              className="w-full py-3.5 text-white rounded-xl font-semibold text-sm disabled:opacity-60 flex items-center justify-center gap-2 transition-opacity hover:opacity-90 mt-2"
+              style={{background:"linear-gradient(90deg,#00b7ba,#981dd8)"}}>
+              {loading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>}
+              {authMode === "login" ? "Giriş Yap" : authMode === "register" ? "Hesap Oluştur" : "Link Gönder"}
             </button>
-          )}
-          {authMode === "login" && (
-            <button onClick={() => setAuthMode("register")}
-              className="text-brand-600">
-              Hesabın yok mu? Kaydol
-            </button>
-          )}
+          </form>
+
+          {/* Alt linkler */}
+          <div className="mt-5 flex flex-col items-center gap-2">
+            {authMode !== "login" && (
+              <button onClick={() => setAuthMode("login")}
+                className="text-brand-600 text-sm font-medium hover:underline">
+                ← Giriş yap
+              </button>
+            )}
+            {authMode === "login" && (
+              <p className="text-slate-500 text-sm">
+                Hesabın yok mu?{" "}
+                <button onClick={() => setAuthMode("register")}
+                  className="text-brand-600 font-semibold hover:underline">
+                  Kaydol
+                </button>
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -416,7 +446,7 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
         <div className="absolute -left-32 top-1/4 w-[600px] h-[600px] rounded-full"
           style={{background:"radial-gradient(circle,rgba(0,183,186,0.18) 0%,transparent 65%)"}}/>
         <div className="absolute right-[-60px] top-[-40px] w-[700px] h-[700px] rounded-full"
-          style={{background:"radial-gradient(circle,rgba(74,222,128,0.1) 0%,transparent 60%)"}}/>
+          style={{background:"radial-gradient(circle,rgba(0,183,186,0.1) 0%,transparent 60%)"}}/>
         <div className="absolute inset-0 opacity-[0.03]"
           style={{backgroundImage:"linear-gradient(rgba(255,255,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px)", backgroundSize:"64px 64px"}}/>
       </div>
@@ -444,7 +474,7 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                     {banner?.badge_text && (
                       <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full text-sm font-semibold border backdrop-blur-sm"
                         style={{background:"rgba(255,255,255,0.06)",borderColor:"rgba(255,255,255,0.12)",color:"rgba(186,230,253,0.9)"}}>
-                        <span className="w-2 h-2 rounded-full animate-pulse" style={{background:"#4ADE80"}}/>
+                        <span className="w-2 h-2 rounded-full animate-pulse" style={{background:"#00b7ba"}}/>
                         {banner.badge_text}
                       </div>
                     )}
@@ -524,7 +554,7 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                       {hasImg && (
                         <>
                           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[500px] h-[400px] rounded-full blur-3xl pointer-events-none"
-                            style={{background:"radial-gradient(ellipse,rgba(74,222,128,0.2) 0%,rgba(0,183,186,0.1) 55%,transparent 70%)"}}/>
+                            style={{background:"radial-gradient(ellipse,rgba(0,183,186,0.2) 0%,rgba(0,183,186,0.1) 55%,transparent 70%)"}}/>
                           <div className="relative z-10" style={{animation:"heroFloat 5s ease-in-out infinite", marginBottom:"-100px"}}>
                             <img
                               src={`${BASE_URL}${banner.image_url}`}
@@ -555,7 +585,7 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
               height:"3px",
               width: i === activeIdx ? "32px" : "16px",
               borderRadius:"2px", border:"none", cursor:"pointer", padding:0,
-              background: i === activeIdx ? "linear-gradient(90deg,#4ADE80,#00b7ba)" : "rgba(255,255,255,0.3)",
+              background: i === activeIdx ? "linear-gradient(90deg,#00b7ba,#981dd8)" : "rgba(255,255,255,0.3)",
               transition:"all 0.4s cubic-bezier(0.34,1.56,0.64,1)",
             }}/>
           ))}
@@ -1897,7 +1927,7 @@ export default function Muuvlink() {
     const editorialFeatures = [
       {
         num:"01", icon: MapPin, accent:"#00b7ba",
-        bg:"linear-gradient(135deg,#f0fdf4 0%,#e5f9f9 50%,#bbf7d0 100%)",
+        bg:"linear-gradient(135deg,#e5f9f9 0%,#e5f9f9 50%,#cbf3f3 100%)",
         sub:"GPS Destekli Arama",
         title:"Yakınındaki Etkinlikleri Bul",
         desc:"Konumunu paylaş, çevrenizdeki antrenmanları saniyeler içinde keşfet. Mesafe filtresiyle en uygun etkinliği bul.",
@@ -1905,7 +1935,7 @@ export default function Muuvlink() {
       },
       {
         num:"02", icon: Users, accent:"#009295",
-        bg:"linear-gradient(135deg,#e5f9f9 0%,#bbf7d0 50%,#86efac 100%)",
+        bg:"linear-gradient(135deg,#e5f9f9 0%,#cbf3f3 50%,#97e7e8 100%)",
         sub:"Takım Yönetimi",
         title:"Kendi Takımını Kur ve Yönet",
         desc:"Spor takımını oluştur, antrenör ekle, üye davet et. Tüm takvimi ve iletişimi tek platformdan yönet.",
@@ -1913,7 +1943,7 @@ export default function Muuvlink() {
       },
       {
         num:"03", icon: Trophy, accent:"#006d6f",
-        bg:"linear-gradient(135deg,#bbf7d0 0%,#86efac 50%,#4ade80 100%)",
+        bg:"linear-gradient(135deg,#e5f9f9 0%,#00b7ba 50%,#009295 100%)",
         sub:"Başarı Sistemi",
         title:"Rozetler Kazan, İlerlemeni Göster",
         desc:"Her antrenmanla yeni başarılar aç. İstatistikler ve rozetlerinle sporcu profilini zenginleştir.",
@@ -2184,7 +2214,7 @@ export default function Muuvlink() {
                     className="px-4 py-2 rounded-xl text-xs font-medium transition-all duration-200"
                     style={nearbyDistance === km
                       ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff", boxShadow:"0 4px 20px rgba(0,183,186,0.35)"}
-                      : {background:"#f0fdf4", color:"#009295", border:"1px solid #bbf7d0"}}
+                      : {background:"#e5f9f9", color:"#009295", border:"1px solid #cbf3f3"}}
                   >
                     {km} km
                   </button>
@@ -2257,21 +2287,21 @@ export default function Muuvlink() {
             style={{backgroundImage:"linear-gradient(rgba(255,255,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px)", backgroundSize:"60px 60px"}}/>
           {/* glow orbs */}
           <div className="absolute -left-32 top-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full pointer-events-none"
-            style={{background:"radial-gradient(circle,rgba(74,222,128,0.18) 0%,transparent 65%)"}}/>
+            style={{background:"radial-gradient(circle,rgba(0,183,186,0.18) 0%,transparent 65%)"}}/>
           <div className="absolute -right-32 top-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full pointer-events-none"
             style={{background:"radial-gradient(circle,rgba(134,239,172,0.12) 0%,transparent 65%)"}}/>
 
           <div className="relative max-w-4xl mx-auto px-4 text-center">
             {/* Big line decoration */}
             <div className="flex items-center justify-center gap-4 mb-8">
-              <div className="h-px flex-1 max-w-20" style={{background:"linear-gradient(90deg,transparent,rgba(74,222,128,0.5))"}}/>
-              <Dumbbell className="w-8 h-8" style={{color:"#4ADE80"}}/>
-              <div className="h-px flex-1 max-w-20" style={{background:"linear-gradient(90deg,rgba(74,222,128,0.5),transparent)"}}/>
+              <div className="h-px flex-1 max-w-20" style={{background:"linear-gradient(90deg,transparent,rgba(0,183,186,0.5))"}}/>
+              <Dumbbell className="w-8 h-8" style={{color:"#00b7ba"}}/>
+              <div className="h-px flex-1 max-w-20" style={{background:"linear-gradient(90deg,rgba(0,183,186,0.5),transparent)"}}/>
             </div>
             <span className="text-xs font-semibold tracking-[0.4em] text-brand-400 uppercase block mb-6">Topluluğa Katıl</span>
             <h2 className="text-5xl md:text-7xl font-semibold text-white mb-6 tracking-tighter leading-[0.95]">
               Spor seni<br/>
-              <span style={{background:"linear-gradient(90deg,#4ADE80,#38BDF8)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent"}}>
+              <span style={{background:"linear-gradient(90deg,#00b7ba,#981dd8)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent"}}>
                 bekliyor.
               </span>
             </h2>
@@ -2304,7 +2334,7 @@ export default function Muuvlink() {
   const ProfilePage = () => (
     <div className="min-h-screen bg-slate-50">
       {/* ── Profile hero header ── */}
-      <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#f0fdf4 0%,#e5f9f9 60%,#bbf7d0 100%)"}}>
+      <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#e5f9f9 0%,#e5f9f9 60%,#cbf3f3 100%)"}}>
         <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
           style={{backgroundImage:"linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px)", backgroundSize:"50px 50px"}}/>
         <div className="absolute inset-0 pointer-events-none"
@@ -2333,7 +2363,7 @@ export default function Muuvlink() {
             </div>
             <button onClick={() => setShowProfileEdit(true)}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all"
-              style={{background:"white", color:"#009295", border:"1px solid #bbf7d0"}}>
+              style={{background:"white", color:"#009295", border:"1px solid #cbf3f3"}}>
               <Settings className="w-4 h-4"/> Profili Düzenle
             </button>
           </div>
@@ -2341,10 +2371,10 @@ export default function Muuvlink() {
           {/* Stats strip */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-px mt-10 rounded-2xl overflow-hidden" style={{background:"rgba(255,255,255,0.06)"}}>
             {[
-              {val: userStats?.total_trainings || 0, label:"Antrenman", accent:"#4ADE80"},
-              {val: myTeams.length, label:"Takım", accent:"#38BDF8"},
-              {val: userBadges.length, label:"Rozet", accent:"#FBBF24"},
-              {val: `${userStats?.total_distance || 0} km`, label:"Mesafe", accent:"#34D399"},
+              {val: userStats?.total_trainings || 0, label:"Antrenman", accent:"#00b7ba"},
+              {val: myTeams.length, label:"Takım", accent:"#981dd8"},
+              {val: userBadges.length, label:"Rozet", accent:"#f59e0b"},
+              {val: `${userStats?.total_distance || 0} km`, label:"Mesafe", accent:"#009295"},
             ].map((s, i) => (
               <div key={i} className="px-6 py-5" style={{background:"rgba(0,183,186,0.15)"}}>
                 <div className="text-2xl font-semibold text-brand-700">{s.val}</div>
@@ -2635,7 +2665,7 @@ export default function Muuvlink() {
     return (
       <div className="min-h-screen bg-slate-50">
         {/* ── Dark athletic page header ── */}
-        <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#f0fdf4 0%,#e5f9f9 60%,#bbf7d0 100%)"}}>
+        <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#e5f9f9 0%,#e5f9f9 60%,#cbf3f3 100%)"}}>
           <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
             style={{backgroundImage:"linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px)", backgroundSize:"50px 50px"}}/>
           <div className="absolute right-0 top-0 w-[500px] h-full pointer-events-none"
@@ -2809,7 +2839,7 @@ export default function Muuvlink() {
     return (
       <div className="min-h-screen bg-slate-50">
         {/* ── Dark athletic page header ── */}
-        <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#f0fdf4 0%,#e5f9f9 60%,#bbf7d0 100%)"}}>
+        <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#e5f9f9 0%,#e5f9f9 60%,#cbf3f3 100%)"}}>
           <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
             style={{backgroundImage:"linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px)", backgroundSize:"50px 50px"}}/>
           <div className="absolute left-0 top-0 w-[500px] h-full pointer-events-none"
@@ -2904,7 +2934,7 @@ export default function Muuvlink() {
   const BadgesPage = () => (
     <div className="min-h-screen bg-slate-50">
       {/* ── Light green header ── */}
-      <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#f0fdf4 0%,#e5f9f9 60%,#bbf7d0 100%)"}}>
+      <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#e5f9f9 0%,#e5f9f9 60%,#cbf3f3 100%)"}}>
         <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
           style={{backgroundImage:"linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px)", backgroundSize:"50px 50px"}}/>
         <div className="absolute inset-0 pointer-events-none"
@@ -3261,7 +3291,7 @@ export default function Muuvlink() {
           {!user ? (
             <div className="rounded-2xl overflow-hidden border border-brand-100 shadow-sm">
               {/* Üst gradient şerit */}
-              <div className="h-1.5" style={{background:"linear-gradient(90deg,#00b7ba,#4ADE80,#00b7ba)"}}/>
+              <div className="h-1.5" style={{background:"linear-gradient(90deg,#00b7ba,#981dd8,#00b7ba)"}}/>
               <div className="p-6 bg-gradient-to-br from-brand-50 to-brand-50">
                 <div className="text-center mb-5">
                   <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-md"
@@ -4565,7 +4595,7 @@ export default function Muuvlink() {
         onClick={() => { setCurrentPage(page); setMobileOpen(false); }}
         className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-sm font-medium transition-colors"
         style={{
-          background: isActive(page) ? "linear-gradient(135deg,#f0fdf4,#e5f9f9)" : "transparent",
+          background: isActive(page) ? "linear-gradient(135deg,#e5f9f9,#e5f9f9)" : "transparent",
           color: isActive(page) ? "#009295" : "#475569",
         }}
       >
@@ -4582,7 +4612,7 @@ export default function Muuvlink() {
             {/* Logo */}
             <button className="flex items-center gap-2 group flex-shrink-0 hover:opacity-85 transition-opacity" onClick={() => setCurrentPage("home")}>
               {/* Amblem her zaman görünür */}
-              <img src="/icons/amblem.svg" alt="" className="h-7 w-auto flex-shrink-0" />
+              <img src="/icons/favicon.png" alt="" className="h-7 w-auto flex-shrink-0" />
               {/* Metin: desktop'ta görünür */}
               <img src="/icons/logo-yatay.svg" alt="Muuvlink" className="hidden md:block h-5 w-auto" />
             </button>
@@ -4795,7 +4825,7 @@ export default function Muuvlink() {
     return (
       <div className="min-h-screen bg-slate-50">
         {/* ── Dark header ── */}
-        <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#f0fdf4 0%,#e5f9f9 60%,#bbf7d0 100%)"}}>
+        <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#e5f9f9 0%,#e5f9f9 60%,#cbf3f3 100%)"}}>
           <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
             style={{backgroundImage:"linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px)", backgroundSize:"50px 50px"}}/>
           <div className="absolute inset-0 pointer-events-none"
@@ -4803,7 +4833,7 @@ export default function Muuvlink() {
           <div className="relative max-w-7xl mx-auto px-4 sm:px-8 py-14 text-center">
             <div className="w-16 h-16 rounded-2xl mx-auto mb-5 flex items-center justify-center"
               style={{background:"rgba(0,183,186,0.15)", border:"1px solid rgba(0,183,186,0.3)"}}>
-              <MessageCircle className="w-8 h-8" style={{color:"#4ADE80"}}/>
+              <MessageCircle className="w-8 h-8" style={{color:"#00b7ba"}}/>
             </div>
             <span className="text-xs font-semibold tracking-[0.35em] text-brand-400 uppercase block mb-3">Destek</span>
             <h1 className="text-5xl md:text-6xl font-semibold text-brand-900 tracking-tighter leading-none mb-4">İletişim</h1>
@@ -4820,9 +4850,9 @@ export default function Muuvlink() {
                 <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase mb-4">İletişim</div>
                 <div className="space-y-4">
                   {[
-                    {icon:<Mail className="w-4 h-4" style={{color:"#4ADE80"}}/>, label:"E-posta", value:"info@sporlaconnect.com", href:"mailto:info@sporlaconnect.com"},
-                    {icon:<MapPin className="w-4 h-4" style={{color:"#34D399"}}/>, label:"Konum", value:"İzmir, Türkiye", href:null},
-                    {icon:<Clock className="w-4 h-4" style={{color:"#38BDF8"}}/>, label:"Yanıt Süresi", value:"24 saat içinde", href:null},
+                    {icon:<Mail className="w-4 h-4" style={{color:"#00b7ba"}}/>, label:"E-posta", value:"info@sporlaconnect.com", href:"mailto:info@sporlaconnect.com"},
+                    {icon:<MapPin className="w-4 h-4" style={{color:"#009295"}}/>, label:"Konum", value:"İzmir, Türkiye", href:null},
+                    {icon:<Clock className="w-4 h-4" style={{color:"#981dd8"}}/>, label:"Yanıt Süresi", value:"24 saat içinde", href:null},
                   ].map((item, i) => (
                     <div key={i} className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{background:"#f8fafc", border:"1px solid #f1f5f9"}}>
@@ -5123,7 +5153,7 @@ E-posta: <a href="mailto:info@sporlaconnect.com">info@sporlaconnect.com</a></p>
             {/* Kolon 1 — Marka */}
             <div className="lg:col-span-1">
               <button onClick={() => setCurrentPage("home")} className="flex items-center gap-2 mb-4 group hover:opacity-80 transition-opacity">
-                <img src="/icons/amblem.svg" alt="" className="h-8 w-auto flex-shrink-0" />
+                <img src="/icons/favicon.png" alt="" className="h-8 w-auto flex-shrink-0" />
                 <img src="/icons/logo-yatay.svg" alt="Muuvlink" className="h-5 w-auto" style={{filter:"brightness(0) invert(1)"}} />
               </button>
               <p className="text-slate-400 text-sm leading-relaxed mb-5">

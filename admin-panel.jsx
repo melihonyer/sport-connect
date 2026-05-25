@@ -884,7 +884,7 @@ export default function AdminPanel() {
 
         {/* Logo */}
         <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-100">
-          <img src="/icons/amblem.svg" alt="Muuvlink" className="h-8 w-auto flex-shrink-0" />
+          <img src="/icons/favicon.png" alt="Muuvlink" className="h-8 w-auto flex-shrink-0" />
           <div className="flex-1">
             <div className="text-slate-800 font-semibold text-sm tracking-tight">Muuvlink</div>
             <div className="text-slate-400 text-xs font-medium">Admin Panel</div>
