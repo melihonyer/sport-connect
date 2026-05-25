@@ -480,7 +480,7 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
       </div>
 
       {/* Banner katmanları — cross-fade */}
-      <div className="relative" style={{minHeight:"680px"}}>
+      <div className="relative" style={{minHeight:"680px", overflow:"hidden"}}>
         {banners.map((banner, i) => {
           const isActive = i === activeIdx;
           const bgF = banner?.gradient_from || "#052e16";
@@ -580,28 +580,29 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                     </div>
                   </div>
 
-                  {/* Sağ: görsel */}
-                  <div className="bn-img-col relative" style={{overflow:"hidden"}}>
-                    {hasImg && (
-                      <>
-                        {/* Glow */}
-                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[500px] h-[400px] rounded-full blur-3xl pointer-events-none"
-                          style={{background:"radial-gradient(ellipse,rgba(0,183,186,0.2) 0%,rgba(0,183,186,0.1) 55%,transparent 70%)"}}/>
-                        {/* Wrapper: top:-60px → banner yüksekliği + 110px kadar alan tanımlar, görsel büyük gelir */}
-                        <div className="absolute inset-x-0 flex justify-center items-end"
-                          style={{top:"-60px", bottom:"-50px", animation:"heroFloat 5s ease-in-out infinite"}}>
-                          <img
-                            src={`${BASE_URL}${banner.image_url}`}
-                            alt=""
-                            className="select-none pointer-events-none"
-                            style={{height:"100%", width:"auto", maxWidth:"none", objectFit:"contain", objectPosition:"bottom center", filter:"drop-shadow(0 8px 24px rgba(0,0,0,0.18))"}}
-                          />
-                        </div>
-                      </>
-                    )}
-                  </div>
+                  {/* Sağ: görsel — layout için boş kolon */}
+                  <div className="bn-img-col"/>
                 </div>
               </div>
+
+              {/* Görsel: banner container'ına absolute — kolon sınırı yok, sadece banner dışına çıkmaz */}
+              {hasImg && (
+                <>
+                  {/* Glow */}
+                  <div className="absolute pointer-events-none"
+                    style={{right:"10%", bottom:0, width:"500px", height:"400px", borderRadius:"50%", filter:"blur(80px)", background:"radial-gradient(ellipse,rgba(0,183,186,0.2) 0%,rgba(0,183,186,0.1) 55%,transparent 70%)"}}/>
+                  {/* Görsel: right side, bottom:-50px → float sırasında alt kenar görünmez */}
+                  <div className="absolute pointer-events-none"
+                    style={{right:0, top:0, bottom:"-50px", width:"52%", display:"flex", justifyContent:"center", alignItems:"flex-end", animation:"heroFloat 5s ease-in-out infinite"}}>
+                    <img
+                      src={`${BASE_URL}${banner.image_url}`}
+                      alt=""
+                      className="select-none"
+                      style={{height:"100%", width:"auto", maxWidth:"none", objectFit:"contain", objectPosition:"bottom center", filter:"drop-shadow(0 8px 32px rgba(0,0,0,0.22))"}}
+                    />
+                  </div>
+                </>
+              )}
             </div>
           );
         })}
