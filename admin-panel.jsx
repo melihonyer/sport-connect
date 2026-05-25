@@ -331,7 +331,7 @@ export default function AdminPanel() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   // Banner form state
-  const emptyBanner = { title:"", subtitle:"", badge_text:"", cta_primary_text:"Hemen Başla", cta_primary_url:"", cta_secondary_text:"Antrenmanları Keşfet", cta_secondary_url:"", gradient_from:"#0D0B26", gradient_via:"#1a1040", gradient_to:"#0f2044", is_active:true, order_index:0, mottos:[""], motto_color_1:"#00b7ba", motto_color_2:"#981dd8" };
+  const emptyBanner = { title:"", subtitle:"", badge_text:"", cta_primary_text:"Hemen Başla", cta_primary_url:"", cta_secondary_text:"Antrenmanları Keşfet", cta_secondary_url:"", gradient_from:"#0D0B26", gradient_via:"#1a1040", gradient_to:"#0f2044", is_active:true, order_index:0, mottos:[""], motto_color_1:"#00b7ba", motto_color_2:"#981dd8", title_color:"#ffffff", subtitle_color:"rgba(186,230,253,0.75)" };
   const [bannerForm, setBannerForm] = useState(emptyBanner);
   const [editingBannerId, setEditingBannerId] = useState(null);
   const [showBannerForm, setShowBannerForm] = useState(false);
@@ -554,6 +554,8 @@ export default function AdminPanel() {
       mottos: (Array.isArray(b.mottos) && b.mottos.length > 0) ? b.mottos : [""],
       motto_color_1: b.motto_color_1 || "#00b7ba",
       motto_color_2: b.motto_color_2 || "#981dd8",
+      title_color: b.title_color || "#ffffff",
+      subtitle_color: b.subtitle_color || "rgba(186,230,253,0.75)",
     });
     setEditingBannerId(b.id);
     setShowBannerForm(true);
@@ -1421,7 +1423,19 @@ export default function AdminPanel() {
                     {/* Başlık + Alt metin */}
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-medium text-slate-500 mb-1.5">Başlık <span className="text-slate-400 font-normal">(sabit satır)</span></label>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="text-xs font-medium text-slate-500">Başlık <span className="text-slate-400 font-normal">(sabit satır)</span></label>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[11px] text-slate-400">Renk</span>
+                            <label className="relative cursor-pointer">
+                              <span className="block w-5 h-5 rounded border border-slate-200 shadow-sm" style={{background: bannerForm.title_color || "#ffffff"}}/>
+                              <input type="color" value={bannerForm.title_color || "#ffffff"}
+                                onChange={e=>setBannerForm(p=>({...p,title_color:e.target.value}))}
+                                className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"/>
+                            </label>
+                            <span className="text-[11px] font-mono text-slate-500">{bannerForm.title_color || "#ffffff"}</span>
+                          </div>
+                        </div>
                         <input value={bannerForm.title} onChange={e=>setBannerForm(p=>({...p,title:e.target.value}))}
                           placeholder="Sporla Buluş,"
                           className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-300"/>
@@ -1435,7 +1449,19 @@ export default function AdminPanel() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1.5">Alt Metin</label>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs font-medium text-slate-500">Alt Metin</label>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[11px] text-slate-400">Renk</span>
+                          <label className="relative cursor-pointer">
+                            <span className="block w-5 h-5 rounded border border-slate-200 shadow-sm" style={{background: bannerForm.subtitle_color || "rgba(186,230,253,0.75)"}}/>
+                            <input type="color" value={(() => { const s = bannerForm.subtitle_color || "rgba(186,230,253,0.75)"; if(s.startsWith("#")) return s; const m=s.match(/[\d.]+/g); return m ? "#"+[m[0],m[1],m[2]].map(n=>Math.round(+n).toString(16).padStart(2,"0")).join("") : "#bae6fd"; })()}
+                              onChange={e=>setBannerForm(p=>({...p,subtitle_color:e.target.value}))}
+                              className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"/>
+                          </label>
+                          <span className="text-[11px] font-mono text-slate-500">{bannerForm.subtitle_color || "rgba(186,230,253,0.75)"}</span>
+                        </div>
+                      </div>
                       <textarea value={bannerForm.subtitle} onChange={e=>setBannerForm(p=>({...p,subtitle:e.target.value}))}
                         placeholder="Açıklama metni…" rows={2}
                         className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-300 resize-none"/>

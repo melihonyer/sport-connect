@@ -508,7 +508,7 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                     )}
 
                     <div>
-                      <h1 className="bn-title text-white" style={{fontSize:"clamp(2.6rem,5.5vw,4.5rem)", lineHeight:1.1, fontWeight:600}}>
+                      <h1 className="bn-title" style={{fontSize:"clamp(2.6rem,5.5vw,4.5rem)", lineHeight:1.1, fontWeight:600, color: banner?.title_color || "#ffffff"}}>
                         {banner?.title || "Sporla Buluş,"}
                       </h1>
                       <h1 className="bn-title bn-motto">
@@ -521,7 +521,7 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                           : <span>&nbsp;</span>
                         }
                       </h1>
-                      <p className="mt-5 text-lg leading-relaxed max-w-md font-light" style={{color:"rgba(186,230,253,0.75)"}}>
+                      <p className="mt-5 text-lg leading-relaxed max-w-md font-light" style={{color: banner?.subtitle_color || "rgba(186,230,253,0.75)"}}>
                         {banner?.subtitle || "Çevrende spor yapan insanları bul, kendi takımını kur, antrenmanlar planla. GPS ile en yakın etkinlikleri saniyeler içinde keşfet."}
                       </p>
                     </div>
