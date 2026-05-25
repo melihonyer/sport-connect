@@ -81,6 +81,8 @@ const Typewriter = React.memo(({ mottos, color1 = "#00b7ba", color2 = "#981dd8" 
 
   const word = mottos[idx % mottos.length];
   const len  = word.length;
+  // Layout shift önlemi: en uzun motto ghost olarak render edilir
+  const longestMotto = mottos.reduce((a, b) => a.length > b.length ? a : b, "");
 
   useEffect(() => {
     let t;
@@ -107,18 +109,30 @@ const Typewriter = React.memo(({ mottos, color1 = "#00b7ba", color2 = "#981dd8" 
   const visible = word.slice(0, count);
 
   return (
-    <span style={{
-      background: `linear-gradient(90deg,${color1},${color2})`,
-      WebkitBackgroundClip: "text",
-      WebkitTextFillColor: "transparent",
-      backgroundClip: "text",
-      display: "inline",
-      opacity:    fading ? 0 : 1,
-      filter:     fading ? "blur(10px)" : "blur(0)",
-      transform:  fading ? "translateY(-6px)" : "translateY(0)",
-      transition: fading ? "opacity .45s ease, filter .45s ease, transform .45s ease" : "none",
-    }}>
-      {visible}
+    <span style={{ display: "inline-block", position: "relative", width: "100%" }}>
+      {/* Ghost: en uzun mottoya göre yükseklik rezerve eder — layout shift yok */}
+      <span style={{ visibility: "hidden", display: "inline" }}>
+        {longestMotto}
+      </span>
+      {/* Gerçek typewriter metni — absolute, üst üste oturur */}
+      <span style={{
+        position: "absolute",
+        left: 0,
+        top: 0,
+        background: `linear-gradient(90deg,${color1},${color2})`,
+        WebkitBackgroundClip: "text",
+        WebkitTextFillColor: "transparent",
+        backgroundClip: "text",
+        color: color1, // fallback: gradient desteklenmezse ilk renk
+        display: "inline-block",
+        width: "100%",
+        opacity:    fading ? 0 : 1,
+        filter:     fading ? "blur(10px)" : "blur(0)",
+        transform:  fading ? "translateY(-6px)" : "translateY(0)",
+        transition: fading ? "opacity .45s ease, filter .45s ease, transform .45s ease" : "none",
+      }}>
+        {visible}
+      </span>
     </span>
   );
 });
