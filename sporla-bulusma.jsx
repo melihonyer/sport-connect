@@ -2014,6 +2014,7 @@ export default function Muuvlink() {
       {
         num:"01", icon: MapPin, accent:"#00b7ba",
         bg:"linear-gradient(135deg,#e5f9f9 0%,#e5f9f9 50%,#cbf3f3 100%)",
+        image: "/uploads/feature-01.jpg",
         sub:"GPS Destekli Arama",
         title:"Yakınındaki Etkinlikleri Bul",
         desc:"Konumunu paylaş, çevrenizdeki antrenmanları saniyeler içinde keşfet. Mesafe filtresiyle en uygun etkinliği bul.",
@@ -2022,6 +2023,7 @@ export default function Muuvlink() {
       {
         num:"02", icon: Users, accent:"#009295",
         bg:"linear-gradient(135deg,#e5f9f9 0%,#cbf3f3 50%,#97e7e8 100%)",
+        image: null,
         sub:"Takım Yönetimi",
         title:"Kendi Takımını Kur ve Yönet",
         desc:"Spor takımını oluştur, antrenör ekle, üye davet et. Tüm takvimi ve iletişimi tek platformdan yönet.",
@@ -2030,6 +2032,7 @@ export default function Muuvlink() {
       {
         num:"03", icon: Trophy, accent:"#006d6f",
         bg:"linear-gradient(135deg,#e5f9f9 0%,#00b7ba 50%,#009295 100%)",
+        image: null,
         sub:"Başarı Sistemi",
         title:"Rozetler Kazan, İlerlemeni Göster",
         desc:"Her antrenmanla yeni başarılar aç. İstatistikler ve rozetlerinle sporcu profilini zenginleştir.",
@@ -2072,23 +2075,51 @@ export default function Muuvlink() {
         {editorialFeatures.map((f, i) => (
           <div key={i} className={`flex flex-col ${i % 2 === 0 ? "md:flex-row" : "md:flex-row-reverse"}`}
             style={{borderTop:"1px solid #f1f5f9", minHeight:"360px"}}>
-            {/* Renkli panel */}
-            <div className="md:w-5/12 relative flex items-center justify-center py-16 px-10 overflow-hidden flex-shrink-0"
-              style={{background: f.bg}}>
-              {/* Büyük numara — dekoratif */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden"
-                style={{fontSize:"clamp(140px,20vw,240px)", fontWeight:800, color:`${f.accent}12`, lineHeight:1, letterSpacing:"-0.06em"}}>
-                {f.num}
-              </div>
-              <div className="relative z-10 flex flex-col items-center gap-4">
-                <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
-                  style={{background:`${f.accent}18`, border:`1.5px solid ${f.accent}30`}}>
-                  <f.icon className="w-8 h-8" style={{color: f.accent}}/>
-                </div>
-                <div className="font-black leading-none" style={{fontSize:"5rem", color: f.accent, letterSpacing:"-0.04em", opacity:0.85}}>
-                  {f.num}
-                </div>
-              </div>
+            {/* Görsel ya da renkli panel */}
+            <div className="md:w-5/12 relative overflow-hidden flex-shrink-0"
+              style={{minHeight:"360px", background: f.image ? "#0a0a0a" : f.bg}}>
+              {f.image ? (
+                <>
+                  {/* Fotoğraf — cover */}
+                  <img src={f.image} alt={f.sub}
+                    className="absolute inset-0 w-full h-full object-cover select-none"
+                    style={{opacity:0.88}}/>
+                  {/* Alt gradient overlay */}
+                  <div className="absolute inset-0"
+                    style={{background:"linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.1) 50%, transparent 100%)"}}/>
+                  {/* Numara — sağ alt köşe */}
+                  <div className="absolute bottom-6 right-7 font-black leading-none select-none"
+                    style={{fontSize:"4.5rem", color:"rgba(255,255,255,0.18)", letterSpacing:"-0.04em"}}>
+                    {f.num}
+                  </div>
+                  {/* İkon — sol üst köşe */}
+                  <div className="absolute top-6 left-6">
+                    <div className="w-11 h-11 rounded-xl flex items-center justify-center backdrop-blur-sm"
+                      style={{background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.25)"}}>
+                      <f.icon className="w-5 h-5 text-white"/>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Büyük numara — dekoratif */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden"
+                    style={{fontSize:"clamp(140px,20vw,240px)", fontWeight:800, color:`${f.accent}12`, lineHeight:1, letterSpacing:"-0.06em"}}>
+                    {f.num}
+                  </div>
+                  <div className="relative h-full flex items-center justify-center py-16 px-10">
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
+                        style={{background:`${f.accent}18`, border:`1.5px solid ${f.accent}30`}}>
+                        <f.icon className="w-8 h-8" style={{color: f.accent}}/>
+                      </div>
+                      <div className="font-black leading-none" style={{fontSize:"5rem", color: f.accent, letterSpacing:"-0.04em", opacity:0.85}}>
+                        {f.num}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
             {/* Metin paneli */}
             <div className="md:w-7/12 flex items-center px-8 md:px-16 py-14 bg-white">
