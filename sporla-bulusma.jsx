@@ -103,37 +103,25 @@ const Typewriter = React.memo(({ mottos, color1 = "#00b7ba", color2 = "#981dd8" 
     return () => clearTimeout(t);
   }, [phase, count, len, mottos.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const fading = phase === "fading";
+  const fading  = phase === "fading";
+  const visible = word.slice(0, count);
 
   return (
-    <span style={{ display:"inline" }}>
-      {word.split("").map((ch, i) => {
-        const t     = len > 1 ? i / (len - 1) : 0;
-        const color = _lerpColor(color1, color2, t);
-        const shown = i < count;
-        const fresh = i === count - 1; // yeni gelen harf
-
-        return (
-          <span key={`${idx}-${i}`} style={{
-            color,
-            display: "inline",
-            opacity:    fading ? 0 : shown ? 1 : 0,
-            filter:     fading ? "blur(12px)" : fresh ? "blur(0)" : "blur(0)",
-            transform:  fading ? "translateY(-6px)" : fresh ? "translateY(0)" : "none",
-            transition: fading
-              ? `opacity .45s ease ${i*8}ms, filter .45s ease ${i*8}ms, transform .45s ease ${i*8}ms`
-              : fresh
-                ? "opacity .22s ease, filter .22s ease, transform .22s ease"
-                : "none",
-          }}>
-            {ch === " " ? " " : ch}
-          </span>
-        );
-      })}
+    <span style={{
+      background: `linear-gradient(90deg,${color1},${color2})`,
+      WebkitBackgroundClip: "text",
+      WebkitTextFillColor: "transparent",
+      backgroundClip: "text",
+      display: "inline",
+      opacity:    fading ? 0 : 1,
+      filter:     fading ? "blur(10px)" : "blur(0)",
+      transform:  fading ? "translateY(-6px)" : "translateY(0)",
+      transition: fading ? "opacity .45s ease, filter .45s ease, transform .45s ease" : "none",
+    }}>
+      {visible}
     </span>
   );
 });
-
 // Module-level — uncontrolled inputs ile focus sorunu tamamen çözülür
 const AuthModal = ({ authMode, setAuthMode, onClose, handleLogin, handleRegister }) => {
   const [error, setError]     = useState("");
