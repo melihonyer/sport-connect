@@ -588,13 +588,38 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                       )}
                     </div>
 
-                    <div className="bn-stats flex items-center gap-6 pt-2">
-                      {stats.slice(0,2).map((s,si) => (
-                        <div key={si}>
-                          <div className={`text-xl font-semibold ${s.color}`}>{s.value}</div>
-                          <div className="text-xs" style={{color:uiMuted}}>{s.label}</div>
-                        </div>
-                      ))}
+                    <div className="bn-stats flex items-stretch gap-0 pt-2">
+                      {stats.slice(0,2).map((s, si) => {
+                        const Icon = s.icon;
+                        return (
+                          <React.Fragment key={si}>
+                            {si > 0 && (
+                              <div style={{width:"1px", alignSelf:"stretch", margin:"0 20px", background: isLightBg ? "rgba(0,0,0,0.12)" : "rgba(255,255,255,0.15)"}}/>
+                            )}
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-2.5">
+                                <div style={{
+                                  width:"30px", height:"30px", borderRadius:"9px", flexShrink:0,
+                                  background: isLightBg ? "rgba(0,183,186,0.14)" : "rgba(0,183,186,0.22)",
+                                  display:"flex", alignItems:"center", justifyContent:"center",
+                                }}>
+                                  <Icon style={{width:"14px", height:"14px", color:"#00b7ba"}}/>
+                                </div>
+                                <span style={{
+                                  fontSize:"1.6rem", fontWeight:800, lineHeight:1,
+                                  background:"linear-gradient(90deg,#00b7ba,#981dd8)",
+                                  WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent",
+                                  backgroundClip:"text",
+                                }}>{s.value}</span>
+                              </div>
+                              <div style={{
+                                fontSize:"0.68rem", fontWeight:600, letterSpacing:"0.06em",
+                                textTransform:"uppercase", color:uiMuted, paddingLeft:"40px",
+                              }}>{s.label}</div>
+                            </div>
+                          </React.Fragment>
+                        );
+                      })}
                     </div>
                   </div>
 
