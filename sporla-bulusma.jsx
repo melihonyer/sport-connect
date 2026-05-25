@@ -73,6 +73,12 @@ const _lerpColor = (c1, c2, t) => {
   const [r1,g1,b1] = _hx(c1), [r2,g2,b2] = _hx(c2);
   return `rgb(${Math.round(r1+(r2-r1)*t)},${Math.round(g1+(g2-g1)*t)},${Math.round(b1+(b2-b1)*t)})`;
 };
+// Hex rengin algısal parlaklığı (0-255)
+const _brightness = hex => {
+  const h = (hex || "#000000").replace('#','');
+  const r = parseInt(h.slice(0,2),16)||0, g = parseInt(h.slice(2,4),16)||0, b = parseInt(h.slice(4,6),16)||0;
+  return (r*299 + g*587 + b*114) / 1000;
+};
 
 const Typewriter = React.memo(({ mottos, color1 = "#00b7ba", color2 = "#981dd8" }) => {
   const [idx,   setIdx]   = useState(0);
@@ -485,6 +491,18 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
           const isActive = i === activeIdx;
           const bgF = banner?.gradient_from || "#052e16";
           const hasImg = banner?.image_url && banner.image_url !== "";
+          // Arka plan parlaklığına göre otomatik kontrast
+          const _bgBrightness = (
+            _brightness(banner?.gradient_from) +
+            _brightness(banner?.gradient_via) +
+            _brightness(banner?.gradient_to)
+          ) / 3;
+          const isLightBg    = _bgBrightness > 140;
+          const uiText       = isLightBg ? "rgba(0,0,0,0.72)"   : "rgba(186,230,253,0.88)";
+          const uiBorder     = isLightBg ? "rgba(0,0,0,0.18)"   : "rgba(255,255,255,0.14)";
+          const uiMuted      = isLightBg ? "rgba(0,0,0,0.48)"   : "rgba(186,230,253,0.5)";
+          const uiBadgeBg    = isLightBg ? "rgba(0,0,0,0.07)"   : "rgba(255,255,255,0.06)";
+          const uiSecHover   = isLightBg ? "rgba(0,0,0,0.06)"   : "rgba(255,255,255,0.08)";
           return (
             <div key={banner.id} style={{
               position:"absolute", inset:0,
@@ -498,18 +516,10 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                 <div className="bn-grid" style={{display:"grid", gridTemplateColumns:"55% 45%", minHeight:"680px", paddingTop:"112px"}}>
 
                   {/* Sol: metin */}
-                  <div className="bn-text-col z-10 space-y-7 pr-8 pb-28 flex flex-col justify-center"
-                    style={{
-                      background:"rgba(0,0,0,0.18)",
-                      backdropFilter:"blur(18px)",
-                      WebkitBackdropFilter:"blur(18px)",
-                      borderRadius:"24px",
-                      padding:"40px 40px 48px 40px",
-                      border:"1px solid rgba(255,255,255,0.08)",
-                    }}>
+                  <div className="bn-text-col z-10 space-y-7 pr-8 pb-28 flex flex-col justify-center">
                     {banner?.badge_text && (
                       <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full text-sm font-semibold border backdrop-blur-sm"
-                        style={{background:"rgba(255,255,255,0.06)",borderColor:"rgba(255,255,255,0.12)",color:"rgba(186,230,253,0.9)"}}>
+                        style={{background:uiBadgeBg, borderColor:uiBorder, color:uiText}}>
                         <span className="w-2 h-2 rounded-full animate-pulse" style={{background:"#00b7ba"}}/>
                         {banner.badge_text}
                       </div>
@@ -548,8 +558,8 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                           </button>
                           <button
                             onClick={() => { setAuthMode("login"); setIsAuthModalOpen(true); }}
-                            className="flex items-center gap-2 px-7 py-3.5 font-semibold text-sm transition-all duration-300 hover:bg-white/10 rounded-[14px]"
-                            style={{color:"rgba(186,230,253,0.85)", border:"1px solid rgba(255,255,255,0.14)"}}
+                            className="flex items-center gap-2 px-7 py-3.5 font-semibold text-sm transition-all duration-300 rounded-[14px]"
+                            style={{color:uiText, border:`1px solid ${uiBorder}`, background:"transparent"}} onMouseEnter={e=>e.currentTarget.style.background=uiSecHover} onMouseLeave={e=>e.currentTarget.style.background="transparent"}
                           >
                             Giriş Yap
                           </button>
@@ -568,8 +578,8 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                           {banner?.cta_secondary_text && (
                             <button
                               onClick={() => handleCtaClick(banner?.cta_secondary_url, () => setCurrentPage("teams"))}
-                              className="flex items-center gap-2 px-7 py-3.5 font-semibold text-sm transition-all duration-300 hover:bg-white/10 rounded-[14px]"
-                              style={{color:"rgba(186,230,253,0.85)", border:"1px solid rgba(255,255,255,0.14)"}}
+                              className="flex items-center gap-2 px-7 py-3.5 font-semibold text-sm transition-all duration-300 rounded-[14px]"
+                              style={{color:uiText, border:`1px solid ${uiBorder}`, background:"transparent"}} onMouseEnter={e=>e.currentTarget.style.background=uiSecHover} onMouseLeave={e=>e.currentTarget.style.background="transparent"}
                             >
                               {banner.cta_secondary_text}
                             </button>
@@ -582,7 +592,7 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                       {stats.slice(0,2).map((s,si) => (
                         <div key={si}>
                           <div className={`text-xl font-semibold ${s.color}`}>{s.value}</div>
-                          <div className="text-xs" style={{color:"rgba(186,230,253,0.5)"}}>{s.label}</div>
+                          <div className="text-xs" style={{color:uiMuted}}>{s.label}</div>
                         </div>
                       ))}
                     </div>
