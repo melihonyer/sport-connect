@@ -15,5 +15,5 @@
 /* Motto font: mobilde çok büyük (2.5x+), masaüstünde başlıkla aynı */
 .bn-motto { font-size: 7rem; font-weight: 700; line-height: 1.05; white-space: normal; }
 @media (min-width: 768px) {
-  .bn-motto { font-size: clamp(2.8rem, 5.5vw, 4.5rem); line-height: 1.1; white-space: nowrap; }
+  .bn-motto { font-size: clamp(2.8rem, 5.5vw, 4.5rem); line-height: 1.1; white-space: normal; }
 }

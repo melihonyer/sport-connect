@@ -589,12 +589,12 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                           style={{background:"radial-gradient(ellipse,rgba(0,183,186,0.2) 0%,rgba(0,183,186,0.1) 55%,transparent 70%)"}}/>
                         {/* Görsel: bottom:-44px → float max 14px yukarı çıksa da alt kenar hiç görünmez */}
                         <div className="absolute inset-x-0 flex justify-center items-end"
-                          style={{bottom:"-44px", animation:"heroFloat 5s ease-in-out infinite"}}>
+                          style={{bottom:"-50px", animation:"heroFloat 5s ease-in-out infinite"}}>
                           <img
                             src={`${BASE_URL}${banner.image_url}`}
                             alt=""
                             className="select-none pointer-events-none"
-                            style={{height:"620px", width:"auto", maxWidth:"100%", objectFit:"contain", objectPosition:"bottom center", filter:"drop-shadow(0 8px 24px rgba(0,0,0,0.18))"}}
+                            style={{height:"750px", width:"auto", maxWidth:"100%", objectFit:"contain", objectPosition:"bottom center", filter:"drop-shadow(0 8px 24px rgba(0,0,0,0.18))"}}
                           />
                         </div>
                       </>
