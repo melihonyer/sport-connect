@@ -449,7 +449,10 @@ export default function AdminPanel() {
         <div className="relative w-full max-w-md mx-4">
           {/* Logo */}
           <div className="text-center mb-8">
-            <img src="/icons/logo-yatay.svg" alt="Muuvlink" className="h-10 w-auto mx-auto mb-4" />
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <img src="/icons/favicon.png" alt="" className="h-10 w-auto"/>
+              <img src="/icons/logo-yatay.svg" alt="Muuvlink" className="h-8 w-auto"/>
+            </div>
             <h1 className="text-2xl font-semibold text-slate-800 tracking-tight">Admin Panel</h1>
             <p className="text-slate-500 text-sm mt-1">Yönetim Konsolu</p>
           </div>
