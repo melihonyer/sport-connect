@@ -67,40 +67,79 @@ const DEFAULT_MOTTOS = [
 // Muuvlink her 55ms'de re-render ederdi (typewriter state),
 // bu da AuthModal gibi nested component'lerin unmount/remount olmasına
 // ve form alanlarının sıfırlanmasına yol açıyordu.
+// Hex → RGB yardımcısı
+const _hx = h => { const x = h.replace('#',''); return [parseInt(x.slice(0,2),16), parseInt(x.slice(2,4),16), parseInt(x.slice(4,6),16)]; };
+const _lerpColor = (c1, c2, t) => {
+  const [r1,g1,b1] = _hx(c1), [r2,g2,b2] = _hx(c2);
+  return `rgb(${Math.round(r1+(r2-r1)*t)},${Math.round(g1+(g2-g1)*t)},${Math.round(b1+(b2-b1)*t)})`;
+};
+
 const Typewriter = React.memo(({ mottos, color1 = "#00b7ba", color2 = "#981dd8" }) => {
-  const [idx, setIdx]         = useState(0);
-  const [visible, setVisible] = useState(true);
-  const [key, setKey]         = useState(0); // animasyonu yeniden tetiklemek için
+  const [idx,   setIdx]   = useState(0);
+  const [count, setCount] = useState(0);   // kaç karakter görünüyor
+  const [phase, setPhase] = useState("typing"); // typing | holding | fading
+
+  const word = mottos[idx % mottos.length];
+  const len  = word.length;
 
   useEffect(() => {
-    const hold = setTimeout(() => {
-      setVisible(false);
-      const swap = setTimeout(() => {
+    let t;
+    if (phase === "typing") {
+      if (count < len) {
+        t = setTimeout(() => setCount(c => c + 1), 62);
+      } else {
+        t = setTimeout(() => setPhase("holding"), 1800);
+      }
+    } else if (phase === "holding") {
+      t = setTimeout(() => setPhase("fading"), 80);
+    } else if (phase === "fading") {
+      // CSS transition süresi 480ms — sonra mottoyu değiştir
+      t = setTimeout(() => {
         setIdx(i => (i + 1) % mottos.length);
-        setVisible(true);
-        setKey(k => k + 1);
-      }, 480);
-      return () => clearTimeout(swap);
-    }, 2400);
-    return () => clearTimeout(hold);
-  }, [key, mottos.length]); // eslint-disable-line react-hooks/exhaustive-deps
+        setCount(0);
+        setPhase("typing");
+      }, 500);
+    }
+    return () => clearTimeout(t);
+  }, [phase, count, len, mottos.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const grad = `linear-gradient(90deg,${color1},${color2})`;
+  const fading = phase === "fading";
 
   return (
-    <span style={{
-      background: grad,
-      WebkitBackgroundClip: "text",
-      WebkitTextFillColor: "transparent",
-      backgroundClip: "text",
-      display: "inline-block",
-      ...(visible
-        ? { animation: "mottoIn 0.55s cubic-bezier(0.16,1,0.3,1) both" }
-        : { opacity: 0, filter: "blur(10px)", transform: "translateY(-8px)",
-            transition: "opacity 0.4s ease, filter 0.4s ease, transform 0.4s ease" }
-      ),
-    }}>
-      {mottos[idx % mottos.length]}
+    <span style={{ display:"inline" }}>
+      {word.split("").map((ch, i) => {
+        const t     = len > 1 ? i / (len - 1) : 0;
+        const color = _lerpColor(color1, color2, t);
+        const shown = i < count;
+        const fresh = i === count - 1; // yeni gelen harf
+
+        return (
+          <span key={`${idx}-${i}`} style={{
+            color,
+            display: "inline",
+            opacity:    fading ? 0 : shown ? 1 : 0,
+            filter:     fading ? "blur(12px)" : fresh ? "blur(0)" : "blur(0)",
+            transform:  fading ? "translateY(-6px)" : fresh ? "translateY(0)" : "none",
+            transition: fading
+              ? `opacity .45s ease ${i*8}ms, filter .45s ease ${i*8}ms, transform .45s ease ${i*8}ms`
+              : fresh
+                ? "opacity .22s ease, filter .22s ease, transform .22s ease"
+                : "none",
+          }}>
+            {ch === " " ? " " : ch}
+          </span>
+        );
+      })}
+      {/* İmleç */}
+      <span style={{
+        display:"inline-block", width:"3px", height:"0.82em",
+        marginLeft:"3px", marginBottom:"-2px", verticalAlign:"text-bottom",
+        background:`linear-gradient(180deg,${color1},${color2})`,
+        borderRadius:"2px",
+        animation:"blink 1s step-end infinite",
+        opacity: fading ? 0 : 1,
+        transition:"opacity .3s ease",
+      }}/>
     </span>
   );
 });
@@ -477,10 +516,10 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                     )}
 
                     <div>
-                      <h1 className="bn-title text-white" style={{fontSize:"clamp(2.8rem,5.5vw,4.5rem)", lineHeight:1.1, fontWeight:600}}>
+                      <h1 className="bn-title text-white" style={{fontSize:"clamp(2.6rem,5.5vw,4.5rem)", lineHeight:1.1, fontWeight:600}}>
                         {banner?.title || "Sporla Buluş,"}
                       </h1>
-                      <h1 className="bn-title" style={{fontSize:"clamp(2.8rem,5.5vw,4.5rem)", lineHeight:1.15, fontWeight:600, minHeight:"1.25em"}}>
+                      <h1 className="bn-title" style={{fontSize:"clamp(3.4rem,8vw,5.5rem)", lineHeight:1.1, fontWeight:700, minHeight:"1.2em"}}>
                         {isActive
                           ? <Typewriter
                               mottos={(banner?.mottos?.length > 0) ? banner.mottos : DEFAULT_MOTTOS}
