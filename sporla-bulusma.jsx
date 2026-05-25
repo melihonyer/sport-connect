@@ -482,6 +482,7 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
     <div className="relative" style={{
       background: `linear-gradient(115deg, ${gFrom} 0%, ${gVia} 45%, ${gTo} 100%)`,
       transition: "background 1s ease",
+      overflow: "hidden",
     }}>
       {/* Arka plan dekorları */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
