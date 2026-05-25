@@ -2054,9 +2054,15 @@ export default function Muuvlink() {
                 }}>Muuvlink?</span>
               </h2>
             </div>
-            <div className="md:max-w-sm md:pb-3">
-              <p className="text-slate-500 text-base leading-relaxed">
-                Spor yapmayı seven insanları bir araya getiren, akıllı ve sosyal spor platformu.
+            <div className="md:max-w-md md:pb-3">
+              <p className="font-bold italic leading-snug text-slate-700"
+                style={{fontSize:"clamp(1.15rem,2.2vw,1.45rem)"}}>
+                Spor yapmayı seven insanları bir araya getiren,{" "}
+                <span style={{
+                  background:"linear-gradient(90deg,#00b7ba,#009295)",
+                  WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text",
+                }}>akıllı ve sosyal</span>{" "}
+                spor platformu.
               </p>
             </div>
           </div>
