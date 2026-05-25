@@ -469,6 +469,14 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
   const gFrom = activeBanner?.gradient_from || "#052e16";
   const gVia  = activeBanner?.gradient_via  || "#004849";
   const gTo   = activeBanner?.gradient_to   || "#006d6f";
+  // Nav butonları için aktif banner'ın kontrast durumu
+  const activeIsLightBg = (
+    _brightness(activeBanner?.gradient_from) +
+    _brightness(activeBanner?.gradient_via) +
+    _brightness(activeBanner?.gradient_to)
+  ) / 3 > 140;
+  const navActiveColor   = activeIsLightBg ? "#0d6b6d"            : "#00b7ba";
+  const navInactiveColor = activeIsLightBg ? "rgba(0,0,0,0.2)"    : "rgba(255,255,255,0.3)";
 
   return (
     <div className="relative" style={{
@@ -607,9 +615,7 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                                 </div>
                                 <span style={{
                                   fontSize:"1.6rem", fontWeight:800, lineHeight:1,
-                                  background:"linear-gradient(90deg,#00b7ba,#981dd8)",
-                                  WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent",
-                                  backgroundClip:"text",
+                                  color: isLightBg ? "#0d6b6d" : "#00b7ba",
                                 }}>{s.value}</span>
                               </div>
                               <div style={{
@@ -662,7 +668,7 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
               height:"3px",
               width: i === activeIdx ? "32px" : "16px",
               borderRadius:"2px", border:"none", cursor:"pointer", padding:0,
-              background: i === activeIdx ? "linear-gradient(90deg,#00b7ba,#981dd8)" : "rgba(255,255,255,0.3)",
+              background: i === activeIdx ? navActiveColor : navInactiveColor,
               transition:"all 0.4s cubic-bezier(0.34,1.56,0.64,1)",
             }}/>
           ))}
