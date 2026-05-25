@@ -635,7 +635,7 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                   <div className="absolute pointer-events-none"
                     style={{right:"10%", bottom:0, width:"500px", height:"400px", borderRadius:"50%", filter:"blur(80px)", background:"radial-gradient(ellipse,rgba(0,183,186,0.2) 0%,rgba(0,183,186,0.1) 55%,transparent 70%)"}}/>
                   {/* Görsel: right side, bottom:-50px → float sırasında alt kenar görünmez */}
-                  <div className="absolute pointer-events-none"
+                  <div className="bn-banner-img absolute pointer-events-none"
                     style={{right:0, top:0, bottom:"-50px", width:"52%", display:"flex", justifyContent:"center", alignItems:"flex-end", animation:"heroFloat 5s ease-in-out infinite"}}>
                     <img
                       src={`${BASE_URL}${banner.image_url}`}
@@ -676,6 +676,7 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
           .bn-grid     { display:flex !important; flex-direction:column !important; min-height:auto !important; padding-top:88px !important; padding-bottom:60px; }
           .bn-text-col { padding-right:0 !important; padding-bottom:0 !important; }
           .bn-img-col  { display:none !important; }
+          .bn-banner-img { display:none !important; }
           .bn-nav      { display:flex !important; }
           .bn-title    { white-space:normal !important; font-size:4.5rem !important; line-height:1.08 !important; word-break:normal !important; overflow-wrap:normal !important; }
           .bn-motto    { white-space:normal !important; font-size:4.5rem !important; line-height:1.08 !important; word-break:normal !important; overflow-wrap:normal !important; }
