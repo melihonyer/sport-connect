@@ -88,7 +88,7 @@ const Typewriter = React.memo(({ mottos, color1 = "#00b7ba", color2 = "#981dd8" 
       if (count < len) {
         t = setTimeout(() => setCount(c => c + 1), 62);
       } else {
-        t = setTimeout(() => setPhase("holding"), 1800);
+        t = setTimeout(() => setPhase("holding"), 2600);
       }
     } else if (phase === "holding") {
       t = setTimeout(() => setPhase("fading"), 80);
@@ -432,7 +432,7 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
     if (len <= 1) return;
     timerRef.current = setInterval(() => {
       setActiveIdx(i => (i + 1) % len);
-    }, 5500);
+    }, 14000);
   };
 
   useEffect(() => {
