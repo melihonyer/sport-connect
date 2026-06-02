@@ -124,9 +124,11 @@ const pool = process.env.PGHOST
         port:     parseInt(process.env.DB_PORT || '5432'),
       });
 
-// Her yeni bağlantıda search_path'i public yap
+// Her yeni bağlantıda timezone'u Europe/Istanbul olarak sabitle.
+// Uygulama Türkiye saatinde çalışıyor: training_time girişleri yerel saat,
+// CURRENT_TIME/CURRENT_DATE karşılaştırmaları da İstanbul saatiyle tutarlı olmalı.
 pool.on('connect', client => {
-  client.query('SET search_path TO public').catch(() => {});
+  client.query("SET search_path TO public; SET timezone = 'Europe/Istanbul'").catch(() => {});
 });
 
 // =====================================================
