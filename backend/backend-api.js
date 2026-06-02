@@ -2274,10 +2274,10 @@ app.get('/api/users/:id/activity', authenticateToken, async (req, res) => {
        FROM training_attendees ta
        JOIN trainings t ON ta.training_id = t.id
        WHERE ta.user_id = $1
-         AND t.training_date >= CURRENT_DATE - INTERVAL '6 days'
+         AND t.training_date::date >= CURRENT_DATE - INTERVAL '6 days'
          AND (
-           t.training_date < CURRENT_DATE
-           OR (t.training_date = CURRENT_DATE AND t.training_time < CURRENT_TIME)
+           t.training_date::date < CURRENT_DATE
+           OR (t.training_date::date = CURRENT_DATE AND t.training_time <= CURRENT_TIME)
          )
        GROUP BY t.training_date::date
        ORDER BY date ASC`,

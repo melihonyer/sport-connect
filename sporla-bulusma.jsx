@@ -3118,12 +3118,11 @@ export default function Muuvlink() {
           </div>
 
           {/* Stats strip */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-px mt-10 rounded-2xl overflow-hidden" style={{background:"rgba(255,255,255,0.06)"}}>
+          <div className="grid grid-cols-3 gap-px mt-10 rounded-2xl overflow-hidden" style={{background:"rgba(255,255,255,0.06)"}}>
             {[
               {val: userStats?.total_trainings || 0, label: t("home.statTrainings"), accent:"#00b7ba"},
               {val: myTeams.length,                  label: t("home.statTeams"),     accent:"#981dd8"},
               {val: userBadges.length,               label: t("home.statBadges"),    accent:"#f59e0b"},
-              {val: `${userStats?.total_distance || 0} km`, label: t("home.statDistance"), accent:"#009295"},
             ].map((s, i) => (
               <div key={i} className="px-6 py-5" style={{background:"rgba(0,183,186,0.15)"}}>
                 <div className="text-2xl font-semibold text-brand-700">{s.val}</div>
