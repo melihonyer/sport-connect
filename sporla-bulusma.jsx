@@ -4581,7 +4581,13 @@ export default function Muuvlink() {
       if (!token) { setEligibleLoading(false); return; }
       fetch(`${API_URL}/teams?can_create_training=true`, { headers: { Authorization: `Bearer ${token}` } })
         .then(r => r.ok ? r.json() : { teams: [] })
-        .then(d => { setEligibleTeams(d.teams || []); setEligibleLoading(false); })
+        .then(d => {
+          // Sadece sahip/antrenör/kaptan olduğu takımlar — backend filtre + frontend güvence
+          const ALLOWED = ['owner', 'coach', 'captain'];
+          const filtered = (d.teams || []).filter(t => ALLOWED.includes(t.my_role));
+          setEligibleTeams(filtered);
+          setEligibleLoading(false);
+        })
         .catch(() => setEligibleLoading(false));
     }, []);
     const [formData, setFormData] = useState({
