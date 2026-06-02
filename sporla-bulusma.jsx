@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { detectLang, createT } from "./i18n.js";
 import {
   MapPin,
   Users,
@@ -42,6 +43,7 @@ import {
   Image,
   Menu,
   ChevronUp,
+  ExternalLink,
 } from "lucide-react";
 import {
   BarChart,
@@ -52,16 +54,386 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 const API_URL  = import.meta.env.VITE_API_URL  ?? (import.meta.env.DEV ? "http://localhost:3000/api" : "/api");
+
+// ── Global hata yakalayıcı — beyaz ekran yerine kullanıcı dostu mesaj ──
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(err) { return { error: err }; }
+  componentDidCatch(err, info) { console.error("[ErrorBoundary]", err, info); }
+  render() {
+    if (!this.state.error) return this.props.children;
+    const reset = () => this.setState({ error: null });
+    const lng = (typeof localStorage !== "undefined" && localStorage.getItem("muuvlang")) || "tr";
+    const _eb = {
+      title: { tr: "Bir şeyler ters gitti", en: "Something went wrong", de: "Etwas ist schiefgelaufen" },
+      retry: { tr: "Tekrar Dene", en: "Try Again", de: "Erneut versuchen" },
+      unexpected: { tr: "Beklenmedik bir hata oluştu.", en: "An unexpected error occurred.", de: "Ein unerwarteter Fehler ist aufgetreten." },
+    };
+    const _t = (k) => _eb[k][lng] || _eb[k].en;
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 px-6 text-center gap-5">
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-red-50">
+          <AlertTriangle className="w-8 h-8 text-red-400"/>
+        </div>
+        <div>
+          <p className="text-slate-800 font-semibold text-lg mb-1">{_t("title")}</p>
+          <p className="text-slate-400 text-sm max-w-xs">
+            {this.state.error?.message || _t("unexpected")}
+          </p>
+        </div>
+        <button onClick={reset}
+          className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white"
+          style={{ background: "linear-gradient(135deg,#00b7ba,#009295)" }}>
+          {_t("retry")}
+        </button>
+      </div>
+    );
+  }
+}
 const BASE_URL = import.meta.env.VITE_BASE_URL ?? (import.meta.env.DEV ? "http://localhost:3000" : "");
 
-const DEFAULT_MOTTOS = [
-  "Birlikte Hareket Et!",
-  "Yeni Dostlar Edin!",
-  "Limitlerini Aş!",
-  "En İyini Keşfet!",
-];
+// ── Tarih formatlama yardımcıları ──────────────────────────────────────────
+// "1 Haziran 2026 Pazartesi" — antrenman detay gibi önemli yerlerde
+const fmtDateFull = (d) => d
+  ? new Date(d).toLocaleDateString("tr-TR", { timeZone:"UTC", weekday:"long", day:"numeric", month:"long", year:"numeric" })
+  : "";
+// "1 Haziran 2026" — kartlar ve listeler için
+const fmtDateMed = (d) => d
+  ? new Date(d).toLocaleDateString("tr-TR", { timeZone:"UTC", day:"numeric", month:"long", year:"numeric" })
+  : "";
+// "1 Haz 2026" — kompakt yerler (yorum tarihi, bildirim vb.)
+const fmtDateShort = (d) => d
+  ? new Date(d).toLocaleDateString("tr-TR", { day:"numeric", month:"short", year:"numeric" })
+  : "";
+
+// Harita arama yardımcıları
+const _hav = (a, b) => { const R=6371,dL=(b.lat-a.lat)*Math.PI/180,dN=(b.lng-a.lng)*Math.PI/180,x=Math.sin(dL/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dN/2)**2; return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x)); };
+const _fmtDist = (km) => km < 1 ? `${Math.round(km*1000)} m` : `${km.toFixed(1)} km`;
+
+const _PLACE_LABELS = {
+  village:       { tr:"Köy/Mahalle", en:"Village",     de:"Dorf"        },
+  hamlet:        { tr:"Köy/Mahalle", en:"Village",     de:"Dorf"        },
+  suburb:        { tr:"Mahalle",     en:"Suburb",      de:"Vorort"      },
+  neighbourhood: { tr:"Mahalle",     en:"Neighborhood",de:"Viertel"     },
+  quarter:       { tr:"Mahalle",     en:"Quarter",     de:"Viertel"     },
+  city:          { tr:"Şehir",       en:"City",        de:"Stadt"       },
+  town:          { tr:"Şehir",       en:"Town",        de:"Ort"         },
+  cafe:          { tr:"Kafe",        en:"Café",        de:"Café"        },
+  restaurant:    { tr:"Restoran",    en:"Restaurant",  de:"Restaurant"  },
+  fast_food:     { tr:"Restoran",    en:"Restaurant",  de:"Restaurant"  },
+  gym:           { tr:"Spor",        en:"Gym",         de:"Fitnessstudio"},
+  sports_centre: { tr:"Spor",        en:"Sports",      de:"Sport"       },
+  swimming_pool: { tr:"Havuz",       en:"Pool",        de:"Schwimmbad"  },
+  park:          { tr:"Park",        en:"Park",        de:"Park"        },
+  garden:        { tr:"Park",        en:"Garden",      de:"Garten"      },
+  school:        { tr:"Okul",        en:"School",      de:"Schule"      },
+  university:    { tr:"Okul",        en:"University",  de:"Universität" },
+  hospital:      { tr:"Sağlık",      en:"Hospital",    de:"Krankenhaus" },
+  clinic:        { tr:"Sağlık",      en:"Clinic",      de:"Klinik"      },
+  stadium:       { tr:"Spor",        en:"Stadium",     de:"Stadion"     },
+  beach:         { tr:"Sahil",       en:"Beach",       de:"Strand"      },
+};
+const _placeType = (cls, typ, lang="tr") => {
+  const l = lang === "en" ? "en" : lang === "de" ? "de" : "tr";
+  const entry = _PLACE_LABELS[typ];
+  if (entry) {
+    const color = {
+      village:"#15803d",hamlet:"#15803d",suburb:"#7c3aed",neighbourhood:"#7c3aed",quarter:"#7c3aed",
+      city:"#0891b2",town:"#0891b2",cafe:"#d97706",restaurant:"#ea580c",fast_food:"#ea580c",
+      gym:"#0891b2",sports_centre:"#0891b2",swimming_pool:"#0284c7",park:"#16a34a",garden:"#16a34a",
+      school:"#64748b",university:"#64748b",hospital:"#dc2626",clinic:"#dc2626",
+      stadium:"#0891b2",beach:"#f59e0b",
+    }[typ] || "#00b7ba";
+    return { label: entry[l] || entry.en, color };
+  }
+  if (cls==="natural")  return { label: {tr:"Doğa", en:"Nature",  de:"Natur" }[l],   color:"#15803d" };
+  if (cls==="highway")  return { label: {tr:"Sokak", en:"Street",  de:"Straße"}[l],   color:"#94a3b8" };
+  if (cls==="shop")     return { label: {tr:"Mağaza", en:"Shop",   de:"Geschäft"}[l], color:"#9333ea" };
+  return { label: {tr:"Yer", en:"Place", de:"Ort"}[l], color:"#00b7ba" };
+};
+
+const DEFAULT_MOTTOS = {
+  tr: ["Birlikte Hareket Et!", "Yeni Dostlar Edin!", "Limitlerini Aş!", "En İyini Keşfet!"],
+  en: ["Move Together!", "Make New Friends!", "Push Your Limits!", "Discover Your Best!"],
+  de: ["Gemeinsam bewegen!", "Neue Freunde finden!", "Grenzen überwinden!", "Entdecke dein Bestes!"],
+};
+
+// ── Leaflet default icon fix (Vite) ──────────────────────────────────────────
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: new URL("leaflet/dist/images/marker-icon-2x.png", import.meta.url).href,
+  iconUrl:       new URL("leaflet/dist/images/marker-icon.png",    import.meta.url).href,
+  shadowUrl:     new URL("leaflet/dist/images/marker-shadow.png",  import.meta.url).href,
+});
+
+// Sport'a göre harita pin rengi
+const SPORT_COLORS = {
+  Koşu:"#00b7ba", Bisiklet:"#009295", Yüzme:"#0284c7", Futbol:"#16a34a",
+  Basketbol:"#d97706", Voleybol:"#7c3aed", Tenis:"#b45309", Padel:"#b45309",
+  Yoga:"#9333ea", Pilates:"#db2777", Crossfit:"#dc2626", Triatlon:"#0891b2",
+  Kano:"#0369a1", Kürek:"#1d4ed8", Trekking:"#15803d", Diğer:"#00b7ba",
+};
+
+// Custom map marker — renk ve harf dışarıdan gelir
+const makeTrainingIcon = (color, letter, highlight = false) => {
+  const size = highlight ? 40 : 34;
+  const shadow = highlight
+    ? `0 0 0 4px ${color}33, 0 4px 16px ${color}66`
+    : `0 3px 10px ${color}55`;
+  return L.divIcon({
+    className: "",
+    html: `<div style="
+      width:${size}px;height:${size}px;
+      background:linear-gradient(135deg,${color},${color}cc);
+      border-radius:50% 50% 50% 0;
+      transform:rotate(-45deg);
+      border:2.5px solid white;
+      box-shadow:${shadow};
+      display:flex;align-items:center;justify-content:center;">
+        <span style="
+          transform:rotate(45deg);
+          color:white;font-weight:900;
+          font-size:${highlight ? 15 : 13}px;
+          font-family:'Barlow Condensed','Barlow',system-ui,sans-serif;
+          line-height:1;letter-spacing:-0.5px;">
+          ${letter}
+        </span>
+    </div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size],
+    popupAnchor: [0, -(size + 4)],
+  });
+};
+
+// Harita seçici için sürüklenebilir pin
+const makePickerIcon = () => L.divIcon({
+  className: "",
+  html: `<div style="position:relative;width:40px;height:40px;">
+    <div style="
+      width:40px;height:40px;
+      background:linear-gradient(135deg,#00b7ba,#009295);
+      border-radius:50% 50% 50% 0;
+      transform:rotate(-45deg);
+      border:3px solid white;
+      box-shadow:0 4px 20px rgba(0,183,186,0.55);
+    "></div>
+    <div style="
+      position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    ">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/>
+      </svg>
+    </div>
+  </div>`,
+  iconSize: [40, 40],
+  iconAnchor: [20, 40],
+  popupAnchor: [0, -44],
+});
+
+// Harita tıklama olaylarını yakalar (MapContainer içinde kullanılır)
+const MapClickHandler = ({ onPick }) => {
+  useMapEvents({ click: (e) => onPick(e.latlng) });
+  return null;
+};
+
+// Resim URL'sinden baskın rengi backend üzerinden çıkarır (CORS yok)
+const extractDominantColor = async (url) => {
+  try {
+    const res = await fetch(`/api/color-extract?url=${encodeURIComponent(url)}`);
+    if (!res.ok) return null;
+    const { color } = await res.json();
+    return color || null;
+  } catch {
+    return null;
+  }
+};
+
+// Harita seçici: belirtilen konuma uç
+const FlyToLocation = ({ target }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (target) map.flyTo([target.lat, target.lng], 15, { duration: 0.8 });
+  }, [target]); // eslint-disable-line
+  return null;
+};
+
+// Harita seçici: görünür alanı (bounds) dışarıya ilet
+const MapBoundsTracker = ({ onBoundsChange }) => {
+  const map = useMapEvents({
+    moveend: () => onBoundsChange(map.getBounds()),
+    zoomend: () => onBoundsChange(map.getBounds()),
+  });
+  useEffect(() => { onBoundsChange(map.getBounds()); }, []); // eslint-disable-line
+  return null;
+};
+
+// Harita sınırları otomatik ayarlama
+const FitBoundsToTrainings = ({ trainings }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (!trainings.length) return;
+    const bounds = L.latLngBounds(
+      trainings.map(t => [parseFloat(t.location_lat), parseFloat(t.location_lng)])
+    );
+    map.fitBounds(bounds, { padding: [48, 48], maxZoom: 13 });
+  }, [trainings, map]);
+  return null;
+};
+
+// Ana harita component'i
+const TrainingsMapView = ({ trainings, onSelectTraining, t }) => {
+  const [active, setActive] = React.useState(null);
+  const [teamColors, setTeamColors] = React.useState({});   // { teamId: "#hex" | null }
+  const processingRef = React.useRef(new Set());             // işlemde olan team_id'ler
+  const mapped = trainings.filter(t => t.location_lat && t.location_lng);
+
+  // Her takım avatarından baskın rengi bir kez çek
+  React.useEffect(() => {
+    mapped.forEach(t => {
+      const { team_id, team_avatar } = t;
+      // Zaten işlendi veya işleniyorsa atla
+      if (teamColors[team_id] !== undefined || processingRef.current.has(team_id)) return;
+
+      const isUrl = typeof team_avatar === "string" && team_avatar.startsWith("http");
+      if (!isUrl) {
+        setTeamColors(prev => ({ ...prev, [team_id]: null })); // emoji → fallback kullan
+        return;
+      }
+
+      processingRef.current.add(team_id);
+      extractDominantColor(team_avatar).then(hex => {
+        processingRef.current.delete(team_id);
+        setTeamColors(prev => ({ ...prev, [team_id]: hex ?? null }));
+      });
+    });
+  }, [mapped.map(t => t.team_id).join(",")]); // eslint-disable-line
+
+  const trCenter = [39.0, 35.0]; // Türkiye merkezi
+
+  const fmtDate = fmtDateMed;
+  const fmtTime = (t) => t ? t.slice(0, 5) : "";
+
+  return (
+    <div className="relative rounded-2xl overflow-hidden border border-slate-200 shadow-sm" style={{ height: "600px" }}>
+      {/* Koordinatsız uyarısı */}
+      {trainings.length > mapped.length && (
+        <div className="absolute top-3 left-3 z-[1000] flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/90 backdrop-blur border border-slate-200 shadow-sm text-slate-600">
+          <MapPin className="w-3.5 h-3.5 text-slate-400"/>
+          {mapped.length}/{trainings.length} {t ? t("map.trainingsOnMap") : "trainings on map"}
+        </div>
+      )}
+      {/* Harita pin sayacı */}
+      <div className="absolute top-3 right-3 z-[1000] flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/90 backdrop-blur border border-slate-200 shadow-sm"
+        style={{ color: "#009295" }}>
+        <Activity className="w-3.5 h-3.5"/>
+        {mapped.length} {t ? t("map.trainingsCount") : "trainings"}
+      </div>
+
+      {mapped.length === 0 ? (
+        <div className="h-full flex flex-col items-center justify-center bg-slate-50 gap-4">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background: "rgba(0,183,186,0.1)" }}>
+            <MapPin className="w-8 h-8 text-brand-400"/>
+          </div>
+          <p className="text-slate-500 font-medium text-sm">{t ? t("map.noLocationData") : "No location data to display on map"}</p>
+          <p className="text-slate-400 text-xs">{t ? t("map.noLocationHint") : "A location must be selected when creating a training"}</p>
+        </div>
+      ) : (
+        <MapContainer
+          center={trCenter} zoom={6}
+          style={{ height: "100%", width: "100%" }}
+          zoomControl={true}
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://carto.com">CARTO</a>'
+            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+            subdomains="abcd"
+          />
+          <FitBoundsToTrainings trainings={mapped}/>
+          {mapped.map(t => {
+            const teamLetter = (t.team_name || t.team_sport || "T").charAt(0).toUpperCase();
+            const teamColor  = teamColors[t.team_id] || SPORT_COLORS[t.team_sport] || "#00b7ba";
+            return (
+            <Marker
+              key={`${t.id}-${teamColor}`}
+              position={[parseFloat(t.location_lat), parseFloat(t.location_lng)]}
+              icon={makeTrainingIcon(teamColor, teamLetter, active === t.id)}
+              eventHandlers={{
+                click: () => setActive(t.id),
+                popupclose: () => setActive(null),
+              }}
+            >
+              <Popup className="training-map-popup" minWidth={220} maxWidth={280}>
+                <div style={{ fontFamily: "system-ui,sans-serif", padding: "4px 0" }}>
+                  {/* Sport badge */}
+                  <div style={{ display:"flex", alignItems:"center", gap:"6px", marginBottom:"8px" }}>
+                    <span style={{
+                      display:"inline-block", padding:"2px 8px",
+                      background: `${teamColor}18`,
+                      color: teamColor,
+                      borderRadius:"6px", fontSize:"11px", fontWeight:700,
+                    }}>{t.team_sport || "Spor"}</span>
+                    {t.difficulty && (
+                      <span style={{ fontSize:"11px", color:"#94a3b8" }}>{t.difficulty}</span>
+                    )}
+                  </div>
+                  {/* Title */}
+                  <div style={{ fontWeight:700, fontSize:"14px", color:"#0f172a", marginBottom:"4px", lineHeight:1.3 }}>
+                    {t.title}
+                  </div>
+                  {/* Team */}
+                  <div style={{ fontSize:"12px", color:"#64748b", marginBottom:"8px" }}>
+                    {t.team_name}
+                  </div>
+                  {/* Meta */}
+                  <div style={{ display:"flex", flexDirection:"column", gap:"4px", marginBottom:"12px" }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:"6px", fontSize:"12px", color:"#475569" }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                      </svg>
+                      {fmtDate(t.training_date)}{t.training_time ? ` · ${fmtTime(t.training_time)}` : ""}
+                    </div>
+                    {t.location_name && (
+                      <div style={{ display:"flex", alignItems:"center", gap:"6px", fontSize:"12px", color:"#475569" }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
+                        </svg>
+                        <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", maxWidth:"190px" }}>
+                          {t.location_name}
+                        </span>
+                      </div>
+                    )}
+                    <div style={{ display:"flex", alignItems:"center", gap:"6px", fontSize:"12px", color:"#475569" }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+                      </svg>
+                      {t.attendee_count || 0} / {t.capacity} katılımcı
+                    </div>
+                  </div>
+                  {/* CTA */}
+                  <button
+                    onClick={() => onSelectTraining(t)}
+                    style={{
+                      width:"100%", padding:"8px 0", borderRadius:"8px", border:"none", cursor:"pointer",
+                      background:`linear-gradient(135deg,${teamColor},${teamColor}cc)`,
+                      color:"white", fontSize:"12px", fontWeight:700, letterSpacing:"0.3px",
+                    }}
+                  >
+                    Detayı Gör →
+                  </button>
+                </div>
+              </Popup>
+            </Marker>
+          );})}
+        </MapContainer>
+      )}
+    </div>
+  );
+};
 
 // Module-level component — Muuvlink içinde OLMAMALI.
 // Muuvlink her 55ms'de re-render ederdi (typewriter state),
@@ -143,7 +515,7 @@ const Typewriter = React.memo(({ mottos, color1 = "#00b7ba", color2 = "#981dd8" 
   );
 });
 // Module-level — uncontrolled inputs ile focus sorunu tamamen çözülür
-const AuthModal = ({ authMode, setAuthMode, onClose, handleLogin, handleRegister }) => {
+const AuthModal = ({ authMode, setAuthMode, onClose, handleLogin, handleRegister, t }) => {
   const [error, setError]     = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -173,23 +545,23 @@ const AuthModal = ({ authMode, setAuthMode, onClose, handleLogin, handleRegister
           body: JSON.stringify({ email }),
         });
         if (res.ok) {
-          setSuccess("Şifre sıfırlama linki e-postana gönderildi. Spam kutusunu da kontrol et.");
+          setSuccess(t("auth.resetEmailSent"));
         } else {
           const d = await res.json();
-          setError(d.error || "Bir hata oluştu.");
+          setError(d.error || t("common.error"));
         }
       } catch {
-        setError("Sunucuya bağlanılamadı.");
+        setError(t("common.networkError"));
       }
     }
     setLoading(false);
   };
 
-  const titles = { login: "Giriş Yap", register: "Kaydol", forgot: "Şifremi Unuttum" };
+  const titles = { login: t("auth.loginTitle"), register: t("auth.registerTitle"), forgot: t("auth.forgotTitle") };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-3xl max-w-md w-full relative overflow-hidden shadow-2xl">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center z-50 p-4 modal-backdrop">
+      <div className="bg-white rounded-3xl max-w-md w-full relative overflow-hidden shadow-2xl modal-content">
 
         {/* Üst gradient şerit */}
         <div className="h-1.5" style={{background:"linear-gradient(90deg,#00b7ba,#981dd8)"}}/>
@@ -208,14 +580,14 @@ const AuthModal = ({ authMode, setAuthMode, onClose, handleLogin, handleRegister
           </div>
 
           {/* Başlık */}
-          <h2 className="text-2xl font-bold text-slate-900 text-center mb-1 tracking-tight">
+          <h2 className="font-display font-bold text-slate-900 text-center mb-1" style={{fontSize:"1.8rem", letterSpacing:"-0.01em"}}>
             {titles[authMode]}
           </h2>
           {authMode === "forgot" ? (
-            <p className="text-slate-400 text-sm text-center mb-6">E-postanı gir, sıfırlama linki gönderelim.</p>
+            <p className="text-slate-400 text-sm text-center mb-6">{t("auth.forgotTitle")}</p>
           ) : (
             <p className="text-slate-400 text-sm text-center mb-6">
-              {authMode === "login" ? "Hesabına giriş yap" : "Yeni hesap oluştur"}
+              {authMode === "login" ? t("auth.loginTitle") : t("auth.registerTitle")}
             </p>
           )}
 
@@ -234,15 +606,15 @@ const AuthModal = ({ authMode, setAuthMode, onClose, handleLogin, handleRegister
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-3">
             {authMode === "register" && (
-              <input ref={nameRef} type="text" placeholder="Ad Soyad"
+              <input ref={nameRef} type="text" placeholder={t("auth.namePlaceholder")}
                 className="w-full px-4 py-3.5 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 text-sm font-medium outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 transition-all"
                 required/>
             )}
-            <input ref={emailRef} type="email" placeholder="E-posta"
+            <input ref={emailRef} type="email" placeholder={t("auth.emailPlaceholder")}
               className={`w-full px-4 py-3.5 border rounded-xl text-slate-800 placeholder-slate-400 text-sm font-medium outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 transition-all ${error ? "border-red-300 bg-red-50/50" : "border-slate-200"}`}
               required/>
             {authMode !== "forgot" && (
-              <input ref={passRef} type="password" placeholder="Şifre"
+              <input ref={passRef} type="password" placeholder={t("auth.passwordLabel")}
                 className={`w-full px-4 py-3.5 border rounded-xl text-slate-800 placeholder-slate-400 text-sm font-medium outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 transition-all ${error ? "border-red-300 bg-red-50/50" : "border-slate-200"}`}
                 required/>
             )}
@@ -250,7 +622,7 @@ const AuthModal = ({ authMode, setAuthMode, onClose, handleLogin, handleRegister
               <div className="text-right">
                 <button type="button" onClick={() => setAuthMode("forgot")}
                   className="text-xs text-brand-600 hover:text-brand-700 font-medium hover:underline">
-                  Şifremi unuttum
+                  {t("auth.forgotLink")}
                 </button>
               </div>
             )}
@@ -258,7 +630,7 @@ const AuthModal = ({ authMode, setAuthMode, onClose, handleLogin, handleRegister
               className="w-full py-3.5 text-white rounded-xl font-semibold text-sm disabled:opacity-60 flex items-center justify-center gap-2 transition-opacity hover:opacity-90 mt-2"
               style={{background:"linear-gradient(90deg,#00b7ba,#981dd8)"}}>
               {loading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>}
-              {authMode === "login" ? "Giriş Yap" : authMode === "register" ? "Hesap Oluştur" : "Link Gönder"}
+              {authMode === "login" ? t("auth.loginBtn") : authMode === "register" ? t("auth.registerBtn") : t("auth.sendResetBtn")}
             </button>
           </form>
 
@@ -267,15 +639,15 @@ const AuthModal = ({ authMode, setAuthMode, onClose, handleLogin, handleRegister
             {authMode !== "login" && (
               <button onClick={() => setAuthMode("login")}
                 className="text-brand-600 text-sm font-medium hover:underline">
-                ← Giriş yap
+                ← {t("auth.loginBtn")}
               </button>
             )}
             {authMode === "login" && (
               <p className="text-slate-500 text-sm">
-                Hesabın yok mu?{" "}
+                {t("auth.noAccount")}{" "}
                 <button onClick={() => setAuthMode("register")}
                   className="text-brand-600 font-semibold hover:underline">
-                  Kaydol
+                  {t("auth.registerBtn")}
                 </button>
               </p>
             )}
@@ -287,16 +659,17 @@ const AuthModal = ({ authMode, setAuthMode, onClose, handleLogin, handleRegister
 };
 
 // ── Haber kartı ────────────────────────────────────────────
-function NewsSection({ items }) {
+function NewsSection({ items, t }) {
   const [lightbox, setLightbox] = useState(null);
   if (!items || items.length === 0) return null;
   return (
     <section style={{background:"#f2f2f2"}} className="pt-16 pb-20">
       <div className="text-center mb-10 px-4">
-        <h2 className="text-3xl md:text-4xl font-semibold text-slate-900 tracking-widest uppercase mb-3">
-          Takım Etkinlikleri
+        <h2 className="font-display font-bold text-slate-900 uppercase mb-3"
+          style={{fontSize:"clamp(2rem,5vw,3rem)", letterSpacing:"0.08em"}}>
+          {t ? t("news.title") : "Team Events"}
         </h2>
-        <p className="text-slate-400 font-light italic text-base">Muuvlink topluluğundan etkinlik haberleri</p>
+        <p className="text-slate-400 font-light italic text-base">{t ? t("news.subtitle") : "Event news from the Muuvlink community"}</p>
       </div>
       <div className="flex w-full" style={{height:"320px"}}>
         {items.map((item) => (
@@ -314,7 +687,7 @@ function NewsSection({ items }) {
             </div>
             <div className="absolute bottom-0 left-0 right-0 p-5">
               <h3 className="text-white font-semibold text-sm leading-snug mb-1 line-clamp-2">{item.title}</h3>
-              {item.date_label && <p className="text-white/50 text-xs font-light">Yayın {item.date_label}</p>}
+              {item.date_label && <p className="text-white/50 text-xs font-light">{t ? t("news.published") : "Published"} {item.date_label}</p>}
             </div>
           </article>
         ))}
@@ -338,7 +711,7 @@ function NewsSection({ items }) {
             <div className="p-6">
               <h3 className="text-lg font-semibold text-slate-900 mb-1">{lightbox.title}</h3>
               {lightbox.date_label && (
-                <p className="text-xs text-slate-400 mb-3">Yayın {lightbox.date_label}</p>
+                <p className="text-xs text-slate-400 mb-3">{t ? t("news.published") : "Published"} {lightbox.date_label}</p>
               )}
               {lightbox.description && (
                 <p className="text-sm text-slate-600 leading-relaxed">{lightbox.description}</p>
@@ -375,7 +748,8 @@ function GallerySection({ items }) {
   return (
     <section className="bg-white pt-16 pb-0">
       <div className="text-center mb-10 px-4">
-        <h2 className="text-3xl md:text-4xl font-semibold text-slate-900 tracking-widest uppercase mb-3">Galeri</h2>
+        <h2 className="font-display font-bold text-slate-900 uppercase mb-3"
+          style={{fontSize:"clamp(2rem,5vw,3rem)", letterSpacing:"0.08em"}}>Galeri</h2>
         <p className="text-slate-400 font-light italic text-base mb-6">Muuvlink etkinliklerinden kareler</p>
         <div className="flex items-center justify-center gap-0 max-w-lg mx-auto">
           <div className="flex-1 border-t border-dashed border-slate-300"/>
@@ -431,7 +805,7 @@ function GallerySection({ items }) {
 }
 
 // ── HERO BANNER SLİDER ─────────────────────────────────────
-function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode, setIsAuthModalOpen, platformStats, stats, fmtNum }) {
+function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode, setIsAuthModalOpen, platformStats, stats, fmtNum, t, lang }) {
   const [activeIdx, setActiveIdx] = useState(0);
   const timerRef = useRef(null);
 
@@ -535,13 +909,13 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                     )}
 
                     <div>
-                      <h1 className="bn-title" style={{fontSize:"clamp(2.6rem,5.5vw,4.5rem)", lineHeight:1.1, fontWeight:600, color: banner?.title_color || "#ffffff"}}>
-                        {banner?.title || "Sporla Buluş,"}
+                      <h1 className="bn-title font-display" style={{fontSize:"clamp(2.8rem,5.8vw,4.8rem)", lineHeight:1.0, fontWeight:700, letterSpacing:"-0.02em", color: banner?.title_color || "#ffffff"}}>
+                        {banner?.title || (t ? t("home.heroTitleFallback") : "Sporla Buluş,")}
                       </h1>
                       <h1 className="bn-title bn-motto">
                         {isActive
                           ? <Typewriter
-                              mottos={(banner?.mottos?.length > 0) ? banner.mottos : DEFAULT_MOTTOS}
+                              mottos={(banner?.mottos?.length > 0) ? banner.mottos : (DEFAULT_MOTTOS[lang] || DEFAULT_MOTTOS.en)}
                               color1={banner?.motto_color_1 || "#00b7ba"}
                               color2={banner?.motto_color_2 || "#981dd8"}
                             />
@@ -549,7 +923,7 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                         }
                       </h1>
                       <p className="mt-5 text-lg leading-relaxed max-w-md font-light" style={{color: banner?.subtitle_color || "rgba(186,230,253,0.75)"}}>
-                        {banner?.subtitle || "Çevrende spor yapan insanları bul, kendi takımını kur, antrenmanlar planla. GPS ile en yakın etkinlikleri saniyeler içinde keşfet."}
+                        {banner?.subtitle || (t ? t("home.heroSubtitleFallback") : "")}
                       </p>
                     </div>
 
@@ -562,7 +936,7 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                             style={{background:"linear-gradient(135deg,#00b7ba,#009295)", borderRadius:"14px", boxShadow:"0 8px 32px rgba(0,183,186,0.4)"}}
                           >
                             <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-[14px]"/>
-                            {banner?.cta_primary_text || "Hemen Başla"}
+                            {banner?.cta_primary_text || (t ? t("home.startBtn") : "Get Started")}
                             <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
                           </button>
                           <button
@@ -570,7 +944,7 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                             className="flex items-center gap-2 px-7 py-3.5 font-semibold text-sm transition-all duration-300 rounded-[14px]"
                             style={{color:uiText, border:`1px solid ${uiBorder}`, background:"transparent"}} onMouseEnter={e=>e.currentTarget.style.background=uiSecHover} onMouseLeave={e=>e.currentTarget.style.background="transparent"}
                           >
-                            Giriş Yap
+                            {t ? t("home.loginBtn") : "Log In"}
                           </button>
                         </>
                       ) : (
@@ -581,7 +955,7 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                             style={{background:"linear-gradient(135deg,#00b7ba,#009295)", borderRadius:"14px", boxShadow:"0 8px 32px rgba(0,183,186,0.4)"}}
                           >
                             <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-[14px]"/>
-                            {banner?.cta_primary_text || "Antrenmanlar"}
+                            {banner?.cta_primary_text || (t ? t("home.trainingsBtn") : "Trainings")}
                             <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
                           </button>
                           {banner?.cta_secondary_text && (
@@ -708,16 +1082,23 @@ export default function Muuvlink() {
   };
   const PATH_TO_PAGE = Object.fromEntries(Object.entries(PAGE_TO_PATH).map(([k,v])=>[v,k]));
 
+  // PAGE_META moved below – uses t() for localised titles/descriptions
+
+  // ── Dil ─────────────────────────────────────────────────
+  const [lang, setLang] = useState(detectLang);
+  const t = createT(lang);
+  const changeLang = (l) => { setLang(l); localStorage.setItem("muuvlang", l); };
+
   const PAGE_META = {
-    home:              { title:"Muuvlink — Spor Arkadaşı Bul, Takım Kur",        desc:"Çevrende spor yapan insanları bul, kendi takımını kur, antrenmanlar planla. GPS ile en yakın etkinlikleri saniyeler içinde keşfet." },
-    trainings:         { title:"Antrenmanlar — Muuvlink",                          desc:"Yakınındaki spor antrenmanlarını bul ve katıl. Koşu, bisiklet, yüzme, futbol ve daha fazlası seni bekliyor." },
-    teams:             { title:"Takımlar — Muuvlink",                              desc:"Spor takımlarını keşfet veya kendi takımını kur. Takım arkadaşı bul, birlikte daha güçlü ol." },
-    contact:           { title:"İletişim — Muuvlink",                              desc:"Muuvlink ekibiyle iletişime geç. Sorularını sor, geri bildirim ver." },
-    profile:           { title:"Profilim — Muuvlink",                              desc:"Muuvlink profil sayfan." },
-    "create-training": { title:"Antrenman Oluştur — Muuvlink",                    desc:"Yeni bir antrenman oluştur, konum ve zaman ayarla, sporcuları davet et." },
-    "create-team":     { title:"Takım Kur — Muuvlink",                             desc:"Kendi spor takımını kur ve üyeleri davet et." },
-    badges:            { title:"Rozetlerim — Muuvlink",                            desc:"Kazandığın spor rozetlerini görüntüle." },
-    "not-found":       { title:"Sayfa Bulunamadı — Muuvlink",                      desc:"Aradığın sayfa bulunamadı." },
+    home:              { title:`Muuvlink — ${t("home.heroTagline")}`,             desc: t("home.heroSubtitleFallback")  },
+    trainings:         { title:`${t("trainings.pageTitle")} — Muuvlink`,          desc: t("trainings.pageSubtitle")     },
+    teams:             { title:`${t("teams.pageTitle")} — Muuvlink`,              desc: t("teams.pageSubtitle")         },
+    contact:           { title:`${t("contact.pageTitle")} — Muuvlink`,            desc: t("contact.pageSubtitle")       },
+    profile:           { title:`${t("profile.pageTitle")} — Muuvlink`,            desc: t("profile.pageTitle")          },
+    "create-training": { title:`${t("createTraining.pageTitle")} — Muuvlink`,     desc: t("createTraining.pageSubtitle")},
+    "create-team":     { title:`${t("createTeam.pageTitle")} — Muuvlink`,         desc: t("createTeam.pageSubtitle")    },
+    badges:            { title:`${t("badges.pageTitle")} — Muuvlink`,             desc: t("badges.pageSubtitle")        },
+    "not-found":       { title:`${t("notFound.title")} — Muuvlink`,               desc: t("notFound.subtitle")          },
   };
 
   const [currentPage, setCurrentPage] = useState(() => PATH_TO_PAGE[window.location.pathname] ?? (window.location.pathname === "/" ? "home" : "not-found"));
@@ -805,14 +1186,14 @@ export default function Muuvlink() {
           </div>
           <div className="flex border-t border-slate-100">
             <button onClick={close} className="flex-1 py-3.5 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
-              Vazgeç
+              {t("common.cancel")}
             </button>
             <div className="w-px bg-slate-100"/>
             <button
               onClick={() => { close(); onConfirm(); }}
               className={`flex-1 py-3.5 text-sm font-semibold transition-colors ${danger ? "text-red-600 hover:bg-red-50" : "text-brand-700 hover:bg-brand-50"}`}
             >
-              Evet, devam et
+              {t("common.confirm")}
             </button>
           </div>
         </div>
@@ -827,6 +1208,44 @@ export default function Muuvlink() {
     const [searching, setSearching] = useState(false);
     const [gettingGPS, setGettingGPS] = useState(false);
     const [locationError, setLocationError] = useState(null);
+    const [showMapPicker, setShowMapPicker] = useState(false);
+    const [pickedPos, setPickedPos] = useState(null);       // {lat, lng} — onay bekliyor
+    const [confirming, setConfirming] = useState(false);   // reverse geocode yükleniyor
+    const [mapQuery, setMapQuery] = useState("");
+    const [mapResults, setMapResults] = useState([]);
+    const [mapSearching, setMapSearching] = useState(false);
+    const [flyTarget, setFlyTarget] = useState(null);
+    const [mapBounds, setMapBounds] = useState(null);
+    const debounceRef = useRef(null);
+
+    const mapCenter = mapBounds ? (() => { const c = mapBounds.getCenter(); return { lat: c.lat, lng: c.lng }; })() : null;
+
+    // Nominatim araması — Türkiye öncelikli, viewbox ile konum bias
+    const searchPlaces = async (q) => {
+      if (!q.trim()) { setMapResults([]); return; }
+      setMapSearching(true);
+      try {
+        // Görünür alan bias (bounded olmadan — sadece öncelik verir)
+        let viewbox = "";
+        if (mapBounds) {
+          const sw = mapBounds.getSouthWest(), ne = mapBounds.getNorthEast();
+          viewbox = `&viewbox=${sw.lng},${ne.lat},${ne.lng},${sw.lat}`;
+        }
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=8&addressdetails=1&countrycodes=tr${viewbox}`,
+          { headers: { "Accept-Language": lang } }
+        );
+        const data = await res.json();
+        setMapResults(data.map(r => ({
+          id: r.place_id,
+          lat: parseFloat(r.lat), lng: parseFloat(r.lon),
+          name: r.name || r.display_name.split(",")[0],
+          subtitle: r.display_name.split(",").slice(1, 4).join(",").trim(),
+          type: _placeType(r.class, r.type, lang),
+          dist: mapCenter ? _hav(mapCenter, { lat: parseFloat(r.lat), lng: parseFloat(r.lon) }) : null,
+        })));
+      } catch {} finally { setMapSearching(false); }
+    };
 
     const showError = (msg) => {
       setLocationError(msg);
@@ -841,13 +1260,13 @@ export default function Muuvlink() {
       try {
         const res = await fetch(
           `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`,
-          { headers: { "Accept-Language": "tr" } }
+          { headers: { "Accept-Language": lang } }
         );
         const data = await res.json();
-        if (data.length === 0) showError("Sonuç bulunamadı. Farklı bir adres dene.");
+        if (data.length === 0) showError(t("location.noResult"));
         setResults(data);
       } catch {
-        showError("Arama başarısız. İnternet bağlantını kontrol et.");
+        showError(t("toast.searchFail"));
       } finally {
         setSearching(false);
       }
@@ -868,7 +1287,7 @@ export default function Muuvlink() {
       try {
         const res = await fetch(
           `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
-          { headers: { "Accept-Language": "tr" } }
+          { headers: { "Accept-Language": lang } }
         );
         const data = await res.json();
         const name = data.display_name?.split(",").slice(0, 3).join(", ") || locationName;
@@ -878,7 +1297,7 @@ export default function Muuvlink() {
 
     const useMyLocation = () => {
       if (!navigator.geolocation) {
-        showError("Bu tarayıcı konum özelliğini desteklemiyor. Lütfen adres arama kutusunu kullan.");
+        showError(t("location.noGeo"));
         return;
       }
       setGettingGPS(true);
@@ -892,9 +1311,9 @@ export default function Muuvlink() {
         (err) => {
           setGettingGPS(false);
           if (err.code === 1) {
-            showError("Konum izni reddedildi. Tarayıcı adres çubuğundaki kilit ikonuna tıklayıp 'Konum → İzin Ver' seç, sonra sayfayı yenile.");
+            showError(t("location.denied"));
           } else {
-            showError("GPS konumu alınamadı. Lütfen yukarıdaki adres arama kutusunu kullanarak konumunu gir.");
+            showError(t("location.gpsFail"));
           }
         },
         { timeout: 8000, enableHighAccuracy: false }
@@ -905,14 +1324,14 @@ export default function Muuvlink() {
       <div className="space-y-3">
         {/* Adres arama */}
         <div>
-          <label className="block text-sm font-medium mb-1">Konum Ara</label>
+          <label className="block text-sm font-medium mb-1">{t("location.searchLabel")}</label>
           <div className="flex gap-2">
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), searchAddress())}
-              placeholder="Örn: Kadıköy Sahil, İstanbul"
+              placeholder={t("location.searchPlaceholder")}
               className="flex-1 px-4 py-2 border rounded-xl text-sm"
             />
             <button
@@ -942,18 +1361,205 @@ export default function Muuvlink() {
           )}
         </div>
 
-        {/* Benim konumum butonu */}
-        <button
-          type="button"
-          onClick={useMyLocation}
-          disabled={gettingGPS}
-          className="flex items-center gap-2 text-sm px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-gray-700 disabled:opacity-60"
-        >
-          {gettingGPS
-            ? <Loader2 className="w-4 h-4 animate-spin" />
-            : <Navigation2 className="w-4 h-4" />}
-          Bulunduğum Konumu Kullan
-        </button>
+        {/* Konum butonları */}
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={useMyLocation}
+            disabled={gettingGPS}
+            className="flex-1 flex items-center justify-center gap-2 text-sm px-3 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-700 disabled:opacity-60 transition-colors"
+          >
+            {gettingGPS ? <Loader2 className="w-4 h-4 animate-spin" /> : <Navigation2 className="w-4 h-4" />}
+            <span>{t("location.useMyLocation")}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => { setPickedPos(lat && lng ? { lat: Number(lat), lng: Number(lng) } : null); setShowMapPicker(true); }}
+            className="flex-1 flex items-center justify-center gap-2 text-sm px-3 py-2.5 bg-brand-50 hover:bg-brand-100 rounded-xl text-brand-700 transition-colors border border-brand-200"
+          >
+            <MapPin className="w-4 h-4" />
+            <span>{t("trainings.selectFromMap")}</span>
+          </button>
+        </div>
+
+        {/* ── Harita Seçici Modal ── */}
+        {showMapPicker && (
+          <div className="fixed inset-0 z-[600] flex flex-col bg-white">
+
+            {/* Başlık */}
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-200 bg-white flex-shrink-0">
+              <button type="button" onClick={() => { setShowMapPicker(false); setMapResults([]); setMapQuery(""); }}
+                className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-colors flex-shrink-0">
+                <ArrowLeft className="w-5 h-5 text-slate-600"/>
+              </button>
+              <div className="min-w-0">
+                <p className="font-semibold text-slate-800 text-sm">{t("location.mapPickerTitle")}</p>
+                <p className="text-xs text-slate-400">{t("location.mapPickerHint")}</p>
+              </div>
+              {pickedPos && (
+                <span className="ml-auto flex-shrink-0 text-xs text-brand-600 font-medium bg-brand-50 px-2.5 py-1 rounded-lg border border-brand-200">
+                  {Number(pickedPos.lat).toFixed(4)}, {Number(pickedPos.lng).toFixed(4)}
+                </span>
+              )}
+            </div>
+
+            {/* Arama kutusu */}
+            <div className="px-3 py-2.5 border-b border-slate-100 bg-white flex-shrink-0 relative">
+              <div className="relative">
+                {mapSearching
+                  ? <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-400 animate-spin pointer-events-none"/>
+                  : <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"/>
+                }
+                <input
+                  type="text"
+                  value={mapQuery}
+                  onChange={e => {
+                    const v = e.target.value;
+                    setMapQuery(v);
+                    clearTimeout(debounceRef.current);
+                    if (v.trim().length > 1) {
+                      debounceRef.current = setTimeout(() => searchPlaces(v), 400);
+                    } else {
+                      setMapResults([]);
+                    }
+                  }}
+                  onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); clearTimeout(debounceRef.current); searchPlaces(mapQuery); } }}
+                  placeholder={t("location.mapSearchPlaceholder")}
+                  className="w-full pl-9 pr-8 h-10 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 bg-slate-50 focus:bg-white transition-colors"
+                />
+                {mapQuery && (
+                  <button type="button" onClick={() => { setMapQuery(""); setMapResults([]); }}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                    <X className="w-4 h-4"/>
+                  </button>
+                )}
+              </div>
+
+              {/* Sonuçlar dropdown */}
+              {mapResults.length > 0 && (
+                <div className="absolute left-3 right-3 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl z-[700] overflow-hidden max-h-72 overflow-y-auto">
+                  {mapResults.map((r, i) => (
+                    <button key={r.id ?? i} type="button"
+                      onClick={() => {
+                        const pos = { lat: r.lat, lng: r.lng };
+                        setPickedPos(pos); setFlyTarget(pos);
+                        setMapResults([]); setMapQuery(r.name);
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 text-left border-b border-slate-100 last:border-0 transition-colors"
+                    >
+                      <div className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center"
+                        style={{ background: `${r.type.color}18` }}>
+                        <MapPin className="w-4 h-4" style={{ color: r.type.color }}/>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-slate-800 truncate">{r.name}</p>
+                        {r.subtitle && <p className="text-xs text-slate-400 truncate">{r.subtitle}</p>}
+                      </div>
+                      <div className="flex-shrink-0 flex flex-col items-end gap-1">
+                        <span className="text-xs font-medium px-2 py-0.5 rounded-full"
+                          style={{ background: `${r.type.color}18`, color: r.type.color }}>
+                          {r.type.label}
+                        </span>
+                        {r.dist != null && <span className="text-xs text-slate-400">{_fmtDist(r.dist)}</span>}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Sonuç yok */}
+              {!mapSearching && mapResults.length === 0 && mapQuery.trim().length > 2 && (
+                <div className="absolute left-3 right-3 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-[700] px-4 py-3 text-sm text-slate-400 text-center">
+                  {t("common.noResults")}
+                </div>
+              )}
+            </div>
+
+            {/* Harita */}
+            <div className="flex-1 relative">
+              {!pickedPos && (
+                <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] px-4 py-2 bg-white/95 backdrop-blur rounded-xl shadow-md border border-slate-200 text-xs text-slate-600 font-medium flex items-center gap-2 pointer-events-none whitespace-nowrap">
+                  <MapPin className="w-3.5 h-3.5 text-brand-500"/>
+                  {t("location.tapToDrop")}
+                </div>
+              )}
+              {/* Konumuma git butonu */}
+              <button
+                type="button"
+                title={t("location.useMyLocation")}
+                onClick={() => {
+                  if (!navigator.geolocation) return;
+                  setGettingGPS(true);
+                  navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                      const p = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                      setPickedPos(p);
+                      setFlyTarget(p);
+                      setGettingGPS(false);
+                    },
+                    () => setGettingGPS(false),
+                    { timeout: 8000, enableHighAccuracy: false }
+                  );
+                }}
+                className="absolute bottom-10 right-3 z-[1000] w-10 h-10 bg-white rounded-xl shadow-md border border-slate-200 flex items-center justify-center hover:bg-brand-50 transition-colors"
+              >
+                {gettingGPS
+                  ? <Loader2 className="w-5 h-5 text-brand-500 animate-spin"/>
+                  : <Navigation2 className="w-5 h-5 text-brand-600"/>
+                }
+              </button>
+              <MapContainer
+                center={pickedPos ? [pickedPos.lat, pickedPos.lng] : [39.0, 35.0]}
+                zoom={pickedPos ? 14 : 6}
+                style={{ height: "100%", width: "100%" }}
+                zoomControl={true}
+              >
+                <TileLayer
+                  attribution='&copy; <a href="https://carto.com">CARTO</a>'
+                  url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                  subdomains="abcd"
+                />
+                <FlyToLocation target={flyTarget}/>
+                <MapBoundsTracker onBoundsChange={setMapBounds}/>
+                <MapClickHandler onPick={(pos) => { setPickedPos({ lat: pos.lat, lng: pos.lng }); setMapResults([]); }}/>
+                {pickedPos && (
+                  <Marker
+                    position={[pickedPos.lat, pickedPos.lng]}
+                    icon={makePickerIcon()}
+                    draggable={true}
+                    eventHandlers={{ dragend: (e) => { const p = e.target.getLatLng(); setPickedPos({ lat: p.lat, lng: p.lng }); } }}
+                  />
+                )}
+              </MapContainer>
+
+            </div>
+
+            {/* Alt onay butonu */}
+            <div className="flex-shrink-0 px-4 py-4 border-t border-slate-200 bg-white">
+              <button
+                type="button"
+                disabled={!pickedPos || confirming}
+                onClick={async () => {
+                  if (!pickedPos) return;
+                  setConfirming(true);
+                  await applyLocation(pickedPos.lat, pickedPos.lng);
+                  setConfirming(false);
+                  setShowMapPicker(false);
+                  setMapQuery(""); setMapResults([]);
+                }}
+                className="w-full py-3.5 rounded-xl text-white text-sm font-semibold disabled:opacity-40 flex items-center justify-center gap-2 transition-opacity"
+                style={{ background: "linear-gradient(135deg,#00b7ba,#009295)" }}
+              >
+                {confirming
+                  ? <><Loader2 className="w-4 h-4 animate-spin"/>{t("location.gettingAddress")}</>
+                  : pickedPos
+                    ? <><CheckCircle className="w-4 h-4"/>{t("location.useThisLocation")}</>
+                    : <><MapPin className="w-4 h-4"/>{t("location.tapToSelect")}</>
+                }
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Hata bildirimi */}
         {locationError && (
@@ -971,7 +1577,7 @@ export default function Muuvlink() {
           <div className="flex items-center gap-2 px-4 py-3 bg-brand-50 border border-brand-200 rounded-xl text-sm">
             <MapPin className="w-4 h-4 text-brand-600 flex-shrink-0" />
             <div className="min-w-0">
-              <div className="font-medium text-brand-800 truncate">{locationName || "Seçili konum"}</div>
+              <div className="font-medium text-brand-800 truncate">{locationName || t("location.useThisLocation")}</div>
               <div className="text-brand-600 text-xs">{Number(lat).toFixed(5)}, {Number(lng).toFixed(5)}</div>
             </div>
             <button
@@ -986,12 +1592,12 @@ export default function Muuvlink() {
 
         {/* Konum adı manuel düzenleme */}
         <div>
-          <label className="block text-sm font-medium mb-1">Konum Adı <span className="text-gray-400 font-normal">(kartlarda görünür)</span></label>
+          <label className="block text-sm font-medium mb-1">{t("location.locationName")} <span className="text-gray-400 font-normal">({t("location.visibleOnCards")})</span></label>
           <input
             type="text"
             value={locationName}
             onChange={(e) => onLocationName(e.target.value)}
-            placeholder="Örn: Kordon Boyu, Alsancak"
+            placeholder={t("location.searchPlaceholder")}
             className="w-full px-4 py-2 border rounded-xl text-sm"
             required
           />
@@ -1003,61 +1609,10 @@ export default function Muuvlink() {
 
   const fmtNum = (n) => n == null ? "—" : n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, "") + "K" : String(n);
   const stats = [
-    { icon: Users,    label: "Kayıtlı Sporcu",       value: fmtNum(platformStats?.users),     color: "text-brand-400" },
-    { icon: Activity, label: "Toplam Antrenman",      value: fmtNum(platformStats?.trainings), color: "text-cyan-400" },
-    { icon: Target,   label: "Aktif Takım",           value: fmtNum(platformStats?.teams),     color: "text-brand-400" },
-    { icon: Award,    label: "Kazanılan Rozet",       value: fmtNum(platformStats?.badges),    color: "text-amber-400" },
-  ];
-
-  const features = [
-    {
-      icon: MapPin,
-      title: "Yakınındaki Etkinlikler",
-      description: "GPS teknolojisiyle çevrenizdeki antrenmanları anında keşfedin, konuma göre filtreleyin.",
-      color: "from-violet-500 to-purple-600",
-      bg: "bg-brand-50",
-      num: "01",
-    },
-    {
-      icon: Users,
-      title: "Takım Oluştur",
-      description: "Kendi takımını kur, üye davet et, gizlilik ayarlarını belirle ve birlikte antrenman yap.",
-      color: "from-indigo-500 to-blue-600",
-      bg: "bg-brand-50",
-      num: "02",
-    },
-    {
-      icon: Calendar,
-      title: "Etkinlik Planla",
-      description: "Antrenmanlarını planla, kapasite belirle, katılımcılara otomatik bildirim gönder.",
-      color: "from-cyan-500 to-teal-600",
-      bg: "bg-cyan-50",
-      num: "03",
-    },
-    {
-      icon: Award,
-      title: "Rozetler Kazan",
-      description: "Hedeflere ulaş, özel rozetler kazan, sporcu profilini zenginleştir.",
-      color: "from-amber-500 to-orange-500",
-      bg: "bg-amber-50",
-      num: "04",
-    },
-    {
-      icon: TrendingUp,
-      title: "İlerlemeyi Takip Et",
-      description: "Haftalık aktivite grafikleri ve istatistiklerle gelişimini analiz et.",
-      color: "from-brand-500 to-brand-600",
-      bg: "bg-brand-50",
-      num: "05",
-    },
-    {
-      icon: Heart,
-      title: "Topluluk Desteği",
-      description: "Takım duvarında mesajlaş, birbirini motive et, spor kültürünü büyüt.",
-      color: "from-rose-500 to-pink-600",
-      bg: "bg-rose-50",
-      num: "06",
-    },
+    { icon: Users,    label: t("home.statsUsers"),     value: fmtNum(platformStats?.users),     color: "text-brand-400" },
+    { icon: Activity, label: t("home.statsTrainings"), value: fmtNum(platformStats?.trainings), color: "text-cyan-400" },
+    { icon: Target,   label: t("home.statsTeams"),     value: fmtNum(platformStats?.teams),     color: "text-brand-400" },
+    { icon: Award,    label: t("home.statsBadges"),    value: fmtNum(platformStats?.badges),    color: "text-amber-400" },
   ];
 
   const sportTypes = [
@@ -1146,18 +1701,18 @@ export default function Muuvlink() {
           headers: { Authorization: `Bearer ${token}` },
         }).then(r => r.json()).then(data => {
           if (data.message) {
-            showToast("Takıma başarıyla katıldınız! 👥", "success");
+            showToast(t("notifications.inviteAccepted"), "success");
             fetchTeamDetails(acceptInvite);
           } else {
-            showToast(data.error || "Davet bulunamadı.", "error");
+            showToast(data.error || t("toast.inviteNotFound"), "error");
           }
-        }).catch(() => showToast("Bir hata oluştu.", "error"));
+        }).catch(() => showToast(t("common.error"), "error"));
       } else {
         // Giriş yapılmamış — login modalı aç, sonra tekrar dene
         localStorage.setItem("pendingInvite", acceptInvite);
         setAuthMode("login");
         setIsAuthModalOpen(true);
-        showToast("Daveti kabul etmek için giriş yapın.", "info");
+        showToast(t("toast.inviteLogin"), "info");
       }
     }
   }, []);
@@ -1173,7 +1728,7 @@ export default function Muuvlink() {
         const msg = JSON.parse(e.data);
         if (msg.event === "notification" && msg.data) {
           setNotifications(prev => [msg.data, ...prev]);
-          showToast(`🔔 ${msg.data.title}`, "info");
+          showToast(msg.data.title, "info");
         }
       } catch {}
     };
@@ -1185,7 +1740,7 @@ export default function Muuvlink() {
     const meta  = PAGE_META[currentPage];
     const path  = PAGE_TO_PATH[currentPage];
     const title = meta?.title || "Muuvlink";
-    const desc  = meta?.desc  || "Spor arkadaşı bul, antrenman planla, takım kur.";
+    const desc  = meta?.desc  || t("home.heroSubtitleFallback");
     const url   = `https://muuvlink.app${path || "/"}`;
 
     document.title = title;
@@ -1217,6 +1772,11 @@ export default function Muuvlink() {
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
+
+  // Sayfa değişince en üste scroll
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [currentPage]);
 
   // Profil sayfasına her gelindiğinde verileri taze çek
   useEffect(() => {
@@ -1273,20 +1833,20 @@ export default function Muuvlink() {
             method: "POST",
             headers: { Authorization: `Bearer ${data.token}` },
           }).then(r => r.json()).then(d => {
-            if (d.message) { showToast("Takıma başarıyla katıldınız! 👥", "success"); fetchTeamDetails(pendingInvite); fetchMyTeams(data.token); fetchMyTrainings(data.token); }
+            if (d.message) { showToast(t("notifications.inviteAccepted"), "success"); fetchTeamDetails(pendingInvite); fetchMyTeams(data.token); fetchMyTrainings(data.token); }
           });
         }
       } else {
-        const msg = data.error || "Giriş başarısız!";
+        const msg = data.error || t("auth.loginFail");
         if (setError) setError(
           msg === "Invalid credentials"
-            ? "E-posta veya şifre hatalı."
+            ? t("auth.invalidCredentials")
             : msg
         );
       }
     } catch (error) {
       console.error("Login error:", error);
-      if (setError) setError("Sunucuya bağlanılamadı. Backend çalışıyor mu?");
+      if (setError) setError(t("auth.serverError"));
     }
   };
 
@@ -1308,16 +1868,16 @@ export default function Muuvlink() {
         fetchTrainings();
         fetchTeams();
       } else {
-        const msg = data.error || "Kayıt başarısız!";
+        const msg = data.error || t("auth.registerFail");
         if (setError) setError(
           msg.includes("duplicate") || msg.includes("unique")
-            ? "Bu e-posta zaten kayıtlı."
+            ? t("auth.emailInUse")
             : msg
         );
       }
     } catch (error) {
       console.error("Register error:", error);
-      if (setError) setError("Sunucuya bağlanılamadı. Backend çalışıyor mu?");
+      if (setError) setError(t("auth.serverError"));
     }
   };
 
@@ -1351,7 +1911,7 @@ export default function Muuvlink() {
         const data = await response.json();
         setUser(data.user);
         setShowProfileEdit(false);
-        showToast("Profil güncellendi! ✅", "success");
+        showToast(t("toast.profileUpdated"), "success");
       }
     } catch (error) {
       console.error("Update profile error:", error);
@@ -1418,12 +1978,23 @@ export default function Muuvlink() {
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setGpsErrorCode(null);
-        applyNearbyLocation(position.coords.latitude, position.coords.longitude, "Mevcut Konumum", distanceOverride);
+        try {
+          const lat = position?.coords?.latitude;
+          const lng = position?.coords?.longitude;
+          if (!lat || !lng || isNaN(lat) || isNaN(lng)) throw new Error("Geçersiz koordinat");
+          setGpsErrorCode(null);
+          applyNearbyLocation(lat, lng, t("trainings.currentLocation"), distanceOverride);
+        } catch (e) {
+          console.error("GPS callback error:", e);
+          setLocationLoading(false);
+          setGpsErrorCode(2);
+          setShowManualLocation(true);
+          setCurrentPage("trainings");
+        }
       },
       (err) => {
         setLocationLoading(false);
-        setGpsErrorCode(err.code); // 1=denied, 2=unavailable, 3=timeout
+        setGpsErrorCode(err?.code ?? 2); // 1=denied, 2=unavailable, 3=timeout
         setShowManualLocation(true);
         setCurrentPage("trainings");
       },
@@ -1490,7 +2061,7 @@ export default function Muuvlink() {
       });
 
       if (response.ok) {
-        showToast("Antrenman'a katıldın! 🎉", "success");
+        showToast(t("toast.joinTraining"), "success");
         fetchTrainings();
         fetchMyTrainings(token);
         if (selectedTraining?.id === trainingId) {
@@ -1498,11 +2069,11 @@ export default function Muuvlink() {
         }
       } else {
         const data = await response.json();
-        showToast(data.error || "Katılım başarısız!", "error");
+        showToast(data.error || t("toast.joinFail"), "error");
       }
     } catch (error) {
       console.error("Join training error:", error);
-      showToast("Bağlantı hatası!", "error");
+      showToast(t("toast.networkError"), "error");
     } finally {
       setJoiningTrainingId(null);
     }
@@ -1518,7 +2089,7 @@ export default function Muuvlink() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.ok) {
-        showToast("Antrenman kaydın silindi.", "success");
+        showToast(t("toast.leaveTraining"), "success");
         fetchTrainings();
         fetchMyTrainings(token);
         if (selectedTraining?.id === trainingId) {
@@ -1526,11 +2097,11 @@ export default function Muuvlink() {
         }
       } else {
         const data = await response.json();
-        showToast(data.error || "Ayrılma başarısız!", "error");
+        showToast(data.error || t("toast.leaveFail"), "error");
       }
     } catch (error) {
       console.error("Leave training error:", error);
-      showToast("Bağlantı hatası!", "error");
+      showToast(t("toast.networkError"), "error");
     } finally {
       setJoiningTrainingId(null);
     }
@@ -1549,13 +2120,13 @@ export default function Muuvlink() {
       });
 
       if (response.ok) {
-        showToast("Antrenman oluşturuldu! 🏋️", "success");
+        showToast(t("toast.trainingCreated"), "success");
         setCurrentPage("profile");
         fetchTrainings();
         fetchMyTrainings(token);
       } else {
         const data = await response.json();
-        showToast(data.error || "Oluşturulamadı!", "error");
+        showToast(data.error || t("toast.createFail"), "error");
       }
     } catch (error) {
       console.error("Create training error:", error);
@@ -1574,13 +2145,13 @@ export default function Muuvlink() {
         body: JSON.stringify(formData),
       });
       if (response.ok) {
-        showToast("Antrenman güncellendi! ✅", "success");
+        showToast(t("toast.trainingUpdated"), "success");
         fetchTrainingDetails(trainingId);
         fetchTrainings();
         fetchMyTrainings(token);
       } else {
         const data = await response.json();
-        showToast(data.error || "Güncellenemedi!", "error");
+        showToast(data.error || t("toast.updateFail"), "error");
       }
     } catch (error) {
       console.error("Update training error:", error);
@@ -1588,7 +2159,7 @@ export default function Muuvlink() {
   };
 
   const handleDeleteTraining = (trainingId) => {
-    showConfirm("Antrenmanı silmek istediğinize emin misiniz?", async () => {
+    showConfirm(t("trainingDetail.confirmDelete"), async () => {
       try {
         const token = localStorage.getItem("token");
         const response = await fetch(`${API_URL}/trainings/${trainingId}`, {
@@ -1596,7 +2167,7 @@ export default function Muuvlink() {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (response.ok) {
-          showToast("Antrenman silindi.", "info");
+          showToast(t("toast.trainingDeleted"), "info");
           setCurrentPage("profile");
           fetchTrainings();
           fetchMyTrainings(token);
@@ -1663,19 +2234,19 @@ export default function Muuvlink() {
         body: JSON.stringify(formData),
       });
       if (response.ok) {
-        showToast("Takım güncellendi! ✅", "success");
+        showToast(t("toast.teamUpdated"), "success");
         fetchTeamDetails(teamId);
         fetchTeams();
         fetchMyTeams(token);
       } else {
         const data = await response.json();
-        showToast(data.error || "Güncellenemedi!", "error");
+        showToast(data.error || t("toast.updateFail"), "error");
       }
-    } catch { showToast("Bağlantı hatası!", "error"); }
+    } catch { showToast(t("toast.networkError"), "error"); }
   };
 
   const handleDeleteTeam = (teamId) => {
-    showConfirm("Takımı silmek istediğinize emin misiniz? Bu işlem geri alınamaz!", async () => {
+    showConfirm(t("teamDetail.confirmDelete"), async () => {
       try {
         const token = localStorage.getItem("token");
         const response = await fetch(`${API_URL}/teams/${teamId}`, {
@@ -1683,16 +2254,16 @@ export default function Muuvlink() {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (response.ok) {
-          showToast("Takım silindi.", "info");
+          showToast(t("toast.teamDeleted"), "info");
           setCurrentPage("teams");
           fetchTeams();
           fetchMyTeams(token);
           fetchMyTrainings(token);
         } else {
           const data = await response.json();
-          showToast(data.error || "Silinemedi!", "error");
+          showToast(data.error || t("toast.deleteFail"), "error");
         }
-      } catch { showToast("Bağlantı hatası!", "error"); }
+      } catch { showToast(t("toast.networkError"), "error"); }
     }, { danger: true });
   };
 
@@ -1705,13 +2276,13 @@ export default function Muuvlink() {
         body: JSON.stringify({ role }),
       });
       if (response.ok) {
-        showToast("Rol güncellendi! ✅", "success");
+        showToast(t("toast.roleUpdated"), "success");
         fetchTeamDetails(teamId);
       } else {
         const data = await response.json();
-        showToast(data.error || "Rol güncellenemedi!", "error");
+        showToast(data.error || t("toast.roleUpdateFail"), "error");
       }
-    } catch { showToast("Bağlantı hatası!", "error"); }
+    } catch { showToast(t("toast.networkError"), "error"); }
   };
 
   const fetchTeamDetails = async (teamId) => {
@@ -1733,7 +2304,7 @@ export default function Muuvlink() {
           setPendingInvitations([]);
         }
       } else if (response.status === 403) {
-        showToast("🔒 Bu gizli bir takım. Erişmek için davet edilmeniz gerekiyor.", "info");
+        showToast("Bu gizli bir takım. Erişmek için davet edilmeniz gerekiyor.", "info");
       } else {
         showToast("Takım detaylarına erişim yok!", "error");
       }
@@ -1752,7 +2323,7 @@ export default function Muuvlink() {
   };
 
   const handleCancelInvitation = (teamId, inviteId) => {
-    showConfirm("Daveti iptal etmek istediğinize emin misiniz?", async () => {
+    showConfirm(t("teamDetail.confirmCancelInvite"), async () => {
       try {
         const token = localStorage.getItem("token");
         const res = await fetch(`${API_URL}/teams/${teamId}/invitations/${inviteId}`, {
@@ -1761,7 +2332,7 @@ export default function Muuvlink() {
         });
         if (res.ok) {
           setPendingInvitations(prev => prev.filter(i => i.id !== inviteId));
-          showToast("Davet iptal edildi.", "info");
+          showToast(t("toast.inviteCancelled"), "info");
         }
       } catch (e) {
         showToast("Bir hata oluştu.", "error");
@@ -1784,7 +2355,7 @@ export default function Muuvlink() {
       });
 
       if (response.ok) {
-        showToast("Takıma katıldın! 👥", "success");
+        showToast(t("teams.joinSuccess"), "success");
         fetchTeams();
         fetchMyTeams(token);
         fetchMyTrainings(token);
@@ -1793,11 +2364,11 @@ export default function Muuvlink() {
         }
       } else {
         const data = await response.json();
-        showToast(data.error || "Katılım başarısız!", "error");
+        showToast(data.error || t("toast.joinFail"), "error");
       }
     } catch (error) {
       console.error("Join team error:", error);
-      showToast("Bağlantı hatası!", "error");
+      showToast(t("toast.networkError"), "error");
     } finally {
       setJoiningTeamId(null);
     }
@@ -1816,7 +2387,7 @@ export default function Muuvlink() {
       });
 
       if (response.ok) {
-        showToast("Takım oluşturuldu! 🏆", "success");
+        showToast(t("createTeam.success"), "success");
         setCurrentPage("profile");
         fetchTeams();
         fetchMyTeams(token);
@@ -1842,32 +2413,32 @@ export default function Muuvlink() {
       const data = await response.json();
 
       if (!response.ok) {
-        showToast(data.error || "Davet gönderilemedi.", "error");
+        showToast(data.error || t("toast.inviteFail"), "error");
         return;
       }
 
       if (data.is_registered) {
-        showToast("Davet gönderildi! 📧 Kullanıcıya bildirim ve e-posta iletildi.", "success");
+        showToast(t("toast.inviteSent"), "success");
       } else {
-        showToast("Davet gönderildi! 📧 Kullanıcı kayıtlı değil — kayıt daveti e-postası gönderildi.", "info");
+        showToast(t("toast.inviteSentNew"), "info");
       }
       setShowInviteModal(false);
       fetchPendingInvitations(teamId);
     } catch (error) {
       console.error("Invite error:", error);
-      showToast("Bir hata oluştu.", "error");
+      showToast(t("common.error"), "error");
     }
   };
 
   const handleRemoveMember = (teamId, userId) => {
-    showConfirm("Üyeyi takımdan çıkarmak istediğinize emin misiniz?", async () => {
+    showConfirm(t("teamDetail.confirmRemoveMember"), async () => {
       try {
         const token = localStorage.getItem("token");
         await fetch(`${API_URL}/teams/${teamId}/members/${userId}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
         });
-        showToast("Üye çıkarıldı.", "info");
+        showToast(t("toast.memberRemoved"), "info");
         fetchTeamDetails(teamId);
       } catch (error) {
         console.error("Remove member error:", error);
@@ -1890,16 +2461,16 @@ export default function Muuvlink() {
       const data = await response.json();
 
       if (!response.ok) {
-        showToast(data.error || "Gönderi paylaşılamadı.", "error");
+        showToast(data.error || t("toast.postFail"), "error");
         return;
       }
 
       // Takım detayını yenileyerek yeni gönderiyi göster
       fetchTeamDetails(teamId);
-      showToast("Gönderi paylaşıldı! Üyelere bildirim gönderildi. 📬", "success");
+      showToast(t("toast.postShared"), "success");
     } catch (error) {
       console.error("Add post error:", error);
-      showToast("Bir hata oluştu.", "error");
+      showToast(t("common.error"), "error");
     }
   };
 
@@ -2015,28 +2586,28 @@ export default function Muuvlink() {
         num:"01", icon: MapPin, accent:"#00b7ba",
         bg:"linear-gradient(135deg,#e5f9f9 0%,#e5f9f9 50%,#cbf3f3 100%)",
         image: "/uploads/feature-01.jpg",
-        sub:"GPS Destekli Arama",
-        title:"Yakınındaki Etkinlikleri Bul",
-        desc:"Konumunu paylaş, çevrenizdeki antrenmanları saniyeler içinde keşfet. Mesafe filtresiyle en uygun etkinliği bul.",
-        points:["5–50 km aralığında filtreleme","Harita üzerinde görüntüleme","Anlık bildirimler"],
+        sub:   t("home.ef1Sub"),
+        title: t("home.ef1Title"),
+        desc:  t("home.ef1Desc"),
+        points:[t("home.ef1p1"), t("home.ef1p2"), t("home.ef1p3")],
       },
       {
         num:"02", icon: Users, accent:"#009295",
         bg:"linear-gradient(135deg,#e5f9f9 0%,#cbf3f3 50%,#97e7e8 100%)",
-        image: null,
-        sub:"Takım Yönetimi",
-        title:"Kendi Takımını Kur ve Yönet",
-        desc:"Spor takımını oluştur, antrenör ekle, üye davet et. Tüm takvimi ve iletişimi tek platformdan yönet.",
-        points:["Sınırsız üye kapasitesi","Rol tabanlı yönetim (Sahip / Antrenör / Üye)","Antrenman takvimi & duyurular"],
+        image: "/uploads/feature-02.jpg",
+        sub:   t("home.ef2Sub"),
+        title: t("home.ef2Title"),
+        desc:  t("home.ef2Desc"),
+        points:[t("home.ef2p1"), t("home.ef2p2"), t("home.ef2p3")],
       },
       {
         num:"03", icon: Trophy, accent:"#006d6f",
         bg:"linear-gradient(135deg,#e5f9f9 0%,#00b7ba 50%,#009295 100%)",
-        image: null,
-        sub:"Başarı Sistemi",
-        title:"Rozetler Kazan, İlerlemeni Göster",
-        desc:"Her antrenmanla yeni başarılar aç. İstatistikler ve rozetlerinle sporcu profilini zenginleştir.",
-        points:["20+ farklı başarı rozeti","Haftalık aktivite grafikleri","Topluluk liderlik tablosu"],
+        image: "/uploads/feature-03.jpg",
+        sub:   t("home.ef3Sub"),
+        title: t("home.ef3Title"),
+        desc:  t("home.ef3Desc"),
+        points:[t("home.ef3p1"), t("home.ef3p2"), t("home.ef3p3")],
       },
     ];
 
@@ -2047,25 +2618,20 @@ export default function Muuvlink() {
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8">
             <div>
               <span className="text-[11px] font-bold tracking-[0.4em] uppercase block mb-5"
-                style={{color:"#00b7ba"}}>Platform</span>
-              <h2 className="font-bold tracking-tight leading-[0.88]"
-                style={{fontSize:"clamp(3.2rem,7vw,5.5rem)"}}>
-                <span className="text-slate-900 block">Neden</span>
+                style={{color:"#00b7ba"}}>{t("home.platform")}</span>
+              <h2 className="font-display font-bold tracking-tight leading-[0.88]"
+                style={{fontSize:"clamp(3.6rem,8vw,6.5rem)"}}>
+                <span className="text-slate-900 block">{t("home.whyNeden")}</span>
                 <span style={{
                   background:"linear-gradient(90deg,#00b7ba 0%,#009295 100%)",
                   WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text",
-                }}>Muuvlink?</span>
+                }}>{t("home.whyMuuvlink")}</span>
               </h2>
             </div>
             <div className="md:max-w-md md:pb-3">
               <p className="font-bold italic leading-snug text-slate-700"
                 style={{fontSize:"clamp(1.15rem,2.2vw,1.45rem)"}}>
-                Spor yapmayı seven insanları bir araya getiren,{" "}
-                <span style={{
-                  background:"linear-gradient(90deg,#00b7ba,#009295)",
-                  WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text",
-                }}>akıllı ve sosyal</span>{" "}
-                spor platformu.
+                {t("home.featTagline")}
               </p>
             </div>
           </div>
@@ -2087,18 +2653,7 @@ export default function Muuvlink() {
                   {/* Alt gradient overlay */}
                   <div className="absolute inset-0"
                     style={{background:"linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.1) 50%, transparent 100%)"}}/>
-                  {/* Numara — sağ alt köşe */}
-                  <div className="absolute bottom-6 right-7 font-black leading-none select-none"
-                    style={{fontSize:"4.5rem", color:"rgba(255,255,255,0.18)", letterSpacing:"-0.04em"}}>
-                    {f.num}
-                  </div>
-                  {/* İkon — sol üst köşe */}
-                  <div className="absolute top-6 left-6">
-                    <div className="w-11 h-11 rounded-xl flex items-center justify-center backdrop-blur-sm"
-                      style={{background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.25)"}}>
-                      <f.icon className="w-5 h-5 text-white"/>
-                    </div>
-                  </div>
+
                 </>
               ) : (
                 <>
@@ -2126,8 +2681,8 @@ export default function Muuvlink() {
               <div className="max-w-lg">
                 <div className="text-[11px] font-bold tracking-[0.35em] uppercase mb-5"
                   style={{color: f.accent}}>{f.sub}</div>
-                <h3 className="font-bold text-slate-900 mb-4 tracking-tight leading-tight"
-                  style={{fontSize:"clamp(1.6rem,3vw,2.1rem)"}}>{f.title}</h3>
+                <h3 className="font-display font-bold text-slate-900 mb-4 leading-tight"
+                  style={{fontSize:"clamp(1.8rem,3.2vw,2.4rem)", letterSpacing:"-0.01em"}}>{f.title}</h3>
                 <p className="text-slate-500 leading-relaxed mb-8" style={{fontSize:"0.95rem"}}>{f.desc}</p>
                 <ul className="space-y-3">
                   {f.points.map((p, j) => (
@@ -2167,8 +2722,8 @@ export default function Muuvlink() {
 
   const dateObj = new Date(training.training_date);
   const day = String(dateObj.getUTCDate()).padStart(2, "0");
-  const monthNames = ["OCA","ŞUB","MAR","NİS","MAY","HAZ","TEM","AĞU","EYL","EKİ","KAS","ARA"];
-  const month = monthNames[dateObj.getUTCMonth()];
+  const localeMap = { tr: "tr-TR", en: "en-US", de: "de-DE" };
+  const month = dateObj.toLocaleDateString(localeMap[lang] || "en-US", { month: "short", timeZone: "UTC" }).toUpperCase();
 
   const difficultyColor = { "Kolay": "#6ee7b7", "Orta": "#fcd34d", "Zor": "#fca5a5" };
   const accentColor = difficultyColor[training.difficulty] || "#6ee7b7";
@@ -2176,12 +2731,12 @@ export default function Muuvlink() {
   return (
     <div
       onClick={() => onClick(training.id)}
-      className="group flex items-stretch gap-0 bg-white border-b border-dashed border-slate-200 cursor-pointer hover:bg-slate-50 transition-colors duration-200 py-6 px-2"
+      className="group flex items-stretch gap-0 bg-white border-b border-dashed border-slate-100 cursor-pointer transition-all duration-200 py-6 px-2 hover:bg-slate-50/80 hover:border-slate-200 active:scale-[0.99]"
     >
       {/* Sol: Takvim tarihi */}
       <div className="flex flex-col items-center justify-center w-20 flex-shrink-0 pr-5">
-        <span className="text-5xl font-bold leading-none" style={{color: accentColor, fontVariantNumeric:"tabular-nums"}}>{day}</span>
-        <span className="text-[10px] font-bold tracking-[0.2em] mt-1.5 text-slate-400 uppercase">{month}</span>
+        <span className="font-display font-bold leading-none" style={{fontSize:"3rem", color: accentColor, fontVariantNumeric:"tabular-nums"}}>{day}</span>
+        <span className="font-display text-[11px] font-bold tracking-[0.18em] mt-1.5 text-slate-400 uppercase">{month}</span>
       </div>
 
       {/* Dikey ayraç */}
@@ -2189,7 +2744,8 @@ export default function Muuvlink() {
 
       {/* Sağ: İçerik */}
       <div className="flex-1 pl-5 flex flex-col justify-center gap-1 min-w-0">
-        <h3 className="text-base font-bold text-slate-900 group-hover:text-brand-700 transition-colors line-clamp-1 leading-snug">
+        <h3 className="font-display font-bold text-slate-900 group-hover:text-brand-700 transition-colors line-clamp-1 leading-snug"
+          style={{fontSize:"1.05rem", letterSpacing:"-0.01em"}}>
           {training.title}
         </h3>
         <p className="text-sm text-slate-400 italic">
@@ -2202,7 +2758,7 @@ export default function Muuvlink() {
         {distanceKm != null && (
           <p className="text-xs text-brand-600 font-medium flex items-center gap-1">
             <Navigation2 className="w-3 h-3"/>
-            {distanceKm < 1 ? `${Math.round(distanceKm * 1000)} m uzakta` : `${distanceKm.toFixed(1)} km uzakta`}
+            {distanceKm < 1 ? `${Math.round(distanceKm * 1000)} m ${t("trainings.away")}` : `${distanceKm.toFixed(1)} km ${t("trainings.away")}`}
           </p>
         )}
       </div>
@@ -2237,33 +2793,33 @@ export default function Muuvlink() {
               <h3 className="font-medium text-slate-900 truncate group-hover:text-brand-700 transition-colors">{team.name}</h3>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <span className="px-2 py-0.5 bg-brand-50 text-brand-600 rounded-md text-xs font-semibold">{team.sport}</span>
-                {team.location && <span className="text-slate-400 text-xs truncate">📍 {team.location}</span>}
+                {team.location && <span className="text-slate-400 text-xs truncate flex items-center gap-1"><MapPin className="w-3 h-3 flex-shrink-0"/>{team.location}</span>}
               </div>
             </div>
           </div>
           {team.is_private && (
             <span className="flex-shrink-0 flex items-center gap-1 px-2 py-1 bg-slate-100 text-slate-500 rounded-lg text-xs font-medium">
-              <Lock className="w-3 h-3"/> Gizli
+              <Lock className="w-3 h-3"/> {t("common.private")}
             </span>
           )}
         </div>
 
         <p className="text-slate-500 text-sm leading-relaxed line-clamp-2 mb-4">
-          {team.description || (team.is_private ? "Bu takım gizlidir." : "Açıklama eklenmemiş.")}
+          {team.description || (team.is_private ? t("teams.privateDesc") : t("common.noDescription"))}
         </p>
 
         <div className="flex items-center justify-between pt-3 border-t border-slate-50">
           <div className="flex items-center gap-1.5 text-slate-500 text-sm">
             <Users className="w-4 h-4"/>
             <span className="font-semibold text-slate-700">{team.member_count || 0}</span>
-            <span>üye</span>
+            <span>{t("teams.members")}</span>
           </div>
           {team.my_role && (
             <span className="px-2.5 py-1 text-xs font-medium rounded-lg" style={{
               background: team.my_role === 'owner' ? '#FEF3C7' : team.my_role === 'coach' ? '#EDE9FE' : team.my_role === 'captain' ? '#DCFCE7' : '#F0FDF4',
               color: team.my_role === 'owner' ? '#92400E' : team.my_role === 'coach' ? '#5B21B6' : team.my_role === 'captain' ? '#006d6f' : '#006d6f',
             }}>
-              {team.my_role === 'owner' ? '🏆 Sahip' : team.my_role === 'coach' ? '🎯 Antrenör' : team.my_role === 'captain' ? '⚓ Kaptan' : '👤 Üye'}
+              {team.my_role === 'owner' ? <><Crown className="w-3 h-3 inline mr-1"/>{t("teamDetail.roles.owner")}</> : team.my_role === 'coach' ? <><Target className="w-3 h-3 inline mr-1"/>{t("teamDetail.roles.coach")}</> : team.my_role === 'captain' ? <><Navigation2 className="w-3 h-3 inline mr-1"/>{t("teamDetail.roles.captain")}</> : <><User className="w-3 h-3 inline mr-1"/>{t("teamDetail.roles.member")}</>}
             </span>
           )}
         </div>
@@ -2271,35 +2827,71 @@ export default function Muuvlink() {
     </div>
   );
 
-  const BadgeCard = ({ badge, earned }) => (
-    <div className={`relative rounded-2xl p-5 border transition-all duration-300 overflow-hidden ${
-      earned
-        ? "border-amber-300/60 hover:border-amber-400 hover:shadow-lg hover:-translate-y-0.5"
-        : "border-slate-100 opacity-60"
-    }`}
-    style={earned
-      ? {background:"linear-gradient(135deg,#fffbeb,#fef3c7)"}
-      : {background:"#f8fafc"}}>
-      {earned && (
-        <div className="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center"
-          style={{background:"linear-gradient(135deg,#F59E0B,#FBBF24)"}}>
-          <svg className="w-3 h-3 text-white fill-current" viewBox="0 0 20 20">
-            <path d="M10 1l2.39 5.26L18 7.27l-4 4.14.94 5.59L10 14.27l-4.94 2.73L6 11.41 2 7.27l5.61-.99z"/>
-          </svg>
-        </div>
-      )}
-      <div className="text-center">
-        <div className={`text-5xl mb-3 leading-none ${earned ? "" : "grayscale opacity-40"}`}>{badge.icon}</div>
-        <h3 className={`font-semibold text-sm mb-1 ${earned ? "text-amber-900" : "text-slate-400"}`}>{badge.name}</h3>
-        <p className={`text-xs leading-relaxed ${earned ? "text-amber-700/70" : "text-slate-400"}`}>{badge.description}</p>
-        {earned && badge.earned_at && (
-          <div className="mt-2.5 text-[10px] font-medium text-amber-500/70 uppercase tracking-wider">
-            {new Date(badge.earned_at).toLocaleDateString("tr-TR")}
+  const BADGE_ICON_MAP = {
+    "Başlangıç":      Award,
+    "Düzenli":        TrendingUp,
+    "Azimli":         Activity,
+    "Sporcu":         Dumbbell,
+    "Efsane":         Trophy,
+    "Takım Oyuncusu": Users,
+    "Lider":          Crown,
+  };
+
+  const BadgeCard = ({ badge, earned }) => {
+    const IconComp = BADGE_ICON_MAP[badge.name] || Award;
+    return (
+      <div className={`relative rounded-2xl p-5 border transition-all duration-300 overflow-hidden group ${
+        earned
+          ? "border-amber-200 hover:border-amber-300 hover:shadow-xl hover:-translate-y-1 cursor-default"
+          : "border-slate-100"
+      }`}
+      style={earned
+        ? {background:"linear-gradient(145deg,#fffdf5 0%,#fffbeb 60%,#fef3c7 100%)"}
+        : {background:"#f8fafc"}}>
+
+        {/* Kazanıldı işareti */}
+        {earned && (
+          <div className="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center shadow-sm"
+            style={{background:"linear-gradient(135deg,#F59E0B,#FBBF24)"}}>
+            <CheckCircle className="w-3 h-3 text-white fill-white"/>
           </div>
         )}
+
+        {/* Dekoratif arka plan halkası */}
+        {earned && (
+          <div className="absolute -bottom-6 -right-6 w-24 h-24 rounded-full pointer-events-none"
+            style={{background:"radial-gradient(circle,rgba(251,191,36,0.12) 0%,transparent 70%)"}}/>
+        )}
+
+        <div className="text-center relative">
+          {/* İkon kutusu */}
+          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3 transition-transform duration-300 ${earned ? "group-hover:scale-110" : ""}`}
+            style={earned
+              ? {background:"linear-gradient(135deg,rgba(245,158,11,0.15),rgba(251,191,36,0.1))", border:"1.5px solid rgba(245,158,11,0.3)", boxShadow:"0 4px 16px rgba(245,158,11,0.15)"}
+              : {background:"#f1f5f9", border:"1.5px solid #e2e8f0"}}>
+            <IconComp className={`w-7 h-7 ${earned ? "text-amber-500" : "text-slate-300"}`}/>
+          </div>
+
+          <h3 className={`font-semibold text-sm mb-1 ${earned ? "text-slate-800" : "text-slate-400"}`}>{badge.name}</h3>
+          <p className={`text-xs leading-relaxed ${earned ? "text-slate-500" : "text-slate-400"}`}>{badge.description}</p>
+
+          {earned && badge.earned_at && (
+            <div className="mt-2.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider"
+              style={{background:"rgba(245,158,11,0.12)", color:"#b45309"}}>
+              <CheckCircle className="w-2.5 h-2.5"/>
+              {fmtDateShort(badge.earned_at)}
+            </div>
+          )}
+
+          {!earned && (
+            <div className="mt-2.5 text-[10px] font-medium text-slate-300 uppercase tracking-wider">
+              {t("badges.notEarned")}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // ── TAKİM ETKİNLİKLERİ — Leisure Club Activities stili ──
 
@@ -2319,6 +2911,8 @@ export default function Muuvlink() {
         platformStats={platformStats}
         stats={stats}
         fmtNum={fmtNum}
+        t={t}
+        lang={lang}
       />
       <FeaturesSection />
 
@@ -2329,22 +2923,25 @@ export default function Muuvlink() {
 
             {/* Sol: GPS arama */}
             <div className="lg:w-72 flex-shrink-0">
-              <span className="text-xs font-semibold tracking-[0.3em] text-brand-500 uppercase block mb-3">GPS Arama</span>
-              <h2 className="text-2xl font-semibold text-slate-900 tracking-tight leading-snug mb-3">
-                Yakınındaki<br/>Antrenmanları Bul
+              <span className="text-xs font-semibold tracking-[0.3em] text-brand-500 uppercase block mb-3">{t("home.gpsLabel")}</span>
+              <h2 className="font-display font-bold text-slate-900 leading-snug mb-3"
+                style={{fontSize:"clamp(1.6rem,3vw,2rem)", letterSpacing:"-0.01em"}}>
+                {t("home.findNearby")}
               </h2>
               <p className="text-slate-500 text-sm leading-relaxed mb-6">
-                Konumunu paylaş, çevrenizdeki etkinlikleri saniyeler içinde keşfet.
+                {t("home.gpsDesc")}
               </p>
               <div className="flex flex-wrap gap-2 mb-4">
                 {[5, 10, 25, 50].map((km) => (
                   <button
                     key={km}
                     onClick={() => setNearbyDistance(km)}
-                    className="px-4 py-2 rounded-xl text-xs font-medium transition-all duration-200"
+                    className="px-4 py-2 rounded-xl text-xs font-medium transition-all duration-300 hover:scale-105 hover:shadow-md"
                     style={nearbyDistance === km
                       ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff", boxShadow:"0 4px 20px rgba(0,183,186,0.35)"}
-                      : {background:"#e5f9f9", color:"#009295", border:"1px solid #cbf3f3"}}
+                      : {background:"#e5f9f9", color:"#009295", border:"1px solid #cbf3f3", boxShadow:"0 2px 8px rgba(0,183,186,0.0)"}}
+                    onMouseEnter={e => { if(nearbyDistance !== km) e.currentTarget.style.boxShadow="0 4px 16px rgba(0,183,186,0.25)"; }}
+                    onMouseLeave={e => { if(nearbyDistance !== km) e.currentTarget.style.boxShadow="0 2px 8px rgba(0,183,186,0.0)"; }}
                   >
                     {km} km
                   </button>
@@ -2357,8 +2954,8 @@ export default function Muuvlink() {
                 style={{background:"linear-gradient(135deg,#00b7ba,#009295)", boxShadow:"0 6px 24px rgba(0,183,186,0.3)"}}
               >
                 {locationLoading
-                  ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/> Konum alınıyor…</>
-                  : <><MapPin className="w-4 h-4"/> Yakınımda Ara</>}
+                  ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/> {t("home.gettingLocation")}</>
+                  : <><MapPin className="w-4 h-4"/> {t("home.searchNearby")}</>}
               </button>
             </div>
 
@@ -2369,9 +2966,10 @@ export default function Muuvlink() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-2">
                 <div>
-                  <span className="text-xs font-semibold tracking-[0.3em] text-brand-500 uppercase block mb-3">Keşfet</span>
-                  <h2 className="text-2xl font-semibold text-slate-900 tracking-tight leading-snug">
-                    Yaklaşan Antrenmanlar
+                  <span className="text-xs font-semibold tracking-[0.3em] text-brand-500 uppercase block mb-3">{t("home.discover")}</span>
+                  <h2 className="font-display font-bold text-slate-900 leading-snug"
+                    style={{fontSize:"clamp(1.6rem,3vw,2rem)", letterSpacing:"-0.01em"}}>
+                    {t("home.upcoming")}
                   </h2>
                 </div>
                 <button
@@ -2379,7 +2977,7 @@ export default function Muuvlink() {
                   className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium transition-all hover:shadow-md flex-shrink-0"
                   style={{background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff"}}
                 >
-                  Tümünü Gör
+                  {t("home.viewAll")}
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
                 </button>
               </div>
@@ -2393,10 +2991,10 @@ export default function Muuvlink() {
               ) : (
                 <div className="text-center py-16 bg-slate-50 rounded-2xl border border-dashed border-slate-200 mt-6">
                   <Activity className="w-10 h-10 text-slate-200 mx-auto mb-3" />
-                  <p className="text-slate-500 font-medium mb-1">Antrenman bulunamadı</p>
-                  <p className="text-slate-400 text-sm mb-4">Sunucu bağlantısı kontrol ediliyor…</p>
+                  <p className="text-slate-500 font-medium mb-1">{t("home.noTrainingsFound")}</p>
+                  <p className="text-slate-400 text-sm mb-4">{t("home.checkingServer")}</p>
                   <button onClick={fetchTrainings} className="px-5 py-2.5 rounded-xl text-sm font-medium text-brand-700 bg-brand-100 hover:bg-brand-200 transition-colors">
-                    Tekrar Dene
+                    {t("common.retry")}
                   </button>
                 </div>
               )}
@@ -2406,7 +3004,7 @@ export default function Muuvlink() {
         </div>
       </div>
 
-      <NewsSection items={homeNews} />
+      <NewsSection items={homeNews} t={t} />
       <GallerySection items={homeGallery} />
 
       {/* ── CTA — Full Bleed Cinematic ── */}
@@ -2428,15 +3026,16 @@ export default function Muuvlink() {
               <Dumbbell className="w-8 h-8" style={{color:"#00b7ba"}}/>
               <div className="h-px flex-1 max-w-20" style={{background:"linear-gradient(90deg,rgba(0,183,186,0.5),transparent)"}}/>
             </div>
-            <span className="text-xs font-semibold tracking-[0.4em] text-brand-400 uppercase block mb-6">Topluluğa Katıl</span>
-            <h2 className="text-5xl md:text-7xl font-semibold text-white mb-6 tracking-tighter leading-[0.95]">
-              Spor seni<br/>
+            <span className="text-xs font-semibold tracking-[0.4em] text-brand-400 uppercase block mb-6">{t("home.ctaJoinCommunity")}</span>
+            <h2 className="font-display font-bold text-white mb-6 leading-[0.92]"
+              style={{fontSize:"clamp(4rem,10vw,7.5rem)", letterSpacing:"-0.02em"}}>
+              {t("home.ctaLine1")}<br/>
               <span style={{background:"linear-gradient(90deg,#00b7ba,#981dd8)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent"}}>
-                bekliyor.
+                {t("home.ctaLine2")}
               </span>
             </h2>
             <p className="text-slate-400 text-lg mb-10 max-w-xl mx-auto leading-relaxed">
-              Ücretsiz kaydol, takımlar kur, antrenmanlar planla. Binlerce sporcu seni bekliyor.
+              {t("home.ctaSignupDesc")}
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
               <button
@@ -2444,7 +3043,7 @@ export default function Muuvlink() {
                 className="inline-flex items-center gap-2.5 px-10 py-4 rounded-2xl font-semibold text-white text-base transition-all hover:scale-105 hover:shadow-2xl"
                 style={{background:"linear-gradient(135deg,#00b7ba,#009295)", boxShadow:"0 12px 40px rgba(0,183,186,0.4)"}}
               >
-                Ücretsiz Başla
+                {t("home.startFree")}
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
               </button>
               <button
@@ -2452,7 +3051,7 @@ export default function Muuvlink() {
                 className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl font-semibold text-sm transition-all hover:bg-white/10"
                 style={{color:"rgba(186,230,253,0.8)", border:"1px solid rgba(255,255,255,0.12)"}}
               >
-                Zaten hesabım var
+                {t("home.alreadyMember")}
               </button>
             </div>
           </div>
@@ -2487,24 +3086,24 @@ export default function Muuvlink() {
                 </div>
               </div>
               <div>
-                <h1 className="text-3xl font-semibold text-brand-900 tracking-tight">{user?.name}</h1>
+                <h1 className="font-display font-bold text-brand-900" style={{fontSize:"2rem", letterSpacing:"-0.01em"}}>{user?.name}</h1>
                 <p className="text-slate-400 text-sm mt-0.5">{user?.email}</p>
               </div>
             </div>
             <button onClick={() => setShowProfileEdit(true)}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all"
               style={{background:"white", color:"#009295", border:"1px solid #cbf3f3"}}>
-              <Settings className="w-4 h-4"/> Profili Düzenle
+              <Settings className="w-4 h-4"/> {t("profile.editProfile")}
             </button>
           </div>
 
           {/* Stats strip */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-px mt-10 rounded-2xl overflow-hidden" style={{background:"rgba(255,255,255,0.06)"}}>
             {[
-              {val: userStats?.total_trainings || 0, label:"Antrenman", accent:"#00b7ba"},
-              {val: myTeams.length, label:"Takım", accent:"#981dd8"},
-              {val: userBadges.length, label:"Rozet", accent:"#f59e0b"},
-              {val: `${userStats?.total_distance || 0} km`, label:"Mesafe", accent:"#009295"},
+              {val: userStats?.total_trainings || 0, label: t("home.statTrainings"), accent:"#00b7ba"},
+              {val: myTeams.length,                  label: t("home.statTeams"),     accent:"#981dd8"},
+              {val: userBadges.length,               label: t("home.statBadges"),    accent:"#f59e0b"},
+              {val: `${userStats?.total_distance || 0} km`, label: t("home.statDistance"), accent:"#009295"},
             ].map((s, i) => (
               <div key={i} className="px-6 py-5" style={{background:"rgba(0,183,186,0.15)"}}>
                 <div className="text-2xl font-semibold text-brand-700">{s.val}</div>
@@ -2521,11 +3120,11 @@ export default function Muuvlink() {
 
           {/* Left: Quick actions */}
           <div className="space-y-3">
-            <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase mb-4">Hızlı Erişim</div>
+            <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase mb-4">{t("home.quickAccess")}</div>
             {[
-              {label:"Antrenman Oluştur", icon:Plus, page:"create-training", grad:"linear-gradient(135deg,#00b7ba,#009295)", shadow:"rgba(0,183,186,0.3)"},
-              {label:"Takım Oluştur", icon:Users, page:"create-team", grad:"linear-gradient(135deg,#0EA5E9,#06B6D4)", shadow:"rgba(14,165,233,0.3)"},
-              {label:"Rozetlerim", icon:Trophy, page:"badges", grad:"linear-gradient(135deg,#F59E0B,#FBBF24)", shadow:"rgba(245,158,11,0.3)"},
+              {label: t("createTraining.pageTitle"), icon:Plus,   page:"create-training", grad:"linear-gradient(135deg,#00b7ba,#009295)", shadow:"rgba(0,183,186,0.3)"},
+              {label: t("teams.create"),             icon:Users,  page:"create-team",     grad:"linear-gradient(135deg,#0EA5E9,#06B6D4)", shadow:"rgba(14,165,233,0.3)"},
+              {label: t("badges.pageTitle"),         icon:Trophy, page:"badges",          grad:"linear-gradient(135deg,#F59E0B,#FBBF24)", shadow:"rgba(245,158,11,0.3)"},
             ].map((a) => (
               <button key={a.label} onClick={() => setCurrentPage(a.page)}
                 className="w-full flex items-center gap-3 px-5 py-3.5 rounded-xl font-medium text-white text-sm transition-all hover:opacity-90 hover:shadow-lg"
@@ -2540,7 +3139,7 @@ export default function Muuvlink() {
             {/* Chart */}
             {activityData.length > 0 && (
               <div className="bg-white rounded-2xl p-6 border border-slate-100">
-                <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase mb-5">Haftalık Aktivite</div>
+                <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase mb-5">{t("home.weeklyActivity")}</div>
                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
                   <ResponsiveContainer width="100%" height={200}>
                     <BarChart data={activityData}>
@@ -2566,7 +3165,7 @@ export default function Muuvlink() {
               <div className="bg-white rounded-2xl p-6 border border-slate-100">
                 <div className="flex items-center gap-2 mb-4">
                   <div className="w-2 h-2 rounded-full bg-brand-500" />
-                  <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase">Katılacağım Antrenmanlar</div>
+                  <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase">{t("home.joinedTrainingsList")}</div>
                   <span className="ml-auto text-xs font-semibold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-full">{joinedTrainings.length}</span>
                 </div>
                 <div className="space-y-2">
@@ -2578,7 +3177,7 @@ export default function Muuvlink() {
                         <div className="text-xs text-slate-400 mt-0.5 flex items-center gap-2">
                           <MapPin className="w-3 h-3 flex-shrink-0"/> <span className="truncate">{t.location_name}</span>
                           <span>·</span>
-                          <Calendar className="w-3 h-3 flex-shrink-0"/> {new Date(t.training_date).toLocaleDateString("tr-TR")}
+                          <Calendar className="w-3 h-3 flex-shrink-0"/> {fmtDateMed(t.training_date)}
                         </div>
                       </div>
                       <ChevronDown className="w-4 h-4 text-slate-300 -rotate-90 flex-shrink-0 ml-2"/>
@@ -2593,7 +3192,7 @@ export default function Muuvlink() {
               <div className="bg-white rounded-2xl p-6 border border-slate-100">
                 <div className="flex items-center gap-2 mb-4">
                   <div className="w-2 h-2 rounded-full bg-blue-400" />
-                  <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase">Takımınızın Antrenmanları</div>
+                  <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase">{t("home.teamTrainingsList")}</div>
                   <span className="ml-auto text-xs font-semibold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">{myTeamTrainings.length}</span>
                 </div>
                 <div className="space-y-2">
@@ -2605,7 +3204,7 @@ export default function Muuvlink() {
                         <div className="text-xs text-slate-400 mt-0.5 flex items-center gap-2">
                           <span className="truncate font-medium text-blue-400">{t.team_name}</span>
                           <span>·</span>
-                          <Calendar className="w-3 h-3 flex-shrink-0"/> {new Date(t.training_date).toLocaleDateString("tr-TR")}
+                          <Calendar className="w-3 h-3 flex-shrink-0"/> {fmtDateMed(t.training_date)}
                         </div>
                       </div>
                       <ChevronDown className="w-4 h-4 text-slate-300 -rotate-90 flex-shrink-0 ml-2"/>
@@ -2618,7 +3217,7 @@ export default function Muuvlink() {
             {/* My Teams */}
             {myTeams.length > 0 && (
               <div className="bg-white rounded-2xl p-6 border border-slate-100">
-                <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase mb-4">Takımlarım</div>
+                <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase mb-4">{t("profile.myTeams")}</div>
                 <div className="grid sm:grid-cols-2 gap-3">
                   {myTeams.map((team) => (
                     <button key={team.id} onClick={() => fetchTeamDetails(team.id)}
@@ -2631,7 +3230,7 @@ export default function Muuvlink() {
                       </div>
                       <div className="min-w-0">
                         <div className="font-medium text-slate-800 text-sm truncate">{team.name}</div>
-                        <div className="text-xs text-slate-400">{team.sport} · {team.member_count} üye</div>
+                        <div className="text-xs text-slate-400">{team.sport} · {team.member_count} {t("teams.members")}</div>
                       </div>
                     </button>
                   ))}
@@ -2646,7 +3245,12 @@ export default function Muuvlink() {
 
   const TrainingsPage = () => {
     const sports = ["Basketbol", "Bisiklet", "Crossfit", "Futbol", "Kano", "Koşu", "Kürek", "Padel", "Pilates", "Tenis", "Trekking", "Triatlon", "Voleybol", "Yoga", "Yüzme", "Diğer"];
-    const difficulties = ["Kolay", "Orta", "Zor"];
+    const difficulties = [
+      { val: "Kolay", label: t("trainings.levelEasy") },
+      { val: "Orta",  label: t("trainings.levelMid")  },
+      { val: "Zor",   label: t("trainings.levelHard") },
+    ];
+    const [viewMode, setViewMode] = React.useState("list"); // "list" | "map"
 
     // Manuel konum arama (GPS çalışmadığında)
     const ManualLocationSearch = () => {
@@ -2660,12 +3264,12 @@ export default function Muuvlink() {
         try {
           const res = await fetch(
             `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=5`,
-            { headers: { "Accept-Language": "tr" } }
+            { headers: { "Accept-Language": lang } }
           );
           const data = await res.json();
           setResults(data);
         } catch {
-          showToast("Arama başarısız, internet bağlantını kontrol et.", "error");
+          showToast(t("toast.searchFail"), "error");
         } finally {
           setSearching(false);
         }
@@ -2680,14 +3284,14 @@ export default function Muuvlink() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-orange-800 text-sm">
-                {gpsErrorCode === 1 ? "Konum izni reddedildi" :
-                 gpsErrorCode === 3 ? "Konum alınamadı (zaman aşımı)" :
-                 "Konum alınamadı"}
+                {gpsErrorCode === 1 ? t("trainings.locationDenied") :
+                 gpsErrorCode === 3 ? t("trainings.locationTimeout") :
+                 t("trainings.locationError")}
               </p>
               <p className="text-xs text-orange-600 mt-0.5">
-                {gpsErrorCode === 1 ? "Tarayıcı konum erişimine izin vermiyor" :
-                 gpsErrorCode === 3 ? "Bağlantı yavaş olabilir, tekrar deneyin" :
-                 "Cihaz konum servislerini desteklemiyor olabilir"}
+                {gpsErrorCode === 1 ? t("trainings.gpsHint1") :
+                 gpsErrorCode === 3 ? t("trainings.gpsHint3") :
+                 t("trainings.gpsHintOther")}
               </p>
             </div>
             <button onClick={() => setShowManualLocation(false)} className="text-gray-400 hover:text-gray-600 flex-shrink-0">
@@ -2698,11 +3302,11 @@ export default function Muuvlink() {
           {/* Contextual hint */}
           <div className="mx-4 mb-3 p-3 bg-white border border-orange-100 rounded-xl text-xs text-gray-600 leading-relaxed">
             {gpsErrorCode === 1 ? (
-              <>🔒 <span className="font-medium">İzni nasıl açarım?</span><br/>Adres çubuğundaki <span className="font-medium">kilit / konum ikonuna</span> tıklayıp <span className="font-medium">"Konum → İzin Ver"</span> seçin, sonra tekrar deneyin.</>
+              <><Lock className="w-3.5 h-3.5 inline mr-1 -mt-0.5"/><span className="font-medium">{t("trainings.gpsHowToEnable")}</span><br/>{t("trainings.gpsEnableHint")}</>
             ) : gpsErrorCode === 3 ? (
-              <>⏱ <span className="font-medium">Zaman aşımı.</span> WiFi veya mobil bağlantınız üzerinden konum alınmaya çalışılıyor. <span className="font-medium">Tekrar dene</span> butonuna basın ya da aşağıdan adresinizi girin.</>
+              <>⏱ <span className="font-medium">{t("trainings.gpsTimeout")}.</span> {t("trainings.gpsTimeoutHint")}</>
             ) : (
-              <>📡 <span className="font-medium">Konum servisi çalışmıyor.</span> Cihazınızın konum ayarlarını kontrol edin ya da aşağıdan adresinizi girerek devam edin.</>
+              <>📡 <span className="font-medium">{t("trainings.gpsNotWorking")}.</span> {t("trainings.gpsNotWorkingHint")}</>
             )}
           </div>
 
@@ -2714,9 +3318,9 @@ export default function Muuvlink() {
               className="w-full py-2.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white text-sm font-semibold rounded-xl flex items-center justify-center gap-2 transition-colors"
             >
               {locationLoading ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Konum alınıyor...</>
+                <><Loader2 className="w-4 h-4 animate-spin" /> {t("trainings.gettingLocation")}</>
               ) : (
-                <><MapPin className="w-4 h-4" /> Tekrar Dene</>
+                <><MapPin className="w-4 h-4" /> {t("trainings.retryLocation")}</>
               )}
             </button>
           </div>
@@ -2724,7 +3328,7 @@ export default function Muuvlink() {
           {/* Divider */}
           <div className="flex items-center gap-3 px-4 mb-3">
             <div className="flex-1 h-px bg-orange-200" />
-            <span className="text-xs text-orange-400 font-medium">veya adres girin</span>
+            <span className="text-xs text-orange-400 font-medium">{t("trainings.manualLocation")}</span>
             <div className="flex-1 h-px bg-orange-200" />
           </div>
 
@@ -2736,7 +3340,7 @@ export default function Muuvlink() {
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && search()}
-                placeholder="Örn: Bornova İzmir, Kadıköy İstanbul..."
+                placeholder={t("trainings.searchPlaceholder")}
                 className="flex-1 px-4 py-2.5 border border-orange-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white"
               />
               <button
@@ -2803,9 +3407,9 @@ export default function Muuvlink() {
           <div className="relative max-w-7xl mx-auto px-4 sm:px-8 py-12">
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
               <div>
-                <span className="text-xs font-semibold tracking-[0.35em] text-brand-400 uppercase block mb-3">Keşfet</span>
-                <h1 className="text-5xl md:text-6xl font-semibold text-brand-900 tracking-tighter leading-none">Antrenmanlar</h1>
-                <p className="text-slate-400 mt-3 text-base">Katıl, yeni arkadaşlar edin, birlikte spor yap.</p>
+                <span className="text-xs font-semibold tracking-[0.35em] text-brand-400 uppercase block mb-3">{t("home.heroCta")}</span>
+                <h1 className="text-5xl md:text-6xl font-semibold text-brand-900 tracking-tighter leading-none">{t("trainings.pageTitle")}</h1>
+                <p className="text-slate-400 mt-3 text-base">{t("trainings.pageSubtitle")}</p>
               </div>
               {user && (
                 <button
@@ -2813,7 +3417,7 @@ export default function Muuvlink() {
                   className="flex items-center gap-2 px-6 py-3 rounded-xl font-medium text-white text-sm transition-all hover:opacity-90 flex-shrink-0"
                   style={{background:"linear-gradient(135deg,#00b7ba,#009295)", boxShadow:"0 8px 24px rgba(0,183,186,0.35)"}}
                 >
-                  <Plus className="w-4 h-4" /> Antrenman Oluştur
+                  <Plus className="w-4 h-4" /> {t("trainings.create")}
                 </button>
               )}
             </div>
@@ -2829,28 +3433,28 @@ export default function Muuvlink() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
                   type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Antrenman veya konum ara…"
+                  placeholder={t("trainings.searchPlaceholder")}
                   className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand-300 focus:bg-white transition"
                 />
               </div>
               {/* Sport filter */}
               <select value={sportFilter} onChange={(e) => setSportFilter(e.target.value)}
                 className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand-300 focus:bg-white transition">
-                <option value="">Tüm Sporlar</option>
-                {sports.map((s) => <option key={s} value={s}>{s}</option>)}
+                <option value="">{t("trainings.filterSport")}</option>
+                {sports.map((s) => <option key={s} value={s}>{t(`sports.${s}`)}</option>)}
               </select>
               {/* Level filter */}
               <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)}
                 className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand-300 focus:bg-white transition">
-                <option value="">Tüm Seviyeler</option>
-                {difficulties.map((d) => <option key={d} value={d}>{d}</option>)}
+                <option value="">{t("trainings.filterLevel")}</option>
+                {difficulties.map((d) => <option key={d.val} value={d.val}>{d.label}</option>)}
               </select>
               {/* GPS toggle */}
               <div className="flex items-center gap-1.5 border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
                 <button onClick={handleExitNearby}
                   className="px-3 py-2.5 text-xs font-medium transition-all"
                   style={!nearbyMode ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff"} : {color:"#64748b"}}>
-                  Tümü
+                  {t("common.all")}
                 </button>
                 <button onClick={() => handleNearbySearch()} disabled={locationLoading}
                   className="px-3 py-2.5 text-xs font-medium transition-all flex items-center gap-1.5 disabled:opacity-50"
@@ -2858,7 +3462,7 @@ export default function Muuvlink() {
                   {locationLoading
                     ? <div className="w-3 h-3 border-2 border-current/30 border-t-current rounded-full animate-spin"/>
                     : <MapPin className="w-3 h-3"/>}
-                  Yakınımda
+                  {t("trainings.nearbySearch")}
                 </button>
               </div>
               {/* Distance pills (when nearby active) */}
@@ -2875,9 +3479,27 @@ export default function Muuvlink() {
               {(searchQuery || sportFilter || levelFilter) && (
                 <button onClick={() => { setSearchQuery(""); setSportFilter(""); setLevelFilter(""); }}
                   className="flex items-center gap-1 px-3 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-medium text-slate-600 transition">
-                  <X className="w-3.5 h-3.5"/> Temizle
+                  <X className="w-3.5 h-3.5"/> {t("trainings.clearFilters")}
                 </button>
               )}
+              {/* View toggle */}
+              <div className="ml-auto flex items-center gap-0 border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
+                <button onClick={() => setViewMode("list")}
+                  className="px-3 py-2.5 text-xs font-medium transition-all flex items-center gap-1.5"
+                  style={viewMode === "list" ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff"} : {color:"#64748b"}}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+                    <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+                  </svg>
+                  {t("trainings.listView")}
+                </button>
+                <button onClick={() => setViewMode("map")}
+                  className="px-3 py-2.5 text-xs font-medium transition-all flex items-center gap-1.5"
+                  style={viewMode === "map" ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff"} : {color:"#64748b"}}>
+                  <MapPin className="w-3.5 h-3.5"/>
+                  {t("trainings.mapView")}
+                </button>
+              </div>
               {/* Nearby result count */}
               {nearbyMode && userLocation && !nearbyLoading && (
                 <span className="ml-auto text-xs font-semibold text-brand-600 flex items-center gap-1">
@@ -2895,12 +3517,24 @@ export default function Muuvlink() {
           {nearbyMode && userLocation && !showManualLocation && (
             <div className="mb-5 flex items-center gap-2 px-4 py-2.5 bg-brand-50 border border-brand-200 rounded-xl text-sm">
               <MapPin className="w-4 h-4 text-brand-600 flex-shrink-0"/>
-              <span className="text-brand-700 font-semibold flex-1">{manualLocationName || "Mevcut Konumum"}</span>
-              <button onClick={() => setShowManualLocation(true)} className="text-xs text-brand-600 hover:underline">Değiştir</button>
+              <span className="text-brand-700 font-semibold flex-1">{manualLocationName || t("trainings.currentLocation")}</span>
+              <button onClick={() => setShowManualLocation(true)} className="text-xs text-brand-600 hover:underline">{t("trainings.changeLocation")}</button>
             </div>
           )}
 
-          {nearbyLoading ? (
+          {/* ── Harita görünümü ── */}
+          {viewMode === "map" && (
+            <ErrorBoundary key="map-boundary">
+              <TrainingsMapView
+                trainings={displayedTrainings}
+                onSelectTraining={fetchTrainingDetails}
+                t={t}
+              />
+            </ErrorBoundary>
+          )}
+
+          {/* ── Liste görünümü ── */}
+          {viewMode === "list" && (nearbyLoading ? (
             <div className="flex flex-col items-center justify-center py-32 gap-5">
               <div className="w-14 h-14 border-4 border-brand-100 rounded-full" style={{borderTopColor:"#00b7ba", animation:"spin 0.8s linear infinite"}}/>
               <p className="text-slate-500 font-semibold">{nearbyDistance} km içinde aranıyor…</p>
@@ -2919,13 +3553,13 @@ export default function Muuvlink() {
                     style={{background:"rgba(0,183,186,0.08)", border:"1px solid rgba(0,183,186,0.15)"}}>
                     <MapPin className="w-9 h-9" style={{color:"rgba(0,183,186,0.4)"}}/>
                   </div>
-                  <p className="text-slate-800 font-semibold text-xl mb-2">{nearbyDistance} km içinde antrenman yok</p>
-                  <p className="text-slate-400 text-sm mb-7 max-w-sm mx-auto">Yakınımda araması sadece GPS koordinatı girilmiş antrenmanları gösterir.</p>
+                  <p className="text-slate-800 font-semibold text-xl mb-2">{nearbyDistance} km {t("trainings.noNearby")}</p>
+                  <p className="text-slate-400 text-sm mb-7 max-w-sm mx-auto">{t("trainings.nearbyGpsNote")}</p>
                   <div className="flex flex-wrap justify-center gap-3">
                     {[10,25,50].filter(k => k > nearbyDistance).map(k => (
                       <button key={k} onClick={() => handleDistanceChange(k)}
                         className="px-5 py-2.5 rounded-xl text-sm font-medium border border-slate-200 text-slate-600 hover:border-brand-300 hover:text-brand-700 transition">
-                        {k} km'ye genişlet
+                        {k} km {t("trainings.expandTo")}
                       </button>
                     ))}
                   </div>
@@ -2936,19 +3570,19 @@ export default function Muuvlink() {
                     style={{background:"rgba(0,183,186,0.08)", border:"1px solid rgba(0,183,186,0.15)"}}>
                     <Activity className="w-9 h-9" style={{color:"rgba(0,183,186,0.4)"}}/>
                   </div>
-                  <p className="text-slate-800 font-semibold text-xl mb-2">Henüz antrenman yok</p>
-                  <p className="text-slate-400 text-sm mb-7 max-w-xs mx-auto">İlk antrenmanı sen oluştur, spor arkadaşlarını topla!</p>
+                  <p className="text-slate-800 font-semibold text-xl mb-2">{t("trainings.noTrainings")}</p>
+                  <p className="text-slate-400 text-sm mb-7 max-w-xs mx-auto">{t("trainings.noTrainingsHint")}</p>
                   {user && (
                     <button onClick={() => setCurrentPage("create-training")}
                       className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-medium text-white text-sm transition-all hover:opacity-90 hover:shadow-lg"
                       style={{background:"linear-gradient(135deg,#00b7ba,#009295)", boxShadow:"0 8px 24px rgba(0,183,186,0.3)"}}>
-                      <Plus className="w-4 h-4"/> Antrenman Oluştur
+                      <Plus className="w-4 h-4"/> {t("trainings.create")}
                     </button>
                   )}
                 </>
               )}
             </div>
-          )}
+          ))}
         </div>
       </div>
     );
@@ -2977,9 +3611,9 @@ export default function Muuvlink() {
           <div className="relative max-w-7xl mx-auto px-4 sm:px-8 py-12">
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
               <div>
-                <span className="text-xs font-semibold tracking-[0.35em] text-brand-600 uppercase block mb-3">Topluluk</span>
-                <h1 className="text-5xl md:text-6xl font-semibold text-brand-900 tracking-tighter leading-none">Takımlar</h1>
-                <p className="text-slate-400 mt-3 text-base">Sana uygun takımı bul ya da kendi takımını kur.</p>
+                <span className="text-xs font-semibold tracking-[0.35em] text-brand-600 uppercase block mb-3">{t("teams.community")}</span>
+                <h1 className="text-5xl md:text-6xl font-semibold text-brand-900 tracking-tighter leading-none">{t("teams.pageTitle")}</h1>
+                <p className="text-slate-400 mt-3 text-base">{t("teams.pageSubtitle")}</p>
               </div>
               {user && (
                 <button
@@ -2987,7 +3621,7 @@ export default function Muuvlink() {
                   className="flex items-center gap-2 px-6 py-3 rounded-xl font-medium text-white text-sm transition-all hover:opacity-90 flex-shrink-0"
                   style={{background:"linear-gradient(135deg,#0EA5E9,#06B6D4)", boxShadow:"0 8px 24px rgba(14,165,233,0.3)"}}
                 >
-                  <Plus className="w-4 h-4" /> Takım Oluştur
+                  <Plus className="w-4 h-4" /> {t("teams.create")}
                 </button>
               )}
             </div>
@@ -3001,21 +3635,21 @@ export default function Muuvlink() {
               <div className="flex-1 min-w-48 relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"/>
                 <input type="text" value={teamSearch} onChange={(e) => setTeamSearch(e.target.value)}
-                  placeholder="Takım ara…"
+                  placeholder={t("teams.searchPlaceholder")}
                   className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-300 focus:bg-white transition"/>
               </div>
               <select value={teamSport} onChange={(e) => setTeamSport(e.target.value)}
                 className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-300 focus:bg-white transition">
-                <option value="">Tüm Sporlar</option>
-                {sports.map((s) => <option key={s} value={s}>{s}</option>)}
+                <option value="">{t("trainings.filterSport")}</option>
+                {sports.map((s) => <option key={s} value={s}>{t(`sports.${s}`)}</option>)}
               </select>
               {(teamSearch || teamSport) && (
                 <button onClick={() => { setTeamSearch(""); setTeamSport(""); }}
                   className="flex items-center gap-1 px-3 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-medium text-slate-600 transition">
-                  <X className="w-3.5 h-3.5"/> Temizle
+                  <X className="w-3.5 h-3.5"/> {t("trainings.clearFilters")}
                 </button>
               )}
-              <span className="ml-auto text-xs text-slate-400 font-semibold">{filteredTeams.length} takım</span>
+              <span className="ml-auto text-xs text-slate-400 font-semibold">{filteredTeams.length} {t("teams.members")}</span>
             </div>
           </div>
         </div>
@@ -3037,21 +3671,21 @@ export default function Muuvlink() {
                   : <Users className="w-9 h-9" style={{color:"rgba(14,165,233,0.4)"}}/>}
               </div>
               <p className="text-slate-800 font-semibold text-xl mb-2">
-                {teamSearch || teamSport ? "Sonuç bulunamadı" : "Henüz takım yok"}
+                {teamSearch || teamSport ? t("common.noResults") : t("teams.noTeams")}
               </p>
               <p className="text-slate-400 text-sm mb-7 max-w-xs mx-auto">
-                {teamSearch || teamSport ? "Farklı bir arama veya spor dalı dene." : "İlk takımı sen kur, üyeleri davet et ve birlikte spor yap!"}
+                {teamSearch || teamSport ? t("teams.noResultsHint") : t("teams.noTeamsHint")}
               </p>
               {teamSearch || teamSport ? (
                 <button onClick={() => { setTeamSearch(""); setTeamSport(""); }}
                   className="px-6 py-3 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 transition">
-                  Filtreleri Temizle
+                  {t("trainings.clearFilters")}
                 </button>
               ) : user && (
                 <button onClick={() => setCurrentPage("create-team")}
                   className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-medium text-white text-sm transition-all hover:opacity-90 hover:shadow-lg"
                   style={{background:"linear-gradient(135deg,#0EA5E9,#06B6D4)", boxShadow:"0 8px 24px rgba(14,165,233,0.3)"}}>
-                  <Plus className="w-4 h-4"/> Takım Kur
+                  <Plus className="w-4 h-4"/> {t("teams.create")}
                 </button>
               )}
             </div>
@@ -3075,19 +3709,19 @@ export default function Muuvlink() {
             style={{color:"#009295"}}
             onMouseEnter={e=>e.currentTarget.style.color="#006d6f"}
             onMouseLeave={e=>e.currentTarget.style.color="#009295"}>
-            <ArrowLeft className="w-4 h-4"/> Profile Dön
+            <ArrowLeft className="w-4 h-4"/> {t("common.back")}
           </button>
           <div className="flex items-end justify-between gap-6">
             <div>
-              <span className="text-xs font-semibold tracking-[0.35em] text-brand-600 uppercase block mb-3">Başarılar</span>
-              <h1 className="text-5xl md:text-6xl font-semibold text-brand-900 tracking-tighter leading-none">Rozetler</h1>
-              <p className="text-brand-700 mt-3 text-base">Her antrenman yeni bir başarının kapısını aralar.</p>
+              <span className="text-xs font-semibold tracking-[0.35em] text-brand-600 uppercase block mb-3">{t("badges.pageTitle")}</span>
+              <h1 className="text-5xl md:text-6xl font-semibold text-brand-900 tracking-tighter leading-none">{t("badges.pageTitle")}</h1>
+              <p className="text-brand-700 mt-3 text-base">{t("badges.pageSubtitle")}</p>
             </div>
             {/* Progress summary */}
             <div className="hidden md:flex items-center gap-4 pb-1">
               <div className="text-right">
                 <div className="text-4xl font-semibold text-brand-700">{userBadges.length}<span className="text-brand-500 text-2xl">/{badges.length}</span></div>
-                <div className="text-xs text-brand-600 font-semibold uppercase tracking-wider mt-1">Kazanılan Rozet</div>
+                <div className="text-xs text-brand-600 font-semibold uppercase tracking-wider mt-1">{t("badges.earned")}</div>
               </div>
               <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
                 style={{background:"rgba(0,183,186,0.12)", border:"1px solid rgba(0,183,186,0.25)"}}>
@@ -3098,7 +3732,7 @@ export default function Muuvlink() {
           {/* Progress bar */}
           <div className="mt-8 max-w-md">
             <div className="flex justify-between text-xs font-medium text-brand-700 mb-2">
-              <span>İlerleme</span>
+              <span>{t("badges.progress")}</span>
               <span style={{color:"#009295"}}>{badges.length > 0 ? Math.round((userBadges.length/badges.length)*100) : 0}%</span>
             </div>
             <div className="h-1.5 bg-brand-100 rounded-full overflow-hidden">
@@ -3162,12 +3796,12 @@ export default function Muuvlink() {
           className="flex items-center text-brand-600 mb-6 hover:underline"
         >
           <ArrowLeft className="w-5 h-5 mr-2" />
-          Geri Dön
+          {t("common.back")}
         </button>
 
         <div className="bg-white rounded-2xl p-8 border">
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-3xl font-medium">{selectedTraining.title}</h1>
+            <h1 className="font-display font-bold" style={{fontSize:"clamp(1.8rem,4vw,2.4rem)", letterSpacing:"-0.01em"}}>{selectedTraining.title}</h1>
             <div className="flex gap-2">
               <span className="px-3 py-1 bg-brand-100 text-brand-600 rounded-full text-sm font-medium">
                 {selectedTraining.team_sport || "Genel"}
@@ -3185,14 +3819,14 @@ export default function Muuvlink() {
                 className="px-4 py-2 bg-blue-100 text-blue-600 rounded-xl font-semibold hover:bg-blue-200 flex items-center gap-2"
               >
                 <Edit className="w-4 h-4" />
-                {editMode ? "İptal" : "Düzenle"}
+                {editMode ? t("common.cancel") : t("common.edit")}
               </button>
               <button
                 onClick={() => handleDeleteTraining(selectedTraining.id)}
                 className="px-4 py-2 bg-red-100 text-red-600 rounded-xl font-semibold hover:bg-red-200 flex items-center gap-2"
               >
                 <Trash2 className="w-4 h-4" />
-                Sil
+                {t("common.delete")}
               </button>
             </div>
           )}
@@ -3204,37 +3838,37 @@ export default function Muuvlink() {
             return (
               <form onSubmit={handleSubmitEdit} className="mb-8 space-y-5">
                 <h3 className="text-base font-semibold text-slate-700 flex items-center gap-2">
-                  <Edit className="w-4 h-4 text-brand-600"/> Antrenmanı Düzenle
+                  <Edit className="w-4 h-4 text-brand-600"/> {t("trainingDetail.editTraining")}
                 </h3>
 
                 {/* Başlık */}
                 <div className="bg-white border border-slate-100 rounded-2xl p-5">
-                  <label className={lCls}>Başlık</label>
+                  <label className={lCls}>{t("createTraining.titleLabel")}</label>
                   <input type="text" value={editData.title}
                     onChange={(e) => setEditData((d) => ({ ...d, title: e.target.value }))}
-                    className={iCls} placeholder="Örn: Pazartesi Koşusu" required />
+                    className={iCls} placeholder={t("createTraining.titlePlaceholder")} required />
                 </div>
 
                 {/* Açıklama */}
                 <div className="bg-white border border-slate-100 rounded-2xl p-5">
-                  <label className={lCls}>Açıklama <span className="normal-case font-normal text-slate-400">(isteğe bağlı)</span></label>
+                  <label className={lCls}>{t("createTraining.descLabel")} <span className="normal-case font-normal text-slate-400">({t("common.optional")})</span></label>
                   <textarea value={editData.description}
                     onChange={(e) => setEditData((d) => ({ ...d, description: e.target.value }))}
                     className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition-colors resize-none"
-                    rows="3" placeholder="Antrenman hakkında kısa bir açıklama…"/>
+                    rows="3" placeholder={t("createTraining.descPlaceholder")}/>
                 </div>
 
                 {/* Tarih + Saat */}
                 <div className="bg-white border border-slate-100 rounded-2xl p-5">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className={lCls}>Tarih</label>
+                      <label className={lCls}>{t("createTraining.dateLabel")}</label>
                       <input type="date" value={editData.training_date}
                         onChange={(e) => setEditData((d) => ({ ...d, training_date: e.target.value }))}
                         className={iCls} required />
                     </div>
                     <div>
-                      <label className={lCls}>Saat</label>
+                      <label className={lCls}>{t("createTraining.timeLabel")}</label>
                       <div className="flex gap-2">
                         <select
                           value={editData.training_time ? editData.training_time.split(":")[0] : ""}
@@ -3266,7 +3900,7 @@ export default function Muuvlink() {
 
                 {/* Konum */}
                 <div className="bg-white border border-slate-100 rounded-2xl p-5">
-                  <label className={lCls}>Konum</label>
+                  <label className={lCls}>{t("createTraining.locationLabel")}</label>
                   <LocationPicker
                     locationName={editData.location_name}
                     lat={editData.location_lat}
@@ -3281,19 +3915,19 @@ export default function Muuvlink() {
                 <div className="bg-white border border-slate-100 rounded-2xl p-5">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className={lCls}>Kapasite</label>
+                      <label className={lCls}>{t("createTraining.capacityLabel")}</label>
                       <input type="number" value={editData.capacity} min="1"
                         onChange={(e) => setEditData((d) => ({ ...d, capacity: parseInt(e.target.value) }))}
                         className={iCls} />
                     </div>
                     <div>
-                      <label className={lCls}>Seviye</label>
+                      <label className={lCls}>{t("createTraining.levelLabel")}</label>
                       <select value={editData.difficulty}
                         onChange={(e) => setEditData((d) => ({ ...d, difficulty: e.target.value }))}
                         className={sCls}>
-                        <option value="Kolay">🟢 Kolay</option>
-                        <option value="Orta">🟡 Orta</option>
-                        <option value="Zor">🔴 Zor</option>
+                        <option value="Kolay">🟢 {t("trainings.levelEasy")}</option>
+                        <option value="Orta">🟡 {t("trainings.levelMid")}</option>
+                        <option value="Zor">🔴 {t("trainings.levelHard")}</option>
                       </select>
                     </div>
                   </div>
@@ -3302,7 +3936,7 @@ export default function Muuvlink() {
                 <button type="submit"
                   className="w-full h-12 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 hover:shadow-lg"
                   style={{background:"linear-gradient(135deg,#00b7ba,#009295)", boxShadow:"0 4px 14px rgba(0,183,186,0.3)"}}>
-                  Kaydet
+                  {t("common.save")}
                 </button>
               </form>
             );
@@ -3314,28 +3948,28 @@ export default function Muuvlink() {
             <div className="p-4 bg-gray-50 rounded-xl">
               <div className="flex items-center text-gray-600 mb-2">
                 <MapPin className="w-5 h-5 mr-2" />
-                <span className="font-semibold">Konum</span>
+                <span className="font-semibold">{t("common.location")}</span>
               </div>
               <p>{selectedTraining.location_name}</p>
             </div>
             <div className="p-4 bg-gray-50 rounded-xl">
               <div className="flex items-center text-gray-600 mb-2">
                 <Calendar className="w-5 h-5 mr-2" />
-                <span className="font-semibold">Tarih</span>
+                <span className="font-semibold">{t("common.date")}</span>
               </div>
-              <p>{new Date(selectedTraining.training_date).toLocaleDateString("tr-TR")}</p>
+              <p>{fmtDateFull(selectedTraining.training_date)}</p>
             </div>
             <div className="p-4 bg-gray-50 rounded-xl">
               <div className="flex items-center text-gray-600 mb-2">
                 <Clock className="w-5 h-5 mr-2" />
-                <span className="font-semibold">Saat</span>
+                <span className="font-semibold">{t("common.time")}</span>
               </div>
               <p>{selectedTraining.training_time}</p>
             </div>
             <div className="p-4 bg-gray-50 rounded-xl">
               <div className="flex items-center text-gray-600 mb-2">
                 <Users className="w-5 h-5 mr-2" />
-                <span className="font-semibold">Kapasite</span>
+                <span className="font-semibold">{t("common.capacity")}</span>
               </div>
               <p>
                 {selectedTraining.attendees?.length || 0}/{selectedTraining.capacity}
@@ -3345,7 +3979,7 @@ export default function Muuvlink() {
 
           <div className="mb-6">
             <h3 className="text-xl font-medium mb-4">
-              Katılımcılar ({selectedTraining.attendees?.length || 0})
+              {t("trainingDetail.joinedList")} ({selectedTraining.attendees?.length || 0})
             </h3>
             {selectedTraining.attendees && selectedTraining.attendees.length > 0 ? (
               <div className="space-y-2">
@@ -3357,21 +3991,21 @@ export default function Muuvlink() {
                     <div>
                       <div className="font-semibold">{attendee.name}</div>
                       <div className="text-sm text-gray-600">
-                        {new Date(attendee.joined_at).toLocaleDateString("tr-TR")}
+                        {fmtDateShort(attendee.joined_at)}
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500">Henüz katılımcı yok</p>
+              <p className="text-gray-500">{t("trainingDetail.noParticipants")}</p>
             )}
           </div>
 
           <div className="mb-6">
             <h3 className="text-xl font-medium mb-4 flex items-center">
               <MessageCircle className="w-5 h-5 mr-2" />
-              Yorumlar ({selectedTraining.comments?.length || 0})
+              {t("trainingDetail.comments")} ({selectedTraining.comments?.length || 0})
             </h3>
 
             {user && (
@@ -3381,7 +4015,7 @@ export default function Muuvlink() {
                     type="text"
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
-                    placeholder="Yorum yaz..."
+                    placeholder={t("trainingDetail.addComment")}
                     className="flex-1 px-4 py-2 border rounded-xl"
                   />
                   <button
@@ -3405,7 +4039,7 @@ export default function Muuvlink() {
                       <div>
                         <div className="font-semibold text-sm">{c.user_name}</div>
                         <div className="text-xs text-gray-500">
-                          {new Date(c.created_at).toLocaleDateString("tr-TR")}
+                          {fmtDateShort(c.created_at)}
                         </div>
                       </div>
                     </div>
@@ -3414,7 +4048,7 @@ export default function Muuvlink() {
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500 text-center py-4">Henüz yorum yok</p>
+              <p className="text-gray-500 text-center py-4">{t("trainingDetail.noComments")}</p>
             )}
           </div>
 
@@ -3430,19 +4064,19 @@ export default function Muuvlink() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
                     </svg>
                   </div>
-                  <h3 className="text-lg font-semibold text-slate-800 mb-1">Spor topluluğuna katıl</h3>
-                  <p className="text-sm text-slate-500">Ücretsiz hesap aç, antrenmanlara katıl ve yeni spor arkadaşları edin.</p>
+                  <h3 className="text-lg font-semibold text-slate-800 mb-1">{t("trainingDetail.loginPromptTitle")}</h3>
+                  <p className="text-sm text-slate-500">{t("trainingDetail.loginPromptDesc")}</p>
                 </div>
 
                 {/* Özellikler */}
                 <div className="grid grid-cols-3 gap-3 mb-5">
                   {[
-                    { icon:"🏃", label:"Antrenmanlara katıl" },
-                    { icon:"🛡️", label:"Takım kur veya katıl" },
-                    { icon:"🤝", label:"Spor arkadaşı edin" },
+                    { icon: Activity,    label: t("trainingDetail.loginFeat1") },
+                    { icon: ShieldCheck, label: t("trainingDetail.loginFeat2") },
+                    { icon: Users,       label: t("trainingDetail.loginFeat3") },
                   ].map(f => (
                     <div key={f.label} className="bg-white rounded-xl p-3 text-center border border-brand-100 shadow-sm">
-                      <div className="text-2xl mb-1">{f.icon}</div>
+                      <div className="mb-1.5 flex justify-center"><f.icon className="w-5 h-5 text-brand-500"/></div>
                       <div className="text-xs font-medium text-slate-600 leading-tight">{f.label}</div>
                     </div>
                   ))}
@@ -3455,13 +4089,13 @@ export default function Muuvlink() {
                     className="flex-1 py-3 font-semibold text-white text-sm rounded-xl transition hover:opacity-90 hover:shadow-lg"
                     style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}
                   >
-                    Ücretsiz Kayıt Ol
+                    {t("home.ctaBtn")}
                   </button>
                   <button
                     onClick={() => { setAuthMode("login"); setIsAuthModalOpen(true); }}
                     className="flex-1 py-3 font-semibold text-brand-700 text-sm rounded-xl border border-brand-300 bg-white hover:bg-brand-50 transition"
                   >
-                    Giriş Yap
+                    {t("nav.login")}
                   </button>
                 </div>
               </div>
@@ -3469,7 +4103,7 @@ export default function Muuvlink() {
           ) : isParticipant ? (
             <div className="flex gap-3">
               <div className="flex-1 py-4 rounded-xl font-semibold text-center text-brand-700 bg-brand-50 border border-brand-200">
-                ✓ Katıldın
+                ✓ {t("trainings.joined")}
               </div>
               <button
                 onClick={() => handleLeaveTraining(selectedTraining.id)}
@@ -3478,12 +4112,12 @@ export default function Muuvlink() {
               >
                 {joiningTrainingId === selectedTraining.id
                   ? <span className="w-4 h-4 border-2 border-red-200 border-t-red-500 rounded-full animate-spin inline-block"/>
-                  : "Ayrıl"}
+                  : t("trainings.leave")}
               </button>
             </div>
           ) : isFull ? (
             <div className="w-full py-4 rounded-xl font-semibold text-center text-slate-500 bg-slate-100 border border-slate-200">
-              Kapasite Dolu
+              {t("trainings.full")}
             </div>
           ) : (
             <button
@@ -3493,8 +4127,8 @@ export default function Muuvlink() {
               style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}
             >
               {joiningTrainingId === selectedTraining.id
-                ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>Katılıyor…</span>
-                : "Antrenmana Katıl"}
+                ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>{t("trainings.joining")}</span>
+                : t("trainingDetail.joinBtn")}
             </button>
           )}
         </div>
@@ -3528,10 +4162,10 @@ export default function Muuvlink() {
     const sportTypes = ["Basketbol","Bisiklet","Crossfit","Futbol","Kano","Koşu","Kürek","Padel","Pilates","Tenis","Trekking","Triatlon","Voleybol","Yoga","Yüzme","Diğer"];
 
     const roleBadge = (role) => {
-      if (role === "owner")   return <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold flex items-center gap-1"><Crown className="w-3 h-3" /> Sahip</span>;
-      if (role === "coach")   return <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold flex items-center gap-1"><Target className="w-3 h-3" /> Antrenör</span>;
-      if (role === "captain") return <span className="px-2 py-0.5 bg-brand-100 text-brand-700 rounded-full text-xs font-semibold flex items-center gap-1"><ShieldCheck className="w-3 h-3" /> Kaptan</span>;
-      return <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold flex items-center gap-1"><User className="w-3 h-3" /> Üye</span>;
+      if (role === "owner")   return <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold flex items-center gap-1"><Crown className="w-3 h-3" /> {t("teamDetail.roles.owner")}</span>;
+      if (role === "coach")   return <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold flex items-center gap-1"><Target className="w-3 h-3" /> {t("teamDetail.roles.coach")}</span>;
+      if (role === "captain") return <span className="px-2 py-0.5 bg-brand-100 text-brand-700 rounded-full text-xs font-semibold flex items-center gap-1"><ShieldCheck className="w-3 h-3" /> {t("teamDetail.roles.captain")}</span>;
+      return <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold flex items-center gap-1"><User className="w-3 h-3" /> {t("teamDetail.roles.member")}</span>;
     };
 
     const handleSubmitPost = (e) => {
@@ -3545,9 +4179,9 @@ export default function Muuvlink() {
     };
 
     const tabs = [
-      { id: "wall",    label: "Duvar",   icon: <MessageSquare className="w-4 h-4" />, show: isMember },
-      { id: "members", label: "Üyeler",  icon: <Users className="w-4 h-4" />,        show: canSeeMembers },
-      { id: "settings",label: "Ayarlar", icon: <Settings className="w-4 h-4" />,     show: isOwner },
+      { id: "wall",    label: t("teamDetail.wall"),       icon: <MessageSquare className="w-4 h-4" />, show: isMember },
+      { id: "members", label: t("teamDetail.membersTab"), icon: <Users className="w-4 h-4" />,        show: canSeeMembers },
+      { id: "settings",label: t("common.settings"),      icon: <Settings className="w-4 h-4" />,     show: isOwner },
     ].filter((t) => t.show);
 
     const iCls = "w-full h-11 px-4 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition-colors";
@@ -3556,7 +4190,7 @@ export default function Muuvlink() {
     return (
       <div className="max-w-4xl mx-auto px-4 py-10">
         <button onClick={() => setCurrentPage("teams")} className="flex items-center gap-1.5 text-brand-600 font-medium mb-6 hover:text-brand-700 transition-colors">
-          <ArrowLeft className="w-4 h-4" /> Takımlara Dön
+          <ArrowLeft className="w-4 h-4" /> {t("teams.pageTitle")}
         </button>
 
         {/* HEADER KARTI */}
@@ -3585,22 +4219,24 @@ export default function Muuvlink() {
                           const data = await res.json();
                           setSelectedTeam(t => ({ ...t, avatar: data.avatar }));
                           setTeams(ts => ts.map(t => t.id === selectedTeam.id ? { ...t, avatar: data.avatar } : t));
-                          showToast("Takım fotoğrafı güncellendi!", "success");
-                        } else showToast("Yükleme başarısız!", "error");
+                          showToast(t("toast.teamPhotoUpdated"), "success");
+                        } else showToast(t("toast.uploadFail"), "error");
                       }} />
                     </label>
                   )}
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold tracking-tight">{selectedTeam.name}</h1>
+                  <h1 className="font-display font-bold" style={{fontSize:"1.8rem", letterSpacing:"-0.01em"}}>{selectedTeam.name}</h1>
                   <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
                     <span className="px-2.5 py-0.5 bg-white/20 rounded-full text-xs font-medium">{selectedTeam.sport}</span>
                     {selectedTeam.is_private
-                      ? <span className="px-2.5 py-0.5 bg-white/20 rounded-full text-xs font-medium flex items-center gap-1"><Lock className="w-3 h-3" /> Gizli</span>
-                      : <span className="px-2.5 py-0.5 bg-white/20 rounded-full text-xs font-medium flex items-center gap-1"><Globe className="w-3 h-3" /> Herkese Açık</span>}
+                      ? <span className="px-2.5 py-0.5 bg-white/20 rounded-full text-xs font-medium flex items-center gap-1"><Lock className="w-3 h-3" /> {t("common.private")}</span>
+                      : <span className="px-2.5 py-0.5 bg-white/20 rounded-full text-xs font-medium flex items-center gap-1"><Globe className="w-3 h-3" /> {t("common.public")}</span>}
                     {myRole && (() => {
-                      const badges = { owner:"👑 Sahip", coach:"🎯 Antrenör", captain:"⚓ Kaptan", member:"👤 Üye" };
-                      return <span className="px-2.5 py-0.5 bg-white/30 rounded-full text-xs font-semibold">{badges[myRole] || myRole}</span>;
+                      const roleIcons = { owner: Crown, coach: Target, captain: Navigation2, member: User };
+                      const roleLabels = { owner: t("teamDetail.roles.owner"), coach: t("teamDetail.roles.coach"), captain: t("teamDetail.roles.captain"), member: t("teamDetail.roles.member") };
+                      const RoleIcon = roleIcons[myRole] || User;
+                      return <span className="px-2.5 py-0.5 bg-white/30 rounded-full text-xs font-semibold flex items-center gap-1"><RoleIcon className="w-3 h-3"/>{roleLabels[myRole] || myRole}</span>;
                     })()}
                   </div>
                 </div>
@@ -3608,7 +4244,7 @@ export default function Muuvlink() {
               {canManage && (
                 <button onClick={() => setShowInviteModal(true)}
                   className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-sm font-semibold transition-colors backdrop-blur">
-                  <UserPlus className="w-4 h-4" /> Davet Et
+                  <UserPlus className="w-4 h-4" /> {t("teamDetail.invite")}
                 </button>
               )}
             </div>
@@ -3618,7 +4254,7 @@ export default function Muuvlink() {
               <div className="flex items-center gap-1.5">
                 <Users className="w-4 h-4 opacity-80" />
                 <span className="font-semibold">{selectedTeam.members?.length || 0}</span>
-                <span className="opacity-75">üye</span>
+                <span className="opacity-75">{t("teams.members")}</span>
               </div>
               {selectedTeam.location && (
                 <div className="flex items-center gap-1.5 opacity-85">
@@ -3664,7 +4300,7 @@ export default function Muuvlink() {
                 <div className="flex gap-2">
                   <input type="text" value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Takımla bir şey paylaş..."
+                    placeholder={t("teamDetail.postPlaceholder")}
                     className={`flex-1 ${iCls}`} />
                   <button type="submit"
                     className="px-5 bg-brand-600 text-white rounded-xl hover:bg-brand-700 transition-colors flex items-center justify-center">
@@ -3683,7 +4319,7 @@ export default function Muuvlink() {
                         </div>
                         <div>
                           <div className="font-semibold text-sm text-slate-800">{post.user_name}</div>
-                          <div className="text-xs text-slate-400">{new Date(post.created_at).toLocaleDateString("tr-TR")}</div>
+                          <div className="text-xs text-slate-400">{fmtDateShort(post.created_at)}</div>
                         </div>
                       </div>
                       <p className="text-slate-700 text-sm leading-relaxed">{post.message}</p>
@@ -3695,8 +4331,7 @@ export default function Muuvlink() {
                   <div className="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
                     <MessageCircle className="w-8 h-8 text-brand-400" />
                   </div>
-                  <p className="font-semibold text-slate-600">Henüz mesaj yok</p>
-                  <p className="text-sm text-slate-400 mt-1">İlk mesajı sen at!</p>
+                  <p className="font-semibold text-slate-600">{t("teamDetail.noWallPosts")}</p>
                 </div>
               )}
             </div>
@@ -3706,11 +4341,11 @@ export default function Muuvlink() {
           {activeTab === "members" && canSeeMembers && (
             <div>
               <div className="flex items-center justify-between mb-5">
-                <h3 className="font-bold text-slate-800 text-lg">Üyeler <span className="text-slate-400 font-normal text-base">({selectedTeam.members?.length || 0})</span></h3>
+                <h3 className="font-bold text-slate-800 text-lg">{t("teamDetail.membersTab")} <span className="text-slate-400 font-normal text-base">({selectedTeam.members?.length || 0})</span></h3>
                 {canManage && (
                   <button onClick={() => setShowInviteModal(true)}
                     className="flex items-center gap-1.5 px-4 py-2 bg-brand-50 text-brand-700 rounded-xl text-sm font-semibold hover:bg-brand-100 transition-colors">
-                    <UserPlus className="w-4 h-4" /> Davet Et
+                    <UserPlus className="w-4 h-4" /> {t("teamDetail.invite")}
                   </button>
                 )}
               </div>
@@ -3719,7 +4354,7 @@ export default function Muuvlink() {
               {canManage && pendingInvitations.length > 0 && (
                 <div className="mb-5">
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5" /> Bekleyen Davetler ({pendingInvitations.length})
+                    <Clock className="w-3.5 h-3.5" /> {t("teamDetail.pendingInvites")} ({pendingInvitations.length})
                   </p>
                   <div className="space-y-2">
                     {pendingInvitations.map(inv => (
@@ -3730,7 +4365,7 @@ export default function Muuvlink() {
                           </div>
                           <div>
                             <div className="font-semibold text-slate-700 text-sm">{inv.invitee_email}</div>
-                            <div className="text-xs text-slate-400">{inv.inviter_name} · {new Date(inv.created_at).toLocaleDateString("tr-TR")}</div>
+                            <div className="text-xs text-slate-400">{inv.inviter_name} · {fmtDateShort(inv.created_at)}</div>
                           </div>
                         </div>
                         <button onClick={() => handleCancelInvitation(selectedTeam.id, inv.id)}
@@ -3758,7 +4393,7 @@ export default function Muuvlink() {
                         <div>
                           <div className="font-semibold text-slate-800 flex items-center gap-1.5">
                             {member.name}
-                            {isMe && <span className="text-xs text-slate-400 font-normal">(sen)</span>}
+                            {isMe && <span className="text-xs text-slate-400 font-normal">({t("teamDetail.me")})</span>}
                           </div>
                           <div className="mt-0.5">{roleBadge(member.role)}</div>
                         </div>
@@ -3769,10 +4404,10 @@ export default function Muuvlink() {
                           <select value={member.role}
                             onChange={(e) => handleChangeMemberRole(selectedTeam.id, member.id, e.target.value)}
                             className="text-sm h-9 px-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 bg-white text-slate-700">
-                            <option value="member">👤 Üye</option>
-                            <option value="captain">⚓ Kaptan</option>
-                            <option value="coach">🎯 Antrenör</option>
-                            <option value="owner">🏆 Sahip</option>
+                            <option value="member">{t("teamDetail.roles.member")}</option>
+                            <option value="captain">{t("teamDetail.roles.captain")}</option>
+                            <option value="coach">{t("teamDetail.roles.coach")}</option>
+                            <option value="owner">{t("teamDetail.roles.owner")}</option>
                           </select>
                           <button onClick={() => handleRemoveMember(selectedTeam.id, member.id)}
                             className="w-9 h-9 flex items-center justify-center bg-red-50 text-red-400 rounded-xl hover:bg-red-100 transition-colors">
@@ -3791,7 +4426,7 @@ export default function Muuvlink() {
                       {isMe && !isThisOwner && (
                         <button onClick={() => handleRemoveMember(selectedTeam.id, user.id)}
                           className="px-3 py-1.5 text-sm bg-red-50 text-red-500 rounded-xl hover:bg-red-100 font-semibold transition-colors">
-                          Ayrıl
+                          {t("teams.leave")}
                         </button>
                       )}
                     </div>
@@ -3806,23 +4441,23 @@ export default function Muuvlink() {
             <form onSubmit={handleEditSubmit} className="space-y-5">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className={lCls}>Takım Adı</label>
+                  <label className={lCls}>{t("createTeam.nameLabel")}</label>
                   <input type="text" value={editForm.name} required
                     onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
                     className={iCls} />
                 </div>
                 <div>
-                  <label className={lCls}>Spor Dalı</label>
+                  <label className={lCls}>{t("createTeam.sportLabel")}</label>
                   <select value={editForm.sport}
                     onChange={(e) => setEditForm((f) => ({ ...f, sport: e.target.value }))}
                     className={`${iCls} appearance-none cursor-pointer`}>
-                    {sportTypes.map((s) => <option key={s} value={s}>{s}</option>)}
+                    {sportTypes.map((s) => <option key={s} value={s}>{t(`sports.${s}`)}</option>)}
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className={lCls}>Açıklama</label>
+                <label className={lCls}>{t("createTeam.descLabel")}</label>
                 <textarea value={editForm.description} rows={3}
                   onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))}
                   className={`${iCls} h-auto py-3 resize-none`} />
@@ -3830,18 +4465,18 @@ export default function Muuvlink() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className={lCls}>Konum</label>
+                  <label className={lCls}>{t("common.location")}</label>
                   <input type="text" value={editForm.location}
                     onChange={(e) => setEditForm((f) => ({ ...f, location: e.target.value }))}
-                    placeholder="İstanbul, Türkiye"
+                    placeholder={t("createTeam.locationPlaceholder")}
                     className={iCls} />
                 </div>
                 <div>
-                  <label className={lCls}>Takım Fotoğrafı</label>
+                  <label className={lCls}>{t("teamDetail.teamPhoto")}</label>
                   <label className="flex items-center gap-3 h-11 px-4 border border-slate-200 rounded-xl bg-white cursor-pointer hover:border-brand-400 transition-colors">
                     <Image className="w-4 h-4 text-brand-600 flex-shrink-0" />
                     <span className="text-sm text-slate-500 truncate">
-                      {(editForm.avatar?.startsWith("/uploads/") || editForm.avatar?.startsWith("http")) ? "Fotoğraf yüklendi ✓" : "Fotoğraf seç..."}
+                      {(editForm.avatar?.startsWith("/uploads/") || editForm.avatar?.startsWith("http")) ? t("teamDetail.photoUploaded") : t("teamDetail.selectPhoto")}
                     </span>
                     <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
                       const file = e.target.files?.[0];
@@ -3855,8 +4490,8 @@ export default function Muuvlink() {
                         setEditForm(f => ({ ...f, avatar: data.avatar }));
                         setSelectedTeam(t => ({ ...t, avatar: data.avatar }));
                         setTeams(ts => ts.map(t => t.id === selectedTeam.id ? { ...t, avatar: data.avatar } : t));
-                        showToast("Takım fotoğrafı güncellendi!", "success");
-                      } else showToast("Yükleme başarısız!", "error");
+                        showToast(t("toast.teamPhotoUpdated"), "success");
+                      } else showToast(t("toast.uploadFail"), "error");
                     }} />
                   </label>
                 </div>
@@ -3865,10 +4500,10 @@ export default function Muuvlink() {
               <div className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-colors ${editForm.is_private ? "border-slate-200 bg-slate-50" : "border-brand-200 bg-brand-50"}`}>
                 <div>
                   <div className="font-semibold text-slate-800 flex items-center gap-1.5 text-sm">
-                    {editForm.is_private ? <><Lock className="w-4 h-4 text-slate-500" /> Gizli Takım</> : <><Globe className="w-4 h-4 text-brand-600" /> Herkese Açık Takım</>}
+                    {editForm.is_private ? <><Lock className="w-4 h-4 text-slate-500" /> {t("teams.privateTeam")}</> : <><Globe className="w-4 h-4 text-brand-600" /> {t("teamDetail.publicTeam")}</>}
                   </div>
                   <div className="text-xs text-slate-500 mt-1">
-                    {editForm.is_private ? "Sadece davet edilenler görebilir." : "Herkes görebilir ve katılabilir."}
+                    {editForm.is_private ? t("teamDetail.privateDesc") : t("teamDetail.publicDesc")}
                   </div>
                 </div>
                 <button type="button"
@@ -3881,11 +4516,11 @@ export default function Muuvlink() {
               <div className="flex gap-3 pt-1">
                 <button type="submit"
                   className="flex-1 h-12 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-semibold transition-colors">
-                  Kaydet
+                  {t("common.save")}
                 </button>
                 <button type="button" onClick={() => handleDeleteTeam(selectedTeam.id)}
                   className="px-6 h-12 bg-red-50 text-red-600 rounded-xl font-semibold hover:bg-red-100 transition-colors flex items-center gap-2">
-                  <Trash2 className="w-4 h-4" /> Sil
+                  <Trash2 className="w-4 h-4" /> {t("common.delete")}
                 </button>
               </div>
             </form>
@@ -3897,8 +4532,8 @@ export default function Muuvlink() {
               <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <Lock className="w-8 h-8 text-slate-400" />
               </div>
-              <p className="font-semibold text-slate-700">Gizli Takım</p>
-              <p className="text-sm text-slate-400 mt-1">Üyeleri görmek için katılmanız gerekiyor.</p>
+              <p className="font-semibold text-slate-700">{t("teams.privateTeam")}</p>
+              <p className="text-sm text-slate-400 mt-1">{t("teams.privateInfo")}</p>
             </div>
           )}
 
@@ -3909,8 +4544,8 @@ export default function Muuvlink() {
                 disabled={joiningTeamId === selectedTeam.id}
                 className="w-full h-12 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-semibold transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
                 {joiningTeamId === selectedTeam.id
-                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Katılınıyor...</>
-                  : <><UserPlus className="w-4 h-4" /> Takıma Katıl</>}
+                  ? <><Loader2 className="w-4 h-4 animate-spin" /> {t("teams.joining")}</>
+                  : <><UserPlus className="w-4 h-4" /> {t("teamDetail.joinTeam")}</>}
               </button>
             </div>
           )}
@@ -3920,7 +4555,17 @@ export default function Muuvlink() {
   };
 
   const CreateTrainingPage = () => {
-    const defaultTeam = myTeams.length > 0 ? myTeams[0] : null;
+    // Backend'den doğrudan sadece antrenman oluşturabileceği takımları çek
+    const [eligibleTeams, setEligibleTeams] = useState([]);
+    const [eligibleLoading, setEligibleLoading] = useState(true);
+    useEffect(() => {
+      const token = localStorage.getItem("token");
+      if (!token) { setEligibleLoading(false); return; }
+      fetch(`${API_URL}/teams?can_create_training=true`, { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.ok ? r.json() : { teams: [] })
+        .then(d => { setEligibleTeams(d.teams || []); setEligibleLoading(false); })
+        .catch(() => setEligibleLoading(false));
+    }, []);
     const [formData, setFormData] = useState({
       title: "",
       description: "",
@@ -3931,16 +4576,24 @@ export default function Muuvlink() {
       location_lng: null,
       capacity: 20,
       difficulty: "Orta",
-      team_id: defaultTeam?.id || null,
-      is_public: defaultTeam ? !defaultTeam.is_private : true,
+      team_id: null,
+      is_public: true,
     });
 
+    // Takımlar yüklenince formdaki team_id'yi ilk uygun takıma ayarla
+    useEffect(() => {
+      if (eligibleTeams.length > 0 && !formData.team_id) {
+        const first = eligibleTeams[0];
+        setFormData(f => ({ ...f, team_id: first.id, is_public: !first.is_private }));
+      }
+    }, [eligibleTeams]);
+
     // Seçili takım nesnesini bul
-    const selectedTeamObj = myTeams.find((t) => t.id === parseInt(formData.team_id));
+    const selectedTeamObj = eligibleTeams.find((t) => t.id === parseInt(formData.team_id));
     const selectedTeamIsPrivate = selectedTeamObj?.is_private || false;
 
     const handleTeamChange = (teamId) => {
-      const team = myTeams.find((t) => t.id === parseInt(teamId));
+      const team = eligibleTeams.find((t) => t.id === parseInt(teamId));
       setFormData((f) => ({
         ...f,
         team_id: parseInt(teamId),
@@ -3952,7 +4605,7 @@ export default function Muuvlink() {
       e.preventDefault();
       if (!formData.location_lat || !formData.location_lng) {
         showConfirm(
-          "GPS koordinatı eklemediniz. Koordinat olmadan bu antrenman \"Yakınımda\" aramasında görünmeyecek. Yine de koordinatsız devam etmek istiyor musunuz?",
+          t("createTraining.noGpsConfirm"),
           () => handleCreateTraining(formData)
         );
         return;
@@ -3971,16 +4624,26 @@ export default function Muuvlink() {
 
           {/* Başlık */}
           <div className="mb-6">
-            <h1 className="text-2xl font-semibold text-slate-900">Yeni Antrenman</h1>
-            <p className="text-sm text-slate-400 mt-1">Takımın için antrenman planla</p>
+            <h1 className="font-display font-bold text-slate-900" style={{fontSize:"2.2rem", letterSpacing:"-0.01em"}}>{t("createTraining.pageTitle")}</h1>
+            <p className="text-sm text-slate-400 mt-1">{t("createTraining.pageSubtitle")}</p>
           </div>
 
-          {myTeams.length === 0 && (
+          {eligibleLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin text-brand-500" />
+            </div>
+          ) : eligibleTeams.length === 0 && (
             <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3">
               <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-amber-800">Önce bir takım oluşturmalısınız</p>
-                <button onClick={() => setCurrentPage("create-team")} className="text-sm text-brand-600 font-semibold mt-1">Takım Oluştur →</button>
+                {myTeams.length === 0 ? (
+                  <>
+                    <p className="text-sm font-medium text-amber-800">{t("createTraining.noTeamFirst")}</p>
+                    <button onClick={() => setCurrentPage("create-team")} className="text-sm text-brand-600 font-semibold mt-1">{t("teams.create")} →</button>
+                  </>
+                ) : (
+                  <p className="text-sm font-medium text-amber-800">{t("createTraining.noEligibleTeam")}</p>
+                )}
               </div>
             </div>
           )}
@@ -3988,17 +4651,17 @@ export default function Muuvlink() {
           <div className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100">
 
             {/* Takım + Gizlilik */}
-            {myTeams.length > 0 && (
+            {eligibleTeams.length > 0 && (
               <div className="p-5 space-y-3">
                 <div>
-                  <label className={labelCls}>Takım</label>
+                  <label className={labelCls}>{t("createTraining.teamLabel")}</label>
                   <select
                     value={formData.team_id}
                     onChange={(e) => handleTeamChange(e.target.value)}
                     className={selectCls}
                     required
                   >
-                    {myTeams.map((team) => (
+                    {eligibleTeams.map((team) => (
                       <option key={team.id} value={team.id}>{team.name}</option>
                     ))}
                   </select>
@@ -4007,12 +4670,12 @@ export default function Muuvlink() {
                 {selectedTeamIsPrivate ? (
                   <div className="flex items-center gap-2.5 px-4 py-3 bg-slate-50 rounded-xl text-sm text-slate-500 border border-slate-200">
                     <Lock className="w-4 h-4 flex-shrink-0" />
-                    <span>Gizli takım — antrenman otomatik olarak <strong className="text-slate-700">sadece üyelere özel</strong> olacak</span>
+                    <span>{t("createTraining.privateTeamNote")}</span>
                   </div>
                 ) : (
                   <div className="flex items-center justify-between px-4 py-3 bg-brand-50 rounded-xl border border-brand-100">
                     <span className="text-sm text-slate-700 flex items-center gap-2">
-                      <Globe className="w-4 h-4 text-brand-500" /> Herkese açık antrenman
+                      <Globe className="w-4 h-4 text-brand-500" /> {t("createTraining.publicTraining")}
                     </span>
                     <button
                       type="button"
@@ -4029,24 +4692,24 @@ export default function Muuvlink() {
             {/* Başlık + Açıklama */}
             <div className="p-5 space-y-4">
               <div>
-                <label className={labelCls}>Başlık</label>
+                <label className={labelCls}>{t("createTraining.titleLabel")}</label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   className={inputCls}
-                  placeholder="Örn: Pazartesi Koşusu"
+                  placeholder={t("createTraining.titlePlaceholder")}
                   required
                 />
               </div>
               <div>
-                <label className={labelCls}>Açıklama <span className="normal-case font-normal text-slate-400">(isteğe bağlı)</span></label>
+                <label className={labelCls}>{t("createTraining.descLabel")} <span className="normal-case font-normal text-slate-400">({t("common.optional")})</span></label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition-colors resize-none"
                   rows="3"
-                  placeholder="Antrenman hakkında kısa bir açıklama…"
+                  placeholder={t("createTraining.descPlaceholder")}
                 />
               </div>
             </div>
@@ -4055,7 +4718,7 @@ export default function Muuvlink() {
             <div className="p-5">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className={labelCls}>Tarih</label>
+                  <label className={labelCls}>{t("createTraining.dateLabel")}</label>
                   <input
                     type="date"
                     value={formData.training_date}
@@ -4065,7 +4728,7 @@ export default function Muuvlink() {
                   />
                 </div>
                 <div>
-                  <label className={labelCls}>Saat</label>
+                  <label className={labelCls}>{t("createTraining.timeLabel")}</label>
                   <div className="flex gap-2">
                     <select
                       value={formData.training_time ? formData.training_time.split(":")[0] : ""}
@@ -4100,7 +4763,7 @@ export default function Muuvlink() {
 
             {/* Konum */}
             <div className="p-5">
-              <label className={labelCls}>Konum</label>
+              <label className={labelCls}>{t("createTraining.locationLabel")}</label>
               <LocationPicker
                 locationName={formData.location_name}
                 lat={formData.location_lat}
@@ -4115,7 +4778,7 @@ export default function Muuvlink() {
             <div className="p-5">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className={labelCls}>Kapasite</label>
+                  <label className={labelCls}>{t("createTraining.capacityLabel")}</label>
                   <input
                     type="number"
                     value={formData.capacity}
@@ -4125,15 +4788,15 @@ export default function Muuvlink() {
                   />
                 </div>
                 <div>
-                  <label className={labelCls}>Seviye</label>
+                  <label className={labelCls}>{t("createTraining.levelLabel")}</label>
                   <select
                     value={formData.difficulty}
                     onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
                     className={selectCls}
                   >
-                    <option value="Kolay">🟢 Kolay</option>
-                    <option value="Orta">🟡 Orta</option>
-                    <option value="Zor">🔴 Zor</option>
+                    <option value="Kolay">🟢 {t("trainings.levelEasy")}</option>
+                    <option value="Orta">🟡 {t("trainings.levelMid")}</option>
+                    <option value="Zor">🔴 {t("trainings.levelHard")}</option>
                   </select>
                 </div>
               </div>
@@ -4148,15 +4811,15 @@ export default function Muuvlink() {
               onClick={() => setCurrentPage("profile")}
               className="h-12 px-6 bg-white border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors"
             >
-              İptal
+              {t("common.cancel")}
             </button>
             <button
               type="submit"
-              disabled={myTeams.length === 0}
+              disabled={eligibleTeams.length === 0}
               className="flex-1 h-12 rounded-xl text-sm font-semibold text-white disabled:opacity-50 transition-all hover:opacity-90 hover:shadow-lg"
               style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}
             >
-              Antrenman Oluştur
+              {t("createTraining.submitBtn")}
             </button>
           </div>
         </div>
@@ -4190,8 +4853,8 @@ export default function Muuvlink() {
 
             {/* Başlık */}
             <div className="mb-6">
-              <h1 className="text-2xl font-semibold text-slate-900">Yeni Takım</h1>
-              <p className="text-sm text-slate-400 mt-1">Bir spor topluluğu kur, üyeleri davet et</p>
+              <h1 className="font-display font-bold text-slate-900" style={{fontSize:"2.2rem", letterSpacing:"-0.01em"}}>{t("createTeam.pageTitle")}</h1>
+              <p className="text-sm text-slate-400 mt-1">{t("createTeam.pageSubtitle")}</p>
             </div>
 
             <div className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100">
@@ -4199,27 +4862,27 @@ export default function Muuvlink() {
               {/* Takım Adı + Spor */}
               <div className="p-5 space-y-4">
                 <div>
-                  <label className={labelCls}>Takım Adı</label>
+                  <label className={labelCls}>{t("createTeam.nameLabel")}</label>
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className={inputCls}
-                    placeholder="Örn: Bornova Koşucuları"
+                    placeholder={t("createTeam.namePlaceholder")}
                     required
                   />
                 </div>
                 <div>
-                  <label className={labelCls}>Spor Dalı</label>
+                  <label className={labelCls}>{t("createTeam.sportLabel")}</label>
                   <select
                     value={formData.sport}
                     onChange={(e) => setFormData({ ...formData, sport: e.target.value })}
                     className={selectCls}
                     required
                   >
-                    <option value="">Seçin</option>
+                    <option value="">{t("createTeam.selectSport")}</option>
                     {sportTypes.map((sport) => (
-                      <option key={sport} value={sport}>{sport}</option>
+                      <option key={sport} value={sport}>{t(`sports.${sport}`)}</option>
                     ))}
                   </select>
                 </div>
@@ -4227,31 +4890,31 @@ export default function Muuvlink() {
 
               {/* Açıklama */}
               <div className="p-5">
-                <label className={labelCls}>Açıklama <span className="normal-case font-normal text-slate-400">(isteğe bağlı)</span></label>
+                <label className={labelCls}>{t("createTeam.descLabel")} <span className="normal-case font-normal text-slate-400">({t("common.optional")})</span></label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition-colors resize-none"
                   rows="3"
-                  placeholder="Takım hakkında kısa bir açıklama…"
+                  placeholder={t("createTeam.descPlaceholder")}
                 />
               </div>
 
               {/* Konum */}
               <div className="p-5">
-                <label className={labelCls}>Konum <span className="normal-case font-normal text-slate-400">(isteğe bağlı)</span></label>
+                <label className={labelCls}>{t("common.location")} <span className="normal-case font-normal text-slate-400">({t("common.optional")})</span></label>
                 <input
                   type="text"
                   value={formData.location}
                   onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                   className={inputCls}
-                  placeholder="Örn: İzmir"
+                  placeholder={t("createTeam.locationPlaceholder")}
                 />
               </div>
 
               {/* Gizlilik */}
               <div className="p-5">
-                <label className={labelCls}>Gizlilik</label>
+                <label className={labelCls}>{t("createTeam.privacyLabel")}</label>
                 <button
                   type="button"
                   onClick={() => setFormData((f) => ({ ...f, is_private: !f.is_private }))}
@@ -4263,8 +4926,8 @@ export default function Muuvlink() {
                 >
                   <span className="text-sm text-slate-700 flex items-center gap-2">
                     {formData.is_private
-                      ? <><Lock className="w-4 h-4 text-slate-400" /> Özel Takım — sadece davet ile katılım</>
-                      : <><Globe className="w-4 h-4 text-brand-500" /> Herkese Açık — herkes katılabilir</>
+                      ? <><Lock className="w-4 h-4 text-slate-400" /> {t("common.private")} — {t("createTeam.privateDesc")}</>
+                      : <><Globe className="w-4 h-4 text-brand-500" /> {t("common.public")} — {t("createTeam.publicDesc")}</>
                     }
                   </span>
                   <div className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${formData.is_private ? "bg-slate-400" : "bg-brand-500"}`}>
@@ -4282,14 +4945,14 @@ export default function Muuvlink() {
                 onClick={() => setCurrentPage("profile")}
                 className="h-12 px-6 bg-white border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors"
               >
-                İptal
+                {t("common.cancel")}
               </button>
               <button
                 type="submit"
                 className="flex-1 h-12 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 hover:shadow-lg"
                 style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}
               >
-                Takım Oluştur
+                {t("createTeam.submitBtn")}
               </button>
             </div>
 
@@ -4315,8 +4978,8 @@ export default function Muuvlink() {
     const handleSubmit = async (e) => {
       e.preventDefault();
       setError("");
-      if (password !== password2) return setError("Şifreler eşleşmiyor.");
-      if (password.length < 6)    return setError("Şifre en az 6 karakter olmalı.");
+      if (password !== password2) return setError(t("settings.passwordMismatch"));
+      if (password.length < 6)    return setError(t("reset.minLength"));
       setLoading(true);
       try {
         const res = await fetch(`${API_URL}/auth/reset-password`, {
@@ -4329,10 +4992,10 @@ export default function Muuvlink() {
           setSuccess(true);
           setTimeout(() => { setCurrentPage("home"); setResetToken(null); }, 3000);
         } else {
-          setError(data.error || "Bir hata oluştu.");
+          setError(data.error || t("common.error"));
         }
       } catch {
-        setError("Sunucuya bağlanılamadı.");
+        setError(t("auth.serverError"));
       }
       setLoading(false);
     };
@@ -4345,15 +5008,15 @@ export default function Muuvlink() {
               style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}>
               <Lock className="w-8 h-8 text-white"/>
             </div>
-            <h1 className="text-2xl font-medium text-slate-900">Yeni Şifre Belirle</h1>
-            <p className="text-slate-500 text-sm mt-1">En az 6 karakter olmalı.</p>
+            <h1 className="text-2xl font-medium text-slate-900">{t("reset.title")}</h1>
+            <p className="text-slate-500 text-sm mt-1">{t("reset.subtitle")}</p>
           </div>
 
           {success ? (
             <div className="text-center py-4">
               <div className="mb-4 flex justify-center"><CheckCircle className="w-14 h-14 text-brand-500" /></div>
-              <p className="text-brand-700 font-semibold">Şifren başarıyla güncellendi!</p>
-              <p className="text-slate-500 text-sm mt-1">Ana sayfaya yönlendiriliyorsun…</p>
+              <p className="text-brand-700 font-semibold">{t("reset.success")}</p>
+              <p className="text-slate-500 text-sm mt-1">{t("reset.redirecting")}</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -4362,18 +5025,18 @@ export default function Muuvlink() {
                   <AlertTriangle className="w-4 h-4 flex-shrink-0" /> {error}
                 </div>
               )}
-              <input type="password" placeholder="Yeni şifre" value={password}
+              <input type="password" placeholder={t("auth.passwordNew")} value={password}
                 onChange={e => { setPassword(e.target.value); setError(""); }}
                 className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-300"
                 required/>
-              <input type="password" placeholder="Yeni şifre (tekrar)" value={password2}
+              <input type="password" placeholder={t("auth.passwordConfirm")} value={password2}
                 onChange={e => { setPassword2(e.target.value); setError(""); }}
                 className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-300"
                 required/>
               <button type="submit" disabled={loading}
                 className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold disabled:opacity-60 flex items-center justify-center gap-2">
                 {loading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>}
-                Şifremi Güncelle
+                {t("reset.btn")}
               </button>
             </form>
           )}
@@ -4389,7 +5052,7 @@ export default function Muuvlink() {
       <div className="fixed right-4 top-20 w-96 bg-white rounded-2xl shadow-2xl border z-50 max-h-[600px] overflow-hidden flex flex-col">
         <div className="p-4 border-b flex justify-between items-center">
           <h3 className="font-medium text-lg">
-            Bildirimler {unreadCount > 0 && `(${unreadCount})`}
+            {t("notifications.title")} {unreadCount > 0 && `(${unreadCount})`}
           </h3>
           <button onClick={() => setShowNotifications(false)}>
             <X className="w-5 h-5" />
@@ -4416,14 +5079,14 @@ export default function Muuvlink() {
                   <p className="text-sm text-gray-600 mb-2">{notif.message}</p>
                   <div className="flex justify-between items-center">
                     <span className="text-xs text-gray-400">
-                      {new Date(notif.created_at).toLocaleDateString("tr-TR")}
+                      {fmtDateShort(notif.created_at)}
                     </span>
                     {!notif.is_read && (
                       <button
                         onClick={() => handleMarkNotificationRead(notif.id)}
                         className="text-xs text-blue-600 hover:underline"
                       >
-                        Okundu işaretle
+                        {t("notifications.markRead")}
                       </button>
                     )}
                   </div>
@@ -4433,7 +5096,7 @@ export default function Muuvlink() {
           ) : (
             <div className="p-8 text-center text-gray-500">
               <Bell className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-              <p>Bildirim yok</p>
+              <p>{t("notifications.noNotifications")}</p>
             </div>
           )}
         </div>
@@ -4470,13 +5133,13 @@ export default function Muuvlink() {
           const data = await res.json();
           setUser(data.user);
           setFormData(f => ({ ...f, avatar: data.user.avatar }));
-          showToast("Fotoğraf güncellendi!", "success");
+          showToast(t("toast.photoUpdated"), "success");
         } else {
           const err = await res.json();
-          showToast(err.error || "Yükleme başarısız!", "error");
+          showToast(err.error || t("toast.uploadFail"), "error");
         }
       } catch {
-        showToast("Bağlantı hatası!", "error");
+        showToast(t("toast.networkError"), "error");
       } finally {
         setAvatarLoading(false);
       }
@@ -4490,11 +5153,11 @@ export default function Muuvlink() {
     const handleChangePassword = async (e) => {
       e.preventDefault();
       if (pwData.newPassword !== pwData.confirmPassword) {
-        showToast("Yeni şifreler eşleşmiyor!", "error");
+        showToast(t("settings.passwordMismatch"), "error");
         return;
       }
       if (pwData.newPassword.length < 4) {
-        showToast("Şifre en az 4 karakter olmalı!", "error");
+        showToast(t("settings.passwordShort"), "error");
         return;
       }
       setPwLoading(true);
@@ -4506,14 +5169,14 @@ export default function Muuvlink() {
           body: JSON.stringify({ currentPassword: pwData.currentPassword, newPassword: pwData.newPassword }),
         });
         if (response.ok) {
-          showToast("Şifre güncellendi! 🔐", "success");
+          showToast(t("toast.passwordUpdated"), "success");
           setShowProfileEdit(false);
         } else {
           const data = await response.json();
-          showToast(data.error || "Şifre güncellenemedi!", "error");
+          showToast(data.error || t("settings.passwordUpdateFail"), "error");
         }
       } catch {
-        showToast("Bağlantı hatası!", "error");
+        showToast(t("toast.networkError"), "error");
       } finally {
         setPwLoading(false);
       }
@@ -4526,7 +5189,7 @@ export default function Muuvlink() {
             <X className="w-6 h-6" />
           </button>
 
-          <h2 className="text-3xl font-medium mb-6">Ayarlar</h2>
+          <h2 className="font-display font-bold mb-6" style={{fontSize:"2rem"}}>{t("settings.pageTitle")}</h2>
 
           {/* Sekmeler */}
           <div className="flex gap-2 mb-6 bg-gray-100 p-1 rounded-xl">
@@ -4534,13 +5197,13 @@ export default function Muuvlink() {
               onClick={() => setActiveTab("profile")}
               className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === "profile" ? "bg-white shadow text-brand-600" : "text-gray-500"}`}
             >
-              Profil
+              {t("nav.profile")}
             </button>
             <button
               onClick={() => setActiveTab("password")}
               className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === "password" ? "bg-white shadow text-brand-600" : "text-gray-500"}`}
             >
-              Şifre
+              {t("auth.passwordLabel")}
             </button>
           </div>
 
@@ -4566,12 +5229,12 @@ export default function Muuvlink() {
                 <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
                 <button type="button" onClick={() => avatarInputRef.current?.click()} disabled={avatarLoading}
                   className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl border border-brand-200 text-brand-700 hover:bg-brand-50 transition-colors disabled:opacity-50">
-                  <Image className="w-3.5 h-3.5" /> Fotoğraf Değiştir
+                  <Image className="w-3.5 h-3.5" /> {t("profile.changePhoto")}
                 </button>
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">İsim</label>
+                <label className="block text-sm font-medium mb-2">{t("auth.nameLabel")}</label>
                 <input
                   type="text"
                   value={formData.name}
@@ -4580,7 +5243,7 @@ export default function Muuvlink() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Telefon</label>
+                <label className="block text-sm font-medium mb-2">{t("profile.phone")}</label>
                 <input
                   type="tel"
                   value={formData.phone}
@@ -4592,13 +5255,13 @@ export default function Muuvlink() {
                 type="submit"
                 className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold"
               >
-                Kaydet
+                {t("common.save")}
               </button>
             </form>
           ) : (
             <form onSubmit={handleChangePassword} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Mevcut Şifre</label>
+                <label className="block text-sm font-medium mb-2">{t("settings.currentPassword")}</label>
                 <input
                   type="password"
                   value={pwData.currentPassword}
@@ -4608,7 +5271,7 @@ export default function Muuvlink() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Yeni Şifre</label>
+                <label className="block text-sm font-medium mb-2">{t("settings.newPassword")}</label>
                 <input
                   type="password"
                   value={pwData.newPassword}
@@ -4618,7 +5281,7 @@ export default function Muuvlink() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Yeni Şifre (Tekrar)</label>
+                <label className="block text-sm font-medium mb-2">{t("settings.confirmPassword")}</label>
                 <input
                   type="password"
                   value={pwData.confirmPassword}
@@ -4632,7 +5295,7 @@ export default function Muuvlink() {
                 disabled={pwLoading}
                 className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold disabled:opacity-70 flex items-center justify-center gap-2"
               >
-                {pwLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Güncelleniyor...</> : "Şifreyi Güncelle"}
+                {pwLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> {t("reset.updating")}</> : t("reset.btn")}
               </button>
             </form>
           )}
@@ -4648,7 +5311,7 @@ export default function Muuvlink() {
     const handleSubmit = async (e) => {
       e.preventDefault();
       if (!selectedTeam) {
-        showToast("Takım bilgisi bulunamadı.", "error");
+        showToast(t("teams.teamNotFound"), "error");
         return;
       }
       if (!email) return;
@@ -4665,17 +5328,17 @@ export default function Muuvlink() {
             <X className="w-6 h-6" />
           </button>
 
-          <h2 className="text-3xl font-medium mb-6">Takıma Davet Et</h2>
+          <h2 className="font-display font-bold mb-6" style={{fontSize:"2rem"}}>{t("teamDetail.inviteByEmail")}</h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-2">E-posta</label>
+              <label className="block text-sm font-medium mb-2">{t("auth.emailLabel")}</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-3 border rounded-xl"
-                placeholder="ornek@email.com"
+                placeholder={t("teamDetail.emailPlaceholder")}
                 required
               />
             </div>
@@ -4684,7 +5347,7 @@ export default function Muuvlink() {
               disabled={sending}
               className="w-full py-4 bg-gradient-to-r from-brand-600 to-brand-600 text-white rounded-xl font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {sending ? "Gönderiliyor…" : "Davet Gönder"}
+              {sending ? t("contact.sending") : t("teamDetail.sendInvite")}
             </button>
           </form>
         </div>
@@ -4735,7 +5398,7 @@ export default function Muuvlink() {
     );
 
     return (
-      <nav className="sticky top-0 z-50 bg-white border-b border-slate-100 shadow-sm">
+      <nav className="sticky top-0 z-50 nav-frosted shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-[68px]">
 
@@ -4749,14 +5412,28 @@ export default function Muuvlink() {
 
             {/* Orta nav — desktop */}
             <div className="hidden md:flex items-center gap-8 h-[68px]">
-              {navLink("home", "Ana Sayfa")}
-              {navLink("trainings", "Antrenmanlar")}
-              {navLink("teams", "Takımlar")}
-              {navLink("contact", "İletişim")}
+              {navLink("home",      t("nav.home"))}
+              {navLink("trainings", t("nav.trainings"))}
+              {navLink("teams",     t("nav.teams"))}
+              {navLink("contact",   t("nav.contact"))}
             </div>
 
             {/* Sağ aksiyonlar — desktop */}
             <div className="hidden md:flex items-center gap-2.5">
+
+              {/* Dil seçici */}
+              <div className="flex items-center gap-0.5 bg-slate-100 rounded-xl p-1">
+                {["tr","en","de"].map(l => (
+                  <button key={l} onClick={() => changeLang(l)}
+                    className="px-2.5 py-1 rounded-lg text-xs font-bold uppercase transition-all duration-150"
+                    style={lang === l
+                      ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff"}
+                      : {color:"#64748b"}}>
+                    {l}
+                  </button>
+                ))}
+              </div>
+
               {user ? (
                 <>
                   <button
@@ -4764,7 +5441,7 @@ export default function Muuvlink() {
                     className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium text-white transition-all hover:opacity-90 hover:shadow-lg"
                     style={{background:"linear-gradient(135deg,#00b7ba,#009295)", boxShadow:"0 4px 14px rgba(0,183,186,0.3)"}}
                   >
-                    <Plus className="w-4 h-4" /> Antrenman
+                    <Plus className="w-4 h-4" /> {t("nav.createTraining")}
                   </button>
 
                   <button
@@ -4803,14 +5480,14 @@ export default function Muuvlink() {
                     onClick={() => { setAuthMode("login"); setIsAuthModalOpen(true); }}
                     className="px-5 py-2 text-sm font-semibold text-slate-600 hover:text-brand-700 transition-colors"
                   >
-                    Giriş Yap
+                    {t("nav.login")}
                   </button>
                   <button
                     onClick={() => { setAuthMode("register"); setIsAuthModalOpen(true); }}
                     className="px-5 py-2.5 rounded-xl text-sm font-medium text-white transition-all hover:opacity-90 hover:shadow-lg"
                     style={{background:"linear-gradient(135deg,#00b7ba,#009295)", boxShadow:"0 4px 14px rgba(0,183,186,0.3)"}}
                   >
-                    Kaydol
+                    {t("nav.register")}
                   </button>
                 </>
               )}
@@ -4845,10 +5522,10 @@ export default function Muuvlink() {
         {mobileOpen && (
           <div className="md:hidden border-t border-slate-100 bg-white px-4 py-3 shadow-lg">
             <div className="flex flex-col gap-1">
-              {mobileNavLink("home",      "Ana Sayfa",    <Activity className="w-4 h-4"/>)}
-              {mobileNavLink("trainings", "Antrenmanlar", <Dumbbell className="w-4 h-4"/>)}
-              {mobileNavLink("teams",     "Takımlar",     <Users className="w-4 h-4"/>)}
-              {mobileNavLink("contact",   "İletişim",     <Mail className="w-4 h-4"/>)}
+              {mobileNavLink("home",      t("nav.home"),      <Activity className="w-4 h-4"/>)}
+              {mobileNavLink("trainings", t("nav.trainings"), <Dumbbell className="w-4 h-4"/>)}
+              {mobileNavLink("teams",     t("nav.teams"),     <Users className="w-4 h-4"/>)}
+              {mobileNavLink("contact",   t("nav.contact"),   <Mail className="w-4 h-4"/>)}
 
               <div className="my-2 border-t border-slate-100"/>
 
@@ -4859,7 +5536,7 @@ export default function Muuvlink() {
                     className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-sm font-medium text-white transition-all"
                     style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}
                   >
-                    <Plus className="w-4 h-4"/> Antrenman Oluştur
+                    <Plus className="w-4 h-4"/> {t("nav.createTrainingFull")}
                   </button>
                   <button
                     onClick={() => { setCurrentPage("profile"); setMobileOpen(false); }}
@@ -4871,31 +5548,45 @@ export default function Muuvlink() {
                         <img src={user.avatar.startsWith("http") ? user.avatar : `${BASE_URL}${user.avatar}`} alt="" className="w-full h-full object-cover" />
                       ) : (user.avatar || user.name[0].toUpperCase())}
                     </div>
-                    {user.name.split(" ")[0]} — Profil
+                    {user.name.split(" ")[0]} — {t("nav.profile")}
                   </button>
                   <button
                     onClick={() => { handleLogout(); setMobileOpen(false); }}
                     className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
                   >
-                    <LogOut className="w-4 h-4"/> Çıkış Yap
+                    <LogOut className="w-4 h-4"/> {t("nav.logout")}
                   </button>
                 </>
               ) : (
-                <div className="flex gap-2 pt-1">
-                  <button
-                    onClick={() => { setAuthMode("login"); setIsAuthModalOpen(true); setMobileOpen(false); }}
-                    className="flex-1 py-3 rounded-xl text-sm font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition-colors"
-                  >
-                    Giriş Yap
-                  </button>
-                  <button
-                    onClick={() => { setAuthMode("register"); setIsAuthModalOpen(true); setMobileOpen(false); }}
-                    className="flex-1 py-3 rounded-xl text-sm font-medium text-white transition-all"
-                    style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}
-                  >
-                    Kaydol
-                  </button>
-                </div>
+                <>
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      onClick={() => { setAuthMode("login"); setIsAuthModalOpen(true); setMobileOpen(false); }}
+                      className="flex-1 py-3 rounded-xl text-sm font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition-colors"
+                    >
+                      {t("nav.login")}
+                    </button>
+                    <button
+                      onClick={() => { setAuthMode("register"); setIsAuthModalOpen(true); setMobileOpen(false); }}
+                      className="flex-1 py-3 rounded-xl text-sm font-medium text-white transition-all"
+                      style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}
+                    >
+                      {t("nav.register")}
+                    </button>
+                  </div>
+                  {/* Mobil dil seçici */}
+                  <div className="flex items-center justify-center gap-1 mt-2 pt-3 border-t border-slate-100">
+                    {["tr","en","de"].map(l => (
+                      <button key={l} onClick={() => { changeLang(l); setMobileOpen(false); }}
+                        className="px-3 py-1.5 rounded-xl text-xs font-bold uppercase transition-all"
+                        style={lang === l
+                          ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff"}
+                          : {color:"#94a3b8", background:"#f8fafc"}}>
+                        {l}
+                      </button>
+                    ))}
+                  </div>
+                </>
               )}
             </div>
           </div>
@@ -4912,22 +5603,12 @@ export default function Muuvlink() {
     const [sending, setSending] = React.useState(false);
     const [openFaq, setOpenFaq] = React.useState(null);
 
-    const faqs = [
-      { q: "Muuvlink'e nasıl üye olurum?", a: "Sağ üst köşedeki 'Kaydol' butonuna tıklayarak adınızı, e-posta adresinizi ve şifrenizi girerek ücretsiz üye olabilirsiniz." },
-      { q: "Takım nasıl kurarım?", a: "'Takımlar' sayfasına gidin ve '+ Takım Oluştur' butonuna tıklayın. Takım adı, spor branşı ve gizlilik ayarını belirleyerek dakikalar içinde takımınızı oluşturabilirsiniz." },
-      { q: "Antrenman nasıl oluştururum?", a: "Bir takıma sahip veya antrenör olarak kayıtlı olmanız gerekiyor. Ardından 'Antrenman Oluştur' butonuna tıklayıp tarih, saat, konum ve kapasite bilgilerini doldurarak antrenmanınızı yayınlayabilirsiniz. Takım üyelerine otomatik olarak bildirim ve e-posta gönderilir." },
-      { q: "Gizli takım nedir?", a: "Gizli takımlar listede görünmez, sadece davet edilen üyeler katılabilir. Gizli takımların antrenmanları da otomatik olarak yalnızca üyelere özel olur." },
-      { q: "Takıma nasıl üye eklerim?", a: "Takım detay sayfasında 'Üyeler' sekmesine gidin ve 'Davet Et' butonuyla e-posta adresi aracılığıyla üye ekleyebilirsiniz. Muuvlink üyesiyse davet bildirimi, değilse kayıt daveti e-postası gönderilir." },
-      { q: "Antrenman bildirimleri nasıl çalışır?", a: "Takımınızda yeni bir antrenman oluşturulduğunda hem uygulama içi bildirim hem de e-posta alırsınız. Ayrıca antrenmanınızdan 3 gün ve 1 gün önce otomatik hatırlatma bildirimi gelir." },
-      { q: "Antrenman kartındaki km bilgisi nasıl hesaplanır?", a: "Tarayıcınızın konum iznine göre bulunduğunuz yere olan mesafe hesaplanır. Konum iznini tarayıcı adres çubuğundaki kilit ikonundan verebilirsiniz." },
-      { q: "Üyelik ücretli mi?", a: "Şu an için Muuvlink tamamen ücretsizdir. Temel tüm özellikler herkes için açıktır. İleride ek özellikler sunan premium bir plan gelebilir, ancak mevcut özellikler ücretsiz kalmaya devam edecektir." },
-      { q: "Şifremi unuttum, ne yapmalıyım?", a: "Giriş ekranındaki 'Şifremi Unuttum' bağlantısına tıklayın. E-posta adresinize şifre sıfırlama linki gönderilecektir." },
-    ];
+    const faqs = [1,2,3,4,5,6,7,8,9,10].map(n => ({ q: t(`faq.q${n}`), a: t(`faq.a${n}`) }));
 
     const handleContactSubmit = async (e) => {
       e.preventDefault();
       if (!contactForm.name || !contactForm.email || !contactForm.subject || !contactForm.message) {
-        showToast("Lütfen tüm alanları doldurun.", "error"); return;
+        showToast(t("contact.fillAll"), "error"); return;
       }
       setSending(true);
       try {
@@ -4938,23 +5619,23 @@ export default function Muuvlink() {
         });
         const data = await res.json();
         if (res.ok) {
-          showToast("Mesajınız gönderildi! En kısa sürede dönüş yapacağız. 📬", "success");
+          showToast(t("contact.sentSuccess"), "success");
           setContactForm({ name: user?.name || "", email: user?.email || "", subject: "", message: "" });
         } else {
-          showToast(data.error || "Bir hata oluştu.", "error");
+          showToast(data.error || t("common.error"), "error");
         }
       } catch {
-        showToast("Bağlantı hatası.", "error");
+        showToast(t("toast.networkError"), "error");
       } finally {
         setSending(false);
       }
     };
 
-    const inputCls = "w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand-300 focus:bg-white transition";
+    const inputCls = "w-full h-12 border border-slate-200 rounded-xl px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition placeholder:text-slate-400";
 
     return (
       <div className="min-h-screen bg-slate-50">
-        {/* ── Dark header ── */}
+        {/* ── Header ── */}
         <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#e5f9f9 0%,#e5f9f9 60%,#cbf3f3 100%)"}}>
           <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
             style={{backgroundImage:"linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px)", backgroundSize:"50px 50px"}}/>
@@ -4965,57 +5646,58 @@ export default function Muuvlink() {
               style={{background:"rgba(0,183,186,0.15)", border:"1px solid rgba(0,183,186,0.3)"}}>
               <MessageCircle className="w-8 h-8" style={{color:"#00b7ba"}}/>
             </div>
-            <span className="text-xs font-semibold tracking-[0.35em] text-brand-400 uppercase block mb-3">Destek</span>
-            <h1 className="text-5xl md:text-6xl font-semibold text-brand-900 tracking-tighter leading-none mb-4">İletişim</h1>
-            <p className="text-slate-400 text-base max-w-md mx-auto">Sorularınız için buradayız. En kısa sürede dönüş yaparız.</p>
+            <span className="section-label block mb-3">{t("contact.support")}</span>
+            <h1 className="font-display font-bold text-brand-900 leading-none mb-4" style={{fontSize:"clamp(3.5rem,8vw,5.5rem)", letterSpacing:"-0.02em"}}>{t("contact.pageTitle")}</h1>
+            <p className="text-slate-500 text-base max-w-md mx-auto">{t("contact.pageSubtitle")}</p>
           </div>
         </div>
 
         <div className="max-w-6xl mx-auto px-4 sm:px-8 py-12">
           <div className="grid md:grid-cols-3 gap-8">
 
-            {/* Sol: İletişim + Sosyal */}
+            {/* Sol: Instagram */}
             <div className="space-y-5">
+              {/* Instagram kartı */}
               <div className="bg-white rounded-2xl p-6 border border-slate-100">
-                <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase mb-4">İletişim</div>
-                <div className="space-y-4">
-                  {[
-                    {icon:<Mail className="w-4 h-4" style={{color:"#00b7ba"}}/>, label:"E-posta", value:"info@sporlaconnect.com", href:"mailto:info@sporlaconnect.com"},
-                    {icon:<MapPin className="w-4 h-4" style={{color:"#009295"}}/>, label:"Konum", value:"İzmir, Türkiye", href:null},
-                    {icon:<Clock className="w-4 h-4" style={{color:"#981dd8"}}/>, label:"Yanıt Süresi", value:"24 saat içinde", href:null},
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{background:"#f8fafc", border:"1px solid #f1f5f9"}}>
-                        {item.icon}
-                      </div>
-                      <div>
-                        <div className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">{item.label}</div>
-                        {item.href
-                          ? <a href={item.href} className="text-sm font-semibold text-slate-700 hover:text-brand-600 transition-colors">{item.value}</a>
-                          : <div className="text-sm font-semibold text-slate-700">{item.value}</div>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <div className="section-label mb-5">{t("contact.social")}</div>
+                <a
+                  href="https://www.instagram.com/muuvlinkapp"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-4 p-4 rounded-2xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] group"
+                  style={{background:"linear-gradient(135deg,#fdf2f8,#fce7f3)", border:"1px solid #fbcfe8"}}
+                >
+                  {/* Instagram gradient icon */}
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{background:"linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)"}}>
+                    <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="font-display font-bold text-slate-900 text-base leading-tight">Instagram</div>
+                    <div className="text-sm text-pink-600 font-medium mt-0.5">@muuvlinkapp</div>
+                  </div>
+                  <ExternalLink className="w-4 h-4 text-pink-400 ml-auto opacity-0 group-hover:opacity-100 transition-opacity"/>
+                </a>
+                <p className="text-xs text-slate-400 mt-4 leading-relaxed text-center">
+                  {t("contact.followUs")}
+                </p>
               </div>
 
-              <div className="bg-white rounded-2xl p-6 border border-slate-100">
-                <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase mb-4">Sosyal Medya</div>
-                <div className="space-y-2">
-                  {[
-                    {label:"Instagram", handle:"@muuvlinkapp", bg:"#fdf2f8", color:"#db2777"},
-                    {label:"X (Twitter)", handle:"@muuvlinkapp", bg:"#f8fafc", color:"#0f172a"},
-                    {label:"LinkedIn", handle:"Muuvlink", bg:"#eff6ff", color:"#1d4ed8"},
-                  ].map((s) => (
-                    <div key={s.label} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-semibold flex-shrink-0"
-                        style={{background:s.bg, color:s.color}}>{s.label[0]}</div>
-                      <div>
-                        <div className="text-sm font-medium text-slate-800">{s.label}</div>
-                        <div className="text-xs text-slate-400">{s.handle}</div>
-                      </div>
-                    </div>
-                  ))}
+              {/* Bilgi notu */}
+              <div className="rounded-2xl p-5 border border-brand-100" style={{background:"linear-gradient(135deg,#e5f9f9,#f0fdfd)"}}>
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
+                    style={{background:"rgba(0,183,186,0.15)"}}>
+                    <MessageCircle className="w-4 h-4" style={{color:"#00b7ba"}}/>
+                  </div>
+                  <div>
+                    <div className="font-display font-bold text-brand-900 text-sm mb-1">{t("contact.quickReply")}</div>
+                    <p className="text-xs text-brand-700 leading-relaxed">
+                      {t("contact.quickReplyDesc")}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -5024,60 +5706,92 @@ export default function Muuvlink() {
             <div className="md:col-span-2 space-y-6">
               {/* Form */}
               <div className="bg-white rounded-2xl p-8 border border-slate-100">
-                <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase mb-6">Mesaj Gönderin</div>
+                <div className="section-label mb-2">{t("contact.formTitle")}</div>
+                <p className="text-slate-400 text-sm mb-6">{t("contact.formSubtitle")}</p>
                 <form onSubmit={handleContactSubmit} className="space-y-4">
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5 block">Adınız</label>
-                      <input value={contactForm.name} onChange={e => setContactForm(p => ({...p, name: e.target.value}))}
-                        placeholder="Adınız Soyadınız" className={inputCls}/>
+                      <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 block">{t("contact.nameLabel")}</label>
+                      <input
+                        value={contactForm.name}
+                        onChange={e => setContactForm(p => ({...p, name: e.target.value}))}
+                        placeholder={t("contact.namePlaceholder")}
+                        className={inputCls}
+                      />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5 block">E-posta</label>
-                      <input type="email" value={contactForm.email} onChange={e => setContactForm(p => ({...p, email: e.target.value}))}
-                        placeholder="ornek@mail.com" className={inputCls}/>
+                      <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 block">{t("contact.emailLabel")}</label>
+                      <input
+                        type="email"
+                        value={contactForm.email}
+                        onChange={e => setContactForm(p => ({...p, email: e.target.value}))}
+                        placeholder="ornek@mail.com"
+                        className={inputCls}
+                      />
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5 block">Konu</label>
-                    <select value={contactForm.subject} onChange={e => setContactForm(p => ({...p, subject: e.target.value}))} className={inputCls}>
-                      <option value="">Konu seçin…</option>
-                      <option>Üyelik & Hesap</option>
-                      <option>Takım Kurma</option>
-                      <option>Antrenman Soruları</option>
-                      <option>Teknik Sorun</option>
-                      <option>İş Birliği & Sponsorluk</option>
-                      <option>Öneri & Geri Bildirim</option>
-                      <option>Diğer</option>
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 block">{t("contact.subjectLabel")}</label>
+                    <select
+                      value={contactForm.subject}
+                      onChange={e => setContactForm(p => ({...p, subject: e.target.value}))}
+                      className={inputCls}
+                    >
+                      <option value="">{t("contact.subjectSelect")}</option>
+                      <option value="Üyelik & Hesap">{t("contact.subjects.account")}</option>
+                      <option value="Takım Kurma">{t("contact.subjects.team")}</option>
+                      <option value="Antrenman Soruları">{t("contact.subjects.training")}</option>
+                      <option value="Teknik Sorun">{t("contact.subjects.technical")}</option>
+                      <option value="İş Birliği & Sponsorluk">{t("contact.subjects.collab")}</option>
+                      <option value="Öneri & Geri Bildirim">{t("contact.subjects.feedback")}</option>
+                      <option value="Diğer">{t("contact.subjects.other")}</option>
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5 block">Mesajınız</label>
-                    <textarea value={contactForm.message} onChange={e => setContactForm(p => ({...p, message: e.target.value}))}
-                      rows={5} placeholder="Mesajınızı buraya yazın…" className={`${inputCls} resize-none`}/>
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 block">{t("contact.messageLabel")}</label>
+                    <textarea
+                      value={contactForm.message}
+                      onChange={e => setContactForm(p => ({...p, message: e.target.value}))}
+                      rows={5}
+                      placeholder={t("contact.messagePlaceholder")}
+                      className={`${inputCls} !h-auto resize-none`}
+                    />
                   </div>
-                  <button type="submit" disabled={sending}
-                    className="w-full py-3.5 rounded-xl font-medium text-white text-sm transition-all hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-2"
-                    style={{background:"linear-gradient(135deg,#00b7ba,#009295)", boxShadow:"0 8px 24px rgba(0,183,186,0.3)"}}>
-                    {sending ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/> Gönderiliyor…</> : <><Send className="w-4 h-4"/> Mesaj Gönder</>}
+                  <button
+                    type="submit"
+                    disabled={sending}
+                    className="btn-primary w-full py-3.5 text-base font-semibold"
+                  >
+                    {sending
+                      ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/> {t("contact.sending")}</>
+                      : <><Send className="w-4 h-4"/> {t("contact.sendBtn")}</>
+                    }
                   </button>
                 </form>
               </div>
 
               {/* SSS */}
               <div className="bg-white rounded-2xl p-8 border border-slate-100">
-                <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase mb-6">Sık Sorulan Sorular</div>
+                <div className="section-label mb-2">{t("contact.faqTitle")}</div>
+                <p className="text-slate-400 text-sm mb-6">{t("contact.faqSubtitle")}</p>
                 <div className="space-y-2">
                   {faqs.map((faq, i) => (
-                    <div key={i} className="border border-slate-100 rounded-xl overflow-hidden">
-                      <button onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                        className="w-full flex items-center justify-between px-5 py-3.5 text-left hover:bg-slate-50 transition-colors">
+                    <div key={i} className="border border-slate-100 rounded-xl overflow-hidden transition-all duration-200"
+                      style={openFaq === i ? {borderColor:"#cbf3f3", boxShadow:"0 0 0 3px rgba(0,183,186,0.07)"} : {}}>
+                      <button
+                        onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                        className="w-full flex items-center justify-between px-5 py-4 text-left transition-colors"
+                        style={openFaq === i ? {background:"#f0fdfd"} : {}}
+                        onMouseEnter={e => { if (openFaq !== i) e.currentTarget.style.background = "#f8fafc"; }}
+                        onMouseLeave={e => { if (openFaq !== i) e.currentTarget.style.background = ""; }}
+                      >
                         <span className="font-semibold text-slate-800 text-sm pr-4">{faq.q}</span>
-                        <ChevronDown className={`w-4 h-4 flex-shrink-0 text-brand-500 transition-transform duration-200 ${openFaq === i ? "rotate-180" : ""}`}/>
+                        <ChevronDown className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 ${openFaq === i ? "rotate-180" : "text-slate-400"}`}
+                          style={openFaq === i ? {color:"#00b7ba"} : {}}/>
                       </button>
                       {openFaq === i && (
-                        <div className="px-5 pb-4 border-t border-slate-50">
-                          <p className="text-slate-500 text-sm leading-relaxed pt-3">{faq.a}</p>
+                        <div className="px-5 pb-5 border-t border-brand-100">
+                          <p className="text-slate-500 text-sm leading-relaxed pt-4">{faq.a}</p>
                         </div>
                       )}
                     </div>
@@ -5097,111 +5811,132 @@ export default function Muuvlink() {
   // =====================================================
   const legalContent = {
     kvkk: {
-      title: "KVKK Aydınlatma Metni",
+      title: t("footer.kvkk"),
       body: `
 <h3>Kişisel Verilerin İşlenmesi Hakkında Aydınlatma Metni</h3>
-<p>SALT KREATİF REKLAM TİC. LTD. ŞTİ. ("Şirket") olarak, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") kapsamında veri sorumlusu sıfatıyla kişisel verilerinizi aşağıda açıklanan amaçlar doğrultusunda işlemekteyiz.</p>
+<p>SALT KREATİF REKLAM TİC. LTD. ŞTİ. ("Şirket") olarak, Muuvlink platformu aracılığıyla 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") kapsamında veri sorumlusu sıfatıyla kişisel verilerinizi aşağıda açıklanan amaçlar doğrultusunda işlemekteyiz.</p>
 
 <h4>1. Veri Sorumlusu</h4>
 <p>SALT KREATİF REKLAM TİC. LTD. ŞTİ.<br/>
 Çınarlı Mahallesi 1572 Sokak No:33 PK.35170 Konak, İzmir<br/>
 Vergi Dairesi: Karşıyaka V.D. | VN: 7420957827<br/>
-E-posta: <a href="mailto:info@sporlaconnect.com">info@sporlaconnect.com</a></p>
+İletişim: Uygulama içi iletişim formu aracılığıyla ulaşabilirsiniz.</p>
 
 <h4>2. İşlenen Kişisel Veriler</h4>
-<p>Ad, soyad, e-posta adresi, telefon numarası, profil fotoğrafı, konum bilgisi, uygulama kullanım verileri.</p>
+<p>Ad, soyad, e-posta adresi, profil fotoğrafı, konum bilgisi (yalnızca kullanıcı izni ile), antrenman ve takım verileri, uygulama kullanım geçmişi.</p>
 
 <h4>3. İşleme Amaçları</h4>
-<p>Üyelik ve kimlik doğrulama işlemleri, platform hizmetlerinin sunulması, antrenman ve takım özelliklerinin sağlanması, bildirim ve e-posta gönderimi, yasal yükümlülüklerin yerine getirilmesi.</p>
+<p>Üyelik oluşturma ve kimlik doğrulama; platform hizmetlerinin (antrenman oluşturma, takım yönetimi, spor arkadaşı eşleştirme) sunulması; bildirim ve e-posta gönderimi; platform güvenliğinin sağlanması; yasal yükümlülüklerin yerine getirilmesi.</p>
 
 <h4>4. Hukuki Dayanak</h4>
-<p>KVKK Madde 5/1 kapsamında açık rıza, Madde 5/2-c kapsamında sözleşmenin ifası, Madde 5/2-ç kapsamında hukuki yükümlülük.</p>
+<p>KVKK Madde 5/2-c uyarınca sözleşmenin ifası; Madde 5/2-ç uyarınca hukuki yükümlülük; Madde 5/2-f uyarınca meşru menfaat; gerektiğinde Madde 5/1 uyarınca açık rıza.</p>
 
 <h4>5. Veri Aktarımı</h4>
-<p>Kişisel verileriniz; altyapı hizmet sağlayıcıları (Supabase, Render), e-posta hizmet sağlayıcıları ve yasal zorunluluk halinde kamu kurumlarıyla paylaşılabilir.</p>
+<p>Kişisel verileriniz; yalnızca hizmet sunumu için zorunlu olan altyapı ve e-posta hizmet sağlayıcılarıyla ve yasal zorunluluk halinde yetkili kamu kurumlarıyla paylaşılabilir. Bu sağlayıcılar, gizlilik yükümlülükleriyle bağlıdır ve verilerinizi kendi amaçları için kullanamazlar.</p>
 
 <h4>6. Saklama Süresi</h4>
-<p>Kişisel verileriniz, üyelik süresince ve üyeliğin sona ermesinden itibaren yasal süreler boyunca saklanır.</p>
+<p>Kişisel verileriniz, hesabınız aktif olduğu sürece ve hesabın silinmesinden itibaren ilgili mevzuatta öngörülen süreler boyunca saklanır. Hesabınızı silmeniz halinde verileriniz 30 gün içinde anonimleştirilir veya kalıcı olarak silinir.</p>
 
-<h4>7. Haklarınız</h4>
-<p>KVKK Madde 11 kapsamında; verilerinize erişim, düzeltme, silme, işlemenin kısıtlanması, itiraz ve taşınabilirlik haklarına sahipsiniz. Talepleriniz için: <a href="mailto:info@sporlaconnect.com">info@sporlaconnect.com</a></p>
+<h4>7. Haklarınız (KVKK Madde 11)</h4>
+<p>Veri sorumlusuna başvurarak kişisel verilerinize erişme, düzeltme, silme veya yok etme talep etme, işlemenin kısıtlanmasını isteme, veri taşınabilirliği talep etme ve otomatik işleme dayalı kararlara itiraz etme haklarına sahipsiniz. Talepleriniz için uygulama içi iletişim formumuzu kullanabilirsiniz.</p>
       `
     },
     gizlilik: {
-      title: "Gizlilik Politikası",
+      title: t("footer.privacy"),
       body: `
 <h3>Gizlilik Politikası</h3>
-<p>Son güncelleme: Mayıs 2025</p>
+<p>Son güncelleme: Haziran 2025</p>
+<p>SALT KREATİF REKLAM TİC. LTD. ŞTİ. olarak, Muuvlink platformu üzerinden kullanıcı gizliliğini en temel önceliklerimizden biri olarak kabul ediyoruz. Bu politika, hangi verileri topladığımızı, nasıl kullandığımızı ve nasıl koruduğumuzu açıklamaktadır.</p>
 
-<h4>1. Toplanan Bilgiler</h4>
-<p>Muuvlink olarak; kayıt sırasında sağladığınız bilgiler (ad, e-posta), platform kullanımı sırasında oluşan veriler (antrenmanlar, takımlar, konum) ve çerezler aracılığıyla teknik veriler toplarız.</p>
+<h4>1. Topladığımız Bilgiler</h4>
+<p><strong>Doğrudan sağladığınız bilgiler:</strong> Kayıt sırasında girdiğiniz ad, e-posta adresi ve şifre; profil sayfasında eklediğiniz fotoğraf ve biyografi.<br/>
+<strong>Platform kullanım verileri:</strong> Oluşturduğunuz veya katıldığınız antrenmanlar, takım üyelikleri, rozet bilgileri.<br/>
+<strong>Konum verisi:</strong> Yalnızca tarayıcı izni verdiğinizde ve yalnızca yakın antrenmanları listelemek için kullanılır. Sunucularımızda kalıcı olarak saklanmaz.<br/>
+<strong>Teknik veriler:</strong> Çerezler ve oturum bilgileri (detaylar için Çerez Politikamıza bakınız).</p>
 
-<h4>2. Bilgilerin Kullanımı</h4>
-<p>Toplanan veriler; hesabınızı yönetmek, size özel içerik sunmak, platform güvenliğini sağlamak ve yasal yükümlülükleri yerine getirmek amacıyla kullanılır.</p>
+<h4>2. Verilerin Kullanımı</h4>
+<p>Toplanan veriler; hesabınızı ve oturumunuzu yönetmek, spor arkadaşı eşleştirme ve antrenman önerilerini kişiselleştirmek, platform güvenliğini korumak, bildirim ve hatırlatıcı e-postalar göndermek ve yasal yükümlülükleri yerine getirmek amacıyla kullanılır. Verileriniz reklam amacıyla üçüncü taraflarla paylaşılmaz.</p>
 
 <h4>3. Veri Güvenliği</h4>
-<p>Verileriniz endüstri standardı şifreleme yöntemleriyle korunmaktadır. Şifreler hash'lenerek saklanır, hiçbir zaman düz metin olarak tutulmaz.</p>
+<p>Verileriniz endüstri standardı şifreleme (HTTPS/TLS) ile iletilmekte; şifreleriniz bcrypt algoritmasıyla hash'lenerek saklanmakta, hiçbir zaman düz metin olarak tutulmamaktadır. Sunucu altyapımız düzenli güvenlik güncellemeleri almaktadır.</p>
 
-<h4>4. Üçüncü Taraflar</h4>
-<p>Verileriniz, hizmet sunumu için gerekli olan üçüncü taraf sağlayıcılarla (altyapı, e-posta) paylaşılabilir. Bu sağlayıcılar gizlilik yükümlülükleriyle bağlıdır.</p>
+<h4>4. Üçüncü Taraf Hizmetler</h4>
+<p>Platform; altyapı (sunucu barındırma) ve e-posta bildirimleri için güvenilir üçüncü taraf sağlayıcılar kullanmaktadır. Bu sağlayıcılara yalnızca hizmet sunumu için gereken minimum veri aktarılır ve sağlayıcılar verilerinizi kendi amaçları için kullanamaz.</p>
 
-<h4>5. Çerezler</h4>
-<p>Platform deneyiminizi iyileştirmek için çerez kullanılmaktadır. Detaylar için Çerez Politikamızı inceleyiniz.</p>
+<h4>5. Haklarınız</h4>
+<p>Verilerinize erişim, düzeltme veya silinmesini talep etme hakkına sahipsiniz. Hesap silme işlemi; profil sayfası → Ayarlar üzerinden yapılabilir. Ek talepler için uygulama içi iletişim formumuzu kullanabilirsiniz.</p>
 
-<h4>6. İletişim</h4>
-<p>Gizlilik konularında: <a href="mailto:info@sporlaconnect.com">info@sporlaconnect.com</a></p>
+<h4>6. Politika Güncellemeleri</h4>
+<p>Bu politika güncellenebildiğinde kullanıcılara bildirim gönderilir. Güncel politikaya her zaman bu sayfa üzerinden ulaşabilirsiniz.</p>
       `
     },
     kullanim: {
-      title: "Kullanım Koşulları",
+      title: t("footer.terms"),
       body: `
 <h3>Kullanım Koşulları</h3>
-<p>Son güncelleme: Mayıs 2025</p>
+<p>Son güncelleme: Haziran 2025</p>
+<p>Muuvlink platformunu kullanarak aşağıdaki koşulları okuduğunuzu, anladığınızı ve kabul ettiğinizi beyan etmiş olursunuz. Bu koşullar, SALT KREATİF REKLAM TİC. LTD. ŞTİ. ile kullanıcı arasındaki hukuki ilişkiyi düzenler.</p>
 
-<h4>1. Kabul</h4>
-<p>Muuvlink platformunu kullanarak bu koşulları kabul etmiş sayılırsınız. Koşulları kabul etmiyorsanız platformu kullanmayınız.</p>
+<h4>1. Hizmet Tanımı</h4>
+<p>Muuvlink; spor yapan bireylerin bir araya gelerek takım kurmasına, antrenman planlamasına ve spor arkadaşları bulmasına olanak tanıyan bir platformdur. Platform, web tarayıcısı üzerinden erişilebilen bir web uygulaması olarak sunulmaktadır.</p>
 
-<h4>2. Üyelik</h4>
-<p>Platform hizmetlerinden yararlanmak için 18 yaşını doldurmuş olmanız ve doğru bilgilerle kayıt olmanız gerekmektedir. Hesap güvenliğinden siz sorumlusunuz.</p>
+<h4>2. Üyelik Koşulları</h4>
+<p>Platforma kayıt olmak için 18 yaşını doldurmuş olmanız ve geçerli bir e-posta adresi ile doğru kimlik bilgileri sağlamanız gerekmektedir. Bir kişi yalnızca bir hesap açabilir. Hesap güvenliğinizden (şifre, oturum) tamamen siz sorumlusunuz.</p>
 
-<h4>3. Kullanım Kuralları</h4>
-<p>Platformda; yanıltıcı, hakaret içeren veya yasadışı içerik paylaşmak, başkalarını taciz etmek, platformun güvenliğini tehdit etmek yasaktır.</p>
+<h4>3. Kabul Edilemez Kullanım</h4>
+<p>Aşağıdaki davranışlar kesinlikle yasaktır:<br/>
+— Yanıltıcı, hakaret içeren, ırkçı veya yasadışı içerik paylaşmak<br/>
+— Diğer kullanıcıları taciz etmek, tehdit etmek veya kişisel verilerini izinsiz paylaşmak<br/>
+— Platform altyapısını bozmaya yönelik girişimlerde bulunmak (bot, spam, DDoS vb.)<br/>
+— Başka bir kullanıcının kimliğine bürünmek<br/>
+— Ticari reklam veya spam içerik yaymak</p>
 
-<h4>4. İçerik</h4>
-<p>Paylaştığınız içeriklerin sorumluluğu size aittir. Şirket, uygunsuz içerikleri kaldırma ve hesabı askıya alma hakkını saklı tutar.</p>
+<h4>4. İçerik Sorumluluğu</h4>
+<p>Platforma yüklediğiniz veya paylaştığınız tüm içeriklerin (profil fotoğrafı, antrenman açıklaması, yorumlar) hukuki sorumluluğu size aittir. Muuvlink, platformun güvenliğini ve kullanıcılarının haklarını korumak amacıyla uygunsuz içerikleri önceden bildirim yapmaksızın kaldırma ve ilgili hesabı askıya alma ya da kalıcı olarak kapatma hakkını saklı tutar.</p>
 
-<h4>5. Hizmet Değişiklikleri</h4>
-<p>Şirket, platformu önceden haber vermeksizin değiştirme, güncelleme veya durdurma hakkını saklı tutar.</p>
+<h4>5. Fikri Mülkiyet</h4>
+<p>Muuvlink markası, logosu, tasarımı ve yazılımı telif hakkı ve fikri mülkiyet mevzuatı kapsamında koruma altındadır. Platforma ait materyaller izinsiz kopyalanamaz, dağıtılamaz veya ticari amaçla kullanılamaz.</p>
 
-<h4>6. Sorumluluk Sınırlaması</h4>
-<p>Platform "olduğu gibi" sunulmaktadır. Şirket, platformun kesintisiz çalışacağını garanti etmez.</p>
+<h4>6. Hizmet Değişiklikleri ve Kesintiler</h4>
+<p>Muuvlink; platformu geliştirmek, güncellemek veya gerektiğinde hizmeti geçici ya da kalıcı olarak durdurmak hakkını saklı tutar. Önemli değişiklikler öncesinde kayıtlı kullanıcılara bildirim yapılmaya çalışılır; ancak teknik zorunluluk halinde bu mümkün olmayabilir.</p>
 
-<h4>7. Uygulanacak Hukuk</h4>
-<p>Bu koşullar Türkiye Cumhuriyeti hukukuna tabidir. Uyuşmazlıklarda İzmir mahkemeleri yetkilidir.</p>
+<h4>7. Sorumluluk Sınırlaması</h4>
+<p>Platform "olduğu gibi" sunulmaktadır. Muuvlink; hizmetin kesintisiz veya hatasız çalışacağını garanti etmez. Platform üzerinde organize edilen fiziksel aktivitelerden (antrenman, spor etkinliği) doğabilecek yaralanma veya maddi zararlardan Muuvlink sorumlu tutulamaz.</p>
 
-<h4>8. İletişim</h4>
-<p><a href="mailto:info@sporlaconnect.com">info@sporlaconnect.com</a></p>
+<h4>8. Uygulanacak Hukuk ve Yetki</h4>
+<p>Bu koşullar Türkiye Cumhuriyeti hukukuna tabidir. Taraflar arasında doğabilecek uyuşmazlıklarda İzmir mahkemeleri ve icra daireleri yetkilidir.</p>
+
+<h4>9. İletişim</h4>
+<p>Kullanım koşullarına ilişkin sorularınız için uygulama içi iletişim formumuzu kullanabilirsiniz.</p>
       `
     },
     cerez: {
-      title: "Çerez Politikası",
+      title: t("footer.cookies"),
       body: `
 <h3>Çerez Politikası</h3>
-<p>Son güncelleme: Mayıs 2025</p>
+<p>Son güncelleme: Haziran 2025</p>
+<p>Bu politika, SALT KREATİF REKLAM TİC. LTD. ŞTİ. tarafından işletilen Muuvlink platformunun çerezleri nasıl kullandığını ve bu konuda tercihlerinizi nasıl yönetebileceğinizi açıklamaktadır.</p>
 
 <h4>Çerez Nedir?</h4>
-<p>Çerezler, tarayıcınız aracılığıyla cihazınıza kaydedilen küçük metin dosyalarıdır. Web sitelerinin sizi tanımasını ve tercihlerinizi hatırlamasını sağlar.</p>
+<p>Çerezler, bir web sitesini ziyaret ettiğinizde tarayıcınız aracılığıyla cihazınıza kaydedilen küçük metin dosyalarıdır. Oturum bilgilerinizi hatırlamak, tercihlerinizi kaydetmek ve platform deneyiminizi iyileştirmek amacıyla kullanılırlar.</p>
 
-<h4>Kullandığımız Çerezler</h4>
-<p><strong>Zorunlu Çerezler:</strong> Platformun temel işlevleri için gereklidir. Oturum yönetimi, güvenlik. Devre dışı bırakılamaz.</p>
-<p><strong>İşlevsel Çerezler:</strong> Dil, tercih gibi ayarlarınızı hatırlamak için kullanılır.</p>
-<p><strong>Analitik Çerezler:</strong> Platform kullanımını anlamamıza yardımcı olur. Veriler anonim olarak işlenir.</p>
+<h4>Kullandığımız Çerez Türleri</h4>
+<p><strong>Zorunlu Çerezler</strong><br/>
+Platformun temel işlevleri için gereklidir: kullanıcı oturumu, güvenlik doğrulaması ve çerez tercih kaydı. Bu çerezler devre dışı bırakılamaz; devre dışı bırakılması durumunda platform düzgün çalışmayabilir.</p>
+<p><strong>İşlevsel Çerezler</strong><br/>
+Dil, tema veya son görüntülediğiniz sayfa gibi tercihlerinizi hatırlamak için kullanılır. Oturum kapandığında veya belirli bir süre sonra sona erer.</p>
+<p><strong>Analitik Çerezler</strong><br/>
+Platform kullanımını ve performansını anlamamıza yardımcı olur. Toplanan veriler anonim olarak işlenir; bireysel kimliğinizle ilişkilendirilmez. Bu çerezler reddedilebilir.</p>
+
+<h4>Çerez Süresi</h4>
+<p><strong>Oturum çerezleri:</strong> Tarayıcıyı kapattığınızda otomatik olarak silinir.<br/>
+<strong>Kalıcı çerezler:</strong> Belirlenen süre (genellikle 30 gün) sonunda sona erer.</p>
 
 <h4>Çerez Yönetimi</h4>
-<p>Tarayıcı ayarlarınızdan çerezleri yönetebilir veya silebilirsiniz. Zorunlu çerezlerin devre dışı bırakılması platform işlevselliğini olumsuz etkileyebilir.</p>
+<p>Çerez tercihlerinizi tarayıcınızın ayarlar menüsünden yönetebilir, tüm çerezleri silebilir veya belirli çerezleri engelleyebilirsiniz. Bununla birlikte, zorunlu çerezlerin engellenmesi oturum açma ve temel platform işlevlerini olumsuz etkileyebilir.</p>
 
-<h4>Onayınız</h4>
-<p>Platformu kullanmaya devam ederek çerez kullanımını kabul etmiş sayılırsınız. Onayınızı geri almak için: <a href="mailto:info@sporlaconnect.com">info@sporlaconnect.com</a></p>
+<h4>Rızanız</h4>
+<p>Platformu ilk ziyaretinizde gösterilen çerez bildirimine "Kabul Et" diyerek çerez kullanımını onaylarsınız. Zorunlu çerezler rıza olmaksızın da kullanılabilir; diğer çerezler için onayınız gereklidir. Onayınızı geri almak için tarayıcı ayarlarından çerezleri temizleyebilirsiniz.</p>
       `
     }
   };
@@ -5237,10 +5972,10 @@ E-posta: <a href="mailto:info@sporlaconnect.com">info@sporlaconnect.com</a></p>
       <div className="fixed bottom-0 left-0 right-0 z-[250] bg-slate-900/95 backdrop-blur-sm border-t border-slate-700 px-4 py-4 shadow-2xl">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <div className="flex-1 text-sm text-slate-300 leading-relaxed">
-            <span className="font-semibold text-white">🍪 Çerez Bildirimi</span>
-            {" "}Platform deneyiminizi geliştirmek için çerezler kullanıyoruz.{" "}
+            <span className="font-semibold text-white">{t("cookie.title")}</span>
+            {" "}{t("cookie.text")}{" "}
             <button onClick={() => setLegalModal("cerez")} className="text-brand-400 hover:text-brand-300 underline underline-offset-2 transition-colors">
-              Çerez Politikası
+              {t("cookie.policy")}
             </button>
           </div>
           <div className="flex items-center gap-3 flex-shrink-0">
@@ -5248,14 +5983,14 @@ E-posta: <a href="mailto:info@sporlaconnect.com">info@sporlaconnect.com</a></p>
               onClick={() => setLegalModal("cerez")}
               className="px-4 py-2 rounded-xl text-sm font-medium text-slate-300 hover:text-white border border-slate-600 hover:border-slate-400 transition-colors"
             >
-              Detaylar
+              {t("cookie.details")}
             </button>
             <button
               onClick={() => { setCookieConsent(true); localStorage.setItem("cookieConsent", "true"); }}
               className="px-5 py-2 rounded-xl text-sm font-medium text-white transition-all hover:opacity-90"
               style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}
             >
-              Kabul Et
+              {t("cookie.accept")}
             </button>
           </div>
         </div>
@@ -5286,54 +6021,42 @@ E-posta: <a href="mailto:info@sporlaconnect.com">info@sporlaconnect.com</a></p>
                 <img src="/icons/favicon.png" alt="" className="h-8 w-auto flex-shrink-0" />
                 <img src="/icons/logo-yatay.svg" alt="Muuvlink" className="h-5 w-auto" style={{filter:"brightness(0) invert(1)"}} />
               </button>
-              <p className="text-slate-400 text-sm leading-relaxed mb-5">
-                Spor topluluğunu bir araya getiren platform. Takımlar kur, antrenmanlar planla, spor arkadaşları bul.
+              <p className="text-slate-400 text-sm leading-relaxed">
+                {t("footer.tagline")}
               </p>
-              <div className="text-xs text-slate-500 space-y-1">
-                <p className="font-medium text-slate-400">SALT KREATİF REKLAM TİC. LTD. ŞTİ.</p>
-                <p>Çınarlı Mah. 1572 Sk. No:33</p>
-                <p>PK.35170 Konak, İzmir</p>
-                <p>Karşıyaka V.D. | VN: 7420957827</p>
-              </div>
             </div>
 
             {/* Kolon 2 — Uygulama */}
             <div>
-              <h3 className="text-sm font-medium text-white uppercase tracking-wider mb-4">Uygulama</h3>
+              <h3 className="text-sm font-medium text-white uppercase tracking-wider mb-4">{t("footer.app")}</h3>
               <ul className="space-y-2.5">
                 {footerLinks([
-                  { label: "Ana Sayfa",     action: () => setCurrentPage("home") },
-                  { label: "Antrenmanlar",  action: () => setCurrentPage("trainings") },
-                  { label: "Takımlar",      action: () => setCurrentPage("teams") },
-                  { label: "Rozetler",      action: () => setCurrentPage("badges") },
-                  { label: "İletişim",      action: () => setCurrentPage("contact") },
+                  { label: t("nav.home"),      action: () => setCurrentPage("home") },
+                  { label: t("nav.trainings"), action: () => setCurrentPage("trainings") },
+                  { label: t("nav.teams"),     action: () => setCurrentPage("teams") },
+                  { label: t("footer.badges"), action: () => setCurrentPage("badges") },
+                  { label: t("nav.contact"),   action: () => setCurrentPage("contact") },
                 ])}
               </ul>
             </div>
 
             {/* Kolon 3 — Yasal */}
             <div>
-              <h3 className="text-sm font-medium text-white uppercase tracking-wider mb-4">Yasal</h3>
+              <h3 className="text-sm font-medium text-white uppercase tracking-wider mb-4">{t("footer.legal")}</h3>
               <ul className="space-y-2.5">
                 {footerLinks([
-                  { label: "KVKK Aydınlatma Metni",  action: () => setLegalModal("kvkk") },
-                  { label: "Gizlilik Politikası",      action: () => setLegalModal("gizlilik") },
-                  { label: "Kullanım Koşulları",       action: () => setLegalModal("kullanim") },
-                  { label: "Çerez Politikası",         action: () => setLegalModal("cerez") },
+                  { label: t("footer.kvkk"),    action: () => setLegalModal("kvkk") },
+                  { label: t("footer.privacy"),  action: () => setLegalModal("gizlilik") },
+                  { label: t("footer.terms"),    action: () => setLegalModal("kullanim") },
+                  { label: t("footer.cookies"),  action: () => setLegalModal("cerez") },
                 ])}
               </ul>
             </div>
 
             {/* Kolon 4 — İletişim */}
             <div>
-              <h3 className="text-sm font-medium text-white uppercase tracking-wider mb-4">İletişim</h3>
+              <h3 className="text-sm font-medium text-white uppercase tracking-wider mb-4">{t("footer.contactCol")}</h3>
               <ul className="space-y-3">
-                <li className="flex items-start gap-2.5 text-sm text-slate-400">
-                  <Mail className="w-4 h-4 mt-0.5 flex-shrink-0 text-brand-400" />
-                  <a href="mailto:muuvlinkapp@gmail.com" className="hover:text-white transition-colors">
-                    muuvlinkapp@gmail.com
-                  </a>
-                </li>
                 <li className="flex items-start gap-2.5 text-sm text-slate-400">
                   <svg className="w-4 h-4 mt-0.5 flex-shrink-0 text-brand-400" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
@@ -5349,7 +6072,7 @@ E-posta: <a href="mailto:info@sporlaconnect.com">info@sporlaconnect.com</a></p>
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
                   style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}
                 >
-                  <MessageCircle className="w-4 h-4" /> Bize Ulaşın
+                  <MessageCircle className="w-4 h-4" /> {t("footer.reach")}
                 </button>
               </div>
             </div>
@@ -5359,7 +6082,7 @@ E-posta: <a href="mailto:info@sporlaconnect.com">info@sporlaconnect.com</a></p>
           {/* Alt çizgi */}
           <div className="border-t border-slate-800 pt-6 text-center">
             <p className="text-slate-500 text-xs">
-              © {new Date().getFullYear()} SALT KREATİF REKLAM TİC. LTD. ŞTİ. — Tüm hakları saklıdır.
+              © {new Date().getFullYear()} Muuvlink — {t("footer.rights")}
             </p>
           </div>
         </div>
@@ -5381,17 +6104,16 @@ E-posta: <a href="mailto:info@sporlaconnect.com">info@sporlaconnect.com</a></p>
             404
           </div>
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-5xl animate-bounce mt-4">🏃</div>
+            <div className="animate-bounce mt-4 flex justify-center"><Activity className="w-12 h-12 text-brand-400"/></div>
           </div>
         </div>
 
         {/* Mesaj */}
         <h1 className="text-2xl font-bold text-slate-800 mb-3">
-          Sayfa bulunamadı
+          {t("notFound.title")}
         </h1>
         <p className="text-slate-500 mb-8 leading-relaxed">
-          Aradığın sayfa taşınmış, silinmiş ya da hiç olmamış olabilir.<br />
-          Ama spor seni bekliyor!
+          {t("notFound.subtitle")}
         </p>
 
         {/* Butonlar */}
@@ -5400,13 +6122,13 @@ E-posta: <a href="mailto:info@sporlaconnect.com">info@sporlaconnect.com</a></p>
             onClick={() => setCurrentPage("home")}
             className="px-6 py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold transition-all shadow-lg shadow-brand-200 hover:shadow-brand-300 hover:-translate-y-0.5 active:translate-y-0"
           >
-            Ana Sayfaya Dön
+            {t("notFound.btn")}
           </button>
           <button
             onClick={() => setCurrentPage("trainings")}
             className="px-6 py-3 rounded-xl bg-white border border-slate-200 hover:border-brand-300 text-slate-700 font-semibold transition-all hover:-translate-y-0.5 active:translate-y-0 shadow-sm"
           >
-            🏋️ Antrenmanları Keşfet
+            <Dumbbell className="w-4 h-4 mr-2 inline -mt-0.5"/>{t("home.heroCta")}
           </button>
         </div>
       </div>
@@ -5454,6 +6176,7 @@ E-posta: <a href="mailto:info@sporlaconnect.com">info@sporlaconnect.com</a></p>
         authMode={authMode} setAuthMode={setAuthMode}
         onClose={() => { setIsAuthModalOpen(false); setAuthMode("login"); }}
         handleLogin={handleLogin} handleRegister={handleRegister}
+        t={t}
       />}
       {showNotifications && <NotificationsPanel />}
       {showProfileEdit && <ProfileEditModal />}
