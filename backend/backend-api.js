@@ -211,6 +211,16 @@ async function sendEmail({ to, subject, html }) {
 
 // ─── HTML Şablonları ──────────────────────────────────
 
+// Tarihi Türkçe uzun formata çevirir: "1 Haziran 2026 Pazartesi"
+function formatTrDate(d) {
+  if (!d) return '';
+  const date = d instanceof Date ? d : new Date(d);
+  return date.toLocaleDateString('tr-TR', {
+    timeZone: 'UTC',
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+  });
+}
+
 function emailWrapper(content) {
   return `<!DOCTYPE html>
 <html lang="tr">
@@ -225,8 +235,8 @@ function emailWrapper(content) {
       <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
         <!-- Header -->
         <tr>
-          <td style="background:linear-gradient(135deg,#6366f1,#8b5cf6);padding:32px 40px;text-align:center;">
-            <div style="font-size:32px;margin-bottom:8px;">🏃‍♂️</div>
+          <td style="background:linear-gradient(135deg,#00b7ba,#009295);padding:32px 40px;text-align:center;">
+            <img src="https://muuvlink.app/icons/favicon.png" width="56" height="56" alt="Muuvlink" style="border-radius:14px;margin-bottom:14px;display:inline-block;box-shadow:0 4px 16px rgba(0,0,0,0.15);" />
             <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;letter-spacing:-0.5px;">Muuvlink</h1>
             <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">Spor topluluğun seni bekliyor</p>
           </td>
@@ -254,24 +264,24 @@ function emailWrapper(content) {
 // Şablon 1: Takım daveti (kayıtlı kullanıcı)
 function inviteEmailExisting({ teamName, teamSport, inviterName, teamId, avatar }) {
   return emailWrapper(`
-    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Takıma Davet Edildiniz! 🎉</h2>
+    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Takıma Davet Edildiniz!</h2>
     <p style="margin:0 0 28px;color:#64748b;font-size:15px;line-height:1.6;">
       <strong>${inviterName}</strong> sizi <strong>${teamName}</strong> takımına davet etti.
     </p>
 
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:24px;margin-bottom:28px;">
       <div style="display:flex;align-items:center;gap:16px;">
-        <div style="width:56px;height:56px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;text-align:center;line-height:56px;">${avatar || '🏃'}</div>
+        <div style="width:56px;height:56px;background:linear-gradient(135deg,#00b7ba,#009295);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;text-align:center;line-height:56px;">${avatar || teamName.charAt(0).toUpperCase()}</div>
         <div>
           <div style="font-size:18px;font-weight:700;color:#1e293b;">${teamName}</div>
-          <div style="font-size:14px;color:#6366f1;margin-top:2px;">🏅 ${teamSport}</div>
+          <div style="font-size:14px;color:#00b7ba;margin-top:2px;">${teamSport}</div>
         </div>
       </div>
     </div>
 
     <div style="text-align:center;">
       <a href="${APP_URL}?accept_invite=${teamId}"
-         style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#ffffff;text-decoration:none;
+         style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;letter-spacing:0.2px;">
         Takıma Katıl →
       </a>
@@ -285,23 +295,23 @@ function inviteEmailExisting({ teamName, teamSport, inviterName, teamId, avatar 
 // Şablon 2: Takım daveti (yeni kullanıcı)
 function inviteEmailNew({ teamName, teamSport, inviterName, avatar }) {
   return emailWrapper(`
-    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Muuvlink'e Davet Edildiniz! 🎉</h2>
+    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Muuvlink'e Davet Edildiniz!</h2>
     <p style="margin:0 0 28px;color:#64748b;font-size:15px;line-height:1.6;">
       <strong>${inviterName}</strong> sizi <strong>${teamName}</strong> takımına davet etti.
       Katılmak için ücretsiz hesap oluşturun.
     </p>
 
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:24px;margin-bottom:28px;">
-      <div style="font-size:32px;text-align:center;margin-bottom:12px;">${avatar || '🏃'}</div>
+      <div style="width:56px;height:56px;background:linear-gradient(135deg,#00b7ba,#009295);border-radius:12px;font-size:22px;font-weight:800;color:#fff;text-align:center;line-height:56px;margin:0 auto 12px;">${avatar || teamName.charAt(0).toUpperCase()}</div>
       <div style="text-align:center;">
         <div style="font-size:18px;font-weight:700;color:#1e293b;">${teamName}</div>
-        <div style="font-size:14px;color:#6366f1;margin-top:4px;">🏅 ${teamSport}</div>
+        <div style="font-size:14px;color:#00b7ba;margin-top:4px;">${teamSport}</div>
       </div>
     </div>
 
     <div style="text-align:center;">
       <a href="${APP_URL}?auth=register"
-         style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#ffffff;text-decoration:none;
+         style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
         Hesap Oluştur →
       </a>
@@ -314,7 +324,7 @@ function inviteEmailNew({ teamName, teamSport, inviterName, avatar }) {
 
 // Şablon 3: Duvar gönderisi bildirimi
 // Avatar URL'sini <img> tag'ine, değilse baş harfe çevirir
-function avatarHtml(avatarValue, name, size = 40, gradient = 'linear-gradient(135deg,#6366f1,#8b5cf6)') {
+function avatarHtml(avatarValue, name, size = 40, gradient = 'linear-gradient(135deg,#00b7ba,#009295)') {
   const isUrl = avatarValue && (avatarValue.startsWith('http') || avatarValue.startsWith('/uploads/'));
   const src = isUrl ? (avatarValue.startsWith('/uploads/') ? `${APP_URL}${avatarValue}` : avatarValue) : null;
   if (src) {
@@ -331,27 +341,27 @@ function avatarHtml(avatarValue, name, size = 40, gradient = 'linear-gradient(13
 function wallPostEmail({ teamName, teamId, posterName, posterAvatar, message, postDate }) {
   const truncated = message.length > 300 ? message.slice(0, 300) + '...' : message;
   return emailWrapper(`
-    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">${teamName} Duvarında Yeni Gönderi 💬</h2>
+    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">${teamName} Duvarında Yeni Gönderi</h2>
     <p style="margin:0 0 28px;color:#64748b;font-size:15px;">
       <strong>${posterName}</strong> takım duvarına bir şey yazdı.
     </p>
 
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:24px;margin-bottom:28px;">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-        ${avatarHtml(posterAvatar, posterName, 40, 'linear-gradient(135deg,#6366f1,#8b5cf6)')}
+        ${avatarHtml(posterAvatar, posterName, 40, 'linear-gradient(135deg,#00b7ba,#009295)')}
         <div>
           <div style="font-weight:600;color:#1e293b;font-size:15px;">${posterName}</div>
           <div style="color:#94a3b8;font-size:13px;">${postDate}</div>
         </div>
       </div>
-      <div style="color:#334155;font-size:15px;line-height:1.7;white-space:pre-wrap;border-left:3px solid #6366f1;padding-left:16px;">
+      <div style="color:#334155;font-size:15px;line-height:1.7;white-space:pre-wrap;border-left:3px solid #00b7ba;padding-left:16px;">
         ${truncated}
       </div>
     </div>
 
     <div style="text-align:center;">
       <a href="${APP_URL}/teams/${teamId}"
-         style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#ffffff;text-decoration:none;
+         style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
         Duvara Git →
       </a>
@@ -368,14 +378,14 @@ function trainingCommentEmail({ commenterName, commenterAvatar, trainingTitle, t
     hour: '2-digit', minute: '2-digit',
   });
   return emailWrapper(`
-    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Antrenmana Yorum Yapıldı 💬</h2>
+    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Antrenmana Yorum Yapıldı</h2>
     <p style="margin:0 0 20px;color:#64748b;font-size:15px;">
       <strong>${commenterName}</strong>, <strong>${trainingTitle}</strong> antrenmanına yorum yaptı.
     </p>
 
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px 20px;margin-bottom:20px;">
-      <div style="font-size:13px;color:#009295;font-weight:600;">🏋️ ${trainingTitle}</div>
-      <div style="font-size:13px;color:#64748b;margin-top:2px;">📅 ${trainingDate}</div>
+      <div style="font-size:13px;color:#009295;font-weight:600;">${trainingTitle}</div>
+      <div style="font-size:13px;color:#64748b;margin-top:2px;">${trainingDate}</div>
     </div>
 
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin-bottom:28px;">
@@ -404,17 +414,17 @@ function trainingCommentEmail({ commenterName, commenterAvatar, trainingTitle, t
 // Şablon: Antrenman güncelleme bildirimi
 function trainingUpdateEmail({ teamName, trainingTitle, trainingDate, trainingTime, location, description, updaterName }) {
   return emailWrapper(`
-    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Antrenman Güncellendi 📝</h2>
+    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Antrenman Güncellendi</h2>
     <p style="margin:0 0 28px;color:#64748b;font-size:15px;line-height:1.6;">
       <strong>${teamName}</strong> takımının <strong>${trainingTitle}</strong> antrenmanında değişiklik yapıldı.
     </p>
 
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:24px;margin-bottom:28px;">
-      <div style="font-size:18px;font-weight:700;color:#009295;margin-bottom:16px;">📋 Güncel Bilgiler</div>
+      <div style="font-size:18px;font-weight:700;color:#009295;margin-bottom:16px;">Güncel Bilgiler</div>
       <table style="width:100%;border-collapse:collapse;">
-        <tr><td style="padding:6px 0;color:#64748b;font-size:14px;width:80px;">📅 Tarih</td><td style="padding:6px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingDate}</td></tr>
-        ${trainingTime ? `<tr><td style="padding:6px 0;color:#64748b;font-size:14px;">🕐 Saat</td><td style="padding:6px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingTime.slice(0,5)}</td></tr>` : ''}
-        ${location ? `<tr><td style="padding:6px 0;color:#64748b;font-size:14px;">📍 Konum</td><td style="padding:6px 0;color:#1e293b;font-size:14px;font-weight:600;">${location}</td></tr>` : ''}
+        <tr><td style="padding:6px 0;color:#64748b;font-size:14px;width:80px;">Tarih</td><td style="padding:6px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingDate}</td></tr>
+        ${trainingTime ? `<tr><td style="padding:6px 0;color:#64748b;font-size:14px;">Saat</td><td style="padding:6px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingTime.slice(0,5)}</td></tr>` : ''}
+        ${location ? `<tr><td style="padding:6px 0;color:#64748b;font-size:14px;">Konum</td><td style="padding:6px 0;color:#1e293b;font-size:14px;font-weight:600;">${location}</td></tr>` : ''}
         ${description ? `<tr><td colspan="2" style="padding:12px 0 4px;color:#334155;font-size:14px;line-height:1.6;border-top:1px solid #e5f9f9;margin-top:8px;">${description}</td></tr>` : ''}
       </table>
     </div>
@@ -437,13 +447,13 @@ function newTrainingEmail({ teamName, trainingTitle, trainingDate, trainingTime,
     <tr>
       <td style="padding:10px 0;border-bottom:1px solid #f1f5f9;">
         <div style="font-weight:600;color:#1e293b;font-size:14px;">${t.title}</div>
-        <div style="color:#64748b;font-size:13px;margin-top:2px;">📅 ${t.training_date} ${t.training_time ? '• ' + t.training_time.slice(0,5) : ''} ${t.location_name ? '• 📍 ' + t.location_name : ''}</div>
+        <div style="color:#64748b;font-size:13px;margin-top:2px;">${formatTrDate(t.training_date)} ${t.training_time ? '• ' + t.training_time.slice(0,5) : ''} ${t.location_name ? '• ' + t.location_name : ''}</div>
       </td>
     </tr>
   `).join('');
 
   return emailWrapper(`
-    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Yeni Antrenman Eklendi! 🏋️</h2>
+    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Yeni Antrenman Eklendi!</h2>
     <p style="margin:0 0 28px;color:#64748b;font-size:15px;line-height:1.6;">
       <strong>${teamName}</strong> takımına yeni bir antrenman eklendi.
     </p>
@@ -451,9 +461,9 @@ function newTrainingEmail({ teamName, trainingTitle, trainingDate, trainingTime,
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:24px;margin-bottom:28px;">
       <div style="font-size:20px;font-weight:700;color:#009295;margin-bottom:12px;">${trainingTitle}</div>
       <table style="width:100%;border-collapse:collapse;">
-        <tr><td style="padding:4px 0;color:#64748b;font-size:14px;">📅 Tarih</td><td style="padding:4px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingDate}</td></tr>
-        ${trainingTime ? `<tr><td style="padding:4px 0;color:#64748b;font-size:14px;">🕐 Saat</td><td style="padding:4px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingTime.slice(0,5)}</td></tr>` : ''}
-        ${location ? `<tr><td style="padding:4px 0;color:#64748b;font-size:14px;">📍 Konum</td><td style="padding:4px 0;color:#1e293b;font-size:14px;font-weight:600;">${location}</td></tr>` : ''}
+        <tr><td style="padding:4px 0;color:#64748b;font-size:14px;">Tarih</td><td style="padding:4px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingDate}</td></tr>
+        ${trainingTime ? `<tr><td style="padding:4px 0;color:#64748b;font-size:14px;">Saat</td><td style="padding:4px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingTime.slice(0,5)}</td></tr>` : ''}
+        ${location ? `<tr><td style="padding:4px 0;color:#64748b;font-size:14px;">Konum</td><td style="padding:4px 0;color:#1e293b;font-size:14px;font-weight:600;">${location}</td></tr>` : ''}
         ${description ? `<tr><td colspan="2" style="padding:12px 0 4px;color:#334155;font-size:14px;line-height:1.6;">${description}</td></tr>` : ''}
       </table>
     </div>
@@ -476,10 +486,10 @@ function newTrainingEmail({ teamName, trainingTitle, trainingDate, trainingTime,
 
 // Şablon 5: Antrenman hatırlatma
 function trainingReminderEmail({ teamName, trainingTitle, trainingDate, trainingTime, location, daysLeft }) {
-  const urgency = daysLeft === 1 ? '⏰ Yarın!' : `🗓️ ${daysLeft} gün kaldı`;
+  const urgency = daysLeft === 1 ? 'Yarın!' : `${daysLeft} gün kaldı`;
   const color   = daysLeft === 1 ? '#dc2626' : '#d97706';
   return emailWrapper(`
-    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Antrenmanınız Yaklaşıyor ${daysLeft === 1 ? '⏰' : '🔔'}</h2>
+    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Antrenmanınız Yaklaşıyor</h2>
     <p style="margin:0 0 28px;color:#64748b;font-size:15px;line-height:1.6;">
       <strong>${teamName}</strong> takımınızın antrenmanına az kaldı.
     </p>
@@ -488,9 +498,9 @@ function trainingReminderEmail({ teamName, trainingTitle, trainingDate, training
       <div style="font-size:13px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">${urgency}</div>
       <div style="font-size:20px;font-weight:700;color:#1e293b;margin-bottom:12px;">${trainingTitle}</div>
       <table style="width:100%;border-collapse:collapse;">
-        <tr><td style="padding:4px 0;color:#64748b;font-size:14px;">📅 Tarih</td><td style="padding:4px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingDate}</td></tr>
-        ${trainingTime ? `<tr><td style="padding:4px 0;color:#64748b;font-size:14px;">🕐 Saat</td><td style="padding:4px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingTime.slice(0,5)}</td></tr>` : ''}
-        ${location ? `<tr><td style="padding:4px 0;color:#64748b;font-size:14px;">📍 Konum</td><td style="padding:4px 0;color:#1e293b;font-size:14px;font-weight:600;">${location}</td></tr>` : ''}
+        <tr><td style="padding:4px 0;color:#64748b;font-size:14px;">Tarih</td><td style="padding:4px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingDate}</td></tr>
+        ${trainingTime ? `<tr><td style="padding:4px 0;color:#64748b;font-size:14px;">Saat</td><td style="padding:4px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingTime.slice(0,5)}</td></tr>` : ''}
+        ${location ? `<tr><td style="padding:4px 0;color:#64748b;font-size:14px;">Konum</td><td style="padding:4px 0;color:#1e293b;font-size:14px;font-weight:600;">${location}</td></tr>` : ''}
       </table>
     </div>
 
@@ -601,7 +611,7 @@ const checkAndAwardBadges = async (userId) => {
         ).then(async (result) => {
           if (result.rows.length > 0) {
             await createNotif(userId, {
-              title: 'Yeni Rozet! 🏆',
+              title: 'Yeni Rozet!',
               message: `"${badge.name}" rozetini kazandın!`,
               type: 'badge',
               refId: badge.id,
@@ -962,10 +972,13 @@ app.post('/api/teams', authenticateToken, async (req, res) => {
 
 app.get('/api/teams', optionalAuth, async (req, res) => {
   try {
-    const { sport, search, member_only } = req.query;
+    const { sport, search, member_only, can_create_training } = req.query;
 
     let whereClause;
-    if (member_only === 'true') {
+    if (can_create_training === 'true') {
+      // Sadece antrenman oluşturabildiği takımlar (sahip/antrenör/kaptan)
+      whereClause = `t.id IN (SELECT team_id FROM team_members WHERE user_id = $1 AND role IN ('owner','coach','captain'))`;
+    } else if (member_only === 'true') {
       // Sadece kullanıcının üye olduğu takımlar (profil sayfası için)
       whereClause = `t.id IN (SELECT team_id FROM team_members WHERE user_id = $1)`;
     } else if (!req.user) {
@@ -1129,12 +1142,12 @@ app.post('/api/teams/:id/join', authenticateToken, async (req, res) => {
         to: leader.email,
         subject: `${team.name} — Yeni Üye: ${joinerName}`,
         html: emailWrapper(`
-          <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Takımınıza Yeni Üye Katıldı! 🎉</h2>
+          <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Takımınıza Yeni Üye Katıldı!</h2>
           <p style="margin:0 0 28px;color:#64748b;font-size:15px;line-height:1.6;">
             <strong>${joinerName}</strong>, <strong>${team.name}</strong> takımına yeni üye olarak katıldı.
           </p>
           <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:24px;margin-bottom:28px;text-align:center;">
-            <div style="font-size:48px;margin-bottom:8px;">👤</div>
+            <div style="width:56px;height:56px;background:linear-gradient(135deg,#00b7ba,#009295);border-radius:50%;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;line-height:56px;text-align:center;">U</div>
             <div style="font-size:18px;font-weight:700;color:#009295;">${joinerName}</div>
           </div>
           <div style="text-align:center;">
@@ -1226,7 +1239,7 @@ app.post('/api/teams/:id/invite', authenticateToken, async (req, res) => {
     // Kayıtlı kullanıcıya in-app bildirim
     if (isRegistered) {
       await createNotif(userResult.rows[0].id, {
-        title: 'Takım Daveti! 🎉',
+        title: 'Takım Daveti!',
         message: `${team.inviter_name} sizi "${team.name}" takımına davet etti.`,
         type: 'invitation',
         refId: teamId,
@@ -1252,7 +1265,7 @@ app.post('/api/teams/:id/invite', authenticateToken, async (req, res) => {
 
     await sendEmail({
       to: email,
-      subject: `${team.inviter_name} sizi "${team.name}" takımına davet etti! 🏃‍♂️`,
+      subject: `${team.inviter_name} sizi "${team.name}" takımına davet etti!`,
       html: emailHtml,
     });
 
@@ -1514,7 +1527,7 @@ app.post('/api/teams/:id/posts', authenticateToken, async (req, res) => {
     const notifAndMailPromises = otherMembers.rows.map(async (member) => {
       // In-app bildirim
       await createNotif(member.id, {
-        title: `${team.name} Duvarı 💬`,
+        title: `${team.name} Duvarı`,
         message: `${poster.user_name}: ${message.trim().slice(0, 80)}${message.length > 80 ? '...' : ''}`,
         type: 'team_post',
         refId: teamId,
@@ -1524,7 +1537,7 @@ app.post('/api/teams/:id/posts', authenticateToken, async (req, res) => {
       // Mail
       sendEmail({
         to: member.email,
-        subject: `${team.name} takımında yeni gönderi var 💬`,
+        subject: `${team.name} takımında yeni gönderi var`,
         html: wallPostEmail({
           teamName: team.name,
           teamId,
@@ -1577,8 +1590,8 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
       [team_id, req.user.id]
     );
 
-    if (memberCheck.rows.length === 0 || !['owner', 'coach'].includes(memberCheck.rows[0].role)) {
-      return res.status(403).json({ error: 'Antrenman oluşturmak için sahip veya antrenör olmanız gerekiyor.' });
+    if (memberCheck.rows.length === 0 || !['owner', 'coach', 'captain'].includes(memberCheck.rows[0].role)) {
+      return res.status(403).json({ error: 'Antrenman oluşturmak için takımın sahibi, antrenörü veya kaptanı olmanız gerekiyor.' });
     }
 
     // Gizli takımın antrenmanı asla public olamaz
@@ -1644,7 +1657,7 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
         html: newTrainingEmail({
           teamName,
           trainingTitle: title,
-          trainingDate: training.training_date,
+          trainingDate: formatTrDate(training.training_date),
           trainingTime: training.training_time,
           location: location_name,
           description,
@@ -1652,6 +1665,12 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
         }),
       }).catch(e => console.error('Training email error:', e.message));
     }
+
+    // Oluşturan kişiyi otomatik katılımcı yap
+    await pool.query(
+      'INSERT INTO training_attendees (training_id, user_id, status) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING',
+      [training.id, req.user.id, 'confirmed']
+    );
 
     logActivity('training_create', req.user.id, null, { training_title: title, team_name: teamName });
     res.status(201).json({ message: 'Training created successfully', training });
@@ -1791,26 +1810,17 @@ app.get('/api/trainings/my-team-trainings', authenticateToken, async (req, res) 
   }
 });
 
-app.get('/api/trainings/nearby', async (req, res) => {
+app.get('/api/trainings/nearby', optionalAuth, async (req, res) => {
   try {
     const { lat, lng, radius = 10 } = req.query;
     if (!lat || !lng) return res.status(400).json({ error: 'lat ve lng gerekli' });
 
-    // Token varsa kullanıcıyı tanımla (opsiyonel auth)
-    let userId = null;
-    const authHeader = req.headers['authorization'];
-    if (authHeader) {
-      try {
-        const token = authHeader.split(' ')[1];
-        const decoded = require('jsonwebtoken').verify(token, JWT_SECRET);
-        userId = decoded.id;
-      } catch { /* geçersiz token, misafir olarak devam et */ }
-    }
+    const userId = req.user?.id || null;
 
-    // Gizlilik: giriş yapmamış → sadece public; giriş yapmış → public + kendi takımları
+    // Gizlilik: giriş yapmamış → herkese açık takımlar veya public; giriş yapmış → + kendi takımları
     const privacyFilter = userId
-      ? `(t.is_public = true OR teams.id IN (SELECT team_id FROM team_members WHERE user_id = ${parseInt(userId)}))`
-      : `t.is_public = true`;
+      ? `(teams.is_private = false OR t.is_public = true OR teams.id IN (SELECT team_id FROM team_members WHERE user_id = ${parseInt(userId)}))`
+      : `(teams.is_private = false OR t.is_public = true)`;
 
     const result = await pool.query(
       `SELECT * FROM (
@@ -1830,7 +1840,10 @@ app.get('/api/trainings/nearby', async (req, res) => {
          JOIN teams ON t.team_id = teams.id
          WHERE t.location_lat IS NOT NULL
            AND t.location_lng IS NOT NULL
-           AND t.training_date >= CURRENT_DATE
+           AND (
+             t.training_date > CURRENT_DATE
+             OR (t.training_date = CURRENT_DATE AND t.training_time >= CURRENT_TIME)
+           )
            AND ${privacyFilter}
        ) sub
        WHERE distance <= $3
@@ -2029,9 +2042,7 @@ app.post('/api/trainings/:id/comments', authenticateToken, async (req, res) => {
     const training = trainingResult.rows[0];
 
     if (training && commenter) {
-      const trainingDate = new Date(training.training_date).toLocaleDateString('tr-TR', {
-        day: 'numeric', month: 'long', year: 'numeric',
-      });
+      const trainingDate = formatTrDate(training.training_date);
 
       // Katılımcılar + takım sahibi (yorumcu hariç, tekrarsız)
       const recipientsResult = await pool.query(
@@ -2052,7 +2063,7 @@ app.post('/api/trainings/:id/comments', authenticateToken, async (req, res) => {
       recipientsResult.rows.forEach(async (recipient) => {
         try {
           await createNotif(recipient.id, {
-            title: `${training.title} — Yeni Yorum 💬`,
+            title: `${training.title} — Yeni Yorum`,
             message: `${commenter.name}: ${comment.trim().slice(0, 80)}${comment.length > 80 ? '...' : ''}`,
             type: 'training_comment',
             refId: trainingId,
@@ -2061,7 +2072,7 @@ app.post('/api/trainings/:id/comments', authenticateToken, async (req, res) => {
 
           sendEmail({
             to: recipient.email,
-            subject: `${training.title} antrenmanına yorum yapıldı 💬`,
+            subject: `${training.title} antrenmanına yorum yapıldı`,
             html: trainingCommentEmail({
               commenterName: commenter.name,
               commenterAvatar: commenter.avatar,
@@ -2136,14 +2147,12 @@ app.put('/api/trainings/:id', authenticateToken, async (req, res) => {
       [trainingId, req.user.id]
     );
 
-    const trainingDate = new Date(training_date).toLocaleDateString('tr-TR', {
-      day: 'numeric', month: 'long', year: 'numeric',
-    });
+    const trainingDate = formatTrDate(training_date);
 
     attendeesResult.rows.forEach(async (attendee) => {
       try {
         await createNotif(attendee.id, {
-          title: `${updated.title} güncellendi 📝`,
+          title: `${updated.title} güncellendi`,
           message: `${updaterName || 'Antrenör'} antrenman bilgilerini güncelledi.`,
           type: 'training_update',
           refId: trainingId,
@@ -2151,7 +2160,7 @@ app.put('/api/trainings/:id', authenticateToken, async (req, res) => {
         });
         sendEmail({
           to: attendee.email,
-          subject: `${updated.title} antrenmanında değişiklik var 📝`,
+          subject: `${updated.title} antrenmanında değişiklik var`,
           html: trainingUpdateEmail({
             teamName: teamName || '',
             trainingTitle: updated.title,
@@ -2256,20 +2265,36 @@ app.get('/api/users/:id/activity', authenticateToken, async (req, res) => {
   try {
     const userId = req.params.id;
 
-    // Son 7 günün verisi
+    // Son 7 günün tamamlanmış antrenmanları (bugün için saat kontrolü)
     const result = await pool.query(
-      `SELECT 
-         DATE(t.training_date) as date,
-         COUNT(DISTINCT ta.training_id) as count
+      `SELECT
+         t.training_date::date as date,
+         COUNT(DISTINCT ta.training_id) as count,
+         COALESCE(SUM(t.duration_minutes), 0) as total_minutes,
+         json_agg(json_build_object('title', t.title, 'sport', t.sport) ORDER BY t.training_time) as trainings
        FROM training_attendees ta
        JOIN trainings t ON ta.training_id = t.id
-       WHERE ta.user_id = $1 
-         AND t.training_date >= CURRENT_DATE - INTERVAL '7 days'
-         AND t.training_date <= CURRENT_DATE
-       GROUP BY DATE(t.training_date)
+       WHERE ta.user_id = $1
+         AND t.training_date >= CURRENT_DATE - INTERVAL '6 days'
+         AND (
+           t.training_date < CURRENT_DATE
+           OR (t.training_date = CURRENT_DATE AND t.training_time < CURRENT_TIME)
+         )
+       GROUP BY t.training_date::date
        ORDER BY date ASC`,
       [userId]
     );
+
+    // Haftalık streak hesapla (ardışık günler)
+    let streak = 0;
+    const today = new Date();
+    for (let i = 0; i < 30; i++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const ds = d.toISOString().split('T')[0];
+      const found = result.rows.find(r => r.date.toISOString().split('T')[0] === ds);
+      if (found && parseInt(found.count) > 0) { streak++; } else if (i > 0) { break; }
+    }
 
     // Son 7 günü doldur (boş günler için 0)
     const last7Days = [];
@@ -2277,17 +2302,21 @@ app.get('/api/users/:id/activity', authenticateToken, async (req, res) => {
       const date = new Date();
       date.setDate(date.getDate() - i);
       const dateStr = date.toISOString().split('T')[0];
-      
       const dayData = result.rows.find(r => r.date.toISOString().split('T')[0] === dateStr);
-      
       last7Days.push({
         date: dateStr,
         day: ['Pz', 'Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct'][date.getDay()],
         count: dayData ? parseInt(dayData.count) : 0,
+        minutes: dayData ? parseInt(dayData.total_minutes) : 0,
+        trainings: dayData ? dayData.trainings : [],
+        isToday: i === 0,
       });
     }
 
-    res.json({ activity: last7Days });
+    const weekTotal = last7Days.reduce((s, d) => s + d.count, 0);
+    const weekMinutes = last7Days.reduce((s, d) => s + d.minutes, 0);
+
+    res.json({ activity: last7Days, streak, weekTotal, weekMinutes });
   } catch (error) {
     console.error('Activity error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -2616,12 +2645,12 @@ app.post('/api/contact', async (req, res) => {
             <p style="margin:0 0 8px;"><strong>E-posta:</strong> ${email}</p>
             <p style="margin:0 0 8px;"><strong>Konu:</strong> ${subject}</p>
           </div>
-          <div style="background:#f8fafc;border-left:3px solid #6366f1;border-radius:8px;padding:20px;">
+          <div style="background:#f8fafc;border-left:3px solid #00b7ba;border-radius:8px;padding:20px;">
             <p style="margin:0;color:#334155;line-height:1.7;white-space:pre-wrap;">${message}</p>
           </div>
           <div style="margin-top:24px;text-align:center;">
             <a href="${APP_URL}?page=admin&tab=contact"
-               style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;">
+               style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;">
               Panelde Görüntüle →
             </a>
           </div>
@@ -2634,11 +2663,11 @@ app.post('/api/contact', async (req, res) => {
       to: email,
       subject: 'Mesajınız alındı — Muuvlink',
       html: emailWrapper(`
-        <h2 style="margin:0 0 12px;color:#1e293b;">Mesajınız için teşekkürler, ${name}! 🎉</h2>
+        <h2 style="margin:0 0 12px;color:#1e293b;">Mesajınız için teşekkürler, ${name}!</h2>
         <p style="color:#64748b;line-height:1.7;margin:0 0 20px;">
           Mesajınız başarıyla alındı. En kısa sürede size dönüş yapacağız.
         </p>
-        <div style="background:#f8fafc;border-left:3px solid #6366f1;border-radius:8px;padding:20px;">
+        <div style="background:#f8fafc;border-left:3px solid #00b7ba;border-radius:8px;padding:20px;">
           <p style="margin:0 0 8px;font-weight:600;color:#1e293b;">Konu: ${subject}</p>
           <p style="margin:0;color:#64748b;font-size:14px;white-space:pre-wrap;">${message.slice(0, 200)}${message.length > 200 ? '...' : ''}</p>
         </div>
@@ -2824,7 +2853,7 @@ app.post('/api/admin/home-news', isAdmin, async (req, res) => {
     const r = await pool.query(
       `INSERT INTO home_news (title, description, date_label, icon, bg, views, comments, is_active, order_index)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
-      [title, description||'', date_label||'', icon||'🏃', bg||'linear-gradient(160deg,#0f2a1a,#1a4a2d)',
+      [title, description||'', date_label||'', icon||'', bg||'linear-gradient(160deg,#0f2a1a,#1a4a2d)',
        views||0, comments||0, is_active!==false, order_index||0]
     );
     res.json(r.rows[0]);
@@ -2837,7 +2866,7 @@ app.put('/api/admin/home-news/:id', isAdmin, async (req, res) => {
     const r = await pool.query(
       `UPDATE home_news SET title=$1, description=$2, date_label=$3, icon=$4, bg=$5, views=$6, comments=$7,
        is_active=$8, order_index=$9 WHERE id=$10 RETURNING *`,
-      [title, description||'', date_label||'', icon||'🏃', bg, views||0, comments||0, is_active!==false, order_index||0, req.params.id]
+      [title, description||'', date_label||'', icon||'', bg, views||0, comments||0, is_active!==false, order_index||0, req.params.id]
     );
     res.json(r.rows[0]);
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -2884,7 +2913,7 @@ app.post('/api/admin/home-gallery', isAdmin, async (req, res) => {
     const r = await pool.query(
       `INSERT INTO home_gallery (icon, bg, is_active, order_index)
        VALUES ($1,$2,$3,$4) RETURNING *`,
-      [icon||'🏃', bg||'linear-gradient(160deg,#0f2a1a,#1a4a2d)', is_active!==false, order_index||0]
+      [icon||'', bg||'linear-gradient(160deg,#0f2a1a,#1a4a2d)', is_active!==false, order_index||0]
     );
     res.json(r.rows[0]);
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -2895,7 +2924,7 @@ app.put('/api/admin/home-gallery/:id', isAdmin, async (req, res) => {
   try {
     const r = await pool.query(
       `UPDATE home_gallery SET icon=$1, bg=$2, is_active=$3, order_index=$4 WHERE id=$5 RETURNING *`,
-      [icon||'🏃', bg, is_active!==false, order_index||0, req.params.id]
+      [icon||'', bg, is_active!==false, order_index||0, req.params.id]
     );
     res.json(r.rows[0]);
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -3108,6 +3137,52 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date() });
 });
 
+// Resim URL'sinden baskın rengi çıkar (frontend CORS sorununu bypass eder)
+app.get('/api/color-extract', async (req, res) => {
+  const { url } = req.query;
+  if (!url || !url.startsWith('http')) return res.status(400).json({ error: 'Geçersiz URL' });
+  try {
+    const sharp = require('sharp');
+    const https = require('https');
+    const http  = require('http');
+    const fetch = (u) => new Promise((resolve, reject) => {
+      const mod = u.startsWith('https') ? https : http;
+      mod.get(u, r => {
+        const chunks = [];
+        r.on('data', d => chunks.push(d));
+        r.on('end', () => resolve(Buffer.concat(chunks)));
+      }).on('error', reject);
+    });
+
+    const buf = await fetch(url);
+    // 16x16'ya küçült, ham piksel olarak al
+    const { data, info } = await sharp(buf)
+      .resize(16, 16, { fit: 'fill' })
+      .removeAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+
+    let r = 0, g = 0, b = 0, n = 0;
+    for (let i = 0; i < data.length; i += 3) {
+      const pr = data[i], pg = data[i+1], pb = data[i+2];
+      if (Math.max(pr,pg,pb) > 245 && Math.min(pr,pg,pb) > 220) continue; // beyaz
+      if (Math.max(pr,pg,pb) < 15) continue;                               // siyah
+      r += pr; g += pg; b += pb; n++;
+    }
+
+    if (n < 4) return res.json({ color: null });
+
+    // Ham ortalama — boost yok (parlak renkleri karartma)
+    const ar = Math.round(r/n), ag = Math.round(g/n), ab = Math.round(b/n);
+    const hex = `#${[ar,ag,ab].map(c => c.toString(16).padStart(2,'0')).join('')}`;
+    res.set('Cache-Control', 'public, max-age=86400');
+    res.json({ color: hex });
+  } catch (err) {
+    console.error('color-extract error:', err.message);
+    res.json({ color: null });
+  }
+});
+
 // =====================================================
 // START SERVER
 // =====================================================
@@ -3217,7 +3292,7 @@ pool.query(`
     id          SERIAL PRIMARY KEY,
     title       TEXT NOT NULL,
     date_label  TEXT DEFAULT '',
-    icon        TEXT DEFAULT '🏃',
+    icon        TEXT DEFAULT '',
     bg          TEXT DEFAULT 'linear-gradient(160deg,#1a3a2a 0%,#2d6a4f 100%)',
     views       INTEGER DEFAULT 0,
     comments    INTEGER DEFAULT 0,
@@ -3229,7 +3304,7 @@ pool.query(`
 pool.query(`
   CREATE TABLE IF NOT EXISTS home_gallery (
     id          SERIAL PRIMARY KEY,
-    icon        TEXT DEFAULT '🏃',
+    icon        TEXT DEFAULT '',
     bg          TEXT DEFAULT 'linear-gradient(160deg,#0f2a1a,#1a4a2d)',
     is_active   BOOLEAN DEFAULT true,
     order_index INTEGER DEFAULT 0,
@@ -3286,11 +3361,11 @@ app.post('/api/auth/forgot-password', async (req, res) => {
       to: email,
       subject: 'Muuvlink — Şifre Sıfırlama',
       html: emailWrapper(`
-        <h2 style="color:#6366f1;margin:0 0 16px">Şifre Sıfırlama</h2>
+        <h2 style="color:#00b7ba;margin:0 0 16px">Şifre Sıfırlama</h2>
         <p style="color:#334155;margin:0 0 12px">Merhaba <strong>${user.name}</strong>,</p>
         <p style="color:#334155;margin:0 0 24px">Şifrenizi sıfırlamak için aşağıdaki butona tıklayın. Link <strong>1 saat</strong> geçerlidir.</p>
         <a href="${resetLink}"
-           style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border-radius:12px;text-decoration:none;font-weight:700;font-size:15px;">
+           style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#00b7ba,#009295);color:#fff;border-radius:12px;text-decoration:none;font-weight:700;font-size:15px;">
           Şifremi Sıfırla
         </a>
         <p style="color:#94a3b8;font-size:13px;margin:24px 0 0;">Bu isteği siz yapmadıysanız bu e-postayı görmezden gelebilirsiniz.</p>
@@ -3384,7 +3459,7 @@ async function sendTrainingReminders() {
             html: trainingReminderEmail({
               teamName: training.team_name,
               trainingTitle: training.title,
-              trainingDate: training.training_date,
+              trainingDate: formatTrDate(training.training_date),
               trainingTime: training.training_time,
               location: training.location_name,
               daysLeft,
@@ -3428,13 +3503,13 @@ if (process.env.NODE_ENV === 'production') {
 
 app.listen(PORT, () => {
   console.log(`
-  ⚡ Muuvlink Backend API - FULL VERSION
-  🚀 Server running on port ${PORT}
+  Muuvlink Backend API - FULL VERSION
+  Server running on port ${PORT}
   📡 Environment: ${process.env.NODE_ENV || 'development'}
   💾 Database: PostgreSQL
   
   📚 API Endpoints: 60+ routes
-  ✅ Auth, Teams, Trainings, Stats, Badges, Notifications, Search, Admin
+  Routes: Auth, Teams, Trainings, Stats, Badges, Notifications, Search, Admin
   `);
 });
 

@@ -201,6 +201,16 @@ export const translations = {
     teamTrainingsList:   { tr: "Takımınızın Antrenmanları",    en: "Team Trainings",                     de: "Team-Trainings"                 },
   },
 
+  // ── ACTIVITY CHART ──────────────────────────────────────
+  activity: {
+    streakDays:       { tr: "gün seri",         en: "day streak",        de: "Tage-Serie"         },
+    weekTrainings:    { tr: "Bu Hafta",          en: "This Week",         de: "Diese Woche"        },
+    weekMinutes:      { tr: "Toplam Süre",       en: "Total Duration",    de: "Gesamtdauer"        },
+    currentStreak:    { tr: "Seri",              en: "Streak",            de: "Serie"              },
+    tooltipTrainings: { tr: "antrenman",         en: "training(s)",       de: "Training(s)"        },
+    noActivityYet:    { tr: "Bu hafta henüz tamamlanan antrenman yok", en: "No completed trainings this week", de: "Keine abgeschlossenen Trainings diese Woche" },
+  },
+
   // ── LOCATION PICKER ─────────────────────────────────────
   location: {
     searchLabel:       { tr: "Konum Ara",                    en: "Search Location",         de: "Ort suchen"              },

@@ -1134,6 +1134,7 @@ export default function Muuvlink() {
   const [userBadges, setUserBadges] = useState([]);
   const [userStats, setUserStats] = useState(null);
   const [activityData, setActivityData] = useState([]);
+  const [activityMeta, setActivityMeta] = useState({ streak: 0, weekTotal: 0, weekMinutes: 0 });
   const [selectedTraining, setSelectedTraining] = useState(null);
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [pendingInvitations, setPendingInvitations] = useState([]);
@@ -2583,7 +2584,8 @@ export default function Muuvlink() {
 
       if (response.ok) {
         const data = await response.json();
-        setActivityData(data.activity);
+        setActivityData(data.activity || []);
+        setActivityMeta({ streak: data.streak || 0, weekTotal: data.weekTotal || 0, weekMinutes: data.weekMinutes || 0 });
       }
     } catch (error) {
       console.error("Fetch activity error:", error);
@@ -3155,28 +3157,94 @@ export default function Muuvlink() {
           {/* Right: Activity + Lists */}
           <div className="md:col-span-2 space-y-6">
             {/* Chart */}
-            {activityData.length > 0 && (
-              <div className="bg-white rounded-2xl p-6 border border-slate-100">
-                <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase mb-5">{t("home.weeklyActivity")}</div>
-                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                  <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={activityData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9"/>
-                      <XAxis dataKey="day" tick={{fill:"#94a3b8", fontSize:11}} axisLine={{stroke:"#e2e8f0"}} tickLine={false}/>
-                      <YAxis tick={{fill:"#94a3b8", fontSize:11}} axisLine={false} tickLine={false}/>
-                      <Tooltip contentStyle={{backgroundColor:"#fff", border:"1px solid #e2e8f0", borderRadius:"12px", boxShadow:"0 4px 16px rgba(0,0,0,0.08)"}} cursor={{fill:"rgba(0,183,186,0.06)"}}/>
-                      <Bar dataKey="count" fill="url(#pgrd)" radius={[6,6,0,0]}/>
-                      <defs>
-                        <linearGradient id="pgrd" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#00b7ba" stopOpacity={1}/>
-                          <stop offset="100%" stopColor="#009295" stopOpacity={0.7}/>
-                        </linearGradient>
-                      </defs>
-                    </BarChart>
-                  </ResponsiveContainer>
+            <div className="bg-white rounded-2xl p-6 border border-slate-100">
+              {/* Başlık + özet */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase">{t("home.weeklyActivity")}</div>
+                <div className="flex items-center gap-3">
+                  {activityMeta.streak > 1 && (
+                    <span className="flex items-center gap-1 text-xs font-semibold text-orange-500 bg-orange-50 px-2.5 py-1 rounded-full">
+                      🔥 {activityMeta.streak} {t("activity.streakDays")}
+                    </span>
+                  )}
                 </div>
               </div>
-            )}
+              {/* Haftalık özet istatistikler */}
+              <div className="grid grid-cols-3 gap-3 mb-5">
+                {[
+                  { val: activityMeta.weekTotal, label: t("activity.weekTrainings"), icon: "🏃" },
+                  { val: activityMeta.weekMinutes > 0 ? `${activityMeta.weekMinutes} dk` : "—", label: t("activity.weekMinutes"), icon: "⏱" },
+                  { val: activityMeta.streak, label: t("activity.currentStreak"), icon: "🔥" },
+                ].map((s, i) => (
+                  <div key={i} className="bg-slate-50 rounded-xl px-3 py-2.5 border border-slate-100 text-center">
+                    <div className="text-lg font-bold text-slate-800">{s.val}</div>
+                    <div className="text-[10px] text-slate-400 font-medium mt-0.5 leading-tight">{s.label}</div>
+                  </div>
+                ))}
+              </div>
+              {/* Bar grafik */}
+              <div className="rounded-xl overflow-hidden">
+                <ResponsiveContainer width="100%" height={160}>
+                  <BarChart data={activityData} barCategoryGap="30%">
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false}/>
+                    <XAxis dataKey="day" tick={{fill:"#94a3b8", fontSize:11, fontWeight:600}} axisLine={false} tickLine={false}/>
+                    <YAxis tick={{fill:"#94a3b8", fontSize:10}} axisLine={false} tickLine={false} allowDecimals={false} width={20}/>
+                    <Tooltip
+                      cursor={{fill:"rgba(0,183,186,0.06)", radius:8}}
+                      content={({ active, payload }) => {
+                        if (!active || !payload?.length) return null;
+                        const d = payload[0]?.payload;
+                        return (
+                          <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-lg text-left min-w-[140px]">
+                            <div className="text-xs font-bold text-slate-700 mb-1.5">{d.day} — {d.count} {t("activity.tooltipTrainings")}</div>
+                            {d.trainings?.length > 0 && d.trainings.map((tr, i) => (
+                              <div key={i} className="text-xs text-slate-500 flex items-center gap-1.5 py-0.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-brand-400 flex-shrink-0"/>
+                                <span className="truncate max-w-[120px]">{tr.title}</span>
+                              </div>
+                            ))}
+                            {d.minutes > 0 && (
+                              <div className="text-[10px] text-slate-400 mt-1.5 border-t border-slate-100 pt-1.5">⏱ {d.minutes} dk</div>
+                            )}
+                          </div>
+                        );
+                      }}
+                    />
+                    <Bar dataKey="count" radius={[6,6,0,0]}
+                      fill="url(#pgrd)"
+                      shape={(props) => {
+                        const { x, y, width, height, payload } = props;
+                        const isToday = payload?.isToday;
+                        const isEmpty = payload?.count === 0;
+                        return (
+                          <g>
+                            <rect
+                              x={x} y={isEmpty ? y + height - 4 : y}
+                              width={width} height={isEmpty ? 4 : height}
+                              rx={6} ry={6}
+                              fill={isEmpty ? (isToday ? "rgba(0,183,186,0.15)" : "#f1f5f9") : "url(#pgrd)"}
+                              opacity={isToday && !isEmpty ? 1 : isEmpty ? 1 : 0.85}
+                            />
+                            {isToday && !isEmpty && (
+                              <rect x={x + width/2 - 2} y={y - 7} width={4} height={4} rx={2} fill="#00b7ba"/>
+                            )}
+                          </g>
+                        );
+                      }}
+                    />
+                    <defs>
+                      <linearGradient id="pgrd" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#00b7ba" stopOpacity={1}/>
+                        <stop offset="100%" stopColor="#009295" stopOpacity={0.75}/>
+                      </linearGradient>
+                    </defs>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              {activityMeta.weekTotal === 0 && (
+                <p className="text-center text-xs text-slate-400 mt-2">{t("activity.noActivityYet")}</p>
+              )}
+            </div>
 
             {/* Joined Trainings */}
             {joinedTrainings.length > 0 && (
