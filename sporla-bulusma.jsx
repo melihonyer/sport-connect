@@ -355,7 +355,7 @@ const TrainingsMapView = ({ trainings, onSelectTraining, t }) => {
           />
           <FitBoundsToTrainings trainings={mapped}/>
           {mapped.map(t => {
-            const teamLetter = (t.team_name || t.team_sport || "T").charAt(0).toUpperCase();
+            const teamLetter = (t.team_name || t.team_sport || "T").charAt(0).toLocaleUpperCase("en-US");
             const teamColor  = teamColors[t.team_id] || SPORT_COLORS[t.team_sport] || "#00b7ba";
             return (
             <Marker
@@ -910,12 +910,12 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
 
                     <div>
                       <h1 className="bn-title font-display" style={{fontSize:"clamp(2.8rem,5.8vw,4.8rem)", lineHeight:1.0, fontWeight:700, letterSpacing:"-0.02em", color: banner?.title_color || "#ffffff"}}>
-                        {banner?.title || (t ? t("home.heroTitleFallback") : "Sporla Buluş,")}
+                        {(lang === "tr" ? banner?.title : null) || (t ? t("home.heroTitleFallback") : "Connect Through Sport,")}
                       </h1>
                       <h1 className="bn-title bn-motto">
                         {isActive
                           ? <Typewriter
-                              mottos={(banner?.mottos?.length > 0) ? banner.mottos : (DEFAULT_MOTTOS[lang] || DEFAULT_MOTTOS.en)}
+                              mottos={(banner?.mottos?.length > 0 && lang === "tr") ? banner.mottos : (DEFAULT_MOTTOS[lang] || DEFAULT_MOTTOS.en)}
                               color1={banner?.motto_color_1 || "#00b7ba"}
                               color2={banner?.motto_color_2 || "#981dd8"}
                             />
@@ -923,7 +923,7 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                         }
                       </h1>
                       <p className="mt-5 text-lg leading-relaxed max-w-md font-light" style={{color: banner?.subtitle_color || "rgba(186,230,253,0.75)"}}>
-                        {banner?.subtitle || (t ? t("home.heroSubtitleFallback") : "")}
+                        {(lang === "tr" ? banner?.subtitle : null) || (t ? t("home.heroSubtitleFallback") : "")}
                       </p>
                     </div>
 
@@ -936,7 +936,7 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                             style={{background:"linear-gradient(135deg,#00b7ba,#009295)", borderRadius:"14px", boxShadow:"0 8px 32px rgba(0,183,186,0.4)"}}
                           >
                             <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-[14px]"/>
-                            {banner?.cta_primary_text || (t ? t("home.startBtn") : "Get Started")}
+                            {(lang === "tr" ? banner?.cta_primary_text : null) || (t ? t("home.startBtn") : "Get Started")}
                             <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
                           </button>
                           <button
@@ -955,10 +955,10 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                             style={{background:"linear-gradient(135deg,#00b7ba,#009295)", borderRadius:"14px", boxShadow:"0 8px 32px rgba(0,183,186,0.4)"}}
                           >
                             <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-[14px]"/>
-                            {banner?.cta_primary_text || (t ? t("home.trainingsBtn") : "Trainings")}
+                            {(lang === "tr" ? banner?.cta_primary_text : null) || (t ? t("home.trainingsBtn") : "Trainings")}
                             <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
                           </button>
-                          {banner?.cta_secondary_text && (
+                          {(lang === "tr" && banner?.cta_secondary_text) && (
                             <button
                               onClick={() => handleCtaClick(banner?.cta_secondary_url, () => setCurrentPage("teams"))}
                               className="flex items-center gap-2 px-7 py-3.5 font-semibold text-sm transition-all duration-300 rounded-[14px]"
@@ -1085,9 +1085,17 @@ export default function Muuvlink() {
   // PAGE_META moved below – uses t() for localised titles/descriptions
 
   // ── Dil ─────────────────────────────────────────────────
-  const [lang, setLang] = useState(detectLang);
+  const [lang, setLang] = useState(() => {
+    const l = detectLang();
+    document.documentElement.lang = l;
+    return l;
+  });
   const t = createT(lang);
-  const changeLang = (l) => { setLang(l); localStorage.setItem("muuvlang", l); };
+  const changeLang = (l) => {
+    setLang(l);
+    localStorage.setItem("muuvlang", l);
+    document.documentElement.lang = l;
+  };
 
   const PAGE_META = {
     home:              { title:`Muuvlink — ${t("home.heroTagline")}`,             desc: t("home.heroSubtitleFallback")  },
@@ -1156,7 +1164,7 @@ export default function Muuvlink() {
       const src = avatar.startsWith("http") ? avatar : `${BASE_URL}${avatar}`;
       return <img src={src} alt="" className={`w-full h-full object-cover ${className}`} />;
     }
-    const letter = name?.[0]?.toUpperCase() ?? "?";
+    const letter = name?.[0]?.toLocaleUpperCase("en-US") ?? "?";
     return <span className="text-inherit font-bold">{letter}</span>;
   };
 
@@ -2723,7 +2731,7 @@ export default function Muuvlink() {
   const dateObj = new Date(training.training_date);
   const day = String(dateObj.getUTCDate()).padStart(2, "0");
   const localeMap = { tr: "tr-TR", en: "en-US", de: "de-DE" };
-  const month = dateObj.toLocaleDateString(localeMap[lang] || "en-US", { month: "short", timeZone: "UTC" }).toUpperCase();
+  const month = dateObj.toLocaleDateString(localeMap[lang] || "en-US", { month: "short", timeZone: "UTC" }).toLocaleUpperCase("en-US");
 
   const difficultyColor = { "Kolay": "#6ee7b7", "Orta": "#fcd34d", "Zor": "#fca5a5" };
   const accentColor = difficultyColor[training.difficulty] || "#6ee7b7";
@@ -2787,7 +2795,7 @@ export default function Muuvlink() {
               style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}>
               {(team.avatar?.startsWith("/uploads/") || team.avatar?.startsWith("http"))
                 ? <img src={team.avatar.startsWith("http") ? team.avatar : `${BASE_URL}${team.avatar}`} alt="" className="w-full h-full object-cover" />
-                : (team.name?.[0]?.toUpperCase() || "T")}
+                : (team.name?.[0]?.toLocaleUpperCase("en-US") || "T")}
             </div>
             <div className="min-w-0">
               <h3 className="font-medium text-slate-900 truncate group-hover:text-brand-700 transition-colors">{team.name}</h3>
@@ -3078,7 +3086,7 @@ export default function Muuvlink() {
                   {(user?.avatar?.startsWith("/uploads/") || user?.avatar?.startsWith("http")) ? (
                     <img src={user.avatar.startsWith("http") ? user.avatar : `${BASE_URL}${user.avatar}`} alt="avatar" className="w-full h-full object-cover" />
                   ) : (
-                    user?.name?.[0]?.toUpperCase() || "?"
+                    user?.name?.[0]?.toLocaleUpperCase("en-US") || "?"
                   )}
                 </div>
                 <div className="absolute inset-0 rounded-2xl bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -3226,7 +3234,7 @@ export default function Muuvlink() {
                         style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}>
                         {(team.avatar?.startsWith("/uploads/") || team.avatar?.startsWith("http"))
                           ? <img src={team.avatar.startsWith("http") ? team.avatar : `${BASE_URL}${team.avatar}`} alt="" className="w-full h-full object-cover" />
-                          : (team.name?.[0]?.toUpperCase() || "T")}
+                          : (team.name?.[0]?.toLocaleUpperCase("en-US") || "T")}
                       </div>
                       <div className="min-w-0">
                         <div className="font-medium text-slate-800 text-sm truncate">{team.name}</div>
@@ -4203,7 +4211,7 @@ export default function Muuvlink() {
                   <div className="w-16 h-16 bg-white/20 backdrop-blur rounded-2xl overflow-hidden flex items-center justify-center text-white text-2xl font-bold shadow-inner">
                     {(selectedTeam.avatar?.startsWith("/uploads/") || selectedTeam.avatar?.startsWith("http"))
                       ? <img src={selectedTeam.avatar.startsWith("http") ? selectedTeam.avatar : `${BASE_URL}${selectedTeam.avatar}`} alt="" className="w-full h-full object-cover" />
-                      : (selectedTeam.name?.[0]?.toUpperCase() || "T")}
+                      : (selectedTeam.name?.[0]?.toLocaleUpperCase("en-US") || "T")}
                   </div>
                   {isOwner && (
                     <label className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center cursor-pointer shadow-md hover:bg-brand-50 transition-colors" title="Fotoğraf yükle">
@@ -5217,7 +5225,7 @@ export default function Muuvlink() {
                     {(formData.avatar?.startsWith("/uploads/") || formData.avatar?.startsWith("http")) ? (
                       <img src={formData.avatar.startsWith("http") ? formData.avatar : `${BASE_URL}${formData.avatar}`} alt="avatar" className="w-full h-full object-cover" />
                     ) : (
-                      user?.name?.[0]?.toUpperCase() || "?"
+                      user?.name?.[0]?.toLocaleUpperCase("en-US") || "?"
                     )}
                   </div>
                   {avatarLoading && (
@@ -5463,7 +5471,7 @@ export default function Muuvlink() {
                       {(user.avatar?.startsWith("/uploads/") || user.avatar?.startsWith("http")) ? (
                         <img src={user.avatar.startsWith("http") ? user.avatar : `${BASE_URL}${user.avatar}`} alt="" className="w-full h-full object-cover" />
                       ) : (
-                        user.avatar || user.name[0].toUpperCase()
+                        user.avatar || user.name[0].toLocaleUpperCase("en-US")
                       )}
                     </div>
                     <span className="text-sm font-semibold text-slate-700">{user.name.split(" ")[0]}</span>
@@ -5546,7 +5554,7 @@ export default function Muuvlink() {
                       style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}>
                       {(user.avatar?.startsWith("/uploads/") || user.avatar?.startsWith("http")) ? (
                         <img src={user.avatar.startsWith("http") ? user.avatar : `${BASE_URL}${user.avatar}`} alt="" className="w-full h-full object-cover" />
-                      ) : (user.avatar || user.name[0].toUpperCase())}
+                      ) : (user.avatar || user.name[0].toLocaleUpperCase("en-US"))}
                     </div>
                     {user.name.split(" ")[0]} — {t("nav.profile")}
                   </button>
