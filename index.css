@@ -2,6 +2,179 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─────────────────────────────────────────────
+   BASE RESETS & GLOBAL ENHANCEMENTS
+───────────────────────────────────────────── */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+  }
+
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Metin seçim rengi — brand teal */
+  ::selection {
+    background: rgba(0, 183, 186, 0.20);
+    color: #006d6f;
+  }
+
+  /* Custom scrollbar — ince, brand renkli */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(0, 183, 186, 0.30);
+    border-radius: 99px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 183, 186, 0.55);
+  }
+
+  /* Firefox scrollbar */
+  * { scrollbar-width: thin; scrollbar-color: rgba(0,183,186,0.30) transparent; }
+}
+
+/* ─────────────────────────────────────────────
+   TYPOGRAPHY — Barlow Condensed display headings
+───────────────────────────────────────────── */
+@layer components {
+  .font-display {
+    font-family: 'Barlow Condensed', sans-serif;
+  }
+
+  /* Büyük ekran başlıkları için impact style */
+  .heading-display {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.0;
+  }
+
+  .heading-section {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.05;
+  }
+}
+
+/* ─────────────────────────────────────────────
+   BUTTON SYSTEM — press/hover micro-interactions
+───────────────────────────────────────────── */
+@layer components {
+  /* Ana CTA buton — teal gradient */
+  .btn-primary {
+    @apply relative inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-white text-sm
+           transition-all duration-200 select-none overflow-hidden;
+    background: linear-gradient(135deg, #00b7ba, #009295);
+    box-shadow: 0 4px 14px rgba(0,183,186,0.35);
+  }
+  .btn-primary:hover {
+    box-shadow: 0 8px 28px rgba(0,183,186,0.45);
+    transform: translateY(-1px);
+  }
+  .btn-primary:active {
+    transform: scale(0.97) translateY(0);
+    box-shadow: 0 2px 8px rgba(0,183,186,0.25);
+  }
+
+  /* Ghost buton */
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm
+           border border-slate-200 text-slate-600 bg-white
+           transition-all duration-150 select-none;
+  }
+  .btn-ghost:hover  { @apply bg-slate-50 border-slate-300 shadow-sm; }
+  .btn-ghost:active { transform: scale(0.97); }
+
+  /* Icon buton */
+  .btn-icon {
+    @apply w-9 h-9 flex items-center justify-center rounded-xl
+           transition-all duration-150 select-none;
+  }
+  .btn-icon:hover  { @apply bg-slate-100; }
+  .btn-icon:active { transform: scale(0.92); }
+}
+
+/* Tüm butonlara evrensel press efekti */
+@layer utilities {
+  button:not([disabled]):active {
+    transform: scale(0.975);
+  }
+  button[disabled] {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}
+
+/* ─────────────────────────────────────────────
+   CARD SYSTEM — hover lift & depth
+───────────────────────────────────────────── */
+@layer components {
+  .card {
+    @apply bg-white rounded-2xl border border-slate-100 transition-all duration-200;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+  .card:hover {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.09);
+    transform: translateY(-2px);
+    @apply border-slate-200;
+  }
+
+  .card-flat {
+    @apply bg-white rounded-2xl border border-slate-100;
+  }
+
+  /* Training/Team kart hover efekti */
+  .training-card-hover {
+    @apply transition-all duration-200;
+  }
+  .training-card-hover:hover {
+    @apply bg-slate-50/80;
+  }
+}
+
+/* ─────────────────────────────────────────────
+   FORM INPUTS — focus ring & transitions
+───────────────────────────────────────────── */
+@layer components {
+  .input-field {
+    @apply w-full h-12 px-4 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white
+           transition-all duration-200 outline-none;
+  }
+  .input-field:focus {
+    @apply border-brand-400 ring-2 ring-brand-100;
+  }
+  .input-field::placeholder { @apply text-slate-400; }
+}
+
+/* Native input / select / textarea focus rings — genel override */
+input:focus, select:focus, textarea:focus {
+  outline: none !important;
+  border-color: #2fcfd0 !important;
+  box-shadow: 0 0 0 3px rgba(0,183,186,0.15) !important;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+/* ─────────────────────────────────────────────
+   NAVIGATION — frosted glass
+───────────────────────────────────────────── */
+.nav-frosted {
+  background: rgba(255, 255, 255, 0.94) !important;
+  backdrop-filter: blur(24px) saturate(200%);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  border-bottom: 1px solid rgba(0,0,0,0.07) !important;
+  box-shadow: 0 1px 24px rgba(0,0,0,0.07);
+}
+
+/* ─────────────────────────────────────────────
+   ANIMATIONS
+───────────────────────────────────────────── */
 @keyframes mottoIn {
   from { opacity: 0; filter: blur(10px); transform: translateY(10px); }
   to   { opacity: 1; filter: blur(0px);  transform: translateY(0px); }
@@ -12,8 +185,182 @@
   50%       { opacity: 0; }
 }
 
-/* Motto font: mobilde çok büyük (2.5x+), masaüstünde başlıkla aynı */
-.bn-motto { font-size: 7rem; font-weight: 700; line-height: 1.05; white-space: normal; }
+@keyframes floatUp {
+  0%   { opacity: 0; transform: translateY(24px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0,183,186,0.4); }
+  50%       { box-shadow: 0 0 0 8px rgba(0,183,186,0); }
+}
+
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Sayfa içeriği yüklenince yumuşak giriş */
+.animate-float-up {
+  animation: floatUp 0.5s ease forwards;
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2s ease infinite;
+}
+
+/* Stagger delay yardımcı class'ları */
+.delay-75  { animation-delay: 75ms; }
+.delay-100 { animation-delay: 100ms; }
+.delay-150 { animation-delay: 150ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+
+/* ─────────────────────────────────────────────
+   BADGE / TAG — küçük renkli etiketler
+───────────────────────────────────────────── */
+@layer components {
+  .badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+  .badge-brand {
+    @apply badge bg-brand-50 text-brand-700;
+  }
+  .badge-accent {
+    @apply badge bg-purple-50 text-purple-700;
+  }
+}
+
+/* ─────────────────────────────────────────────
+   SKELETON LOADER
+───────────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s linear infinite;
+  border-radius: 8px;
+}
+
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+/* ─────────────────────────────────────────────
+   MOTTO / HERO TYPOGRAPHY
+───────────────────────────────────────────── */
+.bn-motto {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 7rem;
+  font-weight: 800;
+  line-height: 1.0;
+  letter-spacing: -0.02em;
+  white-space: normal;
+}
 @media (min-width: 768px) {
-  .bn-motto { font-size: clamp(2.8rem, 5.5vw, 4.5rem); line-height: 1.1; white-space: normal; }
+  .bn-motto {
+    font-size: clamp(2.8rem, 5.5vw, 4.5rem);
+    line-height: 1.05;
+  }
+}
+
+/* Hero h1 display title */
+.bn-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* ─────────────────────────────────────────────
+   MODAL BACKDROP
+───────────────────────────────────────────── */
+.modal-backdrop {
+  animation: fadeIn 0.2s ease forwards;
+}
+.modal-content {
+  animation: popIn 0.25s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes popIn  {
+  from { opacity: 0; transform: scale(0.93) translateY(8px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
+
+/* ─────────────────────────────────────────────
+   TEAM / TRAINING LIST ITEMS
+───────────────────────────────────────────── */
+.list-item-hover {
+  @apply transition-all duration-150 cursor-pointer;
+}
+.list-item-hover:hover {
+  @apply bg-slate-50;
+}
+.list-item-hover:active {
+  @apply bg-slate-100;
+  transform: scale(0.99);
+}
+
+/* ─────────────────────────────────────────────
+   NOTIFICATION BADGE — pulse ring
+───────────────────────────────────────────── */
+.notif-badge-pulse::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 2px solid #ef4444;
+  animation: pulseRing 1.5s ease infinite;
+}
+@keyframes pulseRing {
+  0%   { transform: scale(1);   opacity: 0.8; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+/* ─────────────────────────────────────────────
+   MOBILE NAV DRAWER
+───────────────────────────────────────────── */
+.mobile-drawer {
+  animation: slideUp 0.3s cubic-bezier(0.4,0,0.2,1) forwards;
+}
+@keyframes slideUp {
+  from { transform: translateY(12px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* ─────────────────────────────────────────────
+   SECTION LABEL — küçük üst etiket
+───────────────────────────────────────────── */
+.section-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: #00b7ba;
+}
+
+/* ─────────────────────────────────────────────
+   GRADIENT TEXT UTILITY
+───────────────────────────────────────────── */
+.text-gradient-brand {
+  background: linear-gradient(90deg, #00b7ba, #009295);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.text-gradient-vivid {
+  background: linear-gradient(90deg, #00b7ba, #981dd8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─────────────────────────────────────────────
+   FOCUS VISIBLE — keyboard accessibility
+───────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid #00b7ba;
+  outline-offset: 2px;
+  border-radius: 6px;
 }

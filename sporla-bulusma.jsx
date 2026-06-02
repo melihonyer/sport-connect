@@ -24,6 +24,7 @@ import {
   MessageCircle,
   Settings,
   ChevronDown,
+  Check,
   Navigation2,
   Loader2,
   CheckCircle,
@@ -1096,6 +1097,15 @@ export default function Muuvlink() {
     localStorage.setItem("muuvlang", l);
     document.documentElement.lang = l;
   };
+  const [langDropOpen, setLangDropOpen] = useState(false);
+  const langDropRef = useRef(null);
+  useEffect(() => {
+    const handler = (e) => {
+      if (langDropRef.current && !langDropRef.current.contains(e.target)) setLangDropOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   const PAGE_META = {
     home:              { title:`Muuvlink — ${t("home.heroTagline")}`,             desc: t("home.heroSubtitleFallback")  },
@@ -5429,17 +5439,35 @@ export default function Muuvlink() {
             {/* Sağ aksiyonlar — desktop */}
             <div className="hidden md:flex items-center gap-2.5">
 
-              {/* Dil seçici */}
-              <div className="flex items-center gap-0.5 bg-slate-100 rounded-xl p-1">
-                {["tr","en","de"].map(l => (
-                  <button key={l} onClick={() => changeLang(l)}
-                    className="px-2.5 py-1 rounded-lg text-xs font-bold uppercase transition-all duration-150"
-                    style={lang === l
-                      ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff"}
-                      : {color:"#64748b"}}>
-                    {l}
-                  </button>
-                ))}
+              {/* Dil seçici — dropdown */}
+              <div className="relative" ref={langDropRef}>
+                <button
+                  onClick={() => setLangDropOpen(o => !o)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-all duration-150 select-none"
+                >
+                  <Globe className="w-3.5 h-3.5"/>
+                  <span className="uppercase tracking-wider">{lang}</span>
+                  <ChevronDown className={`w-3 h-3 opacity-50 transition-transform duration-200 ${langDropOpen ? "rotate-180" : ""}`}/>
+                </button>
+                {langDropOpen && (
+                  <div className="absolute right-0 top-[calc(100%+6px)] bg-white rounded-2xl border border-slate-200/80 shadow-xl overflow-hidden z-[200] w-40">
+                    {[
+                      { code:"tr", label:"Türkçe" },
+                      { code:"en", label:"English" },
+                      { code:"de", label:"Deutsch" },
+                    ].map(({ code, label }) => (
+                      <button key={code}
+                        onClick={() => { changeLang(code); setLangDropOpen(false); }}
+                        className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-left transition-colors hover:bg-slate-50"
+                        style={lang === code ? {background:"rgba(0,183,186,0.07)", color:"#009295", fontWeight:600} : {color:"#475569"}}
+                      >
+                        <span className="text-[10px] font-bold tracking-widest w-6 text-slate-400">{code.toLocaleUpperCase("en-US")}</span>
+                        <span className="flex-1">{label}</span>
+                        {lang === code && <Check className="w-3.5 h-3.5 flex-shrink-0" style={{color:"#00b7ba"}}/>}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {user ? (
@@ -5583,16 +5611,29 @@ export default function Muuvlink() {
                     </button>
                   </div>
                   {/* Mobil dil seçici */}
-                  <div className="flex items-center justify-center gap-1 mt-2 pt-3 border-t border-slate-100">
-                    {["tr","en","de"].map(l => (
-                      <button key={l} onClick={() => { changeLang(l); setMobileOpen(false); }}
-                        className="px-3 py-1.5 rounded-xl text-xs font-bold uppercase transition-all"
-                        style={lang === l
-                          ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff"}
-                          : {color:"#94a3b8", background:"#f8fafc"}}>
-                        {l}
-                      </button>
-                    ))}
+                  <div className="mt-2 pt-3 border-t border-slate-100">
+                    <div className="flex items-center gap-1.5 px-1 mb-1">
+                      <Globe className="w-3.5 h-3.5 text-slate-400"/>
+                      <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">Language</span>
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                      {[
+                        { code:"tr", label:"Türkçe" },
+                        { code:"en", label:"English" },
+                        { code:"de", label:"Deutsch" },
+                      ].map(({ code, label }) => (
+                        <button key={code}
+                          onClick={() => { changeLang(code); setMobileOpen(false); }}
+                          className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl text-sm text-left transition-colors"
+                          style={lang === code
+                            ? {background:"rgba(0,183,186,0.07)", color:"#009295", fontWeight:600}
+                            : {color:"#475569"}}>
+                          <span className="text-[10px] font-bold tracking-widest w-6 text-slate-400">{code.toLocaleUpperCase("en-US")}</span>
+                          <span className="flex-1">{label}</span>
+                          {lang === code && <Check className="w-3.5 h-3.5 flex-shrink-0" style={{color:"#00b7ba"}}/>}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </>
               )}
