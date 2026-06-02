@@ -1134,7 +1134,7 @@ export default function Muuvlink() {
   const [userBadges, setUserBadges] = useState([]);
   const [userStats, setUserStats] = useState(null);
   const [activityData, setActivityData] = useState([]);
-  const [activityMeta, setActivityMeta] = useState({ streak: 0, weekTotal: 0, weekMinutes: 0 });
+  const [activityMeta, setActivityMeta] = useState({ streak: 0, weekTotal: 0 });
   const [selectedTraining, setSelectedTraining] = useState(null);
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [pendingInvitations, setPendingInvitations] = useState([]);
@@ -2585,7 +2585,7 @@ export default function Muuvlink() {
       if (response.ok) {
         const data = await response.json();
         setActivityData(data.activity || []);
-        setActivityMeta({ streak: data.streak || 0, weekTotal: data.weekTotal || 0, weekMinutes: data.weekMinutes || 0 });
+        setActivityMeta({ streak: data.streak || 0, weekTotal: data.weekTotal || 0 });
       }
     } catch (error) {
       console.error("Fetch activity error:", error);
@@ -3172,9 +3172,9 @@ export default function Muuvlink() {
               {/* Haftalık özet istatistikler */}
               <div className="grid grid-cols-3 gap-3 mb-5">
                 {[
-                  { val: activityMeta.weekTotal, label: t("activity.weekTrainings"), icon: "🏃" },
-                  { val: activityMeta.weekMinutes > 0 ? `${activityMeta.weekMinutes} dk` : "—", label: t("activity.weekMinutes"), icon: "⏱" },
-                  { val: activityMeta.streak, label: t("activity.currentStreak"), icon: "🔥" },
+                  { val: activityMeta.weekTotal, label: t("activity.weekTrainings") },
+                  { val: activityData.filter(d => d.count > 0).length, label: t("activity.activeDays") },
+                  { val: activityMeta.streak, label: t("activity.currentStreak") },
                 ].map((s, i) => (
                   <div key={i} className="bg-slate-50 rounded-xl px-3 py-2.5 border border-slate-100 text-center">
                     <div className="text-lg font-bold text-slate-800">{s.val}</div>
@@ -3203,9 +3203,6 @@ export default function Muuvlink() {
                                 <span className="truncate max-w-[120px]">{tr.title}</span>
                               </div>
                             ))}
-                            {d.minutes > 0 && (
-                              <div className="text-[10px] text-slate-400 mt-1.5 border-t border-slate-100 pt-1.5">⏱ {d.minutes} dk</div>
-                            )}
                           </div>
                         );
                       }}

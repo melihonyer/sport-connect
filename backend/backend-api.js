@@ -2270,7 +2270,6 @@ app.get('/api/users/:id/activity', authenticateToken, async (req, res) => {
       `SELECT
          t.training_date::date as date,
          COUNT(DISTINCT ta.training_id) as count,
-         COALESCE(SUM(t.duration_minutes), 0) as total_minutes,
          json_agg(json_build_object('title', t.title, 'sport', t.sport) ORDER BY t.training_time) as trainings
        FROM training_attendees ta
        JOIN trainings t ON ta.training_id = t.id
@@ -2307,16 +2306,13 @@ app.get('/api/users/:id/activity', authenticateToken, async (req, res) => {
         date: dateStr,
         day: ['Pz', 'Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct'][date.getDay()],
         count: dayData ? parseInt(dayData.count) : 0,
-        minutes: dayData ? parseInt(dayData.total_minutes) : 0,
         trainings: dayData ? dayData.trainings : [],
         isToday: i === 0,
       });
     }
 
     const weekTotal = last7Days.reduce((s, d) => s + d.count, 0);
-    const weekMinutes = last7Days.reduce((s, d) => s + d.minutes, 0);
-
-    res.json({ activity: last7Days, streak, weekTotal, weekMinutes });
+    res.json({ activity: last7Days, streak, weekTotal });
   } catch (error) {
     console.error('Activity error:', error);
     res.status(500).json({ error: 'Internal server error' });

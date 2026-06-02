@@ -205,7 +205,7 @@ export const translations = {
   activity: {
     streakDays:       { tr: "gün seri",         en: "day streak",        de: "Tage-Serie"         },
     weekTrainings:    { tr: "Bu Hafta",          en: "This Week",         de: "Diese Woche"        },
-    weekMinutes:      { tr: "Toplam Süre",       en: "Total Duration",    de: "Gesamtdauer"        },
+    activeDays:       { tr: "Aktif Gün",         en: "Active Days",       de: "Aktive Tage"        },
     currentStreak:    { tr: "Seri",              en: "Streak",            de: "Serie"              },
     tooltipTrainings: { tr: "antrenman",         en: "training(s)",       de: "Training(s)"        },
     noActivityYet:    { tr: "Bu hafta henüz tamamlanan antrenman yok", en: "No completed trainings this week", de: "Keine abgeschlossenen Trainings diese Woche" },
