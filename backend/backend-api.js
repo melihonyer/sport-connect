@@ -669,7 +669,7 @@ const updateUserStats = async (userId) => {
       `SELECT COUNT(*) as count
        FROM training_attendees ta
        JOIN trainings t ON ta.training_id = t.id
-       WHERE ta.user_id = $1 AND (t.training_date < CURRENT_DATE OR (t.training_date = CURRENT_DATE AND t.training_time < CURRENT_TIME))`,
+       WHERE ta.user_id = $1 AND (t.training_date::date < CURRENT_DATE OR (t.training_date::date = CURRENT_DATE AND t.training_time::time < CURRENT_TIME::time))`,
       [userId]
     );
 
@@ -706,7 +706,7 @@ app.get('/api/trainings/public', async (req, res) => {
       JOIN teams ON t.team_id = teams.id
       LEFT JOIN training_attendees ta ON t.id = ta.training_id
       WHERE t.is_public = true
-  AND t.training_date >= CURRENT_DATE
+  AND t.training_date::date >= CURRENT_DATE
     `;
 
     const params = [];
@@ -1683,7 +1683,7 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
     // Yaklaşan diğer antrenmanları al (yeni oluşturulan hariç)
     const upcomingRes = await pool.query(
       `SELECT title, training_date, training_time, location_name FROM trainings
-       WHERE team_id = $1 AND id != $2 AND training_date >= CURRENT_DATE
+       WHERE team_id = $1 AND id != $2 AND training_date::date >= CURRENT_DATE
        ORDER BY training_date, training_time LIMIT 3`,
       [team_id, training.id]
     );
@@ -1754,8 +1754,8 @@ app.get('/api/trainings', optionalAuth, async (req, res) => {
         ))
       )
       AND (
-        t.training_date > CURRENT_DATE
-        OR (t.training_date = CURRENT_DATE AND t.training_time >= CURRENT_TIME)
+        t.training_date::date > CURRENT_DATE
+        OR (t.training_date::date = CURRENT_DATE AND t.training_time::time >= CURRENT_TIME::time)
       )
     `;
 
@@ -1817,8 +1817,8 @@ app.get('/api/trainings/my-joined', authenticateToken, async (req, res) => {
       JOIN training_attendees ta ON t.id = ta.training_id AND ta.user_id = $1
       LEFT JOIN training_attendees ta2 ON t.id = ta2.training_id
       WHERE (
-        t.training_date > CURRENT_DATE
-        OR (t.training_date = CURRENT_DATE AND t.training_time >= CURRENT_TIME)
+        t.training_date::date > CURRENT_DATE
+        OR (t.training_date::date = CURRENT_DATE AND t.training_time::time >= CURRENT_TIME::time)
       )
       GROUP BY t.id, teams.name, teams.sport, teams.avatar
       ORDER BY t.training_date ASC, t.training_time ASC
@@ -1849,8 +1849,8 @@ app.get('/api/trainings/my-team-trainings', authenticateToken, async (req, res) 
         SELECT 1 FROM training_attendees WHERE training_id = t.id AND user_id = $1
       )
       AND (
-        t.training_date > CURRENT_DATE
-        OR (t.training_date = CURRENT_DATE AND t.training_time >= CURRENT_TIME)
+        t.training_date::date > CURRENT_DATE
+        OR (t.training_date::date = CURRENT_DATE AND t.training_time::time >= CURRENT_TIME::time)
       )
       GROUP BY t.id, teams.name, teams.sport, teams.avatar
       ORDER BY t.training_date ASC, t.training_time ASC
@@ -1898,8 +1898,8 @@ app.get('/api/trainings/nearby', optionalAuth, async (req, res) => {
          WHERE t.location_lat IS NOT NULL
            AND t.location_lng IS NOT NULL
            AND (
-             t.training_date > CURRENT_DATE
-             OR (t.training_date = CURRENT_DATE AND t.training_time >= CURRENT_TIME)
+             t.training_date::date > CURRENT_DATE
+             OR (t.training_date::date = CURRENT_DATE AND t.training_time::time >= CURRENT_TIME::time)
            )
            AND ${privacyFilter}
        ) sub
@@ -2549,7 +2549,7 @@ app.get('/api/admin/stats', isAdmin, async (req, res) => {
       pool.query('SELECT COUNT(*) FROM users'),
       pool.query('SELECT COUNT(*) FROM trainings'),
       pool.query('SELECT COUNT(*) FROM teams'),
-      pool.query(`SELECT COUNT(*) FROM trainings WHERE training_date < CURRENT_DATE OR (training_date = CURRENT_DATE AND training_time < CURRENT_TIME)`),
+      pool.query(`SELECT COUNT(*) FROM trainings WHERE training_date::date < CURRENT_DATE OR (training_date::date = CURRENT_DATE AND training_time::time < CURRENT_TIME::time)`),
       pool.query("SELECT COUNT(*) FROM contact_messages WHERE is_read = false"),
       pool.query("SELECT id, name, email, created_at FROM users ORDER BY created_at DESC LIMIT 5"),
     ]);
