@@ -5,6 +5,8 @@ const dns = require('dns');
 dns.setDefaultResultOrder('ipv4first');
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
@@ -31,8 +33,41 @@ const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET;
 const APP_URL = process.env.APP_URL || 'http://localhost:5173';
 
-app.use(cors());
-app.use(express.json());
+// CORS — sadece muuvlink.app'e izin ver
+app.use(cors({
+  origin: [
+    'https://muuvlink.app',
+    'https://www.muuvlink.app',
+    ...(process.env.NODE_ENV !== 'production' ? ['http://localhost:5173', 'http://localhost:3000'] : []),
+  ],
+  credentials: true,
+}));
+
+// Helmet — güvenlik HTTP header'ları
+app.use(helmet({
+  contentSecurityPolicy: false, // SPA için devre dışı, nginx seviyesinde yönetilecek
+  crossOriginEmbedderPolicy: false,
+}));
+
+// Rate limiting
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 dakika
+  max: 20,                   // 15 dk'da max 20 deneme
+  message: { error: 'Çok fazla istek. Lütfen 15 dakika sonra tekrar deneyin.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+const generalLimiter = rateLimit({
+  windowMs: 60 * 1000,  // 1 dakika
+  max: 120,             // dakikada 120 istek
+  message: { error: 'Çok fazla istek. Lütfen bir süre bekleyin.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => req.path.startsWith('/uploads'), // statik dosyaları atla
+});
+
+app.use(generalLimiter);
+app.use(express.json({ limit: '2mb' }));
 
 // Statik dosyalar (upload edilen görseller)
 const uploadsDir = path.join(__dirname, 'uploads');
@@ -721,7 +756,7 @@ app.get('/api/trainings/public', async (req, res) => {
 // AUTH ROUTES
 // =====================================================
 
-app.post('/api/auth/register', async (req, res) => {
+app.post('/api/auth/register', authLimiter, async (req, res) => {
   try {
     const { name, email, password, phone } = req.body;
 
@@ -775,7 +810,7 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', authLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -3360,7 +3395,7 @@ pool.query(`
 // =====================================================
 
 // Şifremi unuttum — token üret, e-posta gönder
-app.post('/api/auth/forgot-password', async (req, res) => {
+app.post('/api/auth/forgot-password', authLimiter, async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: 'E-posta gerekli.' });
   try {
