@@ -698,6 +698,18 @@ export const translations = {
     title:     { tr: "Takım Etkinlikleri",                        en: "Team Events",                               de: "Team-Events"                              },
     subtitle:  { tr: "Muuvlink topluluğundan etkinlik haberleri", en: "Event news from the Muuvlink community",    de: "Veranstaltungsnews der Muuvlink-Community" },
     published: { tr: "Yayın",                                     en: "Published",                                 de: "Veröffentlicht"                           },
+    cta:       { tr: "Takımınızın etkinliğini Muuvlink topluluğuyla paylaşmak ister misiniz?",
+                 en: "Want to share your team's event with the Muuvlink community?",
+                 de: "Möchten Sie das Event Ihres Teams mit der Muuvlink-Community teilen?" },
+    ctaBtn:    { tr: "Bizimle İletişime Geçin",                   en: "Get in Touch",                              de: "Kontakt aufnehmen"                        },
+  },
+
+  // ── GALLERY ──────────────────────────────────────────────
+  gallery: {
+    cta:       { tr: "Etkinlik fotoğraflarınızın bu alanda yer almasını ister misiniz?",
+                 en: "Want your event photos featured in the Muuvlink gallery?",
+                 de: "Möchten Sie Ihre Event-Fotos in der Muuvlink-Galerie sehen?" },
+    ctaBtn:    { tr: "Bizimle İletişime Geçin",                   en: "Get in Touch",                              de: "Kontakt aufnehmen"                        },
   },
 
   // ── MAP VIEW ─────────────────────────────────────────────

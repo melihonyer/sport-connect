@@ -660,7 +660,7 @@ const AuthModal = ({ authMode, setAuthMode, onClose, handleLogin, handleRegister
 };
 
 // ── Haber kartı ────────────────────────────────────────────
-function NewsSection({ items, t }) {
+function NewsSection({ items, t, setCurrentPage }) {
   const [lightbox, setLightbox] = useState(null);
   if (!items || items.length === 0) return null;
   return (
@@ -692,6 +692,19 @@ function NewsSection({ items, t }) {
             </div>
           </article>
         ))}
+      </div>
+
+      {/* CTA */}
+      <div className="text-center mt-10 px-4">
+        <p className="text-slate-500 text-sm mb-3">
+          {t ? t("news.cta") : "Want to share your team's event with the Muuvlink community?"}
+        </p>
+        <button
+          onClick={() => setCurrentPage && setCurrentPage("contact")}
+          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 hover:border-slate-400 transition-all"
+        >
+          {t ? t("news.ctaBtn") : "Contact Us"} →
+        </button>
       </div>
 
       {/* Lightbox */}
@@ -742,7 +755,7 @@ function GalleryItem({ p, style, onOpen }) {
 }
 
 // ── Galeri bölümü ───────────────────────────────────────────
-function GallerySection({ items }) {
+function GallerySection({ items, t, setCurrentPage }) {
   const [lightbox, setLightbox] = useState(null);
   if (!items || items.length === 0) return null;
   const total = items.length;
@@ -792,6 +805,19 @@ function GallerySection({ items }) {
           )}
         </>
       )}
+
+      {/* CTA */}
+      <div className="text-center py-12 px-4">
+        <p className="text-slate-500 text-sm mb-3">
+          {t ? t("gallery.cta") : "Want your photos featured in the Muuvlink gallery?"}
+        </p>
+        <button
+          onClick={() => setCurrentPage && setCurrentPage("contact")}
+          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 hover:border-slate-400 transition-all"
+        >
+          {t ? t("gallery.ctaBtn") : "Contact Us"} →
+        </button>
+      </div>
 
       {lightbox && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90" onClick={() => setLightbox(null)}>
@@ -3024,8 +3050,8 @@ export default function Muuvlink() {
         </div>
       </div>
 
-      <NewsSection items={homeNews} t={t} />
-      <GallerySection items={homeGallery} />
+      <NewsSection items={homeNews} t={t} setCurrentPage={setCurrentPage} />
+      <GallerySection items={homeGallery} t={t} setCurrentPage={setCurrentPage} />
 
       {/* ── CTA — Full Bleed Cinematic ── */}
       {!user && (
