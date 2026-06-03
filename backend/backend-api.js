@@ -2282,16 +2282,13 @@ app.get('/api/users/:id/activity', authenticateToken, async (req, res) => {
 
     const sixDaysAgo = addDays(todayIST, -6);
 
-    // --- DEBUG ---
-    console.log('[activity] userId:', userId, 'todayIST:', todayIST, 'sixDaysAgo:', sixDaysAgo);
-
     // Son 7 günün tamamlanmış antrenmanları
     // Tarih parametreleri Node'dan geliyor → DB ve JS tarihleri her zaman uyumlu
     const result = await pool.query(
       `SELECT
          t.training_date::date as date,
          COUNT(DISTINCT ta.training_id) as count,
-         json_agg(json_build_object('title', t.title, 'sport', t.sport) ORDER BY t.training_time) as trainings
+         json_agg(json_build_object('title', t.title) ORDER BY t.training_time) as trainings
        FROM training_attendees ta
        JOIN trainings t ON ta.training_id = t.id
        WHERE ta.user_id = $1
@@ -2305,9 +2302,6 @@ app.get('/api/users/:id/activity', authenticateToken, async (req, res) => {
        ORDER BY date ASC`,
       [userId, sixDaysAgo, todayIST]
     );
-
-    // --- DEBUG ---
-    console.log('[activity] raw rows:', JSON.stringify(result.rows.map(r => ({ date: r.date, count: r.count }))));
 
     // DB'den dönen date: PostgreSQL DATE → JS Date objesi (UTC gece yarısı)
     // Güvenli karşılaştırma için .toISOString() yerine direkt format
@@ -2352,21 +2346,6 @@ app.get('/api/users/:id/activity', authenticateToken, async (req, res) => {
 });
 
 // =====================================================
-// DEBUG endpoint — geçici, sonra silinecek
-app.get('/api/debug/my-trainings', authenticateToken, async (req, res) => {
-  try {
-    const r = await pool.query(
-      `SELECT ta.training_id, ta.user_id, ta.status, t.title, t.training_date, t.training_date::date as date_only, t.training_time
-       FROM training_attendees ta
-       JOIN trainings t ON t.id = ta.training_id
-       WHERE ta.user_id = $1
-       ORDER BY t.training_date DESC LIMIT 10`,
-      [req.user.id]
-    );
-    res.json({ userId: req.user.id, rows: r.rows });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
 // =====================================================
 // NOTIFICATIONS
 // =====================================================
