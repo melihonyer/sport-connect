@@ -2267,7 +2267,23 @@ app.get('/api/users/:id/activity', authenticateToken, async (req, res) => {
   try {
     const userId = req.params.id;
 
-    // Son 7 günün tamamlanmış antrenmanları (bugün için saat kontrolü)
+    // İstanbul timezone'unda bugünün tarih string'ini üret (YYYY-MM-DD)
+    // Node.js UTC'de çalışıyor, DB session 'Europe/Istanbul' — ikisini senkronize etmek için
+    // her iki tarafta da İstanbul tarihini explicit olarak kullanıyoruz.
+    const istFmt = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Istanbul' });
+    const todayIST = istFmt.format(new Date()); // 'YYYY-MM-DD'
+
+    // İstanbul tarihine gün ekle/çıkar (UTC öğlen saatinden yapılır — DST güvenli)
+    const addDays = (dateStr, days) => {
+      const d = new Date(dateStr + 'T12:00:00Z');
+      d.setUTCDate(d.getUTCDate() + days);
+      return d.toISOString().split('T')[0];
+    };
+
+    const sixDaysAgo = addDays(todayIST, -6);
+
+    // Son 7 günün tamamlanmış antrenmanları
+    // Tarih parametreleri Node'dan geliyor → DB ve JS tarihleri her zaman uyumlu
     const result = await pool.query(
       `SELECT
          t.training_date::date as date,
@@ -2276,37 +2292,45 @@ app.get('/api/users/:id/activity', authenticateToken, async (req, res) => {
        FROM training_attendees ta
        JOIN trainings t ON ta.training_id = t.id
        WHERE ta.user_id = $1
-         AND t.training_date::date >= CURRENT_DATE - INTERVAL '6 days'
+         AND t.training_date::date >= $2::date
+         AND t.training_date::date <= $3::date
          AND (
-           t.training_date::date < CURRENT_DATE
-           OR (t.training_date::date = CURRENT_DATE AND t.training_time <= CURRENT_TIME)
+           t.training_date::date < $3::date
+           OR (t.training_date::date = $3::date AND t.training_time <= CURRENT_TIME)
          )
        GROUP BY t.training_date::date
        ORDER BY date ASC`,
-      [userId]
+      [userId, sixDaysAgo, todayIST]
     );
 
-    // Haftalık streak hesapla (ardışık günler)
+    // DB'den dönen date: PostgreSQL DATE → JS Date objesi (UTC gece yarısı)
+    // Güvenli karşılaştırma için .toISOString() yerine direkt format
+    const rowDateStr = (row) => {
+      const d = row.date;
+      if (typeof d === 'string') return d.slice(0, 10);
+      // Date object → YYYY-MM-DD UTC (DATE kolonu UTC gece yarısında gelir)
+      return d.toISOString().split('T')[0];
+    };
+
+    // Streak hesabı — 30 gün geriye git (İstanbul tarihleri ile)
     let streak = 0;
-    const today = new Date();
     for (let i = 0; i < 30; i++) {
-      const d = new Date(today);
-      d.setDate(d.getDate() - i);
-      const ds = d.toISOString().split('T')[0];
-      const found = result.rows.find(r => r.date.toISOString().split('T')[0] === ds);
+      const ds = addDays(todayIST, -i);
+      const found = result.rows.find(r => rowDateStr(r) === ds);
       if (found && parseInt(found.count) > 0) { streak++; } else if (i > 0) { break; }
     }
 
     // Son 7 günü doldur (boş günler için 0)
+    const DAY_NAMES = ['Pz', 'Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct'];
     const last7Days = [];
     for (let i = 6; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      const dateStr = date.toISOString().split('T')[0];
-      const dayData = result.rows.find(r => r.date.toISOString().split('T')[0] === dateStr);
+      const dateStr = addDays(todayIST, -i);
+      const dayData = result.rows.find(r => rowDateStr(r) === dateStr);
+      // Hücre gün adı: UTC öğlen saatinden hesaplanır → DST güvenli
+      const dayOfWeek = new Date(dateStr + 'T12:00:00Z').getUTCDay();
       last7Days.push({
         date: dateStr,
-        day: ['Pz', 'Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct'][date.getDay()],
+        day: DAY_NAMES[dayOfWeek],
         count: dayData ? parseInt(dayData.count) : 0,
         trainings: dayData ? dayData.trainings : [],
         isToday: i === 0,
