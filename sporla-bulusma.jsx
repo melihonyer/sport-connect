@@ -1995,6 +1995,25 @@ export default function Muuvlink() {
     }
   };
 
+  // Saat geçmiş antrenmanları client tarafında da filtrele
+  const filterPastTrainings = (list) => {
+    const istFmt  = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Istanbul' });
+    const timeFmt = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Istanbul',
+                      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+    const now         = new Date();
+    const todayStr    = istFmt.format(now);           // 'YYYY-MM-DD'
+    const nowTimeStr  = timeFmt.format(now);           // 'HH:MM:SS'
+    return list.filter(tr => {
+      const d = tr.training_date ? tr.training_date.slice(0, 10) : null;
+      const t = tr.training_time ? tr.training_time.slice(0, 8)  : null;
+      if (!d) return true;
+      if (d > todayStr) return true;
+      if (d < todayStr) return false;
+      // Bugün — saat kontrolü
+      return !t || t >= nowTimeStr;
+    });
+  };
+
   const fetchTrainings = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -2002,7 +2021,7 @@ export default function Muuvlink() {
       const response = await fetch(`${API_URL}/trainings`, { headers, cache: 'no-store' });
       if (response.ok) {
         const data = await response.json();
-        setTrainings(data.trainings || []);
+        setTrainings(filterPastTrainings(data.trainings || []));
       }
     } catch (error) {
       console.error("Fetch trainings error:", error);
@@ -2020,7 +2039,7 @@ export default function Muuvlink() {
       );
       if (response.ok) {
         const data = await response.json();
-        setNearbyTrainings(data.trainings || []);
+        setNearbyTrainings(filterPastTrainings(data.trainings || []));
       }
     } catch (error) {
       console.error("Fetch nearby trainings error:", error);
@@ -3384,6 +3403,9 @@ export default function Muuvlink() {
   );
 
   const TrainingsPage = () => {
+    // Sayfaya her geçişte güncel veri çek
+    useEffect(() => { fetchTrainings(); }, []);
+
     const sports = ["Basketbol", "Bisiklet", "Crossfit", "Futbol", "Kano", "Koşu", "Kürek", "Padel", "Pilates", "Tenis", "Trekking", "Triatlon", "Voleybol", "Yoga", "Yüzme", "Diğer"];
     const difficulties = [
       { val: "Kolay", label: t("trainings.levelEasy") },
