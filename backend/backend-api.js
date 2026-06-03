@@ -764,8 +764,17 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
     if (!name || !email || !password) {
       return res.status(400).json({ error: 'Name, email and password are required' });
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: 'Geçerli bir e-posta adresi girin.' });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Şifre en az 6 karakter olmalıdır.' });
+    }
+    if (name.trim().length < 2) {
+      return res.status(400).json({ error: 'İsim en az 2 karakter olmalıdır.' });
+    }
 
-    const userExists = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
+    const userExists = await pool.query('SELECT id FROM users WHERE email = $1', [email.toLowerCase().trim()]);
 
     if (userExists.rows.length > 0) {
       return res.status(409).json({ error: 'Email already registered' });
@@ -900,7 +909,7 @@ app.post('/api/auth/avatar', authenticateToken, uploadAvatar.single('avatar'), a
     res.json({ message: 'Avatar güncellendi', user: result.rows[0] });
   } catch (error) {
     console.error('Avatar upload error:', error);
-    res.status(500).json({ error: error.message || 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -927,7 +936,7 @@ app.post('/api/teams/:id/avatar', authenticateToken, uploadAvatar.single('avatar
     res.json({ message: 'Takım fotoğrafı güncellendi', avatar: avatarUrl, team: result.rows[0] });
   } catch (error) {
     console.error('Team avatar upload error:', error);
-    res.status(500).json({ error: error.message || 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -1342,7 +1351,7 @@ app.get('/api/teams/:id/invitations', authenticateToken, async (req, res) => {
     );
     res.json(result.rows);
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -1363,7 +1372,7 @@ app.delete('/api/teams/:id/invitations/:inviteId', authenticateToken, async (req
     );
     res.json({ message: 'Davet iptal edildi.' });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -1389,7 +1398,7 @@ app.post('/api/teams/:id/accept-invite', authenticateToken, async (req, res) => 
 
     res.json({ message: 'Takıma başarıyla katıldınız!' });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -1444,6 +1453,11 @@ app.put('/api/teams/:teamId/members/:userId/role', authenticateToken, async (req
   try {
     const { teamId, userId } = req.params;
     const { role } = req.body;
+
+    const ALLOWED_ROLES = ['member', 'coach', 'captain'];
+    if (!ALLOWED_ROLES.includes(role)) {
+      return res.status(400).json({ error: 'Geçersiz rol. İzin verilenler: member, coach, captain' });
+    }
 
     const ownerCheck = await pool.query(
       'SELECT owner_id FROM teams WHERE id = $1',
@@ -1855,10 +1869,15 @@ app.get('/api/trainings/nearby', optionalAuth, async (req, res) => {
 
     const userId = req.user?.id || null;
 
-    // Gizlilik: giriş yapmamış → herkese açık takımlar veya public; giriş yapmış → + kendi takımları
-    const privacyFilter = userId
-      ? `(teams.is_private = false OR t.is_public = true OR teams.id IN (SELECT team_id FROM team_members WHERE user_id = ${parseInt(userId)}))`
-      : `(teams.is_private = false OR t.is_public = true)`;
+    // Parametre bazlı privacy filtresi — string interpolation yok
+    const params = [parseFloat(lat), parseFloat(lng), parseFloat(radius)];
+    let privacyFilter;
+    if (userId) {
+      params.push(userId);
+      privacyFilter = `(teams.is_private = false OR t.is_public = true OR teams.id IN (SELECT team_id FROM team_members WHERE user_id = $${params.length}))`;
+    } else {
+      privacyFilter = `(teams.is_private = false OR t.is_public = true)`;
+    }
 
     const result = await pool.query(
       `SELECT * FROM (
@@ -1886,7 +1905,7 @@ app.get('/api/trainings/nearby', optionalAuth, async (req, res) => {
        ) sub
        WHERE distance <= $3
        ORDER BY distance ASC`,
-      [parseFloat(lat), parseFloat(lng), parseFloat(radius)]
+      params
     );
 
     res.json({ trainings: result.rows });
@@ -2818,7 +2837,7 @@ app.post('/api/admin/banners', isAdmin, async (req, res) => {
     );
     res.json(result.rows[0]);
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -2851,7 +2870,7 @@ app.put('/api/admin/banners/:id', isAdmin, async (req, res) => {
     );
     res.json(result.rows[0]);
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -2869,7 +2888,7 @@ app.post('/api/admin/banners/:id/image', isAdmin, uploadBanner.single('image'), 
     );
     res.json(result.rows[0]);
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -2884,7 +2903,7 @@ app.delete('/api/admin/banners/:id', isAdmin, async (req, res) => {
     await pool.query('DELETE FROM banners WHERE id=$1', [req.params.id]);
     res.json({ message: 'Banner silindi.' });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -2896,14 +2915,14 @@ app.get('/api/home-news', async (req, res) => {
   try {
     const r = await pool.query(`SELECT * FROM home_news WHERE is_active=true ORDER BY order_index ASC, created_at DESC`);
     res.json(r.rows);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
 app.get('/api/admin/home-news', isAdmin, async (req, res) => {
   try {
     const r = await pool.query(`SELECT * FROM home_news ORDER BY order_index ASC, created_at DESC`);
     res.json(r.rows);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
 app.post('/api/admin/home-news', isAdmin, async (req, res) => {
@@ -2916,7 +2935,7 @@ app.post('/api/admin/home-news', isAdmin, async (req, res) => {
        views||0, comments||0, is_active!==false, order_index||0]
     );
     res.json(r.rows[0]);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
 app.put('/api/admin/home-news/:id', isAdmin, async (req, res) => {
@@ -2928,7 +2947,7 @@ app.put('/api/admin/home-news/:id', isAdmin, async (req, res) => {
       [title, description||'', date_label||'', icon||'', bg, views||0, comments||0, is_active!==false, order_index||0, req.params.id]
     );
     res.json(r.rows[0]);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
 app.post('/api/admin/home-news/:id/image', isAdmin, uploadBanner.single('image'), async (req, res) => {
@@ -2938,14 +2957,14 @@ app.post('/api/admin/home-news/:id/image', isAdmin, uploadBanner.single('image')
     const imageUrl = await uploadToSupabase('banners', fileName, req.file.buffer, req.file.mimetype);
     const r = await pool.query('UPDATE home_news SET image_url=$1 WHERE id=$2 RETURNING *', [imageUrl, req.params.id]);
     res.json(r.rows[0]);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
 app.delete('/api/admin/home-news/:id', isAdmin, async (req, res) => {
   try {
     await pool.query('DELETE FROM home_news WHERE id=$1', [req.params.id]);
     res.json({ message: 'Silindi.' });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
 // =====================================================
@@ -2956,14 +2975,14 @@ app.get('/api/home-gallery', async (req, res) => {
   try {
     const r = await pool.query(`SELECT * FROM home_gallery WHERE is_active=true ORDER BY order_index ASC, created_at DESC`);
     res.json(r.rows);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
 app.get('/api/admin/home-gallery', isAdmin, async (req, res) => {
   try {
     const r = await pool.query(`SELECT * FROM home_gallery ORDER BY order_index ASC, created_at DESC`);
     res.json(r.rows);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
 app.post('/api/admin/home-gallery', isAdmin, async (req, res) => {
@@ -2975,7 +2994,7 @@ app.post('/api/admin/home-gallery', isAdmin, async (req, res) => {
       [icon||'', bg||'linear-gradient(160deg,#0f2a1a,#1a4a2d)', is_active!==false, order_index||0]
     );
     res.json(r.rows[0]);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
 app.put('/api/admin/home-gallery/:id', isAdmin, async (req, res) => {
@@ -2986,7 +3005,7 @@ app.put('/api/admin/home-gallery/:id', isAdmin, async (req, res) => {
       [icon||'', bg, is_active!==false, order_index||0, req.params.id]
     );
     res.json(r.rows[0]);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
 app.post('/api/admin/home-gallery/:id/image', isAdmin, uploadBanner.single('image'), async (req, res) => {
@@ -2996,14 +3015,14 @@ app.post('/api/admin/home-gallery/:id/image', isAdmin, uploadBanner.single('imag
     const imageUrl = await uploadToSupabase('banners', fileName, req.file.buffer, req.file.mimetype);
     const r = await pool.query('UPDATE home_gallery SET image_url=$1 WHERE id=$2 RETURNING *', [imageUrl, req.params.id]);
     res.json(r.rows[0]);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
 app.delete('/api/admin/home-gallery/:id', isAdmin, async (req, res) => {
   try {
     await pool.query('DELETE FROM home_gallery WHERE id=$1', [req.params.id]);
     res.json({ message: 'Silindi.' });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
 // =====================================================
@@ -3030,7 +3049,7 @@ app.get('/api/admin/logs', isAdmin, async (req, res) => {
     res.json(result.rows);
   } catch (e) {
     console.error('admin logs error:', e);
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -3184,7 +3203,7 @@ app.get('/api/admin/analytics', isAdmin, async (req, res) => {
     });
   } catch (e) {
     console.error('admin analytics error:', e);
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
