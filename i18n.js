@@ -52,6 +52,7 @@ export const translations = {
     kvkkLink:         { tr: "Kişisel Verilerin Korunması Politikası'nı", en: "Personal Data Protection Policy",         de: "Datenschutzrichtlinie"                     },
     kvkkText2:        { tr: "okudum ve kabul ediyorum.",                 en: "and confirm I have read it.",             de: "und bestätige, sie gelesen zu haben."      },
     kvkkRequired:     { tr: "Devam etmek için KVKK onayı gereklidir.",  en: "Please accept the data protection policy to continue.", de: "Bitte stimmen Sie der Datenschutzrichtlinie zu." },
+    emailInvalid:     { tr: "Lütfen geçerli bir e-posta adresi girin.", en: "Please enter a valid email address.", de: "Bitte geben Sie eine gültige E-Mail-Adresse ein." },
   },
 
   // ── COMMON (tekrar eden genel metinler) ─────────────────

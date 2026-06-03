@@ -619,7 +619,9 @@ const AuthModal = ({ authMode, setAuthMode, onClose, handleLogin, handleRegister
             )}
             <input ref={emailRef} type="email" placeholder={t("auth.emailPlaceholder")}
               className={`w-full px-4 py-3.5 border rounded-xl text-slate-800 placeholder-slate-400 text-sm font-medium outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 transition-all ${error ? "border-red-300 bg-red-50/50" : "border-slate-200"}`}
-              required/>
+              required
+              onInvalid={e => e.target.setCustomValidity(t("auth.emailInvalid"))}
+              onInput={e => e.target.setCustomValidity("")}/>
             {authMode !== "forgot" && (
               <input ref={passRef} type="password" placeholder={t("auth.passwordLabel")}
                 className={`w-full px-4 py-3.5 border rounded-xl text-slate-800 placeholder-slate-400 text-sm font-medium outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 transition-all ${error ? "border-red-300 bg-red-50/50" : "border-slate-200"}`}
