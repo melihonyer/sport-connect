@@ -516,16 +516,17 @@ const Typewriter = React.memo(({ mottos, color1 = "#00b7ba", color2 = "#981dd8" 
   );
 });
 // Module-level — uncontrolled inputs ile focus sorunu tamamen çözülür
-const AuthModal = ({ authMode, setAuthMode, onClose, handleLogin, handleRegister, t }) => {
-  const [error, setError]     = useState("");
-  const [success, setSuccess] = useState("");
-  const [loading, setLoading] = useState(false);
+const AuthModal = ({ authMode, setAuthMode, onClose, handleLogin, handleRegister, setLegalModal, t }) => {
+  const [error, setError]         = useState("");
+  const [success, setSuccess]     = useState("");
+  const [loading, setLoading]     = useState(false);
+  const [kvkkChecked, setKvkk]    = useState(false);
   const nameRef  = useRef();
   const emailRef = useRef();
   const passRef  = useRef();
 
-  // authMode değişince error/success temizle
-  useEffect(() => { setError(""); setSuccess(""); }, [authMode]);
+  // authMode değişince error/success/kvkk temizle
+  useEffect(() => { setError(""); setSuccess(""); setKvkk(false); }, [authMode]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -537,6 +538,11 @@ const AuthModal = ({ authMode, setAuthMode, onClose, handleLogin, handleRegister
     if (authMode === "login") {
       await handleLogin(email, password, setError);
     } else if (authMode === "register") {
+      if (!kvkkChecked) {
+        setError(t("auth.kvkkRequired"));
+        setLoading(false);
+        return;
+      }
       await handleRegister(name, email, password, setError);
     } else if (authMode === "forgot") {
       try {
@@ -627,7 +633,33 @@ const AuthModal = ({ authMode, setAuthMode, onClose, handleLogin, handleRegister
                 </button>
               </div>
             )}
-            <button type="submit" disabled={loading}
+
+            {authMode === "register" && (
+              <label className="flex items-start gap-2.5 cursor-pointer group mt-1">
+                <div className="relative flex-shrink-0 mt-0.5">
+                  <input
+                    type="checkbox"
+                    checked={kvkkChecked}
+                    onChange={e => setKvkk(e.target.checked)}
+                    className="sr-only"
+                  />
+                  <div className={`w-4.5 h-4.5 w-[18px] h-[18px] rounded-[5px] border-2 flex items-center justify-center transition-all ${kvkkChecked ? "bg-brand-500 border-brand-500" : "border-slate-300 bg-white group-hover:border-brand-400"}`}>
+                    {kvkkChecked && <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                  </div>
+                </div>
+                <span className="text-xs text-slate-500 leading-relaxed">
+                  {t("auth.kvkkText1")}{" "}
+                  <button type="button"
+                    onClick={() => setLegalModal && setLegalModal("kvkk")}
+                    className="text-brand-600 font-semibold hover:underline">
+                    {t("auth.kvkkLink")}
+                  </button>
+                  {" "}{t("auth.kvkkText2")}
+                </span>
+              </label>
+            )}
+
+            <button type="submit" disabled={loading || (authMode === "register" && !kvkkChecked)}
               className="w-full py-3.5 text-white rounded-xl font-semibold text-sm disabled:opacity-60 flex items-center justify-center gap-2 transition-opacity hover:opacity-90 mt-2"
               style={{background:"linear-gradient(90deg,#00b7ba,#981dd8)"}}>
               {loading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>}
@@ -6321,6 +6353,7 @@ Platform kullanımını ve performansını anlamamıza yardımcı olur. Toplanan
         authMode={authMode} setAuthMode={setAuthMode}
         onClose={() => { setIsAuthModalOpen(false); setAuthMode("login"); }}
         handleLogin={handleLogin} handleRegister={handleRegister}
+        setLegalModal={setLegalModal}
         t={t}
       />}
       {showNotifications && <NotificationsPanel />}

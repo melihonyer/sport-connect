@@ -48,6 +48,10 @@ export const translations = {
     invalidCredentials: { tr: "E-posta veya şifre hatalı.", en: "Incorrect email or password.", de: "E-Mail oder Passwort falsch." },
     emailInUse:         { tr: "Bu e-posta zaten kayıtlı.", en: "This email is already registered.", de: "Diese E-Mail ist bereits registriert." },
     serverError:        { tr: "Sunucuya bağlanılamadı.",    en: "Could not connect to server.", de: "Server nicht erreichbar." },
+    kvkkText1:        { tr: "Kayıt olarak",                             en: "By signing up, I accept the",             de: "Mit der Registrierung akzeptiere ich die"  },
+    kvkkLink:         { tr: "Kişisel Verilerin Korunması Politikası'nı", en: "Personal Data Protection Policy",         de: "Datenschutzrichtlinie"                     },
+    kvkkText2:        { tr: "okudum ve kabul ediyorum.",                 en: "and confirm I have read it.",             de: "und bestätige, sie gelesen zu haben."      },
+    kvkkRequired:     { tr: "Devam etmek için KVKK onayı gereklidir.",  en: "Please accept the data protection policy to continue.", de: "Bitte stimmen Sie der Datenschutzrichtlinie zu." },
   },
 
   // ── COMMON (tekrar eden genel metinler) ─────────────────
