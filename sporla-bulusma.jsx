@@ -1999,7 +1999,7 @@ export default function Muuvlink() {
     try {
       const token = localStorage.getItem("token");
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const response = await fetch(`${API_URL}/trainings`, { headers });
+      const response = await fetch(`${API_URL}/trainings`, { headers, cache: 'no-store' });
       if (response.ok) {
         const data = await response.json();
         setTrainings(data.trainings || []);
@@ -2016,7 +2016,7 @@ export default function Muuvlink() {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const response = await fetch(
         `${API_URL}/trainings/nearby?lat=${lat}&lng=${lng}&radius=${radius}`,
-        { headers }
+        { headers, cache: 'no-store' }
       );
       if (response.ok) {
         const data = await response.json();
