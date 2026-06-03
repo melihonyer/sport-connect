@@ -162,8 +162,9 @@ const pool = process.env.PGHOST
 // Her yeni bağlantıda timezone'u Europe/Istanbul olarak sabitle.
 // Uygulama Türkiye saatinde çalışıyor: training_time girişleri yerel saat,
 // CURRENT_TIME/CURRENT_DATE karşılaştırmaları da İstanbul saatiyle tutarlı olmalı.
-pool.on('connect', client => {
-  client.query("SET search_path TO public; SET timezone = 'Europe/Istanbul'").catch(() => {});
+pool.on('connect', async client => {
+  await client.query("SET search_path TO public").catch(() => {});
+  await client.query("SET timezone = 'Europe/Istanbul'").catch(() => {});
 });
 
 // =====================================================
