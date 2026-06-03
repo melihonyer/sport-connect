@@ -417,7 +417,7 @@ const TrainingsMapView = ({ trainings, onSelectTraining, t }) => {
                   </div>
                   {/* CTA */}
                   <button
-                    onClick={() => onSelectTraining(t)}
+                    onClick={() => onSelectTraining(t.id)}
                     style={{
                       width:"100%", padding:"8px 0", borderRadius:"8px", border:"none", cursor:"pointer",
                       background:`linear-gradient(135deg,${teamColor},${teamColor}cc)`,
