@@ -2000,16 +2000,19 @@ export default function Muuvlink() {
     const istFmt  = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Istanbul' });
     const timeFmt = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Istanbul',
                       hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-    const now         = new Date();
-    const todayStr    = istFmt.format(now);           // 'YYYY-MM-DD'
-    const nowTimeStr  = timeFmt.format(now);           // 'HH:MM:SS'
+    const now        = new Date();
+    const todayStr   = istFmt.format(now);   // 'YYYY-MM-DD'
+    const nowTimeStr = timeFmt.format(now);  // 'HH:MM:SS'
     return list.filter(tr => {
-      const d = tr.training_date ? tr.training_date.slice(0, 10) : null;
-      const t = tr.training_time ? tr.training_time.slice(0, 8)  : null;
-      if (!d) return true;
+      // training_date pg'den Date nesnesi veya string olarak gelebilir — ikisini de destekle
+      const raw = tr.training_date;
+      if (!raw) return true;
+      const d = raw instanceof Date
+        ? raw.toISOString().slice(0, 10)   // Date nesnesi → UTC ISO string → YYYY-MM-DD
+        : String(raw).slice(0, 10);        // string → YYYY-MM-DD
+      const t = tr.training_time ? String(tr.training_time).slice(0, 8) : null;
       if (d > todayStr) return true;
       if (d < todayStr) return false;
-      // Bugün — saat kontrolü
       return !t || t >= nowTimeStr;
     });
   };
