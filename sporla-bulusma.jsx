@@ -763,8 +763,8 @@ function GallerySection({ items, t, setCurrentPage }) {
     <section className="bg-white pt-16 pb-0">
       <div className="text-center mb-10 px-4">
         <h2 className="font-display font-bold text-slate-900 uppercase mb-3"
-          style={{fontSize:"clamp(2rem,5vw,3rem)", letterSpacing:"0.08em"}}>Galeri</h2>
-        <p className="text-slate-400 font-light italic text-base mb-6">Muuvlink etkinliklerinden kareler</p>
+          style={{fontSize:"clamp(2rem,5vw,3rem)", letterSpacing:"0.08em"}}>{t ? t("gallery.title") : "Gallery"}</h2>
+        <p className="text-slate-400 font-light italic text-base mb-6">{t ? t("gallery.subtitle") : "Moments from Muuvlink events"}</p>
         <div className="flex items-center justify-center gap-0 max-w-lg mx-auto">
           <div className="flex-1 border-t border-dashed border-slate-300"/>
           <div className="mx-4">

@@ -706,6 +706,8 @@ export const translations = {
 
   // ── GALLERY ──────────────────────────────────────────────
   gallery: {
+    title:     { tr: "Galeri",                                            en: "Gallery",                                          de: "Galerie"                                             },
+    subtitle:  { tr: "Muuvlink etkinliklerinden kareler",                 en: "Moments from Muuvlink events",                     de: "Momente von Muuvlink-Events"                         },
     cta:       { tr: "Etkinlik fotoğraflarınızın bu alanda yer almasını ister misiniz?",
                  en: "Want your event photos featured in the Muuvlink gallery?",
                  de: "Möchten Sie Ihre Event-Fotos in der Muuvlink-Galerie sehen?" },
