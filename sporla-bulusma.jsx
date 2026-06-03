@@ -1755,6 +1755,11 @@ export default function Muuvlink() {
       .catch(() => {});
   }, []);
 
+  // Trainings sayfasına geçilince güncel veri çek
+  useEffect(() => {
+    if (currentPage === "trainings") fetchTrainings();
+  }, [currentPage]);
+
   // URL'de reset_token / auth=register / accept_invite varsa yönlendir
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -3406,9 +3411,6 @@ export default function Muuvlink() {
   );
 
   const TrainingsPage = () => {
-    // Sayfaya her geçişte güncel veri çek
-    useEffect(() => { fetchTrainings(); }, []);
-
     const sports = ["Basketbol", "Bisiklet", "Crossfit", "Futbol", "Kano", "Koşu", "Kürek", "Padel", "Pilates", "Tenis", "Trekking", "Triatlon", "Voleybol", "Yoga", "Yüzme", "Diğer"];
     const difficulties = [
       { val: "Kolay", label: t("trainings.levelEasy") },
