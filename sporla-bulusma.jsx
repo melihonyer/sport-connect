@@ -2410,7 +2410,7 @@ export default function Muuvlink() {
       {
         num:"01", icon: MapPin, accent:"#006d6f",
         bg:"linear-gradient(135deg,#e5f9f9 0%,#e5f9f9 50%,#cbf3f3 100%)",
-        image: "/uploads/feature-01.jpg",
+        image: "/uploads/feature-01.webp",
         sub:   t("home.ef1Sub"),
         title: t("home.ef1Title"),
         desc:  t("home.ef1Desc"),
@@ -2419,7 +2419,7 @@ export default function Muuvlink() {
       {
         num:"02", icon: Users, accent:"#006d6f",
         bg:"linear-gradient(135deg,#e5f9f9 0%,#cbf3f3 50%,#97e7e8 100%)",
-        image: "/uploads/feature-02.jpg",
+        image: "/uploads/feature-02.webp",
         sub:   t("home.ef2Sub"),
         title: t("home.ef2Title"),
         desc:  t("home.ef2Desc"),
@@ -2428,7 +2428,7 @@ export default function Muuvlink() {
       {
         num:"03", icon: Trophy, accent:"#006d6f",
         bg:"linear-gradient(135deg,#e5f9f9 0%,#00b7ba 50%,#009295 100%)",
-        image: "/uploads/feature-03.jpg",
+        image: "/uploads/feature-03.webp",
         sub:   t("home.ef3Sub"),
         title: t("home.ef3Title"),
         desc:  t("home.ef3Desc"),

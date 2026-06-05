@@ -14,6 +14,7 @@ const { Pool } = require('pg');
 const { createClient } = require('@supabase/supabase-js');
 const nodemailer = require('nodemailer');
 const multer = require('multer');
+const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs');
 
@@ -113,6 +114,18 @@ try {
   }
 } catch (e) {
   console.warn('Supabase client başlatılamadı:', e.message);
+}
+
+// Görsel buffer'ını WebP'ye dönüştür ve boyutlandır
+async function toWebP(buffer, maxWidth = 1920) {
+  try {
+    return await sharp(buffer)
+      .resize({ width: maxWidth, withoutEnlargement: true })
+      .webp({ quality: 82 })
+      .toBuffer();
+  } catch {
+    return buffer; // dönüşüm başarısız olursa orijinali kullan
+  }
 }
 
 // Supabase Storage REST API — native fetch ile (Node 18+)
@@ -908,8 +921,9 @@ app.post('/api/auth/avatar', authenticateToken, uploadAvatar.single('avatar'), a
   try {
     if (!req.file) return res.status(400).json({ error: 'Dosya yüklenmedi.' });
     const ext = path.extname(req.file.originalname) || '.jpg';
-    const fileName = `avatar-${req.user.id}-${Date.now()}${ext}`;
-    const avatarUrl = await uploadToSupabase('avatars', fileName, req.file.buffer, req.file.mimetype);
+    const fileName = `avatar-${req.user.id}-${Date.now()}.webp`;
+    const webpBuffer = await toWebP(req.file.buffer, 400);
+    const avatarUrl = await uploadToSupabase('avatars', fileName, webpBuffer, 'image/webp');
     const result = await pool.query(
       `UPDATE users SET avatar = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2
        RETURNING id, name, email, phone, avatar`,
@@ -935,8 +949,9 @@ app.post('/api/teams/:id/avatar', authenticateToken, uploadAvatar.single('avatar
     if (ownerCheck.rows[0].owner_id !== req.user.id) return res.status(403).json({ error: 'Sadece takım sahibi fotoğraf yükleyebilir.' });
 
     const ext = path.extname(req.file.originalname) || '.jpg';
-    const fileName = `team-${teamId}-${Date.now()}${ext}`;
-    const avatarUrl = await uploadToSupabase('avatars', fileName, req.file.buffer, req.file.mimetype);
+    const fileName = `team-${teamId}-${Date.now()}.webp`;
+    const webpBuffer = await toWebP(req.file.buffer, 400);
+    const avatarUrl = await uploadToSupabase('avatars', fileName, webpBuffer, 'image/webp');
 
     const result = await pool.query(
       'UPDATE teams SET avatar = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *',
@@ -2888,8 +2903,9 @@ app.post('/api/admin/banners/:id/image', isAdmin, uploadBanner.single('image'), 
   try {
     if (!req.file) return res.status(400).json({ error: 'Dosya yüklenmedi.' });
     const ext = path.extname(req.file.originalname) || '.jpg';
-    const fileName = `banner-${req.params.id}-${Date.now()}${ext}`;
-    const imageUrl = await uploadToSupabase('banners', fileName, req.file.buffer, req.file.mimetype);
+    const fileName = `banner-${req.params.id}-${Date.now()}.webp`;
+    const webpBuffer = await toWebP(req.file.buffer, 1920);
+    const imageUrl = await uploadToSupabase('banners', fileName, webpBuffer, 'image/webp');
 
     const result = await pool.query(
       'UPDATE banners SET image_url=$1 WHERE id=$2 RETURNING *',
@@ -2962,8 +2978,9 @@ app.put('/api/admin/home-news/:id', isAdmin, async (req, res) => {
 app.post('/api/admin/home-news/:id/image', isAdmin, uploadBanner.single('image'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'Dosya yok.' });
-    const fileName = `home-news-${req.params.id}-${Date.now()}.${req.file.originalname.split('.').pop()}`;
-    const imageUrl = await uploadToSupabase('banners', fileName, req.file.buffer, req.file.mimetype);
+    const fileName = `home-news-${req.params.id}-${Date.now()}.webp`;
+    const webpBuffer_news = await toWebP(req.file.buffer, 1200);
+    const imageUrl = await uploadToSupabase('banners', fileName, webpBuffer_news, 'image/webp');
     const r = await pool.query('UPDATE home_news SET image_url=$1 WHERE id=$2 RETURNING *', [imageUrl, req.params.id]);
     res.json(r.rows[0]);
   } catch (e) { res.status(500).json({ error: 'Internal server error' }); }
@@ -3020,8 +3037,9 @@ app.put('/api/admin/home-gallery/:id', isAdmin, async (req, res) => {
 app.post('/api/admin/home-gallery/:id/image', isAdmin, uploadBanner.single('image'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'Dosya yok.' });
-    const fileName = `home-gallery-${req.params.id}-${Date.now()}.${req.file.originalname.split('.').pop()}`;
-    const imageUrl = await uploadToSupabase('banners', fileName, req.file.buffer, req.file.mimetype);
+    const fileName = `home-gallery-${req.params.id}-${Date.now()}.webp`;
+    const webpBuffer_gallery = await toWebP(req.file.buffer, 1920);
+    const imageUrl = await uploadToSupabase('banners', fileName, webpBuffer_gallery, 'image/webp');
     const r = await pool.query('UPDATE home_gallery SET image_url=$1 WHERE id=$2 RETURNING *', [imageUrl, req.params.id]);
     res.json(r.rows[0]);
   } catch (e) { res.status(500).json({ error: 'Internal server error' }); }
