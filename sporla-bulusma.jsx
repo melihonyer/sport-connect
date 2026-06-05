@@ -303,8 +303,8 @@ const AuthModal = ({ authMode, setAuthMode, onClose, handleLogin, handleRegister
 
           {/* Logo */}
           <div className="flex items-center justify-center gap-2.5 mb-6">
-            <img src="/icons/favicon.png" alt="" className="h-8 w-auto"/>
-            <img src="/icons/logo-yatay.svg" alt="Muuvlink" className="h-5 w-auto"/>
+            <img src="/icons/favicon.png" alt="" className="h-8 w-auto" width="32" height="32"/>
+            <img src="/icons/logo-yatay.svg" alt="Muuvlink" className="h-5 w-auto" width="120" height="20"/>
           </div>
 
           {/* Başlık */}
@@ -1428,21 +1428,13 @@ export default function Muuvlink() {
     fetchTeams();
     fetchBadges();
 
-    // Sessizce GPS al — km gösterimi için (hata vermez, zorunlu değil)
+    // Kaydedilmiş konum varsa yükle (GPS izni istemez)
     const savedLoc = localStorage.getItem("userLocation");
     if (savedLoc) {
       try { setUserLocation(JSON.parse(savedLoc)); } catch (_) {}
     }
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-          setUserLocation(loc);
-          localStorage.setItem("userLocation", JSON.stringify(loc));
-        },
-        () => {} // sessiz hata
-      );
-    }
+    // GPS'i otomatik isteme — kullanıcı "Yakınımda Ara" butonuna bastığında sorulur
+    // (Sayfa açılışında permission prompt = PageSpeed penaltı + UX kötü)
 
     // Banner'ları çek
     fetch(`${API_URL}/banners`)
@@ -1509,21 +1501,37 @@ export default function Muuvlink() {
   }, []);
 
   // Real-time bildirimler: SSE bağlantısı
+  // bfcache için: sayfa gizlenince kapat, tekrar görününce yeniden aç
   useEffect(() => {
     if (!user) return;
     const token = localStorage.getItem("token");
     if (!token) return;
-    const es = new EventSource(`${API_URL}/notifications/stream?token=${encodeURIComponent(token)}`);
-    es.onmessage = (e) => {
-      try {
-        const msg = JSON.parse(e.data);
-        if (msg.event === "notification" && msg.data) {
-          setNotifications(prev => [msg.data, ...prev]);
-          showToast(msg.data.title, "info");
-        }
-      } catch {}
+
+    let es = null;
+    const connect = () => {
+      if (es) es.close();
+      es = new EventSource(`${API_URL}/notifications/stream?token=${encodeURIComponent(token)}`);
+      es.onmessage = (e) => {
+        try {
+          const msg = JSON.parse(e.data);
+          if (msg.event === "notification" && msg.data) {
+            setNotifications(prev => [msg.data, ...prev]);
+            showToast(msg.data.title, "info");
+          }
+        } catch {}
+      };
     };
-    return () => es.close();
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") { es?.close(); es = null; }
+      else connect();
+    };
+
+    connect();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      es?.close();
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, [user?.id]);
 
   // Sayfa değişince URL + title + meta güncelle
@@ -5220,9 +5228,9 @@ export default function Muuvlink() {
             {/* Logo */}
             <button className="flex items-center gap-2 group flex-shrink-0 hover:opacity-85 transition-opacity" onClick={() => setCurrentPage("home")}>
               {/* Amblem her zaman görünür */}
-              <img src="/icons/favicon.png" alt="" className="h-7 w-auto flex-shrink-0" />
+              <img src="/icons/favicon.png" alt="" className="h-7 w-auto flex-shrink-0" width="28" height="28"/>
               {/* Metin: desktop'ta görünür */}
-              <img src="/icons/logo-yatay.svg" alt="Muuvlink" className="hidden md:block h-5 w-auto" />
+              <img src="/icons/logo-yatay.svg" alt="Muuvlink" className="hidden md:block h-5 w-auto" width="120" height="20"/>
             </button>
 
             {/* Orta nav — desktop */}
