@@ -821,13 +821,16 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
           zIndex:30, display:"flex", alignItems:"center", gap:"8px",
         }}>
           {banners.map((_, i) => (
-            <button key={i} onClick={() => goTo(i)} style={{
-              height:"3px",
-              width: i === activeIdx ? "32px" : "16px",
-              borderRadius:"2px", border:"none", cursor:"pointer", padding:0,
-              background: i === activeIdx ? navActiveColor : navInactiveColor,
-              transition:"all 0.4s cubic-bezier(0.34,1.56,0.64,1)",
-            }}/>
+            <button key={i} onClick={() => goTo(i)}
+              aria-label={`Slayt ${i + 1}`}
+              aria-current={i === activeIdx ? "true" : undefined}
+              style={{
+                height:"3px",
+                width: i === activeIdx ? "32px" : "16px",
+                borderRadius:"2px", border:"none", cursor:"pointer", padding:0,
+                background: i === activeIdx ? navActiveColor : navInactiveColor,
+                transition:"all 0.4s cubic-bezier(0.34,1.56,0.64,1)",
+              }}/>
           ))}
         </div>
       )}
@@ -2405,7 +2408,7 @@ export default function Muuvlink() {
   const FeaturesSection = () => {
     const editorialFeatures = [
       {
-        num:"01", icon: MapPin, accent:"#00b7ba",
+        num:"01", icon: MapPin, accent:"#006d6f",
         bg:"linear-gradient(135deg,#e5f9f9 0%,#e5f9f9 50%,#cbf3f3 100%)",
         image: "/uploads/feature-01.jpg",
         sub:   t("home.ef1Sub"),
@@ -2414,7 +2417,7 @@ export default function Muuvlink() {
         points:[t("home.ef1p1"), t("home.ef1p2"), t("home.ef1p3")],
       },
       {
-        num:"02", icon: Users, accent:"#009295",
+        num:"02", icon: Users, accent:"#006d6f",
         bg:"linear-gradient(135deg,#e5f9f9 0%,#cbf3f3 50%,#97e7e8 100%)",
         image: "/uploads/feature-02.jpg",
         sub:   t("home.ef2Sub"),
@@ -2440,7 +2443,7 @@ export default function Muuvlink() {
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8">
             <div>
               <span className="text-[11px] font-bold tracking-[0.4em] uppercase block mb-5"
-                style={{color:"#00b7ba"}}>{t("home.platform")}</span>
+                style={{color:"#006d6f"}}>{t("home.platform")}</span>
               <h2 className="font-display font-bold tracking-tight leading-[0.88]"
                 style={{fontSize:"clamp(3.6rem,8vw,6.5rem)"}}>
                 <span className="text-slate-900 block">{t("home.whyNeden")}</span>
@@ -2547,8 +2550,9 @@ export default function Muuvlink() {
   const localeMap = { tr: "tr-TR", en: "en-US", de: "de-DE" };
   const month = dateObj.toLocaleDateString(localeMap[lang] || "en-US", { month: "short", timeZone: "UTC" }).toLocaleUpperCase("en-US");
 
-  const difficultyColor = { "Kolay": "#6ee7b7", "Orta": "#fcd34d", "Zor": "#fca5a5" };
-  const accentColor = difficultyColor[training.difficulty] || "#6ee7b7";
+  // WCAG AA uyumlu renkler (beyaz üzerinde ≥ 4.5:1 kontrast)
+  const difficultyColor = { "Kolay": "#047857", "Orta": "#b45309", "Zor": "#b91c1c" };
+  const accentColor = difficultyColor[training.difficulty] || "#047857";
 
   return (
     <div
@@ -2745,7 +2749,7 @@ export default function Muuvlink() {
 
             {/* Sol: GPS arama */}
             <div className="lg:w-72 flex-shrink-0">
-              <span className="text-xs font-semibold tracking-[0.3em] text-brand-500 uppercase block mb-3">{t("home.gpsLabel")}</span>
+              <span className="text-xs font-semibold tracking-[0.3em] text-brand-800 uppercase block mb-3">{t("home.gpsLabel")}</span>
               <h2 className="font-display font-bold text-slate-900 leading-snug mb-3"
                 style={{fontSize:"clamp(1.6rem,3vw,2rem)", letterSpacing:"-0.01em"}}>
                 {t("home.findNearby")}
@@ -2761,7 +2765,7 @@ export default function Muuvlink() {
                     className="px-4 py-2 rounded-xl text-xs font-medium transition-all duration-300 hover:scale-105 hover:shadow-md"
                     style={nearbyDistance === km
                       ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff", boxShadow:"0 4px 20px rgba(0,183,186,0.35)"}
-                      : {background:"#e5f9f9", color:"#009295", border:"1px solid #cbf3f3", boxShadow:"0 2px 8px rgba(0,183,186,0.0)"}}
+                      : {background:"#e5f9f9", color:"#006d6f", border:"1px solid #cbf3f3", boxShadow:"0 2px 8px rgba(0,183,186,0.0)"}}
                     onMouseEnter={e => { if(nearbyDistance !== km) e.currentTarget.style.boxShadow="0 4px 16px rgba(0,183,186,0.25)"; }}
                     onMouseLeave={e => { if(nearbyDistance !== km) e.currentTarget.style.boxShadow="0 2px 8px rgba(0,183,186,0.0)"; }}
                   >
@@ -2788,7 +2792,7 @@ export default function Muuvlink() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-2">
                 <div>
-                  <span className="text-xs font-semibold tracking-[0.3em] text-brand-500 uppercase block mb-3">{t("home.discover")}</span>
+                  <span className="text-xs font-semibold tracking-[0.3em] text-brand-800 uppercase block mb-3">{t("home.discover")}</span>
                   <h2 className="font-display font-bold text-slate-900 leading-snug"
                     style={{fontSize:"clamp(1.6rem,3vw,2rem)", letterSpacing:"-0.01em"}}>
                     {t("home.upcoming")}
@@ -2848,7 +2852,7 @@ export default function Muuvlink() {
               <Dumbbell className="w-8 h-8" style={{color:"#00b7ba"}}/>
               <div className="h-px flex-1 max-w-20" style={{background:"linear-gradient(90deg,rgba(0,183,186,0.5),transparent)"}}/>
             </div>
-            <span className="text-xs font-semibold tracking-[0.4em] text-brand-400 uppercase block mb-6">{t("home.ctaJoinCommunity")}</span>
+            <span className="text-xs font-semibold tracking-[0.4em] text-brand-800 uppercase block mb-6">{t("home.ctaJoinCommunity")}</span>
             <h2 className="font-display font-bold text-white mb-6 leading-[0.92]"
               style={{fontSize:"clamp(4rem,10vw,7.5rem)", letterSpacing:"-0.02em"}}>
               {t("home.ctaLine1")}<br/>
@@ -3222,7 +3226,7 @@ export default function Muuvlink() {
           <div className="relative max-w-7xl mx-auto px-4 sm:px-8 py-12">
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
               <div>
-                <span className="text-xs font-semibold tracking-[0.35em] text-brand-400 uppercase block mb-3">{t("home.heroCta")}</span>
+                <span className="text-xs font-semibold tracking-[0.35em] text-brand-800 uppercase block mb-3">{t("home.heroCta")}</span>
                 <h1 className="text-5xl md:text-6xl font-semibold text-brand-900 tracking-tighter leading-none">{t("trainings.pageTitle")}</h1>
                 <p className="text-slate-400 mt-3 text-base">{t("trainings.pageSubtitle")}</p>
               </div>
@@ -5226,7 +5230,7 @@ export default function Muuvlink() {
           <div className="flex justify-between items-center h-[68px]">
 
             {/* Logo */}
-            <button className="flex items-center gap-2 group flex-shrink-0 hover:opacity-85 transition-opacity" onClick={() => setCurrentPage("home")}>
+            <button className="flex items-center gap-2 group flex-shrink-0 hover:opacity-85 transition-opacity" onClick={() => setCurrentPage("home")} aria-label="Muuvlink - Ana Sayfa">
               {/* Amblem her zaman görünür */}
               <img src="/icons/favicon.png" alt="" className="h-7 w-auto flex-shrink-0" width="28" height="28"/>
               {/* Metin: desktop'ta görünür */}
@@ -5288,6 +5292,7 @@ export default function Muuvlink() {
                   <button
                     onClick={() => setShowNotifications(!showNotifications)}
                     className="relative w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-colors"
+                    aria-label={t("nav.notifications") || "Bildirimler"}
                   >
                     <Bell className="w-[18px] h-[18px] text-slate-500"/>
                     {unreadCount > 0 && (

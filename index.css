@@ -339,7 +339,7 @@ input:focus, select:focus, textarea:focus {
   font-weight: 700;
   letter-spacing: 0.35em;
   text-transform: uppercase;
-  color: #00b7ba;
+  color: #006d6f; /* brand-800 — WCAG AA kontrast 6:1 */
 }
 
 /* ─────────────────────────────────────────────

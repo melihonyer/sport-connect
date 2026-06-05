@@ -17,6 +17,7 @@ export const translations = {
     profile:        { tr: "Profil",        en: "Profile",    de: "Profil"     },
     createTraining: { tr: "Antrenman",     en: "Training",   de: "Training"   },
     createTrainingFull: { tr: "Antrenman Oluştur", en: "Create Training", de: "Training erstellen" },
+    notifications:      { tr: "Bildirimler",       en: "Notifications",  de: "Benachrichtigungen" },
   },
 
   // ── AUTH MODAL ───────────────────────────────────────────
