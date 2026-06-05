@@ -691,7 +691,7 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                     )}
 
                     <div>
-                      <h1 className="bn-title font-display" style={{fontSize:"clamp(2.8rem,5.8vw,4.8rem)", lineHeight:1.0, fontWeight:700, letterSpacing:"-0.02em", color: banner?.title_color || "#ffffff"}}>
+                      <h1 className="bn-title font-display" style={{fontSize:"clamp(2.8rem,5.8vw,4.8rem)", lineHeight:1.15, fontWeight:700, letterSpacing:"-0.02em", color: banner?.title_color || "#ffffff", paddingBottom:"0.05em"}}>
                         {(lang === "tr" ? banner?.title : null) || (t ? t("home.heroTitleFallback") : "Connect Through Sport,")}
                       </h1>
                       <h1 className="bn-title bn-motto">
@@ -841,8 +841,8 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
           .bn-img-col  { display:none !important; }
           .bn-banner-img { display:none !important; }
           .bn-nav      { display:flex !important; }
-          .bn-title    { white-space:normal !important; font-size:4.5rem !important; line-height:1.08 !important; word-break:normal !important; overflow-wrap:normal !important; }
-          .bn-motto    { white-space:normal !important; font-size:4.5rem !important; line-height:1.08 !important; word-break:normal !important; overflow-wrap:normal !important; }
+          .bn-title    { white-space:normal !important; font-size:4.5rem !important; line-height:1.18 !important; word-break:normal !important; overflow-wrap:normal !important; padding-bottom:0.05em !important; }
+          .bn-motto    { white-space:normal !important; font-size:4.5rem !important; line-height:1.18 !important; word-break:normal !important; overflow-wrap:normal !important; padding-bottom:0.1em !important; }
           .bn-stats    { display:none !important; }
         }
       `}</style>

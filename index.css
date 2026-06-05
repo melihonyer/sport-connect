@@ -254,14 +254,16 @@ input:focus, select:focus, textarea:focus {
   font-family: 'Barlow Condensed', sans-serif;
   font-size: 7rem;
   font-weight: 800;
-  line-height: 1.0;
+  line-height: 1.18;
   letter-spacing: -0.02em;
   white-space: normal;
+  padding-bottom: 0.08em;
 }
 @media (min-width: 768px) {
   .bn-motto {
     font-size: clamp(2.8rem, 5.5vw, 4.5rem);
-    line-height: 1.05;
+    line-height: 1.18;
+    padding-bottom: 0.08em;
   }
 }
 
