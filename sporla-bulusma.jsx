@@ -1501,6 +1501,20 @@ export default function Muuvlink() {
         showToast(t("toast.inviteLogin"), "info");
       }
     }
+    // Takım duvarı deep-link: ?takim=ID (mail'deki "Duvara Git" butonu)
+    const takimId = params.get("takim");
+    if (takimId) {
+      window.history.replaceState({}, "", window.location.pathname);
+      teamActiveTabRef.current = "wall";
+      const token = localStorage.getItem("token");
+      if (token) {
+        fetchTeamDetails(takimId);
+      } else {
+        localStorage.setItem("pendingTeam", takimId);
+        setAuthMode("login");
+        setIsAuthModalOpen(true);
+      }
+    }
   }, []);
 
   // Real-time bildirimler: SSE bağlantısı
@@ -1637,6 +1651,12 @@ export default function Muuvlink() {
           }).then(r => r.json()).then(d => {
             if (d.message) { showToast(t("notifications.inviteAccepted"), "success"); fetchTeamDetails(pendingInvite); fetchMyTeams(data.token); fetchMyTrainings(data.token); }
           });
+        }
+        const pendingTeam = localStorage.getItem("pendingTeam");
+        if (pendingTeam) {
+          localStorage.removeItem("pendingTeam");
+          teamActiveTabRef.current = "wall";
+          fetchTeamDetails(pendingTeam);
         }
       } else {
         const msg = data.error || t("auth.loginFail");
