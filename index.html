@@ -10,7 +10,14 @@
   <meta name="keywords" content="spor, antrenman, takım, sporcu, fitness, futbol, basketbol, tenis, koşu, muuvlink">
   <meta name="author" content="Muuvlink">
   <meta name="robots" content="index, follow">
-  <link rel="canonical" href="https://muuvlink.app/">
+  <!-- Canonical: path'e göre dinamik set et (Googlebot JS render öncesi için) -->
+  <script>
+    (function(){
+      var l=document.createElement('link');l.rel='canonical';
+      l.href='https://muuvlink.app'+window.location.pathname;
+      document.head.appendChild(l);
+    })();
+  </script>
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
