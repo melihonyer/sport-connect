@@ -99,6 +99,7 @@ export const translations = {
     errorTitle:   { tr: "Bir şeyler ters gitti", en: "Something went wrong", de: "Etwas ist schiefgelaufen" },
     retry:        { tr: "Tekrar Dene",      en: "Try Again",     de: "Erneut versuchen" },
     noDescription:{ tr: "Açıklama eklenmemiş.", en: "No description added.", de: "Keine Beschreibung hinzugefügt." },
+    copyLink:     { tr: "Linki Kopyala",       en: "Copy Link",             de: "Link kopieren"                  },
   },
 
   // ── HOME PAGE ────────────────────────────────────────────
@@ -697,6 +698,7 @@ export const translations = {
     messageSent:    { tr: "Mesajınız gönderildi! En kısa sürede dönüş yapacağız. 📬",
                       en: "Your message has been sent! We'll get back to you soon. 📬",
                       de: "Nachricht gesendet! Wir melden uns bald. 📬" },
+    linkCopied:     { tr: "Link kopyalandı!",  en: "Link copied!",          de: "Link kopiert!"                  },
   },
 
   // ── NEWS SECTION ─────────────────────────────────────────

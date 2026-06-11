@@ -420,7 +420,7 @@ function wallPostEmail({ teamName, teamId, posterName, posterAvatar, message, po
     </div>
 
     <div style="text-align:center;">
-      <a href="${APP_URL}/takimlar?takim=${teamId}"
+      <a href="${APP_URL}/takimlar?takim=${teamId}&tab=duvar"
          style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
         Duvara Git →

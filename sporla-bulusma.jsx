@@ -45,6 +45,7 @@ import {
   Menu,
   ChevronUp,
   ExternalLink,
+  Link,
 } from "lucide-react";
 // Ağır kütüphaneler lazy yüklenir — ilk bundle'ı küçültür
 const TrainingsMapViewLazy = React.lazy(() => import("./TrainingsMapView"));
@@ -1501,16 +1502,31 @@ export default function Muuvlink() {
         showToast(t("toast.inviteLogin"), "info");
       }
     }
-    // Takım duvarı deep-link: ?takim=ID (mail'deki "Duvara Git" butonu)
+    // Takım deep-link: ?takim=ID  /  mail'deki duvara git: ?takim=ID&tab=duvar
     const takimId = params.get("takim");
     if (takimId) {
+      const tab = params.get("tab"); // "duvar" → wall, yoksa members
       window.history.replaceState({}, "", window.location.pathname);
-      teamActiveTabRef.current = "wall";
+      teamActiveTabRef.current = tab === "duvar" ? "wall" : "members";
       const token = localStorage.getItem("token");
       if (token) {
         fetchTeamDetails(takimId);
       } else {
         localStorage.setItem("pendingTeam", takimId);
+        localStorage.setItem("pendingTeamTab", tab || "members");
+        setAuthMode("login");
+        setIsAuthModalOpen(true);
+      }
+    }
+    // Antrenman deep-link: ?antrenman=ID (paylaşılan link)
+    const antrenmanId = params.get("antrenman");
+    if (antrenmanId) {
+      window.history.replaceState({}, "", window.location.pathname);
+      const token = localStorage.getItem("token");
+      if (token) {
+        fetchTrainingDetails(antrenmanId);
+      } else {
+        localStorage.setItem("pendingTraining", antrenmanId);
         setAuthMode("login");
         setIsAuthModalOpen(true);
       }
@@ -1655,8 +1671,15 @@ export default function Muuvlink() {
         const pendingTeam = localStorage.getItem("pendingTeam");
         if (pendingTeam) {
           localStorage.removeItem("pendingTeam");
-          teamActiveTabRef.current = "wall";
+          const pendingTab = localStorage.getItem("pendingTeamTab") || "members";
+          localStorage.removeItem("pendingTeamTab");
+          teamActiveTabRef.current = pendingTab === "duvar" ? "wall" : pendingTab;
           fetchTeamDetails(pendingTeam);
+        }
+        const pendingTraining = localStorage.getItem("pendingTraining");
+        if (pendingTraining) {
+          localStorage.removeItem("pendingTraining");
+          fetchTrainingDetails(pendingTraining);
         }
       } else {
         const msg = data.error || t("auth.loginFail");
@@ -3641,15 +3664,25 @@ export default function Muuvlink() {
         </button>
 
         <div className="bg-white rounded-2xl p-8 border">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-start justify-between gap-3 mb-6">
             <h1 className="font-display font-bold" style={{fontSize:"clamp(1.8rem,4vw,2.4rem)", letterSpacing:"-0.01em"}}>{selectedTraining.title}</h1>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2 items-center flex-shrink-0">
               <span className="px-3 py-1 bg-brand-100 text-brand-600 rounded-full text-sm font-medium">
                 {selectedTraining.team_sport || "Genel"}
               </span>
               <span className="px-3 py-1 bg-yellow-100 text-yellow-600 rounded-full text-sm font-medium">
                 {selectedTraining.difficulty}
               </span>
+              <button
+                onClick={() => {
+                  const link = `${window.location.origin}/antrenmanlar?antrenman=${selectedTraining.id}`;
+                  navigator.clipboard.writeText(link).then(() => showToast(t("toast.linkCopied"), "success"));
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full text-sm font-medium transition-colors"
+                title={t("common.copyLink")}
+              >
+                <Link className="w-3.5 h-3.5" /> {t("common.copyLink")}
+              </button>
             </div>
           </div>
 
@@ -4082,12 +4115,24 @@ export default function Muuvlink() {
                   </div>
                 </div>
               </div>
-              {canManage && (
-                <button onClick={() => setShowInviteModal(true)}
-                  className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-sm font-semibold transition-colors backdrop-blur">
-                  <UserPlus className="w-4 h-4" /> {t("teamDetail.invite")}
+              <div className="flex flex-col gap-2 flex-shrink-0">
+                {canManage && (
+                  <button onClick={() => setShowInviteModal(true)}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-sm font-semibold transition-colors backdrop-blur">
+                    <UserPlus className="w-4 h-4" /> {t("teamDetail.invite")}
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    const link = `${window.location.origin}/takimlar?takim=${selectedTeam.id}`;
+                    navigator.clipboard.writeText(link).then(() => showToast(t("toast.linkCopied"), "success"));
+                  }}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-sm font-semibold transition-colors backdrop-blur"
+                  title={t("common.copyLink")}
+                >
+                  <Link className="w-4 h-4" /> {t("common.copyLink")}
                 </button>
-              )}
+              </div>
             </div>
 
             {/* istatistikler */}
