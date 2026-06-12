@@ -3284,9 +3284,9 @@ export default function Muuvlink() {
 
         {/* ── Filter bar ── */}
         <div className="bg-white border-b border-slate-100 sticky top-[68px] z-40 shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 sm:px-8 py-3 space-y-2.5">
+          <div className="max-w-7xl mx-auto px-4 sm:px-8 py-3 space-y-2">
 
-            {/* Satır 1: Arama + View toggle */}
+            {/* Satır 1: Arama (full-width) + tek view toggle butonu */}
             <div className="flex items-center gap-2">
               <div className="flex-1 relative">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -3296,90 +3296,88 @@ export default function Muuvlink() {
                   className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition-colors placeholder:text-slate-400"
                 />
               </div>
-              {/* View toggle */}
-              <div className="flex-shrink-0 flex items-center gap-1.5">
-                <button onClick={() => setViewMode("list")}
-                  className="px-3 py-2.5 text-xs font-medium rounded-xl transition-all flex items-center gap-1.5 border shadow-sm"
-                  style={viewMode === "list"
-                    ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff", borderColor:"transparent", boxShadow:"0 1px 8px rgba(0,183,186,0.35)"}
-                    : {background:"#fff", color:"#64748b", borderColor:"#e2e8f0"}}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
-                    <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
-                  </svg>
-                  <span className="hidden sm:inline">{t("trainings.listView")}</span>
-                </button>
-                <button onClick={() => setViewMode("map")}
-                  className="px-3 py-2.5 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 border shadow-sm"
-                  style={viewMode === "map"
-                    ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff", borderColor:"transparent", boxShadow:"0 1px 8px rgba(0,183,186,0.35)"}
-                    : {background:"linear-gradient(135deg,rgba(0,183,186,0.06),rgba(0,146,149,0.06))", color:"#00a0a3", borderColor:"rgba(0,183,186,0.3)"}}>
-                  <MapPin className="w-3.5 h-3.5"/>
-                  {t("trainings.mapView")}
-                </button>
-              </div>
+              {/* View toggle — tek buton, aktif moda göre değişir */}
+              <button
+                onClick={() => setViewMode(viewMode === "list" ? "map" : "list")}
+                className="flex-shrink-0 whitespace-nowrap px-3.5 py-2.5 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 border shadow-sm"
+                style={viewMode === "map"
+                  ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff", borderColor:"transparent", boxShadow:"0 1px 8px rgba(0,183,186,0.35)"}
+                  : {background:"linear-gradient(135deg,rgba(0,183,186,0.06),rgba(0,146,149,0.06))", color:"#00a0a3", borderColor:"rgba(0,183,186,0.3)"}}>
+                {viewMode === "map" ? (
+                  <>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+                      <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+                    </svg>
+                    {t("trainings.listView")}
+                  </>
+                ) : (
+                  <>
+                    <MapPin className="w-3.5 h-3.5"/>
+                    {t("trainings.mapView")}
+                  </>
+                )}
+              </button>
             </div>
 
-            {/* Satır 2: Filtreler + GPS */}
-            <div className="flex items-center gap-2 flex-wrap">
-              {/* Sport filter */}
+            {/* Satır 2: Branş + Seviye + temizle */}
+            <div className="flex items-center gap-2">
               <select value={sportFilter} onChange={(e) => setSportFilter(e.target.value)}
                 className="flex-1 min-w-0 px-3 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition-colors appearance-none cursor-pointer">
                 <option value="">{t("trainings.filterSport")}</option>
                 {sports.map((s) => <option key={s} value={s}>{t(`sports.${s}`)}</option>)}
               </select>
-              {/* Level filter */}
               <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)}
                 className="flex-1 min-w-0 px-3 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition-colors appearance-none cursor-pointer">
                 <option value="">{t("trainings.filterLevel")}</option>
                 {difficulties.map((d) => <option key={d.val} value={d.val}>{d.label}</option>)}
               </select>
-              {/* GPS toggle */}
-              <div className="flex-shrink-0 flex items-center gap-1.5">
-                <button onClick={handleExitNearby}
-                  className="px-3 py-2.5 text-xs font-medium rounded-xl transition-all border shadow-sm"
-                  style={!nearbyMode
-                    ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff", borderColor:"transparent", boxShadow:"0 1px 8px rgba(0,183,186,0.35)"}
-                    : {background:"#fff", color:"#64748b", borderColor:"#e2e8f0"}}>
-                  {t("common.all")}
-                </button>
-                <button onClick={() => handleNearbySearch()} disabled={locationLoading}
-                  className="px-3 py-2.5 text-xs font-medium rounded-xl transition-all flex items-center gap-1.5 border shadow-sm disabled:opacity-50"
-                  style={nearbyMode
-                    ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff", borderColor:"transparent", boxShadow:"0 1px 8px rgba(0,183,186,0.35)"}
-                    : {background:"#fff", color:"#64748b", borderColor:"#e2e8f0"}}>
-                  {locationLoading
-                    ? <div className="w-3 h-3 border-2 border-current/30 border-t-current rounded-full animate-spin"/>
-                    : <MapPin className="w-3 h-3"/>}
-                  {t("trainings.nearbySearch")}
-                </button>
-              </div>
-              {/* Clear filters */}
               {(searchQuery || sportFilter || levelFilter) && (
                 <button onClick={() => { setSearchQuery(""); setSportFilter(""); setLevelFilter(""); }}
-                  className="flex-shrink-0 flex items-center gap-1 px-3 py-2.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-500 shadow-sm transition-colors">
-                  <X className="w-3.5 h-3.5"/>
+                  className="flex-shrink-0 flex items-center justify-center w-10 h-10 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-slate-400 hover:text-slate-600 shadow-sm transition-colors">
+                  <X className="w-4 h-4"/>
                 </button>
               )}
             </div>
 
-            {/* Satır 3: Mesafe pilleri (GPS aktifken) + sonuç sayısı */}
+            {/* Satır 3: GPS toggle */}
+            <div className="flex items-center gap-2">
+              <button onClick={handleExitNearby}
+                className="px-4 py-2 text-xs font-semibold rounded-xl transition-all border shadow-sm"
+                style={!nearbyMode
+                  ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff", borderColor:"transparent", boxShadow:"0 1px 8px rgba(0,183,186,0.25)"}
+                  : {background:"#fff", color:"#94a3b8", borderColor:"#e2e8f0"}}>
+                {t("common.all")}
+              </button>
+              <button onClick={() => handleNearbySearch()} disabled={locationLoading}
+                className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-xl transition-all border shadow-sm disabled:opacity-50"
+                style={nearbyMode
+                  ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff", borderColor:"transparent", boxShadow:"0 1px 8px rgba(0,183,186,0.25)"}
+                  : {background:"#fff", color:"#64748b", borderColor:"#e2e8f0"}}>
+                {locationLoading
+                  ? <div className="w-3 h-3 border-2 border-current/30 border-t-current rounded-full animate-spin"/>
+                  : <MapPin className="w-3 h-3"/>}
+                {t("trainings.nearbySearch")}
+              </button>
+              {nearbyMode && userLocation && !nearbyLoading && (
+                <span className="ml-auto text-xs font-semibold text-brand-600 flex items-center gap-1">
+                  <MapPin className="w-3 h-3"/> {nearbyTrainings.length} sonuç
+                </span>
+              )}
+            </div>
+
+            {/* Satır 4: Mesafe pilleri (GPS aktifken) */}
             {nearbyMode && (
               <div className="flex items-center gap-2 flex-wrap">
                 {[5,10,25,50].map(km => (
                   <button key={km} onClick={() => handleDistanceChange(km)} disabled={nearbyLoading}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium border transition-all disabled:opacity-50"
+                    className="px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all disabled:opacity-50"
                     style={nearbyDistance === km
-                      ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff", border:"none"}
+                      ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff", borderColor:"transparent"}
                       : {borderColor:"#e2e8f0", color:"#64748b", background:"#fff"}}>
                     {km} km
                   </button>
                 ))}
-                {userLocation && !nearbyLoading && (
-                  <span className="ml-auto text-xs font-semibold text-brand-600 flex items-center gap-1">
-                    <MapPin className="w-3 h-3"/> {nearbyTrainings.length} sonuç
-                  </span>
-                )}
               </div>
             )}
 
