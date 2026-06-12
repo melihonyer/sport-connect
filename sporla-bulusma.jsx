@@ -720,23 +720,31 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                     </div>
 
                     <div className="flex flex-wrap items-center gap-4 pt-1">
-                      {/* Buton 1: Statik "Hemen Başla" — her zaman auth popup açar */}
-                      <button
-                        onClick={() => { setAuthMode("register"); setIsAuthModalOpen(true); }}
-                        className="group relative flex items-center gap-2.5 px-7 py-3.5 font-medium text-white text-sm overflow-hidden transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl"
-                        style={{background:"linear-gradient(135deg,#00b7ba,#009295)", borderRadius:"14px", boxShadow:"0 8px 32px rgba(0,183,186,0.4)"}}
-                      >
-                        <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-[14px]"/>
-                        {t ? t("home.startBtn") : "Get Started"}
-                        <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
-                      </button>
-                      {/* Buton 2: Admin panelinden düzenlenebilir */}
+                      {!user && (
+                        /* Buton 1: Statik "Hemen Başla" — sadece giriş yapılmamışken */
+                        <button
+                          onClick={() => { setAuthMode("register"); setIsAuthModalOpen(true); }}
+                          className="group relative flex items-center gap-2.5 px-7 py-3.5 font-medium text-white text-sm overflow-hidden transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl"
+                          style={{background:"linear-gradient(135deg,#00b7ba,#009295)", borderRadius:"14px", boxShadow:"0 8px 32px rgba(0,183,186,0.4)"}}
+                        >
+                          <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-[14px]"/>
+                          {t ? t("home.startBtn") : "Get Started"}
+                          <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                        </button>
+                      )}
+                      {/* Buton 2: Admin panelinden düzenlenebilir — her zaman göster */}
                       <button
                         onClick={() => handleCtaClick(banner?.cta_primary_url, () => setCurrentPage("trainings"))}
-                        className="flex items-center gap-2 px-7 py-3.5 font-semibold text-sm transition-all duration-300 rounded-[14px]"
-                        style={{color:uiText, border:`1px solid ${uiBorder}`, background:"transparent"}} onMouseEnter={e=>e.currentTarget.style.background=uiSecHover} onMouseLeave={e=>e.currentTarget.style.background="transparent"}
+                        className={`flex items-center gap-2 px-7 py-3.5 font-semibold text-sm transition-all duration-300 rounded-[14px] ${user ? "group relative overflow-hidden hover:scale-[1.03] hover:shadow-2xl" : ""}`}
+                        style={user
+                          ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff", borderRadius:"14px", boxShadow:"0 8px 32px rgba(0,183,186,0.4)"}
+                          : {color:uiText, border:`1px solid ${uiBorder}`, background:"transparent"}}
+                        onMouseEnter={e=>{ if(!user) e.currentTarget.style.background=uiSecHover; }}
+                        onMouseLeave={e=>{ if(!user) e.currentTarget.style.background="transparent"; }}
                       >
+                        {user && <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-[14px]"/>}
                         {(lang === "tr" ? banner?.cta_primary_text : null) || t("home.heroCtaSecondary")}
+                        {user && <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>}
                       </button>
                     </div>
 
