@@ -249,7 +249,7 @@ export const translations = {
     create:         { tr: "Antrenman Oluştur",            en: "Create Training",         de: "Training erstellen"      },
     nearbySearch:   { tr: "Yakınımda Ara",                en: "Search Nearby",           de: "In der Nähe suchen"      },
     listView:       { tr: "Liste",                        en: "List",                    de: "Liste"                   },
-    mapView:        { tr: "Harita",                       en: "Map",                     de: "Karte"                   },
+    mapView:        { tr: "Haritada Göster",               en: "Show on Map",             de: "Auf Karte anzeigen"      },
     filterSport:    { tr: "Tüm Branşlar",                 en: "All Sports",              de: "Alle Sportarten"         },
     filterLevel:    { tr: "Tüm Seviyeler",                en: "All Levels",              de: "Alle Niveaus"            },
     filterDate:     { tr: "Tarih seçin",                  en: "Select date",             de: "Datum wählen"            },

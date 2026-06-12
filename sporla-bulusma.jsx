@@ -3297,10 +3297,12 @@ export default function Muuvlink() {
                 />
               </div>
               {/* View toggle */}
-              <div className="flex-shrink-0 flex items-center border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
+              <div className="flex-shrink-0 flex items-center gap-1.5">
                 <button onClick={() => setViewMode("list")}
-                  className="px-3 py-2.5 text-xs font-medium transition-all flex items-center gap-1.5"
-                  style={viewMode === "list" ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff"} : {color:"#64748b"}}>
+                  className="px-3 py-2.5 text-xs font-medium rounded-xl transition-all flex items-center gap-1.5 border"
+                  style={viewMode === "list"
+                    ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff", borderColor:"transparent"}
+                    : {background:"#f8fafc", color:"#64748b", borderColor:"#e2e8f0"}}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
                     <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
@@ -3308,10 +3310,12 @@ export default function Muuvlink() {
                   <span className="hidden sm:inline">{t("trainings.listView")}</span>
                 </button>
                 <button onClick={() => setViewMode("map")}
-                  className="px-3 py-2.5 text-xs font-medium transition-all flex items-center gap-1.5"
-                  style={viewMode === "map" ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff"} : {color:"#64748b"}}>
+                  className="px-3 py-2.5 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 border"
+                  style={viewMode === "map"
+                    ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff", borderColor:"transparent"}
+                    : {background:"linear-gradient(135deg,rgba(0,183,186,0.08),rgba(0,146,149,0.08))", color:"#00a0a3", borderColor:"rgba(0,183,186,0.35)"}}>
                   <MapPin className="w-3.5 h-3.5"/>
-                  <span className="hidden sm:inline">{t("trainings.mapView")}</span>
+                  {t("trainings.mapView")}
                 </button>
               </div>
             </div>
