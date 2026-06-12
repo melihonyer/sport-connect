@@ -616,7 +616,16 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
     if (url.startsWith("http://") || url.startsWith("https://")) {
       window.open(url, "_blank", "noopener");
     } else {
-      setCurrentPage(url.replace(/^\//, "") || "home");
+      // Türkçe URL path → page key dönüşümü
+      const pathToPage = {
+        "antrenmanlar": "trainings", "/antrenmanlar": "trainings",
+        "takimlar":     "teams",     "/takimlar":     "teams",
+        "iletisim":     "contact",   "/iletisim":     "contact",
+        "profil":       "profile",   "/profil":       "profile",
+        "rozetlerim":   "badges",    "/rozetlerim":   "badges",
+      };
+      const key = pathToPage[url] || pathToPage[url.replace(/^\//, "")] || url.replace(/^\//, "") || "home";
+      setCurrentPage(key);
     }
   };
 
