@@ -743,7 +743,7 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                         onMouseLeave={e=>{ if(!user) e.currentTarget.style.background="transparent"; }}
                       >
                         {user && <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-[14px]"/>}
-                        {(lang === "tr" ? banner?.cta_primary_text : null) || t("home.heroCtaSecondary")}
+                        {(lang === "tr" ? banner?.cta_primary_text : lang === "en" ? banner?.cta_primary_text_en : banner?.cta_primary_text_de) || t("home.heroCtaSecondary")}
                         {user && <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>}
                       </button>
                     </div>

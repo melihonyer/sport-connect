@@ -5,6 +5,7 @@ import {
   TrendingUp, Calendar, AlertTriangle, Search, X,
   ChevronRight, Lock, Globe, Image, Plus, Edit2, ToggleLeft, ToggleRight,
   Upload, GripVertical, ChevronUp, ChevronDown, Newspaper, GalleryHorizontal, Menu,
+  Trophy, User, ClipboardList, CheckCircle2, DoorOpen, Sparkles, Target,
 } from "lucide-react";
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -90,7 +91,7 @@ function HomeNewsTab({ items, setItems, api, token, showToast }) {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="font-medium text-slate-900 text-lg">Takım Etkinlikleri</h2>
+          <h2 className="font-display font-bold text-slate-900 text-xl" style={{letterSpacing:"-0.01em"}}>Takım Etkinlikleri</h2>
           <p className="text-slate-400 text-sm mt-0.5">Anasayfadaki haber kartlarını yönetin.</p>
         </div>
         <button onClick={startNew}
@@ -208,7 +209,7 @@ function HomeGalleryTab({ items, setItems, api, token, showToast }) {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="font-medium text-slate-900 text-lg">Galeri Kartları</h2>
+          <h2 className="font-display font-bold text-slate-900 text-xl" style={{letterSpacing:"-0.01em"}}>Galeri Kartları</h2>
           <p className="text-slate-400 text-sm mt-0.5">Anasayfadaki galeri bölümünü yönetin.</p>
         </div>
         <button onClick={startNew}
@@ -331,7 +332,7 @@ export default function AdminPanel() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   // Banner form state
-  const emptyBanner = { title:"", subtitle:"", badge_text:"", cta_primary_text:"Hemen Başla", cta_primary_url:"", cta_secondary_text:"Antrenmanları Keşfet", cta_secondary_url:"", gradient_from:"#0D0B26", gradient_via:"#1a1040", gradient_to:"#0f2044", is_active:true, order_index:0, mottos:[""], motto_color_1:"#00b7ba", motto_color_2:"#981dd8", title_color:"#ffffff", subtitle_color:"rgba(186,230,253,0.75)" };
+  const emptyBanner = { title:"", subtitle:"", badge_text:"", cta_primary_text:"Hemen Başla", cta_primary_text_en:"", cta_primary_text_de:"", cta_primary_url:"", cta_secondary_text:"Antrenmanları Keşfet", cta_secondary_url:"", gradient_from:"#0D0B26", gradient_via:"#1a1040", gradient_to:"#0f2044", is_active:true, order_index:0, mottos:[""], motto_color_1:"#00b7ba", motto_color_2:"#981dd8", title_color:"#ffffff", subtitle_color:"rgba(186,230,253,0.75)" };
   const [bannerForm, setBannerForm] = useState(emptyBanner);
   const [editingBannerId, setEditingBannerId] = useState(null);
   const [showBannerForm, setShowBannerForm] = useState(false);
@@ -453,7 +454,7 @@ export default function AdminPanel() {
               <img src="/icons/favicon.png" alt="" className="h-10 w-auto"/>
               <img src="/icons/logo-yatay.svg" alt="Muuvlink" className="h-8 w-auto"/>
             </div>
-            <h1 className="text-2xl font-semibold text-slate-800 tracking-tight">Admin Panel</h1>
+            <h1 className="font-display font-bold text-slate-800 tracking-tight" style={{fontSize:"clamp(1.75rem,4vw,2.25rem)", letterSpacing:"-0.02em"}}>Admin Panel</h1>
             <p className="text-slate-500 text-sm mt-1">Yönetim Konsolu</p>
           </div>
 
@@ -543,6 +544,8 @@ export default function AdminPanel() {
       subtitle: b.subtitle || "",
       badge_text: b.badge_text || "",
       cta_primary_text: b.cta_primary_text || "Hemen Başla",
+      cta_primary_text_en: b.cta_primary_text_en || "",
+      cta_primary_text_de: b.cta_primary_text_de || "",
       cta_primary_url: b.cta_primary_url || "",
       cta_secondary_text: b.cta_secondary_text || "Antrenmanları Keşfet",
       cta_secondary_url: b.cta_secondary_url || "",
@@ -660,12 +663,12 @@ export default function AdminPanel() {
   };
 
   const EVENT_CONFIG = {
-    user_register:    { icon: "👤", label: "Üye Oldu",              color: "bg-blue-100 text-blue-700"   },
-    team_create:      { icon: "🏆", label: "Takım Kurdu",           color: "bg-purple-100 text-purple-700" },
-    team_join:        { icon: "👥", label: "Takıma Katıldı",        color: "bg-indigo-100 text-indigo-700" },
-    training_create:  { icon: "📋", label: "Antrenman Oluşturdu",   color: "bg-brand-100 text-brand-700"  },
-    training_join:    { icon: "✅", label: "Antrenmana Katıldı",    color: "bg-brand-100 text-brand-700" },
-    training_leave:   { icon: "🚪", label: "Antrenman Ayrıldı",     color: "bg-orange-100 text-orange-700" },
+    user_register:    { icon: User,          label: "Üye Oldu",              color: "bg-blue-100 text-blue-700"   },
+    team_create:      { icon: Trophy,        label: "Takım Kurdu",           color: "bg-purple-100 text-purple-700" },
+    team_join:        { icon: Users,         label: "Takıma Katıldı",        color: "bg-indigo-100 text-indigo-700" },
+    training_create:  { icon: ClipboardList, label: "Antrenman Oluşturdu",   color: "bg-brand-100 text-brand-700"  },
+    training_join:    { icon: CheckCircle2,  label: "Antrenmana Katıldı",    color: "bg-brand-100 text-brand-700" },
+    training_leave:   { icon: DoorOpen,      label: "Antrenman Ayrıldı",     color: "bg-orange-100 text-orange-700" },
   };
 
   const LOG_FILTERS = [
@@ -708,18 +711,18 @@ export default function AdminPanel() {
         {analytics && (
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
             {[
-              { label: "Yeni Üye",        key: "users",     grad: "from-blue-500 to-blue-700",     icon: "👤" },
-              { label: "Takım Kuruldu",   key: "teams",     grad: "from-purple-500 to-purple-700",  icon: "🏆" },
-              { label: "Takıma Katılım",  key: "teamJoins", grad: "from-indigo-500 to-indigo-700",  icon: "👥" },
-              { label: "Yeni Antrenman",  key: "trainings", grad: "from-brand-500 to-brand-700",    icon: "📋" },
-              { label: "Antrenmana Kat.", key: "joins",     grad: "from-amber-500 to-orange-500",   icon: "✅" },
+              { label: "Yeni Üye",        key: "users",     grad: "from-blue-500 to-blue-700",     icon: User          },
+              { label: "Takım Kuruldu",   key: "teams",     grad: "from-purple-500 to-purple-700",  icon: Trophy        },
+              { label: "Takıma Katılım",  key: "teamJoins", grad: "from-indigo-500 to-indigo-700",  icon: Users         },
+              { label: "Yeni Antrenman",  key: "trainings", grad: "from-brand-500 to-brand-700",    icon: ClipboardList },
+              { label: "Antrenmana Kat.", key: "joins",     grad: "from-amber-500 to-orange-500",   icon: CheckCircle2  },
             ].map(({ label, key, grad, icon }) => (
               <div key={key} className={`bg-gradient-to-br ${grad} rounded-2xl p-5 text-white shadow-lg`}>
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-2xl">{icon}</span>
+                  {React.createElement(icon, { className: "w-6 h-6 opacity-90" })}
                   <span className="text-xs opacity-75 font-medium bg-white/20 px-2 py-0.5 rounded-lg">bugün</span>
                 </div>
-                <div className="text-3xl font-semibold mb-0.5">{analytics.totals.today[key] ?? 0}</div>
+                <div className="font-display font-bold mb-0.5" style={{fontSize:"2rem", letterSpacing:"-0.02em"}}>{analytics.totals.today[key] ?? 0}</div>
                 <div className="text-sm opacity-80 font-medium">{label}</div>
                 <div className="mt-2 flex gap-3 text-xs opacity-70">
                   <span>Bu hafta: <strong className="opacity-100">{analytics.totals.week[key] ?? 0}</strong></span>
@@ -733,7 +736,7 @@ export default function AdminPanel() {
         {/* ── Chart ───────────────────────────────────── */}
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
           <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
-            <h2 className="font-semibold text-slate-900">Büyüme Grafiği</h2>
+            <h2 className="font-display font-bold text-slate-900 text-lg" style={{letterSpacing:"-0.01em"}}>Büyüme Grafiği</h2>
             <div className="flex gap-1 bg-slate-100 rounded-xl p-1">
               {Object.entries(PERIOD_LABELS).map(([p, lbl]) => (
                 <button key={p} onClick={() => setChartPeriod(p)}
@@ -776,8 +779,8 @@ export default function AdminPanel() {
         {/* ── Activity Feed ───────────────────────────── */}
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between flex-wrap gap-3">
-            <h2 className="font-semibold text-slate-900">Aktivite Akışı
-              <span className="ml-2 text-slate-400 font-normal text-sm">({filteredLogs.length})</span>
+            <h2 className="font-display font-bold text-slate-900 text-lg" style={{letterSpacing:"-0.01em"}}>Aktivite Akışı
+              <span className="ml-2 text-slate-400 font-normal text-sm" style={{fontFamily:"'Barlow',sans-serif"}}>({filteredLogs.length})</span>
             </h2>
             <div className="flex flex-wrap gap-1.5">
               {LOG_FILTERS.map(f => (
@@ -799,12 +802,13 @@ export default function AdminPanel() {
               <div className="text-center py-12 text-slate-400 text-sm">Henüz aktivite yok</div>
             )}
             {filteredLogs.map(log => {
-              const cfg = EVENT_CONFIG[log.event_type] || { icon: "•", label: log.event_type, color: "bg-slate-100 text-slate-600" };
+              const cfg = EVENT_CONFIG[log.event_type] || { icon: Activity, label: log.event_type, color: "bg-slate-100 text-slate-600" };
               const meta = log.meta || {};
               const detail = meta.team_name || meta.training_title || meta.email || "";
+              const CfgIcon = cfg.icon;
               return (
                 <div key={log.id} className="flex items-start gap-3 px-4 py-3.5">
-                  <span className="text-xl flex-shrink-0 mt-0.5">{cfg.icon}</span>
+                  <span className={`flex-shrink-0 mt-0.5 p-1.5 rounded-lg ${cfg.color}`}><CfgIcon className="w-3.5 h-3.5"/></span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold ${cfg.color}`}>{cfg.label}</span>
@@ -834,15 +838,16 @@ export default function AdminPanel() {
                   <tr><td colSpan={4} className="text-center py-12 text-slate-400">Henüz aktivite yok</td></tr>
                 )}
                 {filteredLogs.map(log => {
-                  const cfg = EVENT_CONFIG[log.event_type] || { icon: "•", label: log.event_type, color: "bg-slate-100 text-slate-600" };
+                  const cfg = EVENT_CONFIG[log.event_type] || { icon: Activity, label: log.event_type, color: "bg-slate-100 text-slate-600" };
                   const meta = log.meta || {};
                   const detail = meta.team_name || meta.training_title || meta.email || "";
+                  const CfgIconTbl = cfg.icon;
                   return (
                     <tr key={log.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-5 py-3 text-slate-400 text-xs whitespace-nowrap">{relativeTime(log.created_at)}</td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold ${cfg.color}`}>
-                          {cfg.icon} {cfg.label}
+                          <CfgIconTbl className="w-3.5 h-3.5"/> {cfg.label}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-slate-700 font-medium text-sm">
@@ -895,7 +900,7 @@ export default function AdminPanel() {
         <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-100">
           <img src="/icons/favicon.png" alt="Muuvlink" className="h-8 w-auto flex-shrink-0" />
           <div className="flex-1">
-            <div className="text-slate-800 font-semibold text-sm tracking-tight">Muuvlink</div>
+            <div className="font-display font-bold text-slate-800 text-base tracking-tight" style={{letterSpacing:"-0.01em"}}>Muuvlink</div>
             <div className="text-slate-400 text-xs font-medium">Admin Panel</div>
           </div>
           <button className="md:hidden p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 transition" onClick={() => setMobileNavOpen(false)}>
@@ -956,7 +961,7 @@ export default function AdminPanel() {
             <Menu className="w-5 h-5 text-slate-600"/>
           </button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-base md:text-lg font-semibold text-slate-900 truncate">
+            <h1 className="font-display font-bold text-slate-900 truncate" style={{fontSize:"clamp(1rem,2.5vw,1.2rem)", letterSpacing:"-0.01em"}}>
               {navItems.find(n => n.id === tab)?.label || "Panel"}
             </h1>
             <p className="text-slate-400 text-xs hidden sm:block">Muuvlink Yönetim Konsolu</p>
@@ -998,7 +1003,7 @@ export default function AdminPanel() {
                       <s.icon className="w-6 h-6 opacity-80" />
                       <TrendingUp className="w-4 h-4 opacity-50" />
                     </div>
-                    <div className="text-4xl font-semibold mb-1">{s.value ?? "—"}</div>
+                    <div className="font-display font-bold mb-1" style={{fontSize:"2.5rem", letterSpacing:"-0.02em"}}>{s.value ?? "—"}</div>
                     <div className="text-sm opacity-75 font-medium">{s.label}</div>
                   </div>
                 ))}
@@ -1008,7 +1013,7 @@ export default function AdminPanel() {
               {stats?.recentUsers?.length > 0 && (
                 <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                   <div className="px-6 py-4 border-b border-slate-50">
-                    <h2 className="font-medium text-slate-900">🆕 Son Kayıt Olan Kullanıcılar</h2>
+                    <h2 className="font-medium text-slate-900 flex items-center gap-2"><Sparkles className="w-4 h-4 text-brand-400"/>Son Kayıt Olan Kullanıcılar</h2>
                   </div>
                   <div className="divide-y divide-slate-50">
                     {stats.recentUsers.map(u => (
@@ -1443,7 +1448,7 @@ export default function AdminPanel() {
                       <div>
                         <label className="block text-xs font-medium text-slate-500 mb-1.5">Rozet Metni</label>
                         <input value={bannerForm.badge_text} onChange={e=>setBannerForm(p=>({...p,badge_text:e.target.value}))}
-                          placeholder="🏃 500+ Aktif Sporcu"
+                          placeholder="500+ Aktif Sporcu"
                           className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-300"/>
                       </div>
                     </div>
@@ -1480,15 +1485,27 @@ export default function AdminPanel() {
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <label className="block text-[11px] text-slate-400 mb-1">Buton Metni</label>
+                            <label className="block text-[11px] text-slate-400 mb-1">Buton Metni 🇹🇷</label>
                             <input value={bannerForm.cta_primary_text} onChange={e=>setBannerForm(p=>({...p,cta_primary_text:e.target.value}))}
-                              placeholder="Hemen Başla"
+                              placeholder="Antrenmanları Keşfet"
                               className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-300"/>
                           </div>
                           <div>
                             <label className="block text-[11px] text-slate-400 mb-1">Link / URL</label>
                             <input value={bannerForm.cta_primary_url} onChange={e=>setBannerForm(p=>({...p,cta_primary_url:e.target.value}))}
                               placeholder="/antrenmanlar veya https://..."
+                              className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-300"/>
+                          </div>
+                          <div>
+                            <label className="block text-[11px] text-slate-400 mb-1">Buton Metni 🇬🇧</label>
+                            <input value={bannerForm.cta_primary_text_en} onChange={e=>setBannerForm(p=>({...p,cta_primary_text_en:e.target.value}))}
+                              placeholder="Explore Trainings"
+                              className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-300"/>
+                          </div>
+                          <div>
+                            <label className="block text-[11px] text-slate-400 mb-1">Buton Metni 🇩🇪</label>
+                            <input value={bannerForm.cta_primary_text_de} onChange={e=>setBannerForm(p=>({...p,cta_primary_text_de:e.target.value}))}
+                              placeholder="Trainings entdecken"
                               className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-300"/>
                           </div>
                         </div>
