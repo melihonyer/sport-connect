@@ -750,15 +750,13 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                             {(lang === "tr" ? banner?.cta_primary_text : null) || (t ? t("home.trainingsBtn") : "Trainings")}
                             <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
                           </button>
-                          {(lang === "tr" && banner?.cta_secondary_text) && (
-                            <button
-                              onClick={() => handleCtaClick(banner?.cta_secondary_url, () => setCurrentPage("teams"))}
-                              className="flex items-center gap-2 px-7 py-3.5 font-semibold text-sm transition-all duration-300 rounded-[14px]"
-                              style={{color:uiText, border:`1px solid ${uiBorder}`, background:"transparent"}} onMouseEnter={e=>e.currentTarget.style.background=uiSecHover} onMouseLeave={e=>e.currentTarget.style.background="transparent"}
-                            >
-                              {banner.cta_secondary_text}
-                            </button>
-                          )}
+                          <button
+                            onClick={() => handleCtaClick(banner?.cta_secondary_url, () => setCurrentPage("teams"))}
+                            className="flex items-center gap-2 px-7 py-3.5 font-semibold text-sm transition-all duration-300 rounded-[14px]"
+                            style={{color:uiText, border:`1px solid ${uiBorder}`, background:"transparent"}} onMouseEnter={e=>e.currentTarget.style.background=uiSecHover} onMouseLeave={e=>e.currentTarget.style.background="transparent"}
+                          >
+                            {(lang === "tr" ? banner?.cta_secondary_text : null) || t("home.heroCtaSecondary")}
+                          </button>
                         </>
                       )}
                     </div>
