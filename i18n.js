@@ -643,6 +643,12 @@ export const translations = {
     a10:{ tr: "Giriş ekranındaki 'Şifremi Unuttum' bağlantısına tıklayın. E-posta adresinize şifre sıfırlama linki gönderilecektir.",
           en: "Click the 'Forgot Password' link on the login screen. A password reset link will be sent to your email address.",
           de: "Klicke auf 'Passwort vergessen' auf dem Anmeldebildschirm. Ein Link zum Zurücksetzen wird an deine E-Mail-Adresse gesendet." },
+    q11:{ tr: "Antrenman kartlarındaki km mesafesi nasıl hesaplanıyor?",
+          en: "How is the distance shown on training cards calculated?",
+          de: "Wie wird die Entfernung auf den Trainingskarten berechnet?" },
+    a11:{ tr: "Antrenman kartlarında görünen mesafe, bulunduğun anlık konuma göre hesaplanır. Tarayıcında konum iznini bir kez verdikten sonra uygulama her açılışında arka planda sessizce güncel konumunu alır ve mesafeleri otomatik olarak günceller; herhangi bir izin penceresi çıkmaz. Konum iznini henüz vermediysen 'Yakınımda Ara' butonuna bir kez tıklaman yeterli — bu işlemden sonra mesafeler her zaman doğru hesaplanır.",
+          en: "The distance shown on training cards is calculated based on your real-time location. Once you grant location permission in your browser, the app silently retrieves your current position each time you open it and updates distances automatically — no permission prompt appears. If you haven't granted permission yet, simply tap 'Search Nearby' once; after that, distances will always be calculated correctly.",
+          de: "Die auf den Trainingskarten angezeigte Entfernung wird anhand deines aktuellen Standorts berechnet. Sobald du dem Browser die Standortberechtigung einmalig erteilt hast, ruft die App deinen aktuellen Standort bei jedem Öffnen still im Hintergrund ab und aktualisiert die Entfernungen automatisch — ohne erneute Abfrage. Falls du die Berechtigung noch nicht erteilt hast, klicke einmal auf 'In der Nähe suchen'; danach werden die Entfernungen immer korrekt berechnet." },
   },
 
   // ── NOTIFICATIONS ────────────────────────────────────────
