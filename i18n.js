@@ -649,6 +649,18 @@ export const translations = {
     a11:{ tr: "Antrenman kartlarında görünen mesafe, bulunduğun anlık konuma göre hesaplanır. Tarayıcında konum iznini bir kez verdikten sonra uygulama her açılışında arka planda sessizce güncel konumunu alır ve mesafeleri otomatik olarak günceller; herhangi bir izin penceresi çıkmaz. Konum iznini henüz vermediysen 'Yakınımda Ara' butonuna bir kez tıklaman yeterli — bu işlemden sonra mesafeler her zaman doğru hesaplanır.",
           en: "The distance shown on training cards is calculated based on your real-time location. Once you grant location permission in your browser, the app silently retrieves your current position each time you open it and updates distances automatically — no permission prompt appears. If you haven't granted permission yet, simply tap 'Search Nearby' once; after that, distances will always be calculated correctly.",
           de: "Die auf den Trainingskarten angezeigte Entfernung wird anhand deines aktuellen Standorts berechnet. Sobald du dem Browser die Standortberechtigung einmalig erteilt hast, ruft die App deinen aktuellen Standort bei jedem Öffnen still im Hintergrund ab und aktualisiert die Entfernungen automatisch — ohne erneute Abfrage. Falls du die Berechtigung noch nicht erteilt hast, klicke einmal auf 'In der Nähe suchen'; danach werden die Entfernungen immer korrekt berechnet." },
+    q12:{ tr: "Takımımı nasıl paylaşabilirim?",
+          en: "How can I share my team?",
+          de: "Wie kann ich mein Team teilen?" },
+    a12:{ tr: "Takım detay sayfasını açın ve üye davet butonunun hemen yanındaki 'Linki Kopyala' butonuna tıklayın. Kopyalanan link, istediğiniz uygulama veya kanaldan (WhatsApp, e-posta vb.) paylaşılabilir. Linke tıklayan kişi giriş yapmamışsa önce kayıt/giriş ekranı açılır, ardından doğrudan takım sayfasına yönlendirilir.",
+          en: "Open the team detail page and click the 'Copy Link' button next to the invite button. The copied link can be shared through any app or channel (WhatsApp, email, etc.). If the recipient isn't logged in, they'll be prompted to register or log in first, then redirected directly to the team page.",
+          de: "Öffne die Team-Detailseite und klicke auf den 'Link kopieren'-Button neben dem Einladen-Button. Der kopierte Link kann über beliebige Apps oder Kanäle (WhatsApp, E-Mail usw.) geteilt werden. Wenn der Empfänger nicht eingeloggt ist, wird er zunächst zur Anmeldung aufgefordert und dann direkt zur Team-Seite weitergeleitet." },
+    q13:{ tr: "Oluşturduğum antrenmanı nasıl paylaşabilirim?",
+          en: "How can I share a training I created?",
+          de: "Wie kann ich ein Training teilen, das ich erstellt habe?" },
+    a13:{ tr: "Antrenman detay sayfasını açın ve antrenman başlığının yanındaki 'Linki Kopyala' butonuna tıklayın. Kopyalanan link, WhatsApp, e-posta veya istediğiniz herhangi bir kanaldan gönderilebilir. Linke tıklayan kişi giriş yapmamışsa önce kayıt/giriş ekranı açılır, ardından doğrudan o antrenmanın detay sayfasına yönlendirilir.",
+          en: "Open the training detail page and click the 'Copy Link' button next to the training title. The link can be sent via WhatsApp, email, or any channel you prefer. If the recipient isn't logged in, they'll be prompted to register or log in first, then redirected directly to that training's detail page.",
+          de: "Öffne die Trainings-Detailseite und klicke auf den 'Link kopieren'-Button neben dem Trainingstitel. Der Link kann per WhatsApp, E-Mail oder einem beliebigen Kanal verschickt werden. Wenn der Empfänger nicht eingeloggt ist, wird er zunächst zur Anmeldung aufgefordert und dann direkt zur Trainingsdetailseite weitergeleitet." },
   },
 
   // ── NOTIFICATIONS ────────────────────────────────────────

@@ -5555,7 +5555,7 @@ export default function Muuvlink() {
     const [sending, setSending] = React.useState(false);
     const [openFaq, setOpenFaq] = React.useState(null);
 
-    const faqs = [1,2,3,4,5,6,7,8,9,10,11].map(n => ({ q: t(`faq.q${n}`), a: t(`faq.a${n}`) }));
+    const faqs = [1,2,3,4,5,6,7,8,9,10,11,12,13].map(n => ({ q: t(`faq.q${n}`), a: t(`faq.a${n}`) }));
 
     const handleContactSubmit = async (e) => {
       e.preventDefault();
