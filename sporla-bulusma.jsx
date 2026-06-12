@@ -3283,26 +3283,26 @@ export default function Muuvlink() {
         </div>
 
         {/* ── Filter bar ── */}
-        <div className="bg-white border-b border-slate-100 sticky top-[68px] z-40">
-          <div className="max-w-7xl mx-auto px-4 sm:px-8 py-3 space-y-2">
+        <div className="bg-white border-b border-slate-100 sticky top-[68px] z-40 shadow-sm">
+          <div className="max-w-7xl mx-auto px-4 sm:px-8 py-3 space-y-2.5">
 
             {/* Satır 1: Arama + View toggle */}
             <div className="flex items-center gap-2">
               <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
                   type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={t("trainings.searchPlaceholder")}
-                  className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand-300 focus:bg-white transition"
+                  className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition-colors placeholder:text-slate-400"
                 />
               </div>
               {/* View toggle */}
               <div className="flex-shrink-0 flex items-center gap-1.5">
                 <button onClick={() => setViewMode("list")}
-                  className="px-3 py-2.5 text-xs font-medium rounded-xl transition-all flex items-center gap-1.5 border"
+                  className="px-3 py-2.5 text-xs font-medium rounded-xl transition-all flex items-center gap-1.5 border shadow-sm"
                   style={viewMode === "list"
-                    ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff", borderColor:"transparent"}
-                    : {background:"#f8fafc", color:"#64748b", borderColor:"#e2e8f0"}}>
+                    ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff", borderColor:"transparent", boxShadow:"0 1px 8px rgba(0,183,186,0.35)"}
+                    : {background:"#fff", color:"#64748b", borderColor:"#e2e8f0"}}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
                     <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
@@ -3310,10 +3310,10 @@ export default function Muuvlink() {
                   <span className="hidden sm:inline">{t("trainings.listView")}</span>
                 </button>
                 <button onClick={() => setViewMode("map")}
-                  className="px-3 py-2.5 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 border"
+                  className="px-3 py-2.5 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 border shadow-sm"
                   style={viewMode === "map"
-                    ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff", borderColor:"transparent"}
-                    : {background:"linear-gradient(135deg,rgba(0,183,186,0.08),rgba(0,146,149,0.08))", color:"#00a0a3", borderColor:"rgba(0,183,186,0.35)"}}>
+                    ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff", borderColor:"transparent", boxShadow:"0 1px 8px rgba(0,183,186,0.35)"}
+                    : {background:"linear-gradient(135deg,rgba(0,183,186,0.06),rgba(0,146,149,0.06))", color:"#00a0a3", borderColor:"rgba(0,183,186,0.3)"}}>
                   <MapPin className="w-3.5 h-3.5"/>
                   {t("trainings.mapView")}
                 </button>
@@ -3324,26 +3324,30 @@ export default function Muuvlink() {
             <div className="flex items-center gap-2 flex-wrap">
               {/* Sport filter */}
               <select value={sportFilter} onChange={(e) => setSportFilter(e.target.value)}
-                className="flex-1 min-w-0 px-3 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand-300 focus:bg-white transition">
+                className="flex-1 min-w-0 px-3 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition-colors appearance-none cursor-pointer">
                 <option value="">{t("trainings.filterSport")}</option>
                 {sports.map((s) => <option key={s} value={s}>{t(`sports.${s}`)}</option>)}
               </select>
               {/* Level filter */}
               <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)}
-                className="flex-1 min-w-0 px-3 py-2 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand-300 focus:bg-white transition">
+                className="flex-1 min-w-0 px-3 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition-colors appearance-none cursor-pointer">
                 <option value="">{t("trainings.filterLevel")}</option>
                 {difficulties.map((d) => <option key={d.val} value={d.val}>{d.label}</option>)}
               </select>
               {/* GPS toggle */}
-              <div className="flex-shrink-0 flex items-center border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
+              <div className="flex-shrink-0 flex items-center gap-1.5">
                 <button onClick={handleExitNearby}
-                  className="px-3 py-2 text-xs font-medium transition-all"
-                  style={!nearbyMode ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff"} : {color:"#64748b"}}>
+                  className="px-3 py-2.5 text-xs font-medium rounded-xl transition-all border shadow-sm"
+                  style={!nearbyMode
+                    ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff", borderColor:"transparent", boxShadow:"0 1px 8px rgba(0,183,186,0.35)"}
+                    : {background:"#fff", color:"#64748b", borderColor:"#e2e8f0"}}>
                   {t("common.all")}
                 </button>
                 <button onClick={() => handleNearbySearch()} disabled={locationLoading}
-                  className="px-3 py-2 text-xs font-medium transition-all flex items-center gap-1.5 disabled:opacity-50"
-                  style={nearbyMode ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff"} : {color:"#64748b"}}>
+                  className="px-3 py-2.5 text-xs font-medium rounded-xl transition-all flex items-center gap-1.5 border shadow-sm disabled:opacity-50"
+                  style={nearbyMode
+                    ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff", borderColor:"transparent", boxShadow:"0 1px 8px rgba(0,183,186,0.35)"}
+                    : {background:"#fff", color:"#64748b", borderColor:"#e2e8f0"}}>
                   {locationLoading
                     ? <div className="w-3 h-3 border-2 border-current/30 border-t-current rounded-full animate-spin"/>
                     : <MapPin className="w-3 h-3"/>}
@@ -3353,7 +3357,7 @@ export default function Muuvlink() {
               {/* Clear filters */}
               {(searchQuery || sportFilter || levelFilter) && (
                 <button onClick={() => { setSearchQuery(""); setSportFilter(""); setLevelFilter(""); }}
-                  className="flex-shrink-0 flex items-center gap-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-medium text-slate-600 transition">
+                  className="flex-shrink-0 flex items-center gap-1 px-3 py-2.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-500 shadow-sm transition-colors">
                   <X className="w-3.5 h-3.5"/>
                 </button>
               )}
