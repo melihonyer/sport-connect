@@ -3844,13 +3844,34 @@ export default function Muuvlink() {
           <p className="text-gray-600 mb-6">{selectedTraining.description}</p>
 
           <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="p-4 bg-gray-50 rounded-xl">
-              <div className="flex items-center text-gray-600 mb-2">
-                <MapPin className="w-5 h-5 mr-2" />
-                <span className="font-semibold">{t("common.location")}</span>
-              </div>
-              <p>{selectedTraining.location_name}</p>
-            </div>
+            {(() => {
+              const hasCoords = selectedTraining.location_lat && selectedTraining.location_lng;
+              const mapsUrl = hasCoords
+                ? `https://www.google.com/maps/dir/?api=1&destination=${selectedTraining.location_lat},${selectedTraining.location_lng}`
+                : selectedTraining.location_name
+                  ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedTraining.location_name)}`
+                  : null;
+              return (
+                <div
+                  className={`p-4 bg-gray-50 rounded-xl transition-colors ${mapsUrl ? "cursor-pointer hover:bg-brand-50 hover:border hover:border-brand-200 active:bg-brand-100" : ""}`}
+                  onClick={() => mapsUrl && window.open(mapsUrl, "_blank", "noopener")}
+                >
+                  <div className="flex items-center text-gray-600 mb-2 justify-between">
+                    <div className="flex items-center">
+                      <MapPin className="w-5 h-5 mr-2" />
+                      <span className="font-semibold">{t("common.location")}</span>
+                    </div>
+                    {mapsUrl && (
+                      <span className="text-xs font-semibold text-brand-600 flex items-center gap-1">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                        {t("common.navigate")}
+                      </span>
+                    )}
+                  </div>
+                  <p className={mapsUrl ? "text-slate-700" : ""}>{selectedTraining.location_name}</p>
+                </div>
+              );
+            })()}
             <div className="p-4 bg-gray-50 rounded-xl">
               <div className="flex items-center text-gray-600 mb-2">
                 <Calendar className="w-5 h-5 mr-2" />

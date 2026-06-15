@@ -100,6 +100,7 @@ export const translations = {
     retry:        { tr: "Tekrar Dene",      en: "Try Again",     de: "Erneut versuchen" },
     noDescription:{ tr: "Açıklama eklenmemiş.", en: "No description added.", de: "Keine Beschreibung hinzugefügt." },
     copyLink:     { tr: "Linki Kopyala",       en: "Copy Link",             de: "Link kopieren"                  },
+    navigate:     { tr: "Yol Tarifi",          en: "Navigate",              de: "Navigation"                     },
   },
 
   // ── HOME PAGE ────────────────────────────────────────────
