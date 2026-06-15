@@ -1762,24 +1762,23 @@ app.get('/api/trainings', optionalAuth, async (req, res) => {
     const { team_id, date_from, date_to, is_public, sport } = req.query;
 
     let query = `
-      SELECT t.*, 
+      SELECT t.*,
              teams.name as team_name,
              teams.sport as team_sport,
              teams.avatar as team_avatar,
              COUNT(DISTINCT ta.user_id) as attendee_count
       FROM trainings t
       JOIN teams ON t.team_id = teams.id
-      LEFT JOIN training_attendees ta ON t.id = ta.training_id
+      LEFT JOIN training_attendees ta ON ta.training_id = t.id
+      LEFT JOIN team_members tm_auth ON tm_auth.team_id = teams.id AND tm_auth.user_id = $1
       WHERE (
         teams.is_private = false
         OR t.is_public = true
-        OR ($1::int IS NOT NULL AND teams.id IN (
-          SELECT team_id FROM team_members WHERE user_id = $1
-        ))
+        OR ($1::int IS NOT NULL AND tm_auth.team_id IS NOT NULL)
       )
       AND (
-        t.training_date::date > CURRENT_DATE
-        OR (t.training_date::date = CURRENT_DATE AND t.training_time::time >= CURRENT_TIME::time)
+        t.training_date > CURRENT_DATE
+        OR (t.training_date = CURRENT_DATE AND t.training_time >= CURRENT_TIME)
       )
     `;
 
@@ -3543,7 +3542,7 @@ async function sendTrainingReminders() {
 
         for (const member of members.rows) {
           const notifTitle = daysLeft === 1 ? 'Yarın Antrenman Var!' : '3 Gün Sonra Antrenman!';
-          const notifMsg = `${training.team_name}: ${training.title} — ${training.training_date}`;
+          const notifMsg = `${training.team_name}: ${training.title} — ${formatTrDate(training.training_date)}`;
 
           // Aynı bildirim daha önce gönderildi mi kontrol et
           const exists = await pool.query(
