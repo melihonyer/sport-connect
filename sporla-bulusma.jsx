@@ -1430,22 +1430,19 @@ export default function Muuvlink() {
     const savedLoc = localStorage.getItem("userLocation");
     if (savedLoc) {
       try { setUserLocation(JSON.parse(savedLoc)); } catch (_) {}
-    }
-    // İzin daha önce verilmişse sessizce güncel konumu al (prompt çıkmaz)
-    // Böylece km mesafeleri her zaman gerçek anlık konuma göre hesaplanır
-    if (navigator.geolocation && navigator.permissions) {
-      navigator.permissions.query({ name: "geolocation" }).then(perm => {
-        if (perm.state === "granted") {
-          navigator.geolocation.getCurrentPosition(
-            (pos) => {
-              const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-              setUserLocation(loc);
-              localStorage.setItem("userLocation", JSON.stringify(loc));
-            },
-            () => {} // Sessiz hata — eski konum kalmaya devam eder
-          );
-        }
-      }).catch(() => {});
+      // savedLoc varsa kullanıcı daha önce izin vermiş demek → prompt çıkmadan güncel konum al
+      // navigator.permissions iOS Safari'de çalışmıyor, bu yüzden direkt getCurrentPosition kullan
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            setUserLocation(loc);
+            localStorage.setItem("userLocation", JSON.stringify(loc));
+          },
+          () => {}, // Sessiz hata — eski konum kalmaya devam eder
+          { maximumAge: 300000, timeout: 10000, enableHighAccuracy: false }
+        );
+      }
     }
     // GPS'i otomatik isteme — kullanıcı "Yakınımda Ara" butonuna bastığında sorulur
     // (Sayfa açılışında permission prompt = PageSpeed penaltı + UX kötü)
