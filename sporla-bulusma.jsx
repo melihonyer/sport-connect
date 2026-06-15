@@ -3843,6 +3843,67 @@ export default function Muuvlink() {
 
           <p className="text-gray-600 mb-6">{selectedTraining.description}</p>
 
+          {/* Takım bilgisi + katılım */}
+          {selectedTraining.team_id && selectedTraining.team_name && (() => {
+            const isTeamMember = myTeams.some(tm => tm.id === selectedTraining.team_id);
+            return (
+              <div className="flex items-center justify-between gap-3 p-4 rounded-2xl border border-slate-100 bg-slate-50 mb-6">
+                <button
+                  onClick={() => fetchTeamDetails(selectedTraining.team_id)}
+                  className="flex items-center gap-3 min-w-0 text-left"
+                >
+                  {selectedTraining.team_avatar ? (
+                    <img
+                      src={selectedTraining.team_avatar.startsWith("http") ? selectedTraining.team_avatar : `${BASE_URL}${selectedTraining.team_avatar}`}
+                      alt={selectedTraining.team_name}
+                      className="w-11 h-11 rounded-full object-cover flex-shrink-0 border-2 border-white shadow-sm"
+                    />
+                  ) : (
+                    <div className="w-11 h-11 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0 border-2 border-white shadow-sm">
+                      <Users className="w-5 h-5 text-brand-600" />
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="font-semibold text-slate-800 text-sm truncate">{selectedTraining.team_name}</p>
+                    {selectedTraining.team_sport && (
+                      <p className="text-xs text-slate-500">{selectedTraining.team_sport}</p>
+                    )}
+                  </div>
+                </button>
+
+                {user ? (
+                  isTeamMember ? (
+                    <span className="flex-shrink-0 flex items-center gap-1.5 text-xs font-semibold text-brand-600">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                      {t("trainingDetail.alreadyMember") || "Üyesiniz"}
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => handleJoinTeam(selectedTraining.team_id)}
+                      disabled={joiningTeamId === selectedTraining.team_id}
+                      className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-60"
+                      style={{background:"linear-gradient(135deg,#00b7ba,#009295)", boxShadow:"0 2px 10px rgba(0,183,186,0.3)"}}
+                    >
+                      {joiningTeamId === selectedTraining.team_id
+                        ? <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"/>
+                        : <UserPlus className="w-4 h-4"/>}
+                      {t("teamDetail.joinTeam")}
+                    </button>
+                  )
+                ) : (
+                  <button
+                    onClick={() => { setAuthMode("login"); setIsAuthModalOpen(true); }}
+                    className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all"
+                    style={{background:"linear-gradient(135deg,#00b7ba,#009295)", boxShadow:"0 2px 10px rgba(0,183,186,0.3)"}}
+                  >
+                    <UserPlus className="w-4 h-4"/>
+                    {t("teamDetail.joinTeam")}
+                  </button>
+                )}
+              </div>
+            );
+          })()}
+
           <div className="grid grid-cols-2 gap-4 mb-6">
             {(() => {
               const hasCoords = selectedTraining.location_lat && selectedTraining.location_lng;

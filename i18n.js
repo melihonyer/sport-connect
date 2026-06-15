@@ -338,6 +338,7 @@ export const translations = {
     loginFeat2:     { tr: "Güvenli katılım & bildirimler", en: "Secure participation & notifications", de: "Sichere Teilnahme & Benachrichtigungen" },
     loginFeat3:     { tr: "Takım üyeliği & iletişim",     en: "Team membership & communication", de: "Teammitgliedschaft & Kommunikation" },
     joinBtn:        { tr: "Katıl",                         en: "Join",                    de: "Mitmachen"               },
+    alreadyMember:  { tr: "Üyesiniz",                      en: "Member",                  de: "Mitglied"                },
   },
 
   // ── CREATE TRAINING ─────────────────────────────────────
