@@ -3691,10 +3691,10 @@ export default function Muuvlink() {
           {t("common.back")}
         </button>
 
-        <div className="bg-white rounded-2xl p-8 border">
-          <div className="flex items-start justify-between gap-3 mb-6">
-            <h1 className="font-display font-bold" style={{fontSize:"clamp(1.8rem,4vw,2.4rem)", letterSpacing:"-0.01em"}}>{selectedTraining.title}</h1>
-            <div className="flex flex-wrap gap-2 items-center flex-shrink-0">
+        <div className="bg-white rounded-2xl p-6 sm:p-8 border">
+          <div className="mb-6">
+            <h1 className="font-display font-bold mb-3" style={{fontSize:"clamp(1.8rem,4vw,2.4rem)", letterSpacing:"-0.01em"}}>{selectedTraining.title}</h1>
+            <div className="flex flex-wrap gap-2 items-center">
               <span className="px-3 py-1 bg-brand-100 text-brand-600 rounded-full text-sm font-medium">
                 {selectedTraining.team_sport || "Genel"}
               </span>
