@@ -3595,6 +3595,48 @@ function scheduleDailyReminders() {
 }
 scheduleDailyReminders();
 
+// ── Push Token Kayıt & Bildirim ──────────────────────────────────────────────
+// Tablo yoksa oluştur
+pool.query(`
+  CREATE TABLE IF NOT EXISTS device_push_tokens (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    token TEXT NOT NULL,
+    platform VARCHAR(10) NOT NULL DEFAULT 'ios',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(token)
+  )
+`).catch(e => console.error('[PUSH] Token tablosu oluşturulamadı:', e.message));
+
+app.post('/api/push/register', async (req, res) => {
+  const { token, platform = 'ios' } = req.body;
+  if (!token) return res.status(400).json({ error: 'Token gerekli' });
+
+  let userId = null;
+  const authHeader = req.headers.authorization;
+  if (authHeader?.startsWith('Bearer ')) {
+    try {
+      const jwt = require('jsonwebtoken');
+      const decoded = jwt.verify(authHeader.slice(7), process.env.JWT_SECRET);
+      userId = decoded.id;
+    } catch (_) {}
+  }
+
+  try {
+    await pool.query(
+      `INSERT INTO device_push_tokens (user_id, token, platform, updated_at)
+       VALUES ($1, $2, $3, NOW())
+       ON CONFLICT (token) DO UPDATE SET user_id = $1, updated_at = NOW()`,
+      [userId, token, platform]
+    );
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('[PUSH] Token kayıt hatası:', e.message);
+    res.status(500).json({ error: 'Token kaydedilemedi' });
+  }
+});
+
 // Production'da Vite build çıktısını servis et
 if (process.env.NODE_ENV === 'production') {
   const distPath = path.join(__dirname, '../dist');

@@ -848,6 +848,19 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
   );
 }
 
+const isNative = new URLSearchParams(window.location.search).get("src") === "app";
+
+async function triggerHaptic(type = "medium") {
+  if (!isNative) return;
+  try {
+    const { Haptics, ImpactStyle, NotificationType } = await import("@capacitor/haptics");
+    if (type === "success") await Haptics.notification({ type: NotificationType.Success });
+    else if (type === "error") await Haptics.notification({ type: NotificationType.Error });
+    else if (type === "light") await Haptics.impact({ style: ImpactStyle.Light });
+    else await Haptics.impact({ style: ImpactStyle.Medium });
+  } catch (_) {}
+}
+
 export default function Muuvlink() {
   // ── URL ↔ sayfa eşlemesi ─────────────────────────────
   const PAGE_TO_PATH = {
@@ -1110,11 +1123,13 @@ export default function Muuvlink() {
           setGettingGPS(false);
           if (err.code === 1) {
             showError(t("location.denied"));
+          } else if (err.code === 2) {
+            showError(t("location.gpsUnavailable"));
           } else {
-            showError(t("location.gpsFail"));
+            showError(t("location.gpsTimedOut"));
           }
         },
-        { timeout: 8000, enableHighAccuracy: false }
+        { timeout: 15000, maximumAge: 60000, enableHighAccuracy: false }
       );
     };
 
@@ -1470,7 +1485,39 @@ export default function Muuvlink() {
   // Trainings sayfasına geçilince güncel veri çek
   useEffect(() => {
     if (currentPage === "trainings") fetchTrainings();
+    if (currentPage === "home" && isNative) fetchTrainings();
   }, [currentPage]);
+
+  // Push Notifications — sadece native'de
+  useEffect(() => {
+    if (!isNative) return;
+    const initPush = async () => {
+      try {
+        const { PushNotifications } = await import("@capacitor/push-notifications");
+        const perm = await PushNotifications.requestPermissions();
+        if (perm.receive === "granted") {
+          await PushNotifications.register();
+        }
+        PushNotifications.addListener("registration", async (token) => {
+          try {
+            await fetch(`${API_URL}/push/register`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", ...(localStorage.getItem("token") ? { Authorization: `Bearer ${localStorage.getItem("token")}` } : {}) },
+              body: JSON.stringify({ token: token.value, platform: "ios" }),
+            });
+          } catch (_) {}
+        });
+        PushNotifications.addListener("pushNotificationReceived", (notification) => {
+          showSuccess(notification.title || notification.body || "Yeni bildirim");
+        });
+        PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
+          const page = action.notification.data?.page;
+          if (page) setCurrentPage(page);
+        });
+      } catch (_) {}
+    };
+    initPush();
+  }, []);
 
   // URL'de reset_token / auth=register / accept_invite varsa yönlendir
   useEffect(() => {
@@ -1935,6 +1982,7 @@ export default function Muuvlink() {
       });
 
       if (response.ok) {
+        triggerHaptic("success");
         showToast(t("toast.joinTraining"), "success");
         fetchTrainings();
         fetchMyTrainings(token);
@@ -1943,6 +1991,7 @@ export default function Muuvlink() {
         }
       } else {
         const data = await response.json();
+        triggerHaptic("error");
         showToast(data.error || t("toast.joinFail"), "error");
       }
     } catch (error) {
@@ -1963,6 +2012,7 @@ export default function Muuvlink() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.ok) {
+        triggerHaptic("light");
         showToast(t("toast.leaveTraining"), "success");
         fetchTrainings();
         fetchMyTrainings(token);
@@ -2774,6 +2824,75 @@ export default function Muuvlink() {
   // =====================================================
   // PAGES
   // =====================================================
+
+  const MobileHomePage = () => {
+    const activeBanner = banners[0];
+    return (
+      <>
+        {/* Sadeleştirilmiş banner */}
+        <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#00b7ba 0%,#009295 60%,#006d6f 100%)", minHeight:"220px"}}>
+          <div className="absolute inset-0 opacity-10 pointer-events-none"
+            style={{backgroundImage:"linear-gradient(rgba(255,255,255,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.08) 1px,transparent 1px)", backgroundSize:"32px 32px"}}/>
+          <div className="relative z-10 px-5 pt-10 pb-8">
+            {activeBanner ? (
+              <>
+                <p className="text-white/70 text-xs font-semibold tracking-widest uppercase mb-2">{activeBanner.subtitle || "Muuvlink"}</p>
+                <h1 className="font-display font-bold text-white leading-tight mb-4" style={{fontSize:"clamp(1.8rem,6vw,2.4rem)"}}>
+                  {activeBanner.title}
+                </h1>
+              </>
+            ) : (
+              <>
+                <p className="text-white/70 text-xs font-semibold tracking-widest uppercase mb-2">Muuvlink</p>
+                <h1 className="font-display font-bold text-white leading-tight mb-4" style={{fontSize:"clamp(1.8rem,6vw,2.4rem)"}}>
+                  {t("home.heroTitleFallback")}
+                </h1>
+              </>
+            )}
+            <button
+              onClick={() => setCurrentPage("trainings")}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-brand-700 bg-white shadow-md active:scale-95 transition-transform"
+            >
+              <Activity className="w-4 h-4" /> {t("home.viewAll")}
+            </button>
+          </div>
+        </div>
+
+        {/* Yaklaşan antrenmanlar */}
+        <div className="py-8 bg-white px-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-display font-bold text-slate-900 text-xl">{t("home.upcoming")}</h2>
+            <button
+              onClick={() => setCurrentPage("trainings")}
+              className="text-xs font-semibold text-brand-600 hover:text-brand-700"
+            >
+              {t("home.viewAll")} →
+            </button>
+          </div>
+          {trainings.length > 0 ? (
+            <div>
+              {trainings.slice(0, 6).map((training) => (
+                <TrainingCard key={training.id} training={training} onClick={fetchTrainingDetails} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+              <Activity className="w-8 h-8 text-slate-200 mx-auto mb-2" />
+              <p className="text-slate-500 text-sm">{t("home.noTrainingsFound")}</p>
+              <button onClick={fetchTrainings} className="mt-3 px-4 py-2 rounded-xl text-sm font-medium text-brand-700 bg-brand-100">
+                {t("common.retry")}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Galeri */}
+        <GallerySection items={homeGallery} t={t} setCurrentPage={setCurrentPage} />
+
+        <Footer />
+      </>
+    );
+  };
 
   const HomePage = () => (
     <>
@@ -6187,11 +6306,39 @@ Platform kullanımını ve performansını anlamamıza yardımcı olur. Toplanan
     </div>
   );
 
-  return (
-    <div className="min-h-screen bg-slate-50 font-sans antialiased">
-      <Navigation />
+  const BottomNav = () => {
+    const tabs = [
+      { key: "home",      icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>, label: t("nav.home") || "Ana Sayfa" },
+      { key: "trainings", icon: <Activity className="w-5 h-5"/>,  label: t("nav.trainings") || "Antrenmanlar" },
+      { key: "teams",     icon: <Users className="w-5 h-5"/>,     label: t("nav.teams") || "Takımlar" },
+      { key: "profile",   icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>, label: t("nav.profile") || "Profil" },
+    ];
+    return (
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-100"
+        style={{paddingBottom:"env(safe-area-inset-bottom)"}}>
+        <div className="flex">
+          {tabs.map(tab => {
+            const active = currentPage === tab.key || (tab.key === "home" && currentPage === "home");
+            return (
+              <button key={tab.key} onClick={() => setCurrentPage(tab.key)}
+                className="flex-1 flex flex-col items-center gap-0.5 py-2.5 transition-colors"
+                style={{color: active ? "#00b7ba" : "#94a3b8"}}>
+                {tab.icon}
+                <span className="text-[10px] font-medium">{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+    );
+  };
 
-      {currentPage === "home" && <HomePage />}
+  return (
+    <div className="min-h-screen bg-slate-50 font-sans antialiased" style={isNative ? {paddingTop:"env(safe-area-inset-top)"} : {}}>
+      {isNative ? null : <Navigation />}
+
+      <div style={isNative ? {paddingBottom:"calc(env(safe-area-inset-bottom) + 60px)"} : {}}>
+      {currentPage === "home" && (isNative ? <MobileHomePage /> : <HomePage />)}
       {currentPage === "profile" && <ProfilePage />}
       {currentPage === "trainings" && <TrainingsPage />}
       {currentPage === "teams" && <TeamsPage />}
@@ -6218,7 +6365,9 @@ Platform kullanımını ve performansını anlamamıza yardımcı olur. Toplanan
       <LegalModal />
       <CookieBanner />
       <Toast />
-      <Footer />
+      {!isNative && <Footer />}
+      </div>
+      {isNative && <BottomNav />}
     </div>
   );
 }
