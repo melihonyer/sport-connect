@@ -511,7 +511,7 @@ function GalleryItem({ p, style, onOpen }) {
 }
 
 // ── Galeri bölümü ───────────────────────────────────────────
-function GallerySection({ items, t, setCurrentPage }) {
+function GallerySection({ items, t, setCurrentPage, titleOverride, subtitleOverride }) {
   const [lightbox, setLightbox] = useState(null);
   if (!items || items.length === 0) return null;
   const total = items.length;
@@ -519,8 +519,8 @@ function GallerySection({ items, t, setCurrentPage }) {
     <section className="bg-white pt-16 pb-0">
       <div className="text-center mb-10 px-4">
         <h2 className="font-display font-bold text-slate-900 uppercase mb-3"
-          style={{fontSize:"clamp(2rem,5vw,3rem)", letterSpacing:"0.08em"}}>{t ? t("gallery.title") : "Gallery"}</h2>
-        <p className="text-slate-400 font-light italic text-base mb-6">{t ? t("gallery.subtitle") : "Moments from Muuvlink events"}</p>
+          style={{fontSize:"clamp(2rem,5vw,3rem)", letterSpacing:"0.08em"}}>{titleOverride || (t ? t("gallery.title") : "Gallery")}</h2>
+        <p className="text-slate-400 font-light italic text-base mb-6">{subtitleOverride || (t ? t("gallery.subtitle") : "Moments from Muuvlink events")}</p>
         <div className="flex items-center justify-center gap-0 max-w-lg mx-auto">
           <div className="flex-1 border-t border-dashed border-slate-300"/>
           <div className="mx-4">
@@ -2827,34 +2827,96 @@ export default function Muuvlink() {
 
   const MobileHomePage = () => {
     const activeBanner = banners[0];
+    const hasImg = activeBanner?.image_url && activeBanner.image_url !== "";
+    const bannerMottos = (activeBanner?.mottos?.length > 0 && lang === "tr")
+      ? activeBanner.mottos : (DEFAULT_MOTTOS[lang] || DEFAULT_MOTTOS.tr);
+    const gradFrom = activeBanner?.gradient_from || "#d4f09a";
+    const gradVia  = activeBanner?.gradient_via  || "#5de8c0";
+    const gradTo   = activeBanner?.gradient_to   || "#00b7ba";
+    // Arka planın parlaklığına göre logo/yazı rengi belirle
+    const bgBrightness = (_brightness(gradFrom) + _brightness(gradVia) + _brightness(gradTo)) / 3;
+    const isLightBg = bgBrightness > 140;
+    const textColor = activeBanner?.title_color || (isLightBg ? "#1a2e2e" : "#ffffff");
+    const logoFilter = isLightBg ? "none" : "brightness(0) invert(1)";
+
     return (
       <>
-        {/* Sadeleştirilmiş banner */}
-        <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#00b7ba 0%,#009295 60%,#006d6f 100%)", minHeight:"220px"}}>
-          <div className="absolute inset-0 opacity-10 pointer-events-none"
-            style={{backgroundImage:"linear-gradient(rgba(255,255,255,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.08) 1px,transparent 1px)", backgroundSize:"32px 32px"}}/>
-          <div className="relative z-10 px-5 pt-10 pb-8">
-            {activeBanner ? (
-              <>
-                <p className="text-white/70 text-xs font-semibold tracking-widest uppercase mb-2">{activeBanner.subtitle || "Muuvlink"}</p>
-                <h1 className="font-display font-bold text-white leading-tight mb-4" style={{fontSize:"clamp(1.8rem,6vw,2.4rem)"}}>
-                  {activeBanner.title}
-                </h1>
-              </>
-            ) : (
-              <>
-                <p className="text-white/70 text-xs font-semibold tracking-widest uppercase mb-2">Muuvlink</p>
-                <h1 className="font-display font-bold text-white leading-tight mb-4" style={{fontSize:"clamp(1.8rem,6vw,2.4rem)"}}>
-                  {t("home.heroTitleFallback")}
-                </h1>
-              </>
-            )}
-            <button
-              onClick={() => setCurrentPage("trainings")}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-brand-700 bg-white shadow-md active:scale-95 transition-transform"
-            >
-              <Activity className="w-4 h-4" /> {t("home.viewAll")}
-            </button>
+        {/* Banner — web ile aynı tasarım */}
+        <div className="relative overflow-hidden" style={{
+          minHeight:"280px",
+          background:`linear-gradient(135deg, ${gradFrom} 0%, ${gradVia} 50%, ${gradTo} 100%)`
+        }}>
+          {/* Grid texture */}
+          <div className="absolute inset-0 pointer-events-none opacity-[0.06]"
+            style={{backgroundImage:"linear-gradient(rgba(255,255,255,1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,1) 1px,transparent 1px)", backgroundSize:"48px 48px"}}/>
+
+          {/* Fotoğraf — sağa hizalı, webdeki gibi */}
+          {hasImg && (
+            <div className="absolute right-0 top-0 bottom-0" style={{width:"52%"}}>
+              <img
+                src={`${BASE_URL}${activeBanner.image_url}`}
+                alt=""
+                style={{width:"100%", height:"100%", objectFit:"cover", objectPosition:"center top"}}
+              />
+              {/* Sol kenar geçişi — arka planla kaynaşma */}
+              <div className="absolute inset-y-0 left-0" style={{
+                width:"65%",
+                background:`linear-gradient(to right, ${gradVia}, transparent)`
+              }}/>
+            </div>
+          )}
+
+          {/* İçerik — sol sütun */}
+          <div className="relative z-10 flex flex-col justify-between px-4 pt-3 pb-5"
+            style={{minHeight:"280px", width: hasImg ? "58%" : "100%"}}>
+
+            {/* Logo — arka plan parlaklığına göre otomatik renk */}
+            <img src="/icons/logo-yatay.svg" alt="Muuvlink"
+              style={{height:"24px", width:"auto", maxWidth:"140px", filter: logoFilter, opacity:0.9}}/>
+
+            {/* Metin */}
+            <div>
+              <h1 className="font-display font-bold leading-none mb-0.5"
+                style={{fontSize:"clamp(1.9rem,7vw,2.5rem)", letterSpacing:"-0.02em", color: textColor}}>
+                {activeBanner?.title || "Sporla"}
+              </h1>
+              <div style={{fontSize:"clamp(1.15rem,4.5vw,1.5rem)", fontWeight:800, lineHeight:1.15, minHeight:"2rem"}}>
+                <Typewriter mottos={bannerMottos}
+                  color1={activeBanner?.motto_color_1 || "#6d28d9"}
+                  color2={activeBanner?.motto_color_2 || "#7c3aed"}/>
+              </div>
+
+              {/* İstatistikler — DB'den */}
+              <div className="flex items-center gap-4 mt-3 mb-4">
+                <div className="flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5" style={{color: textColor, opacity:0.6}}/>
+                  <span className="text-xs font-bold" style={{color: textColor}}>
+                    <span className="text-sm">{fmtNum(platformStats?.users) || "—"}</span>
+                    <span className="font-normal ml-1" style={{opacity:0.65}}>sporcu</span>
+                  </span>
+                </div>
+                <div style={{width:"1px", height:"12px", background:textColor, opacity:0.2}}/>
+                <div className="flex items-center gap-1.5">
+                  <Activity className="w-3.5 h-3.5" style={{color: textColor, opacity:0.6}}/>
+                  <span className="text-xs font-bold" style={{color: textColor}}>
+                    <span className="text-sm">{fmtNum(platformStats?.trainings) || "—"}</span>
+                    <span className="font-normal ml-1" style={{opacity:0.65}}>antrenman</span>
+                  </span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => { triggerHaptic("light"); setCurrentPage("teams"); }}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold active:scale-95 transition-transform"
+                style={{
+                  background: isLightBg ? "rgba(0,0,0,0.12)" : "rgba(255,255,255,0.15)",
+                  backdropFilter:"blur(8px)",
+                  color: textColor,
+                  border:`1px solid ${isLightBg ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.2)"}`
+                }}>
+                <Users className="w-3 h-3" /> Takımları Gör
+              </button>
+            </div>
           </div>
         </div>
 
@@ -2864,7 +2926,7 @@ export default function Muuvlink() {
             <h2 className="font-display font-bold text-slate-900 text-xl">{t("home.upcoming")}</h2>
             <button
               onClick={() => setCurrentPage("trainings")}
-              className="text-xs font-semibold text-brand-600 hover:text-brand-700"
+              className="text-xs font-semibold text-brand-600"
             >
               {t("home.viewAll")} →
             </button>
@@ -2886,8 +2948,8 @@ export default function Muuvlink() {
           )}
         </div>
 
-        {/* Galeri */}
-        <GallerySection items={homeGallery} t={t} setCurrentPage={setCurrentPage} />
+        {/* Takım Etkinlikleri */}
+        <GallerySection items={homeGallery} t={t} setCurrentPage={setCurrentPage} titleOverride="Takım Etkinlikleri" subtitleOverride="Muuvlink topluluğundan etkinlik haberleri" />
 
         <Footer />
       </>
@@ -3536,6 +3598,7 @@ export default function Muuvlink() {
                 trainings={displayedTrainings}
                 onSelectTraining={fetchTrainingDetails}
                 t={t}
+                containerStyle={isNative ? {height:"calc(100vh - 320px)", marginBottom:"calc(env(safe-area-inset-bottom) + 64px)"} : undefined}
               />
               </React.Suspense>
             </ErrorBoundary>
@@ -6308,23 +6371,25 @@ Platform kullanımını ve performansını anlamamıza yardımcı olur. Toplanan
 
   const BottomNav = () => {
     const tabs = [
-      { key: "home",      icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>, label: t("nav.home") || "Ana Sayfa" },
-      { key: "trainings", icon: <Activity className="w-5 h-5"/>,  label: t("nav.trainings") || "Antrenmanlar" },
-      { key: "teams",     icon: <Users className="w-5 h-5"/>,     label: t("nav.teams") || "Takımlar" },
-      { key: "profile",   icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>, label: t("nav.profile") || "Profil" },
+      { key: "home",      icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>, label: t("nav.home") || "Ana Sayfa" },
+      { key: "trainings", icon: <Activity className="w-6 h-6"/>,  label: t("nav.trainings") || "Antrenmanlar" },
+      { key: "teams",     icon: <Users className="w-6 h-6"/>,     label: t("nav.teams") || "Takımlar" },
+      { key: "profile",   icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>, label: t("nav.profile") || "Profil" },
     ];
     return (
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-100"
-        style={{paddingBottom:"env(safe-area-inset-bottom)"}}>
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-100/80"
+        style={{paddingBottom:"env(safe-area-inset-bottom)", backdropFilter:"blur(12px)", background:"rgba(255,255,255,0.95)"}}>
         <div className="flex">
           {tabs.map(tab => {
-            const active = currentPage === tab.key || (tab.key === "home" && currentPage === "home");
+            const active = currentPage === tab.key;
             return (
-              <button key={tab.key} onClick={() => setCurrentPage(tab.key)}
-                className="flex-1 flex flex-col items-center gap-0.5 py-2.5 transition-colors"
+              <button key={tab.key} onClick={() => { triggerHaptic("light"); setCurrentPage(tab.key); }}
+                className="flex-1 flex flex-col items-center gap-1 py-3 transition-all"
                 style={{color: active ? "#00b7ba" : "#94a3b8"}}>
-                {tab.icon}
-                <span className="text-[10px] font-medium">{tab.label}</span>
+                <div style={{transform: active ? "scale(1.1)" : "scale(1)", transition:"transform 0.15s"}}>
+                  {tab.icon}
+                </div>
+                <span className="text-[11px] font-semibold tracking-wide">{tab.label}</span>
               </button>
             );
           })}

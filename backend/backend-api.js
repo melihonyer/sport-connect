@@ -3640,10 +3640,25 @@ app.post('/api/push/register', async (req, res) => {
 // Production'da Vite build çıktısını servis et
 if (process.env.NODE_ENV === 'production') {
   const distPath = path.join(__dirname, '../dist');
-  app.use(express.static(distPath, { maxAge: '1d', extensions: ['html'] }));
-  app.get('/admin', (req, res) => res.sendFile(path.join(distPath, 'admin.html')));
+  // Hashed assets (JS/CSS) uzun cache — index.html asla cache'lenmesin
+  app.use(express.static(distPath, {
+    maxAge: '1d',
+    extensions: ['html'],
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('index.html') || filePath.endsWith('admin.html')) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+      }
+    }
+  }));
+  app.get('/admin', (req, res) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.sendFile(path.join(distPath, 'admin.html'));
+  });
   app.get('*', (req, res) => {
     if (!req.path.startsWith('/api') && !req.path.startsWith('/uploads')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.sendFile(path.join(distPath, 'index.html'));
     }
   });
