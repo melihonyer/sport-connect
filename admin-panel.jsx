@@ -397,30 +397,28 @@ export default function AdminPanel() {
   }, [token]);
 
   // ─── Veri yükleme ───────────────────────────────────────
+  const loadReqRef = useRef(0);
   const loadTab = useCallback(async (t) => {
+    const reqId = ++loadReqRef.current;
     setTab(t);
     setLoading(true);
     setSearch("");
     try {
-      if (t === "dashboard") setStats(await api("/admin/stats"));
-      else if (t === "users") setUsers(await api("/admin/users") || []);
-      else if (t === "trainings") setTrainings(await api("/admin/trainings") || []);
-      else if (t === "teams") setTeams(await api("/admin/teams") || []);
-      else if (t === "messages") setMessages(await api("/admin/contact") || []);
-      else if (t === "banners")  setBanners(await api("/admin/banners") || []);
-      else if (t === "home-news") setHomeNews(await api("/admin/home-news") || []);
-      else if (t === "home-gallery") setHomeGallery(await api("/admin/home-gallery") || []);
-      else if (t === "reports") setReports(await api("/admin/reports") || []);
+      if (t === "dashboard") { const d = await api("/admin/stats"); if (reqId === loadReqRef.current) setStats(d); }
+      else if (t === "users") { const d = await api("/admin/users"); if (reqId === loadReqRef.current) setUsers(d || []); }
+      else if (t === "trainings") { const d = await api("/admin/trainings"); if (reqId === loadReqRef.current) setTrainings(d || []); }
+      else if (t === "teams") { const d = await api("/admin/teams"); if (reqId === loadReqRef.current) setTeams(d || []); }
+      else if (t === "messages") { const d = await api("/admin/contact"); if (reqId === loadReqRef.current) setMessages(d || []); }
+      else if (t === "banners") { const d = await api("/admin/banners"); if (reqId === loadReqRef.current) setBanners(d || []); }
+      else if (t === "home-news") { const d = await api("/admin/home-news"); if (reqId === loadReqRef.current) setHomeNews(d || []); }
+      else if (t === "home-gallery") { const d = await api("/admin/home-gallery"); if (reqId === loadReqRef.current) setHomeGallery(d || []); }
+      else if (t === "reports") { const d = await api("/admin/reports"); if (reqId === loadReqRef.current) setReports(d || []); }
       else if (t === "logs") {
-        const [logsData, analyticsData] = await Promise.all([
-          api("/admin/logs"),
-          api("/admin/analytics"),
-        ]);
-        setLogs(logsData || []);
-        setAnalytics(analyticsData || null);
+        const [logsData, analyticsData] = await Promise.all([api("/admin/logs"), api("/admin/analytics")]);
+        if (reqId === loadReqRef.current) { setLogs(logsData || []); setAnalytics(analyticsData || null); }
       }
     } catch { /* sessiz */ }
-    finally { setLoading(false); }
+    finally { if (reqId === loadReqRef.current) setLoading(false); }
   }, [api]);
 
   useEffect(() => { if (token) loadTab("dashboard"); }, [token]);
