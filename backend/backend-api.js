@@ -3974,7 +3974,13 @@ app.get('/api/blocked', authenticateToken, async (req, res) => {
 app.get('/api/admin/flags', isAdmin, async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT cr.*, u.name AS reporter_name, u.email AS reporter_email
+      SELECT cr.*, u.name AS reporter_name, u.email AS reporter_email,
+        CASE
+          WHEN cr.content_type = 'wall_post'  THEN (SELECT message FROM team_posts WHERE id = cr.content_id)
+          WHEN cr.content_type = 'comment'    THEN (SELECT comment FROM training_comments WHERE id = cr.content_id)
+          WHEN cr.content_type = 'training'   THEN (SELECT title FROM trainings WHERE id = cr.content_id)
+          WHEN cr.content_type = 'user'       THEN (SELECT name FROM users WHERE id = cr.content_id)
+        END AS content_preview
       FROM content_reports cr
       JOIN users u ON u.id = cr.reporter_id
       ORDER BY cr.created_at DESC

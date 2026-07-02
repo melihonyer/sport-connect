@@ -1765,6 +1765,14 @@ export default function AdminPanel() {
                         {{ training: "Antrenman", comment: "Yorum", wall_post: "Duvar Gönderisi", user: "Kullanıcı" }[r.content_type] || r.content_type} #{r.content_id}
                       </span>
                     </div>
+                    {r.content_preview && (
+                      <p className="text-sm text-slate-700 bg-slate-50 rounded-lg px-3 py-2 mt-1 mb-1 border border-slate-100 italic">
+                        "{r.content_preview}"
+                      </p>
+                    )}
+                    {!r.content_preview && (
+                      <p className="text-xs text-slate-400 italic mt-1">İçerik silinmiş veya bulunamadı</p>
+                    )}
                     <p className="text-sm text-slate-600">Neden: <strong>{{ inappropriate: "Uygunsuz içerik", spam: "Spam/reklam", harassment: "Taciz/zorbalık", fake: "Sahte profil", other: "Diğer" }[r.reason] || r.reason}</strong></p>
                     <p className="text-xs text-slate-400 mt-1">{new Date(r.created_at).toLocaleString("tr-TR")}</p>
                   </div>
