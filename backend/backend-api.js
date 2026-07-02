@@ -1150,7 +1150,7 @@ app.get('/api/teams/:id', authenticateToken, async (req, res) => {
       `SELECT tp.*, u.name as user_name, u.avatar as user_avatar
        FROM team_posts tp
        JOIN users u ON tp.user_id = u.id
-       WHERE tp.team_id = $1
+       WHERE tp.team_id = $1 AND tp.is_deleted IS NOT TRUE
        ORDER BY tp.created_at DESC
        LIMIT 10`,
       [teamId]
@@ -1998,7 +1998,7 @@ app.get('/api/trainings/:id', optionalAuth, async (req, res) => {
       `SELECT tc.*, u.name as user_name, u.avatar as user_avatar
        FROM training_comments tc
        JOIN users u ON tc.user_id = u.id
-       WHERE tc.training_id = $1
+       WHERE tc.training_id = $1 AND tc.is_deleted IS NOT TRUE
        ORDER BY tc.created_at DESC`,
       [trainingId]
     );
@@ -3906,6 +3906,10 @@ pool.query(`
   )
 `).catch(() => {});
 
+// Soft delete kolonları — yoksa ekle
+pool.query(`ALTER TABLE team_posts ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT false`).catch(() => {});
+pool.query(`ALTER TABLE training_comments ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT false`).catch(() => {});
+
 pool.query(`
   CREATE TABLE IF NOT EXISTS blocked_users (
     id         SERIAL PRIMARY KEY,
@@ -4002,6 +4006,30 @@ app.put('/api/admin/flags/:id/resolve', isAdmin, async (req, res) => {
   }
 });
 
+// Admin: silinen içeriği geri getir
+app.post('/api/admin/flags/:id/restore', isAdmin, async (req, res) => {
+  try {
+    const flagRes = await pool.query('SELECT content_type, content_id FROM content_reports WHERE id=$1', [req.params.id]);
+    if (!flagRes.rows[0]) return res.status(404).json({ error: 'Şikayet bulunamadı.' });
+    const { content_type, content_id } = flagRes.rows[0];
+
+    if (content_type === 'wall_post') {
+      await pool.query('UPDATE team_posts SET is_deleted=false WHERE id=$1', [content_id]);
+    } else if (content_type === 'comment') {
+      await pool.query('UPDATE training_comments SET is_deleted=false WHERE id=$1', [content_id]);
+    } else if (content_type === 'training') {
+      await pool.query('UPDATE trainings SET is_deleted=false WHERE id=$1', [content_id]);
+    } else if (content_type === 'user') {
+      await pool.query('UPDATE users SET is_active=true WHERE id=$1', [content_id]);
+    }
+
+    await pool.query('UPDATE content_reports SET resolved=false WHERE id=$1', [req.params.id]);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Geri alma başarısız.' });
+  }
+});
+
 // Admin: şikayet edilen içeriği sil + otomatik çözüldü işaretle
 app.delete('/api/admin/flags/:id/content', isAdmin, async (req, res) => {
   try {
@@ -4010,11 +4038,11 @@ app.delete('/api/admin/flags/:id/content', isAdmin, async (req, res) => {
     const { content_type, content_id } = flagRes.rows[0];
 
     if (content_type === 'wall_post') {
-      await pool.query('DELETE FROM team_posts WHERE id=$1', [content_id]);
+      await pool.query('UPDATE team_posts SET is_deleted=true WHERE id=$1', [content_id]);
     } else if (content_type === 'comment') {
-      await pool.query('DELETE FROM training_comments WHERE id=$1', [content_id]);
+      await pool.query('UPDATE training_comments SET is_deleted=true WHERE id=$1', [content_id]);
     } else if (content_type === 'training') {
-      await pool.query('DELETE FROM trainings WHERE id=$1', [content_id]);
+      await pool.query('UPDATE trainings SET is_deleted=true WHERE id=$1', [content_id]);
     } else if (content_type === 'user') {
       await pool.query('UPDATE users SET is_active=false WHERE id=$1', [content_id]);
     }

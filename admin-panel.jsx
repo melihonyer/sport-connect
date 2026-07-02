@@ -1776,30 +1776,44 @@ export default function AdminPanel() {
                     <p className="text-sm text-slate-600">Neden: <strong>{{ inappropriate: "Uygunsuz içerik", spam: "Spam/reklam", harassment: "Taciz/zorbalık", fake: "Sahte profil", other: "Diğer" }[r.reason] || r.reason}</strong></p>
                     <p className="text-xs text-slate-400 mt-1">{new Date(r.created_at).toLocaleString("tr-TR")}</p>
                   </div>
-                  {!r.resolved && (
-                    <div className="flex flex-col gap-2 flex-shrink-0">
+                  <div className="flex flex-col gap-2 flex-shrink-0">
+                    {!r.resolved && (
+                      <>
+                        <button
+                          onClick={async () => {
+                            if (!window.confirm("Bu içeriği gizlemek istiyor musunuz? İstersen geri alabilirsin.")) return;
+                            await api(`/admin/flags/${r.id}/content`, { method: "DELETE" });
+                            setReports(prev => prev.map(x => x.id === r.id ? { ...x, resolved: true, content_deleted: true } : x));
+                            showToast("İçerik gizlendi.", "success");
+                          }}
+                          className="text-xs px-3 py-1.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 font-semibold transition-colors whitespace-nowrap"
+                        >
+                          İçeriği Gizle
+                        </button>
+                        <button
+                          onClick={async () => {
+                            await api(`/admin/flags/${r.id}/resolve`, { method: "PUT" });
+                            setReports(prev => prev.map(x => x.id === r.id ? { ...x, resolved: true } : x));
+                          }}
+                          className="text-xs px-3 py-1.5 bg-green-50 text-green-600 rounded-xl hover:bg-green-100 font-semibold transition-colors whitespace-nowrap"
+                        >
+                          Çözüldü
+                        </button>
+                      </>
+                    )}
+                    {r.resolved && r.content_deleted && (
                       <button
                         onClick={async () => {
-                          if (!window.confirm(`Bu içeriği kalıcı olarak silmek istiyor musunuz?`)) return;
-                          await api(`/admin/flags/${r.id}/content`, { method: "DELETE" });
-                          setReports(prev => prev.map(x => x.id === r.id ? { ...x, resolved: true } : x));
-                          showToast("İçerik silindi.", "success");
+                          await api(`/admin/flags/${r.id}/restore`, { method: "POST" });
+                          setReports(prev => prev.map(x => x.id === r.id ? { ...x, resolved: false, content_deleted: false } : x));
+                          showToast("İçerik geri getirildi.", "success");
                         }}
-                        className="text-xs px-3 py-1.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 font-semibold transition-colors whitespace-nowrap"
+                        className="text-xs px-3 py-1.5 bg-amber-50 text-amber-600 rounded-xl hover:bg-amber-100 font-semibold transition-colors whitespace-nowrap"
                       >
-                        İçeriği Sil
+                        Geri Al
                       </button>
-                      <button
-                        onClick={async () => {
-                          await api(`/admin/flags/${r.id}/resolve`, { method: "PUT" });
-                          setReports(prev => prev.map(x => x.id === r.id ? { ...x, resolved: true } : x));
-                        }}
-                        className="text-xs px-3 py-1.5 bg-green-50 text-green-600 rounded-xl hover:bg-green-100 font-semibold transition-colors whitespace-nowrap"
-                      >
-                        Çözüldü
-                      </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
