@@ -393,14 +393,21 @@ export default function AdminPanel() {
 
   // ─── API helper ─────────────────────────────────────────
   const api = useCallback(async (path, opts = {}) => {
-    const res = await fetch(`${API_URL}${path}`, {
-      ...opts,
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", ...(opts.headers || {}) },
-    });
-    if (res.status === 401 || res.status === 403) { handleLogout(); return null; }
-    const data = await res.json();
-    if (!res.ok) throw new Error(data?.error || `Sunucu hatası (${res.status})`);
-    return data;
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 15000);
+    try {
+      const res = await fetch(`${API_URL}${path}`, {
+        ...opts,
+        signal: ctrl.signal,
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", ...(opts.headers || {}) },
+      });
+      if (res.status === 401 || res.status === 403) { handleLogout(); return null; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || `Sunucu hatası (${res.status})`);
+      return data;
+    } finally {
+      clearTimeout(timer);
+    }
   }, [token]);
 
   // ─── Veri yükleme ───────────────────────────────────────
