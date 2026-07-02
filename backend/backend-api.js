@@ -31,6 +31,7 @@ if (!process.env.PGHOST && !process.env.DATABASE_URL && !process.env.DB_PASSWORD
 }
 
 const app = express();
+app.set('trust proxy', 1); // nginx arkasında çalışıyoruz, X-Forwarded-For'a güven
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET;
 const APP_URL = process.env.APP_URL || 'http://localhost:5173';
