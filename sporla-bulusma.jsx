@@ -2210,7 +2210,7 @@ export default function Muuvlink() {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
-      setBlockedUsers(prev => [...prev, userId]);
+      setBlockedUsers(prev => [...prev, { id: userId, name: userName }]);
       showToast(t("block.blocked").replace("{name}", userName), "success");
     } catch (e) {
       showToast(t("common.error"), "error");
@@ -3437,14 +3437,14 @@ export default function Muuvlink() {
               <div className="bg-white rounded-2xl p-6 border border-slate-100">
                 <h3 className="font-semibold text-slate-700 text-sm mb-3">{t("block.blockedList")}</h3>
                 <div className="space-y-2">
-                  {blockedUsers.map(uid => (
-                    <div key={uid} className="flex items-center justify-between py-2">
-                      <span className="text-sm text-slate-500">#{uid}</span>
+                  {blockedUsers.map(b => (
+                    <div key={b.id} className="flex items-center justify-between py-2">
+                      <span className="text-sm text-slate-700 font-medium">{b.name}</span>
                       <button
                         onClick={async () => {
                           const token = localStorage.getItem("token");
-                          await fetch(`${API_URL}/block/${uid}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
-                          setBlockedUsers(prev => prev.filter(id => id !== uid));
+                          await fetch(`${API_URL}/block/${b.id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+                          setBlockedUsers(prev => prev.filter(x => x.id !== b.id));
                           showToast(t("block.unblocked"), "success");
                         }}
                         className="text-xs px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-colors"
@@ -4337,7 +4337,7 @@ export default function Muuvlink() {
             </h3>
             {selectedTraining.attendees && selectedTraining.attendees.length > 0 ? (
               <div className="space-y-2">
-                {selectedTraining.attendees.filter(a => !blockedUsers.includes(a.id)).map((attendee) => (
+                {selectedTraining.attendees.filter(a => !blockedUsers.some(b => b.id === a.id)).map((attendee) => (
                   <div key={attendee.id} className="flex items-center p-3 bg-gray-50 rounded-xl">
                     <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full overflow-hidden flex items-center justify-center text-white font-medium mr-3">
                       {renderAvatar(attendee.avatar, attendee.name)}
@@ -4390,7 +4390,7 @@ export default function Muuvlink() {
 
             {selectedTraining.comments && selectedTraining.comments.length > 0 ? (
               <div className="space-y-3">
-                {selectedTraining.comments.filter(c => !blockedUsers.includes(c.user_id)).map((c) => (
+                {selectedTraining.comments.filter(c => !blockedUsers.some(b => b.id === c.user_id)).map((c) => (
                   <div key={c.id} className="p-3 bg-gray-50 rounded-xl">
                     <div className="flex items-center mb-2">
                       <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-full overflow-hidden flex items-center justify-center text-white font-medium mr-2">
@@ -4699,7 +4699,7 @@ export default function Muuvlink() {
 
               {selectedTeam.posts?.length > 0 ? (
                 <div className="space-y-3">
-                  {selectedTeam.posts.filter(p => !blockedUsers.includes(p.user_id)).map((post) => (
+                  {selectedTeam.posts.filter(p => !blockedUsers.some(b => b.id === p.user_id)).map((post) => (
                     <div key={post.id} className="p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-colors">
                       <div className="flex items-center gap-3 mb-2">
                         <div className="w-9 h-9 bg-gradient-to-br from-brand-500 to-brand-600 rounded-full overflow-hidden flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
