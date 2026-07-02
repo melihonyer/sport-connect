@@ -5,7 +5,7 @@ import {
   TrendingUp, Calendar, AlertTriangle, Search, X,
   ChevronRight, Lock, Globe, Image, Plus, Edit2, ToggleLeft, ToggleRight,
   Upload, GripVertical, ChevronUp, ChevronDown, Newspaper, GalleryHorizontal, Menu,
-  Trophy, User, ClipboardList, CheckCircle2, DoorOpen, Sparkles, Target,
+  Trophy, User, ClipboardList, CheckCircle2, DoorOpen, Sparkles, Target, Flag,
 } from "lucide-react";
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -324,6 +324,7 @@ export default function AdminPanel() {
   const [homeGallery, setHomeGallery] = useState([]);
   const [logs, setLogs]         = useState([]);
   const [analytics, setAnalytics] = useState(null);
+  const [reports, setReports]   = useState([]);
   const [logFilter, setLogFilter] = useState("all");
   const [chartPeriod, setChartPeriod] = useState("daily");
   const [loading, setLoading]   = useState(false);
@@ -409,6 +410,7 @@ export default function AdminPanel() {
       else if (t === "banners")  setBanners(await api("/admin/banners") || []);
       else if (t === "home-news") setHomeNews(await api("/admin/home-news") || []);
       else if (t === "home-gallery") setHomeGallery(await api("/admin/home-gallery") || []);
+      else if (t === "reports") setReports(await api("/admin/reports") || []);
       else if (t === "logs") {
         const [logsData, analyticsData] = await Promise.all([
           api("/admin/logs"),
@@ -535,6 +537,8 @@ export default function AdminPanel() {
     { id: "banners",      label: "Bannerlar",    icon: Image },
     { id: "home-news",    label: "Haberler",     icon: Newspaper },
     { id: "home-gallery", label: "Galeri",       icon: GalleryHorizontal },
+    { id: "reports",      label: "Şikayetler",   icon: Flag,
+      badge: reports.filter(r => !r.resolved).length || null },
   ];
 
   // ─── Banner helpers ──────────────────────────────────────
@@ -1726,6 +1730,52 @@ export default function AdminPanel() {
 
           {/* ── LOGS ─────────────────────────────────────── */}
           {!loading && tab === "logs" && <LogsPage />}
+
+          {/* ── REPORTS ──────────────────────────────────── */}
+          {!loading && tab === "reports" && (
+            <div className="space-y-3">
+              {reports.length === 0 && (
+                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-16 text-center text-slate-400">
+                  <Flag className="w-12 h-12 mx-auto mb-3 text-slate-200" />
+                  <p className="font-semibold">Henüz şikayet yok</p>
+                </div>
+              )}
+              {reports.map(r => (
+                <div key={r.id} className={`bg-white rounded-2xl border shadow-sm p-5 flex items-start gap-4 ${r.resolved ? "opacity-50" : "border-red-100"}`}>
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${r.resolved ? "bg-slate-100" : "bg-red-50"}`}>
+                    <Flag className={`w-5 h-5 ${r.resolved ? "text-slate-400" : "text-red-400"}`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span className="font-semibold text-slate-800 text-sm">{r.reporter_name}</span>
+                      <span className="text-xs text-slate-400">{r.reporter_email}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                        r.content_type === "training" ? "bg-blue-100 text-blue-600" :
+                        r.content_type === "comment"  ? "bg-purple-100 text-purple-600" :
+                        r.content_type === "wall_post"? "bg-orange-100 text-orange-600" :
+                        "bg-slate-100 text-slate-600"
+                      }`}>
+                        {{ training: "Antrenman", comment: "Yorum", wall_post: "Duvar Gönderisi", user: "Kullanıcı" }[r.content_type] || r.content_type} #{r.content_id}
+                      </span>
+                    </div>
+                    <p className="text-sm text-slate-600">Neden: <strong>{{ inappropriate: "Uygunsuz içerik", spam: "Spam/reklam", harassment: "Taciz/zorbalık", fake: "Sahte profil", other: "Diğer" }[r.reason] || r.reason}</strong></p>
+                    <p className="text-xs text-slate-400 mt-1">{new Date(r.created_at).toLocaleString("tr-TR")}</p>
+                  </div>
+                  {!r.resolved && (
+                    <button
+                      onClick={async () => {
+                        await api(`/admin/reports/${r.id}/resolve`, { method: "PUT" });
+                        setReports(prev => prev.map(x => x.id === r.id ? { ...x, resolved: true } : x));
+                      }}
+                      className="text-xs px-3 py-1.5 bg-green-50 text-green-600 rounded-xl hover:bg-green-100 font-semibold transition-colors whitespace-nowrap"
+                    >
+                      Çözüldü
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* ── MESSAGES ─────────────────────────────────── */}
           {!loading && tab === "messages" && (
