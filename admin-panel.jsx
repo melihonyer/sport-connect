@@ -12,6 +12,8 @@ import {
   Legend, ResponsiveContainer,
 } from "recharts";
 
+console.log('%c[Muuvlink Admin v7]', 'color:teal;font-weight:bold');
+
 // Admin panelinde SW olmamalı — eski SW'yi kaldır
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(regs => {
