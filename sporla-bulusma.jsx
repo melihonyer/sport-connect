@@ -46,6 +46,7 @@ import {
   ChevronUp,
   ExternalLink,
   Link,
+  Flag,
 } from "lucide-react";
 // Ağır kütüphaneler lazy yüklenir — ilk bundle'ı küçültür
 const TrainingsMapViewLazy = React.lazy(() => import("./TrainingsMapView"));
@@ -151,6 +152,15 @@ const _placeType = (cls, typ, lang="tr") => {
   return { label: {tr:"Yer", en:"Place", de:"Ort"}[l], color:"#00b7ba" };
 };
 
+// Hafta bazlı marka renk rotasyonu — aynı hafta içindeki antrenmanlar aynı rengi paylaşır,
+// haftadan haftaya değişir. Hepsi beyaz üzerinde WCAG AA kontrastlı (≥ 4.5:1).
+const WEEK_ACCENT_COLORS = ["#009295", "#6d28d9", "#b45309", "#b91c1c", "#0369a1", "#047857"];
+const weekAccentColor = (dateObj) => {
+  const weekIndex = Math.floor(dateObj.getTime() / (7 * 24 * 60 * 60 * 1000));
+  const idx = ((weekIndex % WEEK_ACCENT_COLORS.length) + WEEK_ACCENT_COLORS.length) % WEEK_ACCENT_COLORS.length;
+  return WEEK_ACCENT_COLORS[idx];
+};
+
 const DEFAULT_MOTTOS = {
   tr: ["Birlikte Hareket Et!", "Yeni Dostlar Edin!", "Limitlerini Aş!", "En İyini Keşfet!"],
   en: ["Move Together!", "Make New Friends!", "Push Your Limits!", "Discover Your Best!"],
@@ -208,6 +218,10 @@ const Typewriter = React.memo(({ mottos, color1 = "#00b7ba", color2 = "#981dd8" 
 
   const fading  = phase === "fading";
   const visible = word.slice(0, count);
+  // Android WebView'de background-clip:text + width:100% kombinasyonu metni
+  // gizleyip gradyanı düz bir dikdörtgen olarak render ediyor (Chromium bug'ı) —
+  // o yüzden Android'de düz renk fallback'e geçiyoruz.
+  const isAndroid = typeof window !== "undefined" && window?.Capacitor?.getPlatform?.() === "android";
 
   return (
     <span style={{ display: "inline-block", position: "relative", width: "100%" }}>
@@ -220,11 +234,15 @@ const Typewriter = React.memo(({ mottos, color1 = "#00b7ba", color2 = "#981dd8" 
         position: "absolute",
         left: 0,
         top: 0,
-        background: `linear-gradient(90deg,${color1},${color2})`,
-        WebkitBackgroundClip: "text",
-        WebkitTextFillColor: "transparent",
-        backgroundClip: "text",
-        color: color1, // fallback: gradient desteklenmezse ilk renk
+        ...(isAndroid
+          ? { color: color1 }
+          : {
+              background: `linear-gradient(90deg,${color1},${color2})`,
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+              color: color1, // fallback: gradient desteklenmezse ilk renk
+            }),
         display: "inline-block",
         width: "100%",
         opacity:    fading ? 0 : 1,
@@ -374,6 +392,12 @@ const AuthModal = ({ authMode, setAuthMode, onClose, handleLogin, handleRegister
                 <span className="text-xs text-slate-500 leading-relaxed">
                   {t("auth.kvkkText1")}{" "}
                   <button type="button"
+                    onClick={() => setLegalModal && setLegalModal("kullanim")}
+                    className="text-brand-600 font-semibold hover:underline">
+                    {t("footer.terms")}
+                  </button>
+                  {" "}{t("auth.kvkkAnd")}{" "}
+                  <button type="button"
                     onClick={() => setLegalModal && setLegalModal("kvkk")}
                     className="text-brand-600 font-semibold hover:underline">
                     {t("auth.kvkkLink")}
@@ -521,18 +545,6 @@ function GallerySection({ items, t, setCurrentPage, titleOverride, subtitleOverr
         <h2 className="font-display font-bold text-slate-900 uppercase mb-3"
           style={{fontSize:"clamp(2rem,5vw,3rem)", letterSpacing:"0.08em"}}>{titleOverride || (t ? t("gallery.title") : "Gallery")}</h2>
         <p className="text-slate-400 font-light italic text-base mb-6">{subtitleOverride || (t ? t("gallery.subtitle") : "Moments from Muuvlink events")}</p>
-        <div className="flex items-center justify-center gap-0 max-w-lg mx-auto">
-          <div className="flex-1 border-t border-dashed border-slate-300"/>
-          <div className="mx-4">
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <line x1="4" y1="28" x2="28" y2="4" stroke="#94a3b8" strokeWidth="1.5"/>
-              <line x1="4" y1="4" x2="28" y2="28" stroke="#94a3b8" strokeWidth="1.5"/>
-              <circle cx="4" cy="28" r="2" fill="#94a3b8"/>
-              <circle cx="28" cy="28" r="2" fill="#94a3b8"/>
-            </svg>
-          </div>
-          <div className="flex-1 border-t border-dashed border-slate-300"/>
-        </div>
       </div>
 
       {total <= 3 ? (
@@ -848,7 +860,9 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
   );
 }
 
-const isNative = new URLSearchParams(window.location.search).get("src") === "app";
+const isNative =
+  !!(window?.Capacitor?.isNativePlatform?.()) ||
+  new URLSearchParams(window.location.search).get("src") === "app";
 
 async function triggerHaptic(type = "medium") {
   if (!isNative) return;
@@ -911,7 +925,12 @@ export default function Muuvlink() {
     "not-found":       { title:`${t("notFound.title")} — Muuvlink`,               desc: t("notFound.subtitle")          },
   };
 
-  const [currentPage, setCurrentPage] = useState(() => PATH_TO_PAGE[window.location.pathname] ?? (window.location.pathname === "/" ? "home" : "not-found"));
+  const [currentPage, setCurrentPage] = useState(() => {
+    const fromPath = PATH_TO_PAGE[window.location.pathname] ?? (window.location.pathname === "/" ? "home" : "not-found");
+    // Native'de giriş yapılmamışsa direkt Profil sekmesine (giriş ekranına) düş
+    if (isNative && fromPath === "home" && !localStorage.getItem("token")) return "profile";
+    return fromPath;
+  });
   const [user, setUser] = useState(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState("login");
@@ -930,7 +949,8 @@ export default function Muuvlink() {
   const [selectedTraining, setSelectedTraining] = useState(null);
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [pendingInvitations, setPendingInvitations] = useState([]);
-  const [legalModal, setLegalModal] = useState(null); // 'kvkk' | 'gizlilik' | 'kullanim' | 'cerez'
+  const LEGAL_PATH_TO_KEY = { "/gizlilik": "gizlilik", "/kvkk": "kvkk", "/kullanim-kosullari": "kullanim", "/cerez-politikasi": "cerez" };
+  const [legalModal, setLegalModal] = useState(() => LEGAL_PATH_TO_KEY[window.location.pathname] ?? null); // 'kvkk' | 'gizlilik' | 'kullanim' | 'cerez'
   const [cookieConsent, setCookieConsent] = useState(() => localStorage.getItem("cookieConsent") === "true");
   const [searchQuery, setSearchQuery] = useState("");
   const [sportFilter, setSportFilter] = useState("");
@@ -960,6 +980,8 @@ export default function Muuvlink() {
   const [homeNews, setHomeNews] = useState([]);
   const [homeGallery, setHomeGallery] = useState([]);
   const [platformStats, setPlatformStats] = useState(null);
+  const [blockedUsers, setBlockedUsers] = useState([]);
+  const [reportModal, setReportModal] = useState(null); // { type, id } veya null
 
   // Avatar'ı render et: URL ise <img>, değilse emoji/harf
   const renderAvatar = (avatar, name, className = "") => {
@@ -1488,32 +1510,59 @@ export default function Muuvlink() {
     if (currentPage === "home" && isNative) fetchTrainings();
   }, [currentPage]);
 
+  // Native yükleme overlay'ini ilk render'dan sonra kaldır
+  useEffect(() => {
+    if (!isNative) return;
+    const overlay = document.getElementById("native-loader");
+    if (!overlay) return;
+    overlay.style.opacity = "0";
+    const t = setTimeout(() => overlay.remove(), 280);
+    return () => clearTimeout(t);
+  }, []);
+
+  // Android'de WebView varsayılan olarak status bar'ın arkasına çiziliyor
+  // (logo/header saat-pil ikonlarının altında kalıyor). iOS'ta bu sorun yok
+  // (WKWebView safe-area'yı zaten doğru bildiriyor), o yüzden sadece Android'de düzelt.
+  useEffect(() => {
+    if (window?.Capacitor?.getPlatform?.() !== "android") return;
+    import("@capacitor/status-bar")
+      .then(({ StatusBar }) => StatusBar.setOverlaysWebView({ overlay: false }))
+      .catch(() => {});
+  }, []);
+
   // Push Notifications — sadece native'de
   useEffect(() => {
     if (!isNative) return;
     const initPush = async () => {
       try {
         const { PushNotifications } = await import("@capacitor/push-notifications");
-        const perm = await PushNotifications.requestPermissions();
-        if (perm.receive === "granted") {
-          await PushNotifications.register();
-        }
+        const platform = window?.Capacitor?.getPlatform?.() === "android" ? "android" : "ios";
+
+        // Listener'lar register()'dan ÖNCE eklenmeli — aksi halde token/hata olayı kaçırılabilir
         PushNotifications.addListener("registration", async (token) => {
           try {
             await fetch(`${API_URL}/push/register`, {
               method: "POST",
               headers: { "Content-Type": "application/json", ...(localStorage.getItem("token") ? { Authorization: `Bearer ${localStorage.getItem("token")}` } : {}) },
-              body: JSON.stringify({ token: token.value, platform: "ios" }),
+              body: JSON.stringify({ token: token.value, platform }),
             });
           } catch (_) {}
         });
+        PushNotifications.addListener("registrationError", (err) => {
+          console.error("[Push] registration hatası:", err);
+        });
         PushNotifications.addListener("pushNotificationReceived", (notification) => {
-          showSuccess(notification.title || notification.body || "Yeni bildirim");
+          showToast(notification.title || notification.body || "Yeni bildirim", "success");
         });
         PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
           const page = action.notification.data?.page;
           if (page) setCurrentPage(page);
         });
+
+        const perm = await PushNotifications.requestPermissions();
+        if (perm.receive === "granted") {
+          await PushNotifications.register();
+        }
       } catch (_) {}
     };
     initPush();
@@ -1791,7 +1840,27 @@ export default function Muuvlink() {
     setUserBadges([]);
     setUserStats(null);
     setActivityData([]);
-    setCurrentPage("home");
+    setCurrentPage(isNative ? "profile" : "home");
+  };
+
+  const handleDeleteAccount = () => {
+    showConfirm(t("settings.deleteAccountConfirm"), async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(`${API_URL}/users/me`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (response.ok) {
+          showToast(t("settings.accountDeleted"), "info");
+          handleLogout();
+        } else {
+          showToast(t("settings.accountDeleteFail"), "error");
+        }
+      } catch (_) {
+        showToast(t("settings.accountDeleteFail"), "error");
+      }
+    }, { danger: true });
   };
 
   const handleUpdateProfile = async (formData) => {
@@ -2116,6 +2185,35 @@ export default function Muuvlink() {
       fetchTrainingDetails(trainingId);
     } catch (error) {
       console.error("Add comment error:", error);
+    }
+  };
+
+  const handleReport = async (type, id, reason) => {
+    try {
+      const token = localStorage.getItem("token");
+      await fetch(`${API_URL}/report`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ content_type: type, content_id: id, reason }),
+      });
+      setReportModal(null);
+      showToast(t("report.sent"), "success");
+    } catch (e) {
+      showToast(t("common.error"), "error");
+    }
+  };
+
+  const handleBlock = async (userId, userName) => {
+    try {
+      const token = localStorage.getItem("token");
+      await fetch(`${API_URL}/block/${userId}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setBlockedUsers(prev => [...prev, userId]);
+      showToast(t("block.blocked").replace("{name}", userName), "success");
+    } catch (e) {
+      showToast(t("common.error"), "error");
     }
   };
 
@@ -2650,9 +2748,8 @@ export default function Muuvlink() {
   const localeMap = { tr: "tr-TR", en: "en-US", de: "de-DE" };
   const month = dateObj.toLocaleDateString(localeMap[lang] || "en-US", { month: "short", timeZone: "UTC" }).toLocaleUpperCase("en-US");
 
-  // WCAG AA uyumlu renkler (beyaz üzerinde ≥ 4.5:1 kontrast)
-  const difficultyColor = { "Kolay": "#047857", "Orta": "#b45309", "Zor": "#b91c1c" };
-  const accentColor = difficultyColor[training.difficulty] || "#047857";
+  // Haftaya göre dönen marka renkleri — aynı hafta aynı rengi paylaşır, WCAG AA kontrastlı
+  const accentColor = weekAccentColor(dateObj);
 
   return (
     <div
@@ -2826,14 +2923,20 @@ export default function Muuvlink() {
   // =====================================================
 
   const MobileHomePage = () => {
-    const activeBanner = banners[0];
+    const [bannerIdx, setBannerIdx] = React.useState(0);
+    React.useEffect(() => {
+      if (banners.length <= 1) return;
+      const id = setInterval(() => setBannerIdx(i => (i + 1) % banners.length), 4500);
+      return () => clearInterval(id);
+    }, [banners.length]);
+
+    const activeBanner = banners[bannerIdx] || banners[0];
     const hasImg = activeBanner?.image_url && activeBanner.image_url !== "";
     const bannerMottos = (activeBanner?.mottos?.length > 0 && lang === "tr")
       ? activeBanner.mottos : (DEFAULT_MOTTOS[lang] || DEFAULT_MOTTOS.tr);
     const gradFrom = activeBanner?.gradient_from || "#d4f09a";
     const gradVia  = activeBanner?.gradient_via  || "#5de8c0";
     const gradTo   = activeBanner?.gradient_to   || "#00b7ba";
-    // Arka planın parlaklığına göre logo/yazı rengi belirle
     const bgBrightness = (_brightness(gradFrom) + _brightness(gradVia) + _brightness(gradTo)) / 3;
     const isLightBg = bgBrightness > 140;
     const textColor = activeBanner?.title_color || (isLightBg ? "#1a2e2e" : "#ffffff");
@@ -2843,42 +2946,41 @@ export default function Muuvlink() {
       <>
         {/* Banner — web ile aynı tasarım */}
         <div className="relative overflow-hidden" style={{
-          minHeight:"280px",
+          minHeight:"240px",
           background:`linear-gradient(135deg, ${gradFrom} 0%, ${gradVia} 50%, ${gradTo} 100%)`
         }}>
           {/* Grid texture */}
           <div className="absolute inset-0 pointer-events-none opacity-[0.06]"
             style={{backgroundImage:"linear-gradient(rgba(255,255,255,1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,1) 1px,transparent 1px)", backgroundSize:"48px 48px"}}/>
 
-          {/* Fotoğraf — sağa hizalı, webdeki gibi */}
+          {/* Fotoğraf — sağa dayalı, sabit ölçü, sol taraf hep görünür, kırpma sağda olur */}
           {hasImg && (
-            <div className="absolute right-0 top-0 bottom-0" style={{width:"52%"}}>
+            <div className="absolute right-0 top-0 bottom-0" style={{width:"42%"}}>
               <img
                 src={`${BASE_URL}${activeBanner.image_url}`}
                 alt=""
-                style={{width:"100%", height:"100%", objectFit:"cover", objectPosition:"center top"}}
+                style={{width:"100%", height:"100%", objectFit:"cover", objectPosition:"left center"}}
               />
-              {/* Sol kenar geçişi — arka planla kaynaşma */}
-              <div className="absolute inset-y-0 left-0" style={{
-                width:"65%",
-                background:`linear-gradient(to right, ${gradVia}, transparent)`
-              }}/>
             </div>
           )}
 
           {/* İçerik — sol sütun */}
-          <div className="relative z-10 flex flex-col justify-between px-4 pt-3 pb-5"
-            style={{minHeight:"280px", width: hasImg ? "58%" : "100%"}}>
+          <div className="relative z-10 flex flex-col justify-between px-4 pt-3 pb-4"
+            style={{minHeight:"240px", maxWidth: hasImg ? "66%" : "100%"}}>
 
-            {/* Logo — arka plan parlaklığına göre otomatik renk */}
-            <img src="/icons/logo-yatay.svg" alt="Muuvlink"
-              style={{height:"24px", width:"auto", maxWidth:"140px", filter: logoFilter, opacity:0.9}}/>
+            {/* Logo */}
+            <div className="flex items-center gap-1.5">
+              <img src="/icons/favicon.png" alt=""
+                style={{height:"22px", width:"auto", filter: logoFilter, opacity:0.9}}/>
+              <img src="/icons/logo-yatay.svg?v=4" alt="Muuvlink"
+                style={{height:"16px", width:"auto", maxWidth:"120px", filter: logoFilter, opacity:0.9}}/>
+            </div>
 
             {/* Metin */}
             <div>
               <h1 className="font-display font-bold leading-none mb-0.5"
                 style={{fontSize:"clamp(1.9rem,7vw,2.5rem)", letterSpacing:"-0.02em", color: textColor}}>
-                {activeBanner?.title || "Sporla"}
+                {(lang === "tr" ? activeBanner?.title : null) || t("home.heroTitleFallback")}
               </h1>
               <div style={{fontSize:"clamp(1.15rem,4.5vw,1.5rem)", fontWeight:800, lineHeight:1.15, minHeight:"2rem"}}>
                 <Typewriter mottos={bannerMottos}
@@ -2886,38 +2988,36 @@ export default function Muuvlink() {
                   color2={activeBanner?.motto_color_2 || "#7c3aed"}/>
               </div>
 
-              {/* İstatistikler — DB'den */}
-              <div className="flex items-center gap-4 mt-3 mb-4">
-                <div className="flex items-center gap-1.5">
-                  <Users className="w-3.5 h-3.5" style={{color: textColor, opacity:0.6}}/>
-                  <span className="text-xs font-bold" style={{color: textColor}}>
-                    <span className="text-sm">{fmtNum(platformStats?.users) || "—"}</span>
-                    <span className="font-normal ml-1" style={{opacity:0.65}}>sporcu</span>
-                  </span>
-                </div>
-                <div style={{width:"1px", height:"12px", background:textColor, opacity:0.2}}/>
-                <div className="flex items-center gap-1.5">
-                  <Activity className="w-3.5 h-3.5" style={{color: textColor, opacity:0.6}}/>
-                  <span className="text-xs font-bold" style={{color: textColor}}>
-                    <span className="text-sm">{fmtNum(platformStats?.trainings) || "—"}</span>
-                    <span className="font-normal ml-1" style={{opacity:0.65}}>antrenman</span>
-                  </span>
-                </div>
-              </div>
-
               <button
                 onClick={() => { triggerHaptic("light"); setCurrentPage("teams"); }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold active:scale-95 transition-transform"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold active:scale-95 transition-transform mt-4"
                 style={{
                   background: isLightBg ? "rgba(0,0,0,0.12)" : "rgba(255,255,255,0.15)",
                   backdropFilter:"blur(8px)",
                   color: textColor,
                   border:`1px solid ${isLightBg ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.2)"}`
                 }}>
-                <Users className="w-3 h-3" /> Takımları Gör
+                <Users className="w-3 h-3" /> {t("home.viewTeams")}
               </button>
             </div>
           </div>
+
+          {/* Banner dots — sağ alt */}
+          {banners.length > 1 && (
+            <div className="absolute bottom-3 right-4 z-10 flex items-center gap-1.5">
+              {banners.map((_, i) => (
+                <button key={i} onClick={() => setBannerIdx(i)}
+                  style={{
+                    width: i === bannerIdx ? "20px" : "6px",
+                    height:"6px", borderRadius:"3px",
+                    background: i === bannerIdx
+                      ? (isLightBg ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.9)")
+                      : (isLightBg ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.35)"),
+                    transition:"all 0.3s", border:"none", padding:0, cursor:"pointer"
+                  }}/>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Yaklaşan antrenmanlar */}
@@ -2948,8 +3048,8 @@ export default function Muuvlink() {
           )}
         </div>
 
-        {/* Takım Etkinlikleri */}
-        <GallerySection items={homeGallery} t={t} setCurrentPage={setCurrentPage} titleOverride="Takım Etkinlikleri" subtitleOverride="Muuvlink topluluğundan etkinlik haberleri" />
+        {/* Takım Etkinlikleri — adminden home-news */}
+        <NewsSection items={homeNews} t={t} setCurrentPage={setCurrentPage} />
 
         <Footer />
       </>
@@ -3117,7 +3217,33 @@ export default function Muuvlink() {
     </>
   );
 
-  const ProfilePage = () => (
+  const ProfilePage = () => {
+    if (!user) {
+      return (
+        <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center px-6 text-center gap-5">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-white"
+            style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}>
+            <User className="w-7 h-7"/>
+          </div>
+          <div>
+            <h2 className="font-display font-bold text-slate-900 text-xl mb-1">{t("auth.loginTitle")}</h2>
+            <p className="text-slate-400 text-sm">{t("home.heroTagline")}</p>
+          </div>
+          <div className="flex flex-col gap-3 w-full max-w-xs">
+            <button onClick={() => { setAuthMode("login"); setIsAuthModalOpen(true); }}
+              className="w-full px-6 py-3 rounded-xl font-semibold text-white text-sm"
+              style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}>
+              {t("nav.login")}
+            </button>
+            <button onClick={() => { setAuthMode("register"); setIsAuthModalOpen(true); }}
+              className="w-full px-6 py-3 rounded-xl font-semibold text-sm border border-slate-200 text-slate-600">
+              {t("nav.register")}
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return (
     <div className="min-h-screen bg-slate-50">
       {/* ── Profile hero header ── */}
       <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#e5f9f9 0%,#e5f9f9 60%,#cbf3f3 100%)"}}>
@@ -3154,6 +3280,22 @@ export default function Muuvlink() {
             </button>
           </div>
 
+          {/* Dil seçimi — Profili Düzenle'nin altında */}
+          <div className="flex items-center gap-3 mt-4">
+            <div className="flex items-center gap-1.5 text-sm font-semibold text-brand-900">
+              <Globe className="w-4 h-4 text-brand-400"/> {t("profile.language")}
+            </div>
+            <div className="flex items-center gap-1 bg-white/70 rounded-xl p-1">
+              {[{ code:"tr", label:"TR" }, { code:"en", label:"EN" }, { code:"de", label:"DE" }].map(({ code, label }) => (
+                <button key={code} onClick={() => changeLang(code)}
+                  className="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all"
+                  style={lang === code ? {background:"#00b7ba", color:"#fff"} : {color:"#64748b"}}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Stats strip */}
           <div className="grid grid-cols-3 gap-px mt-10 rounded-2xl overflow-hidden" style={{background:"rgba(255,255,255,0.06)"}}>
             {[
@@ -3172,10 +3314,10 @@ export default function Muuvlink() {
 
       {/* ── Content ── */}
       <div className="max-w-5xl mx-auto px-4 sm:px-8 py-10">
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-3 gap-6 min-w-0">
 
           {/* Left: Quick actions */}
-          <div className="space-y-3">
+          <div className="space-y-3 min-w-0">
             <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase mb-4">{t("home.quickAccess")}</div>
             {[
               {label: t("createTraining.pageTitle"), icon:Plus,   page:"create-training", grad:"linear-gradient(135deg,#00b7ba,#009295)", shadow:"rgba(0,183,186,0.3)"},
@@ -3191,9 +3333,9 @@ export default function Muuvlink() {
           </div>
 
           {/* Right: Activity + Lists */}
-          <div className="md:col-span-2 space-y-6">
+          <div className="md:col-span-2 space-y-6 min-w-0">
             {/* Chart */}
-            <div className="bg-white rounded-2xl p-6 border border-slate-100">
+            <div className="bg-white rounded-2xl p-6 border border-slate-100 overflow-hidden min-w-0">
               {/* Başlık + özet */}
               <div className="flex items-center justify-between mb-4">
                 <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase">{t("home.weeklyActivity")}</div>
@@ -3205,9 +3347,11 @@ export default function Muuvlink() {
                   )}
                 </div>
               </div>
+              <div className="min-w-0" style={{width:"100%", overflow:"hidden"}}>
               <React.Suspense fallback={<div className="h-40 flex items-center justify-center"><div className="w-6 h-6 border-2 border-brand-400 border-t-transparent rounded-full animate-spin"/></div>}>
                 <ActivityChartLazy activityData={activityData} activityMeta={activityMeta} t={t}/>
               </React.Suspense>
+              </div>
             </div>
 
             {/* Joined Trainings */}
@@ -3287,11 +3431,24 @@ export default function Muuvlink() {
                 </div>
               </div>
             )}
+
+            {/* Çıkış Yap + Hesabı Sil */}
+            <div className="bg-white rounded-2xl p-6 border border-slate-100 flex flex-col gap-3">
+              <button onClick={handleLogout}
+                className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-medium text-sm transition-all border border-slate-200 text-slate-600 hover:bg-slate-50">
+                <LogOut className="w-4 h-4"/> {t("nav.logout")}
+              </button>
+              <button onClick={handleDeleteAccount}
+                className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-medium text-sm transition-all text-red-500 hover:bg-red-50">
+                {t("settings.deleteAccount")}
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  );
+    );
+  };
 
   const TrainingsPage = () => {
     const sports = ["Basketbol", "Bisiklet", "Crossfit", "Futbol", "Kano", "Koşu", "Kürek", "Padel", "Pilates", "Tenis", "Trekking", "Triatlon", "Voleybol", "Yoga", "Yüzme", "Diğer"];
@@ -3878,7 +4035,7 @@ export default function Muuvlink() {
                 {selectedTraining.team_sport || "Genel"}
               </span>
               <span className="px-3 py-1 bg-yellow-100 text-yellow-600 rounded-full text-sm font-medium">
-                {selectedTraining.difficulty}
+                {{ "Kolay": t("trainings.levelEasy"), "Orta": t("trainings.levelMid"), "Zor": t("trainings.levelHard") }[selectedTraining.difficulty] || selectedTraining.difficulty}
               </span>
               <button
                 onClick={() => {
@@ -3890,6 +4047,14 @@ export default function Muuvlink() {
               >
                 <Link className="w-3.5 h-3.5" /> {t("common.copyLink")}
               </button>
+              {user && !isOwner && (
+                <button
+                  onClick={() => setReportModal({ type: "training", id: selectedTraining.id })}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-500 rounded-full text-sm font-medium transition-colors"
+                >
+                  <Flag className="w-3.5 h-3.5" /> {t("report.btn")}
+                </button>
+              )}
             </div>
           </div>
 
@@ -4147,17 +4312,23 @@ export default function Muuvlink() {
             </h3>
             {selectedTraining.attendees && selectedTraining.attendees.length > 0 ? (
               <div className="space-y-2">
-                {selectedTraining.attendees.map((attendee) => (
+                {selectedTraining.attendees.filter(a => !blockedUsers.includes(a.id)).map((attendee) => (
                   <div key={attendee.id} className="flex items-center p-3 bg-gray-50 rounded-xl">
                     <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full overflow-hidden flex items-center justify-center text-white font-medium mr-3">
                       {renderAvatar(attendee.avatar, attendee.name)}
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <div className="font-semibold">{attendee.name}</div>
-                      <div className="text-sm text-gray-600">
-                        {fmtDateShort(attendee.joined_at)}
-                      </div>
+                      <div className="text-sm text-gray-600">{fmtDateShort(attendee.joined_at)}</div>
                     </div>
+                    {user && attendee.id !== user.id && (
+                      <button
+                        onClick={() => handleBlock(attendee.id, attendee.name)}
+                        className="text-xs text-slate-400 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors"
+                      >
+                        {t("block.btn")}
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -4194,18 +4365,32 @@ export default function Muuvlink() {
 
             {selectedTraining.comments && selectedTraining.comments.length > 0 ? (
               <div className="space-y-3">
-                {selectedTraining.comments.map((c) => (
+                {selectedTraining.comments.filter(c => !blockedUsers.includes(c.user_id)).map((c) => (
                   <div key={c.id} className="p-3 bg-gray-50 rounded-xl">
                     <div className="flex items-center mb-2">
                       <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-full overflow-hidden flex items-center justify-center text-white font-medium mr-2">
                         {renderAvatar(c.user_avatar, c.user_name)}
                       </div>
-                      <div>
+                      <div className="flex-1">
                         <div className="font-semibold text-sm">{c.user_name}</div>
-                        <div className="text-xs text-gray-500">
-                          {fmtDateShort(c.created_at)}
-                        </div>
+                        <div className="text-xs text-gray-500">{fmtDateShort(c.created_at)}</div>
                       </div>
+                      {user && c.user_id !== user.id && (
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => setReportModal({ type: "comment", id: c.id })}
+                            className="text-xs text-slate-400 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors"
+                          >
+                            <Flag className="w-3 h-3" />
+                          </button>
+                          <button
+                            onClick={() => handleBlock(c.user_id, c.user_name)}
+                            className="text-xs text-slate-400 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors"
+                          >
+                            {t("block.btn")}
+                          </button>
+                        </div>
+                      )}
                     </div>
                     <p className="text-gray-700">{c.comment}</p>
                   </div>
@@ -4361,8 +4546,8 @@ export default function Muuvlink() {
         <div className="relative rounded-3xl overflow-hidden mb-4 shadow-sm">
           <div className="bg-gradient-to-br from-brand-600 via-brand-600 to-teal-600 px-8 pt-8 pb-6 text-white">
             {/* üst satır */}
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-center gap-4">
+            <div className="flex items-start gap-4">
+              <div className="flex items-center gap-4 min-w-0">
                 <div className="relative w-16 h-16 flex-shrink-0">
                   <div className="w-16 h-16 bg-white/20 backdrop-blur rounded-2xl overflow-hidden flex items-center justify-center text-white text-2xl font-bold shadow-inner">
                     {(selectedTeam.avatar?.startsWith("/uploads/") || selectedTeam.avatar?.startsWith("http"))
@@ -4389,7 +4574,7 @@ export default function Muuvlink() {
                     </label>
                   )}
                 </div>
-                <div>
+                <div className="min-w-0">
                   <h1 className="font-display font-bold" style={{fontSize:"1.8rem", letterSpacing:"-0.01em"}}>{selectedTeam.name}</h1>
                   <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
                     <span className="px-2.5 py-0.5 bg-white/20 rounded-full text-xs font-medium">{selectedTeam.sport}</span>
@@ -4404,24 +4589,6 @@ export default function Muuvlink() {
                     })()}
                   </div>
                 </div>
-              </div>
-              <div className="flex flex-col gap-2 flex-shrink-0">
-                {canManage && (
-                  <button onClick={() => setShowInviteModal(true)}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-sm font-semibold transition-colors backdrop-blur">
-                    <UserPlus className="w-4 h-4" /> {t("teamDetail.invite")}
-                  </button>
-                )}
-                <button
-                  onClick={() => {
-                    const link = `${window.location.origin}/takimlar?takim=${selectedTeam.id}`;
-                    navigator.clipboard.writeText(link).then(() => showToast(t("toast.linkCopied"), "success"));
-                  }}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-sm font-semibold transition-colors backdrop-blur"
-                  title={t("common.copyLink")}
-                >
-                  <Link className="w-4 h-4" /> {t("common.copyLink")}
-                </button>
               </div>
             </div>
 
@@ -4443,6 +4610,26 @@ export default function Muuvlink() {
             {selectedTeam.description && (
               <p className="mt-3 text-sm text-white/85 leading-relaxed">{selectedTeam.description}</p>
             )}
+
+            {/* aksiyon butonları — sağ alt */}
+            <div className="flex justify-end gap-2 mt-4">
+              {canManage && (
+                <button onClick={() => setShowInviteModal(true)}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-sm font-semibold transition-colors backdrop-blur">
+                  <UserPlus className="w-4 h-4" /> {t("teamDetail.invite")}
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  const link = `${window.location.origin}/takimlar?takim=${selectedTeam.id}`;
+                  navigator.clipboard.writeText(link).then(() => showToast(t("toast.linkCopied"), "success"));
+                }}
+                className="flex items-center gap-1.5 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-sm font-semibold transition-colors backdrop-blur"
+                title={t("common.copyLink")}
+              >
+                <Link className="w-4 h-4" /> {t("common.copyLink")}
+              </button>
+            </div>
           </div>
 
           {/* dekoratif daire */}
@@ -5589,11 +5776,11 @@ export default function Muuvlink() {
               {/* Amblem her zaman görünür */}
               <img src="/icons/favicon.png" alt="" className="h-7 w-auto flex-shrink-0" width="28" height="28"/>
               {/* Metin: desktop'ta görünür */}
-              <img src="/icons/logo-yatay.svg" alt="Muuvlink" className="hidden md:block h-5 w-auto" width="120" height="20"/>
+              <img src="/icons/logo-yatay.svg" alt="Muuvlink" className="hidden lg:block h-5 w-auto" width="120" height="20"/>
             </button>
 
             {/* Orta nav — desktop */}
-            <div className="hidden md:flex items-center gap-8 h-[68px]">
+            <div className="hidden lg:flex items-center gap-8 h-[68px]">
               {navLink("home",      t("nav.home"))}
               {navLink("trainings", t("nav.trainings"))}
               {navLink("teams",     t("nav.teams"))}
@@ -5601,7 +5788,7 @@ export default function Muuvlink() {
             </div>
 
             {/* Sağ aksiyonlar — desktop */}
-            <div className="hidden md:flex items-center gap-2.5">
+            <div className="hidden lg:flex items-center gap-2.5">
 
               {/* Dil seçici — dropdown */}
               <div className="relative" ref={langDropRef}>
@@ -5695,7 +5882,7 @@ export default function Muuvlink() {
             </div>
 
             {/* Hamburger — mobile */}
-            <div className="flex md:hidden items-center gap-2">
+            <div className="flex lg:hidden items-center gap-2">
               {user && (
                 <button
                   onClick={() => setShowNotifications(!showNotifications)}
@@ -5721,7 +5908,7 @@ export default function Muuvlink() {
 
         {/* Mobile menü paneli */}
         {mobileOpen && (
-          <div className="md:hidden border-t border-slate-100 bg-white px-4 py-3 shadow-lg">
+          <div className="lg:hidden border-t border-slate-100 bg-white px-4 py-3 shadow-lg">
             <div className="flex flex-col gap-1">
               {mobileNavLink("home",      t("nav.home"),      <Activity className="w-4 h-4"/>)}
               {mobileNavLink("trainings", t("nav.trainings"), <Dumbbell className="w-4 h-4"/>)}
@@ -6128,31 +6315,57 @@ Vergi Dairesi: Karşıyaka V.D. | VN: 7420957827<br/>
       title: t("footer.cookies"),
       body: `
 <h3>Çerez Politikası</h3>
-<p>Son güncelleme: Haziran 2025</p>
-<p>Bu politika, SALT KREATİF REKLAM TİC. LTD. ŞTİ. tarafından işletilen Muuvlink platformunun çerezleri nasıl kullandığını ve bu konuda tercihlerinizi nasıl yönetebileceğinizi açıklamaktadır.</p>
+<p>Son güncelleme: Haziran 2026</p>
+<p>Bu politika, SALT KREATİF REKLAM TİC. LTD. ŞTİ. tarafından işletilen Muuvlink platformunun teknik depolama (çerez/localStorage) kullanımını açıklamaktadır.</p>
 
-<h4>Çerez Nedir?</h4>
-<p>Çerezler, bir web sitesini ziyaret ettiğinizde tarayıcınız aracılığıyla cihazınıza kaydedilen küçük metin dosyalarıdır. Oturum bilgilerinizi hatırlamak, tercihlerinizi kaydetmek ve platform deneyiminizi iyileştirmek amacıyla kullanılırlar.</p>
+<h4>Önemli: Reklam veya Takip Amaçlı Çerez Kullanılmamaktadır</h4>
+<p>Muuvlink; reklam, pazarlama, profil oluşturma veya kullanıcıları üçüncü taraflarla takip etme amacıyla hiçbir çerez, SDK veya benzeri teknoloji kullanmaz. Platformda üçüncü taraf reklam ağı, analitik SDK'sı veya takip pikseli bulunmamaktadır.</p>
 
-<h4>Kullandığımız Çerez Türleri</h4>
-<p><strong>Zorunlu Çerezler</strong><br/>
-Platformun temel işlevleri için gereklidir: kullanıcı oturumu, güvenlik doğrulaması ve çerez tercih kaydı. Bu çerezler devre dışı bırakılamaz; devre dışı bırakılması durumunda platform düzgün çalışmayabilir.</p>
-<p><strong>İşlevsel Çerezler</strong><br/>
-Dil, tema veya son görüntülediğiniz sayfa gibi tercihlerinizi hatırlamak için kullanılır. Oturum kapandığında veya belirli bir süre sonra sona erer.</p>
-<p><strong>Analitik Çerezler</strong><br/>
-Platform kullanımını ve performansını anlamamıza yardımcı olur. Toplanan veriler anonim olarak işlenir; bireysel kimliğinizle ilişkilendirilmez. Bu çerezler reddedilebilir.</p>
+<h4>Kullandığımız Tek Teknik Depolama Türü</h4>
+<p><strong>Zorunlu Oturum Depolama</strong><br/>
+Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik doğrulama bilginizi (oturum jetonu) ve dil tercihinizi cihazınızda saklar. Bu veriler yalnızca sizin cihazınızda tutulur; reklam veya analiz amacıyla işlenmez, üçüncü taraflarla paylaşılmaz ya da sizi diğer uygulama/web sitelerinde takip etmek için kullanılmaz. Devre dışı bırakılması durumunda platforma giriş yapamazsınız.</p>
 
-<h4>Çerez Süresi</h4>
-<p><strong>Oturum çerezleri:</strong> Tarayıcıyı kapattığınızda otomatik olarak silinir.<br/>
-<strong>Kalıcı çerezler:</strong> Belirlenen süre (genellikle 30 gün) sonunda sona erer.</p>
-
-<h4>Çerez Yönetimi</h4>
-<p>Çerez tercihlerinizi tarayıcınızın ayarlar menüsünden yönetebilir, tüm çerezleri silebilir veya belirli çerezleri engelleyebilirsiniz. Bununla birlikte, zorunlu çerezlerin engellenmesi oturum açma ve temel platform işlevlerini olumsuz etkileyebilir.</p>
+<h4>Yönetimi</h4>
+<p>Tarayıcınızın veya cihazınızın ayarlarından bu depolanan verileri istediğiniz zaman temizleyebilirsiniz; bu işlem yalnızca sizi oturumdan çıkarır, başka hiçbir etkisi yoktur.</p>
 
 <h4>Rızanız</h4>
-<p>Platformu ilk ziyaretinizde gösterilen çerez bildirimine "Kabul Et" diyerek çerez kullanımını onaylarsınız. Zorunlu çerezler rıza olmaksızın da kullanılabilir; diğer çerezler için onayınız gereklidir. Onayınızı geri almak için tarayıcı ayarlarından çerezleri temizleyebilirsiniz.</p>
+<p>Platformu ilk ziyaretinizde gösterilen bildirime "Kabul Et" diyerek bu zorunlu teknik depolamayı onaylarsınız. Bu onay herhangi bir takip, reklam veya üçüncü taraf veri paylaşımı içermez.</p>
       `
     }
+  };
+
+  const REPORT_REASONS = [
+    { key: "inappropriate", label: { tr: "Uygunsuz içerik", en: "Inappropriate content", de: "Unangemessener Inhalt" } },
+    { key: "spam",          label: { tr: "Spam / reklam",    en: "Spam / advertising",    de: "Spam / Werbung"       } },
+    { key: "harassment",    label: { tr: "Taciz / zorbalık", en: "Harassment / bullying", de: "Belästigung"          } },
+    { key: "fake",          label: { tr: "Sahte profil",     en: "Fake profile",          de: "Falsches Profil"      } },
+    { key: "other",         label: { tr: "Diğer",            en: "Other",                 de: "Sonstiges"            } },
+  ];
+
+  const ReportModal = () => {
+    if (!reportModal) return null;
+    return (
+      <div className="fixed inset-0 z-[350] flex items-center justify-center p-4" style={{background:"rgba(0,0,0,0.6)"}}>
+        <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-slate-800">{t("report.title")}</h2>
+            <button onClick={() => setReportModal(null)} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100">
+              <X className="w-5 h-5 text-slate-500" />
+            </button>
+          </div>
+          <p className="text-sm text-slate-500 mb-4">{t("report.subtitle")}</p>
+          <div className="space-y-2">
+            {REPORT_REASONS.map(r => (
+              <button key={r.key}
+                onClick={() => handleReport(reportModal.type, reportModal.id, r.key)}
+                className="w-full text-left px-4 py-3 rounded-xl border border-slate-200 hover:border-red-300 hover:bg-red-50 text-sm text-slate-700 transition-colors">
+                {r.label[lang] || r.label.en}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const LegalModal = () => {
@@ -6181,9 +6394,11 @@ Platform kullanımını ve performansını anlamamıza yardımcı olur. Toplanan
   // COOKIE BANNER
   // =====================================================
   const CookieBanner = () => {
+    if (isNative) return null;
     if (cookieConsent) return null;
     return (
-      <div className="fixed bottom-0 left-0 right-0 z-[250] bg-slate-900/95 backdrop-blur-sm border-t border-slate-700 px-4 py-4 shadow-2xl">
+      <div className="fixed left-0 right-0 z-[250] bg-slate-900/95 backdrop-blur-sm border-t border-slate-700 px-4 py-4 shadow-2xl"
+        style={isNative ? {bottom:"calc(env(safe-area-inset-bottom) + 64px)"} : {bottom:0}}>
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <div className="flex-1 text-sm text-slate-300 leading-relaxed">
             <span className="font-semibold text-white">{t("cookie.title")}</span>
@@ -6377,8 +6592,11 @@ Platform kullanımını ve performansını anlamamıza yardımcı olur. Toplanan
       { key: "profile",   icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>, label: t("nav.profile") || "Profil" },
     ];
     return (
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-100/80"
-        style={{paddingBottom:"env(safe-area-inset-bottom)", backdropFilter:"blur(12px)", background:"rgba(255,255,255,0.95)"}}>
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100/80"
+        style={{
+          paddingBottom:"env(safe-area-inset-bottom)", backdropFilter:"blur(12px)", background:"rgba(255,255,255,0.95)",
+          zIndex:999999,
+        }}>
         <div className="flex">
           {tabs.map(tab => {
             const active = currentPage === tab.key;
@@ -6428,6 +6646,7 @@ Platform kullanımını ve performansını anlamamıza yardımcı olur. Toplanan
       {showInviteModal && <InviteModal />}
       <ConfirmModal />
       <LegalModal />
+      <ReportModal />
       <CookieBanner />
       <Toast />
       {!isNative && <Footer />}

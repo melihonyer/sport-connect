@@ -51,6 +51,7 @@ export const translations = {
     serverError:        { tr: "Sunucuya bağlanılamadı.",    en: "Could not connect to server.", de: "Server nicht erreichbar." },
     kvkkText1:        { tr: "Kayıt olarak",                             en: "By signing up, I accept the",             de: "Mit der Registrierung akzeptiere ich die"  },
     kvkkLink:         { tr: "Kişisel Verilerin Korunması Politikası'nı", en: "Personal Data Protection Policy",         de: "Datenschutzrichtlinie"                     },
+    kvkkAnd:          { tr: "ve",                                        en: "and",                                     de: "und"                                       },
     kvkkText2:        { tr: "okudum ve kabul ediyorum.",                 en: "and confirm I have read it.",             de: "und bestätige, sie gelesen zu haben."      },
     kvkkRequired:     { tr: "Devam etmek için KVKK onayı gereklidir.",  en: "Please accept the data protection policy to continue.", de: "Bitte stimmen Sie der Datenschutzrichtlinie zu." },
     emailInvalid:     { tr: "Lütfen geçerli bir e-posta adresi girin.", en: "Please enter a valid email address.", de: "Bitte geben Sie eine gültige E-Mail-Adresse ein." },
@@ -207,6 +208,7 @@ export const translations = {
     weeklyActivity: { tr: "Haftalık Aktivite",                 en: "Weekly Activity",                    de: "Wöchentliche Aktivität"         },
     joinedTrainingsList: { tr: "Katılacağım Antrenmanlar",     en: "My Upcoming Trainings",               de: "Meine bevorstehenden Trainings" },
     teamTrainingsList:   { tr: "Takımınızın Antrenmanları",    en: "Team Trainings",                     de: "Team-Trainings"                 },
+    viewTeams:      { tr: "Takımları Gör",                     en: "View Teams",                         de: "Teams ansehen"                  },
   },
 
   // ── ACTIVITY CHART ──────────────────────────────────────
@@ -493,6 +495,7 @@ export const translations = {
     teamTrainings:  { tr: "Takım Antrenmanlarım",         en: "Team Trainings",          de: "Team-Trainings"          },
     badges:         { tr: "Rozetlerim",                   en: "My Badges",               de: "Meine Abzeichen"         },
     editProfile:    { tr: "Profili Düzenle",              en: "Edit Profile",            de: "Profil bearbeiten"       },
+    language:       { tr: "Dil",                          en: "Language",                de: "Sprache"                 },
     changePhoto:    { tr: "Fotoğraf Değiştir",            en: "Change Photo",            de: "Foto ändern"             },
     noTrainings:    { tr: "Henüz antrenman oluşturmadınız.", en: "You haven't created any trainings yet.", de: "Noch keine Trainings erstellt." },
     noJoined:       { tr: "Henüz bir antrenmana katılmadınız.", en: "You haven't joined any trainings yet.", de: "Noch an keinem Training teilgenommen." },
@@ -521,6 +524,9 @@ export const translations = {
     deleteAccount:  { tr: "Hesabı Sil",                   en: "Delete Account",          de: "Konto löschen"           },
     dangerZone:     { tr: "Tehlikeli Bölge",              en: "Danger Zone",             de: "Gefahrenbereich"         },
     passwordUpdateFail: { tr: "Şifre güncellenemedi.",    en: "Failed to update password.", de: "Passwort konnte nicht aktualisiert werden." },
+    deleteAccountConfirm: { tr: "Hesabınızı kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.", en: "Are you sure you want to permanently delete your account? This action cannot be undone.", de: "Möchten Sie Ihr Konto wirklich endgültig löschen? Dies kann nicht widerrufen werden." },
+    accountDeleted: { tr: "Hesabınız silindi.",            en: "Your account has been deleted.", de: "Ihr Konto wurde gelöscht." },
+    accountDeleteFail: { tr: "Hesap silinemedi.",          en: "Could not delete account.", de: "Konto konnte nicht gelöscht werden." },
   },
 
   // ── BADGES PAGE ─────────────────────────────────────────
@@ -755,9 +761,9 @@ export const translations = {
   // ── COOKIE BANNER ────────────────────────────────────────
   cookie: {
     title:          { tr: "Çerez Bildirimi",              en: "Cookie Notice",           de: "Cookie-Hinweis"          },
-    text:           { tr: "Platform deneyiminizi geliştirmek için çerezler kullanıyoruz.",
-                      en: "We use cookies to enhance your platform experience.",
-                      de: "Wir verwenden Cookies, um dein Erlebnis zu verbessern." },
+    text:           { tr: "Oturumunuzu açık tutmak için gerekli teknik depolamayı kullanıyoruz. Reklam veya takip amaçlı çerez kullanılmaz.",
+                      en: "We use essential storage to keep you signed in. No advertising or tracking cookies are used.",
+                      de: "Wir verwenden nur technisch notwendige Speicherung, um dich angemeldet zu halten. Es werden keine Werbe- oder Tracking-Cookies verwendet." },
     policy:         { tr: "Çerez Politikası",             en: "Cookie Policy",           de: "Cookie-Richtlinie"       },
     details:        { tr: "Detaylar",                     en: "Details",                 de: "Details"                 },
     accept:         { tr: "Kabul Et",                     en: "Accept",                  de: "Akzeptieren"             },
@@ -778,6 +784,18 @@ export const translations = {
     cookies:        { tr: "Çerez Politikası",             en: "Cookie Policy",           de: "Cookie-Richtlinie"       },
     rights:         { tr: "Tüm hakları saklıdır.",        en: "All rights reserved.",    de: "Alle Rechte vorbehalten."},
     badges:         { tr: "Rozetler",                     en: "Badges",                  de: "Abzeichen"               },
+  },
+
+  // ── REPORT & BLOCK ───────────────────────────────────────
+  report: {
+    btn:      { tr: "Şikayet Et",                    en: "Report",                      de: "Melden"                    },
+    title:    { tr: "İçeriği Şikayet Et",            en: "Report Content",              de: "Inhalt melden"             },
+    subtitle: { tr: "Şikayet nedeninizi seçin:",     en: "Select a reason:",            de: "Grund auswählen:"          },
+    sent:     { tr: "Şikayetiniz iletildi.",         en: "Your report has been sent.",  de: "Ihre Meldung wurde gesendet." },
+  },
+  block: {
+    btn:      { tr: "Engelle",                       en: "Block",                       de: "Blockieren"                },
+    blocked:  { tr: "{name} engellendi.",            en: "{name} has been blocked.",    de: "{name} wurde blockiert."   },
   },
 
   // ── 404 PAGE ─────────────────────────────────────────────

@@ -17,6 +17,7 @@ const multer = require('multer');
 const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs');
+const apn = require('apn');
 
 // Kritik env var kontrolü — eksikse başlatma
 if (!process.env.JWT_SECRET) {
@@ -212,6 +213,7 @@ async function createNotif(userId, { title, message, type, refId = null, url = n
       [userId, title, message, type, refId, url]
     );
     pushToUser(userId, { event: 'notification', data: r.rows[0] });
+    sendPushToUser(userId, { title, body: message, data: { type, refId, url } }).catch(() => {});
     return r.rows[0];
   } catch (e) {
     console.error('createNotif error:', e.message);
@@ -2057,6 +2059,49 @@ app.post('/api/trainings/:id/join', authenticateToken, async (req, res) => {
 
     await updateUserStats(req.user.id);
 
+    // Katılan kullanıcının adını al
+    const joinerRes = await pool.query('SELECT name, email FROM users WHERE id = $1', [req.user.id]);
+    const joinerName = joinerRes.rows[0]?.name || req.user.email;
+
+    // Takım adını ve antrenmanı yönetebilen üyeleri (sahip/antrenör/kaptan) bul
+    const teamRow = await pool.query('SELECT name FROM teams WHERE id = $1', [training.team_id]);
+    const teamName = teamRow.rows[0]?.name || 'Takımınız';
+
+    const leadersRes = await pool.query(
+      `SELECT tm.user_id, u.email, u.name FROM team_members tm
+       JOIN users u ON u.id = tm.user_id
+       WHERE tm.team_id = $1 AND tm.role IN ('owner', 'coach', 'captain') AND tm.user_id != $2`,
+      [training.team_id, req.user.id]
+    );
+
+    for (const leader of leadersRes.rows) {
+      await createNotif(leader.user_id, {
+        title: 'Antrenmana Yeni Katılımcı!',
+        message: `${joinerName}, ${training.title} antrenmanına katıldı.`,
+        type: 'training_join',
+        refId: trainingId,
+        url: `/antrenmanlar`,
+      });
+
+      sendEmail({
+        to: leader.email,
+        subject: `${training.title} — Yeni Katılımcı: ${joinerName}`,
+        html: emailWrapper(`
+          <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Antrenmanınıza Yeni Katılımcı Var!</h2>
+          <p style="margin:0 0 28px;color:#64748b;font-size:15px;line-height:1.6;">
+            <strong>${joinerName}</strong>, <strong>${teamName}</strong> takımının <strong>${training.title}</strong> antrenmanına katıldı.
+          </p>
+          <div style="text-align:center;">
+            <a href="${process.env.APP_URL || 'https://muuvlink.app'}/antrenmanlar"
+               style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#ffffff;text-decoration:none;
+                      padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
+              Antrenmanı Görüntüle →
+            </a>
+          </div>
+        `),
+      }).catch(e => console.error('Training join email error:', e.message));
+    }
+
     logActivity('training_join', req.user.id, null, { training_title: training.title });
     res.json({ message: 'Successfully joined the training' });
   } catch (error) {
@@ -2608,6 +2653,17 @@ app.get('/api/admin/users', isAdmin, async (req, res) => {
     res.json(result.rows);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
+
+// Kullanıcının kendi hesabını silmesi — App Store Guideline 5.1.1(v) için zorunlu
+app.delete('/api/users/me', authenticateToken, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM users WHERE id = $1', [req.user.id]);
+    res.json({ message: 'Hesabınız silindi.' });
+  } catch (error) {
+    console.error('Self-delete error:', error.message);
+    res.status(500).json({ error: 'Hesap silinemedi.' });
   }
 });
 
@@ -3595,6 +3651,64 @@ function scheduleDailyReminders() {
 }
 scheduleDailyReminders();
 
+// ── Engagement Reminder — pasif kullanıcılara nazik hatırlatma ──────────────
+// Son 7 gündür hiç antrenman oluşturmamış/katılmamış VE son 7 gündür bu
+// hatırlatmayı almamış kullanıcılara gönderilir. Aktif kullanıcılar hiç almaz.
+const ENGAGEMENT_INACTIVE_DAYS = 7;
+const ENGAGEMENT_COOLDOWN_DAYS = 7;
+
+async function sendEngagementReminders() {
+  try {
+    const inactiveUsers = await pool.query(
+      `SELECT u.id
+       FROM users u
+       WHERE EXISTS (SELECT 1 FROM team_members tm WHERE tm.user_id = u.id)
+         AND NOT EXISTS (
+           SELECT 1 FROM trainings t
+           WHERE t.created_by = u.id AND t.created_at > NOW() - INTERVAL '${ENGAGEMENT_INACTIVE_DAYS} days'
+         )
+         AND NOT EXISTS (
+           SELECT 1 FROM training_attendees ta
+           WHERE ta.user_id = u.id AND ta.joined_at > NOW() - INTERVAL '${ENGAGEMENT_INACTIVE_DAYS} days'
+         )
+         AND NOT EXISTS (
+           SELECT 1 FROM notifications n
+           WHERE n.user_id = u.id AND n.notification_type = 'engagement_nudge'
+             AND n.created_at > NOW() - INTERVAL '${ENGAGEMENT_COOLDOWN_DAYS} days'
+         )`
+    );
+
+    for (const user of inactiveUsers.rows) {
+      await createNotif(user.id, {
+        title: 'Seni Özledik! 👋',
+        message: 'Hadi kalk, bir antrenman planla ya da var olan birine katıl, arkadaşlarınla buluş 💪',
+        type: 'engagement_nudge',
+        url: '/antrenmanlar',
+      });
+    }
+    if (inactiveUsers.rows.length > 0) {
+      console.log(`[ENGAGEMENT] ${inactiveUsers.rows.length} kullanıcıya hatırlatma gönderildi.`);
+    }
+  } catch (e) {
+    console.error('[ENGAGEMENT] Hata:', e.message);
+  }
+}
+
+// Her gün 18:00'da çalıştır
+function scheduleEngagementReminders() {
+  const now = new Date();
+  const next6pm = new Date(now);
+  next6pm.setHours(18, 0, 0, 0);
+  if (next6pm <= now) next6pm.setDate(next6pm.getDate() + 1);
+  const msUntil6pm = next6pm - now;
+  setTimeout(() => {
+    sendEngagementReminders();
+    setInterval(sendEngagementReminders, 24 * 60 * 60 * 1000);
+  }, msUntil6pm);
+  console.log(`[ENGAGEMENT] İlk çalışma: ${next6pm.toLocaleString('tr-TR')} (${Math.round(msUntil6pm/60000)} dk sonra)`);
+}
+scheduleEngagementReminders();
+
 // ── Push Token Kayıt & Bildirim ──────────────────────────────────────────────
 // Tablo yoksa oluştur
 pool.query(`
@@ -3637,18 +3751,127 @@ app.post('/api/push/register', async (req, res) => {
   }
 });
 
+// ── APNs (Apple Push Notification service) ──────────────────────────────────
+let apnProvider = null;
+try {
+  const apnKeyPath = path.join(__dirname, 'certs', 'AuthKey_ZJKTSFFGGR.p8');
+  if (fs.existsSync(apnKeyPath)) {
+    apnProvider = new apn.Provider({
+      token: {
+        key: apnKeyPath,
+        keyId: 'ZJKTSFFGGR',
+        teamId: 'MZ46V34M5Y',
+      },
+      production: true,
+    });
+    console.log('[PUSH] APNs provider hazır');
+  } else {
+    console.warn('[PUSH] APNs key bulunamadı, push bildirimleri devre dışı:', apnKeyPath);
+  }
+} catch (e) {
+  console.error('[PUSH] APNs provider başlatılamadı:', e.message);
+}
+
+// ── FCM (Firebase Cloud Messaging — Android) ─────────────────────────────────
+let fcmReady = false;
+try {
+  const fcmKeyPath = path.join(__dirname, 'certs', 'firebase-service-account.json');
+  if (fs.existsSync(fcmKeyPath)) {
+    const admin = require('firebase-admin');
+    admin.initializeApp({ credential: admin.credential.cert(require(fcmKeyPath)) });
+    fcmReady = true;
+    console.log('[PUSH] FCM (Android) provider hazır');
+  } else {
+    console.warn('[PUSH] Firebase service account bulunamadı, Android push devre dışı:', fcmKeyPath);
+  }
+} catch (e) {
+  console.error('[PUSH] FCM provider başlatılamadı:', e.message);
+}
+
+async function sendPushToIOS(userId, { title, body, data }) {
+  if (!apnProvider) return;
+  const tokensRes = await pool.query(
+    `SELECT token FROM device_push_tokens WHERE user_id = $1 AND platform = 'ios'`,
+    [userId]
+  );
+  if (tokensRes.rows.length === 0) return;
+
+  const notification = new apn.Notification();
+  notification.alert = { title, body };
+  notification.sound = 'default';
+  notification.topic = 'app.muuvlink';
+  notification.payload = data;
+
+  const tokens = tokensRes.rows.map(r => r.token);
+  const result = await apnProvider.send(notification, tokens);
+
+  for (const failure of result.failed) {
+    if (['BadDeviceToken', 'Unregistered', 'DeviceTokenNotForTopic'].includes(failure.response?.reason)) {
+      await pool.query('DELETE FROM device_push_tokens WHERE token = $1', [failure.device]).catch(() => {});
+    }
+  }
+  if (result.failed.length > 0) {
+    console.warn('[PUSH] APNs gönderim hataları:', result.failed.map(f => f.response?.reason));
+  }
+}
+
+async function sendPushToAndroid(userId, { title, body, data }) {
+  if (!fcmReady) return;
+  const tokensRes = await pool.query(
+    `SELECT token FROM device_push_tokens WHERE user_id = $1 AND platform = 'android'`,
+    [userId]
+  );
+  if (tokensRes.rows.length === 0) return;
+
+  const admin = require('firebase-admin');
+  const tokens = tokensRes.rows.map(r => r.token);
+  const stringData = Object.fromEntries(
+    Object.entries(data || {}).map(([k, v]) => [k, v == null ? '' : String(v)])
+  );
+
+  const result = await admin.messaging().sendEachForMulticast({
+    tokens,
+    notification: { title, body },
+    data: stringData,
+  });
+
+  result.responses.forEach((res, i) => {
+    if (!res.success && ['messaging/registration-token-not-registered', 'messaging/invalid-registration-token'].includes(res.error?.code)) {
+      pool.query('DELETE FROM device_push_tokens WHERE token = $1', [tokens[i]]).catch(() => {});
+    }
+  });
+  if (result.failureCount > 0) {
+    console.warn('[PUSH] FCM gönderim hataları:', result.responses.filter(r => !r.success).map(r => r.error?.code));
+  }
+}
+
+async function sendPushToUser(userId, { title, body, data = {} }) {
+  if (!userId) return;
+  try {
+    await Promise.allSettled([
+      sendPushToIOS(userId, { title, body, data }),
+      sendPushToAndroid(userId, { title, body, data }),
+    ]);
+  } catch (e) {
+    console.error('[PUSH] Gönderim hatası:', e.message);
+  }
+}
+
 // Production'da Vite build çıktısını servis et
 if (process.env.NODE_ENV === 'production') {
   const distPath = path.join(__dirname, '../dist');
-  // Hashed assets (JS/CSS) uzun cache — index.html asla cache'lenmesin
   app.use(express.static(distPath, {
-    maxAge: '1d',
+    maxAge: 0,
+    etag: true,
+    lastModified: true,
     extensions: ['html'],
     setHeaders: (res, filePath) => {
       if (filePath.endsWith('index.html') || filePath.endsWith('admin.html')) {
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
+      } else {
+        res.setHeader('Cache-Control', 'no-cache');
       }
     }
   }));
@@ -3663,6 +3886,112 @@ if (process.env.NODE_ENV === 'production') {
     }
   });
 }
+
+// =====================================================
+// REPORT & BLOCK
+// =====================================================
+
+pool.query(`
+  CREATE TABLE IF NOT EXISTS content_reports (
+    id           SERIAL PRIMARY KEY,
+    reporter_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    content_type TEXT NOT NULL, -- 'training', 'comment', 'wall_post', 'user'
+    content_id   INTEGER NOT NULL,
+    reason       TEXT NOT NULL,
+    resolved     BOOLEAN DEFAULT false,
+    created_at   TIMESTAMPTZ DEFAULT NOW()
+  )
+`).catch(() => {});
+
+pool.query(`
+  CREATE TABLE IF NOT EXISTS blocked_users (
+    id         SERIAL PRIMARY KEY,
+    blocker_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    blocked_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(blocker_id, blocked_id)
+  )
+`).catch(() => {});
+
+// İçerik şikayeti
+app.post('/api/report', authenticateToken, async (req, res) => {
+  const { content_type, content_id, reason } = req.body;
+  if (!content_type || !content_id || !reason) return res.status(400).json({ error: 'Eksik alan.' });
+  try {
+    await pool.query(
+      'INSERT INTO content_reports (reporter_id, content_type, content_id, reason) VALUES ($1,$2,$3,$4)',
+      [req.user.id, content_type, content_id, reason]
+    );
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Şikayet kaydedilemedi.' });
+  }
+});
+
+// Kullanıcı engelleme
+app.post('/api/block/:userId', authenticateToken, async (req, res) => {
+  const blockedId = parseInt(req.params.userId);
+  if (blockedId === req.user.id) return res.status(400).json({ error: 'Kendinizi engelleyemezsiniz.' });
+  try {
+    await pool.query(
+      'INSERT INTO blocked_users (blocker_id, blocked_id) VALUES ($1,$2) ON CONFLICT DO NOTHING',
+      [req.user.id, blockedId]
+    );
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Engelleme başarısız.' });
+  }
+});
+
+// Engeli kaldır
+app.delete('/api/block/:userId', authenticateToken, async (req, res) => {
+  const blockedId = parseInt(req.params.userId);
+  try {
+    await pool.query('DELETE FROM blocked_users WHERE blocker_id=$1 AND blocked_id=$2', [req.user.id, blockedId]);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Engel kaldırılamadı.' });
+  }
+});
+
+// Engellenen kullanıcılar listesi
+app.get('/api/blocked', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT blocked_id FROM blocked_users WHERE blocker_id=$1',
+      [req.user.id]
+    );
+    res.json({ blocked: result.rows.map(r => r.blocked_id) });
+  } catch (e) {
+    res.status(500).json({ blocked: [] });
+  }
+});
+
+// Admin: şikayet listesi
+app.get('/api/admin/reports', isAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT cr.*, u.name AS reporter_name, u.email AS reporter_email
+      FROM content_reports cr
+      JOIN users u ON u.id = cr.reporter_id
+      ORDER BY cr.created_at DESC
+      LIMIT 200
+    `);
+    res.json(result.rows);
+  } catch (e) {
+    res.status(500).json([]);
+  }
+});
+
+// Admin: şikayeti çözüldü işaretle
+app.put('/api/admin/reports/:id/resolve', isAdmin, async (req, res) => {
+  try {
+    await pool.query('UPDATE content_reports SET resolved=true WHERE id=$1', [req.params.id]);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Güncelleme başarısız.' });
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`
