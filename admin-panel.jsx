@@ -417,7 +417,7 @@ export default function AdminPanel() {
         const [logsData, analyticsData] = await Promise.all([api("/admin/logs"), api("/admin/analytics")]);
         if (reqId === loadReqRef.current) { setLogs(logsData || []); setAnalytics(analyticsData || null); }
       }
-    } catch { /* sessiz */ }
+    } catch (err) { console.error('[loadTab] hata:', t, err); }
     finally { if (reqId === loadReqRef.current) setLoading(false); }
   }, [api]);
 
