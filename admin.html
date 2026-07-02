@@ -17,16 +17,6 @@
 <body>
   <meta name="robots" content="noindex, nofollow">
   <div id="root"></div>
-  <!-- SW varsa kaldır ve sayfayı yenile — eski SW önbellekten çıksın -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function(regs) {
-        var had = regs.length > 0;
-        regs.forEach(function(r) { r.unregister(); });
-        if (had) { caches.keys().then(function(keys) { keys.forEach(function(k) { caches.delete(k); }); }); location.reload(true); }
-      });
-    }
-  </script>
   <script type="module" src="/admin-main.jsx"></script>
 </body>
 </html>

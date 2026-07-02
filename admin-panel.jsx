@@ -12,14 +12,7 @@ import {
   Legend, ResponsiveContainer,
 } from "recharts";
 
-console.log('%c[Muuvlink Admin v7]', 'color:teal;font-weight:bold');
-
-// Admin panelinde SW olmamalı — eski SW'yi kaldır
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then(regs => {
-    regs.forEach(r => r.unregister());
-  });
-}
+console.log('%c[Muuvlink Admin v8]', 'color:teal;font-weight:bold');
 
 const API_URL  = import.meta.env.VITE_API_URL  ?? (import.meta.env.DEV ? "http://localhost:3000/api" : "/api");
 const BASE_URL = import.meta.env.VITE_BASE_URL ?? (import.meta.env.DEV ? "http://localhost:3000" : "");
