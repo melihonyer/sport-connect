@@ -3969,7 +3969,7 @@ app.get('/api/blocked', authenticateToken, async (req, res) => {
 });
 
 // Admin: şikayet listesi
-app.get('/api/admin/reports', isAdmin, async (req, res) => {
+app.get('/api/admin/flags', isAdmin, async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT cr.*, u.name AS reporter_name, u.email AS reporter_email
@@ -3985,7 +3985,7 @@ app.get('/api/admin/reports', isAdmin, async (req, res) => {
 });
 
 // Admin: şikayeti çözüldü işaretle
-app.put('/api/admin/reports/:id/resolve', isAdmin, async (req, res) => {
+app.put('/api/admin/flags/:id/resolve', isAdmin, async (req, res) => {
   try {
     await pool.query('UPDATE content_reports SET resolved=true WHERE id=$1', [req.params.id]);
     res.json({ ok: true });

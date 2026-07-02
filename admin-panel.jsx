@@ -428,7 +428,7 @@ export default function AdminPanel() {
       else if (t === "banners") { const d = await api("/admin/banners"); if (reqId === loadReqRef.current) setBanners(d || []); }
       else if (t === "home-news") { const d = await api("/admin/home-news"); if (reqId === loadReqRef.current) setHomeNews(d || []); }
       else if (t === "home-gallery") { const d = await api("/admin/home-gallery"); if (reqId === loadReqRef.current) setHomeGallery(d || []); }
-      else if (t === "reports") { const d = await api("/admin/reports"); if (reqId === loadReqRef.current) setReports(d || []); }
+      else if (t === "reports") { const d = await api("/admin/flags"); if (reqId === loadReqRef.current) setReports(d || []); }
       else if (t === "logs") {
         const [logsData, analyticsData] = await Promise.all([api("/admin/logs"), api("/admin/analytics")]);
         if (reqId === loadReqRef.current) { setLogs(logsData || []); setAnalytics(analyticsData || null); }
@@ -1778,7 +1778,7 @@ export default function AdminPanel() {
                   {!r.resolved && (
                     <button
                       onClick={async () => {
-                        await api(`/admin/reports/${r.id}/resolve`, { method: "PUT" });
+                        await api(`/admin/flags/${r.id}/resolve`, { method: "PUT" });
                         setReports(prev => prev.map(x => x.id === r.id ? { ...x, resolved: true } : x));
                       }}
                       className="text-xs px-3 py-1.5 bg-green-50 text-green-600 rounded-xl hover:bg-green-100 font-semibold transition-colors whitespace-nowrap"
