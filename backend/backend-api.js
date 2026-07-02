@@ -3996,6 +3996,30 @@ app.put('/api/admin/flags/:id/resolve', isAdmin, async (req, res) => {
   }
 });
 
+// Admin: şikayet edilen içeriği sil + otomatik çözüldü işaretle
+app.delete('/api/admin/flags/:id/content', isAdmin, async (req, res) => {
+  try {
+    const flagRes = await pool.query('SELECT content_type, content_id FROM content_reports WHERE id=$1', [req.params.id]);
+    if (!flagRes.rows[0]) return res.status(404).json({ error: 'Şikayet bulunamadı.' });
+    const { content_type, content_id } = flagRes.rows[0];
+
+    if (content_type === 'wall_post') {
+      await pool.query('DELETE FROM team_posts WHERE id=$1', [content_id]);
+    } else if (content_type === 'comment') {
+      await pool.query('DELETE FROM training_comments WHERE id=$1', [content_id]);
+    } else if (content_type === 'training') {
+      await pool.query('DELETE FROM trainings WHERE id=$1', [content_id]);
+    } else if (content_type === 'user') {
+      await pool.query('UPDATE users SET is_active=false WHERE id=$1', [content_id]);
+    }
+
+    await pool.query('UPDATE content_reports SET resolved=true WHERE id=$1', [req.params.id]);
+    res.json({ ok: true, content_type, content_id });
+  } catch (e) {
+    res.status(500).json({ error: 'Silme başarısız.' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`
   Muuvlink Backend API - FULL VERSION

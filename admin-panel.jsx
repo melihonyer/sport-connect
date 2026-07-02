@@ -1769,15 +1769,28 @@ export default function AdminPanel() {
                     <p className="text-xs text-slate-400 mt-1">{new Date(r.created_at).toLocaleString("tr-TR")}</p>
                   </div>
                   {!r.resolved && (
-                    <button
-                      onClick={async () => {
-                        await api(`/admin/flags/${r.id}/resolve`, { method: "PUT" });
-                        setReports(prev => prev.map(x => x.id === r.id ? { ...x, resolved: true } : x));
-                      }}
-                      className="text-xs px-3 py-1.5 bg-green-50 text-green-600 rounded-xl hover:bg-green-100 font-semibold transition-colors whitespace-nowrap"
-                    >
-                      Çözüldü
-                    </button>
+                    <div className="flex flex-col gap-2 flex-shrink-0">
+                      <button
+                        onClick={async () => {
+                          if (!window.confirm(`Bu içeriği kalıcı olarak silmek istiyor musunuz?`)) return;
+                          await api(`/admin/flags/${r.id}/content`, { method: "DELETE" });
+                          setReports(prev => prev.map(x => x.id === r.id ? { ...x, resolved: true } : x));
+                          showToast("İçerik silindi.", "success");
+                        }}
+                        className="text-xs px-3 py-1.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 font-semibold transition-colors whitespace-nowrap"
+                      >
+                        İçeriği Sil
+                      </button>
+                      <button
+                        onClick={async () => {
+                          await api(`/admin/flags/${r.id}/resolve`, { method: "PUT" });
+                          setReports(prev => prev.map(x => x.id === r.id ? { ...x, resolved: true } : x));
+                        }}
+                        className="text-xs px-3 py-1.5 bg-green-50 text-green-600 rounded-xl hover:bg-green-100 font-semibold transition-colors whitespace-nowrap"
+                      >
+                        Çözüldü
+                      </button>
+                    </div>
                   )}
                 </div>
               ))}
