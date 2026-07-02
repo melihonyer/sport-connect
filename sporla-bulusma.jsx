@@ -3432,6 +3432,31 @@ export default function Muuvlink() {
               </div>
             )}
 
+            {/* Engellenen kullanıcılar */}
+            {blockedUsers.length > 0 && (
+              <div className="bg-white rounded-2xl p-6 border border-slate-100">
+                <h3 className="font-semibold text-slate-700 text-sm mb-3">{t("block.blockedList")}</h3>
+                <div className="space-y-2">
+                  {blockedUsers.map(uid => (
+                    <div key={uid} className="flex items-center justify-between py-2">
+                      <span className="text-sm text-slate-500">#{uid}</span>
+                      <button
+                        onClick={async () => {
+                          const token = localStorage.getItem("token");
+                          await fetch(`${API_URL}/block/${uid}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+                          setBlockedUsers(prev => prev.filter(id => id !== uid));
+                          showToast(t("block.unblocked"), "success");
+                        }}
+                        className="text-xs px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-colors"
+                      >
+                        {t("block.unblock")}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Çıkış Yap + Hesabı Sil */}
             <div className="bg-white rounded-2xl p-6 border border-slate-100 flex flex-col gap-3">
               <button onClick={handleLogout}
@@ -4674,16 +4699,32 @@ export default function Muuvlink() {
 
               {selectedTeam.posts?.length > 0 ? (
                 <div className="space-y-3">
-                  {selectedTeam.posts.map((post) => (
+                  {selectedTeam.posts.filter(p => !blockedUsers.includes(p.user_id)).map((post) => (
                     <div key={post.id} className="p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-colors">
                       <div className="flex items-center gap-3 mb-2">
                         <div className="w-9 h-9 bg-gradient-to-br from-brand-500 to-brand-600 rounded-full overflow-hidden flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
                           {renderAvatar(post.user_avatar, post.user_name)}
                         </div>
-                        <div>
+                        <div className="flex-1">
                           <div className="font-semibold text-sm text-slate-800">{post.user_name}</div>
                           <div className="text-xs text-slate-400">{fmtDateShort(post.created_at)}</div>
                         </div>
+                        {user && post.user_id !== user.id && (
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => setReportModal({ type: "wall_post", id: post.id })}
+                              className="text-slate-300 hover:text-red-400 p-1 rounded-lg hover:bg-red-50 transition-colors"
+                            >
+                              <Flag className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleBlock(post.user_id, post.user_name)}
+                              className="text-xs text-slate-300 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors"
+                            >
+                              {t("block.btn")}
+                            </button>
+                          </div>
+                        )}
                       </div>
                       <p className="text-slate-700 text-sm leading-relaxed">{post.message}</p>
                     </div>

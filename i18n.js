@@ -794,8 +794,11 @@ export const translations = {
     sent:     { tr: "Şikayetiniz iletildi.",         en: "Your report has been sent.",  de: "Ihre Meldung wurde gesendet." },
   },
   block: {
-    btn:      { tr: "Engelle",                       en: "Block",                       de: "Blockieren"                },
-    blocked:  { tr: "{name} engellendi.",            en: "{name} has been blocked.",    de: "{name} wurde blockiert."   },
+    btn:         { tr: "Engelle",                    en: "Block",                       de: "Blockieren"                },
+    blocked:     { tr: "{name} engellendi.",         en: "{name} has been blocked.",    de: "{name} wurde blockiert."   },
+    blockedList: { tr: "Engellenen Kullanıcılar",   en: "Blocked Users",               de: "Blockierte Nutzer"         },
+    unblock:     { tr: "Engeli Kaldır",             en: "Unblock",                     de: "Freigeben"                 },
+    unblocked:   { tr: "Engel kaldırıldı.",         en: "User unblocked.",             de: "Blockierung aufgehoben."   },
   },
 
   // ── 404 PAGE ─────────────────────────────────────────────
