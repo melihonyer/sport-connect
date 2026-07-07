@@ -527,6 +527,7 @@ export const translations = {
     deleteAccountConfirm: { tr: "Hesabınızı kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.", en: "Are you sure you want to permanently delete your account? This action cannot be undone.", de: "Möchten Sie Ihr Konto wirklich endgültig löschen? Dies kann nicht widerrufen werden." },
     accountDeleted: { tr: "Hesabınız silindi.",            en: "Your account has been deleted.", de: "Ihr Konto wurde gelöscht." },
     accountDeleteFail: { tr: "Hesap silinemedi.",          en: "Could not delete account.", de: "Konto konnte nicht gelöscht werden." },
+    soleAdminBlock:    { tr: "Bu takımların tek yetkilisisiniz, hesabı silmeden önce devredin veya silin: ", en: "You are the sole admin of these teams, transfer or delete them first: ", de: "Sie sind der einzige Admin dieser Teams, übertragen oder löschen Sie sie zuerst: " },
   },
 
   // ── BADGES PAGE ─────────────────────────────────────────

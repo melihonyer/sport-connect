@@ -1855,7 +1855,13 @@ export default function Muuvlink() {
           showToast(t("settings.accountDeleted"), "info");
           handleLogout();
         } else {
-          showToast(t("settings.accountDeleteFail"), "error");
+          const data = await response.json().catch(() => ({}));
+          if (data.error === "SOLE_ADMIN_TEAMS" && data.teams?.length) {
+            const names = data.teams.map(t => t.name).join(", ");
+            showToast(t("settings.soleAdminBlock") + names, "error");
+          } else {
+            showToast(t("settings.accountDeleteFail"), "error");
+          }
         }
       } catch (_) {
         showToast(t("settings.accountDeleteFail"), "error");

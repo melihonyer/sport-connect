@@ -2660,6 +2660,22 @@ app.get('/api/admin/users', isAdmin, async (req, res) => {
 // Kullanıcının kendi hesabını silmesi — App Store Guideline 5.1.1(v) için zorunlu
 app.delete('/api/users/me', authenticateToken, async (req, res) => {
   try {
+    const soleAdminCheck = await pool.query(
+      `SELECT t.id, t.name FROM teams t
+       JOIN team_members tm ON t.id = tm.team_id
+       WHERE tm.user_id = $1 AND tm.role IN ('owner','coach')
+         AND NOT EXISTS (
+           SELECT 1 FROM team_members tm2
+           WHERE tm2.team_id = t.id AND tm2.user_id != $1 AND tm2.role IN ('owner','coach')
+         )`,
+      [req.user.id]
+    );
+    if (soleAdminCheck.rows.length > 0) {
+      return res.status(400).json({
+        error: 'SOLE_ADMIN_TEAMS',
+        teams: soleAdminCheck.rows,
+      });
+    }
     await pool.query('DELETE FROM users WHERE id = $1', [req.user.id]);
     res.json({ message: 'Hesabınız silindi.' });
   } catch (error) {
@@ -2672,6 +2688,22 @@ app.delete('/api/admin/users/:id', isAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     if (parseInt(id) === req.user.id) return res.status(400).json({ error: 'Kendi hesabınızı silemezsiniz.' });
+    const soleAdminCheck = await pool.query(
+      `SELECT t.id, t.name FROM teams t
+       JOIN team_members tm ON t.id = tm.team_id
+       WHERE tm.user_id = $1 AND tm.role IN ('owner','coach')
+         AND NOT EXISTS (
+           SELECT 1 FROM team_members tm2
+           WHERE tm2.team_id = t.id AND tm2.user_id != $1 AND tm2.role IN ('owner','coach')
+         )`,
+      [id]
+    );
+    if (soleAdminCheck.rows.length > 0) {
+      return res.status(400).json({
+        error: 'SOLE_ADMIN_TEAMS',
+        teams: soleAdminCheck.rows,
+      });
+    }
     await pool.query('DELETE FROM users WHERE id = $1', [id]);
     res.json({ message: 'Kullanıcı silindi.' });
   } catch (error) {
