@@ -65,6 +65,7 @@ export const translations = {
     edit:         { tr: "Düzenle",         en: "Edit",          de: "Bearbeiten"  },
     close:        { tr: "Kapat",           en: "Close",         de: "Schließen"   },
     confirm:      { tr: "Onayla",          en: "Confirm",       de: "Bestätigen"  },
+    ok:           { tr: "Tamam",           en: "OK",            de: "OK"          },
     send:         { tr: "Gönder",          en: "Send",          de: "Senden"      },
     search:       { tr: "Ara",             en: "Search",        de: "Suchen"      },
     filter:       { tr: "Filtrele",        en: "Filter",        de: "Filtern"     },
