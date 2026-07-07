@@ -354,17 +354,17 @@ const AuthModal = ({ authMode, setAuthMode, onClose, handleLogin, handleRegister
           <form onSubmit={handleSubmit} className="space-y-3">
             {authMode === "register" && (
               <input ref={nameRef} type="text" placeholder={t("auth.namePlaceholder")}
-                className="w-full px-4 py-3.5 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 text-sm font-medium outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 transition-all"
+                className="w-full px-4 py-3.5 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 text-base font-medium outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 transition-all"
                 required/>
             )}
             <input ref={emailRef} type="email" placeholder={t("auth.emailPlaceholder")}
-              className={`w-full px-4 py-3.5 border rounded-xl text-slate-800 placeholder-slate-400 text-sm font-medium outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 transition-all ${error ? "border-red-300 bg-red-50/50" : "border-slate-200"}`}
+              className={`w-full px-4 py-3.5 border rounded-xl text-slate-800 placeholder-slate-400 text-base font-medium outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 transition-all ${error ? "border-red-300 bg-red-50/50" : "border-slate-200"}`}
               required
               onInvalid={e => e.target.setCustomValidity(t("auth.emailInvalid"))}
               onInput={e => e.target.setCustomValidity("")}/>
             {authMode !== "forgot" && (
               <input ref={passRef} type="password" placeholder={t("auth.passwordLabel")}
-                className={`w-full px-4 py-3.5 border rounded-xl text-slate-800 placeholder-slate-400 text-sm font-medium outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 transition-all ${error ? "border-red-300 bg-red-50/50" : "border-slate-200"}`}
+                className={`w-full px-4 py-3.5 border rounded-xl text-slate-800 placeholder-slate-400 text-base font-medium outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 transition-all ${error ? "border-red-300 bg-red-50/50" : "border-slate-200"}`}
                 required/>
             )}
             {authMode === "login" && (
