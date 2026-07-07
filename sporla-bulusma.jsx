@@ -926,9 +926,9 @@ export default function Muuvlink() {
   };
 
   const [currentPage, setCurrentPage] = useState(() => {
+    // Native'de URL path'i yok say — stale pushState'ten gelen yanlış sayfa flashını önle
+    if (isNative) return localStorage.getItem("token") ? "home" : "profile";
     const fromPath = PATH_TO_PAGE[window.location.pathname] ?? (window.location.pathname === "/" ? "home" : "not-found");
-    // Native'de giriş yapılmamışsa direkt Profil sekmesine (giriş ekranına) düş
-    if (isNative && fromPath === "home" && !localStorage.getItem("token")) return "profile";
     return fromPath;
   });
   const [user, setUser] = useState(null);
