@@ -1758,6 +1758,7 @@ export default function Muuvlink() {
         localStorage.setItem("token", data.token);
         setUser(data.user);
         setIsAuthModalOpen(false);
+        if (isNative) setCurrentPage("home");
         fetchUserData(data.token);
         fetchTrainings();
         fetchTeams();
@@ -1812,6 +1813,7 @@ export default function Muuvlink() {
         localStorage.setItem("token", data.token);
         setUser(data.user);
         setIsAuthModalOpen(false);
+        if (isNative) setCurrentPage("home");
         fetchUserData(data.token);
         fetchTrainings();
         fetchTeams();
