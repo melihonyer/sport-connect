@@ -998,13 +998,13 @@ export default function Muuvlink() {
     setTimeout(() => setToast(null), 3500);
   };
 
-  const showConfirm = (message, onConfirm, { danger = false } = {}) => {
-    setConfirmModal({ message, onConfirm, danger });
+  const showConfirm = (message, onConfirm, { danger = false, alertOnly = false } = {}) => {
+    setConfirmModal({ message, onConfirm, danger, alertOnly });
   };
 
   const ConfirmModal = () => {
     if (!confirmModal) return null;
-    const { message, onConfirm, danger } = confirmModal;
+    const { message, onConfirm, danger, alertOnly } = confirmModal;
     const close = () => setConfirmModal(null);
     return (
       <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[200]">
@@ -1018,15 +1018,19 @@ export default function Muuvlink() {
             <p className="text-slate-700 text-sm leading-relaxed font-medium">{message}</p>
           </div>
           <div className="flex border-t border-slate-100">
-            <button onClick={close} className="flex-1 py-3.5 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
-              {t("common.cancel")}
-            </button>
-            <div className="w-px bg-slate-100"/>
+            {!alertOnly && (
+              <>
+                <button onClick={close} className="flex-1 py-3.5 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors">
+                  {t("common.cancel")}
+                </button>
+                <div className="w-px bg-slate-100"/>
+              </>
+            )}
             <button
-              onClick={() => { close(); onConfirm(); }}
+              onClick={() => { close(); if (!alertOnly) onConfirm(); }}
               className={`flex-1 py-3.5 text-sm font-semibold transition-colors ${danger ? "text-red-600 hover:bg-red-50" : "text-brand-700 hover:bg-brand-50"}`}
             >
-              {t("common.confirm")}
+              {alertOnly ? t("common.ok") || "Tamam" : t("common.confirm")}
             </button>
           </div>
         </div>
@@ -1859,8 +1863,8 @@ export default function Muuvlink() {
         } else {
           const data = await response.json().catch(() => ({}));
           if (data.error === "SOLE_ADMIN_TEAMS" && data.teams?.length) {
-            const names = data.teams.map(t => t.name).join(", ");
-            showToast(t("settings.soleAdminBlock") + names, "error");
+            const names = data.teams.map(tm => tm.name).join(", ");
+            showConfirm(t("settings.soleAdminBlock") + names, null, { alertOnly: true, danger: true });
           } else {
             showToast(t("settings.accountDeleteFail"), "error");
           }
