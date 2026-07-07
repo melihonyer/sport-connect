@@ -6623,7 +6623,8 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
 
   // TOAST BİLDİRİMİ
   const Toast = () => !toast ? null : (
-    <div className={`fixed z-[200] flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl text-white font-medium max-w-sm transition-all ${isNative ? "top-6 left-4 right-4 animate-in slide-in-from-top-2" : "bottom-6 right-6 animate-in slide-in-from-bottom-2"} ${
+    <div style={isNative ? { top: "calc(env(safe-area-inset-top) + 12px)", left: "16px", right: "16px" } : { bottom: "24px", right: "24px" }}
+      className={`fixed z-[200] flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl text-white font-medium max-w-sm transition-all ${isNative ? "animate-in slide-in-from-top-2" : "animate-in slide-in-from-bottom-2"} ${
       toast.type === "success" ? "bg-brand-600" :
       toast.type === "error" ? "bg-red-600" : "bg-brand-600"
     }`}>
