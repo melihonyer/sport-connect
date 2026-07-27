@@ -315,7 +315,14 @@ export default function AdminPanel() {
   const [form, setForm]         = useState({ email: "", password: "" });
 
   // İçerik state'leri
-  const [tab, setTab]           = useState("dashboard");
+  // Mail'den gelen "Panelde Görüntüle" linki ?tab=messages ile doğrudan ilgili sekmeyi açar
+  const [tab, setTab]           = useState(() => {
+    try {
+      return new URLSearchParams(window.location.search).get("tab") || "dashboard";
+    } catch {
+      return "dashboard";
+    }
+  });
   const [stats, setStats]       = useState(null);
   const [users, setUsers]       = useState([]);
   const [trainings, setTrainings] = useState([]);

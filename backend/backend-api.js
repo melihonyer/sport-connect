@@ -18,6 +18,7 @@ const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs');
 const apn = require('apn');
+const tzLookup = require('tz-lookup');
 
 // Kritik env var kontrolü — eksikse başlatma
 if (!process.env.JWT_SECRET) {
@@ -164,6 +165,10 @@ async function uploadToSupabase(bucket, fileName, buffer, mimetype) {
 
 // DB bağlantısı: ayrı env var'lar öncelikli (şifredeki özel karakterler sorun çıkarmaz)
 // Render/Supabase için: PGHOST, PGPORT, PGDATABASE, PGUSER, PGPASSWORD set edin
+// connectionTimeoutMillis: yeni bağlantı kurulamazsa sonsuza kadar beklemek yerine hata dön.
+// idleTimeoutMillis: boşta bekleyen bağlantıları pool'da tutmayıp serbest bırak (leak önleme).
+const POOL_TIMEOUTS = { connectionTimeoutMillis: 10000, idleTimeoutMillis: 30000 };
+
 const pool = process.env.PGHOST
   ? new Pool({
       host:     process.env.PGHOST,
@@ -172,24 +177,52 @@ const pool = process.env.PGHOST
       user:     process.env.PGUSER,
       password: process.env.PGPASSWORD,
       ssl:      { rejectUnauthorized: false },
+      ...POOL_TIMEOUTS,
     })
   : process.env.DATABASE_URL
-    ? new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } })
+    ? new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false }, ...POOL_TIMEOUTS })
     : new Pool({
         user:     process.env.DB_USER     || 'postgres',
         host:     process.env.DB_HOST     || 'localhost',
         database: process.env.DB_NAME     || 'sporlaconnect',
         password: process.env.DB_PASSWORD,
         port:     parseInt(process.env.DB_PORT || '5432'),
+        ...POOL_TIMEOUTS,
       });
 
 // Her yeni bağlantıda timezone'u Europe/Istanbul olarak sabitle.
 // Uygulama Türkiye saatinde çalışıyor: training_time girişleri yerel saat,
 // CURRENT_TIME/CURRENT_DATE karşılaştırmaları da İstanbul saatiyle tutarlı olmalı.
+// statement_timeout: tek bir sorgu takılırsa (kilit, network vb.) 15sn sonra Postgres
+// sorguyu otomatik iptal etsin — bağlantı sonsuza kadar askıda kalmasın.
 pool.on('connect', async client => {
   await client.query("SET search_path TO public").catch(() => {});
   await client.query("SET timezone = 'Europe/Istanbul'").catch(() => {});
+  await client.query("SET statement_timeout = 15000").catch(() => {});
 });
+
+// Antrenmanın koordinatından IANA saat dilimini bulur (ör. "Europe/Berlin").
+// Uygulama yurtdışında da kullanıldığı için "geçti mi / yaklaşıyor mu" hesabı
+// antrenmanın YEREL saatine göre yapılmalı — training_datetime_utc bunun için var.
+// Koordinat yoksa veya çözülemezse Türkiye varsayılır (mevcut davranışla uyumlu).
+const resolveTrainingTimezone = (lat, lng) => {
+  const la = parseFloat(lat);
+  const ln = parseFloat(lng);
+  if (!Number.isFinite(la) || !Number.isFinite(ln)) return 'Europe/Istanbul';
+  try {
+    return tzLookup(la, ln) || 'Europe/Istanbul';
+  } catch {
+    return 'Europe/Istanbul';
+  }
+};
+
+// Antrenmanın başlangıç anını UTC olarak veren SQL ifadesi.
+// Normalde training_datetime_utc doludur (trigger hesaplar); henüz doldurulmamış
+// eski kayıtlar için tarih+saat'i saat dilimiyle anında çevirerek güvenli fallback sağlar.
+const trainingUtcExpr = (alias = 't') => {
+  const p = alias ? `${alias}.` : '';
+  return `COALESCE(${p}training_datetime_utc, (${p}training_date + ${p}training_time) AT TIME ZONE COALESCE(NULLIF(${p}training_timezone, ''), 'Europe/Istanbul'))`;
+};
 
 // =====================================================
 // REAL-TIME: SSE (Server-Sent Events)
@@ -434,6 +467,7 @@ function wallPostEmail({ teamName, teamId, posterName, posterAvatar, message, po
 
 // Şablon: Antrenman yorumu bildirimi
 function trainingCommentEmail({ commenterName, commenterAvatar, trainingTitle, trainingDate, comment, trainingId }) {
+  const trainingLink = trainingId ? `${APP_URL}/antrenmanlar?antrenman=${trainingId}` : `${APP_URL}/antrenmanlar`;
   const truncated = comment.length > 300 ? comment.slice(0, 300) + '...' : comment;
   const postDate = new Date().toLocaleString('tr-TR', {
     timeZone: 'Europe/Istanbul',
@@ -465,7 +499,7 @@ function trainingCommentEmail({ commenterName, commenterAvatar, trainingTitle, t
     </div>
 
     <div style="text-align:center;">
-      <a href="${APP_URL}/antrenmanlar"
+      <a href="${trainingLink}"
          style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
         Antrenmanı Gör →
@@ -475,7 +509,8 @@ function trainingCommentEmail({ commenterName, commenterAvatar, trainingTitle, t
 }
 
 // Şablon: Antrenman güncelleme bildirimi
-function trainingUpdateEmail({ teamName, trainingTitle, trainingDate, trainingTime, location, description, updaterName }) {
+function trainingUpdateEmail({ teamName, trainingTitle, trainingDate, trainingTime, location, description, updaterName, trainingId }) {
+  const trainingLink = trainingId ? `${APP_URL}/antrenmanlar?antrenman=${trainingId}` : `${APP_URL}/antrenmanlar`;
   return emailWrapper(`
     <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Antrenman Güncellendi</h2>
     <p style="margin:0 0 28px;color:#64748b;font-size:15px;line-height:1.6;">
@@ -495,7 +530,7 @@ function trainingUpdateEmail({ teamName, trainingTitle, trainingDate, trainingTi
     ${updaterName ? `<p style="color:#94a3b8;font-size:13px;margin:0 0 24px;">Güncelleyen: <strong style="color:#64748b;">${updaterName}</strong></p>` : ''}
 
     <div style="text-align:center;">
-      <a href="${APP_URL}/antrenmanlar"
+      <a href="${trainingLink}"
          style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
         Antrenmanı Gör →
@@ -538,7 +573,7 @@ function newTrainingEmail({ teamName, trainingTitle, trainingDate, trainingTime,
     </div>` : ''}
 
     <div style="text-align:center;">
-      <a href="${process.env.APP_URL || 'https://muuvlink.app'}/antrenmanlar"
+      <a href="${trainingLink}"
          style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
         Antrenmanları Gör →
@@ -548,7 +583,8 @@ function newTrainingEmail({ teamName, trainingTitle, trainingDate, trainingTime,
 }
 
 // Şablon 5: Antrenman hatırlatma
-function trainingReminderEmail({ teamName, trainingTitle, trainingDate, trainingTime, location, daysLeft }) {
+function trainingReminderEmail({ teamName, trainingTitle, trainingDate, trainingTime, location, daysLeft, trainingId }) {
+  const trainingLink = trainingId ? `${APP_URL}/antrenmanlar?antrenman=${trainingId}` : `${APP_URL}/antrenmanlar`;
   const urgency = daysLeft === 1 ? 'Yarın!' : `${daysLeft} gün kaldı`;
   const color   = daysLeft === 1 ? '#dc2626' : '#d97706';
   return emailWrapper(`
@@ -568,7 +604,7 @@ function trainingReminderEmail({ teamName, trainingTitle, trainingDate, training
     </div>
 
     <div style="text-align:center;">
-      <a href="${process.env.APP_URL || 'https://muuvlink.app'}/antrenmanlar"
+      <a href="${trainingLink}"
          style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
         Antrenmanı Görüntüle →
@@ -694,7 +730,7 @@ const updateUserStats = async (userId) => {
       `SELECT COUNT(*) as count
        FROM training_attendees ta
        JOIN trainings t ON ta.training_id = t.id
-       WHERE ta.user_id = $1 AND (t.training_date::date < CURRENT_DATE OR (t.training_date::date = CURRENT_DATE AND t.training_time::time < CURRENT_TIME::time))`,
+       WHERE ta.user_id = $1 AND ${trainingUtcExpr('t')} < NOW()`,
       [userId]
     );
 
@@ -731,7 +767,7 @@ app.get('/api/trainings/public', async (req, res) => {
       JOIN teams ON t.team_id = teams.id
       LEFT JOIN training_attendees ta ON t.id = ta.training_id
       WHERE t.is_public = true
-  AND t.training_date::date >= CURRENT_DATE
+  AND ${trainingUtcExpr('t')} >= NOW()
     `;
 
     const params = [];
@@ -1209,7 +1245,7 @@ app.post('/api/teams/:id/join', authenticateToken, async (req, res) => {
         message: `${joinerName}, ${team.name} takımına katıldı.`,
         type: 'team',
         refId: teamId,
-        url: `/takimlar`,
+        url: `/takimlar?takim=${teamId}`,
       });
 
       sendEmail({
@@ -1225,7 +1261,7 @@ app.post('/api/teams/:id/join', authenticateToken, async (req, res) => {
             <div style="font-size:18px;font-weight:700;color:#009295;">${joinerName}</div>
           </div>
           <div style="text-align:center;">
-            <a href="${process.env.APP_URL || 'https://muuvlink.app'}/takimlar"
+            <a href="${process.env.APP_URL || 'https://muuvlink.app'}/takimlar?takim=${teamId}"
                style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#ffffff;text-decoration:none;
                       padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
               Takımı Görüntüle →
@@ -1317,7 +1353,7 @@ app.post('/api/teams/:id/invite', authenticateToken, async (req, res) => {
         message: `${team.inviter_name} sizi "${team.name}" takımına davet etti.`,
         type: 'invitation',
         refId: teamId,
-        url: `/teams/${teamId}`,
+        url: `/takimlar?takim=${teamId}`,
       });
     }
 
@@ -1610,7 +1646,7 @@ app.post('/api/teams/:id/posts', authenticateToken, async (req, res) => {
         message: `${poster.user_name}: ${message.trim().slice(0, 80)}${message.length > 80 ? '...' : ''}`,
         type: 'team_post',
         refId: teamId,
-        url: `/teams/${teamId}`,
+        url: `/takimlar?takim=${teamId}&tab=duvar`,
       });
 
       // Mail
@@ -1678,11 +1714,15 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
     const teamIsPrivate = teamCheck.rows[0]?.is_private || false;
     const finalIsPublic = teamIsPrivate ? false : (is_public !== undefined ? is_public : true);
 
+    // Antrenmanın yapılacağı yerin saat dilimi — training_datetime_utc'yi DB trigger'ı bundan hesaplar
+    const trainingTimezone = resolveTrainingTimezone(location_lat, location_lng);
+
     const result = await pool.query(
       `INSERT INTO trainings (
         team_id, title, description, training_date, training_time, duration_minutes,
-        location_name, location_lat, location_lng, location_address, capacity, is_public, difficulty
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        location_name, location_lat, location_lng, location_address, capacity, is_public, difficulty,
+        training_timezone
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING *`,
       [
         team_id,
@@ -1698,6 +1738,7 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
         capacity || 20,
         finalIsPublic,
         difficulty || 'Orta',
+        trainingTimezone,
       ]
     );
 
@@ -1710,7 +1751,7 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
     // Yaklaşan diğer antrenmanları al (yeni oluşturulan hariç)
     const upcomingRes = await pool.query(
       `SELECT title, training_date, training_time, location_name FROM trainings
-       WHERE team_id = $1 AND id != $2 AND training_date::date >= CURRENT_DATE
+       WHERE team_id = $1 AND id != $2 AND ${trainingUtcExpr('')} >= NOW()
        ORDER BY training_date, training_time LIMIT 3`,
       [team_id, training.id]
     );
@@ -1727,7 +1768,7 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
         message: `${teamName}: ${title} antrenmanı eklendi.`,
         type: 'training',
         refId: training.id,
-        url: `/antrenmanlar`,
+        url: `/antrenmanlar?antrenman=${training.id}`,
       });
       // E-posta
       sendEmail({
@@ -1779,10 +1820,7 @@ app.get('/api/trainings', optionalAuth, async (req, res) => {
         OR t.is_public = true
         OR ($1::int IS NOT NULL AND tm_auth.team_id IS NOT NULL)
       )
-      AND (
-        t.training_date > CURRENT_DATE
-        OR (t.training_date = CURRENT_DATE AND t.training_time >= CURRENT_TIME)
-      )
+      AND ${trainingUtcExpr('t')} >= NOW()
     `;
 
     const params = [req.user?.id || null];
@@ -1842,10 +1880,7 @@ app.get('/api/trainings/my-joined', authenticateToken, async (req, res) => {
       JOIN teams ON t.team_id = teams.id
       JOIN training_attendees ta ON t.id = ta.training_id AND ta.user_id = $1
       LEFT JOIN training_attendees ta2 ON t.id = ta2.training_id
-      WHERE (
-        t.training_date::date > CURRENT_DATE
-        OR (t.training_date::date = CURRENT_DATE AND t.training_time::time >= CURRENT_TIME::time)
-      )
+      WHERE ${trainingUtcExpr('t')} >= NOW()
       GROUP BY t.id, teams.name, teams.sport, teams.avatar
       ORDER BY t.training_date ASC, t.training_time ASC
     `, [req.user.id]);
@@ -1874,10 +1909,7 @@ app.get('/api/trainings/my-team-trainings', authenticateToken, async (req, res) 
       AND NOT EXISTS (
         SELECT 1 FROM training_attendees WHERE training_id = t.id AND user_id = $1
       )
-      AND (
-        t.training_date::date > CURRENT_DATE
-        OR (t.training_date::date = CURRENT_DATE AND t.training_time::time >= CURRENT_TIME::time)
-      )
+      AND ${trainingUtcExpr('t')} >= NOW()
       GROUP BY t.id, teams.name, teams.sport, teams.avatar
       ORDER BY t.training_date ASC, t.training_time ASC
     `, [req.user.id]);
@@ -1923,10 +1955,7 @@ app.get('/api/trainings/nearby', optionalAuth, async (req, res) => {
          JOIN teams ON t.team_id = teams.id
          WHERE t.location_lat IS NOT NULL
            AND t.location_lng IS NOT NULL
-           AND (
-             t.training_date::date > CURRENT_DATE
-             OR (t.training_date::date = CURRENT_DATE AND t.training_time::time >= CURRENT_TIME::time)
-           )
+           AND ${trainingUtcExpr('t')} >= NOW()
            AND ${privacyFilter}
        ) sub
        WHERE distance <= $3
@@ -2081,7 +2110,7 @@ app.post('/api/trainings/:id/join', authenticateToken, async (req, res) => {
         message: `${joinerName}, ${training.title} antrenmanına katıldı.`,
         type: 'training_join',
         refId: trainingId,
-        url: `/antrenmanlar`,
+        url: `/antrenmanlar?antrenman=${trainingId}`,
       });
 
       sendEmail({
@@ -2093,7 +2122,7 @@ app.post('/api/trainings/:id/join', authenticateToken, async (req, res) => {
             <strong>${joinerName}</strong>, <strong>${teamName}</strong> takımının <strong>${training.title}</strong> antrenmanına katıldı.
           </p>
           <div style="text-align:center;">
-            <a href="${process.env.APP_URL || 'https://muuvlink.app'}/antrenmanlar"
+            <a href="${trainingLink}"
                style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#ffffff;text-decoration:none;
                       padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
               Antrenmanı Görüntüle →
@@ -2170,7 +2199,8 @@ app.post('/api/trainings/:id/comments', authenticateToken, async (req, res) => {
     if (training && commenter) {
       const trainingDate = formatTrDate(training.training_date);
 
-      // Katılımcılar + takım sahibi (yorumcu hariç, tekrarsız)
+      // Katılımcılar + takım sahibi + sohbete daha önce katılmış yorumcular
+      // (yorumu yazan hariç, tekrarsız)
       const recipientsResult = await pool.query(
         `SELECT DISTINCT u.id, u.name, u.email
          FROM users u
@@ -2180,6 +2210,10 @@ app.post('/api/trainings/:id/comments', authenticateToken, async (req, res) => {
            UNION
            -- Takım sahibi / adminler
            SELECT user_id FROM team_members WHERE team_id = $2 AND role IN ('owner','admin')
+           UNION
+           -- Bu antrenmana daha önce yorum yapmış kişiler (katılmasalar bile
+           -- kendi başlattıkları sohbetin devamını görebilsinler)
+           SELECT user_id FROM training_comments WHERE training_id = $1
          )
          AND u.id != $3`,
         [trainingId, training.team_id, req.user.id]
@@ -2193,7 +2227,7 @@ app.post('/api/trainings/:id/comments', authenticateToken, async (req, res) => {
             message: `${commenter.name}: ${comment.trim().slice(0, 80)}${comment.length > 80 ? '...' : ''}`,
             type: 'training_comment',
             refId: trainingId,
-            url: `/antrenmanlar`,
+            url: `/antrenmanlar?antrenman=${trainingId}`,
           });
 
           sendEmail({
@@ -2244,14 +2278,18 @@ app.put('/api/trainings/:id', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Only team owners/admins can edit trainings' });
     }
 
+    // Konum değişmiş olabilir → saat dilimini yeniden hesapla (trigger UTC'yi günceller)
+    const trainingTimezone = resolveTrainingTimezone(location_lat, location_lng);
+
     const result = await pool.query(
       `UPDATE trainings
        SET title = $1, description = $2, training_date = $3, training_time = $4,
            location_name = $5, location_lat = $6, location_lng = $7,
-           capacity = $8, difficulty = $9, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $10
+           capacity = $8, difficulty = $9, training_timezone = $10,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $11
        RETURNING *`,
-      [title, description, training_date, training_time, location_name, location_lat || null, location_lng || null, capacity, difficulty, trainingId]
+      [title, description, training_date, training_time, location_name, location_lat || null, location_lng || null, capacity, difficulty, trainingTimezone, trainingId]
     );
 
     const updated = result.rows[0];
@@ -2282,7 +2320,7 @@ app.put('/api/trainings/:id', authenticateToken, async (req, res) => {
           message: `${updaterName || 'Antrenör'} antrenman bilgilerini güncelledi.`,
           type: 'training_update',
           refId: trainingId,
-          url: `/antrenmanlar`,
+          url: `/antrenmanlar?antrenman=${trainingId}`,
         });
         sendEmail({
           to: attendee.email,
@@ -2295,6 +2333,7 @@ app.put('/api/trainings/:id', authenticateToken, async (req, res) => {
             location: location_name,
             description,
             updaterName,
+            trainingId,
           }),
         });
       } catch (notifErr) {
@@ -2420,7 +2459,7 @@ app.get('/api/users/:id/activity', authenticateToken, async (req, res) => {
          AND t.training_date::date <= $3::date
          AND (
            t.training_date::date < $3::date
-           OR (t.training_date::date = $3::date AND t.training_time <= CURRENT_TIME)
+           OR (t.training_date::date = $3::date AND ${trainingUtcExpr('t')} <= NOW())
          )
        GROUP BY t.training_date::date
        ORDER BY date ASC`,
@@ -2618,7 +2657,7 @@ app.get('/api/admin/stats', isAdmin, async (req, res) => {
       pool.query('SELECT COUNT(*) FROM users'),
       pool.query('SELECT COUNT(*) FROM trainings'),
       pool.query('SELECT COUNT(*) FROM teams'),
-      pool.query(`SELECT COUNT(*) FROM trainings WHERE training_date::date < CURRENT_DATE OR (training_date::date = CURRENT_DATE AND training_time::time < CURRENT_TIME::time)`),
+      pool.query(`SELECT COUNT(*) FROM trainings WHERE ${trainingUtcExpr('')} < NOW()`),
       pool.query("SELECT COUNT(*) FROM contact_messages WHERE is_read = false"),
       pool.query("SELECT id, name, email, created_at FROM users ORDER BY created_at DESC LIMIT 5"),
     ]);
@@ -2839,7 +2878,7 @@ app.post('/api/contact', async (req, res) => {
             <p style="margin:0;color:#334155;line-height:1.7;white-space:pre-wrap;">${message}</p>
           </div>
           <div style="margin-top:24px;text-align:center;">
-            <a href="${APP_URL}?page=admin&tab=contact"
+            <a href="${APP_URL}/admin.html?tab=messages"
                style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;">
               Panelde Görüntüle →
             </a>
@@ -3608,19 +3647,16 @@ app.post('/api/auth/reset-password', async (req, res) => {
 
 async function sendTrainingReminders() {
   try {
-    const today = new Date();
-
     for (const daysLeft of [3, 1]) {
-      const targetDate = new Date(today);
-      targetDate.setDate(today.getDate() + daysLeft);
-      const dateStr = targetDate.toISOString().slice(0, 10);
-
+      // "3 gün / 1 gün kaldı" hesabı antrenmanın KENDİ saat dilimindeki bugüne göre
+      // yapılır — yurtdışındaki antrenmanlar için doğru güne denk gelsin diye.
       const trainings = await pool.query(
         `SELECT t.*, teams.name as team_name
          FROM trainings t
          JOIN teams ON teams.id = t.team_id
-         WHERE t.training_date = $1`,
-        [dateStr]
+         WHERE t.training_date =
+           ((NOW() AT TIME ZONE COALESCE(NULLIF(t.training_timezone, ''), 'Europe/Istanbul'))::date + $1::int)`,
+        [daysLeft]
       );
 
       for (const training of trainings.rows) {
@@ -3645,7 +3681,7 @@ async function sendTrainingReminders() {
             message: notifMsg,
             type: 'training_reminder',
             refId: training.id,
-            url: `/antrenmanlar`,
+            url: `/antrenmanlar?antrenman=${training.id}`,
           });
 
           sendEmail({
@@ -3658,6 +3694,7 @@ async function sendTrainingReminders() {
               trainingTime: training.training_time,
               location: training.location_name,
               daysLeft,
+              trainingId: training.id,
             }),
           }).catch(e => console.error('Reminder email error:', e.message));
         }

@@ -154,11 +154,10 @@ const _placeType = (cls, typ, lang="tr") => {
 
 // Hafta bazlı marka renk rotasyonu — aynı hafta içindeki antrenmanlar aynı rengi paylaşır,
 // haftadan haftaya değişir. Hepsi beyaz üzerinde WCAG AA kontrastlı (≥ 4.5:1).
-const WEEK_ACCENT_COLORS = ["#009295", "#6d28d9", "#b45309", "#b91c1c", "#0369a1", "#047857"];
-const weekAccentColor = (dateObj) => {
-  const weekIndex = Math.floor(dateObj.getTime() / (7 * 24 * 60 * 60 * 1000));
-  const idx = ((weekIndex % WEEK_ACCENT_COLORS.length) + WEEK_ACCENT_COLORS.length) % WEEK_ACCENT_COLORS.length;
-  return WEEK_ACCENT_COLORS[idx];
+const TRAINING_ACCENT_COLORS = ["#C71B52", "#4D0C3E", "#2E0C38", "#0E1122", "#17506E", "#60A4A1"];
+const trainingAccentColor = (id) => {
+  const hash = ((id * 2654435761) >>> 0);
+  return TRAINING_ACCENT_COLORS[hash % TRAINING_ACCENT_COLORS.length];
 };
 
 const DEFAULT_MOTTOS = {
@@ -1559,8 +1558,18 @@ export default function Muuvlink() {
           showToast(notification.title || notification.body || "Yeni bildirim", "success");
         });
         PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
-          const page = action.notification.data?.page;
-          if (page) setCurrentPage(page);
+          // Backend push data'sı { type, refId, url } gönderir — url ilgili takım/antrenman detayına götürür
+          const data = action.notification.data || {};
+          if (navigateToNotificationTarget(data.url)) return;
+          // Geriye dönük: url yoksa type + refId'den hedefi çıkar
+          if (data.refId && String(data.type || "").startsWith("training")) {
+            fetchTrainingDetails(data.refId);
+          } else if (data.refId && ["team", "invitation", "team_post"].includes(data.type)) {
+            fetchTeamDetails(data.refId);
+            setCurrentPage("teams");
+          } else if (data.page) {
+            setCurrentPage(data.page);
+          }
         });
 
         const perm = await PushNotifications.requestPermissions();
@@ -1570,6 +1579,48 @@ export default function Muuvlink() {
       } catch (_) {}
     };
     initPush();
+  }, []);
+
+  // Universal Links / App Links — native'de mail linkine tıklanınca uygulamayı aç
+  useEffect(() => {
+    if (!isNative) return;
+    let listener;
+    import("@capacitor/app").then(({ App }) => {
+      listener = App.addListener("appUrlOpen", (event) => {
+        try {
+          const url = new URL(event.url);
+          const params = new URLSearchParams(url.search);
+          const pathname = url.pathname;
+
+          const acceptInvite = params.get("accept_invite");
+          const resetToken   = params.get("reset_token");
+          const takimId      = params.get("takim");
+
+          if (resetToken) {
+            setResetToken(resetToken);
+            setCurrentPage("reset-password");
+          } else if (acceptInvite) {
+            const token = localStorage.getItem("token");
+            if (token) {
+              fetch(`${API_URL}/teams/${acceptInvite}/accept-invite`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${token}` },
+              }).then(r => r.json()).then(data => {
+                if (data.message) { showToast(t("notifications.inviteAccepted"), "success"); fetchTeamDetails(acceptInvite); }
+                else showToast(data.error || t("toast.inviteNotFound"), "error");
+              }).catch(() => showToast(t("common.error"), "error"));
+            }
+            setCurrentPage("teams");
+          } else if (!navigateToNotificationTarget(event.url)) {
+            // Bilinen bir hedef çıkmadıysa sayfa bazında yönlendir
+            if (pathname.startsWith("/takimlar")) setCurrentPage("teams");
+            else if (pathname.startsWith("/antrenmanlar")) setCurrentPage("trainings");
+            else if (pathname.startsWith("/profil")) setCurrentPage("profile");
+          }
+        } catch (_) {}
+      });
+    }).catch(() => {});
+    return () => { listener?.remove?.(); };
   }, []);
 
   // URL'de reset_token / auth=register / accept_invite varsa yönlendir
@@ -2523,6 +2574,50 @@ export default function Muuvlink() {
     }
   };
 
+  // Bildirim/deep-link hedefine git.
+  // Backend action_url'i "/antrenmanlar?antrenman=12" veya "/takimlar?takim=3" formatında üretir.
+  // Hem in-app bildirim tıklaması, hem push tıklaması, hem de Universal Link buradan geçer.
+  const navigateToNotificationTarget = (rawUrl) => {
+    if (!rawUrl) return false;
+    let pathname = "";
+    let params;
+    try {
+      // Mutlak URL de (mail linki) göreli path de (bildirim action_url) desteklenir
+      const u = new URL(rawUrl, window.location.origin);
+      pathname = u.pathname;
+      params = u.searchParams;
+    } catch {
+      return false;
+    }
+
+    const takimId     = params.get("takim");
+    const antrenmanId = params.get("antrenman");
+
+    if (antrenmanId) {
+      fetchTrainingDetails(antrenmanId);
+      return true;
+    }
+    if (takimId) {
+      fetchTeamDetails(takimId);
+      setCurrentPage("teams");
+      return true;
+    }
+
+    const page = PATH_TO_PAGE[pathname.replace(/\/+$/, "") || "/"];
+    if (page) {
+      setCurrentPage(page);
+      return true;
+    }
+    return false;
+  };
+
+  const handleNotificationClick = (notif) => {
+    if (!notif) return;
+    if (!notif.is_read) handleMarkNotificationRead(notif.id);
+    const moved = navigateToNotificationTarget(notif.action_url);
+    if (moved) setShowNotifications(false);
+  };
+
   const handleMarkNotificationRead = async (notificationId) => {
     try {
       const token = localStorage.getItem("token");
@@ -2760,8 +2855,7 @@ export default function Muuvlink() {
   const localeMap = { tr: "tr-TR", en: "en-US", de: "de-DE" };
   const month = dateObj.toLocaleDateString(localeMap[lang] || "en-US", { month: "short", timeZone: "UTC" }).toLocaleUpperCase("en-US");
 
-  // Haftaya göre dönen marka renkleri — aynı hafta aynı rengi paylaşır, WCAG AA kontrastlı
-  const accentColor = weekAccentColor(dateObj);
+  const accentColor = trainingAccentColor(training.id);
 
   return (
     <div
@@ -2770,8 +2864,8 @@ export default function Muuvlink() {
     >
       {/* Sol: Takvim tarihi */}
       <div className="flex flex-col items-center justify-center w-20 flex-shrink-0 pr-5">
-        <span className="font-display font-bold leading-none" style={{fontSize:"3rem", color: accentColor, fontVariantNumeric:"tabular-nums"}}>{day}</span>
-        <span className="font-display text-[11px] font-bold tracking-[0.18em] mt-1.5 text-slate-400 uppercase">{month}</span>
+        <span className="font-smooch leading-none" style={{fontSize:"3rem", fontWeight:800, color: accentColor, fontVariantNumeric:"tabular-nums", letterSpacing:"-0.02em"}}>{day}</span>
+        <span className="font-smooch text-[11px] tracking-[0.18em] mt-0.5 uppercase" style={{fontWeight:600, color: accentColor, opacity: 0.55}}>{month}</span>
       </div>
 
       {/* Dikey ayraç */}
@@ -5019,7 +5113,7 @@ export default function Muuvlink() {
       setFormData((f) => ({
         ...f,
         team_id: parseInt(teamId),
-        is_public: team?.is_private ? false : f.is_public,
+        is_public: !team?.is_private,
       }));
     };
 
@@ -5090,14 +5184,9 @@ export default function Muuvlink() {
                 </div>
 
                 {selectedTeamIsPrivate ? (
-                  <div className="flex items-center gap-2.5 px-4 py-3 bg-slate-50 rounded-xl text-sm text-slate-500 border border-slate-200">
-                    <Lock className="w-4 h-4 flex-shrink-0" />
-                    <span>{t("createTraining.privateTeamNote")}</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between px-4 py-3 bg-brand-50 rounded-xl border border-brand-100">
+                  <div className="flex items-center justify-between px-4 py-3 bg-slate-50 rounded-xl border border-slate-200">
                     <span className="text-sm text-slate-700 flex items-center gap-2">
-                      <Globe className="w-4 h-4 text-brand-500" /> {t("createTraining.publicTraining")}
+                      <Globe className="w-4 h-4 text-slate-400" /> {t("createTraining.openToPublic")}
                     </span>
                     <button
                       type="button"
@@ -5106,6 +5195,11 @@ export default function Muuvlink() {
                     >
                       <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${formData.is_public ? "left-6" : "left-1"}`} />
                     </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2.5 px-4 py-3 bg-brand-50 rounded-xl text-sm text-slate-600 border border-brand-100">
+                    <Globe className="w-4 h-4 text-brand-500 flex-shrink-0" />
+                    <span>{t("createTraining.publicTeamNote")}</span>
                   </div>
                 )}
               </div>
@@ -5487,12 +5581,16 @@ export default function Muuvlink() {
               {notifications.map((notif) => (
                 <div
                   key={notif.id}
-                  className={`p-4 hover:bg-gray-50 ${!notif.is_read ? "bg-blue-50" : ""}`}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleNotificationClick(notif)}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleNotificationClick(notif); }}
+                  className={`p-4 hover:bg-gray-50 cursor-pointer ${!notif.is_read ? "bg-blue-50" : ""}`}
                 >
                   <div className="flex justify-between items-start mb-2">
                     <h4 className="font-semibold">{notif.title}</h4>
                     <button
-                      onClick={() => handleDeleteNotification(notif.id)}
+                      onClick={(e) => { e.stopPropagation(); handleDeleteNotification(notif.id); }}
                       className="text-gray-400 hover:text-red-600"
                     >
                       <X className="w-4 h-4" />
@@ -5505,7 +5603,7 @@ export default function Muuvlink() {
                     </span>
                     {!notif.is_read && (
                       <button
-                        onClick={() => handleMarkNotificationRead(notif.id)}
+                        onClick={(e) => { e.stopPropagation(); handleMarkNotificationRead(notif.id); }}
                         className="text-xs text-blue-600 hover:underline"
                       >
                         {t("notifications.markRead")}
