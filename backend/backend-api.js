@@ -3,6 +3,45 @@ require('dotenv').config();
 // Render'da IPv6 üzerinden SMTP bağlantısı çalışmıyor — IPv4 öncelikli yap
 const dns = require('dns');
 dns.setDefaultResultOrder('ipv4first');
+
+// Bu sunucunun ağ katmanında DNS sorguları (UDP) ara ara kayboluyor. Çözümleme
+// başarısız olduğunda veritabanı ve mail bağlantıları komple düşüyor, kullanıcıya
+// 500 olarak yansıyordu (27.07.2026'da gün içinde defalarca yaşandı).
+//
+// Çözülen adresleri önbelleğe alır ve sorgu başarısız olursa SON BİLİNEN adresi
+// kullanır. Geçici DNS kesintileri böylece kullanıcıya yansımaz. Kalıcı çözüm
+// değil — altyapı kaynaklı kararsızlığı maskeler.
+const DNS_CACHE_TTL_MS = 5 * 60 * 1000;
+const dnsCache = new Map();
+const nativeLookup = dns.lookup.bind(dns);
+
+dns.lookup = function cachedLookup(hostname, options, callback) {
+  if (typeof options === 'function') { callback = options; options = {}; }
+  if (typeof options === 'number') { options = { family: options }; }
+  options = options || {};
+
+  // all:true farklı bir dönüş şekli kullanıyor — önbelleğe karışmadan geç
+  if (options.all) return nativeLookup(hostname, options, callback);
+
+  const key = `${hostname}|${options.family || 0}`;
+  const cached = dnsCache.get(key);
+
+  if (cached && Date.now() - cached.at < DNS_CACHE_TTL_MS) {
+    return process.nextTick(() => callback(null, cached.address, cached.family));
+  }
+
+  nativeLookup(hostname, options, (err, address, family) => {
+    if (err) {
+      if (cached) {
+        console.warn(`[DNS] ${hostname} çözümlenemedi (${err.code || err.message}), önbellekteki adres kullanılıyor`);
+        return callback(null, cached.address, cached.family);
+      }
+      return callback(err);
+    }
+    dnsCache.set(key, { address, family, at: Date.now() });
+    callback(null, address, family);
+  });
+};
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
