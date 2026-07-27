@@ -4117,6 +4117,9 @@ export default function Muuvlink() {
     if (!selectedTraining) return null;
 
     const isOwner = user && selectedTraining.team_owner_id === user.id;
+    // Düzenleme/silme yetkisi backend'den gelir (sahip + antrenör + kaptan).
+    // can_manage gelmezse eski davranışa (yalnızca sahip) düşer.
+    const canManage = user ? (selectedTraining.can_manage ?? isOwner) : false;
     const isParticipant = user && selectedTraining.attendees?.some(a => a.id === user.id);
     const isFull = (selectedTraining.attendees?.length || 0) >= selectedTraining.capacity;
     const isMyTraining = false; // herkes join/leave yapabilir
@@ -4178,7 +4181,7 @@ export default function Muuvlink() {
               >
                 <Link className="w-3.5 h-3.5" /> {t("common.copyLink")}
               </button>
-              {user && !isOwner && (
+              {user && !canManage && (
                 <button
                   onClick={() => setReportModal({ type: "training", id: selectedTraining.id })}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-500 rounded-full text-sm font-medium transition-colors"
@@ -4189,7 +4192,7 @@ export default function Muuvlink() {
             </div>
           </div>
 
-          {isOwner && (
+          {canManage && (
             <div className="flex gap-2 mb-6">
               <button
                 onClick={() => setEditMode(!editMode)}
@@ -4208,7 +4211,7 @@ export default function Muuvlink() {
             </div>
           )}
 
-          {isOwner && editMode && (() => {
+          {canManage && editMode && (() => {
             const iCls = "w-full h-12 px-4 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition-colors";
             const sCls = `${iCls} appearance-none cursor-pointer`;
             const lCls = "block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5";

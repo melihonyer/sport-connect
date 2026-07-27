@@ -225,6 +225,11 @@ pool.query = async (...args) => {
   }
 };
 
+// Antrenmanı oluşturma/düzenleme/silme yetkisi olan takım rolleri.
+// Tek yerden yönetilir ki üç işlem arasında yeniden ayrışmasın.
+// ('admin' sistemde kullanılmıyor ama elle atanmış olma ihtimaline karşı korunuyor.)
+const TRAINING_MANAGER_ROLES = ['owner', 'coach', 'captain', 'admin'];
+
 // Antrenmanın koordinatından IANA saat dilimini bulur (ör. "Europe/Berlin").
 // Uygulama yurtdışında da kullanıldığı için "geçti mi / yaklaşıyor mu" hesabı
 // antrenmanın YEREL saatine göre yapılmalı — training_datetime_utc bunun için var.
@@ -1730,7 +1735,7 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
       [team_id, req.user.id]
     );
 
-    if (memberCheck.rows.length === 0 || !['owner', 'coach', 'captain'].includes(memberCheck.rows[0].role)) {
+    if (memberCheck.rows.length === 0 || !TRAINING_MANAGER_ROLES.includes(memberCheck.rows[0].role)) {
       return res.status(403).json({ error: 'Antrenman oluşturmak için takımın sahibi, antrenörü veya kaptanı olmanız gerekiyor.' });
     }
 
@@ -2053,6 +2058,20 @@ app.get('/api/trainings/:id', optionalAuth, async (req, res) => {
       }
     }
 
+    // Kullanıcının bu takımdaki rolü ve antrenmanı yönetip yönetemeyeceği.
+    // Yetki kuralı tek yerde (backend) kalsın diye hazır boolean olarak döndürülür;
+    // arayüz düzenle/sil butonlarını buna göre gösterir.
+    training.my_role = null;
+    training.can_manage = false;
+    if (req.user) {
+      const roleResult = await pool.query(
+        'SELECT role FROM team_members WHERE team_id = $1 AND user_id = $2',
+        [training.team_id, req.user.id]
+      );
+      training.my_role = roleResult.rows[0]?.role || null;
+      training.can_manage = TRAINING_MANAGER_ROLES.includes(training.my_role);
+    }
+
     const attendeesResult = await pool.query(
       `SELECT u.id, u.name, u.avatar, ta.status, ta.joined_at
        FROM training_attendees ta
@@ -2316,8 +2335,10 @@ app.put('/api/trainings/:id', authenticateToken, async (req, res) => {
       [trainingResult.rows[0].team_id, req.user.id]
     );
 
-    if (memberCheck.rows.length === 0 || !['owner', 'admin'].includes(memberCheck.rows[0].role)) {
-      return res.status(403).json({ error: 'Only team owners/admins can edit trainings' });
+    // Antrenman oluşturabilen roller düzenleyebilmeli de (POST /api/trainings ile aynı liste).
+    // 'admin' pratikte kullanılmıyor ama elle atanmış olma ihtimaline karşı korunuyor.
+    if (memberCheck.rows.length === 0 || !TRAINING_MANAGER_ROLES.includes(memberCheck.rows[0].role)) {
+      return res.status(403).json({ error: 'Antrenmanı düzenlemek için takımın sahibi, antrenörü veya kaptanı olmanız gerekiyor.' });
     }
 
     // Konum değişmiş olabilir → saat dilimini yeniden hesapla (trigger UTC'yi günceller)
@@ -2408,8 +2429,8 @@ app.delete('/api/trainings/:id', authenticateToken, async (req, res) => {
       [trainingResult.rows[0].team_id, req.user.id]
     );
 
-    if (memberCheck.rows.length === 0 || !['owner', 'admin'].includes(memberCheck.rows[0].role)) {
-      return res.status(403).json({ error: 'Only team owners/admins can delete trainings' });
+    if (memberCheck.rows.length === 0 || !TRAINING_MANAGER_ROLES.includes(memberCheck.rows[0].role)) {
+      return res.status(403).json({ error: 'Antrenmanı silmek için takımın sahibi, antrenörü veya kaptanı olmanız gerekiyor.' });
     }
 
     await pool.query('DELETE FROM trainings WHERE id = $1', [trainingId]);
