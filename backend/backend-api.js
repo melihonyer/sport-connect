@@ -2164,7 +2164,7 @@ app.post('/api/trainings/:id/join', authenticateToken, async (req, res) => {
             <strong>${joinerName}</strong>, <strong>${teamName}</strong> takımının <strong>${training.title}</strong> antrenmanına katıldı.
           </p>
           <div style="text-align:center;">
-            <a href="${trainingLink}"
+            <a href="${APP_URL}/antrenmanlar?antrenman=${trainingId}"
                style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#ffffff;text-decoration:none;
                       padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
               Antrenmanı Görüntüle →
