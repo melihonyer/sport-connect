@@ -540,7 +540,8 @@ function trainingUpdateEmail({ teamName, trainingTitle, trainingDate, trainingTi
 }
 
 // Şablon 4: Yeni antrenman bildirimi
-function newTrainingEmail({ teamName, trainingTitle, trainingDate, trainingTime, location, description, upcomingTrainings }) {
+function newTrainingEmail({ teamName, trainingTitle, trainingDate, trainingTime, location, description, upcomingTrainings, trainingId }) {
+  const trainingLink = trainingId ? `${APP_URL}/antrenmanlar?antrenman=${trainingId}` : `${APP_URL}/antrenmanlar`;
   const upcoming = (upcomingTrainings || []).slice(0, 3).map(t => `
     <tr>
       <td style="padding:10px 0;border-bottom:1px solid #f1f5f9;">
@@ -576,7 +577,7 @@ function newTrainingEmail({ teamName, trainingTitle, trainingDate, trainingTime,
       <a href="${trainingLink}"
          style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
-        Antrenmanları Gör →
+        Antrenmanı Gör →
       </a>
     </div>
   `);
@@ -1782,6 +1783,7 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
           location: location_name,
           description,
           upcomingTrainings: upcomingRes.rows,
+          trainingId: training.id,
         }),
       }).catch(e => console.error('Training email error:', e.message));
     }
