@@ -201,6 +201,27 @@ pool.on('connect', async client => {
   await client.query("SET statement_timeout = 15000").catch(() => {});
 });
 
+// Bu sunucunun ağ katmanında yeni TCP/TLS bağlantısı kurmak ARALIKLI olarak
+// başarısız oluyor (PMTU kaynaklı; MSS clamp ile azaltıldı ama tamamen bitmedi).
+// Tek bir başarısız bağlantı, işlemin ortasında kullanıcıya 500 olarak yansıyordu.
+//
+// Sadece BAĞLANTI KURULAMADAN başarısız olan sorgular tekrarlanır: sorgu sunucuya
+// hiç ulaşmadığı için tekrar etmek yan etki üretmez. Sorgu gönderildikten sonra
+// kopan bağlantılar ("Connection terminated unexpectedly" vb.) bilerek KAPSAM DIŞI —
+// onları tekrarlamak çift kayıt oluşturabilir.
+const DB_CONNECT_FAILED = /timeout exceeded when trying to connect|Connection terminated due to connection timeout/i;
+const rawPoolQuery = pool.query.bind(pool);
+pool.query = async (...args) => {
+  try {
+    return await rawPoolQuery(...args);
+  } catch (err) {
+    if (!DB_CONNECT_FAILED.test(err?.message || '')) throw err;
+    console.warn('[DB] Bağlantı kurulamadı, tekrar deneniyor:', err.message);
+    await new Promise(r => setTimeout(r, 300));
+    return await rawPoolQuery(...args);
+  }
+};
+
 // Antrenmanın koordinatından IANA saat dilimini bulur (ör. "Europe/Berlin").
 // Uygulama yurtdışında da kullanıldığı için "geçti mi / yaklaşıyor mu" hesabı
 // antrenmanın YEREL saatine göre yapılmalı — training_datetime_utc bunun için var.
@@ -3369,6 +3390,20 @@ app.get('/api/admin/analytics', isAdmin, async (req, res) => {
 
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date() });
+});
+
+// Gerçek sağlık kontrolü: veritabanına da dokunur.
+// Ana sayfa statik HTML döndürdüğü için DB çökse bile 200 verir; bu uçtan uca
+// kontrol olmadan izleme aracı arızayı göremez. DB'ye ulaşılamazsa 503 döner.
+app.get('/api/health', async (req, res) => {
+  const started = Date.now();
+  try {
+    await pool.query('SELECT 1');
+    res.json({ status: 'ok', db: 'ok', dbLatencyMs: Date.now() - started });
+  } catch (err) {
+    console.error('[HEALTH] DB erişilemiyor:', err.message);
+    res.status(503).json({ status: 'degraded', db: 'error', dbLatencyMs: Date.now() - started });
+  }
 });
 
 // Resim URL'sinden baskın rengi çıkar (frontend CORS sorununu bypass eder)
