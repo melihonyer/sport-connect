@@ -5117,16 +5117,28 @@ export default function Muuvlink() {
       }));
     };
 
+    // Çift gönderim koruması: yavaş bağlantıda istek uzun sürünce kullanıcı butona
+    // tekrar basıp aynı antrenmanı iki kez oluşturabiliyordu.
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const submitOnce = async () => {
+      if (isSubmitting) return;
+      setIsSubmitting(true);
+      try {
+        await handleCreateTraining(formData);
+      } finally {
+        setIsSubmitting(false);
+      }
+    };
+
     const handleSubmit = (e) => {
       e.preventDefault();
+      if (isSubmitting) return;
       if (!formData.location_lat || !formData.location_lng) {
-        showConfirm(
-          t("createTraining.noGpsConfirm"),
-          () => handleCreateTraining(formData)
-        );
+        showConfirm(t("createTraining.noGpsConfirm"), submitOnce);
         return;
       }
-      handleCreateTraining(formData);
+      submitOnce();
     };
 
     const inputCls = "w-full h-12 px-4 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition-colors";
@@ -5331,11 +5343,12 @@ export default function Muuvlink() {
             </button>
             <button
               type="submit"
-              disabled={eligibleTeams.length === 0}
-              className="flex-1 h-12 rounded-xl text-sm font-semibold text-white disabled:opacity-50 transition-all hover:opacity-90 hover:shadow-lg"
+              disabled={eligibleTeams.length === 0 || isSubmitting}
+              className="flex-1 h-12 rounded-xl text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:opacity-90 hover:shadow-lg flex items-center justify-center gap-2"
               style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}
             >
-              {t("createTraining.submitBtn")}
+              {isSubmitting && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+              {isSubmitting ? t("createTraining.submitting") : t("createTraining.submitBtn")}
             </button>
           </div>
         </div>

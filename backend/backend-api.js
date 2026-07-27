@@ -167,7 +167,10 @@ async function uploadToSupabase(bucket, fileName, buffer, mimetype) {
 // Render/Supabase için: PGHOST, PGPORT, PGDATABASE, PGUSER, PGPASSWORD set edin
 // connectionTimeoutMillis: yeni bağlantı kurulamazsa sonsuza kadar beklemek yerine hata dön.
 // idleTimeoutMillis: boşta bekleyen bağlantıları pool'da tutmayıp serbest bırak (leak önleme).
-const POOL_TIMEOUTS = { connectionTimeoutMillis: 10000, idleTimeoutMillis: 30000 };
+// connectionTimeoutMillis kısa tutulur: bağlantı kurulamıyorsa hızlıca pes edip
+// tekrar denemek, kullanıcıyı 20+ saniye bekletmekten iyidir (retry ile birlikte
+// en kötü durum ~7sn). Uzun bekleme, kullanıcının butona tekrar basmasına yol açıyordu.
+const POOL_TIMEOUTS = { connectionTimeoutMillis: 3000, idleTimeoutMillis: 30000 };
 
 const pool = process.env.PGHOST
   ? new Pool({
@@ -1735,6 +1738,22 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
     const teamCheck = await pool.query('SELECT is_private FROM teams WHERE id = $1', [team_id]);
     const teamIsPrivate = teamCheck.rows[0]?.is_private || false;
     const finalIsPublic = teamIsPrivate ? false : (is_public !== undefined ? is_public : true);
+
+    // Çift gönderim koruması: yavaş bağlantıda istek asılı kalınca kullanıcı butona
+    // tekrar basıp aynı antrenmanı iki kez oluşturabiliyor. Aynı takımda aynı
+    // başlık/tarih/saat ile son 2 dakikada bir kayıt varsa yenisini yaratmak yerine
+    // mevcut olanı döndür — istek başarılı görünür ama tekrar kayıt oluşmaz.
+    const duplicate = await pool.query(
+      `SELECT * FROM trainings
+        WHERE team_id = $1 AND title = $2 AND training_date = $3 AND training_time = $4
+          AND created_at > NOW() - INTERVAL '2 minutes'
+        ORDER BY id DESC LIMIT 1`,
+      [team_id, title, training_date, training_time]
+    );
+    if (duplicate.rows.length > 0) {
+      console.warn('[TRAINING] Çift gönderim engellendi, mevcut kayıt döndürüldü:', duplicate.rows[0].id);
+      return res.status(201).json({ message: 'Training created successfully', training: duplicate.rows[0] });
+    }
 
     // Antrenmanın yapılacağı yerin saat dilimi — training_datetime_utc'yi DB trigger'ı bundan hesaplar
     const trainingTimezone = resolveTrainingTimezone(location_lat, location_lng);

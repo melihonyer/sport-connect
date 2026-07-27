@@ -369,6 +369,7 @@ export const translations = {
     descLabel:      { tr: "Açıklama",                     en: "Description",             de: "Beschreibung"            },
     descPlaceholder:{ tr: "Antrenman hakkında bilgi ver…",en: "Describe the training…",  de: "Training beschreiben…"   },
     submitBtn:      { tr: "Antrenman Oluştur",            en: "Create Training",         de: "Training erstellen"      },
+    submitting:     { tr: "Oluşturuluyor...",             en: "Creating...",             de: "Wird erstellt..."        },
     creating:       { tr: "Oluşturuluyor…",               en: "Creating…",               de: "Wird erstellt…"          },
     fillAll:        { tr: "Lütfen tüm alanları doldurun.", en: "Please fill in all fields.", de: "Bitte alle Felder ausfüllen." },
     success:        { tr: "Antrenman oluşturuldu!",        en: "Training created!",       de: "Training erstellt!"      },
@@ -384,6 +385,10 @@ export const translations = {
                       en: "This team is private — training is only visible to members.",
                       de: "Dieses Team ist privat — das Training ist nur für Mitglieder sichtbar." },
     publicTraining: { tr: "Herkese Açık Antrenman",        en: "Public Training",         de: "Öffentliches Training"   },
+    publicTeamNote: { tr: "Bu takım herkese açık — antrenman otomatik olarak herkese görünür.",
+                      en: "This team is public — training is automatically visible to everyone.",
+                      de: "Dieses Team ist öffentlich — das Training ist automatisch für alle sichtbar." },
+    openToPublic:   { tr: "Antrenmanı Herkese Açık Yap",   en: "Make Training Public",    de: "Training öffentlich machen" },
   },
 
   // ── TEAMS PAGE ───────────────────────────────────────────
