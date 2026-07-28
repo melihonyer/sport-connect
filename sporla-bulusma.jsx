@@ -2017,15 +2017,25 @@ export default function Muuvlink() {
   };
 
   const handleNearbySearch = (distanceOverride) => {
+    // Konum beklenirken kullanıcıyı ana sayfada tutmuyoruz: antrenman sayfasına
+    // hemen geçip yükleniyor durumunu orada gösteriyoruz. Aksi halde buton
+    // saniyelerce dönüyor ve hiçbir şey olmuyormuş gibi görünüyordu.
     setLocationLoading(true);
+    setNearbyLoading(true);
     setShowManualLocation(false);
     setGpsErrorCode(null);
+    setNearbyMode(true);
+    setCurrentPage("trainings");
+
+    const failWith = (code) => {
+      setLocationLoading(false);
+      setNearbyLoading(false);
+      setGpsErrorCode(code);
+      setShowManualLocation(true);
+    };
 
     if (!navigator.geolocation) {
-      setLocationLoading(false);
-      setGpsErrorCode(2);
-      setShowManualLocation(true);
-      setCurrentPage("trainings");
+      failWith(2);
       return;
     }
 
@@ -2039,18 +2049,10 @@ export default function Muuvlink() {
           applyNearbyLocation(lat, lng, t("trainings.currentLocation"), distanceOverride);
         } catch (e) {
           console.error("GPS callback error:", e);
-          setLocationLoading(false);
-          setGpsErrorCode(2);
-          setShowManualLocation(true);
-          setCurrentPage("trainings");
+          failWith(2);
         }
       },
-      (err) => {
-        setLocationLoading(false);
-        setGpsErrorCode(err?.code ?? 2); // 1=denied, 2=unavailable, 3=timeout
-        setShowManualLocation(true);
-        setCurrentPage("trainings");
-      },
+      (err) => failWith(err?.code ?? 2), // 1=denied, 2=unavailable, 3=timeout
       { timeout: 15000, enableHighAccuracy: false }
     );
   };
