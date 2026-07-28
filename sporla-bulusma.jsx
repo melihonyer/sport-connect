@@ -3721,9 +3721,15 @@ export default function Muuvlink() {
     });
 
     const handleDistanceChange = (km) => {
+      // Sonuçlar yenilenirken sayfa yüksekliği değiştiği için tarayıcı kaydırma
+      // konumunu kaybediyor; kullanıcıyı bulunduğu yerde tutuyoruz.
+      const keepScrollY = window.scrollY;
+      const restoreScroll = () =>
+        requestAnimationFrame(() => window.scrollTo({ top: keepScrollY, behavior: "instant" }));
+
       setNearbyDistance(km);
       if (userLocation) {
-        fetchNearbyTrainings(userLocation.lat, userLocation.lng, km);
+        fetchNearbyTrainings(userLocation.lat, userLocation.lng, km).finally(restoreScroll);
       } else {
         handleNearbySearch(km);
       }
@@ -3896,7 +3902,9 @@ export default function Muuvlink() {
 
           {/* ── Liste görünümü ── */}
           {viewMode === "list" && (nearbyLoading ? (
-            <div className="flex flex-col items-center justify-center py-32 gap-5">
+            // min-h: mesafe değiştirilince liste yerini yükleme göstergesi alıyor.
+            // Yükseklik korunmazsa sayfa kısalıyor ve tarayıcı kullanıcıyı en üste atıyor.
+            <div className="flex flex-col items-center justify-center py-32 gap-5 min-h-[70vh]">
               <div className="w-14 h-14 border-4 border-brand-100 rounded-full" style={{borderTopColor:"#00b7ba", animation:"spin 0.8s linear infinite"}}/>
               <p className="text-slate-500 font-semibold">{nearbyDistance} km içinde aranıyor…</p>
             </div>
