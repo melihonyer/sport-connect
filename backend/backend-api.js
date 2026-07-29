@@ -1206,7 +1206,7 @@ app.get('/api/teams', optionalAuth, async (req, res) => {
   }
 });
 
-app.get('/api/teams/:id', authenticateToken, async (req, res) => {
+app.get('/api/teams/:id', optionalAuth, async (req, res) => {
   try {
     const teamId = req.params.id;
 
@@ -1229,6 +1229,9 @@ app.get('/api/teams/:id', authenticateToken, async (req, res) => {
     const team = teamResult.rows[0];
 
     if (team.is_private) {
+      if (!req.user) {
+        return res.status(403).json({ error: 'Access denied to private team' });
+      }
       const memberCheck = await pool.query(
         'SELECT id FROM team_members WHERE team_id = $1 AND user_id = $2',
         [teamId, req.user.id]
