@@ -267,7 +267,24 @@ pool.query = async (...args) => {
 // Antrenmanı oluşturma/düzenleme/silme yetkisi olan takım rolleri.
 // Tek yerden yönetilir ki üç işlem arasında yeniden ayrışmasın.
 // ('admin' sistemde kullanılmıyor ama elle atanmış olma ihtimaline karşı korunuyor.)
-const TRAINING_MANAGER_ROLES = ['owner', 'coach', 'captain', 'admin'];
+const TRAINING_MANAGER_ROLES = ['owner', 'coach', 'captain', 'editor', 'admin'];
+
+// Davet gönderme / bekleyen davetleri görme yetkisi olan roller.
+const INVITE_MANAGER_ROLES = ['owner', 'coach', 'editor'];
+
+// Editör, takım sahibiyle (owner) aynı yönetim yetkilerine sahiptir; yalnızca
+// takımı SİLMEK ve takım sahibinin rolüne dokunmak sahibe özeldir.
+// Sahiplik, teams.owner_id ile takip edilir; editörlük ise team_members.role='editor'.
+async function canManageTeam(teamId, userId) {
+  const r = await pool.query(
+    `SELECT 1 FROM teams t
+       LEFT JOIN team_members tm ON tm.team_id = t.id AND tm.user_id = $2
+      WHERE t.id = $1 AND (t.owner_id = $2 OR tm.role = 'editor')
+      LIMIT 1`,
+    [teamId, userId]
+  );
+  return r.rows.length > 0;
+}
 
 // Antrenmanın koordinatından IANA saat dilimini bulur (ör. "Europe/Berlin").
 // Uygulama yurtdışında da kullanıldığı için "geçti mi / yaklaşıyor mu" hesabı
@@ -1054,7 +1071,7 @@ app.post('/api/teams/:id/avatar', authenticateToken, uploadAvatar.single('avatar
       [teamId]
     );
     if (ownerCheck.rows.length === 0) return res.status(404).json({ error: 'Takım bulunamadı.' });
-    if (ownerCheck.rows[0].owner_id !== req.user.id) return res.status(403).json({ error: 'Sadece takım sahibi fotoğraf yükleyebilir.' });
+    if (!(await canManageTeam(teamId, req.user.id))) return res.status(403).json({ error: 'Bu işlem için yetkiniz yok.' });
 
     const ext = path.extname(req.file.originalname) || '.jpg';
     const fileName = `team-${teamId}-${Date.now()}.webp`;
@@ -1156,7 +1173,7 @@ app.get('/api/teams', optionalAuth, async (req, res) => {
     let whereClause;
     if (can_create_training === 'true') {
       // Sadece antrenman oluşturabildiği takımlar (sahip/antrenör/kaptan)
-      whereClause = `t.id IN (SELECT team_id FROM team_members WHERE user_id = $1 AND role IN ('owner','coach','captain'))`;
+      whereClause = `t.id IN (SELECT team_id FROM team_members WHERE user_id = $1 AND role IN ('owner','coach','captain','editor'))`;
     } else if (member_only === 'true') {
       // Sadece kullanıcının üye olduğu takımlar (profil sayfası için)
       whereClause = `t.id IN (SELECT team_id FROM team_members WHERE user_id = $1)`;
@@ -1307,7 +1324,7 @@ app.post('/api/teams/:id/join', authenticateToken, async (req, res) => {
     const leadersRes = await pool.query(
       `SELECT tm.user_id, u.email, u.name FROM team_members tm
        JOIN users u ON u.id = tm.user_id
-       WHERE tm.team_id = $1 AND tm.role IN ('owner', 'coach', 'captain')`,
+       WHERE tm.team_id = $1 AND tm.role IN ('owner', 'coach', 'captain', 'editor')`,
       [teamId]
     );
 
@@ -1368,8 +1385,8 @@ app.post('/api/teams/:id/invite', authenticateToken, async (req, res) => {
       [teamId, req.user.id]
     );
 
-    if (memberCheck.rows.length === 0 || !['owner', 'coach'].includes(memberCheck.rows[0].role)) {
-      return res.status(403).json({ error: 'Only team owners/coaches can invite members' });
+    if (memberCheck.rows.length === 0 || !INVITE_MANAGER_ROLES.includes(memberCheck.rows[0].role)) {
+      return res.status(403).json({ error: 'Only team owners/editors/coaches can invite members' });
     }
 
     // Takım bilgilerini çek
@@ -1472,7 +1489,7 @@ app.get('/api/teams/:id/invitations', authenticateToken, async (req, res) => {
       `SELECT role FROM team_members WHERE team_id = $1 AND user_id = $2`,
       [teamId, req.user.id]
     );
-    if (!memberCheck.rows.length || !['owner', 'coach'].includes(memberCheck.rows[0].role)) {
+    if (!memberCheck.rows.length || !INVITE_MANAGER_ROLES.includes(memberCheck.rows[0].role)) {
       return res.status(403).json({ error: 'Yetki yok.' });
     }
     const result = await pool.query(
@@ -1498,7 +1515,7 @@ app.delete('/api/teams/:id/invitations/:inviteId', authenticateToken, async (req
       `SELECT role FROM team_members WHERE team_id = $1 AND user_id = $2`,
       [teamId, req.user.id]
     );
-    if (!memberCheck.rows.length || !['owner', 'coach'].includes(memberCheck.rows[0].role)) {
+    if (!memberCheck.rows.length || !INVITE_MANAGER_ROLES.includes(memberCheck.rows[0].role)) {
       return res.status(403).json({ error: 'Yetki yok.' });
     }
     await pool.query(
@@ -1544,8 +1561,8 @@ app.put('/api/teams/:id', authenticateToken, async (req, res) => {
 
     const ownerCheck = await pool.query('SELECT owner_id FROM teams WHERE id = $1', [teamId]);
     if (!ownerCheck.rows.length) return res.status(404).json({ error: 'Team not found' });
-    if (ownerCheck.rows[0].owner_id !== req.user.id) {
-      return res.status(403).json({ error: 'Only team owner can edit the team' });
+    if (!(await canManageTeam(teamId, req.user.id))) {
+      return res.status(403).json({ error: 'Only team owner/editor can edit the team' });
     }
 
     // Takım gizli yapılırsa tüm antrenmanları da gizle
@@ -1589,18 +1606,24 @@ app.put('/api/teams/:teamId/members/:userId/role', authenticateToken, async (req
     const { teamId, userId } = req.params;
     const { role } = req.body;
 
-    const ALLOWED_ROLES = ['member', 'coach', 'captain'];
+    const ALLOWED_ROLES = ['member', 'coach', 'captain', 'editor'];
     if (!ALLOWED_ROLES.includes(role)) {
-      return res.status(400).json({ error: 'Geçersiz rol. İzin verilenler: member, coach, captain' });
+      return res.status(400).json({ error: 'Geçersiz rol. İzin verilenler: member, coach, captain, editor' });
     }
 
     const ownerCheck = await pool.query(
       'SELECT owner_id FROM teams WHERE id = $1',
       [teamId]
     );
+    if (!ownerCheck.rows.length) return res.status(404).json({ error: 'Team not found' });
 
-    if (ownerCheck.rows[0].owner_id !== req.user.id) {
-      return res.status(403).json({ error: 'Only team owner can change roles' });
+    if (!(await canManageTeam(teamId, req.user.id))) {
+      return res.status(403).json({ error: 'Only team owner/editor can change roles' });
+    }
+
+    // Takım sahibinin rolü bu uçtan değiştirilemez (sahiplik teams.owner_id ile yönetilir).
+    if (parseInt(userId) === ownerCheck.rows[0].owner_id) {
+      return res.status(403).json({ error: 'Takım sahibinin rolü değiştirilemez.' });
     }
 
     await pool.query(
@@ -1631,6 +1654,7 @@ app.delete('/api/teams/:teamId/members/:userId', authenticateToken, async (req, 
     );
     const isOwner = ownerCheck.rows[0].owner_id === req.user.id;
     const isCoach = myRole.rows[0]?.role === 'coach';
+    const isEditor = myRole.rows[0]?.role === 'editor';
     const isSelf = req.user.id === parseInt(userId);
 
     // Sahip çıkarılamaz
@@ -1638,7 +1662,7 @@ app.delete('/api/teams/:teamId/members/:userId', authenticateToken, async (req, 
       return res.status(403).json({ error: 'Takım sahibi çıkarılamaz.' });
     }
 
-    if (!isOwner && !isCoach && !isSelf) {
+    if (!isOwner && !isCoach && !isEditor && !isSelf) {
       return res.status(403).json({ error: 'Bu işlem için yetkiniz yok.' });
     }
 

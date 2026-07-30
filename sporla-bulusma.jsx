@@ -2385,7 +2385,7 @@ export default function Muuvlink() {
         setCurrentPage("team-detail");
         // owner/coach ise bekleyen davetleri çek
         const myRole = data.team?.members?.find(m => m.id === user?.id)?.role;
-        if (myRole === 'owner' || myRole === 'coach' || myRole === 'captain') {
+        if (myRole === 'owner' || myRole === 'editor' || myRole === 'coach' || myRole === 'captain') {
           fetchPendingInvitations(teamId, token);
         } else {
           setPendingInvitations([]);
@@ -2947,10 +2947,10 @@ export default function Muuvlink() {
           </div>
           {team.my_role && (
             <span className="px-2.5 py-1 text-xs font-medium rounded-lg" style={{
-              background: team.my_role === 'owner' ? '#FEF3C7' : team.my_role === 'coach' ? '#EDE9FE' : team.my_role === 'captain' ? '#DCFCE7' : '#F0FDF4',
-              color: team.my_role === 'owner' ? '#92400E' : team.my_role === 'coach' ? '#5B21B6' : team.my_role === 'captain' ? '#006d6f' : '#006d6f',
+              background: team.my_role === 'owner' ? '#FEF3C7' : team.my_role === 'editor' ? '#FEF3C7' : team.my_role === 'coach' ? '#EDE9FE' : team.my_role === 'captain' ? '#DCFCE7' : '#F0FDF4',
+              color: team.my_role === 'owner' ? '#92400E' : team.my_role === 'editor' ? '#92400E' : team.my_role === 'coach' ? '#5B21B6' : team.my_role === 'captain' ? '#006d6f' : '#006d6f',
             }}>
-              {team.my_role === 'owner' ? <><Crown className="w-3 h-3 inline mr-1"/>{t("teamDetail.roles.owner")}</> : team.my_role === 'coach' ? <><Target className="w-3 h-3 inline mr-1"/>{t("teamDetail.roles.coach")}</> : team.my_role === 'captain' ? <><Navigation2 className="w-3 h-3 inline mr-1"/>{t("teamDetail.roles.captain")}</> : <><User className="w-3 h-3 inline mr-1"/>{t("teamDetail.roles.member")}</>}
+              {team.my_role === 'owner' ? <><Crown className="w-3 h-3 inline mr-1"/>{t("teamDetail.roles.owner")}</> : team.my_role === 'editor' ? <><Edit className="w-3 h-3 inline mr-1"/>{t("teamDetail.roles.editor")}</> : team.my_role === 'coach' ? <><Target className="w-3 h-3 inline mr-1"/>{t("teamDetail.roles.coach")}</> : team.my_role === 'captain' ? <><Navigation2 className="w-3 h-3 inline mr-1"/>{t("teamDetail.roles.captain")}</> : <><User className="w-3 h-3 inline mr-1"/>{t("teamDetail.roles.member")}</>}
             </span>
           )}
         </div>
@@ -4637,7 +4637,11 @@ export default function Muuvlink() {
     const myRole = myMembership?.role || null;
     const isMember = !!myMembership;
     const isCoach = myRole === "coach";
-    const canManage = isOwner || isCoach || myRole === "captain";
+    const isEditor = myRole === "editor";
+    // Editör, sahip ile aynı yönetim yetkilerine sahiptir (takımı silme ve sahibin
+    // rolüne dokunma hariç). canAdmin: ayarlar/avatar/rol değiştirme yetkisi.
+    const canAdmin = isOwner || isEditor;
+    const canManage = canAdmin || isCoach || myRole === "captain";
     const canSeeMembers = !selectedTeam.is_private || isMember;
 
     const [message, setMessage] = useState("");
@@ -4656,6 +4660,7 @@ export default function Muuvlink() {
 
     const roleBadge = (role) => {
       if (role === "owner")   return <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold flex items-center gap-1"><Crown className="w-3 h-3" /> {t("teamDetail.roles.owner")}</span>;
+      if (role === "editor")  return <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-xs font-semibold flex items-center gap-1"><Edit className="w-3 h-3" /> {t("teamDetail.roles.editor")}</span>;
       if (role === "coach")   return <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold flex items-center gap-1"><Target className="w-3 h-3" /> {t("teamDetail.roles.coach")}</span>;
       if (role === "captain") return <span className="px-2 py-0.5 bg-brand-100 text-brand-700 rounded-full text-xs font-semibold flex items-center gap-1"><ShieldCheck className="w-3 h-3" /> {t("teamDetail.roles.captain")}</span>;
       return <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold flex items-center gap-1"><User className="w-3 h-3" /> {t("teamDetail.roles.member")}</span>;
@@ -4674,7 +4679,7 @@ export default function Muuvlink() {
     const tabs = [
       { id: "wall",    label: t("teamDetail.wall"),       icon: <MessageSquare className="w-4 h-4" />, show: isMember },
       { id: "members", label: t("teamDetail.membersTab"), icon: <Users className="w-4 h-4" />,        show: canSeeMembers },
-      { id: "settings",label: t("common.settings"),      icon: <Settings className="w-4 h-4" />,     show: isOwner },
+      { id: "settings",label: t("common.settings"),      icon: <Settings className="w-4 h-4" />,     show: canAdmin },
     ].filter((t) => t.show);
 
     const iCls = "w-full h-11 px-4 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition-colors";
@@ -4698,7 +4703,7 @@ export default function Muuvlink() {
                       ? <img src={selectedTeam.avatar.startsWith("http") ? selectedTeam.avatar : `${BASE_URL}${selectedTeam.avatar}`} alt="" className="w-full h-full object-cover" />
                       : (selectedTeam.name?.[0]?.toLocaleUpperCase("en-US") || "T")}
                   </div>
-                  {isOwner && (
+                  {canAdmin && (
                     <label className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center cursor-pointer shadow-md hover:bg-brand-50 transition-colors" title="Fotoğraf yükle">
                       <Image className="w-3 h-3 text-brand-600" />
                       <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
@@ -4726,8 +4731,8 @@ export default function Muuvlink() {
                       ? <span className="px-2.5 py-0.5 bg-white/20 rounded-full text-xs font-medium flex items-center gap-1"><Lock className="w-3 h-3" /> {t("common.private")}</span>
                       : <span className="px-2.5 py-0.5 bg-white/20 rounded-full text-xs font-medium flex items-center gap-1"><Globe className="w-3 h-3" /> {t("common.public")}</span>}
                     {myRole && (() => {
-                      const roleIcons = { owner: Crown, coach: Target, captain: Navigation2, member: User };
-                      const roleLabels = { owner: t("teamDetail.roles.owner"), coach: t("teamDetail.roles.coach"), captain: t("teamDetail.roles.captain"), member: t("teamDetail.roles.member") };
+                      const roleIcons = { owner: Crown, editor: Edit, coach: Target, captain: Navigation2, member: User };
+                      const roleLabels = { owner: t("teamDetail.roles.owner"), editor: t("teamDetail.roles.editor"), coach: t("teamDetail.roles.coach"), captain: t("teamDetail.roles.captain"), member: t("teamDetail.roles.member") };
                       const RoleIcon = roleIcons[myRole] || User;
                       return <span className="px-2.5 py-0.5 bg-white/30 rounded-full text-xs font-semibold flex items-center gap-1"><RoleIcon className="w-3 h-3"/>{roleLabels[myRole] || myRole}</span>;
                     })()}
@@ -4922,7 +4927,7 @@ export default function Muuvlink() {
                         </div>
                       </div>
 
-                      {isOwner && !isThisOwner && (
+                      {canAdmin && !isThisOwner && (
                         <div className="flex items-center gap-2">
                           <select value={member.role}
                             onChange={(e) => handleChangeMemberRole(selectedTeam.id, member.id, e.target.value)}
@@ -4930,7 +4935,7 @@ export default function Muuvlink() {
                             <option value="member">{t("teamDetail.roles.member")}</option>
                             <option value="captain">{t("teamDetail.roles.captain")}</option>
                             <option value="coach">{t("teamDetail.roles.coach")}</option>
-                            <option value="owner">{t("teamDetail.roles.owner")}</option>
+                            <option value="editor">{t("teamDetail.roles.editor")}</option>
                           </select>
                           <button onClick={() => handleRemoveMember(selectedTeam.id, member.id)}
                             className="w-9 h-9 flex items-center justify-center bg-red-50 text-red-400 rounded-xl hover:bg-red-100 transition-colors">
@@ -4960,7 +4965,7 @@ export default function Muuvlink() {
           )}
 
           {/* AYARLAR */}
-          {activeTab === "settings" && isOwner && (
+          {activeTab === "settings" && canAdmin && (
             <form onSubmit={handleEditSubmit} className="space-y-5">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -5041,10 +5046,12 @@ export default function Muuvlink() {
                   className="flex-1 h-12 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-semibold transition-colors">
                   {t("common.save")}
                 </button>
-                <button type="button" onClick={() => handleDeleteTeam(selectedTeam.id)}
-                  className="px-6 h-12 bg-red-50 text-red-600 rounded-xl font-semibold hover:bg-red-100 transition-colors flex items-center gap-2">
-                  <Trash2 className="w-4 h-4" /> {t("common.delete")}
-                </button>
+                {isOwner && (
+                  <button type="button" onClick={() => handleDeleteTeam(selectedTeam.id)}
+                    className="px-6 h-12 bg-red-50 text-red-600 rounded-xl font-semibold hover:bg-red-100 transition-colors flex items-center gap-2">
+                    <Trash2 className="w-4 h-4" /> {t("common.delete")}
+                  </button>
+                )}
               </div>
             </form>
           )}
@@ -5087,8 +5094,8 @@ export default function Muuvlink() {
       fetch(`${API_URL}/teams?can_create_training=true`, { headers: { Authorization: `Bearer ${token}` } })
         .then(r => r.ok ? r.json() : { teams: [] })
         .then(d => {
-          // Sadece sahip/antrenör/kaptan olduğu takımlar — backend filtre + frontend güvence
-          const ALLOWED = ['owner', 'coach', 'captain'];
+          // Sadece sahip/editör/antrenör/kaptan olduğu takımlar — backend filtre + frontend güvence
+          const ALLOWED = ['owner', 'editor', 'coach', 'captain'];
           const filtered = (d.teams || []).filter(t => ALLOWED.includes(t.my_role));
           setEligibleTeams(filtered);
           setEligibleLoading(false);

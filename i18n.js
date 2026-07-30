@@ -434,6 +434,7 @@ export const translations = {
     inviteSent:     { tr: "Davet gönderildi!",            en: "Invite sent!",            de: "Einladung gesendet!"     },
     roles: {
       owner:   { tr: "Sahip",      en: "Owner",   de: "Inhaber"  },
+      editor:  { tr: "Editör",     en: "Editor",  de: "Redakteur" },
       coach:   { tr: "Antrenör",   en: "Coach",   de: "Trainer"  },
       captain: { tr: "Kaptan",     en: "Captain", de: "Kapitän"  },
       member:  { tr: "Üye",        en: "Member",  de: "Mitglied" },
