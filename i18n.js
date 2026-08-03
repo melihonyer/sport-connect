@@ -735,6 +735,7 @@ export const translations = {
                       en: "Your message has been sent! We'll get back to you soon. 📬",
                       de: "Nachricht gesendet! Wir melden uns bald. 📬" },
     linkCopied:     { tr: "Link kopyalandı!",  en: "Link copied!",          de: "Link kopiert!"                  },
+    shareFail:      { tr: "Paylaşım başarısız.", en: "Sharing failed.",      de: "Teilen fehlgeschlagen."         },
   },
 
   // ── NEWS SECTION ─────────────────────────────────────────

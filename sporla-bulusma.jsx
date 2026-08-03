@@ -46,6 +46,7 @@ import {
   ChevronUp,
   ExternalLink,
   Link,
+  Share2,
   Flag,
 } from "lucide-react";
 // Ağır kütüphaneler lazy yüklenir — ilk bundle'ı küçültür
@@ -872,6 +873,39 @@ async function triggerHaptic(type = "medium") {
     else if (type === "light") await Haptics.impact({ style: ImpactStyle.Light });
     else await Haptics.impact({ style: ImpactStyle.Medium });
   } catch (_) {}
+}
+
+// Link paylaşımı — kademeli:
+//  1) Native uygulama: Capacitor Share (iOS UIActivityViewController / Android intent seçici → WhatsApp, Telegram, Mesajlar…)
+//  2) Mobil tarayıcı: Web Share API
+//  3) Diğer (masaüstü / desteklenmeyen): panoya kopyala
+// Dönüş: "shared" | "cancelled" | "copied" | "failed"
+async function shareLink({ title, text, url }) {
+  if (window?.Capacitor?.isNativePlatform?.()) {
+    try {
+      const { Share } = await import("@capacitor/share");
+      await Share.share({ title, text, url, dialogTitle: title });
+      return "shared";
+    } catch (e) {
+      const msg = String(e?.message || e).toLowerCase();
+      if (msg.includes("cancel") || msg.includes("abort")) return "cancelled";
+      // Plugin yok / başarısız → aşağıdaki fallback'lere düş
+    }
+  }
+  if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+    try {
+      await navigator.share({ title, text, url });
+      return "shared";
+    } catch (e) {
+      if (e?.name === "AbortError") return "cancelled";
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(url);
+    return "copied";
+  } catch (_) {
+    return "failed";
+  }
 }
 
 export default function Muuvlink() {
@@ -4182,14 +4216,16 @@ export default function Muuvlink() {
                 {{ "Kolay": t("trainings.levelEasy"), "Orta": t("trainings.levelMid"), "Zor": t("trainings.levelHard") }[selectedTraining.difficulty] || selectedTraining.difficulty}
               </span>
               <button
-                onClick={() => {
+                onClick={async () => {
                   const link = `${window.location.origin}/antrenmanlar?antrenman=${selectedTraining.id}`;
-                  navigator.clipboard.writeText(link).then(() => showToast(t("toast.linkCopied"), "success"));
+                  const res = await shareLink({ title: selectedTraining.title, text: selectedTraining.title, url: link });
+                  if (res === "copied") showToast(t("toast.linkCopied"), "success");
+                  else if (res === "failed") showToast(t("toast.shareFail"), "error");
                 }}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full text-sm font-medium transition-colors"
-                title={t("common.copyLink")}
+                title={t("common.share")}
               >
-                <Link className="w-3.5 h-3.5" /> {t("common.copyLink")}
+                <Share2 className="w-3.5 h-3.5" /> {t("common.share")}
               </button>
               {user && !canManage && (
                 <button
@@ -4769,14 +4805,16 @@ export default function Muuvlink() {
                 </button>
               )}
               <button
-                onClick={() => {
+                onClick={async () => {
                   const link = `${window.location.origin}/takimlar?takim=${selectedTeam.id}`;
-                  navigator.clipboard.writeText(link).then(() => showToast(t("toast.linkCopied"), "success"));
+                  const res = await shareLink({ title: selectedTeam.name, text: selectedTeam.name, url: link });
+                  if (res === "copied") showToast(t("toast.linkCopied"), "success");
+                  else if (res === "failed") showToast(t("toast.shareFail"), "error");
                 }}
                 className="flex items-center gap-1.5 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-sm font-semibold transition-colors backdrop-blur"
-                title={t("common.copyLink")}
+                title={t("common.share")}
               >
-                <Link className="w-4 h-4" /> {t("common.copyLink")}
+                <Share2 className="w-4 h-4" /> {t("common.share")}
               </button>
             </div>
           </div>
