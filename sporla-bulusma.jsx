@@ -2923,9 +2923,9 @@ export default function Muuvlink() {
         </h3>
         <p className="text-sm text-slate-400 italic">
           {training.training_time && <span>{training.training_time}</span>}
-          {training.training_time && (training.team_name || training.location_name) && <span className="mx-2">·</span>}
-          {training.team_name && <span className="not-italic font-medium text-brand-700">{training.team_name}</span>}
-          {training.team_name && training.location_name && <span className="mx-2">-</span>}
+          {training.training_time && (training.team_name || training.creator_display || training.location_name) && <span className="mx-2">·</span>}
+          {(training.team_name || training.creator_display) && <span className="not-italic font-medium text-brand-700">{training.team_name || training.creator_display}</span>}
+          {(training.team_name || training.creator_display) && training.location_name && <span className="mx-2">-</span>}
           {training.location_name && <span>{training.location_name}</span>}
         </p>
         {distanceKm != null && (
@@ -3757,7 +3757,7 @@ export default function Muuvlink() {
     const displayedTrainings = baseTrainings.filter((t) => {
       const q = searchQuery.toLowerCase();
       const matchesSearch = !q || t.title?.toLowerCase().includes(q) || t.location_name?.toLowerCase().includes(q) || t.description?.toLowerCase().includes(q);
-      const matchesSport = !sportFilter || t.team_sport === sportFilter;
+      const matchesSport = !sportFilter || (t.team_sport || t.sport) === sportFilter;
       const matchesDifficulty = !levelFilter || t.difficulty === levelFilter;
       return matchesSearch && matchesSport && matchesDifficulty;
     });
@@ -4218,7 +4218,7 @@ export default function Muuvlink() {
             <h1 className="font-display font-bold mb-3" style={{fontSize:"clamp(1.8rem,4vw,2.4rem)", letterSpacing:"-0.01em"}}>{selectedTraining.title}</h1>
             <div className="flex flex-wrap gap-2 items-center">
               <span className="px-3 py-1 bg-brand-100 text-brand-600 rounded-full text-sm font-medium">
-                {selectedTraining.team_sport || "Genel"}
+                {selectedTraining.team_sport || selectedTraining.sport || "Genel"}
               </span>
               <span className="px-3 py-1 bg-yellow-100 text-yellow-600 rounded-full text-sm font-medium">
                 {{ "Kolay": t("trainings.levelEasy"), "Orta": t("trainings.levelMid"), "Zor": t("trainings.levelHard") }[selectedTraining.difficulty] || selectedTraining.difficulty}
@@ -4438,6 +4438,19 @@ export default function Muuvlink() {
               </div>
             );
           })()}
+
+          {/* Bireysel etkinlik: takım yerine maskeli oluşturan */}
+          {!selectedTraining.team_id && selectedTraining.creator_display && (
+            <div className="flex items-center gap-3 p-4 rounded-2xl border border-slate-100 bg-slate-50 mb-6">
+              <div className="w-11 h-11 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0 border-2 border-white shadow-sm">
+                <User className="w-5 h-5 text-brand-600" />
+              </div>
+              <div className="min-w-0">
+                <p className="font-semibold text-slate-800 text-sm truncate">{selectedTraining.creator_display}</p>
+                <p className="text-xs text-slate-500">{t("createTraining.individual")}</p>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4 mb-6">
             {(() => {
@@ -5158,27 +5171,26 @@ export default function Muuvlink() {
       location_lng: null,
       capacity: 20,
       difficulty: "Orta",
-      team_id: null,
+      team_id: null,   // null = bireysel (takımsız) etkinlik
+      sport: "",       // yalnızca bireysel etkinlikte kullanılır
       is_public: true,
     });
 
-    // Takımlar yüklenince formdaki team_id'yi ilk uygun takıma ayarla
-    useEffect(() => {
-      if (eligibleTeams.length > 0 && !formData.team_id) {
-        const first = eligibleTeams[0];
-        setFormData(f => ({ ...f, team_id: first.id, is_public: !first.is_private }));
-      }
-    }, [eligibleTeams]);
-
-    // Seçili takım nesnesini bul
+    // Seçili takım nesnesini bul (team_id null ise bireysel)
     const selectedTeamObj = eligibleTeams.find((t) => t.id === parseInt(formData.team_id));
     const selectedTeamIsPrivate = selectedTeamObj?.is_private || false;
+    const isIndividual = !formData.team_id;
 
-    const handleTeamChange = (teamId) => {
-      const team = eligibleTeams.find((t) => t.id === parseInt(teamId));
+    const handleTeamChange = (val) => {
+      if (!val) {
+        // Bireysel
+        setFormData((f) => ({ ...f, team_id: null, is_public: true }));
+        return;
+      }
+      const team = eligibleTeams.find((t) => t.id === parseInt(val));
       setFormData((f) => ({
         ...f,
-        team_id: parseInt(teamId),
+        team_id: parseInt(val),
         is_public: !team?.is_private,
       }));
     };
@@ -5222,66 +5234,68 @@ export default function Muuvlink() {
             <p className="text-sm text-slate-400 mt-1">{t("createTraining.pageSubtitle")}</p>
           </div>
 
-          {eligibleLoading ? (
+          {eligibleLoading && (
             <div className="flex justify-center py-8">
               <Loader2 className="w-6 h-6 animate-spin text-brand-500" />
-            </div>
-          ) : eligibleTeams.length === 0 && (
-            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-              <div>
-                {myTeams.length === 0 ? (
-                  <>
-                    <p className="text-sm font-medium text-amber-800">{t("createTraining.noTeamFirst")}</p>
-                    <button onClick={() => setCurrentPage("create-team")} className="text-sm text-brand-600 font-semibold mt-1">{t("teams.create")} →</button>
-                  </>
-                ) : (
-                  <p className="text-sm font-medium text-amber-800">{t("createTraining.noEligibleTeam")}</p>
-                )}
-              </div>
             </div>
           )}
 
           <div className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100">
 
-            {/* Takım + Gizlilik */}
-            {eligibleTeams.length > 0 && (
-              <div className="p-5 space-y-3">
+            {/* Etkinlik tipi: Bireysel veya Takım */}
+            <div className="p-5 space-y-3">
+              <div>
+                <label className={labelCls}>{t("createTraining.typeLabel")}</label>
+                <select
+                  value={formData.team_id ?? ""}
+                  onChange={(e) => handleTeamChange(e.target.value)}
+                  className={selectCls}
+                >
+                  <option value="">{t("createTraining.individual")}</option>
+                  {eligibleTeams.map((team) => (
+                    <option key={team.id} value={team.id}>{team.name}</option>
+                  ))}
+                </select>
+                {eligibleTeams.length === 0 && (
+                  <button type="button" onClick={() => setCurrentPage("create-team")} className="text-xs text-brand-600 font-semibold mt-2 inline-flex items-center gap-1">
+                    {t("createTraining.orCreateTeam")} →
+                  </button>
+                )}
+              </div>
+
+              {isIndividual ? (
                 <div>
-                  <label className={labelCls}>{t("createTraining.teamLabel")}</label>
+                  <label className={labelCls}>{t("createTraining.sportLabel")}</label>
                   <select
-                    value={formData.team_id}
-                    onChange={(e) => handleTeamChange(e.target.value)}
+                    value={formData.sport}
+                    onChange={(e) => setFormData((f) => ({ ...f, sport: e.target.value }))}
                     className={selectCls}
                     required
                   >
-                    {eligibleTeams.map((team) => (
-                      <option key={team.id} value={team.id}>{team.name}</option>
-                    ))}
+                    <option value="" disabled>{t("createTraining.sportPlaceholder")}</option>
+                    {sportTypes.map((s) => <option key={s} value={s}>{t(`sports.${s}`)}</option>)}
                   </select>
                 </div>
-
-                {selectedTeamIsPrivate ? (
-                  <div className="flex items-center justify-between px-4 py-3 bg-slate-50 rounded-xl border border-slate-200">
-                    <span className="text-sm text-slate-700 flex items-center gap-2">
-                      <Globe className="w-4 h-4 text-slate-400" /> {t("createTraining.openToPublic")}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setFormData((f) => ({ ...f, is_public: !f.is_public }))}
-                      className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${formData.is_public ? "bg-brand-500" : "bg-slate-300"}`}
-                    >
-                      <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${formData.is_public ? "left-6" : "left-1"}`} />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2.5 px-4 py-3 bg-brand-50 rounded-xl text-sm text-slate-600 border border-brand-100">
-                    <Globe className="w-4 h-4 text-brand-500 flex-shrink-0" />
-                    <span>{t("createTraining.publicTeamNote")}</span>
-                  </div>
-                )}
-              </div>
-            )}
+              ) : selectedTeamIsPrivate ? (
+                <div className="flex items-center justify-between px-4 py-3 bg-slate-50 rounded-xl border border-slate-200">
+                  <span className="text-sm text-slate-700 flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-slate-400" /> {t("createTraining.openToPublic")}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setFormData((f) => ({ ...f, is_public: !f.is_public }))}
+                    className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${formData.is_public ? "bg-brand-500" : "bg-slate-300"}`}
+                  >
+                    <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${formData.is_public ? "left-6" : "left-1"}`} />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2.5 px-4 py-3 bg-brand-50 rounded-xl text-sm text-slate-600 border border-brand-100">
+                  <Globe className="w-4 h-4 text-brand-500 flex-shrink-0" />
+                  <span>{t("createTraining.publicTeamNote")}</span>
+                </div>
+              )}
+            </div>
 
             {/* Başlık + Açıklama */}
             <div className="p-5 space-y-4">
@@ -5409,7 +5423,7 @@ export default function Muuvlink() {
             </button>
             <button
               type="submit"
-              disabled={eligibleTeams.length === 0 || isSubmitting}
+              disabled={isSubmitting}
               className="flex-1 h-12 rounded-xl text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:opacity-90 hover:shadow-lg flex items-center justify-center gap-2"
               style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}
             >

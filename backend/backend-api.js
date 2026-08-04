@@ -272,6 +272,24 @@ const TRAINING_MANAGER_ROLES = ['owner', 'coach', 'captain', 'editor', 'admin'];
 // Davet gönderme / bekleyen davetleri görme yetkisi olan roller.
 const INVITE_MANAGER_ROLES = ['owner', 'coach', 'editor'];
 
+// Bireysel (takımsız) etkinliklerde, takım adı yerine oluşturanın adı gösterilir.
+// Gizlilik için tam ad değil; ad ve soyadın yalnızca ilk ikişer harfi (ör. "Melih Önyer" → "Me Ön").
+function maskCreatorName(full) {
+  if (!full || !full.trim()) return null;
+  const parts = full.trim().split(/\s+/);
+  const two = s => [...s].slice(0, 2).join('');
+  return parts.length === 1 ? two(parts[0]) : `${two(parts[0])} ${two(parts[parts.length - 1])}`;
+}
+
+// Etkinlik satırlarına bireysel-oluşturan görünen adını ekle, ham ad alanını gizle.
+function attachCreatorDisplay(rows) {
+  for (const r of rows) {
+    if (!r.team_id) r.creator_display = maskCreatorName(r.creator_name);
+    delete r.creator_name;
+  }
+  return rows;
+}
+
 // Editör, takım sahibiyle (owner) aynı yönetim yetkilerine sahiptir; yalnızca
 // takımı SİLMEK ve takım sahibinin rolüne dokunmak sahibe özeldir.
 // Sahiplik, teams.owner_id ile takip edilir; editörlük ise team_members.role='editor'.
@@ -848,9 +866,11 @@ app.get('/api/trainings/public', async (req, res) => {
              teams.name as team_name,
              teams.sport as team_sport,
              teams.avatar as team_avatar,
+             creator.name as creator_name,
              COUNT(DISTINCT ta.user_id) as attendee_count
       FROM trainings t
-      JOIN teams ON t.team_id = teams.id
+      LEFT JOIN teams ON t.team_id = teams.id
+      LEFT JOIN users creator ON creator.id = t.created_by
       LEFT JOIN training_attendees ta ON t.id = ta.training_id
       WHERE t.is_public = true
   AND ${trainingUtcExpr('t')} >= NOW()
@@ -879,16 +899,17 @@ app.get('/api/trainings/public', async (req, res) => {
 
     if (sport) {
       paramCount++;
-      query += ` AND teams.sport = $${paramCount}`;
+      query += ` AND COALESCE(t.sport, teams.sport) = $${paramCount}`;
       params.push(sport);
     }
 
     query += `
-      GROUP BY t.id, teams.name, teams.sport, teams.avatar
+      GROUP BY t.id, teams.name, teams.sport, teams.avatar, creator.name
       ORDER BY t.training_date ASC, t.training_time ASC
     `;
 
     const result = await pool.query(query, params);
+    attachCreatorDisplay(result.rows);
 
     res.json({
       trainings: result.rows,
@@ -1778,6 +1799,7 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
   try {
     const {
       team_id,
+      sport,
       title,
       description,
       training_date,
@@ -1792,23 +1814,28 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
       difficulty,
     } = req.body;
 
-    if (!team_id || !title || !training_date || !training_time || !location_name) {
+    if (!title || !training_date || !training_time || !location_name) {
       return res.status(400).json({ error: 'Required fields missing' });
     }
 
-    const memberCheck = await pool.query(
-      'SELECT role FROM team_members WHERE team_id = $1 AND user_id = $2',
-      [team_id, req.user.id]
-    );
-
-    if (memberCheck.rows.length === 0 || !TRAINING_MANAGER_ROLES.includes(memberCheck.rows[0].role)) {
-      return res.status(403).json({ error: 'Etkinlik oluşturmak için takımın sahibi, antrenörü veya kaptanı olmanız gerekiyor.' });
+    // team_id varsa takım etkinliği: yetki + gizlilik takımdan.
+    // team_id yoksa BİREYSEL etkinlik: her giriş yapmış kullanıcı oluşturabilir, spor formdan gelir.
+    let finalIsPublic;
+    if (team_id) {
+      const memberCheck = await pool.query(
+        'SELECT role FROM team_members WHERE team_id = $1 AND user_id = $2',
+        [team_id, req.user.id]
+      );
+      if (memberCheck.rows.length === 0 || !TRAINING_MANAGER_ROLES.includes(memberCheck.rows[0].role)) {
+        return res.status(403).json({ error: 'Etkinlik oluşturmak için takımın sahibi, antrenörü veya kaptanı olmanız gerekiyor.' });
+      }
+      // Gizli takımın etkinliği asla public olamaz
+      const teamCheck = await pool.query('SELECT is_private FROM teams WHERE id = $1', [team_id]);
+      const teamIsPrivate = teamCheck.rows[0]?.is_private || false;
+      finalIsPublic = teamIsPrivate ? false : (is_public !== undefined ? is_public : true);
+    } else {
+      finalIsPublic = is_public !== undefined ? is_public : true;
     }
-
-    // Gizli takımın etkinliği asla public olamaz
-    const teamCheck = await pool.query('SELECT is_private FROM teams WHERE id = $1', [team_id]);
-    const teamIsPrivate = teamCheck.rows[0]?.is_private || false;
-    const finalIsPublic = teamIsPrivate ? false : (is_public !== undefined ? is_public : true);
 
     // Çift gönderim koruması: yavaş bağlantıda istek asılı kalınca kullanıcı butona
     // tekrar basıp aynı etkinliği iki kez oluşturabiliyor. Aynı takımda aynı
@@ -1816,10 +1843,10 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
     // mevcut olanı döndür — istek başarılı görünür ama tekrar kayıt oluşmaz.
     const duplicate = await pool.query(
       `SELECT * FROM trainings
-        WHERE team_id = $1 AND title = $2 AND training_date = $3 AND training_time = $4
+        WHERE created_by = $1 AND title = $2 AND training_date = $3 AND training_time = $4
           AND created_at > NOW() - INTERVAL '2 minutes'
         ORDER BY id DESC LIMIT 1`,
-      [team_id, title, training_date, training_time]
+      [req.user.id, title, training_date, training_time]
     );
     if (duplicate.rows.length > 0) {
       console.warn('[TRAINING] Çift gönderim engellendi, mevcut kayıt döndürüldü:', duplicate.rows[0].id);
@@ -1831,13 +1858,15 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
 
     const result = await pool.query(
       `INSERT INTO trainings (
-        team_id, title, description, training_date, training_time, duration_minutes,
+        team_id, sport, created_by, title, description, training_date, training_time, duration_minutes,
         location_name, location_lat, location_lng, location_address, capacity, is_public, difficulty,
         training_timezone
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
       RETURNING *`,
       [
-        team_id,
+        team_id || null,
+        team_id ? null : (sport || null),
+        req.user.id,
         title,
         description,
         training_date,
@@ -1856,47 +1885,49 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
 
     const training = result.rows[0];
 
-    // Takım adını al
-    const teamRow = await pool.query('SELECT name FROM teams WHERE id = $1', [team_id]);
-    const teamName = teamRow.rows[0]?.name || 'Takımınız';
+    // Takım etkinliğiyse takım üyelerine haber ver. Bireysel etkinlikte bildirilecek takım yok.
+    if (team_id) {
+      const teamRow = await pool.query('SELECT name FROM teams WHERE id = $1', [team_id]);
+      const teamName = teamRow.rows[0]?.name || 'Takımınız';
 
-    // Yaklaşan diğer etkinlikleri al (yeni oluşturulan hariç)
-    const upcomingRes = await pool.query(
-      `SELECT title, training_date, training_time, location_name FROM trainings
-       WHERE team_id = $1 AND id != $2 AND ${trainingUtcExpr('')} >= NOW()
-       ORDER BY training_date, training_time LIMIT 3`,
-      [team_id, training.id]
-    );
+      // Yaklaşan diğer etkinlikleri al (yeni oluşturulan hariç)
+      const upcomingRes = await pool.query(
+        `SELECT title, training_date, training_time, location_name FROM trainings
+         WHERE team_id = $1 AND id != $2 AND ${trainingUtcExpr('')} >= NOW()
+         ORDER BY training_date, training_time LIMIT 3`,
+        [team_id, training.id]
+      );
 
-    const members = await pool.query(
-      'SELECT tm.user_id, u.email, u.name FROM team_members tm JOIN users u ON u.id = tm.user_id WHERE tm.team_id = $1 AND tm.user_id != $2',
-      [team_id, req.user.id]
-    );
+      const members = await pool.query(
+        'SELECT tm.user_id, u.email, u.name FROM team_members tm JOIN users u ON u.id = tm.user_id WHERE tm.team_id = $1 AND tm.user_id != $2',
+        [team_id, req.user.id]
+      );
 
-    for (const member of members.rows) {
-      // In-app bildirim
-      await createNotif(member.user_id, {
-        title: 'Yeni Etkinlik!',
-        message: `${teamName}: ${title} etkinliği eklendi.`,
-        type: 'training',
-        refId: training.id,
-        url: `/etkinlikler?etkinlik=${training.id}`,
-      });
-      // E-posta
-      sendEmail({
-        to: member.email,
-        subject: `${teamName} — Yeni Etkinlik: ${title}`,
-        html: newTrainingEmail({
-          teamName,
-          trainingTitle: title,
-          trainingDate: formatTrDate(training.training_date),
-          trainingTime: training.training_time,
-          location: location_name,
-          description,
-          upcomingTrainings: upcomingRes.rows,
-          trainingId: training.id,
-        }),
-      }).catch(e => console.error('Training email error:', e.message));
+      for (const member of members.rows) {
+        // In-app bildirim
+        await createNotif(member.user_id, {
+          title: 'Yeni Etkinlik!',
+          message: `${teamName}: ${title} etkinliği eklendi.`,
+          type: 'training',
+          refId: training.id,
+          url: `/etkinlikler?etkinlik=${training.id}`,
+        });
+        // E-posta
+        sendEmail({
+          to: member.email,
+          subject: `${teamName} — Yeni Etkinlik: ${title}`,
+          html: newTrainingEmail({
+            teamName,
+            trainingTitle: title,
+            trainingDate: formatTrDate(training.training_date),
+            trainingTime: training.training_time,
+            location: location_name,
+            description,
+            upcomingTrainings: upcomingRes.rows,
+            trainingId: training.id,
+          }),
+        }).catch(e => console.error('Training email error:', e.message));
+      }
     }
 
     // Oluşturan kişiyi otomatik katılımcı yap
@@ -1905,7 +1936,7 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
       [training.id, req.user.id, 'confirmed']
     );
 
-    logActivity('training_create', req.user.id, null, { training_title: title, team_name: teamName });
+    logActivity('training_create', req.user.id, null, { training_title: title, team_name: team_id ? undefined : 'Bireysel' });
     res.status(201).json({ message: 'Training created successfully', training });
   } catch (error) {
     console.error('Create training error:', error);
@@ -1923,15 +1954,18 @@ app.get('/api/trainings', optionalAuth, async (req, res) => {
              teams.name as team_name,
              teams.sport as team_sport,
              teams.avatar as team_avatar,
+             creator.name as creator_name,
              COUNT(DISTINCT ta.user_id) as attendee_count
       FROM trainings t
-      JOIN teams ON t.team_id = teams.id
+      LEFT JOIN teams ON t.team_id = teams.id
+      LEFT JOIN users creator ON creator.id = t.created_by
       LEFT JOIN training_attendees ta ON ta.training_id = t.id
       LEFT JOIN team_members tm_auth ON tm_auth.team_id = teams.id AND tm_auth.user_id = $1
       WHERE (
         teams.is_private = false
         OR t.is_public = true
         OR ($1::int IS NOT NULL AND tm_auth.team_id IS NOT NULL)
+        OR ($1::int IS NOT NULL AND t.created_by = $1)
       )
       AND ${trainingUtcExpr('t')} >= NOW()
     `;
@@ -1965,13 +1999,14 @@ app.get('/api/trainings', optionalAuth, async (req, res) => {
 
     if (sport) {
       paramCount++;
-      query += ` AND teams.sport = $${paramCount}`;
+      query += ` AND COALESCE(t.sport, teams.sport) = $${paramCount}`;
       params.push(sport);
     }
 
-    query += ' GROUP BY t.id, teams.name, teams.sport, teams.avatar ORDER BY t.training_date ASC, t.training_time ASC';
+    query += ' GROUP BY t.id, teams.name, teams.sport, teams.avatar, creator.name ORDER BY t.training_date ASC, t.training_time ASC';
 
     const result = await pool.query(query, params);
+    attachCreatorDisplay(result.rows);
 
     res.json({ trainings: result.rows });
   } catch (error) {
@@ -1988,15 +2023,18 @@ app.get('/api/trainings/my-joined', authenticateToken, async (req, res) => {
              teams.name as team_name,
              teams.sport as team_sport,
              teams.avatar as team_avatar,
+             creator.name as creator_name,
              COUNT(DISTINCT ta2.user_id) as attendee_count
       FROM trainings t
-      JOIN teams ON t.team_id = teams.id
+      LEFT JOIN teams ON t.team_id = teams.id
+      LEFT JOIN users creator ON creator.id = t.created_by
       JOIN training_attendees ta ON t.id = ta.training_id AND ta.user_id = $1
       LEFT JOIN training_attendees ta2 ON t.id = ta2.training_id
       WHERE ${trainingUtcExpr('t')} >= NOW()
-      GROUP BY t.id, teams.name, teams.sport, teams.avatar
+      GROUP BY t.id, teams.name, teams.sport, teams.avatar, creator.name
       ORDER BY t.training_date ASC, t.training_time ASC
     `, [req.user.id]);
+    attachCreatorDisplay(result.rows);
     res.json({ trainings: result.rows });
   } catch (error) {
     console.error('my-joined trainings error:', error);
@@ -2056,6 +2094,7 @@ app.get('/api/trainings/nearby', optionalAuth, async (req, res) => {
            teams.name  AS team_name,
            teams.sport AS team_sport,
            teams.avatar AS team_avatar,
+           creator.name AS creator_name,
            COALESCE(
              (SELECT COUNT(*) FROM training_attendees ta WHERE ta.training_id = t.id),
              0
@@ -2065,7 +2104,8 @@ app.get('/api/trainings/nearby', optionalAuth, async (req, res) => {
              + sin(radians($1)) * sin(radians(t.location_lat))
            ))) AS distance
          FROM trainings t
-         JOIN teams ON t.team_id = teams.id
+         LEFT JOIN teams ON t.team_id = teams.id
+         LEFT JOIN users creator ON creator.id = t.created_by
          WHERE t.location_lat IS NOT NULL
            AND t.location_lng IS NOT NULL
            AND ${trainingUtcExpr('t')} >= NOW()
@@ -2076,6 +2116,7 @@ app.get('/api/trainings/nearby', optionalAuth, async (req, res) => {
       params
     );
 
+    attachCreatorDisplay(result.rows);
     res.json({ trainings: result.rows });
   } catch (error) {
     console.error('Nearby trainings error:', error);
@@ -2094,12 +2135,14 @@ app.get('/api/trainings/:id', optionalAuth, async (req, res) => {
               teams.avatar as team_avatar,
               teams.owner_id as team_owner_id,
               teams.is_private as team_is_private,
+              creator.name as creator_name,
               COUNT(DISTINCT ta.user_id) as attendee_count
        FROM trainings t
-       JOIN teams ON t.team_id = teams.id
+       LEFT JOIN teams ON t.team_id = teams.id
+       LEFT JOIN users creator ON creator.id = t.created_by
        LEFT JOIN training_attendees ta ON t.id = ta.training_id
        WHERE t.id = $1
-       GROUP BY t.id, teams.name, teams.sport, teams.avatar, teams.owner_id, teams.is_private`,
+       GROUP BY t.id, teams.name, teams.sport, teams.avatar, teams.owner_id, teams.is_private, creator.name`,
       [trainingId]
     );
 
@@ -2109,7 +2152,12 @@ app.get('/api/trainings/:id', optionalAuth, async (req, res) => {
 
     const training = trainingResult.rows[0];
 
-    // Gizlilik kontrolü: takım herkese açıksa veya etkinlik public ise herkes görebilir
+    // Bireysel etkinlikte takım adı yerine maskeli oluşturan adı gösterilir.
+    if (!training.team_id) training.creator_display = maskCreatorName(training.creator_name);
+    delete training.creator_name;
+
+    // Gizlilik kontrolü: bireysel etkinlik (takımsız) public'se herkes görebilir;
+    // takım etkinliğinde takım herkese açıksa veya etkinlik public ise herkes görebilir.
     const isPubliclyVisible = !training.team_is_private || training.is_public;
     if (!isPubliclyVisible) {
       if (!req.user) {
@@ -2124,18 +2172,21 @@ app.get('/api/trainings/:id', optionalAuth, async (req, res) => {
       }
     }
 
-    // Kullanıcının bu takımdaki rolü ve etkinliği yönetip yönetemeyeceği.
-    // Yetki kuralı tek yerde (backend) kalsın diye hazır boolean olarak döndürülür;
-    // arayüz düzenle/sil butonlarını buna göre gösterir.
+    // Etkinliği yönetip yönetemeyeceği: bireyselde OLUŞTURAN yönetir,
+    // takım etkinliğinde ise takımdaki rolü belirler. Yetki kuralı tek yerde (backend).
     training.my_role = null;
     training.can_manage = false;
     if (req.user) {
-      const roleResult = await pool.query(
-        'SELECT role FROM team_members WHERE team_id = $1 AND user_id = $2',
-        [training.team_id, req.user.id]
-      );
-      training.my_role = roleResult.rows[0]?.role || null;
-      training.can_manage = TRAINING_MANAGER_ROLES.includes(training.my_role);
+      if (!training.team_id) {
+        training.can_manage = training.created_by === req.user.id;
+      } else {
+        const roleResult = await pool.query(
+          'SELECT role FROM team_members WHERE team_id = $1 AND user_id = $2',
+          [training.team_id, req.user.id]
+        );
+        training.my_role = roleResult.rows[0]?.role || null;
+        training.can_manage = TRAINING_MANAGER_ROLES.includes(training.my_role);
+      }
     }
 
     const attendeesResult = await pool.query(
@@ -2220,7 +2271,8 @@ app.post('/api/trainings/:id/join', authenticateToken, async (req, res) => {
     const joinerRes = await pool.query('SELECT name, email FROM users WHERE id = $1', [req.user.id]);
     const joinerName = joinerRes.rows[0]?.name || req.user.email;
 
-    // Takım adını ve etkinliği yönetebilen üyeleri (sahip/antrenör/kaptan) bul
+    // Takım etkinliğinde yöneticilere, bireysel etkinlikte oluşturana katılım bildirimi gider.
+    if (training.team_id) {
     const teamRow = await pool.query('SELECT name FROM teams WHERE id = $1', [training.team_id]);
     const teamName = teamRow.rows[0]?.name || 'Takımınız';
 
@@ -2257,6 +2309,16 @@ app.post('/api/trainings/:id/join', authenticateToken, async (req, res) => {
           </div>
         `),
       }).catch(e => console.error('Training join email error:', e.message));
+    }
+    } else if (training.created_by && training.created_by !== req.user.id) {
+      // Bireysel etkinlik: oluşturana katılım bildirimi
+      await createNotif(training.created_by, {
+        title: 'Etkinliğe Yeni Katılımcı!',
+        message: `${joinerName}, ${training.title} etkinliğine katıldı.`,
+        type: 'training_join',
+        refId: trainingId,
+        url: `/etkinlikler?etkinlik=${trainingId}`,
+      });
     }
 
     logActivity('training_join', req.user.id, null, { training_title: training.title });
@@ -2317,7 +2379,7 @@ app.post('/api/trainings/:id/comments', authenticateToken, async (req, res) => {
     const trainingResult = await pool.query(
       `SELECT t.title, t.training_date, t.team_id, teams.name as team_name
        FROM trainings t
-       JOIN teams ON t.team_id = teams.id
+       LEFT JOIN teams ON t.team_id = teams.id
        WHERE t.id = $1`,
       [trainingId]
     );
@@ -2388,7 +2450,7 @@ app.put('/api/trainings/:id', authenticateToken, async (req, res) => {
     const { title, description, training_date, training_time, location_name, location_lat, location_lng, capacity, difficulty } = req.body;
 
     const trainingResult = await pool.query(
-      'SELECT team_id FROM trainings WHERE id = $1',
+      'SELECT team_id, created_by FROM trainings WHERE id = $1',
       [trainingId]
     );
 
@@ -2396,15 +2458,20 @@ app.put('/api/trainings/:id', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Training not found' });
     }
 
-    const memberCheck = await pool.query(
-      'SELECT role FROM team_members WHERE team_id = $1 AND user_id = $2',
-      [trainingResult.rows[0].team_id, req.user.id]
-    );
-
-    // Etkinlik oluşturabilen roller düzenleyebilmeli de (POST /api/trainings ile aynı liste).
-    // 'admin' pratikte kullanılmıyor ama elle atanmış olma ihtimaline karşı korunuyor.
-    if (memberCheck.rows.length === 0 || !TRAINING_MANAGER_ROLES.includes(memberCheck.rows[0].role)) {
-      return res.status(403).json({ error: 'Etkinliği düzenlemek için takımın sahibi, antrenörü veya kaptanı olmanız gerekiyor.' });
+    // Bireysel etkinlikte yalnızca oluşturan düzenler; takım etkinliğinde yetkili roller.
+    const trg = trainingResult.rows[0];
+    if (!trg.team_id) {
+      if (trg.created_by !== req.user.id) {
+        return res.status(403).json({ error: 'Bu etkinliği yalnızca oluşturan kişi düzenleyebilir.' });
+      }
+    } else {
+      const memberCheck = await pool.query(
+        'SELECT role FROM team_members WHERE team_id = $1 AND user_id = $2',
+        [trg.team_id, req.user.id]
+      );
+      if (memberCheck.rows.length === 0 || !TRAINING_MANAGER_ROLES.includes(memberCheck.rows[0].role)) {
+        return res.status(403).json({ error: 'Etkinliği düzenlemek için takımın sahibi, antrenörü veya kaptanı olmanız gerekiyor.' });
+      }
     }
 
     // Konum değişmiş olabilir → saat dilimini yeniden hesapla (trigger UTC'yi günceller)
@@ -2482,7 +2549,7 @@ app.delete('/api/trainings/:id', authenticateToken, async (req, res) => {
     const trainingId = req.params.id;
 
     const trainingResult = await pool.query(
-      'SELECT team_id FROM trainings WHERE id = $1',
+      'SELECT team_id, created_by FROM trainings WHERE id = $1',
       [trainingId]
     );
 
@@ -2490,13 +2557,20 @@ app.delete('/api/trainings/:id', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Training not found' });
     }
 
-    const memberCheck = await pool.query(
-      'SELECT role FROM team_members WHERE team_id = $1 AND user_id = $2',
-      [trainingResult.rows[0].team_id, req.user.id]
-    );
-
-    if (memberCheck.rows.length === 0 || !TRAINING_MANAGER_ROLES.includes(memberCheck.rows[0].role)) {
-      return res.status(403).json({ error: 'Etkinliği silmek için takımın sahibi, antrenörü veya kaptanı olmanız gerekiyor.' });
+    // Bireysel etkinlikte yalnızca oluşturan siler; takım etkinliğinde yetkili roller.
+    const trg = trainingResult.rows[0];
+    if (!trg.team_id) {
+      if (trg.created_by !== req.user.id) {
+        return res.status(403).json({ error: 'Bu etkinliği yalnızca oluşturan kişi silebilir.' });
+      }
+    } else {
+      const memberCheck = await pool.query(
+        'SELECT role FROM team_members WHERE team_id = $1 AND user_id = $2',
+        [trg.team_id, req.user.id]
+      );
+      if (memberCheck.rows.length === 0 || !TRAINING_MANAGER_ROLES.includes(memberCheck.rows[0].role)) {
+        return res.status(403).json({ error: 'Etkinliği silmek için takımın sahibi, antrenörü veya kaptanı olmanız gerekiyor.' });
+      }
     }
 
     await pool.query('DELETE FROM trainings WHERE id = $1', [trainingId]);
@@ -2730,17 +2804,18 @@ app.get('/api/search', authenticateToken, async (req, res) => {
 
     if (!type || type === 'trainings') {
       const trainingsResult = await pool.query(
-        `SELECT t.*, teams.name as team_name, teams.sport as team_sport
+        `SELECT t.*, teams.name as team_name, teams.sport as team_sport, creator.name as creator_name
          FROM trainings t
-         JOIN teams ON t.team_id = teams.id
-         WHERE (t.title ILIKE $1 OR t.description ILIKE $1 OR teams.sport ILIKE $1)
+         LEFT JOIN teams ON t.team_id = teams.id
+         LEFT JOIN users creator ON creator.id = t.created_by
+         WHERE (t.title ILIKE $1 OR t.description ILIKE $1 OR COALESCE(t.sport, teams.sport) ILIKE $1)
            AND (t.is_public = true OR teams.id IN (
              SELECT team_id FROM team_members WHERE user_id = $2
-           ))
+           ) OR t.created_by = $2)
          LIMIT 10`,
         [`%${q}%`, req.user.id]
       );
-      results.trainings = trainingsResult.rows;
+      results.trainings = attachCreatorDisplay(trainingsResult.rows);
     }
 
     if (!type || type === 'teams') {
@@ -3580,6 +3655,8 @@ pool.query(`ALTER TABLE activity_logs ADD COLUMN IF NOT EXISTS source_ref TEXT`)
 pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS activity_logs_source_ref_idx ON activity_logs(source_ref) WHERE source_ref IS NOT NULL`).catch(() => {});
 // training_attendees ve team_members tablolarına created_at ekle (yoksa)
 pool.query(`ALTER TABLE training_attendees ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW()`).catch(() => {});
+// Bireysel etkinliklerin spor dalı (takım etkinliklerinde spor takımdan gelir).
+pool.query(`ALTER TABLE trainings ADD COLUMN IF NOT EXISTS sport TEXT`).catch(() => {});
 pool.query(`ALTER TABLE team_members      ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW()`).catch(() => {});
 
 async function logActivity(event_type, user_id, user_name, meta = {}) {

@@ -349,9 +349,14 @@ export const translations = {
   // ── CREATE TRAINING ─────────────────────────────────────
   createTraining: {
     pageTitle:      { tr: "Etkinlik Oluştur",            en: "Create Event",         de: "Event erstellen"      },
-    pageSubtitle:   { tr: "Takımın için yeni bir etkinlik planla.",
-                      en: "Plan a new event for your team.",
-                      de: "Plane ein neues Event für dein Team." },
+    pageSubtitle:   { tr: "Bireysel ya da takımınla yeni bir etkinlik planla.",
+                      en: "Plan a new event individually or with your team.",
+                      de: "Plane ein neues Event einzeln oder mit deinem Team." },
+    typeLabel:      { tr: "Etkinlik Türü",               en: "Event Type",           de: "Eventtyp"             },
+    individual:     { tr: "Bireysel (takımsız)",         en: "Individual (no team)", de: "Einzeln (kein Team)"  },
+    orCreateTeam:   { tr: "veya bir takım kur",          en: "or create a team",     de: "oder ein Team erstellen" },
+    sportLabel:     { tr: "Spor Dalı",                   en: "Sport",                de: "Sportart"             },
+    sportPlaceholder:{ tr: "Spor dalı seç",              en: "Select a sport",       de: "Sportart wählen"      },
     titleLabel:     { tr: "Etkinlik Başlığı",            en: "Event Title",          de: "Eventstitel"          },
     titlePlaceholder:{ tr: "örn. Sabah Koşusu",           en: "e.g. Morning Run",        de: "z.B. Morgenlauf"         },
     teamLabel:      { tr: "Takım",                        en: "Team",                    de: "Team"                    },
