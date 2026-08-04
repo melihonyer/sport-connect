@@ -342,7 +342,7 @@ export default function AdminPanel() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   // Banner form state
-  const emptyBanner = { title:"", subtitle:"", badge_text:"", cta_primary_text:"Hemen Başla", cta_primary_text_en:"", cta_primary_text_de:"", cta_primary_url:"", cta_secondary_text:"Antrenmanları Keşfet", cta_secondary_url:"", gradient_from:"#0D0B26", gradient_via:"#1a1040", gradient_to:"#0f2044", is_active:true, order_index:0, mottos:[""], motto_color_1:"#00b7ba", motto_color_2:"#981dd8", title_color:"#ffffff", subtitle_color:"rgba(186,230,253,0.75)" };
+  const emptyBanner = { title:"", subtitle:"", badge_text:"", cta_primary_text:"Hemen Başla", cta_primary_text_en:"", cta_primary_text_de:"", cta_primary_url:"", cta_secondary_text:"Etkinlikleri Keşfet", cta_secondary_url:"", gradient_from:"#0D0B26", gradient_via:"#1a1040", gradient_to:"#0f2044", is_active:true, order_index:0, mottos:[""], motto_color_1:"#00b7ba", motto_color_2:"#981dd8", title_color:"#ffffff", subtitle_color:"rgba(186,230,253,0.75)" };
   const [bannerForm, setBannerForm] = useState(emptyBanner);
   const [editingBannerId, setEditingBannerId] = useState(null);
   const [showBannerForm, setShowBannerForm] = useState(false);
@@ -543,7 +543,7 @@ export default function AdminPanel() {
   const navItems = [
     { id: "dashboard", label: "Genel Bakış", icon: LayoutDashboard },
     { id: "users",     label: "Kullanıcılar", icon: Users },
-    { id: "trainings", label: "Antrenmanlar", icon: Activity },
+    { id: "trainings", label: "Etkinlikler", icon: Activity },
     { id: "teams",     label: "Takımlar",     icon: Shield },
     { id: "logs",      label: "Loglar",       icon: Activity },
     { id: "messages",  label: "Mesajlar",     icon: MessageSquare,
@@ -565,7 +565,7 @@ export default function AdminPanel() {
       cta_primary_text_en: b.cta_primary_text_en || "",
       cta_primary_text_de: b.cta_primary_text_de || "",
       cta_primary_url: b.cta_primary_url || "",
-      cta_secondary_text: b.cta_secondary_text || "Antrenmanları Keşfet",
+      cta_secondary_text: b.cta_secondary_text || "Etkinlikleri Keşfet",
       cta_secondary_url: b.cta_secondary_url || "",
       gradient_from: b.gradient_from || "#0D0B26",
       gradient_via: b.gradient_via || "#1a1040",
@@ -684,9 +684,9 @@ export default function AdminPanel() {
     user_register:    { icon: User,          label: "Üye Oldu",              color: "bg-blue-100 text-blue-700"   },
     team_create:      { icon: Trophy,        label: "Takım Kurdu",           color: "bg-purple-100 text-purple-700" },
     team_join:        { icon: Users,         label: "Takıma Katıldı",        color: "bg-indigo-100 text-indigo-700" },
-    training_create:  { icon: ClipboardList, label: "Antrenman Oluşturdu",   color: "bg-brand-100 text-brand-700"  },
-    training_join:    { icon: CheckCircle2,  label: "Antrenmana Katıldı",    color: "bg-brand-100 text-brand-700" },
-    training_leave:   { icon: DoorOpen,      label: "Antrenman Ayrıldı",     color: "bg-orange-100 text-orange-700" },
+    training_create:  { icon: ClipboardList, label: "Etkinlik Oluşturdu",   color: "bg-brand-100 text-brand-700"  },
+    training_join:    { icon: CheckCircle2,  label: "Etkinliğe Katıldı",    color: "bg-brand-100 text-brand-700" },
+    training_leave:   { icon: DoorOpen,      label: "Etkinlik Ayrıldı",     color: "bg-orange-100 text-orange-700" },
   };
 
   const LOG_FILTERS = [
@@ -694,7 +694,7 @@ export default function AdminPanel() {
     { id: "user_register",  label: "Üye Kayıt" },
     { id: "team_create",    label: "Takım" },
     { id: "team_join",      label: "Takım Katıl" },
-    { id: "training_create",label: "Antrenman" },
+    { id: "training_create",label: "Etkinlik" },
     { id: "training_join",  label: "Katılım" },
   ];
 
@@ -732,8 +732,8 @@ export default function AdminPanel() {
               { label: "Yeni Üye",        key: "users",     grad: "from-blue-500 to-blue-700",     icon: User          },
               { label: "Takım Kuruldu",   key: "teams",     grad: "from-purple-500 to-purple-700",  icon: Trophy        },
               { label: "Takıma Katılım",  key: "teamJoins", grad: "from-indigo-500 to-indigo-700",  icon: Users         },
-              { label: "Yeni Antrenman",  key: "trainings", grad: "from-brand-500 to-brand-700",    icon: ClipboardList },
-              { label: "Antrenmana Kat.", key: "joins",     grad: "from-amber-500 to-orange-500",   icon: CheckCircle2  },
+              { label: "Yeni Etkinlik",  key: "trainings", grad: "from-brand-500 to-brand-700",    icon: ClipboardList },
+              { label: "Etkinliğe Kat.", key: "joins",     grad: "from-amber-500 to-orange-500",   icon: CheckCircle2  },
             ].map(({ label, key, grad, icon }) => (
               <div key={key} className={`bg-gradient-to-br ${grad} rounded-2xl p-5 text-white shadow-lg`}>
                 <div className="flex items-center justify-between mb-3">
@@ -787,8 +787,8 @@ export default function AdminPanel() {
                 <Area type="monotone" dataKey="users"     name="Üye"           stroke={seriesStroke("users",     "#3B82F6")} fill="url(#gUsers)"     strokeWidth={seriesWidth("users")}     dot={false} fillOpacity={seriesFill("users")} />
                 <Area type="monotone" dataKey="teams"     name="Takım Kuruldu" stroke={seriesStroke("teams",     "#8B5CF6")} fill="url(#gTeams)"     strokeWidth={seriesWidth("teams")}     dot={false} fillOpacity={seriesFill("teams")} />
                 <Area type="monotone" dataKey="teamJoins" name="Takıma Katılım" stroke={seriesStroke("teamJoins", "#6366F1")} fill="url(#gTeamJoins)" strokeWidth={seriesWidth("teamJoins")} dot={false} fillOpacity={seriesFill("teamJoins")} />
-                <Area type="monotone" dataKey="trainings" name="Antrenman"      stroke={seriesStroke("trainings", "#00b7ba")} fill="url(#gTrainings)" strokeWidth={seriesWidth("trainings")} dot={false} fillOpacity={seriesFill("trainings")} />
-                <Area type="monotone" dataKey="joins"     name="Antrenmana Kat." stroke={seriesStroke("joins",    "#F59E0B")} fill="url(#gJoins)"     strokeWidth={seriesWidth("joins")}     dot={false} fillOpacity={seriesFill("joins")} />
+                <Area type="monotone" dataKey="trainings" name="Etkinlik"      stroke={seriesStroke("trainings", "#00b7ba")} fill="url(#gTrainings)" strokeWidth={seriesWidth("trainings")} dot={false} fillOpacity={seriesFill("trainings")} />
+                <Area type="monotone" dataKey="joins"     name="Etkinliğe Kat." stroke={seriesStroke("joins",    "#F59E0B")} fill="url(#gJoins)"     strokeWidth={seriesWidth("joins")}     dot={false} fillOpacity={seriesFill("joins")} />
               </AreaChart>
             </ResponsiveContainer>
           )}
@@ -888,7 +888,7 @@ export default function AdminPanel() {
 
   const statCards = stats ? [
     { label: "Toplam Kullanıcı",   value: stats.users,            icon: Users,        grad: "from-brand-500 to-brand-700" },
-    { label: "Toplam Antrenman",   value: stats.trainings,        icon: Activity,     grad: "from-brand-400 to-brand-600" },
+    { label: "Toplam Etkinlik",   value: stats.trainings,        icon: Activity,     grad: "from-brand-400 to-brand-600" },
     { label: "Toplam Takım",       value: stats.teams,            icon: Shield,       grad: "from-cyan-500 to-teal-600" },
     { label: "Yeni Mesaj",         value: stats.unreadContact,    icon: MessageSquare,grad: "from-amber-500 to-orange-500" },
   ] : [];
@@ -1086,7 +1086,7 @@ export default function AdminPanel() {
                       <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-400">
                         <span>{u.team_count ?? 0} takım</span>
                         <span>·</span>
-                        <span>{u.training_count ?? 0} antrenman</span>
+                        <span>{u.training_count ?? 0} etkinlik</span>
                         <span>·</span>
                         <span>{fmt(u.created_at)}</span>
                       </div>
@@ -1109,7 +1109,7 @@ export default function AdminPanel() {
                       <th className="text-left px-6 py-3">Kullanıcı</th>
                       <th className="text-left px-4 py-3">E-posta</th>
                       <th className="text-center px-4 py-3">Takım</th>
-                      <th className="text-center px-4 py-3">Antrenman</th>
+                      <th className="text-center px-4 py-3">Etkinlik</th>
                       <th className="text-center px-4 py-3">Rol</th>
                       <th className="text-left px-4 py-3">Kayıt</th>
                       <th className="px-4 py-3"></th>
@@ -1162,13 +1162,13 @@ export default function AdminPanel() {
           {!loading && tab === "trainings" && (
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
               <div className="px-4 md:px-6 py-4 border-b border-slate-100">
-                <h2 className="font-medium text-slate-900">Antrenmanlar <span className="text-slate-400 font-normal text-sm">({filteredTrainings.length})</span></h2>
+                <h2 className="font-medium text-slate-900">Etkinlikler <span className="text-slate-400 font-normal text-sm">({filteredTrainings.length})</span></h2>
               </div>
 
               {/* Mobil kart listesi */}
               <div className="sm:hidden divide-y divide-slate-50">
                 {filteredTrainings.length === 0 && (
-                  <div className="text-center py-12 text-slate-400 text-sm">Antrenman bulunamadı</div>
+                  <div className="text-center py-12 text-slate-400 text-sm">Etkinlik bulunamadı</div>
                 )}
                 {filteredTrainings.map(t => {
                   const trainingDateObj = new Date(t.training_date);
@@ -1255,7 +1255,7 @@ export default function AdminPanel() {
                   </tbody>
                 </table>
                 {filteredTrainings.length === 0 && (
-                  <div className="text-center py-16 text-slate-400">Antrenman bulunamadı</div>
+                  <div className="text-center py-16 text-slate-400">Etkinlik bulunamadı</div>
                 )}
               </div>
             </div>
@@ -1505,13 +1505,13 @@ export default function AdminPanel() {
                           <div>
                             <label className="block text-[11px] text-slate-400 mb-1">Buton Metni 🇹🇷</label>
                             <input value={bannerForm.cta_primary_text} onChange={e=>setBannerForm(p=>({...p,cta_primary_text:e.target.value}))}
-                              placeholder="Antrenmanları Keşfet"
+                              placeholder="Etkinlikleri Keşfet"
                               className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-300"/>
                           </div>
                           <div>
                             <label className="block text-[11px] text-slate-400 mb-1">Link / URL</label>
                             <input value={bannerForm.cta_primary_url} onChange={e=>setBannerForm(p=>({...p,cta_primary_url:e.target.value}))}
-                              placeholder="/antrenmanlar veya https://..."
+                              placeholder="/etkinlikler veya https://..."
                               className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-300"/>
                           </div>
                           <div>
@@ -1540,7 +1540,7 @@ export default function AdminPanel() {
                           <div>
                             <label className="block text-[11px] text-slate-400 mb-1">Buton Metni</label>
                             <input value={bannerForm.cta_secondary_text} onChange={e=>setBannerForm(p=>({...p,cta_secondary_text:e.target.value}))}
-                              placeholder="Antrenmanları Keşfet"
+                              placeholder="Etkinlikleri Keşfet"
                               className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-300"/>
                           </div>
                           <div>
@@ -1769,7 +1769,7 @@ export default function AdminPanel() {
                         r.content_type === "wall_post"? "bg-orange-100 text-orange-600" :
                         "bg-slate-100 text-slate-600"
                       }`}>
-                        {{ training: "Antrenman", comment: "Yorum", wall_post: "Duvar Gönderisi", user: "Kullanıcı" }[r.content_type] || r.content_type} #{r.content_id}
+                        {{ training: "Etkinlik", comment: "Yorum", wall_post: "Duvar Gönderisi", user: "Kullanıcı" }[r.content_type] || r.content_type} #{r.content_id}
                       </span>
                     </div>
                     {r.content_preview && (

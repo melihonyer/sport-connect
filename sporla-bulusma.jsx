@@ -94,7 +94,7 @@ class ErrorBoundary extends React.Component {
 const BASE_URL = import.meta.env.VITE_BASE_URL ?? (import.meta.env.DEV ? "http://localhost:3000" : "");
 
 // ── Tarih formatlama yardımcıları ──────────────────────────────────────────
-// "1 Haziran 2026 Pazartesi" — antrenman detay gibi önemli yerlerde
+// "1 Haziran 2026 Pazartesi" — etkinlik detay gibi önemli yerlerde
 const fmtDateFull = (d) => d
   ? new Date(d).toLocaleDateString("tr-TR", { timeZone:"UTC", weekday:"long", day:"numeric", month:"long", year:"numeric" })
   : "";
@@ -153,7 +153,7 @@ const _placeType = (cls, typ, lang="tr") => {
   return { label: {tr:"Yer", en:"Place", de:"Ort"}[l], color:"#00b7ba" };
 };
 
-// Hafta bazlı marka renk rotasyonu — aynı hafta içindeki antrenmanlar aynı rengi paylaşır,
+// Hafta bazlı marka renk rotasyonu — aynı hafta içindeki etkinlikler aynı rengi paylaşır,
 // haftadan haftaya değişir. Hepsi beyaz üzerinde WCAG AA kontrastlı (≥ 4.5:1).
 const TRAINING_ACCENT_COLORS = ["#C71B52", "#4D0C3E", "#2E0C38", "#0E1122", "#17506E", "#60A4A1"];
 const trainingAccentColor = (id) => {
@@ -630,7 +630,8 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
     } else {
       // Türkçe URL path → page key dönüşümü
       const pathToPage = {
-        "antrenmanlar": "trainings", "/antrenmanlar": "trainings",
+        "etkinlikler": "trainings", "/etkinlikler": "trainings",
+        "antrenmanlar": "trainings", "/antrenmanlar": "trainings", // eski link uyumu
         "takimlar":     "teams",     "/takimlar":     "teams",
         "iletisim":     "contact",   "/iletisim":     "contact",
         "profil":       "profile",   "/profil":       "profile",
@@ -916,15 +917,18 @@ export default function Muuvlink() {
   // ── URL ↔ sayfa eşlemesi ─────────────────────────────
   const PAGE_TO_PATH = {
     home:              "/",
-    trainings:         "/antrenmanlar",
+    trainings:         "/etkinlikler",
     teams:             "/takimlar",
     contact:           "/iletisim",
     profile:           "/profil",
-    "create-training": "/antrenman-ekle",
+    "create-training": "/etkinlik-ekle",
     "create-team":     "/takim-kur",
     badges:            "/rozetlerim",
   };
   const PATH_TO_PAGE = Object.fromEntries(Object.entries(PAGE_TO_PATH).map(([k,v])=>[v,k]));
+  // Eski Türkçe path'ler hâlâ çözümlensin (daha önce paylaşılmış linkler):
+  PATH_TO_PAGE["/antrenmanlar"]  = "trainings";
+  PATH_TO_PAGE["/antrenman-ekle"] = "create-training";
 
   // PAGE_META moved below – uses t() for localised titles/descriptions
 
@@ -1596,7 +1600,7 @@ export default function Muuvlink() {
           showToast(notification.title || notification.body || "Yeni bildirim", "success");
         });
         PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
-          // Backend push data'sı { type, refId, url } gönderir — url ilgili takım/antrenman detayına götürür
+          // Backend push data'sı { type, refId, url } gönderir — url ilgili takım/etkinlik detayına götürür
           const data = action.notification.data || {};
           if (navigateToNotificationTarget(data.url)) return;
           // Geriye dönük: url yoksa type + refId'den hedefi çıkar
@@ -1652,7 +1656,7 @@ export default function Muuvlink() {
           } else if (!navigateToNotificationTarget(event.url)) {
             // Bilinen bir hedef çıkmadıysa sayfa bazında yönlendir
             if (pathname.startsWith("/takimlar")) setCurrentPage("teams");
-            else if (pathname.startsWith("/antrenmanlar")) setCurrentPage("trainings");
+            else if (pathname.startsWith("/etkinlikler") || pathname.startsWith("/antrenmanlar")) setCurrentPage("trainings");
             else if (pathname.startsWith("/profil")) setCurrentPage("profile");
           }
         } catch (_) {}
@@ -1714,15 +1718,15 @@ export default function Muuvlink() {
         setIsAuthModalOpen(true);
       }
     }
-    // Antrenman deep-link: ?antrenman=ID (paylaşılan link)
-    const antrenmanId = params.get("antrenman");
-    if (antrenmanId) {
+    // Etkinlik deep-link: ?etkinlik=ID (paylaşılan link) — eski ?antrenman=ID de kabul edilir
+    const etkinlikId = params.get("etkinlik") || params.get("antrenman");
+    if (etkinlikId) {
       window.history.replaceState({}, "", window.location.pathname);
       const token = localStorage.getItem("token");
       if (token) {
-        fetchTrainingDetails(antrenmanId);
+        fetchTrainingDetails(etkinlikId);
       } else {
-        localStorage.setItem("pendingTraining", antrenmanId);
+        localStorage.setItem("pendingTraining", etkinlikId);
         setAuthMode("login");
         setIsAuthModalOpen(true);
       }
@@ -1987,7 +1991,7 @@ export default function Muuvlink() {
     }
   };
 
-  // Saat geçmiş antrenmanları client tarafında da filtrele
+  // Saat geçmiş etkinlikleri client tarafında da filtrele
   const filterPastTrainings = (list) => {
     const istFmt  = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Istanbul' });
     const timeFmt = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Istanbul',
@@ -2055,7 +2059,7 @@ export default function Muuvlink() {
   };
 
   const handleNearbySearch = (distanceOverride) => {
-    // Konum beklenirken kullanıcıyı ana sayfada tutmuyoruz: antrenman sayfasına
+    // Konum beklenirken kullanıcıyı ana sayfada tutmuyoruz: etkinlik sayfasına
     // hemen geçip yükleniyor durumunu orada gösteriyoruz. Aksi halde buton
     // saniyelerce dönüyor ve hiçbir şey olmuyormuş gibi görünüyordu.
     setLocationLoading(true);
@@ -2615,7 +2619,7 @@ export default function Muuvlink() {
   };
 
   // Bildirim/deep-link hedefine git.
-  // Backend action_url'i "/antrenmanlar?antrenman=12" veya "/takimlar?takim=3" formatında üretir.
+  // Backend action_url'i "/etkinlikler?etkinlik=12" veya "/takimlar?takim=3" formatında üretir.
   // Hem in-app bildirim tıklaması, hem push tıklaması, hem de Universal Link buradan geçer.
   const navigateToNotificationTarget = (rawUrl) => {
     if (!rawUrl) return false;
@@ -2631,10 +2635,10 @@ export default function Muuvlink() {
     }
 
     const takimId     = params.get("takim");
-    const antrenmanId = params.get("antrenman");
+    const etkinlikId = params.get("etkinlik") || params.get("antrenman"); // eski bildirim URL'leri
 
-    if (antrenmanId) {
-      fetchTrainingDetails(antrenmanId);
+    if (etkinlikId) {
+      fetchTrainingDetails(etkinlikId);
       return true;
     }
     if (takimId) {
@@ -3166,7 +3170,7 @@ export default function Muuvlink() {
           )}
         </div>
 
-        {/* Yaklaşan antrenmanlar */}
+        {/* Yaklaşan etkinlikler */}
         <div className="py-8 bg-white px-4">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-display font-bold text-slate-900 text-xl">{t("home.upcoming")}</h2>
@@ -3265,7 +3269,7 @@ export default function Muuvlink() {
             {/* Dikey ayraç */}
             <div className="hidden lg:block w-px bg-slate-100 self-stretch"/>
 
-            {/* Sağ: Antrenman listesi */}
+            {/* Sağ: Etkinlik listesi */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-2">
                 <div>
@@ -4221,7 +4225,7 @@ export default function Muuvlink() {
               </span>
               <button
                 onClick={async () => {
-                  const link = `${window.location.origin}/antrenmanlar?antrenman=${selectedTraining.id}`;
+                  const link = `${window.location.origin}/etkinlikler?etkinlik=${selectedTraining.id}`;
                   const res = await shareLink({ title: selectedTraining.title, text: selectedTraining.title, url: link });
                   if (res === "copied") showToast(t("toast.linkCopied"), "success");
                   else if (res === "failed") showToast(t("toast.shareFail"), "error");
@@ -5127,7 +5131,7 @@ export default function Muuvlink() {
   };
 
   const CreateTrainingPage = () => {
-    // Backend'den doğrudan sadece antrenman oluşturabileceği takımları çek
+    // Backend'den doğrudan sadece etkinlik oluşturabileceği takımları çek
     const [eligibleTeams, setEligibleTeams] = useState([]);
     const [eligibleLoading, setEligibleLoading] = useState(true);
     useEffect(() => {
@@ -5180,7 +5184,7 @@ export default function Muuvlink() {
     };
 
     // Çift gönderim koruması: yavaş bağlantıda istek uzun sürünce kullanıcı butona
-    // tekrar basıp aynı antrenmanı iki kez oluşturabiliyordu.
+    // tekrar basıp aynı etkinliği iki kez oluşturabiliyordu.
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const submitOnce = async () => {
@@ -6367,7 +6371,7 @@ export default function Muuvlink() {
                       <option value="">{t("contact.subjectSelect")}</option>
                       <option value="Üyelik & Hesap">{t("contact.subjects.account")}</option>
                       <option value="Takım Kurma">{t("contact.subjects.team")}</option>
-                      <option value="Antrenman Soruları">{t("contact.subjects.training")}</option>
+                      <option value="Etkinlik Soruları">{t("contact.subjects.training")}</option>
                       <option value="Teknik Sorun">{t("contact.subjects.technical")}</option>
                       <option value="İş Birliği & Sponsorluk">{t("contact.subjects.collab")}</option>
                       <option value="Öneri & Geri Bildirim">{t("contact.subjects.feedback")}</option>
@@ -6466,10 +6470,10 @@ Vergi Dairesi: Karşıyaka V.D. | VN: 7420957827<br/>
 İletişim: Uygulama içi iletişim formu aracılığıyla ulaşabilirsiniz.</p>
 
 <h4>2. İşlenen Kişisel Veriler</h4>
-<p>Ad, soyad, e-posta adresi, profil fotoğrafı, konum bilgisi (yalnızca kullanıcı izni ile), antrenman ve takım verileri, uygulama kullanım geçmişi.</p>
+<p>Ad, soyad, e-posta adresi, profil fotoğrafı, konum bilgisi (yalnızca kullanıcı izni ile), etkinlik ve takım verileri, uygulama kullanım geçmişi.</p>
 
 <h4>3. İşleme Amaçları</h4>
-<p>Üyelik oluşturma ve kimlik doğrulama; platform hizmetlerinin (antrenman oluşturma, takım yönetimi, spor arkadaşı eşleştirme) sunulması; bildirim ve e-posta gönderimi; platform güvenliğinin sağlanması; yasal yükümlülüklerin yerine getirilmesi.</p>
+<p>Üyelik oluşturma ve kimlik doğrulama; platform hizmetlerinin (etkinlik oluşturma, takım yönetimi, spor arkadaşı eşleştirme) sunulması; bildirim ve e-posta gönderimi; platform güvenliğinin sağlanması; yasal yükümlülüklerin yerine getirilmesi.</p>
 
 <h4>4. Hukuki Dayanak</h4>
 <p>KVKK Madde 5/2-c uyarınca sözleşmenin ifası; Madde 5/2-ç uyarınca hukuki yükümlülük; Madde 5/2-f uyarınca meşru menfaat; gerektiğinde Madde 5/1 uyarınca açık rıza.</p>
@@ -6493,12 +6497,12 @@ Vergi Dairesi: Karşıyaka V.D. | VN: 7420957827<br/>
 
 <h4>1. Topladığımız Bilgiler</h4>
 <p><strong>Doğrudan sağladığınız bilgiler:</strong> Kayıt sırasında girdiğiniz ad, e-posta adresi ve şifre; profil sayfasında eklediğiniz fotoğraf ve biyografi.<br/>
-<strong>Platform kullanım verileri:</strong> Oluşturduğunuz veya katıldığınız antrenmanlar, takım üyelikleri, rozet bilgileri.<br/>
-<strong>Konum verisi:</strong> Yalnızca tarayıcı izni verdiğinizde ve yalnızca yakın antrenmanları listelemek için kullanılır. Sunucularımızda kalıcı olarak saklanmaz.<br/>
+<strong>Platform kullanım verileri:</strong> Oluşturduğunuz veya katıldığınız etkinlikler, takım üyelikleri, rozet bilgileri.<br/>
+<strong>Konum verisi:</strong> Yalnızca tarayıcı izni verdiğinizde ve yalnızca yakın etkinlikleri listelemek için kullanılır. Sunucularımızda kalıcı olarak saklanmaz.<br/>
 <strong>Teknik veriler:</strong> Çerezler ve oturum bilgileri (detaylar için Çerez Politikamıza bakınız).</p>
 
 <h4>2. Verilerin Kullanımı</h4>
-<p>Toplanan veriler; hesabınızı ve oturumunuzu yönetmek, spor arkadaşı eşleştirme ve antrenman önerilerini kişiselleştirmek, platform güvenliğini korumak, bildirim ve hatırlatıcı e-postalar göndermek ve yasal yükümlülükleri yerine getirmek amacıyla kullanılır. Verileriniz reklam amacıyla üçüncü taraflarla paylaşılmaz.</p>
+<p>Toplanan veriler; hesabınızı ve oturumunuzu yönetmek, spor arkadaşı eşleştirme ve etkinlik önerilerini kişiselleştirmek, platform güvenliğini korumak, bildirim ve hatırlatıcı e-postalar göndermek ve yasal yükümlülükleri yerine getirmek amacıyla kullanılır. Verileriniz reklam amacıyla üçüncü taraflarla paylaşılmaz.</p>
 
 <h4>3. Veri Güvenliği</h4>
 <p>Verileriniz endüstri standardı şifreleme (HTTPS/TLS) ile iletilmekte; şifreleriniz bcrypt algoritmasıyla hash'lenerek saklanmakta, hiçbir zaman düz metin olarak tutulmamaktadır. Sunucu altyapımız düzenli güvenlik güncellemeleri almaktadır.</p>
@@ -6521,7 +6525,7 @@ Vergi Dairesi: Karşıyaka V.D. | VN: 7420957827<br/>
 <p>Muuvlink platformunu kullanarak aşağıdaki koşulları okuduğunuzu, anladığınızı ve kabul ettiğinizi beyan etmiş olursunuz. Bu koşullar, SALT KREATİF REKLAM TİC. LTD. ŞTİ. ile kullanıcı arasındaki hukuki ilişkiyi düzenler.</p>
 
 <h4>1. Hizmet Tanımı</h4>
-<p>Muuvlink; spor yapan bireylerin bir araya gelerek takım kurmasına, antrenman planlamasına ve spor arkadaşları bulmasına olanak tanıyan bir platformdur. Platform, web tarayıcısı üzerinden erişilebilen bir web uygulaması olarak sunulmaktadır.</p>
+<p>Muuvlink; spor yapan bireylerin bir araya gelerek takım kurmasına, etkinlik planlamasına ve spor arkadaşları bulmasına olanak tanıyan bir platformdur. Platform, web tarayıcısı üzerinden erişilebilen bir web uygulaması olarak sunulmaktadır.</p>
 
 <h4>2. Üyelik Koşulları</h4>
 <p>Platforma kayıt olmak için 18 yaşını doldurmuş olmanız ve geçerli bir e-posta adresi ile doğru kimlik bilgileri sağlamanız gerekmektedir. Bir kişi yalnızca bir hesap açabilir. Hesap güvenliğinizden (şifre, oturum) tamamen siz sorumlusunuz.</p>
@@ -6535,7 +6539,7 @@ Vergi Dairesi: Karşıyaka V.D. | VN: 7420957827<br/>
 — Ticari reklam veya spam içerik yaymak</p>
 
 <h4>4. İçerik Sorumluluğu</h4>
-<p>Platforma yüklediğiniz veya paylaştığınız tüm içeriklerin (profil fotoğrafı, antrenman açıklaması, yorumlar) hukuki sorumluluğu size aittir. Muuvlink, platformun güvenliğini ve kullanıcılarının haklarını korumak amacıyla uygunsuz içerikleri önceden bildirim yapmaksızın kaldırma ve ilgili hesabı askıya alma ya da kalıcı olarak kapatma hakkını saklı tutar.</p>
+<p>Platforma yüklediğiniz veya paylaştığınız tüm içeriklerin (profil fotoğrafı, etkinlik açıklaması, yorumlar) hukuki sorumluluğu size aittir. Muuvlink, platformun güvenliğini ve kullanıcılarının haklarını korumak amacıyla uygunsuz içerikleri önceden bildirim yapmaksızın kaldırma ve ilgili hesabı askıya alma ya da kalıcı olarak kapatma hakkını saklı tutar.</p>
 
 <h4>5. Fikri Mülkiyet</h4>
 <p>Muuvlink markası, logosu, tasarımı ve yazılımı telif hakkı ve fikri mülkiyet mevzuatı kapsamında koruma altındadır. Platforma ait materyaller izinsiz kopyalanamaz, dağıtılamaz veya ticari amaçla kullanılamaz.</p>
@@ -6544,7 +6548,7 @@ Vergi Dairesi: Karşıyaka V.D. | VN: 7420957827<br/>
 <p>Muuvlink; platformu geliştirmek, güncellemek veya gerektiğinde hizmeti geçici ya da kalıcı olarak durdurmak hakkını saklı tutar. Önemli değişiklikler öncesinde kayıtlı kullanıcılara bildirim yapılmaya çalışılır; ancak teknik zorunluluk halinde bu mümkün olmayabilir.</p>
 
 <h4>7. Sorumluluk Sınırlaması</h4>
-<p>Platform "olduğu gibi" sunulmaktadır. Muuvlink; hizmetin kesintisiz veya hatasız çalışacağını garanti etmez. Platform üzerinde organize edilen fiziksel aktivitelerden (antrenman, spor etkinliği) doğabilecek yaralanma veya maddi zararlardan Muuvlink sorumlu tutulamaz.</p>
+<p>Platform "olduğu gibi" sunulmaktadır. Muuvlink; hizmetin kesintisiz veya hatasız çalışacağını garanti etmez. Platform üzerinde organize edilen fiziksel aktivitelerden (etkinlik, spor müsabakası) doğabilecek yaralanma veya maddi zararlardan Muuvlink sorumlu tutulamaz.</p>
 
 <h4>8. Uygulanacak Hukuk ve Yetki</h4>
 <p>Bu koşullar Türkiye Cumhuriyeti hukukuna tabidir. Taraflar arasında doğabilecek uyuşmazlıklarda İzmir mahkemeleri ve icra daireleri yetkilidir.</p>
@@ -6877,7 +6881,7 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
   const BottomNav = () => {
     const tabs = [
       { key: "home",      icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>, label: t("nav.home") || "Ana Sayfa" },
-      { key: "trainings", icon: <Activity className="w-6 h-6"/>,  label: t("nav.trainings") || "Antrenmanlar" },
+      { key: "trainings", icon: <Activity className="w-6 h-6"/>,  label: t("nav.trainings") || "Etkinlikler" },
       { key: "teams",     icon: <Users className="w-6 h-6"/>,     label: t("nav.teams") || "Takımlar" },
       { key: "profile",   icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>, label: t("nav.profile") || "Profil" },
     ];

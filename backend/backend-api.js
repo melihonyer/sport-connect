@@ -264,7 +264,7 @@ pool.query = async (...args) => {
   }
 };
 
-// Antrenmanı oluşturma/düzenleme/silme yetkisi olan takım rolleri.
+// Etkinliği oluşturma/düzenleme/silme yetkisi olan takım rolleri.
 // Tek yerden yönetilir ki üç işlem arasında yeniden ayrışmasın.
 // ('admin' sistemde kullanılmıyor ama elle atanmış olma ihtimaline karşı korunuyor.)
 const TRAINING_MANAGER_ROLES = ['owner', 'coach', 'captain', 'editor', 'admin'];
@@ -286,9 +286,9 @@ async function canManageTeam(teamId, userId) {
   return r.rows.length > 0;
 }
 
-// Antrenmanın koordinatından IANA saat dilimini bulur (ör. "Europe/Berlin").
+// Etkinliğin koordinatından IANA saat dilimini bulur (ör. "Europe/Berlin").
 // Uygulama yurtdışında da kullanıldığı için "geçti mi / yaklaşıyor mu" hesabı
-// antrenmanın YEREL saatine göre yapılmalı — training_datetime_utc bunun için var.
+// etkinliğin YEREL saatine göre yapılmalı — training_datetime_utc bunun için var.
 // Koordinat yoksa veya çözülemezse Türkiye varsayılır (mevcut davranışla uyumlu).
 const resolveTrainingTimezone = (lat, lng) => {
   const la = parseFloat(lat);
@@ -301,7 +301,7 @@ const resolveTrainingTimezone = (lat, lng) => {
   }
 };
 
-// Antrenmanın başlangıç anını UTC olarak veren SQL ifadesi.
+// Etkinliğin başlangıç anını UTC olarak veren SQL ifadesi.
 // Normalde training_datetime_utc doludur (trigger hesaplar); henüz doldurulmamış
 // eski kayıtlar için tarih+saat'i saat dilimiyle anında çevirerek güvenli fallback sağlar.
 const trainingUtcExpr = (alias = 't') => {
@@ -550,9 +550,9 @@ function wallPostEmail({ teamName, teamId, posterName, posterAvatar, message, po
   `);
 }
 
-// Şablon: Antrenman yorumu bildirimi
+// Şablon: Etkinlik yorumu bildirimi
 function trainingCommentEmail({ commenterName, commenterAvatar, trainingTitle, trainingDate, comment, trainingId }) {
-  const trainingLink = trainingId ? `${APP_URL}/antrenmanlar?antrenman=${trainingId}` : `${APP_URL}/antrenmanlar`;
+  const trainingLink = trainingId ? `${APP_URL}/etkinlikler?etkinlik=${trainingId}` : `${APP_URL}/etkinlikler`;
   const truncated = comment.length > 300 ? comment.slice(0, 300) + '...' : comment;
   const postDate = new Date().toLocaleString('tr-TR', {
     timeZone: 'Europe/Istanbul',
@@ -560,9 +560,9 @@ function trainingCommentEmail({ commenterName, commenterAvatar, trainingTitle, t
     hour: '2-digit', minute: '2-digit',
   });
   return emailWrapper(`
-    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Antrenmana Yorum Yapıldı</h2>
+    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Etkinliğe Yorum Yapıldı</h2>
     <p style="margin:0 0 20px;color:#64748b;font-size:15px;">
-      <strong>${commenterName}</strong>, <strong>${trainingTitle}</strong> antrenmanına yorum yaptı.
+      <strong>${commenterName}</strong>, <strong>${trainingTitle}</strong> etkinliğine yorum yaptı.
     </p>
 
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px 20px;margin-bottom:20px;">
@@ -587,19 +587,19 @@ function trainingCommentEmail({ commenterName, commenterAvatar, trainingTitle, t
       <a href="${trainingLink}"
          style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
-        Antrenmanı Gör →
+        Etkinliği Gör →
       </a>
     </div>
   `);
 }
 
-// Şablon: Antrenman güncelleme bildirimi
+// Şablon: Etkinlik güncelleme bildirimi
 function trainingUpdateEmail({ teamName, trainingTitle, trainingDate, trainingTime, location, description, updaterName, trainingId }) {
-  const trainingLink = trainingId ? `${APP_URL}/antrenmanlar?antrenman=${trainingId}` : `${APP_URL}/antrenmanlar`;
+  const trainingLink = trainingId ? `${APP_URL}/etkinlikler?etkinlik=${trainingId}` : `${APP_URL}/etkinlikler`;
   return emailWrapper(`
-    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Antrenman Güncellendi</h2>
+    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Etkinlik Güncellendi</h2>
     <p style="margin:0 0 28px;color:#64748b;font-size:15px;line-height:1.6;">
-      <strong>${teamName}</strong> takımının <strong>${trainingTitle}</strong> antrenmanında değişiklik yapıldı.
+      <strong>${teamName}</strong> takımının <strong>${trainingTitle}</strong> etkinliğinde değişiklik yapıldı.
     </p>
 
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:24px;margin-bottom:28px;">
@@ -618,15 +618,15 @@ function trainingUpdateEmail({ teamName, trainingTitle, trainingDate, trainingTi
       <a href="${trainingLink}"
          style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
-        Antrenmanı Gör →
+        Etkinliği Gör →
       </a>
     </div>
   `);
 }
 
-// Şablon 4: Yeni antrenman bildirimi
+// Şablon 4: Yeni etkinlik bildirimi
 function newTrainingEmail({ teamName, trainingTitle, trainingDate, trainingTime, location, description, upcomingTrainings, trainingId }) {
-  const trainingLink = trainingId ? `${APP_URL}/antrenmanlar?antrenman=${trainingId}` : `${APP_URL}/antrenmanlar`;
+  const trainingLink = trainingId ? `${APP_URL}/etkinlikler?etkinlik=${trainingId}` : `${APP_URL}/etkinlikler`;
   const upcoming = (upcomingTrainings || []).slice(0, 3).map(t => `
     <tr>
       <td style="padding:10px 0;border-bottom:1px solid #f1f5f9;">
@@ -637,9 +637,9 @@ function newTrainingEmail({ teamName, trainingTitle, trainingDate, trainingTime,
   `).join('');
 
   return emailWrapper(`
-    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Yeni Antrenman Eklendi!</h2>
+    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Yeni Etkinlik Eklendi!</h2>
     <p style="margin:0 0 28px;color:#64748b;font-size:15px;line-height:1.6;">
-      <strong>${teamName}</strong> takımına yeni bir antrenman eklendi.
+      <strong>${teamName}</strong> takımına yeni bir etkinlik eklendi.
     </p>
 
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:24px;margin-bottom:28px;">
@@ -654,7 +654,7 @@ function newTrainingEmail({ teamName, trainingTitle, trainingDate, trainingTime,
 
     ${upcoming ? `
     <div style="margin-bottom:28px;">
-      <div style="font-weight:700;color:#1e293b;font-size:15px;margin-bottom:12px;">Yaklaşan Diğer Antrenmanlar</div>
+      <div style="font-weight:700;color:#1e293b;font-size:15px;margin-bottom:12px;">Yaklaşan Diğer Etkinlikler</div>
       <table style="width:100%;border-collapse:collapse;">${upcoming}</table>
     </div>` : ''}
 
@@ -662,21 +662,21 @@ function newTrainingEmail({ teamName, trainingTitle, trainingDate, trainingTime,
       <a href="${trainingLink}"
          style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
-        Antrenmanı Gör →
+        Etkinliği Gör →
       </a>
     </div>
   `);
 }
 
-// Şablon 5: Antrenman hatırlatma
+// Şablon 5: Etkinlik hatırlatma
 function trainingReminderEmail({ teamName, trainingTitle, trainingDate, trainingTime, location, daysLeft, trainingId }) {
-  const trainingLink = trainingId ? `${APP_URL}/antrenmanlar?antrenman=${trainingId}` : `${APP_URL}/antrenmanlar`;
+  const trainingLink = trainingId ? `${APP_URL}/etkinlikler?etkinlik=${trainingId}` : `${APP_URL}/etkinlikler`;
   const urgency = daysLeft === 1 ? 'Yarın!' : `${daysLeft} gün kaldı`;
   const color   = daysLeft === 1 ? '#dc2626' : '#d97706';
   return emailWrapper(`
-    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Antrenmanınız Yaklaşıyor</h2>
+    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Etkinliğiniz Yaklaşıyor</h2>
     <p style="margin:0 0 28px;color:#64748b;font-size:15px;line-height:1.6;">
-      <strong>${teamName}</strong> takımınızın antrenmanına az kaldı.
+      <strong>${teamName}</strong> takımınızın etkinliğine az kaldı.
     </p>
 
     <div style="background:#fffbeb;border:2px solid ${color};border-radius:12px;padding:24px;margin-bottom:28px;">
@@ -693,7 +693,7 @@ function trainingReminderEmail({ teamName, trainingTitle, trainingDate, training
       <a href="${trainingLink}"
          style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
-        Antrenmanı Görüntüle →
+        Etkinliği Görüntüle →
       </a>
     </div>
   `);
@@ -1172,7 +1172,7 @@ app.get('/api/teams', optionalAuth, async (req, res) => {
 
     let whereClause;
     if (can_create_training === 'true') {
-      // Sadece antrenman oluşturabildiği takımlar (sahip/antrenör/kaptan)
+      // Sadece etkinlik oluşturabildiği takımlar (sahip/antrenör/kaptan)
       whereClause = `t.id IN (SELECT team_id FROM team_members WHERE user_id = $1 AND role IN ('owner','coach','captain','editor'))`;
     } else if (member_only === 'true') {
       // Sadece kullanıcının üye olduğu takımlar (profil sayfası için)
@@ -1565,7 +1565,7 @@ app.put('/api/teams/:id', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Only team owner/editor can edit the team' });
     }
 
-    // Takım gizli yapılırsa tüm antrenmanları da gizle
+    // Takım gizli yapılırsa tüm etkinlikleri da gizle
     if (is_private === true) {
       await pool.query('UPDATE trainings SET is_public = false WHERE team_id = $1', [teamId]);
     }
@@ -1802,16 +1802,16 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
     );
 
     if (memberCheck.rows.length === 0 || !TRAINING_MANAGER_ROLES.includes(memberCheck.rows[0].role)) {
-      return res.status(403).json({ error: 'Antrenman oluşturmak için takımın sahibi, antrenörü veya kaptanı olmanız gerekiyor.' });
+      return res.status(403).json({ error: 'Etkinlik oluşturmak için takımın sahibi, antrenörü veya kaptanı olmanız gerekiyor.' });
     }
 
-    // Gizli takımın antrenmanı asla public olamaz
+    // Gizli takımın etkinliği asla public olamaz
     const teamCheck = await pool.query('SELECT is_private FROM teams WHERE id = $1', [team_id]);
     const teamIsPrivate = teamCheck.rows[0]?.is_private || false;
     const finalIsPublic = teamIsPrivate ? false : (is_public !== undefined ? is_public : true);
 
     // Çift gönderim koruması: yavaş bağlantıda istek asılı kalınca kullanıcı butona
-    // tekrar basıp aynı antrenmanı iki kez oluşturabiliyor. Aynı takımda aynı
+    // tekrar basıp aynı etkinliği iki kez oluşturabiliyor. Aynı takımda aynı
     // başlık/tarih/saat ile son 2 dakikada bir kayıt varsa yenisini yaratmak yerine
     // mevcut olanı döndür — istek başarılı görünür ama tekrar kayıt oluşmaz.
     const duplicate = await pool.query(
@@ -1826,7 +1826,7 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
       return res.status(201).json({ message: 'Training created successfully', training: duplicate.rows[0] });
     }
 
-    // Antrenmanın yapılacağı yerin saat dilimi — training_datetime_utc'yi DB trigger'ı bundan hesaplar
+    // Etkinliğin yapılacağı yerin saat dilimi — training_datetime_utc'yi DB trigger'ı bundan hesaplar
     const trainingTimezone = resolveTrainingTimezone(location_lat, location_lng);
 
     const result = await pool.query(
@@ -1860,7 +1860,7 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
     const teamRow = await pool.query('SELECT name FROM teams WHERE id = $1', [team_id]);
     const teamName = teamRow.rows[0]?.name || 'Takımınız';
 
-    // Yaklaşan diğer antrenmanları al (yeni oluşturulan hariç)
+    // Yaklaşan diğer etkinlikleri al (yeni oluşturulan hariç)
     const upcomingRes = await pool.query(
       `SELECT title, training_date, training_time, location_name FROM trainings
        WHERE team_id = $1 AND id != $2 AND ${trainingUtcExpr('')} >= NOW()
@@ -1876,16 +1876,16 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
     for (const member of members.rows) {
       // In-app bildirim
       await createNotif(member.user_id, {
-        title: 'Yeni Antrenman!',
-        message: `${teamName}: ${title} antrenmanı eklendi.`,
+        title: 'Yeni Etkinlik!',
+        message: `${teamName}: ${title} etkinliği eklendi.`,
         type: 'training',
         refId: training.id,
-        url: `/antrenmanlar?antrenman=${training.id}`,
+        url: `/etkinlikler?etkinlik=${training.id}`,
       });
       // E-posta
       sendEmail({
         to: member.email,
-        subject: `${teamName} — Yeni Antrenman: ${title}`,
+        subject: `${teamName} — Yeni Etkinlik: ${title}`,
         html: newTrainingEmail({
           teamName,
           trainingTitle: title,
@@ -1980,7 +1980,7 @@ app.get('/api/trainings', optionalAuth, async (req, res) => {
   }
 });
 
-// Kullanıcının kayıt olduğu yaklaşan antrenmanlar
+// Kullanıcının kayıt olduğu yaklaşan etkinlikler
 app.get('/api/trainings/my-joined', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(`
@@ -2004,7 +2004,7 @@ app.get('/api/trainings/my-joined', authenticateToken, async (req, res) => {
   }
 });
 
-// Kullanıcının üye olduğu takımların yaklaşan antrenmanları (katılmadıkları)
+// Kullanıcının üye olduğu takımların yaklaşan etkinlikleri (katılmadıkları)
 app.get('/api/trainings/my-team-trainings', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(`
@@ -2109,22 +2109,22 @@ app.get('/api/trainings/:id', optionalAuth, async (req, res) => {
 
     const training = trainingResult.rows[0];
 
-    // Gizlilik kontrolü: takım herkese açıksa veya antrenman public ise herkes görebilir
+    // Gizlilik kontrolü: takım herkese açıksa veya etkinlik public ise herkes görebilir
     const isPubliclyVisible = !training.team_is_private || training.is_public;
     if (!isPubliclyVisible) {
       if (!req.user) {
-        return res.status(401).json({ error: 'Bu antrenmanı görmek için giriş yapmanız gerekiyor.', requiresAuth: true });
+        return res.status(401).json({ error: 'Bu etkinliği görmek için giriş yapmanız gerekiyor.', requiresAuth: true });
       }
       const memberCheck = await pool.query(
         'SELECT id FROM team_members WHERE team_id = $1 AND user_id = $2',
         [training.team_id, req.user.id]
       );
       if (memberCheck.rows.length === 0) {
-        return res.status(403).json({ error: 'Bu antrenman gizli bir takıma ait. Erişim yetkiniz yok.' });
+        return res.status(403).json({ error: 'Bu etkinlik gizli bir takıma ait. Erişim yetkiniz yok.' });
       }
     }
 
-    // Kullanıcının bu takımdaki rolü ve antrenmanı yönetip yönetemeyeceği.
+    // Kullanıcının bu takımdaki rolü ve etkinliği yönetip yönetemeyeceği.
     // Yetki kuralı tek yerde (backend) kalsın diye hazır boolean olarak döndürülür;
     // arayüz düzenle/sil butonlarını buna göre gösterir.
     training.my_role = null;
@@ -2187,7 +2187,7 @@ app.post('/api/trainings/:id/join', authenticateToken, async (req, res) => {
         [training.team_id, req.user.id]
       );
       if (memberCheck.rows.length === 0) {
-        return res.status(403).json({ error: 'Bu antrenman gizli bir takıma ait. Sadece takım üyeleri katılabilir.' });
+        return res.status(403).json({ error: 'Bu etkinlik gizli bir takıma ait. Sadece takım üyeleri katılabilir.' });
       }
     }
 
@@ -2220,7 +2220,7 @@ app.post('/api/trainings/:id/join', authenticateToken, async (req, res) => {
     const joinerRes = await pool.query('SELECT name, email FROM users WHERE id = $1', [req.user.id]);
     const joinerName = joinerRes.rows[0]?.name || req.user.email;
 
-    // Takım adını ve antrenmanı yönetebilen üyeleri (sahip/antrenör/kaptan) bul
+    // Takım adını ve etkinliği yönetebilen üyeleri (sahip/antrenör/kaptan) bul
     const teamRow = await pool.query('SELECT name FROM teams WHERE id = $1', [training.team_id]);
     const teamName = teamRow.rows[0]?.name || 'Takımınız';
 
@@ -2233,26 +2233,26 @@ app.post('/api/trainings/:id/join', authenticateToken, async (req, res) => {
 
     for (const leader of leadersRes.rows) {
       await createNotif(leader.user_id, {
-        title: 'Antrenmana Yeni Katılımcı!',
-        message: `${joinerName}, ${training.title} antrenmanına katıldı.`,
+        title: 'Etkinliğe Yeni Katılımcı!',
+        message: `${joinerName}, ${training.title} etkinliğine katıldı.`,
         type: 'training_join',
         refId: trainingId,
-        url: `/antrenmanlar?antrenman=${trainingId}`,
+        url: `/etkinlikler?etkinlik=${trainingId}`,
       });
 
       sendEmail({
         to: leader.email,
         subject: `${training.title} — Yeni Katılımcı: ${joinerName}`,
         html: emailWrapper(`
-          <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Antrenmanınıza Yeni Katılımcı Var!</h2>
+          <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Etkinliğinize Yeni Katılımcı Var!</h2>
           <p style="margin:0 0 28px;color:#64748b;font-size:15px;line-height:1.6;">
-            <strong>${joinerName}</strong>, <strong>${teamName}</strong> takımının <strong>${training.title}</strong> antrenmanına katıldı.
+            <strong>${joinerName}</strong>, <strong>${teamName}</strong> takımının <strong>${training.title}</strong> etkinliğine katıldı.
           </p>
           <div style="text-align:center;">
-            <a href="${APP_URL}/antrenmanlar?antrenman=${trainingId}"
+            <a href="${APP_URL}/etkinlikler?etkinlik=${trainingId}"
                style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#ffffff;text-decoration:none;
                       padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
-              Antrenmanı Görüntüle →
+              Etkinliği Görüntüle →
             </a>
           </div>
         `),
@@ -2267,7 +2267,7 @@ app.post('/api/trainings/:id/join', authenticateToken, async (req, res) => {
   }
 });
 
-// Antrenman ayrıl
+// Etkinlik ayrıl
 app.delete('/api/trainings/:id/leave', authenticateToken, async (req, res) => {
   try {
     const trainingId = req.params.id;
@@ -2278,11 +2278,11 @@ app.delete('/api/trainings/:id/leave', authenticateToken, async (req, res) => {
       [trainingId, req.user.id]
     );
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Bu antrenmana zaten kayıtlı değilsiniz.' });
+      return res.status(404).json({ error: 'Bu etkinliğe zaten kayıtlı değilsiniz.' });
     }
     await updateUserStats(req.user.id);
     logActivity('training_leave', req.user.id, null, { training_title: trainingTitle });
-    res.json({ message: 'Antrenman kaydınız silindi.' });
+    res.json({ message: 'Etkinlik kaydınız silindi.' });
   } catch (error) {
     console.error('Leave training error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -2313,7 +2313,7 @@ app.post('/api/trainings/:id/comments', authenticateToken, async (req, res) => {
     );
     const commenter = commenterResult.rows[0];
 
-    // Antrenman + takım bilgilerini çek
+    // Etkinlik + takım bilgilerini çek
     const trainingResult = await pool.query(
       `SELECT t.title, t.training_date, t.team_id, teams.name as team_name
        FROM trainings t
@@ -2332,13 +2332,13 @@ app.post('/api/trainings/:id/comments', authenticateToken, async (req, res) => {
         `SELECT DISTINCT u.id, u.name, u.email
          FROM users u
          WHERE u.id IN (
-           -- Antrenmana kayıtlı kişiler
+           -- Etkinliğe kayıtlı kişiler
            SELECT user_id FROM training_attendees WHERE training_id = $1
            UNION
            -- Takım sahibi / adminler
            SELECT user_id FROM team_members WHERE team_id = $2 AND role IN ('owner','admin')
            UNION
-           -- Bu antrenmana daha önce yorum yapmış kişiler (katılmasalar bile
+           -- Bu etkinliğe daha önce yorum yapmış kişiler (katılmasalar bile
            -- kendi başlattıkları sohbetin devamını görebilsinler)
            SELECT user_id FROM training_comments WHERE training_id = $1
          )
@@ -2354,12 +2354,12 @@ app.post('/api/trainings/:id/comments', authenticateToken, async (req, res) => {
             message: `${commenter.name}: ${comment.trim().slice(0, 80)}${comment.length > 80 ? '...' : ''}`,
             type: 'training_comment',
             refId: trainingId,
-            url: `/antrenmanlar?antrenman=${trainingId}`,
+            url: `/etkinlikler?etkinlik=${trainingId}`,
           });
 
           sendEmail({
             to: recipient.email,
-            subject: `${training.title} antrenmanına yorum yapıldı`,
+            subject: `${training.title} etkinliğine yorum yapıldı`,
             html: trainingCommentEmail({
               commenterName: commenter.name,
               commenterAvatar: commenter.avatar,
@@ -2401,10 +2401,10 @@ app.put('/api/trainings/:id', authenticateToken, async (req, res) => {
       [trainingResult.rows[0].team_id, req.user.id]
     );
 
-    // Antrenman oluşturabilen roller düzenleyebilmeli de (POST /api/trainings ile aynı liste).
+    // Etkinlik oluşturabilen roller düzenleyebilmeli de (POST /api/trainings ile aynı liste).
     // 'admin' pratikte kullanılmıyor ama elle atanmış olma ihtimaline karşı korunuyor.
     if (memberCheck.rows.length === 0 || !TRAINING_MANAGER_ROLES.includes(memberCheck.rows[0].role)) {
-      return res.status(403).json({ error: 'Antrenmanı düzenlemek için takımın sahibi, antrenörü veya kaptanı olmanız gerekiyor.' });
+      return res.status(403).json({ error: 'Etkinliği düzenlemek için takımın sahibi, antrenörü veya kaptanı olmanız gerekiyor.' });
     }
 
     // Konum değişmiş olabilir → saat dilimini yeniden hesapla (trigger UTC'yi günceller)
@@ -2446,14 +2446,14 @@ app.put('/api/trainings/:id', authenticateToken, async (req, res) => {
       try {
         await createNotif(attendee.id, {
           title: `${updated.title} güncellendi`,
-          message: `${updaterName || 'Antrenör'} antrenman bilgilerini güncelledi.`,
+          message: `${updaterName || 'Antrenör'} etkinlik bilgilerini güncelledi.`,
           type: 'training_update',
           refId: trainingId,
-          url: `/antrenmanlar?antrenman=${trainingId}`,
+          url: `/etkinlikler?etkinlik=${trainingId}`,
         });
         sendEmail({
           to: attendee.email,
-          subject: `${updated.title} antrenmanında değişiklik var`,
+          subject: `${updated.title} etkinliğinde değişiklik var`,
           html: trainingUpdateEmail({
             teamName: teamName || '',
             trainingTitle: updated.title,
@@ -2496,7 +2496,7 @@ app.delete('/api/trainings/:id', authenticateToken, async (req, res) => {
     );
 
     if (memberCheck.rows.length === 0 || !TRAINING_MANAGER_ROLES.includes(memberCheck.rows[0].role)) {
-      return res.status(403).json({ error: 'Antrenmanı silmek için takımın sahibi, antrenörü veya kaptanı olmanız gerekiyor.' });
+      return res.status(403).json({ error: 'Etkinliği silmek için takımın sahibi, antrenörü veya kaptanı olmanız gerekiyor.' });
     }
 
     await pool.query('DELETE FROM trainings WHERE id = $1', [trainingId]);
@@ -2574,7 +2574,7 @@ app.get('/api/users/:id/activity', authenticateToken, async (req, res) => {
 
     const sixDaysAgo = addDays(todayIST, -6);
 
-    // Son 7 günün tamamlanmış antrenmanları
+    // Son 7 günün tamamlanmış etkinlikleri
     // Tarih parametreleri Node'dan geliyor → DB ve JS tarihleri her zaman uyumlu
     const result = await pool.query(
       `SELECT
@@ -2913,7 +2913,7 @@ app.get('/api/admin/trainings', isAdmin, async (req, res) => {
 app.delete('/api/admin/trainings/:id', isAdmin, async (req, res) => {
   try {
     await pool.query('DELETE FROM trainings WHERE id = $1', [req.params.id]);
-    res.json({ message: 'Antrenman silindi.' });
+    res.json({ message: 'Etkinlik silindi.' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to delete training' });
   }
@@ -3626,7 +3626,7 @@ async function backfillActivityLogs() {
     // Yanlış timestamp'li eski backfill kayıtlarını temizle:
     await pool.query(`DELETE FROM activity_logs WHERE source_ref LIKE 'team_join_%'`).catch(() => {});
 
-    // Antrenman oluşturma
+    // Etkinlik oluşturma
     await pool.query(`
       INSERT INTO activity_logs (event_type, user_id, user_name, meta, created_at, source_ref)
       SELECT 'training_create', tm.user_id, u.name,
@@ -3640,7 +3640,7 @@ async function backfillActivityLogs() {
       WHERE NOT EXISTS (SELECT 1 FROM activity_logs al WHERE al.source_ref = 'training_create_' || tr.id::text)
     `);
 
-    // Antrenmana katılma
+    // Etkinliğe katılma
     await pool.query(`
       INSERT INTO activity_logs (event_type, user_id, user_name, meta, created_at, source_ref)
       SELECT 'training_join', ta.user_id, u.name,
@@ -3785,14 +3785,14 @@ app.post('/api/auth/reset-password', async (req, res) => {
 });
 
 // =====================================================
-// ANTRENMAN HATIRLATMA CRON JOB (her gün 09:00'da çalışır)
+// ETKİNLİK HATIRLATMA CRON JOB (her gün 09:00'da çalışır)
 // =====================================================
 
 async function sendTrainingReminders() {
   try {
     for (const daysLeft of [3, 1]) {
-      // "3 gün / 1 gün kaldı" hesabı antrenmanın KENDİ saat dilimindeki bugüne göre
-      // yapılır — yurtdışındaki antrenmanlar için doğru güne denk gelsin diye.
+      // "3 gün / 1 gün kaldı" hesabı etkinliğin KENDİ saat dilimindeki bugüne göre
+      // yapılır — yurtdışındaki etkinlikler için doğru güne denk gelsin diye.
       const trainings = await pool.query(
         `SELECT t.*, teams.name as team_name
          FROM trainings t
@@ -3809,7 +3809,7 @@ async function sendTrainingReminders() {
         );
 
         for (const member of members.rows) {
-          const notifTitle = daysLeft === 1 ? 'Yarın Antrenman Var!' : '3 Gün Sonra Antrenman!';
+          const notifTitle = daysLeft === 1 ? 'Yarın Etkinlik Var!' : '3 Gün Sonra Etkinlik!';
           const notifMsg = `${training.team_name}: ${training.title} — ${formatTrDate(training.training_date)}`;
 
           // Aynı bildirim daha önce gönderildi mi kontrol et
@@ -3824,7 +3824,7 @@ async function sendTrainingReminders() {
             message: notifMsg,
             type: 'training_reminder',
             refId: training.id,
-            url: `/antrenmanlar?antrenman=${training.id}`,
+            url: `/etkinlikler?etkinlik=${training.id}`,
           });
 
           sendEmail({
@@ -3843,7 +3843,7 @@ async function sendTrainingReminders() {
         }
       }
     }
-    console.log('[REMINDER] Antrenman hatırlatmaları gönderildi.');
+    console.log('[REMINDER] Etkinlik hatırlatmaları gönderildi.');
   } catch (err) {
     console.error('[REMINDER] Hata:', err.message);
   }
@@ -3865,7 +3865,7 @@ function scheduleDailyReminders() {
 scheduleDailyReminders();
 
 // ── Engagement Reminder — pasif kullanıcılara nazik hatırlatma ──────────────
-// Son 7 gündür hiç antrenman oluşturmamış/katılmamış VE son 7 gündür bu
+// Son 7 gündür hiç etkinlik oluşturmamış/katılmamış VE son 7 gündür bu
 // hatırlatmayı almamış kullanıcılara gönderilir. Aktif kullanıcılar hiç almaz.
 const ENGAGEMENT_INACTIVE_DAYS = 7;
 const ENGAGEMENT_COOLDOWN_DAYS = 7;
@@ -3894,9 +3894,9 @@ async function sendEngagementReminders() {
     for (const user of inactiveUsers.rows) {
       await createNotif(user.id, {
         title: 'Seni Özledik! 👋',
-        message: 'Hadi kalk, bir antrenman planla ya da var olan birine katıl, arkadaşlarınla buluş 💪',
+        message: 'Hadi kalk, bir etkinlik planla ya da var olan birine katıl, arkadaşlarınla buluş 💪',
         type: 'engagement_nudge',
-        url: '/antrenmanlar',
+        url: '/etkinlikler',
       });
     }
     if (inactiveUsers.rows.length > 0) {
