@@ -795,6 +795,22 @@ export const translations = {
     badges:         { tr: "Rozetler",                     en: "Badges",                  de: "Abzeichen"               },
   },
 
+  // ── DOWNLOAD / STORE CTA ─────────────────────────────────
+  download: {
+    title:        { tr: "Muuvlink'i indir",  en: "Get Muuvlink",       de: "Muuvlink holen"        },
+    subtitle:     { tr: "Uygulamayı telefonuna kur, her yerden bağlan.",
+                    en: "Install the app on your phone and connect anywhere.",
+                    de: "Installiere die App und bleib überall verbunden." },
+    ctaTitle:     { tr: "Muuvlink'i telefonuna indir",
+                    en: "Download Muuvlink on your phone",
+                    de: "Lade Muuvlink auf dein Handy" },
+    ctaSubtitle:  { tr: "Antrenmanları keşfet, takımına katıl ve spor arkadaşlarınla bağlan — her an, her yerde.",
+                    en: "Discover trainings, join your team and connect with sports buddies — anytime, anywhere.",
+                    de: "Entdecke Trainings, tritt deinem Team bei und vernetze dich mit Sportfreunden – jederzeit, überall." },
+    appStoreTop:  { tr: "App Store'dan indir",  en: "Download on the",  de: "Laden im"              },
+    playTop:      { tr: "Şuradan indir:",       en: "GET IT ON",        de: "JETZT BEI"             },
+  },
+
   // ── REPORT & BLOCK ───────────────────────────────────────
   report: {
     btn:      { tr: "Şikayet Et",                    en: "Report",                      de: "Melden"                    },
