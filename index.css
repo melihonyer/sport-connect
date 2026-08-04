@@ -10,12 +10,21 @@
     scroll-behavior: smooth;
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior: none;
+    overflow-x: clip;
+    max-width: 100vw;
   }
 
   body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    overflow-x: clip;
+    max-width: 100vw;
+  }
+
+  #root {
+    overflow-x: clip;
+    max-width: 100vw;
   }
 
   /* Metin seçim rengi — brand teal */
@@ -37,6 +46,25 @@
 
   /* Firefox scrollbar */
   * { scrollbar-width: thin; scrollbar-color: rgba(0,183,186,0.30) transparent; }
+
+  /* iOS zoom engelleyici — font-size 16px altındaki inputlar WebKit'te otomatik zoom yapar */
+  input, textarea, select {
+    font-size: 16px;
+  }
+}
+
+/* ─────────────────────────────────────────────
+   iOS ZOOM-ON-FOCUS FİX
+   Safari/WKWebView, 16px altı font'a sahip bir input'a focus
+   olunca sayfayı otomatik zoom'luyor ve viewport meta hack'i
+   (user-scalable=no) bunu her zaman güvenilir şekilde engellemiyor.
+   -webkit-touch-callout sadece iOS Safari/WKWebView'de desteklendiği
+   için bu kural masaüstü/Android'i etkilemeden sadece iOS'ta devreye girer.
+───────────────────────────────────────────── */
+@supports (-webkit-touch-callout: none) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
 }
 
 /* ─────────────────────────────────────────────
