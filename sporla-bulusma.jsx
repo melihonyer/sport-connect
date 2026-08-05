@@ -1305,10 +1305,16 @@ async function shareBadgeCard(badge, earned, dateStr, texts) {
     // 1) Native dosya paylaşımı — YALNIZCA mobil/dokunmatik cihazlarda.
     // Masaüstü Chrome→macOS köprüsü dosyayı taşımıyor (Mail/AirDrop sadece metni
     // alıyor), o yüzden masaüstünde paylaşım penceresi yerine doğrudan indiriyoruz.
-    const isMobileLike =
-      !!(window?.Capacitor?.isNativePlatform?.()) ||
-      (typeof window !== "undefined" && window.matchMedia && window.matchMedia("(pointer: coarse)").matches) ||
-      (typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod|Mobile|Silk/i.test(navigator.userAgent || ""));
+    let isMobileLike = false;
+    try {
+      if (window?.Capacitor?.isNativePlatform?.()) {
+        isMobileLike = true;
+      } else if (navigator.userAgentData && typeof navigator.userAgentData.mobile === "boolean") {
+        isMobileLike = navigator.userAgentData.mobile;              // Chrome/Edge: masaüstü kesin false
+      } else if (/Android|iPhone|iPad|iPod|Mobile|Silk/i.test(navigator.userAgent || "")) {
+        isMobileLike = true;                                         // Safari/Firefox mobil
+      }
+    } catch (_) { isMobileLike = false; }
     if (isMobileLike) {
       try {
         const file = new File([blob], filename, { type: "image/png" });
