@@ -4394,8 +4394,9 @@ export default function Muuvlink() {
                       className="w-11 h-11 rounded-full object-cover flex-shrink-0 border-2 border-white shadow-sm"
                     />
                   ) : (
-                    <div className="w-11 h-11 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0 border-2 border-white shadow-sm text-xl">
-                      {selectedTraining.team_avatar || <Users className="w-5 h-5 text-brand-600" />}
+                    <div className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 border-2 border-white shadow-sm text-white text-lg font-bold"
+                      style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}>
+                      {selectedTraining.team_name?.[0]?.toLocaleUpperCase("tr-TR") || <Users className="w-5 h-5 text-white" />}
                     </div>
                   )}
                   <div className="min-w-0">
