@@ -1384,10 +1384,15 @@ async function badgeCardBlob(badge, dateStr, texts) {
     const mark = await loadImageRobust(`/icons/favicon.png`);
     x.drawImage(mark, LOGO_MARK_X, LOGO_MARK_Y, LOGO_MARK_SIZE, LOGO_MARK_SIZE);
   } catch (e) { dbgFav = String(e && e.message || e); }
-  try {
-    if (typeof window !== "undefined") window.__shareDebug =
-      `slug=${slug} badge=${drawn ? "OK" : "FAIL:" + dbgBadge} fav=${dbgFav ? "FAIL:" + dbgFav : "OK"}`;
-  } catch (_) {}
+  const dbg = `slug=${slug} | badge=${drawn ? "OK" : "FAIL " + dbgBadge} | fav=${dbgFav ? "FAIL " + dbgFav : "OK"}`;
+  try { if (typeof window !== "undefined") window.__shareDebug = dbg; } catch (_) {}
+  // GEÇİCİ teşhis: sebebi doğrudan görsele yaz (badge/fav yüklenemezse)
+  if (!drawn || dbgFav) {
+    x.fillStyle = "#ff8a8a"; x.font = "600 20px Arial, sans-serif"; x.textAlign = "center";
+    const line = dbg.length > 95 ? dbg.slice(0, 95) : dbg;
+    x.fillText(line, W / 2, 1780);
+    if (dbg.length > 95) x.fillText(dbg.slice(95, 190), W / 2, 1804);
+  }
   x.save();
   const sc = LOGO_WORDMARK_W / 353.5;
   x.translate(LOGO_WORDMARK_CX - LOGO_WORDMARK_W / 2, 1748);
