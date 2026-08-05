@@ -944,6 +944,15 @@ const BADGE_THEME = {
 };
 const badgeTheme = (name) => BADGE_THEME[name] || { c1: "#2dd4bf", c2: "#0d9488", glyph: "rosette" };
 
+// Rozet adı → sabit ascii dosya adı (paylaşım kartı için önceden üretilmiş PNG'ler).
+const BADGE_SLUG = {
+  "Başlangıç": "baslangic", "Düzenli": "duzenli", "Azimli": "azimli", "Sporcu": "sporcu",
+  "Efsane": "efsane", "Şampiyon": "sampiyon", "Takım Oyuncusu": "takim-oyuncusu", "Lider": "lider",
+  "Organizatör": "organizator", "Sohbetçi": "sohbetci", "Bisikletçi": "bisikletci", "Koşucu": "kosucu",
+  "Yüzücü": "yuzucu", "Tenisçi": "tenisci", "Kanocu": "kanocu", "Futbolcu": "futbolcu",
+  "Basketbolcu": "basketbolcu", "Voleybolcu": "voleybolcu", "Yogi": "yogi", "Kaşif": "kasif",
+};
+
 const slugify = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "b";
 
 // ── Vintage amblem paleti ──
@@ -1285,6 +1294,94 @@ async function storyToPngBlob(svgString) {
   }
 }
 
+// #rrggbb + alfa → rgba()
+function hexA(hex, a) {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+function roundRectPath(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+// Paylaşım kartını TAMAMEN Canvas 2D ile çiz (SVG rasterize YOK → iOS Safari dahil
+// her yerde taint olmadan PNG üretir). Rozet görseli önceden üretilmiş same-origin
+// PNG (/badges/<slug>.png); logo = favicon (M) + wordmark (Path2D).
+async function badgeCardBlob(badge, dateStr, texts) {
+  const W = 1080, H = 1920;
+  const canvas = document.createElement("canvas");
+  canvas.width = W; canvas.height = H;
+  const x = canvas.getContext("2d");
+  const theme = badgeTheme(badge.name);
+  const origin = (typeof window !== "undefined" && window.location?.origin) || "https://muuvlink.app";
+
+  // Arka plan + parıltı
+  const bg = x.createLinearGradient(0, 0, 320, H);
+  bg.addColorStop(0, "#0f2f33"); bg.addColorStop(0.55, "#0d3b3e"); bg.addColorStop(1, "#062225");
+  x.fillStyle = bg; x.fillRect(0, 0, W, H);
+  const glow = x.createRadialGradient(W / 2, 760, 0, W / 2, 760, 560);
+  glow.addColorStop(0, hexA(theme.c1, 0.3)); glow.addColorStop(1, hexA(theme.c1, 0));
+  x.fillStyle = glow; x.fillRect(0, 0, W, H);
+
+  // Başlık
+  x.textAlign = "center";
+  try { x.letterSpacing = "14px"; } catch (_) {}
+  x.fillStyle = theme.c1; x.font = "700 40px Arial, sans-serif";
+  x.fillText(texts.unlocked, W / 2, 400);
+  try { x.letterSpacing = "0px"; } catch (_) {}
+
+  // Rozet görseli (önceden üretilmiş PNG); yoksa temaya uygun kapsül + emoji fallback
+  const bw = 560, bh = Math.round(bw * 1.4), bx = (W - bw) / 2, by = 470;
+  const slug = BADGE_SLUG[badge.name] || slugify(badge.name);
+  let drawn = false;
+  try {
+    const img = await loadImage(`${origin}/badges/${slug}.png`);
+    x.drawImage(img, bx, by, bw, bh);
+    drawn = true;
+  } catch (_) { /* fallback aşağıda */ }
+  if (!drawn) {
+    x.fillStyle = "#efe4c8"; roundRectPath(x, bx - 16, by - 16, bw + 32, bh + 32, (bw + 32) * 0.42); x.fill();
+    const g = x.createLinearGradient(0, by, 0, by + bh);
+    g.addColorStop(0, theme.c1); g.addColorStop(1, theme.c2);
+    x.fillStyle = g; roundRectPath(x, bx, by, bw, bh, bw * 0.42); x.fill();
+    x.font = "240px Arial"; x.textBaseline = "middle"; x.fillStyle = "#fff";
+    x.fillText(badge.icon || "🏅", W / 2, by + bh * 0.5); x.textBaseline = "alphabetic";
+  }
+
+  // Metinler
+  x.fillStyle = "#ffffff"; x.font = "800 100px Arial, sans-serif";
+  x.fillText(badge.name, W / 2, by + bh + 96);
+  x.fillStyle = "#a7d8d6"; x.font = "500 44px Arial, sans-serif";
+  x.fillText(badge.description, W / 2, by + bh + 160);
+  if (dateStr) {
+    x.fillStyle = "#5f9b98"; x.font = "600 34px Arial, sans-serif";
+    x.fillText(dateStr, W / 2, by + bh + 222);
+  }
+
+  // Tam logo: M amblemi (favicon) + wordmark (Path2D)
+  try {
+    const mark = await loadImage(`${origin}/icons/favicon.png`);
+    x.drawImage(mark, LOGO_MARK_X, LOGO_MARK_Y, LOGO_MARK_SIZE, LOGO_MARK_SIZE);
+  } catch (_) {}
+  x.save();
+  const sc = LOGO_WORDMARK_W / 353.5;
+  x.translate(LOGO_WORDMARK_CX - LOGO_WORDMARK_W / 2, 1748);
+  x.scale(sc, sc); x.fillStyle = "#ffffff";
+  for (const d of MUUVLINK_LOGO_PATHS) x.fill(new Path2D(d));
+  x.restore();
+  x.fillStyle = "#4f817e"; x.font = "600 32px Arial, sans-serif"; x.textAlign = "center";
+  x.fillText("muuvlink.app", W / 2, 1852);
+
+  return await new Promise((resolve, reject) =>
+    canvas.toBlob((b) => b ? resolve(b) : reject(new Error("toBlob null")), "image/png"));
+}
+
 // Rozet paylaşımı — çok katmanlı, ASLA "hata" ile çıkmaz:
 //  1) Görsel üretilebiliyorsa: mobilde native dosya paylaşımı, masaüstünde PNG indir.
 //  2) Görsel üretilemezse (ör. bazı Safari sürümleri SVG'de canvas'ı taint ediyor):
@@ -1295,8 +1392,7 @@ async function shareBadgeCard(badge, earned, dateStr, texts) {
 
   let blob = null;
   try {
-    const svg = buildBadgeStorySvg(badge, earned, dateStr, texts);
-    blob = await storyToPngBlob(svg);
+    blob = await badgeCardBlob(badge, dateStr, texts);
   } catch (e) {
     console.error("Badge card render error:", e);   // görsel üretilemedi → link fallback
   }
