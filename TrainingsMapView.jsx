@@ -34,6 +34,19 @@ const makeTrainingIcon = (color, letter, highlight = false) => {
   });
 };
 
+// Mount sonrası Leaflet'in iç ölçümünü tazele — lazy-load sırasında 0-genişlikle
+// başlayan harita yanlış boyutta kalıp sayfa düzenini bozabiliyor.
+const MapSizeFixer = () => {
+  const map = useMap();
+  useEffect(() => {
+    const t = setTimeout(() => map.invalidateSize(), 150);
+    const onResize = () => map.invalidateSize();
+    window.addEventListener("resize", onResize);
+    return () => { clearTimeout(t); window.removeEventListener("resize", onResize); };
+  }, []); // eslint-disable-line
+  return null;
+};
+
 const FitBoundsToTrainings = ({ trainings }) => {
   const map = useMap();
   useEffect(() => {
@@ -106,6 +119,7 @@ const TrainingsMapView = ({ trainings, onSelectTraining, t, containerStyle }) =>
             url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
             subdomains="abcd"
           />
+          <MapSizeFixer/>
           <FitBoundsToTrainings trainings={mapped}/>
           {mapped.map(tr => {
             const teamLetter = (tr.team_name || tr.team_sport || "T").charAt(0).toLocaleUpperCase("en-US");

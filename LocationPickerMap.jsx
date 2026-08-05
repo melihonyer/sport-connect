@@ -24,6 +24,20 @@ const makePickerIcon = () => L.divIcon({
   iconSize: [40, 40], iconAnchor: [20, 40], popupAnchor: [0, -44],
 });
 
+// Mount sonrası (ve container yeniden boyutlandığında) Leaflet'in iç ölçümünü tazele.
+// Bunsuz, lazy-load/Suspense içinde geçici 0-genişlikle başlayan harita yanlış
+// boyutta kalıp sayfa düzenini (overflow) bozabiliyor.
+const MapSizeFixer = () => {
+  const map = useMap();
+  useEffect(() => {
+    const t = setTimeout(() => map.invalidateSize(), 150);
+    const onResize = () => map.invalidateSize();
+    window.addEventListener("resize", onResize);
+    return () => { clearTimeout(t); window.removeEventListener("resize", onResize); };
+  }, []); // eslint-disable-line
+  return null;
+};
+
 const FlyToLocation = ({ target }) => {
   const map = useMap();
   useEffect(() => {
@@ -58,6 +72,7 @@ const LocationPickerMap = ({ pickedPos, flyTarget, onPick, onDragEnd, onBoundsCh
       url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
       subdomains="abcd"
     />
+    <MapSizeFixer/>
     <FlyToLocation target={flyTarget}/>
     <MapBoundsTracker onBoundsChange={onBoundsChange}/>
     <MapClickHandler onPick={onPick}/>

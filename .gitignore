@@ -3,5 +3,8 @@ dist/
 .env
 backend/.env
 backend/uploads/
+backend/certs/
+android/keystore/
+android/keystore.properties
 *.log
 .DS_Store

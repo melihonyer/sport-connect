@@ -4387,15 +4387,15 @@ export default function Muuvlink() {
                   onClick={() => fetchTeamDetails(selectedTraining.team_id)}
                   className="flex items-center gap-3 min-w-0 text-left"
                 >
-                  {selectedTraining.team_avatar ? (
+                  {(selectedTraining.team_avatar?.startsWith("/uploads/") || selectedTraining.team_avatar?.startsWith("http")) ? (
                     <img
                       src={selectedTraining.team_avatar.startsWith("http") ? selectedTraining.team_avatar : `${BASE_URL}${selectedTraining.team_avatar}`}
                       alt={selectedTraining.team_name}
                       className="w-11 h-11 rounded-full object-cover flex-shrink-0 border-2 border-white shadow-sm"
                     />
                   ) : (
-                    <div className="w-11 h-11 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0 border-2 border-white shadow-sm">
-                      <Users className="w-5 h-5 text-brand-600" />
+                    <div className="w-11 h-11 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0 border-2 border-white shadow-sm text-xl">
+                      {selectedTraining.team_avatar || <Users className="w-5 h-5 text-brand-600" />}
                     </div>
                   )}
                   <div className="min-w-0">
@@ -5256,11 +5256,14 @@ export default function Muuvlink() {
                     <option key={team.id} value={team.id}>{team.name}</option>
                   ))}
                 </select>
-                {eligibleTeams.length === 0 && (
-                  <button type="button" onClick={() => setCurrentPage("create-team")} className="text-xs text-brand-600 font-semibold mt-2 inline-flex items-center gap-1">
-                    {t("createTraining.orCreateTeam")} →
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage("create-team")}
+                  className="mt-3 w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-brand-200 bg-brand-50 text-brand-700 text-sm font-semibold hover:bg-brand-100 active:scale-[0.99] transition"
+                >
+                  <Plus className="w-4 h-4" />
+                  {t("createTraining.orCreateTeam")}
+                </button>
               </div>
 
               {isIndividual ? (

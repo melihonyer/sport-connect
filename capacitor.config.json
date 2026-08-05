@@ -8,6 +8,9 @@
     "androidScheme": "https",
     "allowNavigation": ["muuvlink.app", "*.muuvlink.app"]
   },
+  "ios": {
+    "webContentsDebuggingEnabled": true
+  },
   "plugins": {
     "SplashScreen": {
       "launchShowDuration": 1500,

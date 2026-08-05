@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "357104839162",
+    "project_id": "muuvlink-16161",
+    "storage_bucket": "muuvlink-16161.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:357104839162:android:b3a43477d1cd0072819c43",
+        "android_client_info": {
+          "package_name": "app.muuvlink"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAzdJdQeJ-Xu-qpudcO9sVlKUcl6hQhTvY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

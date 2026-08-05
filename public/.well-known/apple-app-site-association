@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "MZ46V34M5Y.app.muuvlink",
+        "paths": ["*"]
+      }
+    ]
+  }
+}

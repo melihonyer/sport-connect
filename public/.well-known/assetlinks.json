@@ -1,0 +1,10 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "app.muuvlink",
+    "sha256_cert_fingerprints": [
+      "A0:AD:02:B5:67:00:3D:96:D4:ED:74:D5:5B:B4:DD:F8:B1:4C:6B:FC:67:6C:2F:BE:09:1B:60:D3:1F:B3:9D:D7"
+    ]
+  }
+}]
