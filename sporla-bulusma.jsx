@@ -933,117 +933,207 @@ const BADGE_THEME = {
 };
 const badgeTheme = (name) => BADGE_THEME[name] || { c1: "#2dd4bf", c2: "#0d9488", glyph: "rosette" };
 
-// Beyaz, dolgu-tabanlı semboller (0..24 kutusunda). Rasterize dostu.
-const BADGE_GLYPHS = {
-  star:   `<path d="M12 2.6l2.6 5.9 6.4.6-4.85 4.25 1.45 6.25L12 16.9 6.35 19.6l1.45-6.25L3 9.1l6.4-.6z"/>`,
-  flame:  `<path d="M12.6 2c1.4 2.6.2 4.3 1.5 6.2.9 1.3 2.4 1.9 2.4 4.3a4.5 4.5 0 0 1-9 0c0-1.8.9-2.9 1.8-3.8-.1 1.3.6 2.2 1.5 2.2.9 0 1.3-.8 1.1-1.8-.5-2.5-1.6-4.1-.3-7.1z"/>`,
-  dumbbell: `<rect x="2.3" y="8.8" width="3" height="6.4" rx="1.2"/><rect x="5.3" y="10.3" width="2" height="3.4" rx=".6"/><rect x="7" y="10.9" width="10" height="2.2" rx="1.1"/><rect x="16.7" y="10.3" width="2" height="3.4" rx=".6"/><rect x="18.7" y="8.8" width="3" height="6.4" rx="1.2"/>`,
-  trophy: `<path d="M6.5 4h11v3.3a5.5 5.5 0 0 1-11 0z"/><rect x="10.7" y="11.6" width="2.6" height="3.8" rx=".6"/><rect x="7.8" y="15.2" width="8.4" height="2.4" rx="1.1"/><path d="M6.6 5.1H4.5v1.4A3.2 3.2 0 0 0 7 9.5" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/><path d="M17.4 5.1h2.1v1.4A3.2 3.2 0 0 1 17 9.5" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>`,
-  crown:  `<path d="M3.6 8.4l3.4 2.5L12 4.8l5 6.1 3.4-2.5-1.5 8.7H5.1z"/><rect x="4.9" y="17.6" width="14.2" height="2.3" rx="1.1"/>`,
-  users:  `<circle cx="9" cy="8" r="3"/><path d="M3.1 18.7a5.9 5.9 0 0 1 11.8 0z"/><circle cx="16.6" cy="8.7" r="2.4"/><path d="M15 18.7a4.7 4.7 0 0 1 6.9-4.1 4.7 4.7 0 0 1 .2 4.1z"/>`,
-  megaphone: `<path d="M4 10v4l3.6.9 1.6 3.4 2-.9-1.1-2.3L20 18.6V5.4L7.6 9.1z"/><circle cx="18.4" cy="12" r="0"/>`,
-  chat:   `<path d="M4.2 5.4h15.6a1.6 1.6 0 0 1 1.6 1.6v6.9a1.6 1.6 0 0 1-1.6 1.6H10l-4.2 3.5v-3.5H4.2a1.6 1.6 0 0 1-1.6-1.6V7a1.6 1.6 0 0 1 1.6-1.6z"/>`,
-  medal:  `<path d="M8.8 2.6l1.5 4.1h3.4l1.5-4.1" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="14" r="7" fill="none" stroke="#fff" stroke-width="1.9"/><path d="M12 9.4l1.55 3.15 3.45.5-2.5 2.45.6 3.45L12 17.8l-3.1 1.65.6-3.45-2.5-2.45 3.45-.5z"/>`,
-  rosette: `<circle cx="12" cy="10.4" r="6.4" fill="none" stroke="#fff" stroke-width="1.9"/><path d="M12 6.6l1.35 2.75 3.05.45-2.2 2.15.52 3.03L12 13.5l-2.72 1.48.52-3.03-2.2-2.15 3.05-.45z"/><path d="M8.6 15.8l-1.6 5.2 5-2.4 5 2.4-1.6-5.2" fill="none" stroke="#fff" stroke-width="1.7" stroke-linejoin="round"/>`,
-};
-
 const slugify = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "b";
 
-// Perspektifli üçgen madalya — bir <g> markup'ı döndürür (cx,cy merkez, r yarı-boyut).
-function triangleMedalMarkup({ cx, cy, r, theme, earned, id }) {
-  const t = earned ? theme : { c1: "#cbd5e1", c2: "#94a3b8" };
-  const sw = r * 0.16;                    // yuvarlak köşe için stroke kalınlığı
-  const apex = [cx, cy - r];
-  const bl   = [cx - r * 0.9, cy + r * 0.7];
-  const br   = [cx + r * 0.9, cy + r * 0.7];
-  const poly = `${apex[0]},${apex[1]} ${br[0]},${br[1]} ${bl[0]},${bl[1]}`;
-  const dx = r * 0.05, dy = r * 0.11;     // arka yüz (kalınlık) kayması
-  const g = r * 1.0;                       // sembol boyutu
-  const gScale = g / 24;
-  const gx = cx - g / 2, gy = cy + r * 0.12 - g / 2;
-  const glyph = BADGE_GLYPHS[theme.glyph] || BADGE_GLYPHS.rosette;
-  return `
-  <g transform="rotate(-7 ${cx} ${cy})">
-    <defs>
-      <linearGradient id="face-${id}" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="${t.c1}"/>
-        <stop offset="1" stop-color="${t.c2}"/>
-      </linearGradient>
-      <linearGradient id="edge-${id}" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="${t.c2}"/>
-        <stop offset="1" stop-color="${t.c2}" stop-opacity="0.65"/>
-      </linearGradient>
-      <radialGradient id="gloss-${id}" cx="0.5" cy="0.16" r="0.7">
-        <stop offset="0" stop-color="#ffffff" stop-opacity="${earned ? 0.55 : 0.3}"/>
-        <stop offset="0.5" stop-color="#ffffff" stop-opacity="0"/>
-      </radialGradient>
-    </defs>
-    <!-- kalınlık / perspektif arka yüz -->
-    <polygon points="${apex[0] + dx},${apex[1] + dy} ${br[0] + dx},${br[1] + dy} ${bl[0] + dx},${bl[1] + dy}"
-      fill="url(#edge-${id})" stroke="url(#edge-${id})" stroke-width="${sw}" stroke-linejoin="round"/>
-    <!-- ön yüz -->
-    <polygon points="${poly}" fill="url(#face-${id})" stroke="url(#face-${id})" stroke-width="${sw}" stroke-linejoin="round"/>
-    <!-- parlaklık -->
-    <polygon points="${poly}" fill="url(#gloss-${id})" stroke="url(#gloss-${id})" stroke-width="${sw}" stroke-linejoin="round"/>
-    <!-- sembol -->
-    <g transform="translate(${gx} ${gy}) scale(${gScale})" fill="#ffffff" fill-opacity="${earned ? 1 : 0.85}"
-       stroke-linejoin="round">${glyph}</g>
-  </g>`;
+// ── Vintage amblem paleti ──
+const VP = {
+  cream: "#efe4c8", creamEdge: "#ddcfa6", ink: "#122636", inkSoft: "#1c3346",
+  sun: "#f7d774", sunDeep: "#f4a63c", star: "#f3e8c4",
+  m1: "#2f6f74", m2: "#255a63", m3: "#1a3f4c", pine: "#12303a", snow: "#dbeef0",
+};
+const n1 = (v) => Math.round(v * 10) / 10;
+
+// ── Sahne parçaları (string üreticiler) ──
+const lg = (id, a, b) => `<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient>`;
+const mtn = (fill, pts) => `<polygon points="${pts} 184,264 16,264" fill="${fill}"/>`;
+function sunRays(cx, cy, r0, r1, fill, num = 14, rot = 0.15) {
+  let s = "";
+  for (let i = 0; i < num; i++) {
+    const a = rot + (i * 2 * Math.PI) / num;
+    const x1 = cx + Math.cos(a - 0.07) * r0, y1 = cy + Math.sin(a - 0.07) * r0;
+    const x2 = cx + Math.cos(a) * r1, y2 = cy + Math.sin(a) * r1;
+    const x3 = cx + Math.cos(a + 0.07) * r0, y3 = cy + Math.sin(a + 0.07) * r0;
+    s += `<path d="M${n1(x1)} ${n1(y1)} L${n1(x2)} ${n1(y2)} L${n1(x3)} ${n1(y3)} Z" fill="${fill}"/>`;
+  }
+  return s;
+}
+function pine(cx, baseY, h, fill = VP.pine) {
+  const w = h * 0.66;
+  return `<g fill="${fill}"><rect x="${n1(cx - h * 0.06)}" y="${n1(baseY - h * 0.14)}" width="${n1(h * 0.12)}" height="${n1(h * 0.18)}"/>`
+    + `<path d="M${n1(cx)} ${n1(baseY - h)} L${n1(cx + w * 0.42)} ${n1(baseY - h * 0.45)} L${n1(cx - w * 0.42)} ${n1(baseY - h * 0.45)} Z"/>`
+    + `<path d="M${n1(cx)} ${n1(baseY - h * 0.62)} L${n1(cx + w * 0.55)} ${n1(baseY - h * 0.08)} L${n1(cx - w * 0.55)} ${n1(baseY - h * 0.08)} Z"/></g>`;
+}
+const star4 = (x, y, s, fill = VP.star) =>
+  `<path d="M${x} ${y - s} L${x + s * 0.3} ${y - s * 0.3} L${x + s} ${y} L${x + s * 0.3} ${y + s * 0.3} L${x} ${y + s} L${x - s * 0.3} ${y + s * 0.3} L${x - s} ${y} L${x - s * 0.3} ${y - s * 0.3} Z" fill="${fill}"/>`;
+
+// Sky + güneş + dağlar + çamlar → {defs, body}
+function landscape(uid, o) {
+  let defs = lg(`sky-${uid}`, o.sky[0], o.sky[1]);
+  let body = `<rect x="16" y="16" width="168" height="248" fill="url(#sky-${uid})"/>`;
+  (o.stars || []).forEach(([x, y, s]) => { body += star4(x, y, s); });
+  if (o.sun !== false) {
+    if (o.rays) body += sunRays(100, o.sunY, 30, o.rayR || 60, o.rayFill || o.sunFill, o.rayNum || 14);
+    body += `<circle cx="100" cy="${o.sunY}" r="${o.sunR || 28}" fill="${o.sunFill}"/>`;
+  }
+  (o.ranges || []).forEach(([fill, pts]) => { body += mtn(fill, pts); });
+  (o.pines || []).forEach(([cx, by, h]) => { body += pine(cx, by, h); });
+  if (o.ground) body += `<rect x="16" y="${o.ground}" width="168" height="${264 - o.ground}" fill="${VP.m3}"/>`;
+  return { defs, body };
 }
 
-// Sayfadaki rozet SVG'si (string). size px kenar.
-function buildBadgeSvg(name, earned, size = 120) {
-  const id = slugify(name) + (earned ? "-e" : "-l");
-  const theme = { ...badgeTheme(name) };
-  const medal = triangleMedalMarkup({ cx: size / 2, cy: size / 2 + size * 0.02, r: size * 0.4, theme, earned, id });
-  const lock = earned ? "" : `
-    <g transform="translate(${size * 0.62} ${size * 0.62})">
-      <circle cx="${size*0.13}" cy="${size*0.13}" r="${size*0.13}" fill="#64748b"/>
-      <rect x="${size*0.08}" y="${size*0.12}" width="${size*0.1}" height="${size*0.08}" rx="${size*0.015}" fill="#fff"/>
-      <path d="M${size*0.1} ${size*0.12} v-${size*0.02} a${size*0.03} ${size*0.03} 0 0 1 ${size*0.06} 0 v${size*0.02}" fill="none" stroke="#fff" stroke-width="${size*0.014}"/>
-    </g>`;
-  return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" fill="none">${medal}${lock}</svg>`;
+// ── Rozete özel siluetler (koyu, VP.ink) ──
+const SUBJ = {
+  flag: (cx, by, h) => `<g fill="${VP.ink}"><rect x="${cx - 1.4}" y="${by - h}" width="2.8" height="${h}" rx="1.2"/><path d="M${cx + 1.2} ${by - h} L${cx + h * 0.62} ${by - h + h * 0.16} L${cx + 1.2} ${by - h + h * 0.32} Z" fill="${VP.sunDeep}"/></g>`,
+  trophy: (cx, cy, s) => `<g fill="${VP.ink}"><path d="M${cx - s * 0.42} ${cy - s * 0.5} h${s * 0.84} v${s * 0.16} a${s * 0.42} ${s * 0.42} 0 0 1 -${s * 0.84} 0 Z"/><path d="M${cx - s * 0.42} ${cy - s * 0.44} h-${s * 0.13} a${s * 0.17} ${s * 0.17} 0 0 0 ${s * 0.14} ${s * 0.22}" fill="none" stroke="${VP.ink}" stroke-width="${s * 0.07}"/><path d="M${cx + s * 0.42} ${cy - s * 0.44} h${s * 0.13} a${s * 0.17} ${s * 0.17} 0 0 1 -${s * 0.14} ${s * 0.22}" fill="none" stroke="${VP.ink}" stroke-width="${s * 0.07}"/><rect x="${cx - s * 0.08}" y="${cy - s * 0.02}" width="${s * 0.16}" height="${s * 0.22}"/><rect x="${cx - s * 0.26}" y="${cy + s * 0.2}" width="${s * 0.52}" height="${s * 0.1}" rx="${s * 0.03}"/><rect x="${cx - s * 0.34}" y="${cy + s * 0.3}" width="${s * 0.68}" height="${s * 0.1}" rx="${s * 0.03}"/></g>`,
+  crown: (cx, cy, s) => `<g fill="${VP.ink}"><path d="M${cx - s * 0.5} ${cy + s * 0.28} L${cx - s * 0.4} ${cy - s * 0.26} L${cx - s * 0.18} ${cy + s * 0.04} L${cx} ${cy - s * 0.38} L${cx + s * 0.18} ${cy + s * 0.04} L${cx + s * 0.4} ${cy - s * 0.26} L${cx + s * 0.5} ${cy + s * 0.28} Z"/><rect x="${cx - s * 0.5}" y="${cy + s * 0.26}" width="${s}" height="${s * 0.16}" rx="${s * 0.03}"/><circle cx="${cx - s * 0.4}" cy="${cy - s * 0.3}" r="${s * 0.06}"/><circle cx="${cx}" cy="${cy - s * 0.42}" r="${s * 0.06}"/><circle cx="${cx + s * 0.4}" cy="${cy - s * 0.3}" r="${s * 0.06}"/></g>`,
+  megaphone: (cx, cy, s) => `<g fill="${VP.ink}"><path d="M${cx - s * 0.5} ${cy - s * 0.16} L${cx + s * 0.12} ${cy - s * 0.4} L${cx + s * 0.12} ${cy + s * 0.4} L${cx - s * 0.5} ${cy + s * 0.16} Z"/><rect x="${cx - s * 0.66}" y="${cy - s * 0.16}" width="${s * 0.16}" height="${s * 0.32}" rx="${s * 0.04}"/><path d="M${cx - s * 0.34} ${cy + s * 0.16} l${s * 0.12} ${s * 0.34} h${s * 0.14} l-${s * 0.12} -${s * 0.34} Z"/></g><g fill="none" stroke="${VP.ink}" stroke-width="${s * 0.07}" stroke-linecap="round"><path d="M${cx + s * 0.28} ${cy - s * 0.22} a${s * 0.2} ${s * 0.2} 0 0 1 0 ${s * 0.44}"/><path d="M${cx + s * 0.44} ${cy - s * 0.34} a${s * 0.34} ${s * 0.34} 0 0 1 0 ${s * 0.68}"/></g>`,
+  chat: (cx, cy, s) => `<g fill="${VP.ink}"><path d="M${cx - s * 0.55} ${cy - s * 0.4} h${s * 0.7} a${s * 0.12} ${s * 0.12} 0 0 1 ${s * 0.12} ${s * 0.12} v${s * 0.34} a${s * 0.12} ${s * 0.12} 0 0 1 -${s * 0.12} ${s * 0.12} h-${s * 0.34} l-${s * 0.18} ${s * 0.2} v-${s * 0.2} h-${s * 0.18} a${s * 0.12} ${s * 0.12} 0 0 1 -${s * 0.12} -${s * 0.12} v-${s * 0.34} a${s * 0.12} ${s * 0.12} 0 0 1 ${s * 0.12} -${s * 0.12} Z"/><path d="M${cx + s * 0.02} ${cy - s * 0.05} h${s * 0.5} a${s * 0.12} ${s * 0.12} 0 0 1 ${s * 0.12} ${s * 0.12} v${s * 0.3} a${s * 0.12} ${s * 0.12} 0 0 1 -${s * 0.12} ${s * 0.12} h-${s * 0.16} v${s * 0.18} l-${s * 0.16} -${s * 0.18} h-${s * 0.2} a${s * 0.12} ${s * 0.12} 0 0 1 -${s * 0.12} -${s * 0.12} v-${s * 0.3} a${s * 0.12} ${s * 0.12} 0 0 1 ${s * 0.12} -${s * 0.12} Z" fill="${VP.inkSoft}"/></g>`,
+  dumbbell: (cx, cy, s) => `<g fill="${VP.ink}"><rect x="${cx - s * 0.6}" y="${cy - s * 0.26}" width="${s * 0.16}" height="${s * 0.52}" rx="${s * 0.05}"/><rect x="${cx - s * 0.46}" y="${cy - s * 0.16}" width="${s * 0.12}" height="${s * 0.32}" rx="${s * 0.04}"/><rect x="${cx - s * 0.36}" y="${cy - s * 0.08}" width="${s * 0.72}" height="${s * 0.16}" rx="${s * 0.05}"/><rect x="${cx + s * 0.34}" y="${cy - s * 0.16}" width="${s * 0.12}" height="${s * 0.32}" rx="${s * 0.04}"/><rect x="${cx + s * 0.44}" y="${cy - s * 0.26}" width="${s * 0.16}" height="${s * 0.52}" rx="${s * 0.05}"/></g>`,
+  bike: (cx, cy, s) => `<g fill="none" stroke="${VP.ink}" stroke-width="${s * 0.09}" stroke-linecap="round" stroke-linejoin="round"><circle cx="${cx - s * 0.6}" cy="${cy + s * 0.18}" r="${s * 0.34}"/><circle cx="${cx + s * 0.6}" cy="${cy + s * 0.18}" r="${s * 0.34}"/><path d="M${cx - s * 0.6} ${cy + s * 0.18} L${cx - s * 0.12} ${cy + s * 0.18} L${cx + s * 0.2} ${cy - s * 0.34} L${cx + s * 0.6} ${cy + s * 0.18} M${cx - s * 0.12} ${cy + s * 0.18} L${cx + s * 0.2} ${cy - s * 0.34} M${cx + s * 0.2} ${cy - s * 0.34} L${cx + s * 0.36} ${cy - s * 0.38}"/></g>`,
+  group: (cx, cy, s) => {
+    const p = (dx, r) => `<circle cx="${cx + dx}" cy="${cy - s * 0.18}" r="${r}"/><path d="M${cx + dx - r * 1.7} ${cy + s * 0.42} a${r * 1.7} ${r * 1.9} 0 0 1 ${r * 3.4} 0 Z"/>`;
+    return `<g fill="${VP.inkSoft}">${p(-s * 0.5, s * 0.2)}${p(s * 0.5, s * 0.2)}</g><g fill="${VP.ink}">${p(0, s * 0.26)}</g>`;
+  },
+};
+
+// Rozet adına göre sahne. uid → benzersiz gradient id'leri.
+function badgeScene(name, uid) {
+  const S = SUBJ;
+  const groundHill = `<path d="M16 240 Q60 220 100 232 T184 236 V264 H16 Z" fill="${VP.m3}"/>`;
+  switch (name) {
+    case "Başlangıç": { // gün doğumu + başlangıç bayrağı
+      const l = landscape(uid, { sky: ["#f7c25a", "#ef7d3b"], sunY: 150, sunR: 34, sunFill: VP.sun, rays: true, rayFill: "#f9d98a", rayR: 62,
+        ranges: [[VP.m2, "16,208 60,178 100,200 140,172 184,204"], [VP.m3, "16,236 50,214 92,236 130,216 184,232"]], pines: [[38, 250, 30], [162, 252, 26]] });
+      return { defs: l.defs, body: l.body + S.flag(100, 244, 52) };
+    }
+    case "Düzenli": { // sakin gün + yol + bisiklet
+      const l = landscape(uid, { sky: ["#7fd6d0", "#2f9b96"], sunY: 92, sunR: 26, sunFill: VP.sun,
+        ranges: [[VP.m1, "16,206 55,176 96,202 140,172 184,200"], [VP.m3, "16,238 60,222 120,238 184,224"]] });
+      const road = `<path d="M60 264 Q96 210 100 200 Q104 210 140 264 Z" fill="${VP.inkSoft}"/><path d="M99 264 Q100 220 100 206" stroke="${VP.sun}" stroke-width="3" stroke-dasharray="6 8" fill="none"/>`;
+      return { defs: l.defs, body: l.body + road + S.bike(100, 226, 34) };
+    }
+    case "Azimli": { // kararlı tırmanış + alev güneş
+      const l = landscape(uid, { sky: ["#f6a63c", "#e2562a"], sunY: 96, sunR: 30, sunFill: "#ffe08a", rays: true, rayFill: "#f6b24a", rayR: 64, rayNum: 16,
+        ranges: [[VP.m2, "16,224 70,150 108,196 184,214"], [VP.m3, "16,244 60,204 110,240 150,214 184,240"]], pines: [[150, 252, 24]] });
+      return { defs: l.defs, body: l.body + S.flag(108, 200, 40) };
+    }
+    case "Sporcu": { // atlet + dambıl
+      const l = landscape(uid, { sky: ["#54c4bd", "#1f7a74"], sunY: 90, sunR: 26, sunFill: VP.sun,
+        ranges: [[VP.m1, "16,204 58,178 100,200 142,176 184,202"], [VP.m3, "16,238 70,222 130,238 184,224"]] });
+      return { defs: l.defs, body: l.body + groundHill + S.dumbbell(100, 210, 62) };
+    }
+    case "Efsane": { // gece zirve + bayrak
+      const l = landscape(uid, { sky: ["#2c4a7c", "#132648"], sunY: 96, sunR: 22, sunFill: "#f3e8c4",
+        stars: [[46, 60, 3], [70, 90, 2], [150, 66, 3], [132, 96, 2], [40, 110, 2], [164, 120, 2.4]],
+        ranges: [[VP.m2, "16,236 66,146 100,196 140,158 184,220"]] });
+      const peak = `<polygon points="66,146 84,176 48,176" fill="${VP.snow}"/><polygon points="140,158 154,182 126,182" fill="${VP.snow}"/>`;
+      return { defs: l.defs, body: l.body + peak + S.flag(66, 148, 42) };
+    }
+    case "Şampiyon": { // altın ışınlar + kupa
+      const l = landscape(uid, { sky: ["#f7c948", "#ef8b2c"], sunY: 140, sunR: 0, sun: false });
+      const burst = sunRays(100, 150, 0, 150, "#f9d271", 22, 0.1) + sunRays(100, 150, 0, 150, "#f7c948", 22, 0.24);
+      const podium = `<rect x="70" y="238" width="60" height="26" fill="${VP.inkSoft}"/><rect x="60" y="250" width="80" height="14" fill="${VP.ink}"/>`;
+      return { defs: l.defs, body: l.body + burst + podium + S.trophy(100, 200, 74) };
+    }
+    case "Takım Oyuncusu": { // grup silueti
+      const l = landscape(uid, { sky: ["#6fd0cf", "#2a8f8c"], sunY: 88, sunR: 26, sunFill: VP.sun,
+        ranges: [[VP.m1, "16,206 60,180 100,202 140,178 184,204"], [VP.m3, "16,240 80,224 140,240 184,226"]] });
+      return { defs: l.defs, body: l.body + groundHill + S.group(100, 214, 46) };
+    }
+    case "Lider": { // taç + zirve
+      const l = landscape(uid, { sky: ["#f4a63c", "#e2562a"], sunY: 150, sunR: 30, sunFill: "#ffe08a", rays: true, rayFill: "#f6b24a", rayR: 60,
+        ranges: [[VP.m2, "16,232 66,168 100,208 140,170 184,226"], [VP.m3, "16,248 70,224 120,246 184,230"]] });
+      return { defs: l.defs, body: l.body + S.crown(100, 150, 70) };
+    }
+    case "Organizatör": { // megafon
+      const l = landscape(uid, { sky: ["#8f8be6", "#4338ca"], sunY: 90, sunR: 24, sunFill: "#e9e6ff",
+        ranges: [[VP.m2, "16,210 60,182 100,204 140,180 184,206"], [VP.m3, "16,240 80,226 140,240 184,228"]] });
+      return { defs: l.defs, body: l.body + groundHill + S.megaphone(96, 150, 78) };
+    }
+    case "Sohbetçi": { // sohbet balonları
+      const l = landscape(uid, { sky: ["#f6a4c0", "#db2777"], sunY: 92, sunR: 26, sunFill: "#ffe08a",
+        ranges: [[VP.m2, "16,208 58,182 100,204 142,182 184,206"], [VP.m3, "16,240 80,226 140,240 184,228"]] });
+      return { defs: l.defs, body: l.body + groundHill + S.chat(96, 150, 80) };
+    }
+    default: {
+      const l = landscape(uid, { sky: ["#54c4bd", "#1f7a74"], sunY: 92, sunR: 28, sunFill: VP.sun,
+        ranges: [[VP.m2, "16,208 60,180 100,204 140,178 184,204"], [VP.m3, "16,240 80,224 140,240 184,226"]], pines: [[40, 250, 26], [160, 252, 24]] });
+      return { defs: l.defs, body: l.body + S.flag(100, 244, 48) };
+    }
+  }
 }
 
-// Muuvlink logo işareti (üçgen "M") — paylaşım kartı için küçük vektör.
-function muuvlinkMarkMarkup(x, y, s, color = "#ffffff") {
-  return `<g transform="translate(${x} ${y})" fill="${color}">
-    <path d="M0 ${s} L${s*0.5} 0 L${s*0.62} ${s*0.24} L${s*0.28} ${s} Z"/>
-    <path d="M${s*0.38} ${s} L${s*0.88} 0 L${s} ${s*0.24} L${s*0.66} ${s} Z" opacity="0.75"/>
-  </g>`;
+// Amblem (defs + body), 0..200 × 0..280 koordinatında. Krem sticker + sahne + çerçeve.
+function buildEmblem(name, uid) {
+  const scene = badgeScene(name, uid);
+  const defs = `<clipPath id="win-${uid}"><rect x="18" y="18" width="164" height="244" rx="80" ry="82"/></clipPath>${scene.defs}`;
+  const body =
+    `<rect x="12" y="16" width="176" height="256" rx="88" fill="#0b1a24" opacity="0.18"/>` +          // gölge
+    `<rect x="8" y="8" width="184" height="264" rx="92" fill="${VP.cream}" stroke="${VP.creamEdge}" stroke-width="2"/>` + // krem sticker
+    `<g clip-path="url(#win-${uid})">${scene.body}</g>` +
+    `<rect x="18" y="18" width="164" height="244" rx="80" ry="82" fill="none" stroke="${VP.ink}" stroke-width="4.5"/>`;    // iç çerçeve
+  return { defs, body };
+}
+
+// Sayfadaki rozet SVG'si (string). w = genişlik px; boy = w*1.4 (dikey kapsül).
+function buildBadgeSvg(name, earned, w = 150) {
+  const uid = slugify(name) + (earned ? "-e" : "-l");
+  const em = buildEmblem(name, uid);
+  const h = Math.round(w * 1.4);
+  const inner = earned
+    ? em.body
+    : `<g filter="url(#gray-${uid})" opacity="0.9">${em.body}</g>` +
+      `<g transform="translate(140 200)"><circle cx="20" cy="20" r="20" fill="${VP.ink}"/><rect x="11" y="18" width="18" height="15" rx="2.5" fill="${VP.cream}"/><path d="M14 18 v-4 a6 6 0 0 1 12 0 v4" fill="none" stroke="${VP.cream}" stroke-width="3"/></g>`;
+  const grayDef = earned ? "" : `<filter id="gray-${uid}"><feColorMatrix type="saturate" values="0.12"/></filter>`;
+  return `<svg viewBox="0 0 200 280" width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg"><defs>${em.defs}${grayDef}</defs>${inner}</svg>`;
+}
+
+// Gerçek muuvlink wordmark (logo-yatay.svg) — istenen genişliğe ölçekli, tek renk.
+const MUUVLINK_LOGO_PATHS = [
+  "M38.6,42.7v-22.7c-.1,0-11.1,18.4-11.1,18.4h-5.4l-10.9-17.8v22H0V0h10l15,24.7L39.6,0h10v42.7c.1,0-11,0-11,0Z",
+  "M57.9,23.7V0h12.1v23.3c0,7.3,3.1,10.3,8.1,10.3s8.1-2.9,8.1-10.3V0h11.9v23.7c0,12.8-7.4,19.9-20.1,19.9s-20.1-7.1-20.1-19.9Z",
+  "M105.9,23.7V0h12.1v23.3c0,7.3,3.1,10.3,8.1,10.3s8.1-2.9,8.1-10.3V0h11.9v23.7c0,12.8-7.4,19.9-20.1,19.9s-20.1-7.1-20.1-19.9Z",
+  "M197.6,0l-18.3,42.7h-11.9L149.1,0h13.1l11.6,27.8L185.6,0h12Z",
+  "M209.6,0h7.9l-15.5,36h22.3l-2.9,6.7h-30.3L209.6,0Z",
+  "M246.2,0h7.9l-18.4,42.7h-7.9L246.2,0Z",
+  "M303.6,0l-18.4,42.7h-6.5l-10.6-29.9-12.9,29.9h-7.9L265.7,0h6.5l10.7,29.9L295.7,0h7.9Z",
+  "M326,19.9l9.9,22.8h-8.9l-8-18-9.8,7.1-4.7,10.9h-7.9L315.1,0h7.9l-9.3,21.6L343.5,0h10l-27.4,19.8h-.1Z",
+];
+function muuvlinkLogoMarkup(cx, y, targetW, color = "#ffffff") {
+  const scale = targetW / 353.5;
+  const x = cx - targetW / 2;
+  return `<g transform="translate(${x} ${y}) scale(${scale})" fill="${color}">${MUUVLINK_LOGO_PATHS.map(d => `<path d="${d}"/>`).join("")}</g>`;
 }
 
 // Instagram/WhatsApp hikaye kartı (1080×1920 PNG) — markalı.
 function buildBadgeStorySvg(badge, earned, dateStr, texts) {
   const W = 1080, H = 1920;
   const theme = badgeTheme(badge.name);
-  const id = slugify(badge.name) + "-story";
-  const medal = triangleMedalMarkup({ cx: W / 2, cy: 900, r: 300, theme, earned, id });
+  const uid = slugify(badge.name) + "-story";
+  const em = buildEmblem(badge.name, uid);
   const esc = (s) => String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const bw = 560, bh = bw * 1.4;                 // amblem boyutu
+  const bx = (W - bw) / 2, by = 470;
+  const k = bw / 200;
   return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <linearGradient id="bg-${id}" x1="0" y1="0" x2="0.3" y2="1">
-        <stop offset="0" stop-color="#0f2f33"/>
-        <stop offset="0.55" stop-color="#0d3b3e"/>
-        <stop offset="1" stop-color="#062225"/>
+      <linearGradient id="bg-${uid}" x1="0" y1="0" x2="0.3" y2="1">
+        <stop offset="0" stop-color="#0f2f33"/><stop offset="0.55" stop-color="#0d3b3e"/><stop offset="1" stop-color="#062225"/>
       </linearGradient>
-      <radialGradient id="glow-${id}" cx="0.5" cy="0.46" r="0.5">
-        <stop offset="0" stop-color="${theme.c1}" stop-opacity="0.35"/>
-        <stop offset="1" stop-color="${theme.c1}" stop-opacity="0"/>
+      <radialGradient id="glow-${uid}" cx="0.5" cy="0.42" r="0.5">
+        <stop offset="0" stop-color="${theme.c1}" stop-opacity="0.32"/><stop offset="1" stop-color="${theme.c1}" stop-opacity="0"/>
       </radialGradient>
+      ${em.defs}
     </defs>
-    <rect width="${W}" height="${H}" fill="url(#bg-${id})"/>
-    <rect width="${W}" height="${H}" fill="url(#glow-${id})"/>
-    <text x="${W/2}" y="520" text-anchor="middle" fill="${theme.c1}" font-family="Arial, Helvetica, sans-serif" font-size="40" font-weight="700" letter-spacing="14">${esc(texts.unlocked)}</text>
-    ${medal}
-    <text x="${W/2}" y="1330" text-anchor="middle" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="104" font-weight="800" letter-spacing="-2">${esc(badge.name)}</text>
-    <text x="${W/2}" y="1410" text-anchor="middle" fill="#a7d8d6" font-family="Arial, Helvetica, sans-serif" font-size="46" font-weight="500">${esc(badge.description)}</text>
-    ${dateStr ? `<text x="${W/2}" y="1500" text-anchor="middle" fill="#5f9b98" font-family="Arial, Helvetica, sans-serif" font-size="36" font-weight="600" letter-spacing="2">${esc(dateStr)}</text>` : ""}
-    <g transform="translate(${W/2 - 150} 1740)">
-      ${muuvlinkMarkMarkup(0, 4, 52)}
-      <text x="82" y="46" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="800" letter-spacing="-1">muuvlink</text>
-    </g>
-    <text x="${W/2}" y="1850" text-anchor="middle" fill="#4f817e" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="600" letter-spacing="3">muuvlink.app</text>
+    <rect width="${W}" height="${H}" fill="url(#bg-${uid})"/>
+    <rect width="${W}" height="${H}" fill="url(#glow-${uid})"/>
+    <text x="${W / 2}" y="400" text-anchor="middle" fill="${theme.c1}" font-family="Arial, Helvetica, sans-serif" font-size="40" font-weight="700" letter-spacing="14">${esc(texts.unlocked)}</text>
+    <g transform="translate(${bx} ${by}) scale(${k})">${em.body}</g>
+    <text x="${W / 2}" y="${by + bh + 96}" text-anchor="middle" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="100" font-weight="800" letter-spacing="-2">${esc(badge.name)}</text>
+    <text x="${W / 2}" y="${by + bh + 162}" text-anchor="middle" fill="#a7d8d6" font-family="Arial, Helvetica, sans-serif" font-size="44" font-weight="500">${esc(badge.description)}</text>
+    ${dateStr ? `<text x="${W / 2}" y="${by + bh + 226}" text-anchor="middle" fill="#5f9b98" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="600" letter-spacing="2">${esc(dateStr)}</text>` : ""}
+    ${muuvlinkLogoMarkup(W / 2, 1770, 300, "#ffffff")}
+    <text x="${W / 2}" y="1850" text-anchor="middle" fill="#4f817e" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="600" letter-spacing="4">muuvlink.app</text>
   </svg>`;
 }
 
@@ -3196,7 +3286,7 @@ export default function Muuvlink() {
     const done = Number(userStats?.total_trainings || 0);
     const showProgress = !earned && badge.requirement_type === "training_count" && badge.requirement_value > 0;
     const pct = showProgress ? Math.min(100, Math.round((done / badge.requirement_value) * 100)) : 0;
-    const svg = buildBadgeSvg(badge.name, !!earned, 132);
+    const svg = buildBadgeSvg(badge.name, !!earned, 150);
     const busy = sharingBadge === badge.id;
 
     return (
@@ -3210,9 +3300,9 @@ export default function Muuvlink() {
             style={{background:`radial-gradient(ellipse at center,${badgeTheme(badge.name).c1}22 0%,transparent 70%)`}}/>
         )}
 
-        {/* Rozet madalyası */}
-        <div className={`relative w-[108px] h-[108px] mb-3 transition-transform duration-300 ${earned ? "group-hover:scale-[1.06] drop-shadow-md" : ""}`}
-          style={earned ? {filter:`drop-shadow(0 8px 16px ${badgeTheme(badge.name).c2}33)`} : {}}
+        {/* Rozet amblemi */}
+        <div className={`relative w-[130px] mb-3 transition-transform duration-300 ${earned ? "group-hover:scale-[1.05]" : ""}`}
+          style={earned ? {filter:"drop-shadow(0 10px 18px rgba(15,42,50,0.18))"} : {}}
           dangerouslySetInnerHTML={{ __html: svg }}/>
 
         <h3 className={`font-bold text-sm mb-1 ${earned ? "text-slate-800" : "text-slate-400"}`}>{badge.name}</h3>
@@ -4372,8 +4462,8 @@ export default function Muuvlink() {
           <div className="relative rounded-3xl overflow-hidden border border-slate-200/70 bg-white p-5 sm:p-6 flex items-center gap-5">
             <div className="absolute inset-y-0 right-0 w-1/2 pointer-events-none opacity-60"
               style={{background:`radial-gradient(ellipse at right,${badgeTheme(nextBadge.name).c1}18 0%,transparent 70%)`}}/>
-            <div className="relative w-[92px] h-[92px] flex-shrink-0"
-              dangerouslySetInnerHTML={{ __html: buildBadgeSvg(nextBadge.name, false, 120) }}/>
+            <div className="relative w-[86px] flex-shrink-0"
+              dangerouslySetInnerHTML={{ __html: buildBadgeSvg(nextBadge.name, false, 86) }}/>
             <div className="relative min-w-0 flex-1">
               <span className="text-[11px] font-bold tracking-[0.2em] uppercase" style={{color:badgeTheme(nextBadge.name).c2}}>{t("badges.nextUp")}</span>
               <h3 className="text-lg font-bold text-slate-800 mt-0.5">{nextBadge.name}</h3>
