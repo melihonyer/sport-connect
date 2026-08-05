@@ -1269,6 +1269,21 @@ function loadImage(src) {
   });
 }
 
+// Sağlam görsel yükleme: önce fetch(no-store)→blob→objectURL (önbelleği ve
+// new Image() tuhaflıklarını atlar), olmazsa doğrudan <img>'a düş.
+async function loadImageRobust(url) {
+  try {
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error("http " + res.status);
+    const blob = await res.blob();
+    const obj = URL.createObjectURL(blob);
+    try { return await loadImage(obj); }
+    finally { setTimeout(() => URL.revokeObjectURL(obj), 15000); }
+  } catch (e) {
+    return await loadImage(url);   // son çare: doğrudan
+  }
+}
+
 // Story SVG → PNG Blob. SVG'yi BLOB URL ile yükleriz (Safari data-URI'de canvas'ı
 // "tainted" sayıp toBlob'u patlatıyor → masaüstünde "paylaşım oluşturulamadı" hatası).
 // Ayrıca M amblemini (favicon, same-origin) kanvasa bindirip tam logoyu tamamlarız.
@@ -1338,12 +1353,12 @@ async function badgeCardBlob(badge, dateStr, texts) {
   // Rozet görseli (önceden üretilmiş PNG); yoksa temaya uygun kapsül + emoji fallback
   const bw = 560, bh = Math.round(bw * 1.4), bx = (W - bw) / 2, by = 470;
   const slug = BADGE_SLUG[badge.name] || slugify(badge.name);
-  let drawn = false;
+  let drawn = false, dbgBadge = "";
   try {
-    const img = await loadImage(`/badges/${slug}.png`);   // göreli yol — header logosuyla aynı, her bağlamda çalışır
+    const img = await loadImageRobust(`/badges/${slug}.png`);
     x.drawImage(img, bx, by, bw, bh);
     drawn = true;
-  } catch (_) { /* fallback aşağıda */ }
+  } catch (e) { dbgBadge = String(e && e.message || e); }
   if (!drawn) {
     x.fillStyle = "#efe4c8"; roundRectPath(x, bx - 16, by - 16, bw + 32, bh + 32, (bw + 32) * 0.42); x.fill();
     const g = x.createLinearGradient(0, by, 0, by + bh);
@@ -1364,9 +1379,14 @@ async function badgeCardBlob(badge, dateStr, texts) {
   }
 
   // Tam logo: M amblemi (favicon) + wordmark (Path2D)
+  let dbgFav = "";
   try {
-    const mark = await loadImage(`/icons/favicon.png`);   // göreli yol
+    const mark = await loadImageRobust(`/icons/favicon.png`);
     x.drawImage(mark, LOGO_MARK_X, LOGO_MARK_Y, LOGO_MARK_SIZE, LOGO_MARK_SIZE);
+  } catch (e) { dbgFav = String(e && e.message || e); }
+  try {
+    if (typeof window !== "undefined") window.__shareDebug =
+      `slug=${slug} badge=${drawn ? "OK" : "FAIL:" + dbgBadge} fav=${dbgFav ? "FAIL:" + dbgFav : "OK"}`;
   } catch (_) {}
   x.save();
   const sc = LOGO_WORDMARK_W / 353.5;
@@ -3542,6 +3562,11 @@ export default function Muuvlink() {
     const dateStr = earned && badge.earned_at ? fmtDateShort(badge.earned_at) : "";
     const res = await shareBadgeCard(badge, !!earned, dateStr, texts);
     setSharingBadge(null);
+    // Geçici teşhis: rozet/logo görseli yüklenemezse sebebini göster
+    try {
+      const dbg = typeof window !== "undefined" ? window.__shareDebug : "";
+      if (dbg && /FAIL/.test(dbg)) { showToast("DBG " + dbg, "error"); return; }
+    } catch (_) {}
     if (res === "downloaded") showToast(t("badges.shareDownloaded"), "success");
     else if (res === "copied") showToast(t("badges.shareCopied"), "success");
     else if (res === "failed") showToast(t("badges.shareFailed"), "error");
