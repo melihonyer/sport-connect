@@ -1303,10 +1303,12 @@ async function shareBadgeCard(badge, earned, dateStr, texts) {
 
   if (blob) {
     // 1) Native dosya paylaşımı (mobil / destekleyen tarayıcı)
+    // ÖNEMLİ: yalnızca dosya paylaş — `text`/`url` eklenince macOS hedefleri
+    // (Mail, AirDrop) görseli atıp yalnız metni alıyor. `title` e-posta konusu olur.
     try {
       const file = new File([blob], filename, { type: "image/png" });
       if (typeof navigator !== "undefined" && navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], text: texts.shareText });
+        await navigator.share({ files: [file], title: "Muuvlink" });
         return "shared";
       }
     } catch (e) {
