@@ -1302,20 +1302,26 @@ async function shareBadgeCard(badge, earned, dateStr, texts) {
   }
 
   if (blob) {
-    // 1) Native dosya paylaşımı (mobil / destekleyen tarayıcı)
-    // ÖNEMLİ: yalnızca dosya paylaş — `text`/`url` eklenince macOS hedefleri
-    // (Mail, AirDrop) görseli atıp yalnız metni alıyor. `title` e-posta konusu olur.
-    try {
-      const file = new File([blob], filename, { type: "image/png" });
-      if (typeof navigator !== "undefined" && navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: "Muuvlink" });
-        return "shared";
+    // 1) Native dosya paylaşımı — YALNIZCA mobil/dokunmatik cihazlarda.
+    // Masaüstü Chrome→macOS köprüsü dosyayı taşımıyor (Mail/AirDrop sadece metni
+    // alıyor), o yüzden masaüstünde paylaşım penceresi yerine doğrudan indiriyoruz.
+    const isMobileLike =
+      !!(window?.Capacitor?.isNativePlatform?.()) ||
+      (typeof window !== "undefined" && window.matchMedia && window.matchMedia("(pointer: coarse)").matches) ||
+      (typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod|Mobile|Silk/i.test(navigator.userAgent || ""));
+    if (isMobileLike) {
+      try {
+        const file = new File([blob], filename, { type: "image/png" });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: "Muuvlink" });
+          return "shared";
+        }
+      } catch (e) {
+        if (e?.name === "AbortError") return "cancelled";
+        // paylaşım reddedildi → indirmeye düş
       }
-    } catch (e) {
-      if (e?.name === "AbortError") return "cancelled";
-      // paylaşım reddedildi → indirmeye düş
     }
-    // 2) Masaüstü: PNG indir
+    // 2) Masaüstü (veya native paylaşım yok): PNG indir
     try {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
