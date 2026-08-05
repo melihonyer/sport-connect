@@ -813,6 +813,18 @@ const checkAndAwardBadges = async (userId) => {
           [userId]
         );
         qualified = parseInt(commentCount.rows[0].count) >= badge.requirement_value;
+      } else if (badge.requirement_type === 'sport_count' && badge.sport) {
+        // Kullanıcının katılıp tamamladığı, belirli spor dalındaki etkinlik sayısı
+        // (bireysel etkinlikte t.sport, takım etkinliğinde teams.sport)
+        const sportCount = await pool.query(
+          `SELECT COUNT(*) FROM training_attendees ta
+             JOIN trainings t ON ta.training_id = t.id
+             LEFT JOIN teams tm ON t.team_id = tm.id
+           WHERE ta.user_id = $1 AND ${trainingUtcExpr('t')} < NOW()
+             AND COALESCE(t.sport, tm.sport) = $2`,
+          [userId, badge.sport]
+        );
+        qualified = parseInt(sportCount.rows[0].count) >= badge.requirement_value;
       }
 
       if (qualified) {
@@ -4223,17 +4235,30 @@ pool.query(`UPDATE badges SET description = REPLACE(description, 'antrenman', 'e
 
 // Yeni rozetler — yoksa ekle (isme göre idempotent)
 (async () => {
+  // Spor dalı kolonu — INSERT'ten ÖNCE tamamlanmalı (yoksa "column sport does not exist")
+  await pool.query(`ALTER TABLE badges ADD COLUMN IF NOT EXISTS sport TEXT`).catch(() => {});
   const NEW_BADGES = [
-    { name: 'Organizatör', description: '1 etkinlik oluştur',   icon: '📣', requirement_type: 'created_count',  requirement_value: 1 },
-    { name: 'Sohbetçi',    description: 'İlk mesajını gönder',  icon: '💬', requirement_type: 'comment_count',  requirement_value: 1 },
-    { name: 'Şampiyon',    description: '100 etkinlik tamamla', icon: '🥇', requirement_type: 'training_count', requirement_value: 100 },
+    { name: 'Organizatör', description: '1 etkinlik oluştur',   icon: '📣', requirement_type: 'created_count',  requirement_value: 1,   sport: null },
+    { name: 'Sohbetçi',    description: 'İlk mesajını gönder',  icon: '💬', requirement_type: 'comment_count',  requirement_value: 1,   sport: null },
+    { name: 'Şampiyon',    description: '100 etkinlik tamamla', icon: '🥇', requirement_type: 'training_count', requirement_value: 100, sport: null },
+    // ── Spor dalı rozetleri: ilgili daldaki ilk etkinliğinle açılır ──
+    { name: 'Bisikletçi',  description: 'İlk bisiklet etkinliğin',  icon: '🚴', requirement_type: 'sport_count', requirement_value: 1, sport: 'Bisiklet' },
+    { name: 'Koşucu',      description: 'İlk koşu etkinliğin',      icon: '🏃', requirement_type: 'sport_count', requirement_value: 1, sport: 'Koşu' },
+    { name: 'Yüzücü',      description: 'İlk yüzme etkinliğin',     icon: '🏊', requirement_type: 'sport_count', requirement_value: 1, sport: 'Yüzme' },
+    { name: 'Tenisçi',     description: 'İlk tenis etkinliğin',     icon: '🎾', requirement_type: 'sport_count', requirement_value: 1, sport: 'Tenis' },
+    { name: 'Kanocu',      description: 'İlk kano etkinliğin',      icon: '🛶', requirement_type: 'sport_count', requirement_value: 1, sport: 'Kano' },
+    { name: 'Futbolcu',    description: 'İlk futbol etkinliğin',    icon: '⚽', requirement_type: 'sport_count', requirement_value: 1, sport: 'Futbol' },
+    { name: 'Basketbolcu', description: 'İlk basketbol etkinliğin', icon: '🏀', requirement_type: 'sport_count', requirement_value: 1, sport: 'Basketbol' },
+    { name: 'Voleybolcu',  description: 'İlk voleybol etkinliğin',  icon: '🏐', requirement_type: 'sport_count', requirement_value: 1, sport: 'Voleybol' },
+    { name: 'Yogi',        description: 'İlk yoga etkinliğin',      icon: '🧘', requirement_type: 'sport_count', requirement_value: 1, sport: 'Yoga' },
+    { name: 'Kaşif',       description: 'İlk trekking etkinliğin',  icon: '🥾', requirement_type: 'sport_count', requirement_value: 1, sport: 'Trekking' },
   ];
   for (const b of NEW_BADGES) {
     await pool.query(
-      `INSERT INTO badges (name, description, icon, requirement_type, requirement_value)
-       SELECT $1, $2, $3, $4, $5
+      `INSERT INTO badges (name, description, icon, requirement_type, requirement_value, sport)
+       SELECT $1, $2, $3, $4, $5, $6
        WHERE NOT EXISTS (SELECT 1 FROM badges WHERE name = $1)`,
-      [b.name, b.description, b.icon, b.requirement_type, b.requirement_value]
+      [b.name, b.description, b.icon, b.requirement_type, b.requirement_value, b.sport]
     ).catch(e => console.error('Seed badge error:', b.name, e.message));
   }
 })();

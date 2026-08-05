@@ -930,6 +930,17 @@ const BADGE_THEME = {
   "Lider":          { c1: "#fcd34d", c2: "#d97706", glyph: "crown"   },
   "Organizatör":    { c1: "#818cf8", c2: "#4338ca", glyph: "megaphone" },
   "Sohbetçi":       { c1: "#f472b6", c2: "#db2777", glyph: "chat"    },
+  // Spor dalı rozetleri
+  "Bisikletçi":     { c1: "#2dd4bf", c2: "#0d9488" },
+  "Koşucu":         { c1: "#fb923c", c2: "#ea580c" },
+  "Yüzücü":         { c1: "#38bdf8", c2: "#0284c7" },
+  "Tenisçi":        { c1: "#a3e635", c2: "#4d7c0f" },
+  "Kanocu":         { c1: "#22d3ee", c2: "#0e7490" },
+  "Futbolcu":       { c1: "#34d399", c2: "#047857" },
+  "Basketbolcu":    { c1: "#fb7185", c2: "#be123c" },
+  "Voleybolcu":     { c1: "#fbbf24", c2: "#b45309" },
+  "Yogi":           { c1: "#c4b5fd", c2: "#6d28d9" },
+  "Kaşif":          { c1: "#8fbf9f", c2: "#3f7a5a" },
 };
 const badgeTheme = (name) => BADGE_THEME[name] || { c1: "#2dd4bf", c2: "#0d9488", glyph: "rosette" };
 
@@ -965,17 +976,23 @@ function pine(cx, baseY, h, fill = VP.pine) {
 }
 const star4 = (x, y, s, fill = VP.star) =>
   `<path d="M${x} ${y - s} L${x + s * 0.3} ${y - s * 0.3} L${x + s} ${y} L${x + s * 0.3} ${y + s * 0.3} L${x} ${y + s} L${x - s * 0.3} ${y + s * 0.3} L${x - s} ${y} L${x - s * 0.3} ${y - s * 0.3} Z" fill="${fill}"/>`;
+const bird = (x, y, s, fill) => `<path d="M${x - s} ${y} Q${x - s * 0.5} ${y - s * 0.6} ${x} ${y} Q${x + s * 0.5} ${y - s * 0.6} ${x + s} ${y}" fill="none" stroke="${fill}" stroke-width="${s * 0.28}" stroke-linecap="round"/>`;
+const cloud = (x, y, s, fill) => `<g fill="${fill}"><ellipse cx="${x}" cy="${y}" rx="${s}" ry="${s * 0.5}"/><ellipse cx="${x - s * 0.6}" cy="${y + s * 0.1}" rx="${s * 0.55}" ry="${s * 0.38}"/><ellipse cx="${x + s * 0.6}" cy="${y + s * 0.1}" rx="${s * 0.55}" ry="${s * 0.38}"/></g>`;
+const water = (topY, fill) => `<path d="M16 ${topY} q22 -6 42 0 t42 0 t42 0 t42 0 V264 H16 Z" fill="${fill}"/>`;
 
 // Sky + güneş + dağlar + çamlar → {defs, body}
 function landscape(uid, o) {
   let defs = lg(`sky-${uid}`, o.sky[0], o.sky[1]);
   let body = `<rect x="16" y="16" width="168" height="248" fill="url(#sky-${uid})"/>`;
   (o.stars || []).forEach(([x, y, s]) => { body += star4(x, y, s); });
+  (o.clouds || []).forEach(([x, y, s]) => { body += cloud(x, y, s, "#ffffff28"); });
   if (o.sun !== false) {
     if (o.rays) body += sunRays(100, o.sunY, 30, o.rayR || 60, o.rayFill || o.sunFill, o.rayNum || 14);
+    body += `<circle cx="100" cy="${o.sunY}" r="${(o.sunR || 28) + 6}" fill="${o.sunFill}" opacity="0.25"/>`;
     body += `<circle cx="100" cy="${o.sunY}" r="${o.sunR || 28}" fill="${o.sunFill}"/>`;
   }
   (o.ranges || []).forEach(([fill, pts]) => { body += mtn(fill, pts); });
+  (o.birds || []).forEach(([x, y, s]) => { body += bird(x, y, s, o.birdFill || "#12303a"); });
   (o.pines || []).forEach(([cx, by, h]) => { body += pine(cx, by, h); });
   if (o.ground) body += `<rect x="16" y="${o.ground}" width="168" height="${264 - o.ground}" fill="${VP.m3}"/>`;
   return { defs, body };
@@ -994,6 +1011,40 @@ const SUBJ = {
     const p = (dx, r) => `<circle cx="${cx + dx}" cy="${cy - s * 0.18}" r="${r}"/><path d="M${cx + dx - r * 1.7} ${cy + s * 0.42} a${r * 1.7} ${r * 1.9} 0 0 1 ${r * 3.4} 0 Z"/>`;
     return `<g fill="${VP.inkSoft}">${p(-s * 0.5, s * 0.2)}${p(s * 0.5, s * 0.2)}</g><g fill="${VP.ink}">${p(0, s * 0.26)}</g>`;
   },
+  // ── Spor piktogramları (kalın yuvarlak çizgi + dolu kafa) ──
+  _fig: (parts, s) => `<g fill="none" stroke="${VP.ink}" stroke-width="${s * 0.15}" stroke-linecap="round" stroke-linejoin="round">${parts}</g>`,
+  _head: (x, y, s) => `<circle cx="${x}" cy="${y}" r="${s * 0.13}" fill="${VP.ink}"/>`,
+  runner: (cx, cy, s) => SUBJ._head(cx + s * 0.08, cy - s * 0.34, s) +
+    SUBJ._fig(`<path d="M${cx + s * 0.04} ${cy - s * 0.2} L${cx + s * 0.12} ${cy + s * 0.06}"/><path d="M${cx + s * 0.08} ${cy - s * 0.12} L${cx + s * 0.32} ${cy - s * 0.2}"/><path d="M${cx + s * 0.06} ${cy - s * 0.08} L${cx - s * 0.2} ${cy}"/><path d="M${cx + s * 0.12} ${cy + s * 0.06} L${cx + s * 0.28} ${cy + s * 0.16} L${cx + s * 0.22} ${cy + s * 0.4}"/><path d="M${cx + s * 0.12} ${cy + s * 0.06} L${cx - s * 0.12} ${cy + s * 0.2} L${cx - s * 0.3} ${cy + s * 0.12}"/>`, s),
+  cyclist: (cx, cy, s) => `<g fill="none" stroke="${VP.ink}" stroke-width="${s * 0.08}" stroke-linecap="round" stroke-linejoin="round"><circle cx="${cx - s * 0.42}" cy="${cy + s * 0.3}" r="${s * 0.22}"/><circle cx="${cx + s * 0.42}" cy="${cy + s * 0.3}" r="${s * 0.22}"/><path d="M${cx - s * 0.42} ${cy + s * 0.3} L${cx - s * 0.02} ${cy + s * 0.3} L${cx + s * 0.18} ${cy - s * 0.06} L${cx + s * 0.42} ${cy + s * 0.3} M${cx - s * 0.02} ${cy + s * 0.3} L${cx + s * 0.18} ${cy - s * 0.06} M${cx + s * 0.18} ${cy - s * 0.06} L${cx + s * 0.34} ${cy - s * 0.1}"/></g>` +
+    SUBJ._head(cx + s * 0.28, cy - s * 0.34, s) +
+    SUBJ._fig(`<path d="M${cx + s * 0.24} ${cy - s * 0.22} L${cx + s * 0.02} ${cy - s * 0.04}"/><path d="M${cx + s * 0.24} ${cy - s * 0.22} L${cx + s * 0.36} ${cy - s * 0.08}"/><path d="M${cx + s * 0.02} ${cy - s * 0.04} L${cx + s * 0.18} ${cy - s * 0.06}"/>`, s),
+  swimmer: (cx, cy, s) => SUBJ._head(cx - s * 0.18, cy - s * 0.02, s) +
+    SUBJ._fig(`<path d="M${cx - s * 0.06} ${cy + s * 0.02} L${cx + s * 0.34} ${cy + s * 0.08}"/><path d="M${cx - s * 0.1} ${cy} L${cx - s * 0.36} ${cy - s * 0.24}"/><path d="M${cx + s * 0.34} ${cy + s * 0.08} L${cx + s * 0.44} ${cy - s * 0.06}"/>`, s),
+  tennis: (cx, cy, s) => SUBJ._head(cx - s * 0.02, cy - s * 0.34, s) +
+    SUBJ._fig(`<path d="M${cx - s * 0.04} ${cy - s * 0.2} L${cx + s * 0.02} ${cy + s * 0.08}"/><path d="M${cx - s * 0.02} ${cy - s * 0.12} L${cx + s * 0.26} ${cy - s * 0.34}"/><path d="M${cx - s * 0.02} ${cy - s * 0.08} L${cx - s * 0.24} ${cy - s * 0.02}"/><path d="M${cx + s * 0.02} ${cy + s * 0.08} L${cx + s * 0.16} ${cy + s * 0.34} M${cx + s * 0.02} ${cy + s * 0.08} L${cx - s * 0.14} ${cy + s * 0.32}"/>`, s) +
+    `<ellipse cx="${cx + s * 0.32}" cy="${cy - s * 0.42}" rx="${s * 0.13}" ry="${s * 0.16}" fill="none" stroke="${VP.ink}" stroke-width="${s * 0.06}"/>`,
+  kayak: (cx, cy, s) => `<path d="M${cx - s * 0.5} ${cy + s * 0.24} Q${cx} ${cy + s * 0.44} ${cx + s * 0.5} ${cy + s * 0.24} Q${cx} ${cy + s * 0.34} ${cx - s * 0.5} ${cy + s * 0.24} Z" fill="${VP.inkSoft}"/>` +
+    SUBJ._head(cx, cy - s * 0.26, s) +
+    SUBJ._fig(`<path d="M${cx} ${cy - s * 0.14} L${cx} ${cy + s * 0.16}"/><path d="M${cx - s * 0.34} ${cy - s * 0.12} L${cx + s * 0.34} ${cy + s * 0.06}"/>`, s) +
+    `<path d="M${cx - s * 0.4} ${cy - s * 0.18} l${s * 0.1} -${s * 0.06} M${cx + s * 0.4} ${cy + s * 0.12} l${s * 0.1} ${s * 0.06}" stroke="${VP.ink}" stroke-width="${s * 0.1}" stroke-linecap="round"/>`,
+  footballer: (cx, cy, s) => SUBJ._head(cx - s * 0.06, cy - s * 0.34, s) +
+    SUBJ._fig(`<path d="M${cx - s * 0.1} ${cy - s * 0.2} L${cx - s * 0.02} ${cy + s * 0.04}"/><path d="M${cx - s * 0.06} ${cy - s * 0.12} L${cx - s * 0.28} ${cy - s * 0.16}"/><path d="M${cx - s * 0.05} ${cy - s * 0.1} L${cx + s * 0.18} ${cy - s * 0.12}"/><path d="M${cx - s * 0.02} ${cy + s * 0.04} L${cx - s * 0.2} ${cy + s * 0.16} L${cx - s * 0.16} ${cy + s * 0.4}"/><path d="M${cx - s * 0.02} ${cy + s * 0.04} L${cx + s * 0.16} ${cy + s * 0.12} L${cx + s * 0.34} ${cy + s * 0.06}"/>`, s) +
+    `<circle cx="${cx + s * 0.44}" cy="${cy + s * 0.16}" r="${s * 0.14}" fill="${VP.ink}"/><path d="M${cx + s * 0.34} ${cy + s * 0.12} l${s * 0.2} ${s * 0.08} M${cx + s * 0.44} ${cy + s * 0.02} l0 ${s * 0.28}" stroke="#ffffff55" stroke-width="${s * 0.03}"/>`,
+  basketball: (cx, cy, s) => SUBJ._head(cx - s * 0.04, cy - s * 0.3, s) +
+    SUBJ._fig(`<path d="M${cx - s * 0.02} ${cy - s * 0.16} L${cx + s * 0.04} ${cy + s * 0.1}"/><path d="M${cx} ${cy - s * 0.1} L${cx - s * 0.22} ${cy - s * 0.28}"/><path d="M${cx + s * 0.02} ${cy - s * 0.08} L${cx + s * 0.2} ${cy - s * 0.28}"/><path d="M${cx + s * 0.04} ${cy + s * 0.1} L${cx - s * 0.12} ${cy + s * 0.34} M${cx + s * 0.04} ${cy + s * 0.1} L${cx + s * 0.2} ${cy + s * 0.36}"/>`, s) +
+    `<circle cx="${cx - s * 0.06}" cy="${cy - s * 0.46}" r="${s * 0.14}" fill="${VP.ink}"/><path d="M${cx - s * 0.06} ${cy - s * 0.6} l0 ${s * 0.28} M${cx - s * 0.2} ${cy - s * 0.46} l${s * 0.28} 0" stroke="#ffffff55" stroke-width="${s * 0.03}"/>`,
+  volleyball: (cx, cy, s) => SUBJ._head(cx - s * 0.02, cy - s * 0.26, s) +
+    SUBJ._fig(`<path d="M${cx} ${cy - s * 0.12} L${cx + s * 0.04} ${cy + s * 0.12}"/><path d="M${cx + s * 0.02} ${cy - s * 0.06} L${cx + s * 0.24} ${cy - s * 0.3}"/><path d="M${cx + s * 0.01} ${cy - s * 0.04} L${cx - s * 0.22} ${cy - s * 0.16}"/><path d="M${cx + s * 0.04} ${cy + s * 0.12} L${cx - s * 0.1} ${cy + s * 0.36} M${cx + s * 0.04} ${cy + s * 0.12} L${cx + s * 0.2} ${cy + s * 0.36}"/>`, s) +
+    `<circle cx="${cx + s * 0.34}" cy="${cy - s * 0.44}" r="${s * 0.14}" fill="${VP.ink}"/><path d="M${cx + s * 0.34} ${cy - s * 0.58} l0 ${s * 0.28} M${cx + s * 0.2} ${cy - s * 0.44} l${s * 0.28} 0" stroke="#ffffff55" stroke-width="${s * 0.03}"/>`,
+  yoga: (cx, cy, s) => SUBJ._head(cx, cy - s * 0.3, s) +
+    `<path d="M${cx} ${cy - s * 0.16} L${cx} ${cy + s * 0.08}" stroke="${VP.ink}" stroke-width="${s * 0.15}" stroke-linecap="round"/>` +
+    `<path d="M${cx} ${cy + s * 0.08} L${cx - s * 0.4} ${cy + s * 0.28} L${cx - s * 0.06} ${cy + s * 0.28} M${cx} ${cy + s * 0.08} L${cx + s * 0.4} ${cy + s * 0.28} L${cx + s * 0.06} ${cy + s * 0.28}" fill="none" stroke="${VP.ink}" stroke-width="${s * 0.15}" stroke-linecap="round" stroke-linejoin="round"/>` +
+    `<path d="M${cx - s * 0.02} ${cy - s * 0.05} L${cx - s * 0.34} ${cy + s * 0.12} M${cx + s * 0.02} ${cy - s * 0.05} L${cx + s * 0.34} ${cy + s * 0.12}" stroke="${VP.ink}" stroke-width="${s * 0.13}" stroke-linecap="round"/>`,
+  hiker: (cx, cy, s) => SUBJ._head(cx - s * 0.02, cy - s * 0.34, s) +
+    `<path d="M${cx - s * 0.12} ${cy - s * 0.24} q-${s * 0.16} ${s * 0.04} -${s * 0.14} ${s * 0.22}" fill="none" stroke="${VP.ink}" stroke-width="${s * 0.18}" stroke-linecap="round"/>` +
+    SUBJ._fig(`<path d="M${cx - s * 0.04} ${cy - s * 0.2} L${cx + s * 0.02} ${cy + s * 0.06}"/><path d="M${cx - s * 0.02} ${cy - s * 0.12} L${cx + s * 0.2} ${cy - s * 0.04}"/><path d="M${cx + s * 0.02} ${cy + s * 0.06} L${cx + s * 0.16} ${cy + s * 0.16} L${cx + s * 0.14} ${cy + s * 0.4}"/><path d="M${cx + s * 0.02} ${cy + s * 0.06} L${cx - s * 0.14} ${cy + s * 0.2} L${cx - s * 0.16} ${cy + s * 0.4}"/>`, s) +
+    `<path d="M${cx + s * 0.22} ${cy - s * 0.06} L${cx + s * 0.3} ${cy + s * 0.42}" stroke="${VP.ink}" stroke-width="${s * 0.06}" stroke-linecap="round"/>`,
 };
 
 // Rozet adına göre sahne. uid → benzersiz gradient id'leri.
@@ -1054,6 +1105,60 @@ function badgeScene(name, uid) {
       const l = landscape(uid, { sky: ["#f6a4c0", "#db2777"], sunY: 92, sunR: 26, sunFill: "#ffe08a",
         ranges: [[VP.m2, "16,208 58,182 100,204 142,182 184,206"], [VP.m3, "16,240 80,226 140,240 184,228"]] });
       return { defs: l.defs, body: l.body + groundHill + S.chat(96, 150, 80) };
+    }
+    case "Bisikletçi": {
+      const l = landscape(uid, { sky: ["#7fd6d0", "#2f9b96"], sunY: 88, sunR: 26, sunFill: VP.sun, birds: [[54, 66, 9], [72, 58, 7]],
+        ranges: [[VP.m1, "16,206 58,180 100,202 140,178 184,204"], [VP.m3, "16,242 80,226 140,242 184,228"]] });
+      return { defs: l.defs, body: l.body + groundHill + S.cyclist(100, 208, 62) };
+    }
+    case "Koşucu": {
+      const l = landscape(uid, { sky: ["#f7c25a", "#ef7d3b"], sunY: 150, sunR: 32, sunFill: VP.sun, rays: true, rayFill: "#f9d98a", rayR: 60, birds: [[52, 72, 9], [150, 60, 8]],
+        ranges: [[VP.m2, "16,210 60,182 100,206 140,180 184,206"], [VP.m3, "16,242 80,226 140,242 184,228"]] });
+      return { defs: l.defs, body: l.body + groundHill + S.runner(100, 210, 64) };
+    }
+    case "Yüzücü": {
+      const l = landscape(uid, { sky: ["#7ecbf0", "#2b8fd0"], sunY: 84, sunR: 24, sunFill: "#fff2c0", clouds: [[56, 70, 14], [150, 56, 11]],
+        ranges: [[VP.m1, "16,196 70,174 130,192 184,176"]] });
+      return { defs: l.defs, body: l.body + water(196, "#1f6f8c") + water(214, "#155a73") + S.swimmer(100, 210, 62) };
+    }
+    case "Tenisçi": {
+      const l = landscape(uid, { sky: ["#c7e86a", "#7bb43a"], sunY: 86, sunR: 24, sunFill: "#fff2c0", birds: [[150, 62, 8]],
+        ranges: [[VP.m1, "16,206 60,184 100,204 140,182 184,206"], [VP.m3, "16,242 80,228 140,242 184,230"]] });
+      const court = `<rect x="52" y="238" width="96" height="26" fill="#2f7a3a"/><rect x="98" y="238" width="4" height="26" fill="#dbe4c4"/>`;
+      return { defs: l.defs, body: l.body + court + S.tennis(100, 206, 66) };
+    }
+    case "Kanocu": {
+      const l = landscape(uid, { sky: ["#67d3e8", "#1596b4"], sunY: 84, sunR: 24, sunFill: "#fff2c0", clouds: [[58, 66, 12]], birds: [[146, 58, 8]],
+        ranges: [[VP.m3, "16,192 70,170 130,188 184,172"]] });
+      return { defs: l.defs, body: l.body + water(194, "#127088") + water(212, "#0c5871") + S.kayak(100, 200, 66) };
+    }
+    case "Futbolcu": {
+      const l = landscape(uid, { sky: ["#63d6a0", "#1f9b6a"], sunY: 86, sunR: 24, sunFill: "#fff2c0", birds: [[54, 62, 8]],
+        ranges: [[VP.m1, "16,208 70,188 130,206 184,188"]] });
+      const field = `<rect x="16" y="232" width="168" height="32" fill="#2c7d4e"/><path d="M16 232 h168" stroke="#dff0e2" stroke-width="2" opacity="0.5"/>`;
+      return { defs: l.defs, body: l.body + field + S.footballer(98, 206, 64) };
+    }
+    case "Basketbolcu": {
+      const l = landscape(uid, { sky: ["#f6a24a", "#e2562a"], sunY: 92, sunR: 26, sunFill: "#ffe08a", rays: true, rayFill: "#f6b24a", rayR: 58,
+        ranges: [[VP.m3, "16,224 70,200 130,222 184,202"]] });
+      const court = `<rect x="16" y="234" width="168" height="30" fill="#8a3f22"/>`;
+      return { defs: l.defs, body: l.body + court + S.basketball(100, 206, 66) };
+    }
+    case "Voleybolcu": {
+      const l = landscape(uid, { sky: ["#fbd15a", "#e79a2a"], sunY: 88, sunR: 24, sunFill: "#fff2c0", clouds: [[150, 60, 11]],
+        ranges: [[VP.m1, "16,210 70,190 130,208 184,190"]] });
+      const sand = `<rect x="16" y="234" width="168" height="30" fill="#d8b25e"/><rect x="99" y="206" width="2.5" height="30" fill="${VP.ink}"/>`;
+      return { defs: l.defs, body: l.body + sand + S.volleyball(96, 206, 62) };
+    }
+    case "Yogi": {
+      const l = landscape(uid, { sky: ["#b9a7f2", "#6d43c9"], sunY: 150, sunR: 30, sunFill: "#f3e3ff", rays: true, rayFill: "#c9b6f5", rayR: 56, birds: [[54, 70, 8], [148, 66, 7]],
+        ranges: [[VP.m2, "16,214 66,190 100,210 140,188 184,214"]] });
+      return { defs: l.defs, body: l.body + groundHill + S.yoga(100, 208, 62) };
+    }
+    case "Kaşif": {
+      const l = landscape(uid, { sky: ["#8fd4c6", "#2f8f86"], sunY: 84, sunR: 22, sunFill: "#fff2c0", birds: [[52, 60, 9], [70, 52, 7]],
+        ranges: [[VP.m2, "16,226 66,158 108,198 184,214"], [VP.m3, "16,246 60,214 110,242 150,220 184,244"]], pines: [[150, 252, 22]] });
+      return { defs: l.defs, body: l.body + S.hiker(96, 214, 64) };
     }
     default: {
       const l = landscape(uid, { sky: ["#54c4bd", "#1f7a74"], sunY: 92, sunR: 28, sunFill: VP.sun,
@@ -1132,40 +1237,78 @@ function buildBadgeStorySvg(badge, earned, dateStr, texts) {
     <text x="${W / 2}" y="${by + bh + 96}" text-anchor="middle" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="100" font-weight="800" letter-spacing="-2">${esc(badge.name)}</text>
     <text x="${W / 2}" y="${by + bh + 162}" text-anchor="middle" fill="#a7d8d6" font-family="Arial, Helvetica, sans-serif" font-size="44" font-weight="500">${esc(badge.description)}</text>
     ${dateStr ? `<text x="${W / 2}" y="${by + bh + 226}" text-anchor="middle" fill="#5f9b98" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="600" letter-spacing="2">${esc(dateStr)}</text>` : ""}
-    ${muuvlinkLogoMarkup(W / 2, 1770, 300, "#ffffff")}
-    <text x="${W / 2}" y="1850" text-anchor="middle" fill="#4f817e" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="600" letter-spacing="4">muuvlink.app</text>
+    ${muuvlinkLogoMarkup(LOGO_WORDMARK_CX, 1748, 300, "#ffffff")}
+    <text x="${W / 2}" y="1852" text-anchor="middle" fill="#4f817e" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="600" letter-spacing="4">muuvlink.app</text>
   </svg>`;
 }
 
-// SVG string → PNG Blob (kanvasa çizerek). Harici kaynak yok → tainting yok.
-function svgToPngBlob(svgString, w, h) {
+// Tam logo yerleşimi: M amblemi (favicon.png) + wordmark yan yana, ortalı.
+const LOGO_MARK_SIZE = 92, LOGO_GAP = 22, LOGO_WORDMARK_W = 300;
+const LOGO_TOTAL_W = LOGO_MARK_SIZE + LOGO_GAP + LOGO_WORDMARK_W;
+const LOGO_LEFT = (1080 - LOGO_TOTAL_W) / 2;
+const LOGO_MARK_X = LOGO_LEFT;
+const LOGO_MARK_Y = 1728;                                   // dikey ortalama
+const LOGO_WORDMARK_CX = LOGO_LEFT + LOGO_MARK_SIZE + LOGO_GAP + LOGO_WORDMARK_W / 2;
+
+// Bir görseli yükle (Promise).
+function loadImage(src) {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = w; canvas.height = h;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(img, 0, 0, w, h);
-      canvas.toBlob((b) => b ? resolve(b) : reject(new Error("toBlob null")), "image/png");
-    };
-    img.onerror = () => reject(new Error("svg image load failed"));
-    img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgString);
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("image load failed: " + src));
+    img.src = src;
   });
 }
 
-// Rozet paylaşım kartını üret + paylaş (Web Share L2 → indirme fallback).
+// Story SVG → PNG Blob. SVG'yi BLOB URL ile yükleriz (Safari data-URI'de canvas'ı
+// "tainted" sayıp toBlob'u patlatıyor → masaüstünde "paylaşım oluşturulamadı" hatası).
+// Ayrıca M amblemini (favicon, same-origin) kanvasa bindirip tam logoyu tamamlarız.
+async function storyToPngBlob(svgString) {
+  const W = 1080, H = 1920;
+  const svgBlob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+  const svgUrl = URL.createObjectURL(svgBlob);
+  try {
+    const svgImg = await loadImage(svgUrl);
+    const canvas = document.createElement("canvas");
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(svgImg, 0, 0, W, H);
+    // Tam logo: M amblemini (same-origin PNG) wordmark'ın soluna çiz — taint yok.
+    try {
+      const mark = await loadImage(`${window.location.origin}/icons/favicon.png`);
+      ctx.drawImage(mark, LOGO_MARK_X, LOGO_MARK_Y, LOGO_MARK_SIZE, LOGO_MARK_SIZE);
+    } catch (_) { /* amblem yüklenemezse yalnız wordmark kalır */ }
+    return await new Promise((resolve, reject) =>
+      canvas.toBlob((b) => b ? resolve(b) : reject(new Error("toBlob null")), "image/png"));
+  } finally {
+    URL.revokeObjectURL(svgUrl);
+  }
+}
+
+// Rozet paylaşım kartını üret + paylaş (native varsa native, yoksa indirme).
 async function shareBadgeCard(badge, earned, dateStr, texts) {
+  let blob;
   try {
     const svg = buildBadgeStorySvg(badge, earned, dateStr, texts);
-    const blob = await svgToPngBlob(svg, 1080, 1920);
-    const filename = `muuvlink-${slugify(badge.name)}.png`;
+    blob = await storyToPngBlob(svg);
+  } catch (e) {
+    console.error("Badge card render error:", e);
+    return "failed";
+  }
+  const filename = `muuvlink-${slugify(badge.name)}.png`;
+  // 1) Native paylaşım (mobil): dosyayı paylaş
+  try {
     const file = new File([blob], filename, { type: "image/png" });
-    const shareText = `${texts.shareText}`;
     if (typeof navigator !== "undefined" && navigator.canShare && navigator.canShare({ files: [file] })) {
-      try { await navigator.share({ files: [file], text: shareText }); return "shared"; }
-      catch (e) { if (e?.name === "AbortError") return "cancelled"; }
+      await navigator.share({ files: [file], text: texts.shareText });
+      return "shared";
     }
-    // Fallback: PNG indir
+  } catch (e) {
+    if (e?.name === "AbortError") return "cancelled";
+    // aksi halde indirmeye düş
+  }
+  // 2) Masaüstü / desteklemeyen: PNG indir
+  try {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url; a.download = filename;
@@ -1173,7 +1316,7 @@ async function shareBadgeCard(badge, earned, dateStr, texts) {
     setTimeout(() => URL.revokeObjectURL(url), 5000);
     return "downloaded";
   } catch (e) {
-    console.error("Badge share error:", e);
+    console.error("Badge download error:", e);
     return "failed";
   }
 }
