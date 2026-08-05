@@ -562,6 +562,7 @@ export const translations = {
     sharing:        { tr: "Hazırlanıyor…",                en: "Preparing…",              de: "Wird vorbereitet…"       },
     shareDownloaded:{ tr: "Rozet görseli indirildi — hikayende paylaşabilirsin!", en: "Badge image downloaded — share it on your story!", de: "Abzeichen-Bild heruntergeladen — teile es in deiner Story!" },
     shareFailed:    { tr: "Paylaşım oluşturulamadı.",     en: "Couldn't create the share image.", de: "Freigabe konnte nicht erstellt werden." },
+    shareCopied:    { tr: "Rozet linki panoya kopyalandı.", en: "Badge link copied to clipboard.", de: "Abzeichen-Link in die Zwischenablage kopiert." },
     earnedSection:  { tr: "Kazanılan Rozetler",           en: "Earned Badges",           de: "Verdiente Abzeichen"     },
     lockedSection:  { tr: "Kilitli Rozetler",             en: "Locked Badges",           de: "Gesperrte Abzeichen"     },
     nextUp:         { tr: "Sıradaki Rozet",               en: "Next Up",                 de: "Als Nächstes"            },

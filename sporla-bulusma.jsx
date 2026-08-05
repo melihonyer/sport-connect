@@ -1285,40 +1285,53 @@ async function storyToPngBlob(svgString) {
   }
 }
 
-// Rozet paylaşım kartını üret + paylaş (native varsa native, yoksa indirme).
+// Rozet paylaşımı — çok katmanlı, ASLA "hata" ile çıkmaz:
+//  1) Görsel üretilebiliyorsa: mobilde native dosya paylaşımı, masaüstünde PNG indir.
+//  2) Görsel üretilemezse (ör. bazı Safari sürümleri SVG'de canvas'ı taint ediyor):
+//     metin + link paylaşımına / panoya kopyalamaya düş.
 async function shareBadgeCard(badge, earned, dateStr, texts) {
-  let blob;
+  const pageUrl = (typeof window !== "undefined" && window.location?.origin) || "https://muuvlink.app";
+  const filename = `muuvlink-${slugify(badge.name)}.png`;
+
+  let blob = null;
   try {
     const svg = buildBadgeStorySvg(badge, earned, dateStr, texts);
     blob = await storyToPngBlob(svg);
   } catch (e) {
-    console.error("Badge card render error:", e);
-    return "failed";
+    console.error("Badge card render error:", e);   // görsel üretilemedi → link fallback
   }
-  const filename = `muuvlink-${slugify(badge.name)}.png`;
-  // 1) Native paylaşım (mobil): dosyayı paylaş
-  try {
-    const file = new File([blob], filename, { type: "image/png" });
-    if (typeof navigator !== "undefined" && navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({ files: [file], text: texts.shareText });
-      return "shared";
+
+  if (blob) {
+    // 1) Native dosya paylaşımı (mobil / destekleyen tarayıcı)
+    try {
+      const file = new File([blob], filename, { type: "image/png" });
+      if (typeof navigator !== "undefined" && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], text: texts.shareText });
+        return "shared";
+      }
+    } catch (e) {
+      if (e?.name === "AbortError") return "cancelled";
+      // paylaşım reddedildi → indirmeye düş
     }
-  } catch (e) {
-    if (e?.name === "AbortError") return "cancelled";
-    // aksi halde indirmeye düş
+    // 2) Masaüstü: PNG indir
+    try {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      return "downloaded";
+    } catch (e) {
+      console.error("Badge download error:", e);   // indirme de olmadı → link fallback
+    }
   }
-  // 2) Masaüstü / desteklemeyen: PNG indir
-  try {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = filename;
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
-    return "downloaded";
-  } catch (e) {
-    console.error("Badge download error:", e);
-    return "failed";
-  }
+
+  // 3) Fallback: görsel yoksa metin + link paylaş / kopyala (masaüstünde hata yerine link)
+  const r = await shareLink({ title: badge.name, text: texts.shareText, url: pageUrl });
+  if (r === "shared") return "shared";
+  if (r === "cancelled") return "cancelled";
+  if (r === "copied") return "copied";
+  return "failed";
 }
 
 export default function Muuvlink() {
@@ -3421,6 +3434,7 @@ export default function Muuvlink() {
     const res = await shareBadgeCard(badge, !!earned, dateStr, texts);
     setSharingBadge(null);
     if (res === "downloaded") showToast(t("badges.shareDownloaded"), "success");
+    else if (res === "copied") showToast(t("badges.shareCopied"), "success");
     else if (res === "failed") showToast(t("badges.shareFailed"), "error");
   };
 
