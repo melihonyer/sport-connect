@@ -1319,7 +1319,6 @@ async function badgeCardBlob(badge, dateStr, texts) {
   canvas.width = W; canvas.height = H;
   const x = canvas.getContext("2d");
   const theme = badgeTheme(badge.name);
-  const origin = (typeof window !== "undefined" && window.location?.origin) || "https://muuvlink.app";
 
   // Arka plan + parıltı
   const bg = x.createLinearGradient(0, 0, 320, H);
@@ -1341,7 +1340,7 @@ async function badgeCardBlob(badge, dateStr, texts) {
   const slug = BADGE_SLUG[badge.name] || slugify(badge.name);
   let drawn = false;
   try {
-    const img = await loadImage(`${origin}/badges/${slug}.png`);
+    const img = await loadImage(`/badges/${slug}.png`);   // göreli yol — header logosuyla aynı, her bağlamda çalışır
     x.drawImage(img, bx, by, bw, bh);
     drawn = true;
   } catch (_) { /* fallback aşağıda */ }
@@ -1366,7 +1365,7 @@ async function badgeCardBlob(badge, dateStr, texts) {
 
   // Tam logo: M amblemi (favicon) + wordmark (Path2D)
   try {
-    const mark = await loadImage(`${origin}/icons/favicon.png`);
+    const mark = await loadImage(`/icons/favicon.png`);   // göreli yol
     x.drawImage(mark, LOGO_MARK_X, LOGO_MARK_Y, LOGO_MARK_SIZE, LOGO_MARK_SIZE);
   } catch (_) {}
   x.save();
