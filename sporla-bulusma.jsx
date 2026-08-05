@@ -913,6 +913,181 @@ async function shareLink({ title, text, url }) {
   }
 }
 
+// ═══════════════════════════════════════════════════════════════
+//  ROZET GÖRSELLERİ — perspektifli üçgen "madalya" rozetler
+//  Tek kaynak: hem sayfadaki SVG hem de paylaşım kartı (PNG) buradan üretilir.
+// ═══════════════════════════════════════════════════════════════
+
+// Rozet adına göre renk teması + sembol. Bilinmeyen rozet → varsayılan (teal).
+const BADGE_THEME = {
+  "Başlangıç":      { c1: "#34d399", c2: "#059669", glyph: "rosette" },
+  "Düzenli":        { c1: "#38bdf8", c2: "#0284c7", glyph: "star"    },
+  "Azimli":         { c1: "#fb923c", c2: "#ea580c", glyph: "flame"   },
+  "Sporcu":         { c1: "#a78bfa", c2: "#6d28d9", glyph: "dumbbell"},
+  "Efsane":         { c1: "#fbbf24", c2: "#d97706", glyph: "trophy"  },
+  "Şampiyon":       { c1: "#fb7185", c2: "#be123c", glyph: "medal"   },
+  "Takım Oyuncusu": { c1: "#2dd4bf", c2: "#0d9488", glyph: "users"   },
+  "Lider":          { c1: "#fcd34d", c2: "#d97706", glyph: "crown"   },
+  "Organizatör":    { c1: "#818cf8", c2: "#4338ca", glyph: "megaphone" },
+  "Sohbetçi":       { c1: "#f472b6", c2: "#db2777", glyph: "chat"    },
+};
+const badgeTheme = (name) => BADGE_THEME[name] || { c1: "#2dd4bf", c2: "#0d9488", glyph: "rosette" };
+
+// Beyaz, dolgu-tabanlı semboller (0..24 kutusunda). Rasterize dostu.
+const BADGE_GLYPHS = {
+  star:   `<path d="M12 2.6l2.6 5.9 6.4.6-4.85 4.25 1.45 6.25L12 16.9 6.35 19.6l1.45-6.25L3 9.1l6.4-.6z"/>`,
+  flame:  `<path d="M12.6 2c1.4 2.6.2 4.3 1.5 6.2.9 1.3 2.4 1.9 2.4 4.3a4.5 4.5 0 0 1-9 0c0-1.8.9-2.9 1.8-3.8-.1 1.3.6 2.2 1.5 2.2.9 0 1.3-.8 1.1-1.8-.5-2.5-1.6-4.1-.3-7.1z"/>`,
+  dumbbell: `<rect x="2.3" y="8.8" width="3" height="6.4" rx="1.2"/><rect x="5.3" y="10.3" width="2" height="3.4" rx=".6"/><rect x="7" y="10.9" width="10" height="2.2" rx="1.1"/><rect x="16.7" y="10.3" width="2" height="3.4" rx=".6"/><rect x="18.7" y="8.8" width="3" height="6.4" rx="1.2"/>`,
+  trophy: `<path d="M6.5 4h11v3.3a5.5 5.5 0 0 1-11 0z"/><rect x="10.7" y="11.6" width="2.6" height="3.8" rx=".6"/><rect x="7.8" y="15.2" width="8.4" height="2.4" rx="1.1"/><path d="M6.6 5.1H4.5v1.4A3.2 3.2 0 0 0 7 9.5" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/><path d="M17.4 5.1h2.1v1.4A3.2 3.2 0 0 1 17 9.5" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>`,
+  crown:  `<path d="M3.6 8.4l3.4 2.5L12 4.8l5 6.1 3.4-2.5-1.5 8.7H5.1z"/><rect x="4.9" y="17.6" width="14.2" height="2.3" rx="1.1"/>`,
+  users:  `<circle cx="9" cy="8" r="3"/><path d="M3.1 18.7a5.9 5.9 0 0 1 11.8 0z"/><circle cx="16.6" cy="8.7" r="2.4"/><path d="M15 18.7a4.7 4.7 0 0 1 6.9-4.1 4.7 4.7 0 0 1 .2 4.1z"/>`,
+  megaphone: `<path d="M4 10v4l3.6.9 1.6 3.4 2-.9-1.1-2.3L20 18.6V5.4L7.6 9.1z"/><circle cx="18.4" cy="12" r="0"/>`,
+  chat:   `<path d="M4.2 5.4h15.6a1.6 1.6 0 0 1 1.6 1.6v6.9a1.6 1.6 0 0 1-1.6 1.6H10l-4.2 3.5v-3.5H4.2a1.6 1.6 0 0 1-1.6-1.6V7a1.6 1.6 0 0 1 1.6-1.6z"/>`,
+  medal:  `<path d="M8.8 2.6l1.5 4.1h3.4l1.5-4.1" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="14" r="7" fill="none" stroke="#fff" stroke-width="1.9"/><path d="M12 9.4l1.55 3.15 3.45.5-2.5 2.45.6 3.45L12 17.8l-3.1 1.65.6-3.45-2.5-2.45 3.45-.5z"/>`,
+  rosette: `<circle cx="12" cy="10.4" r="6.4" fill="none" stroke="#fff" stroke-width="1.9"/><path d="M12 6.6l1.35 2.75 3.05.45-2.2 2.15.52 3.03L12 13.5l-2.72 1.48.52-3.03-2.2-2.15 3.05-.45z"/><path d="M8.6 15.8l-1.6 5.2 5-2.4 5 2.4-1.6-5.2" fill="none" stroke="#fff" stroke-width="1.7" stroke-linejoin="round"/>`,
+};
+
+const slugify = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "b";
+
+// Perspektifli üçgen madalya — bir <g> markup'ı döndürür (cx,cy merkez, r yarı-boyut).
+function triangleMedalMarkup({ cx, cy, r, theme, earned, id }) {
+  const t = earned ? theme : { c1: "#cbd5e1", c2: "#94a3b8" };
+  const sw = r * 0.16;                    // yuvarlak köşe için stroke kalınlığı
+  const apex = [cx, cy - r];
+  const bl   = [cx - r * 0.9, cy + r * 0.7];
+  const br   = [cx + r * 0.9, cy + r * 0.7];
+  const poly = `${apex[0]},${apex[1]} ${br[0]},${br[1]} ${bl[0]},${bl[1]}`;
+  const dx = r * 0.05, dy = r * 0.11;     // arka yüz (kalınlık) kayması
+  const g = r * 1.0;                       // sembol boyutu
+  const gScale = g / 24;
+  const gx = cx - g / 2, gy = cy + r * 0.12 - g / 2;
+  const glyph = BADGE_GLYPHS[theme.glyph] || BADGE_GLYPHS.rosette;
+  return `
+  <g transform="rotate(-7 ${cx} ${cy})">
+    <defs>
+      <linearGradient id="face-${id}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="${t.c1}"/>
+        <stop offset="1" stop-color="${t.c2}"/>
+      </linearGradient>
+      <linearGradient id="edge-${id}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="${t.c2}"/>
+        <stop offset="1" stop-color="${t.c2}" stop-opacity="0.65"/>
+      </linearGradient>
+      <radialGradient id="gloss-${id}" cx="0.5" cy="0.16" r="0.7">
+        <stop offset="0" stop-color="#ffffff" stop-opacity="${earned ? 0.55 : 0.3}"/>
+        <stop offset="0.5" stop-color="#ffffff" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <!-- kalınlık / perspektif arka yüz -->
+    <polygon points="${apex[0] + dx},${apex[1] + dy} ${br[0] + dx},${br[1] + dy} ${bl[0] + dx},${bl[1] + dy}"
+      fill="url(#edge-${id})" stroke="url(#edge-${id})" stroke-width="${sw}" stroke-linejoin="round"/>
+    <!-- ön yüz -->
+    <polygon points="${poly}" fill="url(#face-${id})" stroke="url(#face-${id})" stroke-width="${sw}" stroke-linejoin="round"/>
+    <!-- parlaklık -->
+    <polygon points="${poly}" fill="url(#gloss-${id})" stroke="url(#gloss-${id})" stroke-width="${sw}" stroke-linejoin="round"/>
+    <!-- sembol -->
+    <g transform="translate(${gx} ${gy}) scale(${gScale})" fill="#ffffff" fill-opacity="${earned ? 1 : 0.85}"
+       stroke-linejoin="round">${glyph}</g>
+  </g>`;
+}
+
+// Sayfadaki rozet SVG'si (string). size px kenar.
+function buildBadgeSvg(name, earned, size = 120) {
+  const id = slugify(name) + (earned ? "-e" : "-l");
+  const theme = { ...badgeTheme(name) };
+  const medal = triangleMedalMarkup({ cx: size / 2, cy: size / 2 + size * 0.02, r: size * 0.4, theme, earned, id });
+  const lock = earned ? "" : `
+    <g transform="translate(${size * 0.62} ${size * 0.62})">
+      <circle cx="${size*0.13}" cy="${size*0.13}" r="${size*0.13}" fill="#64748b"/>
+      <rect x="${size*0.08}" y="${size*0.12}" width="${size*0.1}" height="${size*0.08}" rx="${size*0.015}" fill="#fff"/>
+      <path d="M${size*0.1} ${size*0.12} v-${size*0.02} a${size*0.03} ${size*0.03} 0 0 1 ${size*0.06} 0 v${size*0.02}" fill="none" stroke="#fff" stroke-width="${size*0.014}"/>
+    </g>`;
+  return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" fill="none">${medal}${lock}</svg>`;
+}
+
+// Muuvlink logo işareti (üçgen "M") — paylaşım kartı için küçük vektör.
+function muuvlinkMarkMarkup(x, y, s, color = "#ffffff") {
+  return `<g transform="translate(${x} ${y})" fill="${color}">
+    <path d="M0 ${s} L${s*0.5} 0 L${s*0.62} ${s*0.24} L${s*0.28} ${s} Z"/>
+    <path d="M${s*0.38} ${s} L${s*0.88} 0 L${s} ${s*0.24} L${s*0.66} ${s} Z" opacity="0.75"/>
+  </g>`;
+}
+
+// Instagram/WhatsApp hikaye kartı (1080×1920 PNG) — markalı.
+function buildBadgeStorySvg(badge, earned, dateStr, texts) {
+  const W = 1080, H = 1920;
+  const theme = badgeTheme(badge.name);
+  const id = slugify(badge.name) + "-story";
+  const medal = triangleMedalMarkup({ cx: W / 2, cy: 900, r: 300, theme, earned, id });
+  const esc = (s) => String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="bg-${id}" x1="0" y1="0" x2="0.3" y2="1">
+        <stop offset="0" stop-color="#0f2f33"/>
+        <stop offset="0.55" stop-color="#0d3b3e"/>
+        <stop offset="1" stop-color="#062225"/>
+      </linearGradient>
+      <radialGradient id="glow-${id}" cx="0.5" cy="0.46" r="0.5">
+        <stop offset="0" stop-color="${theme.c1}" stop-opacity="0.35"/>
+        <stop offset="1" stop-color="${theme.c1}" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <rect width="${W}" height="${H}" fill="url(#bg-${id})"/>
+    <rect width="${W}" height="${H}" fill="url(#glow-${id})"/>
+    <text x="${W/2}" y="520" text-anchor="middle" fill="${theme.c1}" font-family="Arial, Helvetica, sans-serif" font-size="40" font-weight="700" letter-spacing="14">${esc(texts.unlocked)}</text>
+    ${medal}
+    <text x="${W/2}" y="1330" text-anchor="middle" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="104" font-weight="800" letter-spacing="-2">${esc(badge.name)}</text>
+    <text x="${W/2}" y="1410" text-anchor="middle" fill="#a7d8d6" font-family="Arial, Helvetica, sans-serif" font-size="46" font-weight="500">${esc(badge.description)}</text>
+    ${dateStr ? `<text x="${W/2}" y="1500" text-anchor="middle" fill="#5f9b98" font-family="Arial, Helvetica, sans-serif" font-size="36" font-weight="600" letter-spacing="2">${esc(dateStr)}</text>` : ""}
+    <g transform="translate(${W/2 - 150} 1740)">
+      ${muuvlinkMarkMarkup(0, 4, 52)}
+      <text x="82" y="46" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="800" letter-spacing="-1">muuvlink</text>
+    </g>
+    <text x="${W/2}" y="1850" text-anchor="middle" fill="#4f817e" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="600" letter-spacing="3">muuvlink.app</text>
+  </svg>`;
+}
+
+// SVG string → PNG Blob (kanvasa çizerek). Harici kaynak yok → tainting yok.
+function svgToPngBlob(svgString, w, h) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, w, h);
+      canvas.toBlob((b) => b ? resolve(b) : reject(new Error("toBlob null")), "image/png");
+    };
+    img.onerror = () => reject(new Error("svg image load failed"));
+    img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgString);
+  });
+}
+
+// Rozet paylaşım kartını üret + paylaş (Web Share L2 → indirme fallback).
+async function shareBadgeCard(badge, earned, dateStr, texts) {
+  try {
+    const svg = buildBadgeStorySvg(badge, earned, dateStr, texts);
+    const blob = await svgToPngBlob(svg, 1080, 1920);
+    const filename = `muuvlink-${slugify(badge.name)}.png`;
+    const file = new File([blob], filename, { type: "image/png" });
+    const shareText = `${texts.shareText}`;
+    if (typeof navigator !== "undefined" && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], text: shareText }); return "shared"; }
+      catch (e) { if (e?.name === "AbortError") return "cancelled"; }
+    }
+    // Fallback: PNG indir
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    return "downloaded";
+  } catch (e) {
+    console.error("Badge share error:", e);
+    return "failed";
+  }
+}
+
 export default function Muuvlink() {
   // ── URL ↔ sayfa eşlemesi ─────────────────────────────
   const PAGE_TO_PATH = {
@@ -3000,68 +3175,89 @@ export default function Muuvlink() {
     </div>
   );
 
-  const BADGE_ICON_MAP = {
-    "Başlangıç":      Award,
-    "Düzenli":        TrendingUp,
-    "Azimli":         Activity,
-    "Sporcu":         Dumbbell,
-    "Efsane":         Trophy,
-    "Takım Oyuncusu": Users,
-    "Lider":          Crown,
+  const [sharingBadge, setSharingBadge] = useState(null);
+
+  const handleShareBadge = async (badge, earned) => {
+    if (sharingBadge) return;
+    setSharingBadge(badge.id);
+    const texts = {
+      unlocked: t("badges.unlocked"),
+      shareText: t("badges.shareText").replace("{name}", badge.name),
+    };
+    const dateStr = earned && badge.earned_at ? fmtDateShort(badge.earned_at) : "";
+    const res = await shareBadgeCard(badge, !!earned, dateStr, texts);
+    setSharingBadge(null);
+    if (res === "downloaded") showToast(t("badges.shareDownloaded"), "success");
+    else if (res === "failed") showToast(t("badges.shareFailed"), "error");
   };
 
   const BadgeCard = ({ badge, earned }) => {
-    const IconComp = BADGE_ICON_MAP[badge.name] || Award;
+    // training_count rozetleri için ilerleme (canlı veri: userStats.total_trainings)
+    const done = Number(userStats?.total_trainings || 0);
+    const showProgress = !earned && badge.requirement_type === "training_count" && badge.requirement_value > 0;
+    const pct = showProgress ? Math.min(100, Math.round((done / badge.requirement_value) * 100)) : 0;
+    const svg = buildBadgeSvg(badge.name, !!earned, 132);
+    const busy = sharingBadge === badge.id;
+
     return (
-      <div className={`relative rounded-2xl p-5 border transition-all duration-300 overflow-hidden group ${
+      <div className={`relative rounded-3xl p-5 border transition-all duration-300 overflow-hidden group flex flex-col items-center text-center ${
         earned
-          ? "border-amber-200 hover:border-amber-300 hover:shadow-xl hover:-translate-y-1 cursor-default"
-          : "border-slate-100"
-      }`}
-      style={earned
-        ? {background:"linear-gradient(145deg,#fffdf5 0%,#fffbeb 60%,#fef3c7 100%)"}
-        : {background:"#f8fafc"}}>
-
-        {/* Kazanıldı işareti */}
+          ? "border-slate-200/70 bg-white hover:shadow-xl hover:-translate-y-1"
+          : "border-slate-100 bg-slate-50/60"
+      }`}>
         {earned && (
-          <div className="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center shadow-sm"
-            style={{background:"linear-gradient(135deg,#F59E0B,#FBBF24)"}}>
-            <CheckCircle className="w-3 h-3 text-white fill-white"/>
+          <div className="absolute inset-x-0 -top-16 h-32 pointer-events-none opacity-70"
+            style={{background:`radial-gradient(ellipse at center,${badgeTheme(badge.name).c1}22 0%,transparent 70%)`}}/>
+        )}
+
+        {/* Rozet madalyası */}
+        <div className={`relative w-[108px] h-[108px] mb-3 transition-transform duration-300 ${earned ? "group-hover:scale-[1.06] drop-shadow-md" : ""}`}
+          style={earned ? {filter:`drop-shadow(0 8px 16px ${badgeTheme(badge.name).c2}33)`} : {}}
+          dangerouslySetInnerHTML={{ __html: svg }}/>
+
+        <h3 className={`font-bold text-sm mb-1 ${earned ? "text-slate-800" : "text-slate-400"}`}>{badge.name}</h3>
+        <p className={`text-xs leading-relaxed mb-3 ${earned ? "text-slate-500" : "text-slate-400"}`}>{badge.description}</p>
+
+        {/* Kazanıldı: tarih + paylaş */}
+        {earned && (
+          <div className="mt-auto w-full flex flex-col items-center gap-2">
+            {badge.earned_at && (
+              <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider"
+                style={{background:`${badgeTheme(badge.name).c1}1f`, color:badgeTheme(badge.name).c2}}>
+                <CheckCircle className="w-2.5 h-2.5"/> {fmtDateShort(badge.earned_at)}
+              </div>
+            )}
+            <button
+              onClick={() => handleShareBadge(badge, earned)}
+              disabled={busy}
+              className="inline-flex items-center justify-center gap-1.5 w-full px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 active:scale-[0.98] transition disabled:opacity-60">
+              {busy
+                ? <><Loader2 className="w-3.5 h-3.5 animate-spin"/> {t("badges.sharing")}</>
+                : <><Share2 className="w-3.5 h-3.5"/> {t("common.share")}</>}
+            </button>
           </div>
         )}
 
-        {/* Dekoratif arka plan halkası */}
-        {earned && (
-          <div className="absolute -bottom-6 -right-6 w-24 h-24 rounded-full pointer-events-none"
-            style={{background:"radial-gradient(circle,rgba(251,191,36,0.12) 0%,transparent 70%)"}}/>
-        )}
-
-        <div className="text-center relative">
-          {/* İkon kutusu */}
-          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3 transition-transform duration-300 ${earned ? "group-hover:scale-110" : ""}`}
-            style={earned
-              ? {background:"linear-gradient(135deg,rgba(245,158,11,0.15),rgba(251,191,36,0.1))", border:"1.5px solid rgba(245,158,11,0.3)", boxShadow:"0 4px 16px rgba(245,158,11,0.15)"}
-              : {background:"#f1f5f9", border:"1.5px solid #e2e8f0"}}>
-            <IconComp className={`w-7 h-7 ${earned ? "text-amber-500" : "text-slate-300"}`}/>
+        {/* Kilitli: ilerleme veya durum */}
+        {!earned && (
+          <div className="mt-auto w-full">
+            {showProgress ? (
+              <>
+                <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                  <div className="h-full rounded-full transition-all duration-700"
+                    style={{width:`${pct}%`, background:`linear-gradient(90deg,${badgeTheme(badge.name).c1},${badgeTheme(badge.name).c2})`}}/>
+                </div>
+                <div className="mt-1.5 text-[10px] font-semibold text-slate-400 tabular-nums">
+                  {done}/{badge.requirement_value}
+                </div>
+              </>
+            ) : (
+              <div className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-300 uppercase tracking-wider">
+                <Lock className="w-2.5 h-2.5"/> {t("badges.notEarned")}
+              </div>
+            )}
           </div>
-
-          <h3 className={`font-semibold text-sm mb-1 ${earned ? "text-slate-800" : "text-slate-400"}`}>{badge.name}</h3>
-          <p className={`text-xs leading-relaxed ${earned ? "text-slate-500" : "text-slate-400"}`}>{badge.description}</p>
-
-          {earned && badge.earned_at && (
-            <div className="mt-2.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider"
-              style={{background:"rgba(245,158,11,0.12)", color:"#b45309"}}>
-              <CheckCircle className="w-2.5 h-2.5"/>
-              {fmtDateShort(badge.earned_at)}
-            </div>
-          )}
-
-          {!earned && (
-            <div className="mt-2.5 text-[10px] font-medium text-slate-300 uppercase tracking-wider">
-              {t("badges.notEarned")}
-            </div>
-          )}
-        </div>
+        )}
       </div>
     );
   };
@@ -4106,7 +4302,23 @@ export default function Muuvlink() {
     );
   };
 
-  const BadgesPage = () => (
+  const BadgesPage = () => {
+    // Kazanılan tarihleri rozetlere iliştir, kazanılan/kilitli olarak ayır
+    const merged = badges.map((b) => {
+      const ub = userBadges.find((x) => x.id === b.id);
+      return { ...b, earned: !!ub, earned_at: ub?.earned_at };
+    });
+    const earnedList = merged.filter((b) => b.earned);
+    const lockedList = merged.filter((b) => !b.earned);
+    const done = Number(userStats?.total_trainings || 0);
+    // Sıradaki rozet: ilerlemesi en yüksek kilitli etkinlik rozeti, yoksa ilk kilitli
+    const nextBadge = lockedList
+      .filter((b) => b.requirement_type === "training_count" && b.requirement_value > 0)
+      .map((b) => ({ b, ratio: done / b.requirement_value }))
+      .sort((a, z) => z.ratio - a.ratio)[0]?.b || lockedList[0];
+    const pctAll = badges.length > 0 ? Math.round((earnedList.length / badges.length) * 100) : 0;
+
+    return (
     <div className="min-h-screen bg-slate-50">
       {/* ── Light green header ── */}
       <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#e5f9f9 0%,#e5f9f9 60%,#cbf3f3 100%)"}}>
@@ -4131,7 +4343,7 @@ export default function Muuvlink() {
             {/* Progress summary */}
             <div className="hidden md:flex items-center gap-4 pb-1">
               <div className="text-right">
-                <div className="text-4xl font-semibold text-brand-700">{userBadges.length}<span className="text-brand-500 text-2xl">/{badges.length}</span></div>
+                <div className="text-4xl font-semibold text-brand-700">{earnedList.length}<span className="text-brand-500 text-2xl">/{badges.length}</span></div>
                 <div className="text-xs text-brand-600 font-semibold uppercase tracking-wider mt-1">{t("badges.earned")}</div>
               </div>
               <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
@@ -4144,27 +4356,70 @@ export default function Muuvlink() {
           <div className="mt-8 max-w-md">
             <div className="flex justify-between text-xs font-medium text-brand-700 mb-2">
               <span>{t("badges.progress")}</span>
-              <span style={{color:"#009295"}}>{badges.length > 0 ? Math.round((userBadges.length/badges.length)*100) : 0}%</span>
+              <span style={{color:"#009295"}}>{pctAll}%</span>
             </div>
             <div className="h-1.5 bg-brand-100 rounded-full overflow-hidden">
               <div className="h-full rounded-full transition-all duration-700"
-                style={{width:`${badges.length > 0 ? (userBadges.length/badges.length)*100 : 0}%`, background:"linear-gradient(90deg,#00b7ba,#009295)"}}/>
+                style={{width:`${pctAll}%`, background:"linear-gradient(90deg,#00b7ba,#009295)"}}/>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ── Badges grid ── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-8 py-10">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {badges.map((badge) => {
-            const earned = userBadges.find((ub) => ub.id === badge.id);
-            return <BadgeCard key={badge.id} badge={earned || badge} earned={!!earned}/>;
-          })}
-        </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 py-10 space-y-10">
+        {/* ── Sıradaki rozet çağrısı ── */}
+        {nextBadge && (
+          <div className="relative rounded-3xl overflow-hidden border border-slate-200/70 bg-white p-5 sm:p-6 flex items-center gap-5">
+            <div className="absolute inset-y-0 right-0 w-1/2 pointer-events-none opacity-60"
+              style={{background:`radial-gradient(ellipse at right,${badgeTheme(nextBadge.name).c1}18 0%,transparent 70%)`}}/>
+            <div className="relative w-[92px] h-[92px] flex-shrink-0"
+              dangerouslySetInnerHTML={{ __html: buildBadgeSvg(nextBadge.name, false, 120) }}/>
+            <div className="relative min-w-0 flex-1">
+              <span className="text-[11px] font-bold tracking-[0.2em] uppercase" style={{color:badgeTheme(nextBadge.name).c2}}>{t("badges.nextUp")}</span>
+              <h3 className="text-lg font-bold text-slate-800 mt-0.5">{nextBadge.name}</h3>
+              <p className="text-sm text-slate-500 mb-2.5">{nextBadge.description}</p>
+              {nextBadge.requirement_type === "training_count" && nextBadge.requirement_value > 0 && (
+                <div className="max-w-sm">
+                  <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-700"
+                      style={{width:`${Math.min(100, Math.round((done/nextBadge.requirement_value)*100))}%`, background:`linear-gradient(90deg,${badgeTheme(nextBadge.name).c1},${badgeTheme(nextBadge.name).c2})`}}/>
+                  </div>
+                  <div className="mt-1.5 text-xs font-semibold text-slate-400 tabular-nums">{done}/{nextBadge.requirement_value}</div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── Kazanılan rozetler ── */}
+        {earnedList.length > 0 && (
+          <section>
+            <div className="flex items-center gap-2 mb-4">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500">{t("badges.earnedSection")}</h2>
+              <span className="text-xs font-semibold text-brand-600 bg-brand-50 rounded-full px-2 py-0.5">{earnedList.length}</span>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {earnedList.map((badge) => <BadgeCard key={badge.id} badge={badge} earned={true}/>)}
+            </div>
+          </section>
+        )}
+
+        {/* ── Kilitli rozetler ── */}
+        {lockedList.length > 0 && (
+          <section>
+            <div className="flex items-center gap-2 mb-4">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">{t("badges.lockedSection")}</h2>
+              <span className="text-xs font-semibold text-slate-400 bg-slate-100 rounded-full px-2 py-0.5">{lockedList.length}</span>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {lockedList.map((badge) => <BadgeCard key={badge.id} badge={badge} earned={false}/>)}
+            </div>
+          </section>
+        )}
       </div>
     </div>
-  );
+    );
+  };
   const TrainingDetailPage = () => {
     if (!selectedTraining) return null;
 

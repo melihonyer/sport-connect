@@ -555,6 +555,16 @@ export const translations = {
     noBadges:       { tr: "Henüz rozet kazanmadınız. Etkinlik yapın ve katılın!", en: "No badges yet. Train and participate!", de: "Noch keine Abzeichen. Trainiere und mach mit!" },
     progress:       { tr: "İlerleme",                     en: "Progress",                de: "Fortschritt"             },
     notEarned:      { tr: "Henüz kazanılmadı",            en: "Not earned yet",          de: "Noch nicht verdient"     },
+    unlocked:       { tr: "ROZET KAZANILDI",             en: "BADGE UNLOCKED",          de: "ABZEICHEN FREIGESCHALTET"},
+    shareText:      { tr: "\"{name}\" rozetini Muuvlink'te kazandım! 🏅 muuvlink.app",
+                      en: "I earned the \"{name}\" badge on Muuvlink! 🏅 muuvlink.app",
+                      de: "Ich habe das Abzeichen \"{name}\" bei Muuvlink verdient! 🏅 muuvlink.app" },
+    sharing:        { tr: "Hazırlanıyor…",                en: "Preparing…",              de: "Wird vorbereitet…"       },
+    shareDownloaded:{ tr: "Rozet görseli indirildi — hikayende paylaşabilirsin!", en: "Badge image downloaded — share it on your story!", de: "Abzeichen-Bild heruntergeladen — teile es in deiner Story!" },
+    shareFailed:    { tr: "Paylaşım oluşturulamadı.",     en: "Couldn't create the share image.", de: "Freigabe konnte nicht erstellt werden." },
+    earnedSection:  { tr: "Kazanılan Rozetler",           en: "Earned Badges",           de: "Verdiente Abzeichen"     },
+    lockedSection:  { tr: "Kilitli Rozetler",             en: "Locked Badges",           de: "Gesperrte Abzeichen"     },
+    nextUp:         { tr: "Sıradaki Rozet",               en: "Next Up",                 de: "Als Nächstes"            },
   },
 
   // ── CONTACT PAGE ────────────────────────────────────────

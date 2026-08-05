@@ -801,6 +801,18 @@ const checkAndAwardBadges = async (userId) => {
           [userId]
         );
         qualified = parseInt(teamCount.rows[0].count) >= badge.requirement_value;
+      } else if (badge.requirement_type === 'created_count') {
+        const createdCount = await pool.query(
+          'SELECT COUNT(*) FROM trainings WHERE created_by = $1',
+          [userId]
+        );
+        qualified = parseInt(createdCount.rows[0].count) >= badge.requirement_value;
+      } else if (badge.requirement_type === 'comment_count') {
+        const commentCount = await pool.query(
+          'SELECT COUNT(*) FROM training_comments WHERE user_id = $1 AND is_deleted = false',
+          [userId]
+        );
+        qualified = parseInt(commentCount.rows[0].count) >= badge.requirement_value;
       }
 
       if (qualified) {
@@ -1937,6 +1949,10 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
     );
 
     logActivity('training_create', req.user.id, null, { training_title: title, team_name: team_id ? undefined : 'Bireysel' });
+
+    // Rozet kontrolü — "Organizatör" gibi oluşturma bazlı rozetler
+    checkAndAwardBadges(req.user.id).catch(e => console.error('Badge check (create) error:', e.message));
+
     res.status(201).json({ message: 'Training created successfully', training });
   } catch (error) {
     console.error('Create training error:', error);
@@ -2436,6 +2452,9 @@ app.post('/api/trainings/:id/comments', authenticateToken, async (req, res) => {
         }
       });
     }
+
+    // Rozet kontrolü — "Sohbetçi" gibi mesaj bazlı rozetler
+    checkAndAwardBadges(req.user.id).catch(e => console.error('Badge check (comment) error:', e.message));
 
     res.json({ comment: result.rows[0] });
   } catch (error) {
@@ -4198,6 +4217,26 @@ pool.query(`
 // Soft delete kolonları — yoksa ekle
 pool.query(`ALTER TABLE team_posts ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT false`).catch(() => {});
 pool.query(`ALTER TABLE training_comments ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT false`).catch(() => {});
+
+// Rozet açıklamalarındaki eski "antrenman" kelimesini "etkinlik" yap (rename devamı)
+pool.query(`UPDATE badges SET description = REPLACE(description, 'antrenman', 'etkinlik') WHERE description LIKE '%antrenman%'`).catch(() => {});
+
+// Yeni rozetler — yoksa ekle (isme göre idempotent)
+(async () => {
+  const NEW_BADGES = [
+    { name: 'Organizatör', description: '1 etkinlik oluştur',   icon: '📣', requirement_type: 'created_count',  requirement_value: 1 },
+    { name: 'Sohbetçi',    description: 'İlk mesajını gönder',  icon: '💬', requirement_type: 'comment_count',  requirement_value: 1 },
+    { name: 'Şampiyon',    description: '100 etkinlik tamamla', icon: '🥇', requirement_type: 'training_count', requirement_value: 100 },
+  ];
+  for (const b of NEW_BADGES) {
+    await pool.query(
+      `INSERT INTO badges (name, description, icon, requirement_type, requirement_value)
+       SELECT $1, $2, $3, $4, $5
+       WHERE NOT EXISTS (SELECT 1 FROM badges WHERE name = $1)`,
+      [b.name, b.description, b.icon, b.requirement_type, b.requirement_value]
+    ).catch(e => console.error('Seed badge error:', b.name, e.message));
+  }
+})();
 
 pool.query(`
   CREATE TABLE IF NOT EXISTS blocked_users (
