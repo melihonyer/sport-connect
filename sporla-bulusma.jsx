@@ -6421,13 +6421,15 @@ export default function Muuvlink() {
                   onKeyDown={(e) => { if (e.key === "Enter") handleNotificationClick(notif); }}
                   className={`p-4 hover:bg-gray-50 cursor-pointer ${!notif.is_read ? "bg-blue-50" : ""}`}
                 >
-                  <div className="flex justify-between items-start mb-2">
-                    <h4 className="font-semibold">{notif.title}</h4>
+                  <div className="flex justify-between items-start mb-2 gap-2">
+                    <h4 className="font-semibold min-w-0">{notif.title}</h4>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleDeleteNotification(notif.id); }}
-                      className="text-gray-400 hover:text-red-600"
+                      onPointerDown={(e) => e.stopPropagation()}
+                      aria-label={t("common.delete") || "Sil"}
+                      className="flex-shrink-0 -mt-1.5 -mr-1.5 p-2.5 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 active:bg-red-100 transition-colors"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-5 h-5" />
                     </button>
                   </div>
                   <p className="text-sm text-gray-600 mb-2">{notif.message}</p>
