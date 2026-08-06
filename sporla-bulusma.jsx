@@ -27,6 +27,7 @@ import {
   Check,
   Navigation2,
   Loader2,
+  Download,
   CheckCircle,
   XCircle,
   Info,
@@ -7563,9 +7564,44 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
     );
   };
 
+  // ── Mobil web'de OS'a göre "Uygulamayı indir" bandı ──
+  const AppInstallBanner = () => {
+    const [hidden, setHidden] = useState(() => {
+      try { return localStorage.getItem("muuv_dl_dismissed") === "1"; } catch (_) { return false; }
+    });
+    const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
+    const isIOS = /iPhone|iPad|iPod/i.test(ua);
+    const isAndroidUA = /Android/i.test(ua);
+    if (isNative || hidden || (!isIOS && !isAndroidUA)) return null;   // yalnız mobil web
+    const url = isIOS ? APP_STORE_URL : PLAY_STORE_URL;
+    const store = isIOS ? "App Store" : "Google Play";
+    const dismiss = () => { try { localStorage.setItem("muuv_dl_dismissed", "1"); } catch (_) {} setHidden(true); };
+    return (
+      <div className="fixed left-0 right-0 z-[60] px-3 lg:hidden"
+        style={{ bottom: "calc(env(safe-area-inset-bottom) + 12px)" }}>
+        <div className="mx-auto max-w-md flex items-center gap-3 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/70 p-2.5 pr-2">
+          <img src="/icons/favicon.png" alt="" className="w-9 h-9 rounded-lg flex-shrink-0" width="36" height="36" />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold text-slate-800 leading-tight">Muuvlink uygulaması</p>
+            <p className="text-[11px] text-slate-500 leading-tight truncate">{store}'dan indir — daha hızlı deneyim</p>
+          </div>
+          <a href={url} target="_blank" rel="noopener noreferrer"
+            className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white active:scale-95 transition"
+            style={{ background: "linear-gradient(135deg,#00b7ba,#009295)" }}>
+            <Download className="w-4 h-4" /> İndir
+          </a>
+          <button onClick={dismiss} aria-label="Kapat" className="flex-shrink-0 p-1.5 text-slate-400 hover:text-slate-600">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 font-sans antialiased" style={isNative ? {paddingTop:"env(safe-area-inset-top)"} : {}}>
       {isNative ? null : <Navigation />}
+      {isNative ? null : <AppInstallBanner />}
 
       <div style={isNative ? {paddingBottom:"calc(env(safe-area-inset-bottom) + 60px)"} : {}}>
       {currentPage === "home" && (isNative ? <MobileHomePage /> : <HomePage />)}
