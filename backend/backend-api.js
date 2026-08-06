@@ -522,6 +522,45 @@ function inviteEmailNew({ teamName, teamSport, inviterName, avatar }) {
   `);
 }
 
+// Rol etiketleri (TR)
+const ROLE_LABELS_TR = {
+  owner: 'Sahip',
+  editor: 'Editör',
+  coach: 'Antrenör',
+  captain: 'Kaptan',
+  member: 'Üye',
+  admin: 'Yönetici',
+};
+
+// Şablon: Takımdaki rol değişikliği
+function roleChangeEmail({ teamName, teamId, newRoleLabel, changerName, avatar }) {
+  return emailWrapper(`
+    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Takım Rolün Güncellendi</h2>
+    <p style="margin:0 0 28px;color:#64748b;font-size:15px;line-height:1.6;">
+      <strong>${changerName}</strong>, <strong>${teamName}</strong> takımındaki rolünü
+      <strong>${newRoleLabel}</strong> olarak güncelledi.
+    </p>
+
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:24px;margin-bottom:28px;">
+      <div style="display:flex;align-items:center;gap:16px;">
+        <div style="width:56px;height:56px;background:linear-gradient(135deg,#00b7ba,#009295);border-radius:12px;font-size:22px;font-weight:800;color:#fff;text-align:center;line-height:56px;">${avatar || teamName.charAt(0).toUpperCase()}</div>
+        <div>
+          <div style="font-size:18px;font-weight:700;color:#1e293b;">${teamName}</div>
+          <div style="font-size:14px;color:#00b7ba;margin-top:2px;">Yeni rolün: ${newRoleLabel}</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align:center;">
+      <a href="${APP_URL}?takim=${teamId}"
+         style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#ffffff;text-decoration:none;
+                padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;letter-spacing:0.2px;">
+        Takımı Görüntüle →
+      </a>
+    </div>
+  `);
+}
+
 // Şablon 3: Duvar gönderisi bildirimi
 // Avatar URL'sini <img> tag'ine, değilse baş harfe çevirir
 function avatarHtml(avatarValue, name, size = 40, gradient = 'linear-gradient(135deg,#00b7ba,#009295)') {
@@ -1658,7 +1697,7 @@ app.put('/api/teams/:teamId/members/:userId/role', authenticateToken, async (req
     }
 
     const ownerCheck = await pool.query(
-      'SELECT owner_id FROM teams WHERE id = $1',
+      'SELECT owner_id, name, avatar FROM teams WHERE id = $1',
       [teamId]
     );
     if (!ownerCheck.rows.length) return res.status(404).json({ error: 'Team not found' });
@@ -1672,12 +1711,60 @@ app.put('/api/teams/:teamId/members/:userId/role', authenticateToken, async (req
       return res.status(403).json({ error: 'Takım sahibinin rolü değiştirilemez.' });
     }
 
+    // Mevcut rolü al — gerçekten değiştiyse bildirim/mail gönder
+    const prev = await pool.query(
+      'SELECT role FROM team_members WHERE team_id = $1 AND user_id = $2',
+      [teamId, userId]
+    );
+    if (!prev.rows.length) return res.status(404).json({ error: 'Üye bulunamadı.' });
+    const oldRole = prev.rows[0].role;
+
     await pool.query(
       'UPDATE team_members SET role = $1 WHERE team_id = $2 AND user_id = $3',
       [role, teamId, userId]
     );
 
     res.json({ message: 'Role updated' });
+
+    // Rol gerçekten değiştiyse ve kişi kendi rolünü değiştirmediyse: bildirim + mail
+    if (oldRole !== role && parseInt(userId) !== req.user.id) {
+      (async () => {
+        try {
+          const team = ownerCheck.rows[0];
+          const newRoleLabel = ROLE_LABELS_TR[role] || role;
+          const [target, changer] = await Promise.all([
+            pool.query('SELECT id, name, email FROM users WHERE id = $1', [userId]),
+            pool.query('SELECT name FROM users WHERE id = $1', [req.user.id]),
+          ]);
+          if (!target.rows.length) return;
+          const changerName = changer.rows[0]?.name || 'Takım yöneticisi';
+
+          await createNotif(target.rows[0].id, {
+            title: 'Takım rolün güncellendi',
+            message: `${changerName}, "${team.name}" takımındaki rolünü "${newRoleLabel}" olarak güncelledi.`,
+            type: 'role_change',
+            refId: parseInt(teamId),
+            url: `/takimlar?takim=${teamId}`,
+          });
+
+          if (target.rows[0].email) {
+            await sendEmail({
+              to: target.rows[0].email,
+              subject: `${team.name} takımındaki rolün güncellendi`,
+              html: roleChangeEmail({
+                teamName: team.name,
+                teamId,
+                newRoleLabel,
+                changerName,
+                avatar: team.avatar,
+              }),
+            });
+          }
+        } catch (e) {
+          console.error('Role change notify error:', e.message);
+        }
+      })();
+    }
   } catch (error) {
     console.error('Update role error:', error);
     res.status(500).json({ error: 'Internal server error' });

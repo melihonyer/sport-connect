@@ -2165,7 +2165,7 @@ export default function Muuvlink() {
           // Geriye dönük: url yoksa type + refId'den hedefi çıkar
           if (data.refId && String(data.type || "").startsWith("training")) {
             fetchTrainingDetails(data.refId);
-          } else if (data.refId && ["team", "invitation", "team_post"].includes(data.type)) {
+          } else if (data.refId && ["team", "invitation", "team_post", "role_change"].includes(data.type)) {
             fetchTeamDetails(data.refId);
             setCurrentPage("teams");
           } else if (data.page) {
