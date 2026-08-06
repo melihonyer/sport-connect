@@ -1251,13 +1251,18 @@ function buildBadgeStorySvg(badge, earned, dateStr, texts) {
   </svg>`;
 }
 
-// Tam logo yerleşimi: M amblemi (favicon.png) + wordmark yan yana, ortalı.
-const LOGO_MARK_SIZE = 92, LOGO_GAP = 22, LOGO_WORDMARK_W = 300;
+// Tam logo yerleşimi: M amblemi (favicon.png) + wordmark yan yana, ortalı ve
+// dikey hizalı. M, wordmark yüksekliğinin ~1.6 katı (header'daki oranla aynı).
+const LOGO_WORDMARK_W = 300;
+const LOGO_WORDMARK_H = LOGO_WORDMARK_W * 43.6 / 353.5;    // ≈ 37
+const LOGO_MARK_SIZE = 60, LOGO_GAP = 18;
 const LOGO_TOTAL_W = LOGO_MARK_SIZE + LOGO_GAP + LOGO_WORDMARK_W;
 const LOGO_LEFT = (1080 - LOGO_TOTAL_W) / 2;
 const LOGO_MARK_X = LOGO_LEFT;
-const LOGO_MARK_Y = 1728;                                   // dikey ortalama
+const LOGO_WORDMARK_TOP = 1648;                            // wordmark üst kenarı
+const LOGO_MARK_Y = LOGO_WORDMARK_TOP + LOGO_WORDMARK_H / 2 - LOGO_MARK_SIZE / 2;  // M'i wordmark ile dikey ortala
 const LOGO_WORDMARK_CX = LOGO_LEFT + LOGO_MARK_SIZE + LOGO_GAP + LOGO_WORDMARK_W / 2;
+const LOGO_URL_Y = 1752;                                   // muuvlink.app taban çizgisi
 
 // Bir görseli yükle (Promise).
 // NOT: `new Image()` KULLANMA — lucide-react'tan import edilen `Image` ikonu
@@ -1341,7 +1346,10 @@ async function badgeCardBlob(badge, dateStr, texts) {
   const bg = x.createLinearGradient(0, 0, 320, H);
   bg.addColorStop(0, "#0f2f33"); bg.addColorStop(0.55, "#0d3b3e"); bg.addColorStop(1, "#062225");
   x.fillStyle = bg; x.fillRect(0, 0, W, H);
-  const glow = x.createRadialGradient(W / 2, 760, 0, W / 2, 760, 560);
+  // Rozet amblemi boyutu (parıltı ve başlık buna göre konumlanır)
+  const bw = 560, bh = Math.round(bw * 1.4), bx = (W - bw) / 2, by = 495;
+
+  const glow = x.createRadialGradient(W / 2, by + bh * 0.5, 0, W / 2, by + bh * 0.5, 580);
   glow.addColorStop(0, hexA(theme.c1, 0.3)); glow.addColorStop(1, hexA(theme.c1, 0));
   x.fillStyle = glow; x.fillRect(0, 0, W, H);
 
@@ -1349,11 +1357,10 @@ async function badgeCardBlob(badge, dateStr, texts) {
   x.textAlign = "center";
   try { x.letterSpacing = "14px"; } catch (_) {}
   x.fillStyle = theme.c1; x.font = "700 40px Arial, sans-serif";
-  x.fillText(texts.unlocked, W / 2, 400);
+  x.fillText(texts.unlocked, W / 2, by - 75);
   try { x.letterSpacing = "0px"; } catch (_) {}
 
   // Rozet görseli (önceden üretilmiş PNG); yoksa temaya uygun kapsül + emoji fallback
-  const bw = 560, bh = Math.round(bw * 1.4), bx = (W - bw) / 2, by = 470;
   const slug = BADGE_SLUG[badge.name] || slugify(badge.name);
   let drawn = false;
   try {
@@ -1372,27 +1379,27 @@ async function badgeCardBlob(badge, dateStr, texts) {
 
   // Metinler
   x.fillStyle = "#ffffff"; x.font = "800 100px Arial, sans-serif";
-  x.fillText(badge.name, W / 2, by + bh + 96);
+  x.fillText(badge.name, W / 2, by + bh + 94);
   x.fillStyle = "#a7d8d6"; x.font = "500 44px Arial, sans-serif";
-  x.fillText(badge.description, W / 2, by + bh + 160);
+  x.fillText(badge.description, W / 2, by + bh + 156);
   if (dateStr) {
     x.fillStyle = "#5f9b98"; x.font = "600 34px Arial, sans-serif";
-    x.fillText(dateStr, W / 2, by + bh + 222);
+    x.fillText(dateStr, W / 2, by + bh + 214);
   }
 
-  // Tam logo: M amblemi (favicon) + wordmark (Path2D)
+  // Tam logo: M amblemi (favicon) + wordmark (Path2D), dikey hizalı
   try {
     const mark = await loadImageRobust(`/icons/favicon.png`);
     x.drawImage(mark, LOGO_MARK_X, LOGO_MARK_Y, LOGO_MARK_SIZE, LOGO_MARK_SIZE);
   } catch (_) {}
   x.save();
   const sc = LOGO_WORDMARK_W / 353.5;
-  x.translate(LOGO_WORDMARK_CX - LOGO_WORDMARK_W / 2, 1748);
+  x.translate(LOGO_WORDMARK_CX - LOGO_WORDMARK_W / 2, LOGO_WORDMARK_TOP);
   x.scale(sc, sc); x.fillStyle = "#ffffff";
   for (const d of MUUVLINK_LOGO_PATHS) x.fill(new Path2D(d));
   x.restore();
   x.fillStyle = "#4f817e"; x.font = "600 32px Arial, sans-serif"; x.textAlign = "center";
-  x.fillText("muuvlink.app", W / 2, 1852);
+  x.fillText("muuvlink.app", W / 2, LOGO_URL_Y);
 
   return await new Promise((resolve, reject) =>
     canvas.toBlob((b) => b ? resolve(b) : reject(new Error("toBlob null")), "image/png"));
