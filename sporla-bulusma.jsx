@@ -7564,17 +7564,28 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
     );
   };
 
-  // ── Mobil web'de OS'a göre "Uygulamayı indir" bandı ──
+  // ── Android web'de "Uygulamayı indir" bandı ──
+  // iOS'ta göstermiyoruz: Apple'ın native Smart App Banner'ı (apple-itunes-app meta)
+  // kurulu→AÇ / değil→İNDİR mantığını zaten yapıyor. Android'de native banner yok,
+  // o yüzden getInstalledRelatedApps ile UYGULAMA KURULU DEĞİLSE gösteriyoruz.
   const AppInstallBanner = () => {
     const [hidden, setHidden] = useState(() => {
       try { return localStorage.getItem("muuv_dl_dismissed") === "1"; } catch (_) { return false; }
     });
-    const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
-    const isIOS = /iPhone|iPad|iPod/i.test(ua);
-    const isAndroidUA = /Android/i.test(ua);
-    if (isNative || hidden || (!isIOS && !isAndroidUA)) return null;   // yalnız mobil web
-    const url = isIOS ? APP_STORE_URL : PLAY_STORE_URL;
-    const store = isIOS ? "App Store" : "Google Play";
+    const [notInstalled, setNotInstalled] = useState(null);   // null=bilinmiyor
+    const isAndroidUA = typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent || "");
+    useEffect(() => {
+      if (isNative || !isAndroidUA) return;
+      if (navigator.getInstalledRelatedApps) {
+        navigator.getInstalledRelatedApps()
+          .then((apps) => setNotInstalled(!(apps && apps.length > 0)))
+          .catch(() => setNotInstalled(true));
+      } else {
+        setNotInstalled(true);   // API yok → kurulu değil varsay
+      }
+    }, [isAndroidUA]);
+    // Yalnız: mobil web değil, Android, kapatılmamış ve KURULU DEĞİL kesinleşmişse
+    if (isNative || !isAndroidUA || hidden || notInstalled !== true) return null;
     const dismiss = () => { try { localStorage.setItem("muuv_dl_dismissed", "1"); } catch (_) {} setHidden(true); };
     return (
       <div className="fixed left-0 right-0 z-[60] px-3 lg:hidden"
@@ -7583,9 +7594,9 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
           <img src="/icons/favicon.png" alt="" className="w-9 h-9 rounded-lg flex-shrink-0" width="36" height="36" />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-bold text-slate-800 leading-tight">Muuvlink uygulaması</p>
-            <p className="text-[11px] text-slate-500 leading-tight truncate">{store}'dan indir — daha hızlı deneyim</p>
+            <p className="text-[11px] text-slate-500 leading-tight truncate">Google Play'den indir — daha hızlı deneyim</p>
           </div>
-          <a href={url} target="_blank" rel="noopener noreferrer"
+          <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer"
             className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white active:scale-95 transition"
             style={{ background: "linear-gradient(135deg,#00b7ba,#009295)" }}>
             <Download className="w-4 h-4" /> İndir

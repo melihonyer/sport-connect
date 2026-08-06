@@ -9,6 +9,10 @@
   "orientation": "portrait-primary",
   "lang": "tr",
   "categories": ["sports", "social"],
+  "prefer_related_applications": false,
+  "related_applications": [
+    { "platform": "play", "id": "app.muuvlink", "url": "https://play.google.com/store/apps/details?id=app.muuvlink" }
+  ],
   "icons": [
     {
       "src": "/icons/favicon.png",
