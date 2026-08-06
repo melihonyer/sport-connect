@@ -350,7 +350,8 @@ async function createNotif(userId, { title, message, type, refId = null, url = n
       [userId, title, message, type, refId, url]
     );
     pushToUser(userId, { event: 'notification', data: r.rows[0] });
-    sendPushToUser(userId, { title, body: message, data: { type, refId, url } }).catch(() => {});
+    const unread = await getUnreadCount(userId);
+    sendPushToUser(userId, { title, body: message, data: { type, refId, url }, badge: unread }).catch(() => {});
     return r.rows[0];
   } catch (e) {
     console.error('createNotif error:', e.message);
@@ -2865,6 +2866,8 @@ app.put('/api/notifications/:id/read', authenticateToken, async (req, res) => {
       [req.params.id, req.user.id]
     );
 
+    sendBadgeUpdate(req.user.id).catch(() => {});   // uygulama ikonu rozetini güncelle
+
     res.json({ message: 'Notification marked as read' });
   } catch (error) {
     console.error('Mark notification error:', error);
@@ -2878,6 +2881,8 @@ app.delete('/api/notifications/:id', authenticateToken, async (req, res) => {
       'DELETE FROM notifications WHERE id = $1 AND user_id = $2',
       [req.params.id, req.user.id]
     );
+
+    sendBadgeUpdate(req.user.id).catch(() => {});   // silinen bildirim okunmamışsa rozet azalsın
 
     res.json({ message: 'Notification deleted' });
   } catch (error) {
@@ -4176,7 +4181,7 @@ try {
   console.error('[PUSH] FCM provider başlatılamadı:', e.message);
 }
 
-async function sendPushToIOS(userId, { title, body, data }) {
+async function sendPushToIOS(userId, { title, body, data, badge = null }) {
   if (!apnProvider) return;
   const tokensRes = await pool.query(
     `SELECT token FROM device_push_tokens WHERE user_id = $1 AND platform = 'ios'`,
@@ -4189,6 +4194,7 @@ async function sendPushToIOS(userId, { title, body, data }) {
   notification.sound = 'default';
   notification.topic = 'app.muuvlink';
   notification.payload = data;
+  if (badge != null) notification.badge = badge;   // uygulama ikonu rozeti (okunmamış sayısı)
 
   const tokens = tokensRes.rows.map(r => r.token);
   const result = await apnProvider.send(notification, tokens);
@@ -4203,7 +4209,7 @@ async function sendPushToIOS(userId, { title, body, data }) {
   }
 }
 
-async function sendPushToAndroid(userId, { title, body, data }) {
+async function sendPushToAndroid(userId, { title, body, data, badge = null }) {
   if (!fcmReady) return;
   const tokensRes = await pool.query(
     `SELECT token FROM device_push_tokens WHERE user_id = $1 AND platform = 'android'`,
@@ -4217,11 +4223,15 @@ async function sendPushToAndroid(userId, { title, body, data }) {
     Object.entries(data || {}).map(([k, v]) => [k, v == null ? '' : String(v)])
   );
 
-  const result = await admin.messaging().sendEachForMulticast({
+  const message = {
     tokens,
     notification: { title, body },
     data: stringData,
-  });
+  };
+  // Uygulama ikonu rozet sayısı (launcher destekliyorsa)
+  if (badge != null) message.android = { notification: { notificationCount: badge } };
+
+  const result = await admin.messaging().sendEachForMulticast(message);
 
   result.responses.forEach((res, i) => {
     if (!res.success && ['messaging/registration-token-not-registered', 'messaging/invalid-registration-token'].includes(res.error?.code)) {
@@ -4233,15 +4243,48 @@ async function sendPushToAndroid(userId, { title, body, data }) {
   }
 }
 
-async function sendPushToUser(userId, { title, body, data = {} }) {
+async function sendPushToUser(userId, { title, body, data = {}, badge = null }) {
   if (!userId) return;
   try {
     await Promise.allSettled([
-      sendPushToIOS(userId, { title, body, data }),
-      sendPushToAndroid(userId, { title, body, data }),
+      sendPushToIOS(userId, { title, body, data, badge }),
+      sendPushToAndroid(userId, { title, body, data, badge }),
     ]);
   } catch (e) {
     console.error('[PUSH] Gönderim hatası:', e.message);
+  }
+}
+
+// Kullanıcının okunmamış bildirim sayısı (uygulama ikonu rozeti için)
+async function getUnreadCount(userId) {
+  try {
+    const r = await pool.query(
+      'SELECT COUNT(*)::int as c FROM notifications WHERE user_id = $1 AND is_read = false',
+      [userId]
+    );
+    return r.rows[0].c;
+  } catch (_) { return 0; }
+}
+
+// Sessiz badge güncellemesi — banner göstermeden uygulama ikonu rozetini günceller
+// (okundu işaretleme / bildirim silme sonrası rozetin doğru azalması için).
+async function sendBadgeUpdate(userId) {
+  if (!userId) return;
+  try {
+    const count = await getUnreadCount(userId);
+    if (apnProvider) {
+      const t = await pool.query(
+        `SELECT token FROM device_push_tokens WHERE user_id = $1 AND platform = 'ios'`, [userId]
+      );
+      if (t.rows.length > 0) {
+        const n = new apn.Notification();
+        n.topic = 'app.muuvlink';
+        n.badge = count;                 // yalnız rozet: alert/sound yok → banner çıkmaz
+        await apnProvider.send(n, t.rows.map(r => r.token)).catch(() => {});
+      }
+    }
+  } catch (e) {
+    console.error('[PUSH] Badge güncelleme hatası:', e.message);
   }
 }
 
