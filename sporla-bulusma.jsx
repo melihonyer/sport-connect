@@ -2153,6 +2153,9 @@ export default function Muuvlink() {
           console.error("[Push] registration hatası:", err);
         });
         PushNotifications.addListener("pushNotificationReceived", (notification) => {
+          const d = notification.data || {};
+          // Sessiz rozet güncellemeleri (başlıksız/gövdesiz) toast göstermesin
+          if (d.badgeUpdate || (!notification.title && !notification.body)) return;
           showToast(notification.title || notification.body || "Yeni bildirim", "success");
         });
         PushNotifications.addListener("pushNotificationActionPerformed", (action) => {

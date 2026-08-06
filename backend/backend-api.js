@@ -4280,6 +4280,7 @@ async function sendBadgeUpdate(userId) {
         const n = new apn.Notification();
         n.topic = 'app.muuvlink';
         n.badge = count;                 // yalnız rozet: alert/sound yok → banner çıkmaz
+        n.payload = { badgeUpdate: '1' }; // ön planda toast gösterilmesin diye işaret
         await apnProvider.send(n, t.rows.map(r => r.token)).catch(() => {});
       }
     }
