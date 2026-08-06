@@ -2228,14 +2228,23 @@ app.get('/api/trainings/:id', optionalAuth, async (req, res) => {
 
     training.attendees = attendeesResult.rows;
 
-    // Get comments
+    // Get comments (+ beğeni sayısı, kullanıcı beğenmiş mi, beğenenler)
     const commentsResult = await pool.query(
-      `SELECT tc.*, u.name as user_name, u.avatar as user_avatar
+      `SELECT tc.*, u.name as user_name, u.avatar as user_avatar,
+              (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = tc.id)::int as like_count,
+              ($2::int IS NOT NULL AND EXISTS(
+                 SELECT 1 FROM comment_likes cl WHERE cl.comment_id = tc.id AND cl.user_id = $2
+              )) as liked_by_me,
+              COALESCE((
+                 SELECT json_agg(json_build_object('id', lu.id, 'name', lu.name) ORDER BY cl.created_at)
+                 FROM comment_likes cl JOIN users lu ON lu.id = cl.user_id
+                 WHERE cl.comment_id = tc.id
+              ), '[]'::json) as likers
        FROM training_comments tc
        JOIN users u ON tc.user_id = u.id
        WHERE tc.training_id = $1 AND tc.is_deleted IS NOT TRUE
        ORDER BY tc.created_at DESC`,
-      [trainingId]
+      [trainingId, req.user?.id ?? null]
     );
 
     training.comments = commentsResult.rows;
@@ -2471,6 +2480,64 @@ app.post('/api/trainings/:id/comments', authenticateToken, async (req, res) => {
     res.json({ comment: result.rows[0] });
   } catch (error) {
     console.error('Comment error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Mesaj (yorum) beğenisini aç/kapat
+app.post('/api/comments/:id/like', authenticateToken, async (req, res) => {
+  try {
+    const commentId = req.params.id;
+    const userId = req.user.id;
+
+    const cRes = await pool.query(
+      'SELECT id, user_id, training_id, comment FROM training_comments WHERE id = $1 AND is_deleted IS NOT TRUE',
+      [commentId]
+    );
+    if (cRes.rows.length === 0) return res.status(404).json({ error: 'Mesaj bulunamadı.' });
+    const commentRow = cRes.rows[0];
+
+    // Zaten beğenmiş mi?
+    const existing = await pool.query(
+      'SELECT id FROM comment_likes WHERE comment_id = $1 AND user_id = $2',
+      [commentId, userId]
+    );
+
+    let liked;
+    if (existing.rows.length > 0) {
+      await pool.query('DELETE FROM comment_likes WHERE comment_id = $1 AND user_id = $2', [commentId, userId]);
+      liked = false;
+    } else {
+      await pool.query(
+        'INSERT INTO comment_likes (comment_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+        [commentId, userId]
+      );
+      liked = true;
+      // Beğeni bildirimi (kendi mesajını beğenmek hariç)
+      if (commentRow.user_id !== userId) {
+        const liker = await pool.query('SELECT name FROM users WHERE id = $1', [userId]);
+        createNotif(commentRow.user_id, {
+          title: 'Mesajın beğenildi',
+          message: `${liker.rows[0]?.name || 'Biri'} mesajını beğendi: "${commentRow.comment.slice(0, 60)}"`,
+          type: 'comment_like',
+          refId: commentRow.training_id,
+          url: `/etkinlikler?etkinlik=${commentRow.training_id}`,
+        }).catch(e => console.error('Like notif error:', e.message));
+      }
+    }
+
+    // Güncel sayı + beğenenler
+    const agg = await pool.query(
+      `SELECT COUNT(*)::int as count,
+              COALESCE(json_agg(json_build_object('id', lu.id, 'name', lu.name) ORDER BY cl.created_at), '[]'::json) as likers
+       FROM comment_likes cl JOIN users lu ON lu.id = cl.user_id
+       WHERE cl.comment_id = $1`,
+      [commentId]
+    );
+
+    res.json({ liked, count: agg.rows[0].count, likers: agg.rows[0].likers });
+  } catch (error) {
+    console.error('Comment like error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -4229,6 +4296,17 @@ pool.query(`
 // Soft delete kolonları — yoksa ekle
 pool.query(`ALTER TABLE team_posts ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT false`).catch(() => {});
 pool.query(`ALTER TABLE training_comments ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT false`).catch(() => {});
+
+// Mesaj (yorum) beğenileri
+pool.query(`
+  CREATE TABLE IF NOT EXISTS comment_likes (
+    id         SERIAL PRIMARY KEY,
+    comment_id INTEGER NOT NULL REFERENCES training_comments(id) ON DELETE CASCADE,
+    user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(comment_id, user_id)
+  )
+`).catch(() => {});
 
 // Rozet açıklamalarındaki eski "antrenman" kelimesini "etkinlik" yap (rename devamı)
 pool.query(`UPDATE badges SET description = REPLACE(description, 'antrenman', 'etkinlik') WHERE description LIKE '%antrenman%'`).catch(() => {});

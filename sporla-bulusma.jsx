@@ -2850,6 +2850,76 @@ export default function Muuvlink() {
     }
   };
 
+  // ── Mesaj beğeni (göz kırpan) ikonu + sayı + kimler beğendi ──
+  const EYE_ACTIVE = [
+    "M39.1,3.8c0-2.1-1.7-3.8-3.8-3.8s-4,1.7-4,3.8-1.7,4-3.8,4-4-1.9-4-4-1.7-3.8-3.8-3.8-3.8,1.7-3.8,3.8c0,6.4,5.2,11.6,11.6,11.6s11.6-5.2,11.6-11.6h0Z",
+    "M59.9,0c-4.3,0-7.6,3.5-7.6,7.8s3.3,7.6,7.6,7.6,7.8-3.3,7.8-7.6-3.5-7.8-7.8-7.8h0Z",
+    "M79.9,33.5c-3.5,17-18.7,29.5-36.4,29.5S11.7,51.3,7.7,34.5c-.5-1.9-2.6-3.3-4.7-2.8-2.1.5-3.3,2.6-2.8,4.7,4.7,20.3,22.7,34.5,43.5,34.5s39.7-15.1,43.9-35.9c.5-2.1-.9-4-2.8-4.5-2.1-.5-4.3.9-4.7,3.1h0Z",
+  ];
+  const EYE_INACTIVE = [
+    "M0,35.9c5,20.3,22.9,34.5,43.7,34.5s39.7-15.1,43.9-35.9c.2-1.9-.9-4-3.1-4.5-2.1-.5-4.3.9-4.5,3.1-3.5,17.2-18.9,29.5-36.4,29.5S11.7,51,7.6,34.2c-.5-2.1-2.6-3.5-4.7-2.8-1.9.5-3.3,2.4-2.8,4.5H0Z",
+    "M19.5,7.6c0,4.3,3.5,7.8,7.8,7.8s7.8-3.5,7.8-7.8S31.5,0,27.3,0s-7.8,3.3-7.8,7.6h0Z",
+    "M59.4,0c-4.3,0-7.8,3.3-7.8,7.6s3.5,7.8,7.8,7.8,7.8-3.5,7.8-7.8-3.5-7.6-7.8-7.6h0Z",
+  ];
+
+  const MessageLike = ({ comment }) => {
+    const [liked, setLiked] = useState(!!comment.liked_by_me);
+    const [count, setCount] = useState(comment.like_count || 0);
+    const [likers, setLikers] = useState(Array.isArray(comment.likers) ? comment.likers : []);
+    const [hover, setHover] = useState(false);
+    const [pop, setPop] = useState(false);
+    const [busy, setBusy] = useState(false);
+
+    const toggle = async () => {
+      if (!user) { showToast(t("messageLike.loginRequired"), "info"); return; }
+      if (busy) return;
+      setBusy(true);
+      const prev = { liked, count, likers };
+      const nextLiked = !liked;
+      setLiked(nextLiked);
+      setCount((c) => Math.max(0, c + (nextLiked ? 1 : -1)));
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API_URL}/comments/${comment.id}/like`, {
+          method: "POST", headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (res.ok) { setLiked(data.liked); setCount(data.count); setLikers(data.likers || []); }
+        else { setLiked(prev.liked); setCount(prev.count); setLikers(prev.likers); }
+      } catch (_) { setLiked(prev.liked); setCount(prev.count); setLikers(prev.likers); }
+      setBusy(false);
+    };
+
+    const showPop = (hover || pop) && likers.length > 0;
+    return (
+      <div className="relative flex items-center gap-1.5 select-none"
+        onMouseEnter={() => setHover(true)} onMouseLeave={() => { setHover(false); setPop(false); }}>
+        <button type="button" onClick={toggle} disabled={busy}
+          aria-label={liked ? t("messageLike.unlike") : t("messageLike.like")}
+          className="p-1 -m-1 active:scale-90 transition-transform">
+          <svg viewBox={liked ? "0 0 87.6 70.9" : "0 0 87.8 70.4"} width="21" height="17"
+            className={liked ? "msg-like-wink" : ""} fill={liked ? "#ef4444" : "#94a3b8"}>
+            {(liked ? EYE_ACTIVE : EYE_INACTIVE).map((d, i) => <path key={i} d={d} fillRule="evenodd" />)}
+          </svg>
+        </button>
+        {count > 0 && (
+          <button type="button" onClick={(e) => { e.stopPropagation(); setPop((p) => !p); }}
+            className={`text-xs font-semibold tabular-nums ${liked ? "text-red-500" : "text-slate-500"}`}>
+            {count}
+          </button>
+        )}
+        {showPop && (
+          <div className="absolute bottom-full right-0 mb-2 z-30 min-w-[120px] max-w-[220px] bg-slate-800 text-white text-xs rounded-xl shadow-xl py-2 px-3">
+            <div className="font-semibold text-slate-300 mb-1">{t("messageLike.likedBy")}</div>
+            {likers.slice(0, 15).map((l) => <div key={l.id} className="truncate leading-relaxed">{l.name}</div>)}
+            {likers.length > 15 && <div className="text-slate-400 mt-0.5">+{likers.length - 15}</div>}
+            <div className="absolute top-full right-4 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-slate-800" />
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const handleReport = async (type, id, reason) => {
     try {
       const token = localStorage.getItem("token");
@@ -5231,6 +5301,9 @@ export default function Muuvlink() {
                       )}
                     </div>
                     <p className="text-gray-700">{c.comment}</p>
+                    <div className="flex justify-end mt-1.5 -mb-0.5">
+                      <MessageLike comment={c} />
+                    </div>
                   </div>
                 ))}
               </div>

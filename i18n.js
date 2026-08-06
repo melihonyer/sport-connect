@@ -345,6 +345,12 @@ export const translations = {
     joinBtn:        { tr: "Katıl",                         en: "Join",                    de: "Mitmachen"               },
     alreadyMember:  { tr: "Bu takımın üyesisiniz.",         en: "You're a member.",        de: "Du bist Mitglied."       },
   },
+  messageLike: {
+    like:          { tr: "Beğen",                          en: "Like",                    de: "Gefällt mir"             },
+    unlike:        { tr: "Beğeniyi geri al",               en: "Unlike",                  de: "Gefällt mir nicht mehr"  },
+    likedBy:       { tr: "Beğenenler",                     en: "Liked by",                de: "Gefällt"                 },
+    loginRequired: { tr: "Beğenmek için giriş yapın.",     en: "Log in to like.",         de: "Zum Liken anmelden."     },
+  },
 
   // ── CREATE TRAINING ─────────────────────────────────────
   createTraining: {
