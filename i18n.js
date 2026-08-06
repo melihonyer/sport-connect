@@ -711,6 +711,8 @@ export const translations = {
     inviteAccepted: { tr: "Takıma başarıyla katıldınız!", en: "Successfully joined the team!", de: "Team erfolgreich beigetreten!" },
     inviteNotFound: { tr: "Davet bulunamadı.",            en: "Invitation not found.",   de: "Einladung nicht gefunden." },
     markRead:       { tr: "Okundu İşaretle",              en: "Mark as Read",            de: "Als gelesen markieren"   },
+    unread:         { tr: "okunmamış",                    en: "unread",                  de: "ungelesen"               },
+    allRead:        { tr: "Tümü okundu",                  en: "All caught up",           de: "Alles gelesen"           },
   },
 
   // ── TOAST MESSAGES ──────────────────────────────────────

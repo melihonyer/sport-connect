@@ -28,6 +28,7 @@ import {
   Navigation2,
   Loader2,
   Download,
+  ChevronRight,
   CheckCircle,
   XCircle,
   Info,
@@ -4111,6 +4112,29 @@ export default function Muuvlink() {
 
       {/* ── Content ── */}
       <div className="max-w-5xl mx-auto px-4 sm:px-8 py-10">
+        {/* Bildirimler satırı */}
+        {(() => {
+          const unread = notifications.filter((n) => !n.is_read).length;
+          return (
+            <button onClick={() => setShowNotifications(true)}
+              className="w-full flex items-center gap-3.5 bg-white rounded-2xl border border-slate-100 p-4 mb-6 hover:shadow-md active:scale-[0.995] transition text-left">
+              <div className="relative w-11 h-11 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0">
+                <Bell className="w-5 h-5 text-brand-600" />
+                {unread > 0 && <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-red-500 border-2 border-white" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-slate-800">{t("notifications.title")}</div>
+                <div className="text-xs text-slate-400">
+                  {unread > 0 ? `${unread} ${t("notifications.unread")}` : t("notifications.allRead")}
+                </div>
+              </div>
+              {unread > 0 && (
+                <span className="flex-shrink-0 min-w-[22px] h-[22px] px-1.5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center">{unread}</span>
+              )}
+              <ChevronRight className="w-5 h-5 text-slate-300 flex-shrink-0" />
+            </button>
+          );
+        })()}
         <div className="grid md:grid-cols-3 gap-6 min-w-0">
 
           {/* Left: Quick actions */}
@@ -6371,12 +6395,16 @@ export default function Muuvlink() {
     const unreadCount = notifications.filter((n) => !n.is_read).length;
 
     return (
-      <div className="fixed right-4 top-20 w-96 bg-white rounded-2xl shadow-2xl border z-50 max-h-[600px] overflow-hidden flex flex-col">
+      <div className="fixed inset-0 z-[100] sm:bg-transparent bg-black/40" onClick={() => setShowNotifications(false)}>
+      <div onClick={(e) => e.stopPropagation()}
+        className="absolute bg-white flex flex-col overflow-hidden shadow-2xl
+          inset-0 sm:inset-auto sm:right-4 sm:top-20 sm:w-96 sm:max-h-[600px] sm:rounded-2xl sm:border"
+        style={isNative ? { paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" } : {}}>
         <div className="p-4 border-b flex justify-between items-center">
-          <h3 className="font-medium text-lg">
+          <h3 className="font-semibold text-lg">
             {t("notifications.title")} {unreadCount > 0 && `(${unreadCount})`}
           </h3>
-          <button onClick={() => setShowNotifications(false)}>
+          <button onClick={() => setShowNotifications(false)} aria-label="Kapat" className="p-1 -m-1 text-slate-500 hover:text-slate-800">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -6426,6 +6454,7 @@ export default function Muuvlink() {
             </div>
           )}
         </div>
+      </div>
       </div>
     );
   };
@@ -7606,6 +7635,7 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
   );
 
   const BottomNav = () => {
+    const unreadCount = notifications.filter((n) => !n.is_read).length;
     const tabs = [
       { key: "home",      icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>, label: t("nav.home") || "Ana Sayfa" },
       { key: "trainings", icon: <Activity className="w-6 h-6"/>,  label: t("nav.trainings") || "Etkinlikler" },
@@ -7625,8 +7655,12 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
               <button key={tab.key} onClick={() => { triggerHaptic("light"); setCurrentPage(tab.key); }}
                 className="flex-1 flex flex-col items-center gap-1 py-3 transition-all"
                 style={{color: active ? "#00b7ba" : "#94a3b8"}}>
-                <div style={{transform: active ? "scale(1.1)" : "scale(1)", transition:"transform 0.15s"}}>
+                <div className="relative" style={{transform: active ? "scale(1.1)" : "scale(1)", transition:"transform 0.15s"}}>
                   {tab.icon}
+                  {/* Profil ikonunda okunmamış bildirim kırmızı noktası */}
+                  {tab.key === "profile" && unreadCount > 0 && (
+                    <span className="absolute -top-0.5 -right-1 w-2.5 h-2.5 rounded-full bg-red-500 border-2 border-white" />
+                  )}
                 </div>
                 <span className="text-[11px] font-semibold tracking-wide">{tab.label}</span>
               </button>
