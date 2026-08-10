@@ -92,7 +92,7 @@ const TrainingsMapView = ({ trainings, onSelectTraining, t, containerStyle }) =>
   }, [mapped.map(tr => tr.team_id).join(",")]); // eslint-disable-line
 
   return (
-    <div className="relative rounded-2xl overflow-hidden border border-slate-200 shadow-sm" style={{ height: "600px", ...containerStyle }}>
+    <div className="relative isolate rounded-2xl overflow-hidden border border-slate-200 shadow-sm" style={{ height: "600px", ...containerStyle }}>
       {trainings.length > mapped.length && (
         <div className="absolute top-3 left-3 z-[1000] flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/90 backdrop-blur border border-slate-200 shadow-sm text-slate-600">
           <MapPin className="w-3.5 h-3.5 text-slate-400"/>
