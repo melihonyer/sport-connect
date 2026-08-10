@@ -3016,6 +3016,15 @@ export default function Muuvlink() {
     const [hover, setHover] = useState(false);
     const [pop, setPop] = useState(false);
     const [busy, setBusy] = useState(false);
+    const wrapRef = useRef(null);
+
+    // Mobilde: beğenenler açıkken dışarı dokununca kapat.
+    useEffect(() => {
+      if (!pop) return;
+      const onDoc = (e) => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setPop(false); };
+      document.addEventListener("pointerdown", onDoc);
+      return () => document.removeEventListener("pointerdown", onDoc);
+    }, [pop]);
 
     const toggle = async () => {
       if (!user) { showToast(t("messageLike.loginRequired"), "info"); return; }
@@ -3039,7 +3048,7 @@ export default function Muuvlink() {
 
     const showPop = (hover || pop) && likers.length > 0;
     return (
-      <div className="relative flex items-center gap-1.5 select-none"
+      <div ref={wrapRef} className="relative flex items-center gap-0.5 select-none"
         onMouseEnter={() => setHover(true)} onMouseLeave={() => { setHover(false); setPop(false); }}>
         <button type="button" onClick={toggle} disabled={busy}
           aria-label={liked ? t("messageLike.unlike") : t("messageLike.like")}
@@ -3050,8 +3059,10 @@ export default function Muuvlink() {
           </svg>
         </button>
         {count > 0 && (
+          // Sayıya dokununca beğenenler görünür (beğeniyi TOGGLE ETMEZ) — mobilde de çalışır.
           <button type="button" onClick={(e) => { e.stopPropagation(); setPop((p) => !p); }}
-            className={`text-xs font-semibold tabular-nums ${liked ? "text-red-500" : "text-slate-500"}`}>
+            aria-label={t("messageLike.likedBy")}
+            className={`px-2 py-1 -my-0.5 rounded-lg text-xs font-semibold tabular-nums cursor-pointer transition-colors hover:bg-slate-100 active:bg-slate-200 ${liked ? "text-red-500" : "text-slate-500"}`}>
             {count}
           </button>
         )}
