@@ -1063,7 +1063,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     }
 
     const result = await pool.query(
-      'SELECT id, name, email, password_hash, avatar FROM users WHERE email = $1',
+      'SELECT id, name, email, password_hash, avatar, deleted_at FROM users WHERE email = $1',
       [email]
     );
 
@@ -1078,13 +1078,21 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+    // Silinmeye zamanlanmış hesap → doğru şifreyle giriş onu GERİ GETİRİR.
+    let restored = false;
+    if (user.deleted_at) {
+      await pool.query('UPDATE users SET deleted_at = NULL WHERE id = $1', [user.id]);
+      restored = true;
+    }
+
     const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, {
       expiresIn: '30d',
     });
 
     delete user.password_hash;
+    delete user.deleted_at;
 
-    res.json({ message: 'Login successful', user, token });
+    res.json({ message: 'Login successful', user, token, restored });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -3190,8 +3198,10 @@ app.delete('/api/users/me', authenticateToken, async (req, res) => {
         teams: soleAdminCheck.rows,
       });
     }
-    await pool.query('DELETE FROM users WHERE id = $1', [req.user.id]);
-    res.json({ message: 'Hesabınız silindi.' });
+    // Soft-delete: kalıcı silmek yerine "silinmeye zamanlanmış" işaretle.
+    // 30 gün içinde giriş yapılırsa geri gelir; sonra purge kalıcı siler.
+    await pool.query('UPDATE users SET deleted_at = NOW() WHERE id = $1', [req.user.id]);
+    res.json({ message: 'Hesabınız silinmek üzere kapatıldı.' });
   } catch (error) {
     console.error('Self-delete error:', error.message);
     res.status(500).json({ error: 'Hesap silinemedi.' });
@@ -3932,6 +3942,10 @@ pool.query(`ALTER TABLE trainings ADD COLUMN IF NOT EXISTS sport TEXT`).catch(()
 // Takımın spor dalları (çoklu). Eski takımlar için tekil sport'tan doldur.
 pool.query(`ALTER TABLE teams ADD COLUMN IF NOT EXISTS sports TEXT[]`).catch(() => {});
 pool.query(`UPDATE teams SET sports = ARRAY[sport] WHERE (sports IS NULL OR array_length(sports,1) IS NULL) AND sport IS NOT NULL`).catch(() => {});
+
+// Hesap silme = soft-delete. deleted_at doluysa hesap "silinmeye zamanlanmış"tır;
+// 30 gün içinde giriş yapılırsa geri gelir, sonra purge ile kalıcı silinir.
+pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ`).catch(() => {});
 pool.query(`ALTER TABLE team_members      ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW()`).catch(() => {});
 
 async function logActivity(event_type, user_id, user_name, meta = {}) {
@@ -4215,6 +4229,22 @@ function scheduleDailyReminders() {
   console.log(`[REMINDER] İlk çalışma: ${next9am.toLocaleString('tr-TR')} (${Math.round(msUntil9am/60000)} dk sonra)`);
 }
 scheduleDailyReminders();
+
+// ── Soft-delete purge — 30 günü dolan hesapları kalıcı sil ──────────────────
+const ACCOUNT_PURGE_DAYS = 30;
+async function purgeSoftDeletedAccounts() {
+  try {
+    const res = await pool.query(
+      `DELETE FROM users WHERE deleted_at IS NOT NULL AND deleted_at < NOW() - INTERVAL '${ACCOUNT_PURGE_DAYS} days' RETURNING id`
+    );
+    if (res.rowCount > 0) console.log(`[PURGE] ${res.rowCount} hesap kalıcı silindi (${ACCOUNT_PURGE_DAYS} gün doldu).`);
+  } catch (e) {
+    console.error('[PURGE] Hata:', e.message);
+  }
+}
+// Başlangıçta bir kez + günde bir çalıştır.
+purgeSoftDeletedAccounts();
+setInterval(purgeSoftDeletedAccounts, 24 * 60 * 60 * 1000);
 
 // ── Engagement Reminder — pasif kullanıcılara nazik hatırlatma ──────────────
 // Son 7 gündür hiç etkinlik oluşturmamış/katılmamış VE son 7 gündür bu
