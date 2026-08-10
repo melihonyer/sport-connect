@@ -96,17 +96,22 @@ class ErrorBoundary extends React.Component {
 const BASE_URL = import.meta.env.VITE_BASE_URL ?? (import.meta.env.DEV ? "http://localhost:3000" : "");
 
 // ── Tarih formatlama yardımcıları ──────────────────────────────────────────
+// Aktif dile göre BCP-47 locale — seçili dil değişince tarihler de o dilde gelir.
+const _dateLocale = () => {
+  const l = (typeof localStorage !== "undefined" && localStorage.getItem("muuvlang")) || "tr";
+  return l === "en" ? "en-US" : l === "de" ? "de-DE" : "tr-TR";
+};
 // "1 Haziran 2026 Pazartesi" — etkinlik detay gibi önemli yerlerde
 const fmtDateFull = (d) => d
-  ? new Date(d).toLocaleDateString("tr-TR", { timeZone:"UTC", weekday:"long", day:"numeric", month:"long", year:"numeric" })
+  ? new Date(d).toLocaleDateString(_dateLocale(), { timeZone:"UTC", weekday:"long", day:"numeric", month:"long", year:"numeric" })
   : "";
 // "1 Haziran 2026" — kartlar ve listeler için
 const fmtDateMed = (d) => d
-  ? new Date(d).toLocaleDateString("tr-TR", { timeZone:"UTC", day:"numeric", month:"long", year:"numeric" })
+  ? new Date(d).toLocaleDateString(_dateLocale(), { timeZone:"UTC", day:"numeric", month:"long", year:"numeric" })
   : "";
 // "1 Haz 2026" — kompakt yerler (yorum tarihi, bildirim vb.)
 const fmtDateShort = (d) => d
-  ? new Date(d).toLocaleDateString("tr-TR", { day:"numeric", month:"short", year:"numeric" })
+  ? new Date(d).toLocaleDateString(_dateLocale(), { day:"numeric", month:"short", year:"numeric" })
   : "";
 
 // Harita arama yardımcıları
