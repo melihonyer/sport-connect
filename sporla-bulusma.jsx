@@ -3009,10 +3009,12 @@ export default function Muuvlink() {
     "M59.4,0c-4.3,0-7.8,3.3-7.8,7.6s3.5,7.8,7.8,7.8,7.8-3.5,7.8-7.8-3.5-7.6-7.8-7.6h0Z",
   ];
 
-  const MessageLike = ({ comment }) => {
-    const [liked, setLiked] = useState(!!comment.liked_by_me);
-    const [count, setCount] = useState(comment.like_count || 0);
-    const [likers, setLikers] = useState(Array.isArray(comment.likers) ? comment.likers : []);
+  // Ortak beğeni bileşeni — hem etkinlik mesajlarında hem takım duvarında kullanılır.
+  // item: { id, liked_by_me, like_count, likers }, endpoint: beğeni toggle URL'i.
+  const MessageLike = ({ item, endpoint }) => {
+    const [liked, setLiked] = useState(!!item.liked_by_me);
+    const [count, setCount] = useState(item.like_count || 0);
+    const [likers, setLikers] = useState(Array.isArray(item.likers) ? item.likers : []);
     const [hover, setHover] = useState(false);
     const [pop, setPop] = useState(false);
     const [busy, setBusy] = useState(false);
@@ -3036,7 +3038,7 @@ export default function Muuvlink() {
       setCount((c) => Math.max(0, c + (nextLiked ? 1 : -1)));
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch(`${API_URL}/comments/${comment.id}/like`, {
+        const res = await fetch(endpoint, {
           method: "POST", headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -5494,7 +5496,7 @@ export default function Muuvlink() {
                     </div>
                     <p className="text-gray-700">{c.comment}</p>
                     <div className="flex justify-end mt-1.5 -mb-0.5">
-                      <MessageLike comment={c} />
+                      <MessageLike item={c} endpoint={`${API_URL}/comments/${c.id}/like`} />
                     </div>
                   </div>
                 ))}
@@ -5813,6 +5815,9 @@ export default function Muuvlink() {
                         )}
                       </div>
                       <p className="text-slate-700 text-sm leading-relaxed">{post.message}</p>
+                      <div className="flex justify-end mt-1.5 -mb-0.5">
+                        <MessageLike item={post} endpoint={`${API_URL}/team-posts/${post.id}/like`} />
+                      </div>
                     </div>
                   ))}
                 </div>

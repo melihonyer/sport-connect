@@ -1363,15 +1363,24 @@ app.get('/api/teams/:id', optionalAuth, async (req, res) => {
 
     team.members = membersResult.rows;
 
-    // Get team posts
+    // Get team posts (+ beğeni bilgileri; giriş yoksa $2 null → liked_by_me false)
     const postsResult = await pool.query(
-      `SELECT tp.*, u.name as user_name, u.avatar as user_avatar
+      `SELECT tp.*, u.name as user_name, u.avatar as user_avatar,
+              (SELECT COUNT(*) FROM team_post_likes pl WHERE pl.post_id = tp.id)::int as like_count,
+              (($2::int IS NOT NULL) AND EXISTS (
+                 SELECT 1 FROM team_post_likes pl WHERE pl.post_id = tp.id AND pl.user_id = $2
+              )) as liked_by_me,
+              COALESCE((
+                 SELECT json_agg(json_build_object('id', lu.id, 'name', lu.name) ORDER BY pl.created_at)
+                 FROM team_post_likes pl JOIN users lu ON lu.id = pl.user_id
+                 WHERE pl.post_id = tp.id
+              ), '[]'::json) as likers
        FROM team_posts tp
        JOIN users u ON tp.user_id = u.id
        WHERE tp.team_id = $1 AND tp.is_deleted IS NOT TRUE
        ORDER BY tp.created_at DESC
        LIMIT 10`,
-      [teamId]
+      [teamId, req.user?.id || null]
     );
 
     team.posts = postsResult.rows;
@@ -2641,6 +2650,62 @@ app.post('/api/comments/:id/like', authenticateToken, async (req, res) => {
     res.json({ liked, count: agg.rows[0].count, likers: agg.rows[0].likers });
   } catch (error) {
     console.error('Comment like error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Takım duvarı gönderisini beğen / beğenmekten vazgeç (yorum beğenisinin aynısı)
+app.post('/api/team-posts/:id/like', authenticateToken, async (req, res) => {
+  try {
+    const postId = req.params.id;
+    const userId = req.user.id;
+
+    const pRes = await pool.query(
+      'SELECT id, user_id, team_id, message FROM team_posts WHERE id = $1 AND is_deleted IS NOT TRUE',
+      [postId]
+    );
+    if (pRes.rows.length === 0) return res.status(404).json({ error: 'Gönderi bulunamadı.' });
+    const postRow = pRes.rows[0];
+
+    const existing = await pool.query(
+      'SELECT id FROM team_post_likes WHERE post_id = $1 AND user_id = $2',
+      [postId, userId]
+    );
+
+    let liked;
+    if (existing.rows.length > 0) {
+      await pool.query('DELETE FROM team_post_likes WHERE post_id = $1 AND user_id = $2', [postId, userId]);
+      liked = false;
+    } else {
+      await pool.query(
+        'INSERT INTO team_post_likes (post_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+        [postId, userId]
+      );
+      liked = true;
+      // Beğeni bildirimi (kendi gönderisini beğenmek hariç) — mail yok
+      if (postRow.user_id !== userId) {
+        const liker = await pool.query('SELECT name FROM users WHERE id = $1', [userId]);
+        createNotif(postRow.user_id, {
+          title: 'Gönderin beğenildi',
+          message: `${liker.rows[0]?.name || 'Biri'} takım duvarındaki gönderini beğendi: "${(postRow.message || '').slice(0, 60)}"`,
+          type: 'wall_post_like',
+          refId: postRow.team_id,
+          url: `/takimlar?takim=${postRow.team_id}&tab=duvar`,
+        }).catch(e => console.error('Wall like notif error:', e.message));
+      }
+    }
+
+    const agg = await pool.query(
+      `SELECT COUNT(*)::int as count,
+              COALESCE(json_agg(json_build_object('id', lu.id, 'name', lu.name) ORDER BY pl.created_at), '[]'::json) as likers
+       FROM team_post_likes pl JOIN users lu ON lu.id = pl.user_id
+       WHERE pl.post_id = $1`,
+      [postId]
+    );
+
+    res.json({ liked, count: agg.rows[0].count, likers: agg.rows[0].likers });
+  } catch (error) {
+    console.error('Team post like error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -4456,6 +4521,17 @@ pool.query(`
     user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(comment_id, user_id)
+  )
+`).catch(() => {});
+
+// Takım duvarı gönderisi beğenileri (yorum beğenileriyle aynı yapı)
+pool.query(`
+  CREATE TABLE IF NOT EXISTS team_post_likes (
+    id         SERIAL PRIMARY KEY,
+    post_id    INTEGER NOT NULL REFERENCES team_posts(id) ON DELETE CASCADE,
+    user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(post_id, user_id)
   )
 `).catch(() => {});
 
