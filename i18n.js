@@ -265,6 +265,8 @@ export const translations = {
     levelEasyDesc:  { tr: "Yeni başlayanlar için, rahat tempo",  en: "For beginners, relaxed pace",        de: "Für Anfänger, entspanntes Tempo"      },
     levelMidDesc:   { tr: "Düzenli spor yapanlar için",          en: "For regular exercisers",             de: "Für regelmäßig Aktive"                },
     levelHardDesc:  { tr: "Deneyimli sporcular, yüksek tempo",   en: "Experienced athletes, high intensity", de: "Erfahrene Sportler, hohe Intensität" },
+    levelAll:       { tr: "Her Seviye",                          en: "All Levels",                         de: "Alle Niveaus"                         },
+    levelAllDesc:   { tr: "Herkese açık, seviye fark etmez",     en: "Open to everyone, any level",        de: "Für alle offen, jedes Niveau"         },
     join:           { tr: "Katıl",                        en: "Join",                    de: "Mitmachen"               },
     joined:         { tr: "Katılıyorum",                  en: "Joined",                  de: "Angemeldet"              },
     leave:          { tr: "Ayrıl",                        en: "Leave",                   de: "Verlassen"               },

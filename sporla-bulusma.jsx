@@ -117,9 +117,10 @@ const fmtDateShort = (d) => d
 // ── Zorluk seviyeleri ───────────────────────────────────────────────────────
 // Emoji yerine kurumsal (teal) sinyal-çubuğu ikonu + her seviyeye açıklama.
 const TRAINING_LEVELS = [
-  { val: "Kolay", key: "levelEasy", desc: "levelEasyDesc", bars: 1 },
-  { val: "Orta",  key: "levelMid",  desc: "levelMidDesc",  bars: 2 },
-  { val: "Zor",   key: "levelHard", desc: "levelHardDesc", bars: 3 },
+  { val: "Kolay",      key: "levelEasy", desc: "levelEasyDesc", bars: 1 },
+  { val: "Orta",       key: "levelMid",  desc: "levelMidDesc",  bars: 2 },
+  { val: "Zor",        key: "levelHard", desc: "levelHardDesc", bars: 3 },
+  { val: "Her Seviye", key: "levelAll",  desc: "levelAllDesc",  all: true },
 ];
 // Artan yükseklikte 3 çubuk; ilk `active` tanesi dolu (currentColor), gerisi gri.
 const LevelBars = ({ active = 0, size = 20 }) => (
@@ -130,9 +131,21 @@ const LevelBars = ({ active = 0, size = 20 }) => (
     ))}
   </svg>
 );
-// 3 kartlı seviye seçici — create/edit formlarında ortak kullanılır.
+// "Her Seviye" için grup/insanlar ikonu — herkese açık olduğunu anlatır.
+const LevelAllIcon = ({ size = 20 }) => (
+  <svg width={size} height={size * 0.9} viewBox="0 0 22 18" fill="none" stroke="currentColor"
+    strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="8" cy="6" r="3" />
+    <path d="M2.5 16.5c0-3 2.5-5 5.5-5s5.5 2 5.5 5" />
+    <circle cx="16.5" cy="7" r="2.3" />
+    <path d="M15 12.2c2.6.2 4.5 2 4.5 4.3" />
+  </svg>
+);
+const LevelIcon = ({ lv, size }) =>
+  lv.all ? <LevelAllIcon size={size} /> : <LevelBars active={lv.bars} size={size} />;
+// Seviye seçici (2×2) — create/edit formlarında ortak kullanılır.
 const LevelSelect = ({ value, onChange, t }) => (
-  <div className="grid grid-cols-3 gap-2.5">
+  <div className="grid grid-cols-2 gap-2.5">
     {TRAINING_LEVELS.map((lv) => {
       const selected = value === lv.val;
       return (
@@ -142,7 +155,7 @@ const LevelSelect = ({ value, onChange, t }) => (
             ? "border-brand-500 bg-brand-50 ring-1 ring-brand-500"
             : "border-slate-200 bg-white hover:border-brand-300"}`}>
           <span className={selected ? "text-brand-600" : "text-slate-400"}>
-            <LevelBars active={lv.bars} />
+            <LevelIcon lv={lv} />
           </span>
           <div className={`mt-2 text-sm font-semibold leading-tight ${selected ? "text-brand-700" : "text-slate-700"}`}>{t(`trainings.${lv.key}`)}</div>
           <div className="mt-1 text-[11px] leading-snug text-slate-500">{t(`trainings.${lv.desc}`)}</div>
@@ -4345,9 +4358,10 @@ export default function Muuvlink() {
   const TrainingsPage = () => {
     const sports = ["Basketbol", "Bisiklet", "Crossfit", "Futbol", "Kano", "Koşu", "Kürek", "Padel", "Pilates", "Tenis", "Trekking", "Triatlon", "Voleybol", "Yoga", "Yüzme", "Diğer"];
     const difficulties = [
-      { val: "Kolay", label: t("trainings.levelEasy") },
-      { val: "Orta",  label: t("trainings.levelMid")  },
-      { val: "Zor",   label: t("trainings.levelHard") },
+      { val: "Kolay",      label: t("trainings.levelEasy") },
+      { val: "Orta",       label: t("trainings.levelMid")  },
+      { val: "Zor",        label: t("trainings.levelHard") },
+      { val: "Her Seviye", label: t("trainings.levelAll")  },
     ];
     const [viewMode, setViewMode] = React.useState("list"); // "list" | "map"
 
@@ -4997,8 +5011,8 @@ export default function Muuvlink() {
                 {selectedTraining.team_sport || selectedTraining.sport || "Genel"}
               </span>
               <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-brand-50 text-brand-700 rounded-full text-sm font-medium">
-                <span className="text-brand-600"><LevelBars active={(TRAINING_LEVELS.find((l) => l.val === selectedTraining.difficulty) || {}).bars || 0} size={14} /></span>
-                {{ "Kolay": t("trainings.levelEasy"), "Orta": t("trainings.levelMid"), "Zor": t("trainings.levelHard") }[selectedTraining.difficulty] || selectedTraining.difficulty}
+                <span className="text-brand-600"><LevelIcon lv={TRAINING_LEVELS.find((l) => l.val === selectedTraining.difficulty) || { bars: 0 }} size={14} /></span>
+                {{ "Kolay": t("trainings.levelEasy"), "Orta": t("trainings.levelMid"), "Zor": t("trainings.levelHard"), "Her Seviye": t("trainings.levelAll") }[selectedTraining.difficulty] || selectedTraining.difficulty}
               </span>
               <button
                 onClick={async () => {
