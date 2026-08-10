@@ -167,6 +167,14 @@ const LevelSelect = ({ value, onChange, t }) => (
 
 // ── Spor dalları ────────────────────────────────────────────────────────────
 const SPORT_TYPES = ["Basketbol","Bisiklet","Crossfit","Futbol","Kano","Koşu","Kürek","Padel","Pilates","Tenis","Trekking","Triatlon","Voleybol","Yoga","Yüzme","Diğer"];
+
+// Bildirim tercihi satırları (backend NOTIF_TYPE_TO_KEY ile hizalı). email:false → sadece uygulama.
+const NOTIF_PREF_ROWS = [
+  { sec: "secTeam",   items: [ { k: "invite", email: true }, { k: "team_member", email: true }, { k: "role", email: true } ] },
+  { sec: "secEvents", items: [ { k: "event_new", email: true }, { k: "event_update", email: true }, { k: "event_reminder", email: true }, { k: "event_join", email: true } ] },
+  { sec: "secSocial", items: [ { k: "comment", email: true }, { k: "wall_post", email: true }, { k: "like", email: false } ] },
+  { sec: "secOther",  items: [ { k: "badge", email: false }, { k: "nudge", email: false } ] },
+];
 // Çoklu spor dalı seçici (chip'ler) — takım oluşturma/düzenlemede kullanılır.
 const SportsMultiSelect = ({ value = [], onChange, t }) => (
   <div className="flex flex-wrap gap-2">
@@ -1630,6 +1638,7 @@ export default function Muuvlink() {
   const [levelFilter, setLevelFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showNotifPrefs, setShowNotifPrefs] = useState(false);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [teamActiveTab, setTeamActiveTab] = useState("wall");
@@ -1760,6 +1769,114 @@ export default function Muuvlink() {
             <button onClick={close} disabled={busy}
               className="w-full h-12 rounded-xl text-sm font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition-colors">
               {t("settings.keepAccount")}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ---- BİLDİRİM TERCİHLERİ ----
+  // Yalnızca açıkken mount edilir. Varsayılan: uygulama AÇIK, e-posta KAPALI.
+  const NotifPrefsModal = () => {
+    const [prefs, setPrefs] = useState(() => (user?.notif_prefs && typeof user.notif_prefs === "object") ? { ...user.notif_prefs } : {});
+    const [busy, setBusy] = useState(false);
+
+    const isApp = (k) => prefs[k]?.app !== false;      // varsayılan açık
+    const isEmail = (k) => prefs[k]?.email === true;   // varsayılan kapalı
+    const setCh = (k, ch, val) => setPrefs((p) => ({ ...p, [k]: { ...p[k], [ch]: val } }));
+
+    const emailKeys = NOTIF_PREF_ROWS.flatMap((s) => s.items).filter((i) => i.email).map((i) => i.k);
+    const allKeys = NOTIF_PREF_ROWS.flatMap((s) => s.items).map((i) => i.k);
+    const allApp = allKeys.every((k) => isApp(k));
+    const allEmail = emailKeys.every((k) => isEmail(k));
+    const setAll = (ch, val) => setPrefs((p) => {
+      const next = { ...p };
+      (ch === "email" ? emailKeys : allKeys).forEach((k) => { next[k] = { ...next[k], [ch]: val }; });
+      return next;
+    });
+
+    const save = async () => {
+      if (busy) return;
+      setBusy(true);
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API_URL}/users/me/notif-prefs`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ prefs }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setUser((u) => (u ? { ...u, notif_prefs: data.prefs } : u));
+          showToast(t("notifPrefs.saved"), "success");
+          setShowNotifPrefs(false);
+        } else showToast(t("notifPrefs.saveFail"), "error");
+      } catch (_) { showToast(t("notifPrefs.saveFail"), "error"); }
+      setBusy(false);
+    };
+
+    const Toggle = ({ on, onChange }) => (
+      <button type="button" onClick={() => onChange(!on)} aria-pressed={on}
+        className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${on ? "bg-brand-500" : "bg-slate-300"}`}>
+        <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${on ? "left-6" : "left-1"}`} />
+      </button>
+    );
+
+    const Row = ({ label, k, email, header }) => (
+      <div className="flex items-center gap-3 px-4 py-3 border-t border-slate-100 first:border-t-0">
+        <span className={`flex-1 text-sm ${header ? "font-bold text-slate-800" : "text-slate-700"}`}>{label}</span>
+        <div className="w-12 flex justify-center"><Toggle on={header ? allApp : isApp(k)} onChange={(v) => header ? setAll("app", v) : setCh(k, "app", v)} /></div>
+        <div className="w-12 flex justify-center">
+          {(header || email)
+            ? <Toggle on={header ? allEmail : isEmail(k)} onChange={(v) => header ? setAll("email", v) : setCh(k, "email", v)} />
+            : <span className="text-slate-300 text-sm">—</span>}
+        </div>
+      </div>
+    );
+
+    return (
+      <div className="fixed inset-0 z-[100] bg-black/40 flex sm:items-center justify-center"
+        style={{ zIndex: 1000000 }} onClick={() => setShowNotifPrefs(false)}>
+        <div className="bg-white w-full sm:max-w-md sm:rounded-2xl sm:my-8 flex flex-col sm:max-h-[85vh] max-h-full"
+          style={isNative ? { paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" } : {}}
+          onClick={(e) => e.stopPropagation()}>
+          {/* Başlık */}
+          <div className="flex items-center gap-3 px-4 py-3.5 border-b border-slate-100 flex-shrink-0">
+            <button onClick={() => setShowNotifPrefs(false)} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 -ml-1">
+              <ArrowLeft className="w-5 h-5 text-slate-600" />
+            </button>
+            <div className="min-w-0 flex-1">
+              <div className="font-display font-bold text-slate-900">{t("notifPrefs.title")}</div>
+            </div>
+          </div>
+          {/* İçerik */}
+          <div className="overflow-y-auto flex-1">
+            <p className="text-xs text-slate-500 px-4 pt-3 pb-1 leading-relaxed">{t("notifPrefs.intro")}</p>
+            {/* Kanal başlıkları */}
+            <div className="flex items-center gap-3 px-4 py-2 sticky top-0 bg-white/95 backdrop-blur border-b border-slate-100">
+              <span className="flex-1" />
+              <div className="w-12 text-center text-[11px] font-bold uppercase tracking-wide text-slate-400">{t("notifPrefs.colApp")}</div>
+              <div className="w-12 text-center text-[11px] font-bold uppercase tracking-wide text-slate-400">{t("notifPrefs.colEmail")}</div>
+            </div>
+            {/* Hepsi */}
+            <div className="bg-brand-50/40"><Row label={t("notifPrefs.all")} header /></div>
+            {/* Bölümler */}
+            {NOTIF_PREF_ROWS.map((sec) => (
+              <div key={sec.sec}>
+                <div className="px-4 pt-4 pb-1 text-[11px] font-bold uppercase tracking-wide text-brand-600">{t(`notifPrefs.${sec.sec}`)}</div>
+                {sec.items.map((it) => <Row key={it.k} k={it.k} email={it.email} label={t(`notifPrefs.k_${it.k}`)} />)}
+              </div>
+            ))}
+            <div className="h-3" />
+          </div>
+          {/* Kaydet */}
+          <div className="px-4 py-3 border-t border-slate-100 flex-shrink-0">
+            <button onClick={save} disabled={busy}
+              className="w-full h-12 rounded-xl text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
+              style={{ background: "linear-gradient(135deg,#00b7ba,#009295)" }}>
+              {busy && <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />}
+              {t("notifPrefs.save")}
             </button>
           </div>
         </div>
@@ -4298,6 +4415,18 @@ export default function Muuvlink() {
             </button>
           );
         })()}
+        {/* Bildirim Tercihleri satırı */}
+        <button onClick={() => setShowNotifPrefs(true)}
+          className="w-full flex items-center gap-3.5 bg-white rounded-2xl border border-slate-100 p-4 mb-6 hover:shadow-md active:scale-[0.995] transition text-left">
+          <div className="w-11 h-11 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0">
+            <Settings className="w-5 h-5 text-brand-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-slate-800">{t("notifPrefs.title")}</div>
+            <div className="text-xs text-slate-400">{t("notifPrefs.rowHint")}</div>
+          </div>
+          <ChevronRight className="w-5 h-5 text-slate-300 flex-shrink-0" />
+        </button>
         <div className="grid md:grid-cols-3 gap-6 min-w-0">
 
           {/* Left: Quick actions */}
@@ -7902,6 +8031,7 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
       {showInviteModal && <InviteModal />}
       <ConfirmModal />
       {showDeleteModal && <DeleteAccountModal />}
+      {showNotifPrefs && <NotifPrefsModal />}
       <LegalModal />
       <ReportModal />
       <CookieBanner />

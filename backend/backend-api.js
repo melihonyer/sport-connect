@@ -341,9 +341,45 @@ function pushToUser(userId, payload) {
   conns.forEach(res => { try { res.write(line); } catch {} });
 }
 
-// Bildirim oluştur ve anlık ilet
+// ── Bildirim tercihleri ─────────────────────────────────────────────────────
+// Her bildirim türünü kullanıcının açıp kapatabileceği bir "anahtar"a eşle.
+// Varsayılan: uygulama (app) AÇIK, e-posta KAPALI.
+const NOTIF_TYPE_TO_KEY = {
+  invitation:        'invite',
+  team:              'team_member',
+  role_change:       'role',
+  training:          'event_new',
+  training_update:   'event_update',
+  training_reminder: 'event_reminder',
+  training_join:     'event_join',
+  training_comment:  'comment',
+  team_post:         'wall_post',
+  comment_like:      'like',
+  wall_post_like:    'like',
+  badge:             'badge',
+  engagement_nudge:  'nudge',
+};
+async function getNotifPrefs(userId) {
+  try {
+    const r = await pool.query('SELECT notif_prefs FROM users WHERE id = $1', [userId]);
+    return r.rows[0]?.notif_prefs || {};
+  } catch { return {}; }
+}
+// channel: 'app' (varsayılan açık) | 'email' (varsayılan kapalı)
+function prefAllows(prefs, key, channel) {
+  const p = (prefs && prefs[key]) || {};
+  if (channel === 'email') return p.email === true;
+  return p.app !== false;
+}
+
+// Bildirim oluştur ve anlık ilet — kullanıcı bu türü kapatmışsa hiç oluşturulmaz.
 async function createNotif(userId, { title, message, type, refId = null, url = null }) {
   try {
+    const key = NOTIF_TYPE_TO_KEY[type];
+    if (key) {
+      const prefs = await getNotifPrefs(userId);
+      if (!prefAllows(prefs, key, 'app')) return null; // uygulama bildirimi kapalı
+    }
     const r = await pool.query(
       `INSERT INTO notifications (user_id, title, message, notification_type, reference_id, action_url)
        VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
@@ -377,7 +413,18 @@ const mailTransporter = nodemailer.createTransport({
 });
 
 // Mail gönder — Resend HTTP API (Render SMTP portlarını engelliyor)
-async function sendEmail({ to, subject, html }) {
+// prefKey verilirse bu bir "bildirim" mailidir → alıcının e-posta tercihi kapalıysa
+// (varsayılan kapalı) gönderilmez. prefKey yoksa transactional maildir, her zaman gider.
+async function sendEmail({ to, subject, html, prefKey = null, userId = null }) {
+  if (prefKey) {
+    try {
+      const r = userId
+        ? await pool.query('SELECT notif_prefs FROM users WHERE id = $1', [userId])
+        : await pool.query('SELECT notif_prefs FROM users WHERE lower(email) = lower($1)', [to]);
+      const prefs = r.rows[0]?.notif_prefs || {};
+      if (!prefAllows(prefs, prefKey, 'email')) return { skipped: true };
+    } catch (e) { console.error('sendEmail pref check error:', e.message); return { skipped: true }; }
+  }
   if (!process.env.RESEND_API_KEY) {
     console.log(`[EMAIL - MOCK] To: ${to} | Subject: ${subject}`);
     return { mocked: true };
@@ -1103,7 +1150,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
 app.get('/api/auth/me', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, name, email, phone, avatar, is_admin, created_at FROM users WHERE id = $1',
+      'SELECT id, name, email, phone, avatar, is_admin, created_at, notif_prefs FROM users WHERE id = $1',
       [req.user.id]
     );
 
@@ -1450,6 +1497,7 @@ app.post('/api/teams/:id/join', authenticateToken, async (req, res) => {
       sendEmail({
         to: leader.email,
         subject: `${team.name} — Yeni Üye: ${joinerName}`,
+        prefKey: 'team_member',
         html: emailWrapper(`
           <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Takımınıza Yeni Üye Katıldı!</h2>
           <p style="margin:0 0 28px;color:#64748b;font-size:15px;line-height:1.6;">
@@ -1575,6 +1623,7 @@ app.post('/api/teams/:id/invite', authenticateToken, async (req, res) => {
     await sendEmail({
       to: email,
       subject: `${team.inviter_name} sizi "${team.name}" takımına davet etti!`,
+      prefKey: 'invite',
       html: emailHtml,
     });
 
@@ -1783,6 +1832,7 @@ app.put('/api/teams/:teamId/members/:userId/role', authenticateToken, async (req
             await sendEmail({
               to: target.rows[0].email,
               subject: `${team.name} takımındaki rolün güncellendi`,
+              prefKey: 'role',
               html: roleChangeEmail({
                 teamName: team.name,
                 teamId,
@@ -1914,6 +1964,7 @@ app.post('/api/teams/:id/posts', authenticateToken, async (req, res) => {
       sendEmail({
         to: member.email,
         subject: `${team.name} takımında yeni gönderi var`,
+        prefKey: 'wall_post',
         html: wallPostEmail({
           teamName: team.name,
           teamId,
@@ -2060,6 +2111,7 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
         sendEmail({
           to: member.email,
           subject: `${teamName} — Yeni Etkinlik: ${title}`,
+          prefKey: 'event_new',
           html: newTrainingEmail({
             teamName,
             trainingTitle: title,
@@ -2452,6 +2504,7 @@ app.post('/api/trainings/:id/join', authenticateToken, async (req, res) => {
       sendEmail({
         to: leader.email,
         subject: `${training.title} — Yeni Katılımcı: ${joinerName}`,
+        prefKey: 'event_join',
         html: emailWrapper(`
           <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Etkinliğinize Yeni Katılımcı Var!</h2>
           <p style="margin:0 0 28px;color:#64748b;font-size:15px;line-height:1.6;">
@@ -2579,6 +2632,7 @@ app.post('/api/trainings/:id/comments', authenticateToken, async (req, res) => {
           sendEmail({
             to: recipient.email,
             subject: `${training.title} etkinliğine yorum yapıldı`,
+            prefKey: 'comment',
             html: trainingCommentEmail({
               commenterName: commenter.name,
               commenterAvatar: commenter.avatar,
@@ -2796,6 +2850,7 @@ app.put('/api/trainings/:id', authenticateToken, async (req, res) => {
         sendEmail({
           to: attendee.email,
           subject: `${updated.title} etkinliğinde değişiklik var`,
+          prefKey: 'event_update',
           html: trainingUpdateEmail({
             teamName: teamName || '',
             trainingTitle: updated.title,
@@ -3205,6 +3260,42 @@ app.delete('/api/users/me', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Self-delete error:', error.message);
     res.status(500).json({ error: 'Hesap silinemedi.' });
+  }
+});
+
+// Bildirim tercihlerini oku
+app.get('/api/users/me/notif-prefs', authenticateToken, async (req, res) => {
+  try {
+    const prefs = await getNotifPrefs(req.user.id);
+    res.json({ prefs });
+  } catch (error) {
+    console.error('Get notif-prefs error:', error.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Bildirim tercihlerini kaydet — { prefs: { key: { app, email } } }
+app.put('/api/users/me/notif-prefs', authenticateToken, async (req, res) => {
+  try {
+    const incoming = req.body?.prefs;
+    if (!incoming || typeof incoming !== 'object' || Array.isArray(incoming)) {
+      return res.status(400).json({ error: 'Geçersiz tercih verisi.' });
+    }
+    // Sadece bilinen anahtarları ve boolean değerleri kabul et (sanitize).
+    const allowedKeys = new Set(Object.values(NOTIF_TYPE_TO_KEY));
+    const clean = {};
+    for (const [k, v] of Object.entries(incoming)) {
+      if (!allowedKeys.has(k) || !v || typeof v !== 'object') continue;
+      const entry = {};
+      if (typeof v.app === 'boolean') entry.app = v.app;
+      if (typeof v.email === 'boolean') entry.email = v.email;
+      if (Object.keys(entry).length) clean[k] = entry;
+    }
+    await pool.query('UPDATE users SET notif_prefs = $1 WHERE id = $2', [JSON.stringify(clean), req.user.id]);
+    res.json({ prefs: clean });
+  } catch (error) {
+    console.error('Save notif-prefs error:', error.message);
+    res.status(500).json({ error: 'Tercihler kaydedilemedi.' });
   }
 });
 
@@ -3946,6 +4037,9 @@ pool.query(`UPDATE teams SET sports = ARRAY[sport] WHERE (sports IS NULL OR arra
 // Hesap silme = soft-delete. deleted_at doluysa hesap "silinmeye zamanlanmış"tır;
 // 30 gün içinde giriş yapılırsa geri gelir, sonra purge ile kalıcı silinir.
 pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ`).catch(() => {});
+
+// Bildirim tercihleri: { key: { app: bool, email: bool } }. Varsayılan app AÇIK, e-posta KAPALI.
+pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS notif_prefs JSONB DEFAULT '{}'::jsonb`).catch(() => {});
 pool.query(`ALTER TABLE team_members      ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW()`).catch(() => {});
 
 async function logActivity(event_type, user_id, user_name, meta = {}) {
@@ -4196,6 +4290,7 @@ async function sendTrainingReminders() {
           sendEmail({
             to: member.email,
             subject: `${training.team_name} — ${daysLeft === 1 ? 'Yarın' : '3 Gün Sonra'}: ${training.title}`,
+            prefKey: 'event_reminder',
             html: trainingReminderEmail({
               teamName: training.team_name,
               trainingTitle: training.title,

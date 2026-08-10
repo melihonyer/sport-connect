@@ -564,6 +564,36 @@ export const translations = {
     accountRestored:   { tr: "Tekrar hoş geldin! Hesabın geri getirildi.", en: "Welcome back! Your account has been restored.", de: "Willkommen zurück! Dein Konto wurde wiederhergestellt." },
   },
 
+  // ── NOTIFICATION PREFERENCES ────────────────────────────
+  notifPrefs: {
+    title:      { tr: "Bildirim Tercihleri",      en: "Notification Preferences", de: "Benachrichtigungen" },
+    row:        { tr: "Bildirim tercihleri",      en: "Notification preferences", de: "Benachrichtigungseinstellungen" },
+    rowHint:    { tr: "Uygulama ve e-posta bildirimlerini yönet", en: "Manage app & email notifications", de: "App- & E-Mail-Benachrichtigungen verwalten" },
+    intro:      { tr: "Hangi bildirimleri nasıl almak istediğini seç. E-postalar varsayılan olarak kapalıdır; istediğini açabilirsin.", en: "Choose how you want each notification. Emails are off by default; turn on what you like.", de: "Wähle, wie du jede Benachrichtigung erhalten möchtest. E-Mails sind standardmäßig aus." },
+    colApp:     { tr: "Uygulama",                 en: "App",                     de: "App" },
+    colEmail:   { tr: "E-posta",                  en: "Email",                   de: "E-Mail" },
+    all:        { tr: "Hepsi",                    en: "All",                     de: "Alle" },
+    save:       { tr: "Kaydet",                   en: "Save",                    de: "Speichern" },
+    saved:      { tr: "Bildirim tercihlerin kaydedildi.", en: "Notification preferences saved.", de: "Benachrichtigungseinstellungen gespeichert." },
+    saveFail:   { tr: "Tercihler kaydedilemedi.", en: "Could not save preferences.", de: "Einstellungen konnten nicht gespeichert werden." },
+    secTeam:    { tr: "Takım",                    en: "Team",                    de: "Team" },
+    secEvents:  { tr: "Etkinlikler",              en: "Events",                  de: "Events" },
+    secSocial:  { tr: "Etkileşim",                en: "Interactions",            de: "Interaktionen" },
+    secOther:   { tr: "Diğer",                    en: "Other",                   de: "Sonstiges" },
+    k_invite:         { tr: "Takım daveti",             en: "Team invitation",       de: "Team-Einladung" },
+    k_team_member:    { tr: "Takıma yeni üye",          en: "New team member",       de: "Neues Teammitglied" },
+    k_role:           { tr: "Rol değişikliği",          en: "Role change",           de: "Rollenänderung" },
+    k_event_new:      { tr: "Yeni etkinlik",            en: "New event",             de: "Neues Event" },
+    k_event_update:   { tr: "Etkinlik güncellemesi",    en: "Event update",          de: "Event-Update" },
+    k_event_reminder: { tr: "Etkinlik hatırlatması",    en: "Event reminder",        de: "Event-Erinnerung" },
+    k_event_join:     { tr: "Etkinliğe yeni katılımcı", en: "New event attendee",    de: "Neuer Teilnehmer" },
+    k_comment:        { tr: "Etkinliğe yorum",          en: "Event comment",         de: "Event-Kommentar" },
+    k_wall_post:      { tr: "Takım duvarı gönderisi",   en: "Team wall post",        de: "Team-Pinnwand" },
+    k_like:           { tr: "Beğeniler",                en: "Likes",                 de: "Likes" },
+    k_badge:          { tr: "Yeni rozet",               en: "New badge",             de: "Neues Abzeichen" },
+    k_nudge:          { tr: "Hatırlatmalar",            en: "Reminders",             de: "Erinnerungen" },
+  },
+
   // ── BADGES PAGE ─────────────────────────────────────────
   badges: {
     pageTitle:      { tr: "Rozetlerim",                   en: "My Badges",               de: "Meine Abzeichen"         },
