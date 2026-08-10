@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Muuvlink — Tüm Bağlantılar</title>
+  <meta name="description" content="Muuvlink'i iOS ve Android'de indir, web'de keşfet, YouTube ve Instagram'da bizi takip et. Spor arkadaşını bul, takımını kur." />
+  <meta name="theme-color" content="#00b7ba" />
+  <link rel="canonical" href="https://muuvlink.app/link" />
+  <link rel="apple-touch-icon" href="/icons/favicon.png" />
+  <link rel="icon" type="image/png" href="/icons/favicon.png" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://muuvlink.app/link" />
+  <meta property="og:title" content="Muuvlink — Tüm Bağlantılar" />
+  <meta property="og:description" content="Spor arkadaşını bul, takımını kur. iOS · Android · Web · YouTube · Instagram." />
+  <meta property="og:image" content="https://muuvlink.app/og-image.jpg" />
+  <meta property="og:site_name" content="Muuvlink" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- Fonts: Barlow (body) + Barlow Condensed (display) — uygulamayla aynı -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preload" as="style"
+    href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@600;700;800&display=swap"
+    onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@600;700;800&display=swap" /></noscript>
+
+  <style>
+    :root {
+      --brand:        #00b7ba;
+      --brand-dark:   #009295;
+      --brand-darker: #017173;
+      --ink:          #0f2b2c;
+      --card:         #ffffff;
+      --ring:         rgba(255,255,255,0.55);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html { -webkit-text-size-adjust: 100%; }
+
+    body {
+      font-family: 'Barlow', system-ui, -apple-system, sans-serif;
+      color: #fff;
+      min-height: 100dvh;
+      display: flex;
+      justify-content: center;
+      background:
+        radial-gradient(120% 80% at 50% -10%, #14c8cb 0%, var(--brand) 38%, var(--brand-dark) 72%, var(--brand-darker) 100%) fixed;
+      position: relative;
+      overflow-x: hidden;
+      padding: max(env(safe-area-inset-top), 20px) 20px max(env(safe-area-inset-bottom), 28px);
+    }
+
+    /* Yumuşak animasyonlu ışık lekeleri (arka plan dokusu) */
+    .glow { position: fixed; border-radius: 50%; filter: blur(60px); opacity: 0.5; pointer-events: none; z-index: 0; }
+    .glow.a { width: 340px; height: 340px; top: -120px; left: -100px; background: #4be3e5; animation: drift1 14s ease-in-out infinite; }
+    .glow.b { width: 300px; height: 300px; bottom: -120px; right: -90px; background: #00d9c0; animation: drift2 16s ease-in-out infinite; }
+    @keyframes drift1 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(40px,30px); } }
+    @keyframes drift2 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-30px,-40px); } }
+
+    .wrap {
+      position: relative; z-index: 1;
+      width: 100%; max-width: 460px;
+      display: flex; flex-direction: column; align-items: center;
+      animation: rise 0.6s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+    /* Logo / kimlik */
+    .badge {
+      width: 92px; height: 92px; border-radius: 24px;
+      background: #fff;
+      display: grid; place-items: center;
+      box-shadow: 0 18px 40px -14px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.4);
+      margin-top: 12px;
+    }
+    .badge img { width: 66px; height: 66px; display: block; }
+
+    .wordmark { height: 30px; margin-top: 22px; filter: brightness(0) invert(1); opacity: 0.98; }
+
+    .tagline {
+      margin-top: 12px; text-align: center;
+      font-size: 16px; line-height: 1.5; font-weight: 500;
+      color: rgba(255,255,255,0.92);
+      max-width: 22rem;
+    }
+
+    /* Buton listesi */
+    .links { width: 100%; margin-top: 30px; display: flex; flex-direction: column; gap: 13px; }
+
+    .link {
+      display: flex; align-items: center; gap: 15px;
+      width: 100%; min-height: 62px; padding: 12px 18px;
+      background: var(--card); color: var(--ink);
+      border-radius: 18px; text-decoration: none;
+      box-shadow: 0 10px 24px -14px rgba(0,0,0,0.45);
+      border: 1px solid rgba(255,255,255,0.6);
+      transition: transform .2s ease, box-shadow .2s ease, background-color .2s ease;
+      opacity: 0; animation: pop .5s cubic-bezier(0.22,1,0.36,1) forwards;
+    }
+    .link:hover { background: #f6feff; box-shadow: 0 16px 30px -12px rgba(0,0,0,0.4); transform: translateY(-2px); }
+    .link:active { transform: translateY(0) scale(0.99); }
+    .link:focus-visible { outline: 3px solid var(--ring); outline-offset: 3px; }
+    @keyframes pop { to { opacity: 1; transform: none; } }
+    .link:nth-child(1){ animation-delay:.08s } .link:nth-child(2){ animation-delay:.15s }
+    .link:nth-child(3){ animation-delay:.22s } .link:nth-child(4){ animation-delay:.29s }
+    .link:nth-child(5){ animation-delay:.36s }
+
+    .ico { width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0; display: grid; place-items: center; }
+    .ico svg { width: 24px; height: 24px; display: block; }
+    .ico.apple { background: #000; }
+    .ico.play  { background: #f1f5f9; }
+    .ico.web   { background: linear-gradient(135deg, var(--brand), var(--brand-dark)); }
+    .ico.yt    { background: #ff0000; }
+    .ico.ig    { background: linear-gradient(45deg,#feda75,#fa7e1e 28%,#d62976 58%,#962fbf 78%,#4f5bd5); }
+
+    .meta { flex: 1; min-width: 0; }
+    .meta .t { display: block; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 21px; line-height: 1.05; letter-spacing: .2px; text-transform: uppercase; }
+    .meta .s { display: block; font-size: 13px; color: #64748b; font-weight: 500; margin-top: 2px; }
+    .chev { color: #cbd5e1; flex-shrink: 0; }
+    .link:hover .chev { color: var(--brand-dark); }
+
+    footer { margin-top: 30px; text-align: center; color: rgba(255,255,255,0.85); font-size: 13px; line-height: 1.6; }
+    footer a { color: #fff; text-decoration: none; font-weight: 600; }
+    footer a:hover { text-decoration: underline; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, .glow, .wrap, .link { animation: none !important; transition: none !important; }
+      .link { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="glow a"></div>
+  <div class="glow b"></div>
+
+  <main class="wrap">
+    <div class="badge">
+      <img src="/icons/favicon.png" alt="Muuvlink uygulama simgesi" width="66" height="66" />
+    </div>
+    <img class="wordmark" src="/icons/logo-yatay.svg" alt="Muuvlink" />
+    <p class="tagline">Spor arkadaşını bul, takımını kur, etkinlik planla. Hepsi tek uygulamada.</p>
+
+    <nav class="links" aria-label="Muuvlink bağlantıları">
+
+      <a class="link" href="https://apps.apple.com/app/id6781591672" target="_blank" rel="noopener" aria-label="App Store'dan indir">
+        <span class="ico apple" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="#fff"><path d="M17.05 12.04c-.03-2.6 2.12-3.85 2.22-3.91-1.21-1.77-3.1-2.01-3.77-2.04-1.6-.16-3.13.94-3.94.94-.81 0-2.07-.92-3.4-.9-1.75.03-3.36 1.02-4.26 2.58-1.82 3.16-.46 7.84 1.3 10.41.86 1.26 1.89 2.67 3.24 2.62 1.3-.05 1.79-.84 3.36-.84 1.57 0 2.01.84 3.39.81 1.4-.02 2.29-1.28 3.15-2.55.99-1.46 1.4-2.87 1.42-2.95-.03-.01-2.72-1.04-2.75-4.13zM14.6 4.6c.72-.87 1.2-2.08 1.07-3.28-1.03.04-2.28.69-3.02 1.56-.66.77-1.24 2-1.08 3.18 1.15.09 2.32-.58 3.03-1.46z"/></svg>
+        </span>
+        <span class="meta"><span class="t">App Store</span><span class="s">iPhone &amp; iPad için indir</span></span>
+        <svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </a>
+
+      <a class="link" href="https://play.google.com/store/apps/details?id=app.muuvlink" target="_blank" rel="noopener" aria-label="Google Play'den indir">
+        <span class="ico play" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path fill="#00e0ff" d="M3.6 2.3c-.3.25-.48.64-.48 1.15v17.1c0 .5.18.9.48 1.15l.06.05L13 12.6v-.2L3.66 2.25z"/><path fill="#00f076" d="M16.5 15.7 13 12.6v-.2l3.5-3.1 4 2.28c1.14.65 1.14 1.71 0 2.36z"/><path fill="#ff3a44" d="M16.5 15.7 13 12.5 3.6 21.7c.38.32.94.35 1.6-.02z"/><path fill="#ffc900" d="M16.5 8.4 5.2 2.32C4.55 1.95 3.98 1.98 3.6 2.3l9.4 9.2z"/></svg>
+        </span>
+        <span class="meta"><span class="t">Google Play</span><span class="s">Android için indir</span></span>
+        <svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </a>
+
+      <a class="link" href="https://muuvlink.app" target="_blank" rel="noopener" aria-label="Web uygulamasını aç">
+        <span class="ico web" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 3.8 5.7 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.7-3.8-9S9.5 5.5 12 3z"/></svg>
+        </span>
+        <span class="meta"><span class="t">Web Uygulaması</span><span class="s">Tarayıcıda muuvlink.app</span></span>
+        <svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </a>
+
+      <a class="link" href="https://www.youtube.com/@muuvlinkapp" target="_blank" rel="noopener" aria-label="YouTube kanalımız">
+        <span class="ico yt" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="#fff"><path d="M8.8 8.4v7.2l6.4-3.6z"/></svg>
+        </span>
+        <span class="meta"><span class="t">YouTube</span><span class="s">Videolar &amp; ipuçları</span></span>
+        <svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </a>
+
+      <a class="link" href="https://www.instagram.com/muuvlinkapp/" target="_blank" rel="noopener" aria-label="Instagram sayfamız">
+        <span class="ico ig" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2.16c3.2 0 3.58.01 4.85.07 3.25.15 4.77 1.69 4.92 4.92.06 1.27.07 1.64.07 4.85s-.01 3.58-.07 4.85c-.15 3.23-1.66 4.77-4.92 4.92-1.27.06-1.64.07-4.85.07s-3.58-.01-4.85-.07c-3.26-.15-4.77-1.7-4.92-4.92C2.17 15.58 2.16 15.2 2.16 12s.01-3.58.07-4.85C2.38 3.92 3.9 2.38 7.15 2.23 8.42 2.17 8.8 2.16 12 2.16zm0 3.68a6.16 6.16 0 100 12.32 6.16 6.16 0 000-12.32zM12 16a4 4 0 110-8 4 4 0 010 8zm6.41-11.85a1.44 1.44 0 100 2.88 1.44 1.44 0 000-2.88z"/></svg>
+        </span>
+        <span class="meta"><span class="t">Instagram</span><span class="s">@muuvlinkapp</span></span>
+        <svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </a>
+
+    </nav>
+
+    <footer>
+      <a href="https://muuvlink.app">muuvlink.app</a><br />
+      © 2026 Muuvlink · Spor topluluğun seni bekliyor
+    </footer>
+  </main>
+</body>
+</html>
