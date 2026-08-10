@@ -2338,9 +2338,21 @@ export default function Muuvlink() {
           { maximumAge: 300000, timeout: 10000, enableHighAccuracy: false }
         );
       }
+    } else if (isNative && navigator.geolocation) {
+      // Native uygulama konum-odaklı: açılışta konumu al → kartlarda mesafe görünür.
+      // (Web'de otomatik istemiyoruz; aşağıdaki nota bak.)
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          setUserLocation(loc);
+          localStorage.setItem("userLocation", JSON.stringify(loc));
+        },
+        () => {}, // izin verilmezse sessiz geç — mesafe yine gösterilmez
+        { maximumAge: 300000, timeout: 10000, enableHighAccuracy: false }
+      );
     }
-    // GPS'i otomatik isteme — kullanıcı "Yakınımda Ara" butonuna bastığında sorulur
-    // (Sayfa açılışında permission prompt = PageSpeed penaltı + UX kötü)
+    // GPS'i web'de otomatik isteme — kullanıcı "Yakınımda Ara" butonuna bastığında sorulur
+    // (Web sayfa açılışında permission prompt = PageSpeed penaltı + UX kötü)
 
     // Banner'ları çek
     fetch(`${API_URL}/banners`)
