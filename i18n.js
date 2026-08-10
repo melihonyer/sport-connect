@@ -551,6 +551,13 @@ export const translations = {
     accountDeleted: { tr: "Hesabınız silindi.",            en: "Your account has been deleted.", de: "Ihr Konto wurde gelöscht." },
     accountDeleteFail: { tr: "Hesap silinemedi.",          en: "Could not delete account.", de: "Konto konnte nicht gelöscht werden." },
     soleAdminBlock:    { tr: "Aşağıdaki takımların tek yetkilisisiniz. Hesabı silmeden önce bu takımları başka bir üyeye devredin veya silin:\n\n", en: "You are the sole admin of the following teams. Transfer or delete them before deleting your account:\n\n", de: "Sie sind der einzige Admin der folgenden Teams. Übertragen oder löschen Sie diese zuerst:\n\n" },
+    dangerZoneDesc:    { tr: "Hesabını silmek kalıcıdır ve geri alınamaz.", en: "Deleting your account is permanent and cannot be undone.", de: "Das Löschen deines Kontos ist dauerhaft und kann nicht rückgängig gemacht werden." },
+    deleteModalTitle:  { tr: "Hesabını kalıcı olarak sil", en: "Permanently delete your account", de: "Konto endgültig löschen" },
+    deleteModalWarning:{ tr: "Bu işlem geri alınamaz. Profilin, katıldığın etkinlikler, mesajların ve rozetlerin kalıcı olarak silinir.", en: "This cannot be undone. Your profile, joined events, messages and badges will be permanently deleted.", de: "Dies kann nicht rückgängig gemacht werden. Dein Profil, deine Events, Nachrichten und Abzeichen werden dauerhaft gelöscht." },
+    deleteModalTypeLabel: { tr: "Onaylamak için e-posta adresini yaz", en: "Type your email to confirm", de: "Gib zur Bestätigung deine E-Mail ein" },
+    deleteModalButton: { tr: "Hesabımı kalıcı olarak sil", en: "Permanently delete my account", de: "Mein Konto endgültig löschen" },
+    keepAccount:       { tr: "Vazgeç, hesabımı koru", en: "Cancel, keep my account", de: "Abbrechen, Konto behalten" },
+    logoutHint:        { tr: "Oturumu kapatırsın; hesabın ve verilerin korunur.", en: "Signs you out; your account and data stay safe.", de: "Meldet dich ab; dein Konto und deine Daten bleiben erhalten." },
   },
 
   // ── BADGES PAGE ─────────────────────────────────────────

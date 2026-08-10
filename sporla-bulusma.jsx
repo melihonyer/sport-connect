@@ -1622,6 +1622,7 @@ export default function Muuvlink() {
   const [nearbyLoading, setNearbyLoading] = useState(false);
   const [toast, setToast] = useState(null);
   const [confirmModal, setConfirmModal] = useState(null); // {message, onConfirm, danger}
+  const [showDeleteModal, setShowDeleteModal] = useState(false); // hesap silme onay modalı
   const [resetToken, setResetToken] = useState(null); // URL'den gelen şifre sıfırlama token'ı
   const [joiningTrainingId, setJoiningTrainingId] = useState(null);
   const [joiningTeamId, setJoiningTeamId] = useState(null);
@@ -1684,6 +1685,61 @@ export default function Muuvlink() {
               className={`flex-1 py-3.5 text-sm font-semibold transition-colors ${danger ? "text-red-600 hover:bg-red-50" : "text-brand-700 hover:bg-brand-50"}`}
             >
               {alertOnly ? t("common.ok") || "Tamam" : t("common.confirm")}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Hesap silme — e-postayı yazarak onaylama (yanlışlıkla silmeyi engeller)
+  // Yalnızca açıkken mount edilir ({showDeleteModal && <DeleteAccountModal/>}).
+  const DeleteAccountModal = () => {
+    const requiredEmail = (user?.email || "").trim();
+    const [typed, setTyped] = useState("");
+    const [busy, setBusy] = useState(false);
+    const match = typed.trim().toLowerCase() === requiredEmail.toLowerCase() && requiredEmail !== "";
+    const close = () => { if (!busy) setShowDeleteModal(false); };
+    return (
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[200] p-4" onClick={close}>
+        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden" onClick={(e) => e.stopPropagation()}>
+          <div className="p-6">
+            <div className="w-11 h-11 rounded-full bg-red-50 flex items-center justify-center mb-4">
+              <Trash2 className="w-5 h-5 text-red-500" />
+            </div>
+            <h3 className="font-display font-bold text-lg text-slate-900">{t("settings.deleteModalTitle")}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600">{t("settings.deleteModalWarning")}</p>
+
+            <label className="block mt-5 mb-1.5 text-xs font-semibold text-slate-500">
+              {t("settings.deleteModalTypeLabel")}
+            </label>
+            <div className="mb-2 text-sm font-medium text-slate-700 select-all">{requiredEmail}</div>
+            <input
+              type="email"
+              autoComplete="off"
+              autoCapitalize="none"
+              spellCheck={false}
+              value={typed}
+              onChange={(e) => setTyped(e.target.value)}
+              placeholder={requiredEmail}
+              className="w-full h-12 px-4 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-red-300 focus:border-red-400"
+            />
+          </div>
+          <div className="px-6 pb-6 flex flex-col gap-2.5">
+            <button
+              onClick={async () => { if (!match || busy) return; setBusy(true); await confirmDeleteAccount(); setBusy(false); }}
+              disabled={!match || busy}
+              className={`w-full h-12 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
+                match && !busy
+                  ? "bg-red-600 text-white hover:bg-red-700"
+                  : "bg-slate-100 text-slate-400 cursor-not-allowed"}`}
+            >
+              {busy && <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />}
+              {t("settings.deleteModalButton")}
+            </button>
+            <button onClick={close} disabled={busy}
+              className="w-full h-12 rounded-xl text-sm font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition-colors">
+              {t("settings.keepAccount")}
             </button>
           </div>
         </div>
@@ -2557,30 +2613,33 @@ export default function Muuvlink() {
     setCurrentPage(isNative ? "profile" : "home");
   };
 
-  const handleDeleteAccount = () => {
-    showConfirm(t("settings.deleteAccountConfirm"), async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const response = await fetch(`${API_URL}/users/me`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (response.ok) {
-          showToast(t("settings.accountDeleted"), "info");
-          handleLogout();
+  // Silme onayı DeleteAccountModal'da (e-posta yazarak) alınır; bu fonksiyon
+  // yalnızca modal onayından sonra gerçek silme isteğini atar.
+  const confirmDeleteAccount = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_URL}/users/me`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        setShowDeleteModal(false);
+        showToast(t("settings.accountDeleted"), "info");
+        handleLogout();
+      } else {
+        const data = await response.json().catch(() => ({}));
+        setShowDeleteModal(false);
+        if (data.error === "SOLE_ADMIN_TEAMS" && data.teams?.length) {
+          const names = data.teams.map(tm => tm.name).join(", ");
+          showConfirm(t("settings.soleAdminBlock") + names, null, { alertOnly: true, danger: true });
         } else {
-          const data = await response.json().catch(() => ({}));
-          if (data.error === "SOLE_ADMIN_TEAMS" && data.teams?.length) {
-            const names = data.teams.map(tm => tm.name).join(", ");
-            showConfirm(t("settings.soleAdminBlock") + names, null, { alertOnly: true, danger: true });
-          } else {
-            showToast(t("settings.accountDeleteFail"), "error");
-          }
+          showToast(t("settings.accountDeleteFail"), "error");
         }
-      } catch (_) {
-        showToast(t("settings.accountDeleteFail"), "error");
       }
-    }, { danger: true });
+    } catch (_) {
+      setShowDeleteModal(false);
+      showToast(t("settings.accountDeleteFail"), "error");
+    }
   };
 
   const handleUpdateProfile = async (formData) => {
@@ -4337,15 +4396,27 @@ export default function Muuvlink() {
               </div>
             )}
 
-            {/* Çıkış Yap + Hesabı Sil */}
-            <div className="bg-white rounded-2xl p-6 border border-slate-100 flex flex-col gap-3">
+            {/* Oturum — güvenli işlem */}
+            <div className="bg-white rounded-2xl p-4 border border-slate-100">
               <button onClick={handleLogout}
-                className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-medium text-sm transition-all border border-slate-200 text-slate-600 hover:bg-slate-50">
+                className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm transition-all border border-slate-200 text-slate-700 hover:bg-slate-50">
                 <LogOut className="w-4 h-4"/> {t("nav.logout")}
               </button>
-              <button onClick={handleDeleteAccount}
-                className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-medium text-sm transition-all text-red-500 hover:bg-red-50">
-                {t("settings.deleteAccount")}
+              <p className="mt-2 text-center text-xs text-slate-400">{t("settings.logoutHint")}</p>
+            </div>
+
+            {/* Tehlikeli Bölge — hesabı kalıcı silme, ayrıştırılmış */}
+            <div className="mt-3 rounded-2xl border border-red-100 bg-red-50/40 p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <svg className="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+                </svg>
+                <span className="text-xs font-bold uppercase tracking-wide text-red-600">{t("settings.dangerZone")}</span>
+              </div>
+              <p className="text-xs text-slate-500 mb-3">{t("settings.dangerZoneDesc")}</p>
+              <button onClick={() => setShowDeleteModal(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-red-600 border border-red-200 bg-white hover:bg-red-600 hover:text-white hover:border-red-600 transition-colors">
+                <Trash2 className="w-4 h-4"/> {t("settings.deleteAccount")}
               </button>
             </div>
           </div>
@@ -7807,6 +7878,7 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
       {showProfileEdit && <ProfileEditModal />}
       {showInviteModal && <InviteModal />}
       <ConfirmModal />
+      {showDeleteModal && <DeleteAccountModal />}
       <LegalModal />
       <ReportModal />
       <CookieBanner />
