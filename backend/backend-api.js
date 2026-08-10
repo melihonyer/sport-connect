@@ -4441,6 +4441,28 @@ pool.query(`
   )
 `).catch(() => {});
 
+// Destek hesabı (MUUVLINK) her takıma editör olarak katılsın — böylece app olarak
+// takımlara yardım edebiliriz. Trigger tüm katılım yollarını (katılma, davet kabul,
+// admin ekleme) tek noktada yakalar; e-posta ile eşleşir, hesap id'si değişse de çalışır.
+pool.query(`
+  CREATE OR REPLACE FUNCTION muuv_support_editor() RETURNS trigger AS $$
+  BEGIN
+    IF EXISTS (SELECT 1 FROM users WHERE id = NEW.user_id AND lower(email) = 'muuvlinkapp@gmail.com') THEN
+      NEW.role := 'editor';
+    END IF;
+    RETURN NEW;
+  END;
+  $$ LANGUAGE plpgsql;
+`).then(() =>
+  pool.query(`DROP TRIGGER IF EXISTS trg_muuv_support_editor ON team_members`)
+).then(() =>
+  pool.query(`
+    CREATE TRIGGER trg_muuv_support_editor
+    BEFORE INSERT ON team_members
+    FOR EACH ROW EXECUTE FUNCTION muuv_support_editor()
+  `)
+).catch(() => {});
+
 // Rozet açıklamalarındaki eski "antrenman" kelimesini "etkinlik" yap (rename devamı)
 pool.query(`UPDATE badges SET description = REPLACE(description, 'antrenman', 'etkinlik') WHERE description LIKE '%antrenman%'`).catch(() => {});
 
