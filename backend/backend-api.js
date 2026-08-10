@@ -732,15 +732,15 @@ function newTrainingEmail({ teamName, trainingTitle, trainingDate, trainingTime,
 function trainingReminderEmail({ teamName, trainingTitle, trainingDate, trainingTime, location, daysLeft, trainingId }) {
   const trainingLink = trainingId ? `${APP_URL}/etkinlikler?etkinlik=${trainingId}` : `${APP_URL}/etkinlikler`;
   const urgency = daysLeft === 1 ? 'Yarın!' : `${daysLeft} gün kaldı`;
-  const color   = daysLeft === 1 ? '#dc2626' : '#d97706';
+  const accent  = '#009295'; // kurumsal teal (sarı/amber yerine)
   return emailWrapper(`
     <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Etkinliğiniz Yaklaşıyor</h2>
     <p style="margin:0 0 28px;color:#64748b;font-size:15px;line-height:1.6;">
       <strong>${teamName}</strong> takımınızın etkinliğine az kaldı.
     </p>
 
-    <div style="background:#fffbeb;border:2px solid ${color};border-radius:12px;padding:24px;margin-bottom:28px;">
-      <div style="font-size:13px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">${urgency}</div>
+    <div style="background:#f0fdf4;border:2px solid ${accent};border-radius:12px;padding:24px;margin-bottom:28px;">
+      <div style="font-size:13px;font-weight:700;color:${accent};text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">${urgency}</div>
       <div style="font-size:20px;font-weight:700;color:#1e293b;margin-bottom:12px;">${trainingTitle}</div>
       <table style="width:100%;border-collapse:collapse;">
         <tr><td style="padding:4px 0;color:#64748b;font-size:14px;">Tarih</td><td style="padding:4px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingDate}</td></tr>
