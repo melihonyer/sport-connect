@@ -5873,6 +5873,15 @@ export default function Muuvlink() {
 
             {/* aksiyon butonları — sağ alt */}
             <div className="flex justify-end gap-2 mt-4">
+              {!isMember && !selectedTeam.is_private && (
+                <button onClick={() => handleJoinTeam(selectedTeam.id)}
+                  disabled={joiningTeamId === selectedTeam.id}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-white text-brand-700 hover:bg-white/90 rounded-xl text-sm font-bold transition-colors disabled:opacity-60 shadow-sm">
+                  {joiningTeamId === selectedTeam.id
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> {t("teams.joining")}</>
+                    : <><UserPlus className="w-4 h-4" /> {t("teamDetail.joinTeam")}</>}
+                </button>
+              )}
               {canManage && (
                 <button onClick={() => setShowInviteModal(true)}
                   className="flex items-center gap-1.5 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-sm font-semibold transition-colors backdrop-blur">
@@ -6023,7 +6032,7 @@ export default function Muuvlink() {
                 </div>
               )}
 
-              <div className="space-y-2">
+              <div className="space-y-1.5 max-h-[58vh] overflow-y-auto pr-1 -mr-1">
                 {selectedTeam.members?.map((member) => {
                   const isThisOwner = member.id === selectedTeam.owner_id;
                   const isMe = member.id === user?.id;
@@ -6157,18 +6166,7 @@ export default function Muuvlink() {
             </div>
           )}
 
-          {/* KATIL butonu */}
-          {!isMember && !selectedTeam.is_private && (
-            <div className="mt-6">
-              <button onClick={() => handleJoinTeam(selectedTeam.id)}
-                disabled={joiningTeamId === selectedTeam.id}
-                className="w-full h-12 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-semibold transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
-                {joiningTeamId === selectedTeam.id
-                  ? <><Loader2 className="w-4 h-4 animate-spin" /> {t("teams.joining")}</>
-                  : <><UserPlus className="w-4 h-4" /> {t("teamDetail.joinTeam")}</>}
-              </button>
-            </div>
-          )}
+          {/* KATIL butonu artık başlıkta (hep görünür) — buradan kaldırıldı. */}
         </div>
       </div>
     );
