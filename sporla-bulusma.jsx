@@ -5217,6 +5217,7 @@ export default function Muuvlink() {
       location_lng: selectedTraining.location_lng || null,
       capacity: selectedTraining.capacity || 20,
       difficulty: selectedTraining.difficulty || "Orta",
+      sport: selectedTraining.sport || selectedTraining.team_sport || "",
     });
 
     const handleSubmitEdit = (e) => {
@@ -5376,8 +5377,17 @@ export default function Muuvlink() {
                   />
                 </div>
 
-                {/* Kapasite + Seviye */}
+                {/* Spor Dalı + Kapasite + Seviye */}
                 <div className="bg-white border border-slate-100 rounded-2xl p-5 space-y-4">
+                  <div>
+                    <label className={lCls}>{t("createTraining.sportLabel")}</label>
+                    <select value={editData.sport}
+                      onChange={(e) => setEditData((d) => ({ ...d, sport: e.target.value }))}
+                      className={sCls} required>
+                      <option value="" disabled>{t("createTraining.sportPlaceholder")}</option>
+                      {SPORT_TYPES.map((s) => <option key={s} value={s}>{t(`sports.${s}`)}</option>)}
+                    </select>
+                  </div>
                   <div>
                     <label className={lCls}>{t("createTraining.capacityLabel")}</label>
                     <input type="number" value={editData.capacity} min="1"
