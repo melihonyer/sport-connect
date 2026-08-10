@@ -1214,19 +1214,24 @@ app.put('/api/auth/password', authenticateToken, async (req, res) => {
 
 app.post('/api/teams', authenticateToken, async (req, res) => {
   try {
-    const { name, sport, description, location, is_private, avatar } = req.body;
+    const { name, sport, sports, description, location, is_private, avatar } = req.body;
 
-    if (!name || !sport) {
-      return res.status(400).json({ error: 'Name and sport are required' });
+    // Çoklu spor dalı; geriye dönük olarak tekil `sport` da kabul edilir.
+    const sportsArr = (Array.isArray(sports) ? sports : []).filter(Boolean);
+    if (!sportsArr.length && sport) sportsArr.push(sport);
+    if (!name || !sportsArr.length) {
+      return res.status(400).json({ error: 'Name and at least one sport are required' });
     }
+    const primarySport = sportsArr[0]; // tekil `sport` = birincil dal (mevcut gösterimlerle uyum)
 
     const teamResult = await pool.query(
-      `INSERT INTO teams (name, sport, description, location, is_private, owner_id, avatar, subscription_end)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `INSERT INTO teams (name, sport, sports, description, location, is_private, owner_id, avatar, subscription_end)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
       [
         name,
-        sport,
+        primarySport,
+        sportsArr,
         description,
         location,
         is_private || false,
@@ -1245,7 +1250,7 @@ app.post('/api/teams', authenticateToken, async (req, res) => {
 
     await updateUserStats(req.user.id);
 
-    logActivity('team_create', req.user.id, null, { team_name: name, sport });
+    logActivity('team_create', req.user.id, null, { team_name: name, sport: primarySport });
     res.status(201).json({ message: 'Team created successfully', team });
   } catch (error) {
     console.error('Create team error:', error);
@@ -1289,7 +1294,8 @@ app.get('/api/teams', optionalAuth, async (req, res) => {
 
     if (sport) {
       paramCount++;
-      query += ` AND t.sport = $${paramCount}`;
+      // Çoklu dal: seçilen dal takımın dalları arasındaysa eşleş (tekil sport'a da düş).
+      query += ` AND ($${paramCount} = ANY(t.sports) OR t.sport = $${paramCount})`;
       params.push(sport);
     }
 
@@ -1646,7 +1652,7 @@ app.put('/api/teams/:id', authenticateToken, async (req, res) => {
     const teamId = req.params.id;
     // Not: avatar burada GÜNCELLENMEZ — fotoğraf yalnızca POST /teams/:id/avatar
     // ile yönetilir. Aksi halde formdaki bayat avatar değeri yeni fotoğrafı geri alabilir.
-    const { name, sport, description, location, is_private } = req.body;
+    const { name, sport, sports, description, location, is_private } = req.body;
 
     const ownerCheck = await pool.query('SELECT owner_id FROM teams WHERE id = $1', [teamId]);
     if (!ownerCheck.rows.length) return res.status(404).json({ error: 'Team not found' });
@@ -1659,10 +1665,15 @@ app.put('/api/teams/:id', authenticateToken, async (req, res) => {
       await pool.query('UPDATE trainings SET is_public = false WHERE team_id = $1', [teamId]);
     }
 
+    // Çoklu dal; en az bir dal olmalı. Tekil `sport` = birincil dal.
+    const sportsArr = (Array.isArray(sports) ? sports : []).filter(Boolean);
+    if (!sportsArr.length && sport) sportsArr.push(sport);
+    const primarySport = sportsArr[0] || null;
+
     const result = await pool.query(
-      `UPDATE teams SET name=$1, sport=$2, description=$3, location=$4, is_private=$5, updated_at=CURRENT_TIMESTAMP
-       WHERE id=$6 RETURNING *`,
-      [name, sport, description, location, is_private, teamId]
+      `UPDATE teams SET name=$1, sport=$2, sports=$3, description=$4, location=$5, is_private=$6, updated_at=CURRENT_TIMESTAMP
+       WHERE id=$7 RETURNING *`,
+      [name, primarySport, (sportsArr.length ? sportsArr : null), description, location, is_private, teamId]
     );
 
     res.json({ message: 'Team updated', team: result.rows[0] });
@@ -1981,7 +1992,7 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
       RETURNING *`,
       [
         team_id || null,
-        team_id ? null : (sport || null),
+        sport || null, // etkinliğin kendi dalı — takım etkinliğinde de takımın dalları arasından seçilir
         req.user.id,
         title,
         description,
@@ -2637,7 +2648,7 @@ app.post('/api/comments/:id/like', authenticateToken, async (req, res) => {
 app.put('/api/trainings/:id', authenticateToken, async (req, res) => {
   try {
     const trainingId = req.params.id;
-    const { title, description, training_date, training_time, location_name, location_lat, location_lng, capacity, difficulty } = req.body;
+    const { title, description, training_date, training_time, location_name, location_lat, location_lng, capacity, difficulty, sport } = req.body;
 
     const trainingResult = await pool.query(
       'SELECT team_id, created_by FROM trainings WHERE id = $1',
@@ -2672,10 +2683,11 @@ app.put('/api/trainings/:id', authenticateToken, async (req, res) => {
        SET title = $1, description = $2, training_date = $3, training_time = $4,
            location_name = $5, location_lat = $6, location_lng = $7,
            capacity = $8, difficulty = $9, training_timezone = $10,
+           sport = COALESCE($12, sport),
            updated_at = CURRENT_TIMESTAMP
        WHERE id = $11
        RETURNING *`,
-      [title, description, training_date, training_time, location_name, location_lat || null, location_lng || null, capacity, difficulty, trainingTimezone, trainingId]
+      [title, description, training_date, training_time, location_name, location_lat || null, location_lng || null, capacity, difficulty, trainingTimezone, trainingId, sport || null]
     );
 
     const updated = result.rows[0];
@@ -3849,8 +3861,12 @@ pool.query(`ALTER TABLE activity_logs ADD COLUMN IF NOT EXISTS source_ref TEXT`)
 pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS activity_logs_source_ref_idx ON activity_logs(source_ref) WHERE source_ref IS NOT NULL`).catch(() => {});
 // training_attendees ve team_members tablolarına created_at ekle (yoksa)
 pool.query(`ALTER TABLE training_attendees ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW()`).catch(() => {});
-// Bireysel etkinliklerin spor dalı (takım etkinliklerinde spor takımdan gelir).
+// Etkinliğin spor dalı — hem bireysel hem takım etkinlikleri için (takım etkinliğinde
+// takımın dalları arasından seçilir; yoksa geriye dönük olarak team_sport'a düşülür).
 pool.query(`ALTER TABLE trainings ADD COLUMN IF NOT EXISTS sport TEXT`).catch(() => {});
+// Takımın spor dalları (çoklu). Eski takımlar için tekil sport'tan doldur.
+pool.query(`ALTER TABLE teams ADD COLUMN IF NOT EXISTS sports TEXT[]`).catch(() => {});
+pool.query(`UPDATE teams SET sports = ARRAY[sport] WHERE (sports IS NULL OR array_length(sports,1) IS NULL) AND sport IS NOT NULL`).catch(() => {});
 pool.query(`ALTER TABLE team_members      ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW()`).catch(() => {});
 
 async function logActivity(event_type, user_id, user_name, meta = {}) {

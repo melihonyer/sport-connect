@@ -123,7 +123,7 @@ const TrainingsMapView = ({ trainings, onSelectTraining, t, containerStyle }) =>
           <FitBoundsToTrainings trainings={mapped}/>
           {mapped.map(tr => {
             const teamLetter = (tr.team_name || tr.team_sport || "T").charAt(0).toLocaleUpperCase("en-US");
-            const teamColor  = teamColors[tr.team_id] || SPORT_COLORS[tr.team_sport] || "#00b7ba";
+            const teamColor  = teamColors[tr.team_id] || SPORT_COLORS[tr.sport || tr.team_sport] || "#00b7ba";
             return (
               <Marker
                 key={`${tr.id}-${teamColor}`}
@@ -134,7 +134,7 @@ const TrainingsMapView = ({ trainings, onSelectTraining, t, containerStyle }) =>
                 <Popup className="training-map-popup" minWidth={220} maxWidth={280}>
                   <div style={{ fontFamily:"system-ui,sans-serif", padding:"4px 0" }}>
                     <div style={{ display:"flex", alignItems:"center", gap:"6px", marginBottom:"8px" }}>
-                      <span style={{ display:"inline-block", padding:"2px 8px", background:`${teamColor}18`, color:teamColor, borderRadius:"6px", fontSize:"11px", fontWeight:700 }}>{tr.team_sport || "Spor"}</span>
+                      <span style={{ display:"inline-block", padding:"2px 8px", background:`${teamColor}18`, color:teamColor, borderRadius:"6px", fontSize:"11px", fontWeight:700 }}>{tr.sport || tr.team_sport || "Spor"}</span>
                       {tr.difficulty && <span style={{ fontSize:"11px", color:"#94a3b8" }}>{tr.difficulty}</span>}
                     </div>
                     <div style={{ fontWeight:700, fontSize:"14px", color:"#0f172a", marginBottom:"4px", lineHeight:1.3 }}>{tr.title}</div>

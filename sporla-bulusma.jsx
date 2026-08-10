@@ -165,6 +165,26 @@ const LevelSelect = ({ value, onChange, t }) => (
   </div>
 );
 
+// ── Spor dalları ────────────────────────────────────────────────────────────
+const SPORT_TYPES = ["Basketbol","Bisiklet","Crossfit","Futbol","Kano","Koşu","Kürek","Padel","Pilates","Tenis","Trekking","Triatlon","Voleybol","Yoga","Yüzme","Diğer"];
+// Çoklu spor dalı seçici (chip'ler) — takım oluşturma/düzenlemede kullanılır.
+const SportsMultiSelect = ({ value = [], onChange, t }) => (
+  <div className="flex flex-wrap gap-2">
+    {SPORT_TYPES.map((s) => {
+      const on = value.includes(s);
+      return (
+        <button key={s} type="button" aria-pressed={on}
+          onClick={() => onChange(on ? value.filter((x) => x !== s) : [...value, s])}
+          className={`px-3 py-1.5 rounded-full text-sm font-medium border cursor-pointer transition-colors ${on
+            ? "bg-brand-600 text-white border-brand-600"
+            : "bg-white text-slate-600 border-slate-200 hover:border-brand-300"}`}>
+          {t(`sports.${s}`)}
+        </button>
+      );
+    })}
+  </div>
+);
+
 // Harita arama yardımcıları
 const _hav = (a, b) => { const R=6371,dL=(b.lat-a.lat)*Math.PI/180,dN=(b.lng-a.lng)*Math.PI/180,x=Math.sin(dL/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dN/2)**2; return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x)); };
 const _fmtDist = (km) => km < 1 ? `${Math.round(km*1000)} m` : `${km.toFixed(1)} km`;
@@ -4567,7 +4587,8 @@ export default function Muuvlink() {
     const displayedTrainings = baseTrainings.filter((t) => {
       const q = searchQuery.toLowerCase();
       const matchesSearch = !q || t.title?.toLowerCase().includes(q) || t.location_name?.toLowerCase().includes(q) || t.description?.toLowerCase().includes(q);
-      const matchesSport = !sportFilter || (t.team_sport || t.sport) === sportFilter;
+      // Etkinliğin KENDİ dalı önceliklidir; eski takım etkinliklerinde (dalı boş) takımın dalına düşülür.
+      const matchesSport = !sportFilter || (t.sport || t.team_sport) === sportFilter;
       const matchesDifficulty = !levelFilter || t.difficulty === levelFilter;
       return matchesSearch && matchesSport && matchesDifficulty;
     });
@@ -5087,7 +5108,7 @@ export default function Muuvlink() {
             <h1 className="font-display font-bold mb-3" style={{fontSize:"clamp(1.8rem,4vw,2.4rem)", letterSpacing:"-0.01em"}}>{selectedTraining.title}</h1>
             <div className="flex flex-wrap gap-2 items-center">
               <span className="px-3 py-1 bg-brand-100 text-brand-600 rounded-full text-sm font-medium">
-                {selectedTraining.team_sport || selectedTraining.sport || "Genel"}
+                {selectedTraining.sport || selectedTraining.team_sport || "Genel"}
               </span>
               <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-brand-50 text-brand-700 rounded-full text-sm font-medium">
                 <span className="text-brand-600"><LevelIcon lv={TRAINING_LEVELS.find((l) => l.val === selectedTraining.difficulty) || { bars: 0 }} size={14} /></span>
@@ -5576,14 +5597,12 @@ export default function Muuvlink() {
     const setActiveTab = (tab) => { teamActiveTabRef.current = tab; setActiveTabState(tab); setTeamActiveTab(tab); };
     const [editForm, setEditForm] = useState({
       name: selectedTeam.name,
-      sport: selectedTeam.sport,
+      sports: selectedTeam.sports?.length ? selectedTeam.sports : (selectedTeam.sport ? [selectedTeam.sport] : []),
       description: selectedTeam.description || "",
       location: selectedTeam.location || "",
       avatar: selectedTeam.avatar || "",
       is_private: selectedTeam.is_private || false,
     });
-
-    const sportTypes = ["Basketbol","Bisiklet","Crossfit","Futbol","Kano","Koşu","Kürek","Padel","Pilates","Tenis","Trekking","Triatlon","Voleybol","Yoga","Yüzme","Diğer"];
 
     const roleBadge = (role) => {
       if (role === "owner")   return <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold flex items-center gap-1"><Crown className="w-3 h-3" /> {t("teamDetail.roles.owner")}</span>;
@@ -5600,7 +5619,8 @@ export default function Muuvlink() {
 
     const handleEditSubmit = (e) => {
       e.preventDefault();
-      handleUpdateTeam(selectedTeam.id, editForm);
+      if (!editForm.sports?.length) { showToast(t("createTeam.atLeastOneSport"), "error"); return; }
+      handleUpdateTeam(selectedTeam.id, { ...editForm, sport: editForm.sports[0] });
     };
 
     const tabs = [
@@ -5653,7 +5673,9 @@ export default function Muuvlink() {
                 <div className="min-w-0">
                   <h1 className="font-display font-bold" style={{fontSize:"1.8rem", letterSpacing:"-0.01em"}}>{selectedTeam.name}</h1>
                   <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                    <span className="px-2.5 py-0.5 bg-white/20 rounded-full text-xs font-medium">{selectedTeam.sport}</span>
+                    {(selectedTeam.sports?.length ? selectedTeam.sports : [selectedTeam.sport]).filter(Boolean).map((s) => (
+                      <span key={s} className="px-2.5 py-0.5 bg-white/20 rounded-full text-xs font-medium">{t(`sports.${s}`)}</span>
+                    ))}
                     {selectedTeam.is_private
                       ? <span className="px-2.5 py-0.5 bg-white/20 rounded-full text-xs font-medium flex items-center gap-1"><Lock className="w-3 h-3" /> {t("common.private")}</span>
                       : <span className="px-2.5 py-0.5 bg-white/20 rounded-full text-xs font-medium flex items-center gap-1"><Globe className="w-3 h-3" /> {t("common.public")}</span>}
@@ -5896,21 +5918,19 @@ export default function Muuvlink() {
           {/* AYARLAR */}
           {activeTab === "settings" && canAdmin && (
             <form onSubmit={handleEditSubmit} className="space-y-5">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className={lCls}>{t("createTeam.nameLabel")}</label>
-                  <input type="text" value={editForm.name} required
-                    onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
-                    className={iCls} />
-                </div>
-                <div>
-                  <label className={lCls}>{t("createTeam.sportLabel")}</label>
-                  <select value={editForm.sport}
-                    onChange={(e) => setEditForm((f) => ({ ...f, sport: e.target.value }))}
-                    className={`${iCls} appearance-none cursor-pointer`}>
-                    {sportTypes.map((s) => <option key={s} value={s}>{t(`sports.${s}`)}</option>)}
-                  </select>
-                </div>
+              <div>
+                <label className={lCls}>{t("createTeam.nameLabel")}</label>
+                <input type="text" value={editForm.name} required
+                  onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
+                  className={iCls} />
+              </div>
+              <div>
+                <label className={lCls}>{t("createTeam.sportsLabel")}</label>
+                <SportsMultiSelect
+                  value={editForm.sports}
+                  onChange={(sports) => setEditForm((f) => ({ ...f, sports }))}
+                  t={t}
+                />
               </div>
 
               <div>
@@ -6026,18 +6046,25 @@ export default function Muuvlink() {
     const selectedTeamObj = eligibleTeams.find((t) => t.id === parseInt(formData.team_id));
     const selectedTeamIsPrivate = selectedTeamObj?.is_private || false;
     const isIndividual = !formData.team_id;
+    // Takımın spor dalları — takım etkinliğinde dal bunlar arasından seçilir.
+    const teamSports = (arr => arr.length ? arr : (SPORT_TYPES))(
+      selectedTeamObj?.sports?.length ? selectedTeamObj.sports : (selectedTeamObj?.sport ? [selectedTeamObj.sport] : [])
+    );
 
     const handleTeamChange = (val) => {
       if (!val) {
-        // Bireysel
-        setFormData((f) => ({ ...f, team_id: null, is_public: true }));
+        // Bireysel — dalı kullanıcı seçsin
+        setFormData((f) => ({ ...f, team_id: null, is_public: true, sport: "" }));
         return;
       }
       const team = eligibleTeams.find((t) => t.id === parseInt(val));
+      const opts = team?.sports?.length ? team.sports : (team?.sport ? [team.sport] : []);
       setFormData((f) => ({
         ...f,
         team_id: parseInt(val),
         is_public: !team?.is_private,
+        // Etkinliğin dalını takımın birincil dalına varsay (kullanıcı değiştirebilir)
+        sport: opts.includes(f.sport) ? f.sport : (opts[0] || ""),
       }));
     };
 
@@ -6112,20 +6139,22 @@ export default function Muuvlink() {
                 </button>
               </div>
 
-              {isIndividual ? (
-                <div>
-                  <label className={labelCls}>{t("createTraining.sportLabel")}</label>
-                  <select
-                    value={formData.sport}
-                    onChange={(e) => setFormData((f) => ({ ...f, sport: e.target.value }))}
-                    className={selectCls}
-                    required
-                  >
-                    <option value="" disabled>{t("createTraining.sportPlaceholder")}</option>
-                    {sportTypes.map((s) => <option key={s} value={s}>{t(`sports.${s}`)}</option>)}
-                  </select>
-                </div>
-              ) : selectedTeamIsPrivate ? (
+              {/* Etkinliğin spor dalı — bireyselde tüm dallar, takımda takımın dalları */}
+              <div>
+                <label className={labelCls}>{t("createTraining.sportLabel")}</label>
+                <select
+                  value={formData.sport}
+                  onChange={(e) => setFormData((f) => ({ ...f, sport: e.target.value }))}
+                  className={selectCls}
+                  required
+                >
+                  <option value="" disabled>{t("createTraining.sportPlaceholder")}</option>
+                  {(isIndividual ? SPORT_TYPES : teamSports).map((s) => <option key={s} value={s}>{t(`sports.${s}`)}</option>)}
+                </select>
+              </div>
+
+              {/* Takım etkinliğinde herkese açıklık */}
+              {!isIndividual && (selectedTeamIsPrivate ? (
                 <div className="flex items-center justify-between px-4 py-3 bg-slate-50 rounded-xl border border-slate-200">
                   <span className="text-sm text-slate-700 flex items-center gap-2">
                     <Globe className="w-4 h-4 text-slate-400" /> {t("createTraining.openToPublic")}
@@ -6143,7 +6172,7 @@ export default function Muuvlink() {
                   <Globe className="w-4 h-4 text-brand-500 flex-shrink-0" />
                   <span>{t("createTraining.publicTeamNote")}</span>
                 </div>
-              )}
+              ))}
             </div>
 
             {/* Başlık + Açıklama */}
@@ -6283,7 +6312,7 @@ export default function Muuvlink() {
   const CreateTeamPage = () => {
     const [formData, setFormData] = useState({
       name: "",
-      sport: "",
+      sports: [],
       description: "",
       location: "",
       is_private: false,
@@ -6291,7 +6320,8 @@ export default function Muuvlink() {
 
     const handleSubmit = (e) => {
       e.preventDefault();
-      handleCreateTeam(formData);
+      if (!formData.sports.length) { showToast(t("createTeam.atLeastOneSport"), "error"); return; }
+      handleCreateTeam({ ...formData, sport: formData.sports[0] });
     };
 
     const inputCls = "w-full h-12 px-4 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition-colors";
@@ -6325,18 +6355,13 @@ export default function Muuvlink() {
                   />
                 </div>
                 <div>
-                  <label className={labelCls}>{t("createTeam.sportLabel")}</label>
-                  <select
-                    value={formData.sport}
-                    onChange={(e) => setFormData({ ...formData, sport: e.target.value })}
-                    className={selectCls}
-                    required
-                  >
-                    <option value="">{t("createTeam.selectSport")}</option>
-                    {sportTypes.map((sport) => (
-                      <option key={sport} value={sport}>{t(`sports.${sport}`)}</option>
-                    ))}
-                  </select>
+                  <label className={labelCls}>{t("createTeam.sportsLabel")}</label>
+                  <SportsMultiSelect
+                    value={formData.sports}
+                    onChange={(sports) => setFormData({ ...formData, sports })}
+                    t={t}
+                  />
+                  <p className="mt-2 text-xs text-slate-400">{t("createTeam.sportsHint")}</p>
                 </div>
               </div>
 
