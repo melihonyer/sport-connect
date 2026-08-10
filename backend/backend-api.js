@@ -1644,7 +1644,9 @@ app.post('/api/teams/:id/accept-invite', authenticateToken, async (req, res) => 
 app.put('/api/teams/:id', authenticateToken, async (req, res) => {
   try {
     const teamId = req.params.id;
-    const { name, sport, description, location, is_private, avatar } = req.body;
+    // Not: avatar burada GÜNCELLENMEZ — fotoğraf yalnızca POST /teams/:id/avatar
+    // ile yönetilir. Aksi halde formdaki bayat avatar değeri yeni fotoğrafı geri alabilir.
+    const { name, sport, description, location, is_private } = req.body;
 
     const ownerCheck = await pool.query('SELECT owner_id FROM teams WHERE id = $1', [teamId]);
     if (!ownerCheck.rows.length) return res.status(404).json({ error: 'Team not found' });
@@ -1658,9 +1660,9 @@ app.put('/api/teams/:id', authenticateToken, async (req, res) => {
     }
 
     const result = await pool.query(
-      `UPDATE teams SET name=$1, sport=$2, description=$3, location=$4, is_private=$5, avatar=$6, updated_at=CURRENT_TIMESTAMP
-       WHERE id=$7 RETURNING *`,
-      [name, sport, description, location, is_private, avatar, teamId]
+      `UPDATE teams SET name=$1, sport=$2, description=$3, location=$4, is_private=$5, updated_at=CURRENT_TIMESTAMP
+       WHERE id=$6 RETURNING *`,
+      [name, sport, description, location, is_private, teamId]
     );
 
     res.json({ message: 'Team updated', team: result.rows[0] });

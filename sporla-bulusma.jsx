@@ -5920,38 +5920,14 @@ export default function Muuvlink() {
                   className={`${iCls} h-auto py-3 resize-none`} />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className={lCls}>{t("common.location")}</label>
-                  <input type="text" value={editForm.location}
-                    onChange={(e) => setEditForm((f) => ({ ...f, location: e.target.value }))}
-                    placeholder={t("createTeam.locationPlaceholder")}
-                    className={iCls} />
-                </div>
-                <div>
-                  <label className={lCls}>{t("teamDetail.teamPhoto")}</label>
-                  <label className="flex items-center gap-3 h-11 px-4 border border-slate-200 rounded-xl bg-white cursor-pointer hover:border-brand-400 transition-colors">
-                    <Image className="w-4 h-4 text-brand-600 flex-shrink-0" />
-                    <span className="text-sm text-slate-500 truncate">
-                      {(editForm.avatar?.startsWith("/uploads/") || editForm.avatar?.startsWith("http")) ? t("teamDetail.photoUploaded") : t("teamDetail.selectPhoto")}
-                    </span>
-                    <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      const fd = new FormData();
-                      fd.append("avatar", file);
-                      const token = localStorage.getItem("token");
-                      const res = await fetch(`${API_URL}/teams/${selectedTeam.id}/avatar`, { method:"POST", headers:{ Authorization:`Bearer ${token}` }, body:fd });
-                      if (res.ok) {
-                        const data = await res.json();
-                        setEditForm(f => ({ ...f, avatar: data.avatar }));
-                        setSelectedTeam(t => ({ ...t, avatar: data.avatar }));
-                        setTeams(ts => ts.map(t => t.id === selectedTeam.id ? { ...t, avatar: data.avatar } : t));
-                        showToast(t("toast.teamPhotoUpdated"), "success");
-                      } else showToast(t("toast.uploadFail"), "error");
-                    }} />
-                  </label>
-                </div>
+              {/* Takım fotoğrafı buradan kaldırıldı — fotoğraf, takım başlığındaki
+                  avatarın üzerindeki kamera ikonundan değiştiriliyor (tek ve net yol). */}
+              <div>
+                <label className={lCls}>{t("common.location")}</label>
+                <input type="text" value={editForm.location}
+                  onChange={(e) => setEditForm((f) => ({ ...f, location: e.target.value }))}
+                  placeholder={t("createTeam.locationPlaceholder")}
+                  className={iCls} />
               </div>
 
               <div className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-colors ${editForm.is_private ? "border-slate-200 bg-slate-50" : "border-brand-200 bg-brand-50"}`}>
