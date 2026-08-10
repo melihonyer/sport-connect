@@ -359,6 +359,14 @@ const NOTIF_TYPE_TO_KEY = {
   badge:             'badge',
   engagement_nudge:  'nudge',
 };
+// Yeni kullanıcılar için varsayılan bildirim tercihleri: bu türlerde e-posta AÇIK gelir
+// (diğerleri: uygulama açık / e-posta kapalı varsayılanı geçerli).
+const DEFAULT_NOTIF_PREFS = {
+  invite:       { email: true },
+  event_new:    { email: true },
+  event_update: { email: true },
+  role:         { email: true },
+};
 async function getNotifPrefs(userId) {
   try {
     const r = await pool.query('SELECT notif_prefs FROM users WHERE id = $1', [userId]);
@@ -1064,8 +1072,8 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
     const passwordHash = await bcrypt.hash(password, 10);
 
     const result = await pool.query(
-      'INSERT INTO users (name, email, password_hash, phone) VALUES ($1, $2, $3, $4) RETURNING id, name, email, avatar, created_at',
-      [name, email, passwordHash, phone]
+      'INSERT INTO users (name, email, password_hash, phone, notif_prefs) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, avatar, created_at, notif_prefs',
+      [name, email, passwordHash, phone, JSON.stringify(DEFAULT_NOTIF_PREFS)]
     );
 
     const user = result.rows[0];
