@@ -5755,6 +5755,7 @@ export default function Muuvlink() {
     const canSeeMembers = !selectedTeam.is_private || isMember;
 
     const [message, setMessage] = useState("");
+    const [showAllMembers, setShowAllMembers] = useState(false);
     const [activeTab, setActiveTabState] = useState(teamActiveTabRef.current);
     const setActiveTab = (tab) => { teamActiveTabRef.current = tab; setActiveTabState(tab); setTeamActiveTab(tab); };
     const [editForm, setEditForm] = useState({
@@ -6034,8 +6035,8 @@ export default function Muuvlink() {
                 </div>
               )}
 
-              <div className="space-y-1.5 max-h-[58vh] overflow-y-auto pr-1 -mr-1">
-                {selectedTeam.members?.map((member) => {
+              <div className="space-y-1.5">
+                {(showAllMembers ? selectedTeam.members : selectedTeam.members?.slice(0, 8))?.map((member) => {
                   const isThisOwner = member.id === selectedTeam.owner_id;
                   const isMe = member.id === user?.id;
                   return (
@@ -6088,6 +6089,14 @@ export default function Muuvlink() {
                   );
                 })}
               </div>
+              {selectedTeam.members?.length > 8 && (
+                <button onClick={() => setShowAllMembers((v) => !v)}
+                  className="w-full mt-3 py-2.5 rounded-xl text-sm font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 transition-colors flex items-center justify-center gap-1.5">
+                  {showAllMembers
+                    ? <>{t("teamDetail.showLess")} <ChevronUp className="w-4 h-4" /></>
+                    : <>{t("teamDetail.showAllMembers")} ({selectedTeam.members.length}) <ChevronDown className="w-4 h-4" /></>}
+                </button>
+              )}
             </div>
           )}
 

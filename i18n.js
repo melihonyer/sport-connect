@@ -442,6 +442,8 @@ export const translations = {
   teamDetail: {
     wall:           { tr: "Duvar",                        en: "Wall",                    de: "Pinnwand"                },
     membersTab:     { tr: "Üyeler",                       en: "Members",                 de: "Mitglieder"              },
+    showAllMembers: { tr: "Tümünü gör",                   en: "Show all",                de: "Alle anzeigen"           },
+    showLess:       { tr: "Daha az göster",               en: "Show less",               de: "Weniger anzeigen"        },
     trainingsTab:   { tr: "Etkinlikler",                 en: "Events",               de: "Events"               },
     invite:         { tr: "Davet Et",                     en: "Invite",                  de: "Einladen"                },
     inviteByEmail:  { tr: "E-posta ile davet",            en: "Invite by email",         de: "Per E-Mail einladen"     },
