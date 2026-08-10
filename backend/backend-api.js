@@ -1477,12 +1477,13 @@ app.post('/api/teams/:id/join', authenticateToken, async (req, res) => {
     const joinerRes = await pool.query('SELECT name, email FROM users WHERE id = $1', [req.user.id]);
     const joinerName = joinerRes.rows[0]?.name || req.user.email;
 
-    // Yeni üye bildirimi yalnızca takım SAHİBİNE gider (yönetici = sahip).
+    // Yeni üye bildirimi takımın YÖNETİMİNE gider (sahip, antrenör, kaptan, editör) —
+    // sıradan üyelere gitmez.
     const leadersRes = await pool.query(
-      `SELECT u.id AS user_id, u.email, u.name FROM teams t
-       JOIN users u ON u.id = t.owner_id
-       WHERE t.id = $1 AND u.id <> $2`,
-      [teamId, req.user.id]
+      `SELECT tm.user_id, u.email, u.name FROM team_members tm
+       JOIN users u ON u.id = tm.user_id
+       WHERE tm.team_id = $1 AND tm.role IN ('owner', 'coach', 'captain', 'editor')`,
+      [teamId]
     );
 
     for (const leader of leadersRes.rows) {
