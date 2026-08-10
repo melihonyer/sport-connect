@@ -114,6 +114,44 @@ const fmtDateShort = (d) => d
   ? new Date(d).toLocaleDateString(_dateLocale(), { day:"numeric", month:"short", year:"numeric" })
   : "";
 
+// ── Zorluk seviyeleri ───────────────────────────────────────────────────────
+// Emoji yerine kurumsal (teal) sinyal-çubuğu ikonu + her seviyeye açıklama.
+const TRAINING_LEVELS = [
+  { val: "Kolay", key: "levelEasy", desc: "levelEasyDesc", bars: 1 },
+  { val: "Orta",  key: "levelMid",  desc: "levelMidDesc",  bars: 2 },
+  { val: "Zor",   key: "levelHard", desc: "levelHardDesc", bars: 3 },
+];
+// Artan yükseklikte 3 çubuk; ilk `active` tanesi dolu (currentColor), gerisi gri.
+const LevelBars = ({ active = 0, size = 20 }) => (
+  <svg width={size} height={size * 0.9} viewBox="0 0 20 18" fill="none" aria-hidden="true">
+    {[8, 12, 16].map((h, i) => (
+      <rect key={i} x={i * 7} y={18 - h} width="5" height={h} rx="1.5"
+        fill={i < active ? "currentColor" : "#e2e8f0"} />
+    ))}
+  </svg>
+);
+// 3 kartlı seviye seçici — create/edit formlarında ortak kullanılır.
+const LevelSelect = ({ value, onChange, t }) => (
+  <div className="grid grid-cols-3 gap-2.5">
+    {TRAINING_LEVELS.map((lv) => {
+      const selected = value === lv.val;
+      return (
+        <button key={lv.val} type="button" onClick={() => onChange(lv.val)}
+          aria-pressed={selected}
+          className={`text-left rounded-xl border p-3 cursor-pointer transition-all ${selected
+            ? "border-brand-500 bg-brand-50 ring-1 ring-brand-500"
+            : "border-slate-200 bg-white hover:border-brand-300"}`}>
+          <span className={selected ? "text-brand-600" : "text-slate-400"}>
+            <LevelBars active={lv.bars} />
+          </span>
+          <div className={`mt-2 text-sm font-semibold leading-tight ${selected ? "text-brand-700" : "text-slate-700"}`}>{t(`trainings.${lv.key}`)}</div>
+          <div className="mt-1 text-[11px] leading-snug text-slate-500">{t(`trainings.${lv.desc}`)}</div>
+        </button>
+      );
+    })}
+  </div>
+);
+
 // Harita arama yardımcıları
 const _hav = (a, b) => { const R=6371,dL=(b.lat-a.lat)*Math.PI/180,dN=(b.lng-a.lng)*Math.PI/180,x=Math.sin(dL/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dN/2)**2; return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x)); };
 const _fmtDist = (km) => km < 1 ? `${Math.round(km*1000)} m` : `${km.toFixed(1)} km`;
@@ -4958,7 +4996,8 @@ export default function Muuvlink() {
               <span className="px-3 py-1 bg-brand-100 text-brand-600 rounded-full text-sm font-medium">
                 {selectedTraining.team_sport || selectedTraining.sport || "Genel"}
               </span>
-              <span className="px-3 py-1 bg-yellow-100 text-yellow-600 rounded-full text-sm font-medium">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-brand-50 text-brand-700 rounded-full text-sm font-medium">
+                <span className="text-brand-600"><LevelBars active={(TRAINING_LEVELS.find((l) => l.val === selectedTraining.difficulty) || {}).bars || 0} size={14} /></span>
                 {{ "Kolay": t("trainings.levelEasy"), "Orta": t("trainings.levelMid"), "Zor": t("trainings.levelHard") }[selectedTraining.difficulty] || selectedTraining.difficulty}
               </span>
               <button
@@ -5084,24 +5123,20 @@ export default function Muuvlink() {
                 </div>
 
                 {/* Kapasite + Seviye */}
-                <div className="bg-white border border-slate-100 rounded-2xl p-5">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className={lCls}>{t("createTraining.capacityLabel")}</label>
-                      <input type="number" value={editData.capacity} min="1"
-                        onChange={(e) => setEditData((d) => ({ ...d, capacity: parseInt(e.target.value) }))}
-                        className={iCls} />
-                    </div>
-                    <div>
-                      <label className={lCls}>{t("createTraining.levelLabel")}</label>
-                      <select value={editData.difficulty}
-                        onChange={(e) => setEditData((d) => ({ ...d, difficulty: e.target.value }))}
-                        className={sCls}>
-                        <option value="Kolay">🟢 {t("trainings.levelEasy")}</option>
-                        <option value="Orta">🟡 {t("trainings.levelMid")}</option>
-                        <option value="Zor">🔴 {t("trainings.levelHard")}</option>
-                      </select>
-                    </div>
+                <div className="bg-white border border-slate-100 rounded-2xl p-5 space-y-4">
+                  <div>
+                    <label className={lCls}>{t("createTraining.capacityLabel")}</label>
+                    <input type="number" value={editData.capacity} min="1"
+                      onChange={(e) => setEditData((d) => ({ ...d, capacity: parseInt(e.target.value) }))}
+                      className={iCls} />
+                  </div>
+                  <div>
+                    <label className={lCls}>{t("createTraining.levelLabel")}</label>
+                    <LevelSelect
+                      value={editData.difficulty}
+                      onChange={(val) => setEditData((d) => ({ ...d, difficulty: val }))}
+                      t={t}
+                    />
                   </div>
                 </div>
 
@@ -6128,30 +6163,24 @@ export default function Muuvlink() {
             </div>
 
             {/* Kapasite + Seviye */}
-            <div className="p-5">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className={labelCls}>{t("createTraining.capacityLabel")}</label>
-                  <input
-                    type="number"
-                    value={formData.capacity}
-                    onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value) })}
-                    className={inputCls}
-                    min="1"
-                  />
-                </div>
-                <div>
-                  <label className={labelCls}>{t("createTraining.levelLabel")}</label>
-                  <select
-                    value={formData.difficulty}
-                    onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
-                    className={selectCls}
-                  >
-                    <option value="Kolay">🟢 {t("trainings.levelEasy")}</option>
-                    <option value="Orta">🟡 {t("trainings.levelMid")}</option>
-                    <option value="Zor">🔴 {t("trainings.levelHard")}</option>
-                  </select>
-                </div>
+            <div className="p-5 space-y-4">
+              <div>
+                <label className={labelCls}>{t("createTraining.capacityLabel")}</label>
+                <input
+                  type="number"
+                  value={formData.capacity}
+                  onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value) })}
+                  className={inputCls}
+                  min="1"
+                />
+              </div>
+              <div>
+                <label className={labelCls}>{t("createTraining.levelLabel")}</label>
+                <LevelSelect
+                  value={formData.difficulty}
+                  onChange={(val) => setFormData({ ...formData, difficulty: val })}
+                  t={t}
+                />
               </div>
             </div>
 
