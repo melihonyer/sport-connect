@@ -5873,15 +5873,6 @@ export default function Muuvlink() {
 
             {/* aksiyon butonları — sağ alt */}
             <div className="flex justify-end gap-2 mt-4">
-              {!isMember && !selectedTeam.is_private && (
-                <button onClick={() => handleJoinTeam(selectedTeam.id)}
-                  disabled={joiningTeamId === selectedTeam.id}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-white text-brand-700 hover:bg-white/90 rounded-xl text-sm font-bold transition-colors disabled:opacity-60 shadow-sm">
-                  {joiningTeamId === selectedTeam.id
-                    ? <><Loader2 className="w-4 h-4 animate-spin" /> {t("teams.joining")}</>
-                    : <><UserPlus className="w-4 h-4" /> {t("teamDetail.joinTeam")}</>}
-                </button>
-              )}
               {canManage && (
                 <button onClick={() => setShowInviteModal(true)}
                   className="flex items-center gap-1.5 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-sm font-semibold transition-colors backdrop-blur">
@@ -5907,6 +5898,17 @@ export default function Muuvlink() {
           <div className="absolute -top-8 -right-8 w-40 h-40 bg-white/5 rounded-full pointer-events-none" />
           <div className="absolute -bottom-12 -left-6 w-32 h-32 bg-white/5 rounded-full pointer-events-none" />
         </div>
+
+        {/* KATIL butonu — başlığın hemen altında, tam genişlik ve büyük */}
+        {!isMember && !selectedTeam.is_private && (
+          <button onClick={() => handleJoinTeam(selectedTeam.id)}
+            disabled={joiningTeamId === selectedTeam.id}
+            className="w-full h-14 mb-4 bg-brand-600 hover:bg-brand-700 text-white rounded-2xl font-bold text-base shadow-lg shadow-brand-600/20 transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
+            {joiningTeamId === selectedTeam.id
+              ? <><Loader2 className="w-5 h-5 animate-spin" /> {t("teams.joining")}</>
+              : <><UserPlus className="w-5 h-5" /> {t("teamDetail.joinTeam")}</>}
+          </button>
+        )}
 
         {/* SEKMELER */}
         {tabs.length > 0 && (
