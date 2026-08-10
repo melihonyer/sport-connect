@@ -542,13 +542,15 @@ function roleChangeEmail({ teamName, teamId, newRoleLabel, changerName, avatar }
     </p>
 
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:24px;margin-bottom:28px;">
-      <div style="display:flex;align-items:center;gap:16px;">
-        <div style="width:56px;height:56px;background:linear-gradient(135deg,#00b7ba,#009295);border-radius:12px;font-size:22px;font-weight:800;color:#fff;text-align:center;line-height:56px;">${avatar || teamName.charAt(0).toUpperCase()}</div>
-        <div>
-          <div style="font-size:18px;font-weight:700;color:#1e293b;">${teamName}</div>
-          <div style="font-size:14px;color:#00b7ba;margin-top:2px;">Yeni rolün: ${newRoleLabel}</div>
-        </div>
-      </div>
+      <table cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+        <tr>
+          <td style="vertical-align:middle;padding-right:16px;">${avatarHtml(avatar, teamName, 56)}</td>
+          <td style="vertical-align:middle;">
+            <div style="font-size:18px;font-weight:700;color:#1e293b;">${teamName}</div>
+            <div style="font-size:14px;color:#00b7ba;margin-top:2px;">Yeni rolün: ${newRoleLabel}</div>
+          </td>
+        </tr>
+      </table>
     </div>
 
     <div style="text-align:center;">
