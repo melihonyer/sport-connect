@@ -1932,7 +1932,15 @@ export default function Muuvlink() {
 
         {/* ── Harita Seçici Modal ── */}
         {showMapPicker && (
-          <div className="fixed inset-0 z-[600] flex flex-col bg-white">
+          <div className="fixed inset-0 flex flex-col bg-white"
+            style={{
+              // BottomNav (zIndex 999999) tam ekran seçicinin üstünde kalıp
+              // "Bu Konumu Kullan" butonunu örtüyordu — modalı onun da üstüne al.
+              zIndex: 1000000,
+              // Native'de başlık status bar'ın, buton da home indicator'ın altında
+              // kalmasın diye güvenli alan boşlukları.
+              ...(isNative ? { paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" } : {}),
+            }}>
 
             {/* Başlık */}
             <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-200 bg-white flex-shrink-0">
