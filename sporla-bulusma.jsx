@@ -49,6 +49,7 @@ import {
   ExternalLink,
   Link,
   Share2,
+  Ticket,
   Flag,
 } from "lucide-react";
 // Ağır kütüphaneler lazy yüklenir — ilk bundle'ı küçültür
@@ -3003,6 +3004,19 @@ export default function Muuvlink() {
     }
   };
 
+  // Ücretli etkinlik: "Kayıt Ol" → dış kayıt linkini aç + tıklama sayacını artır.
+  // Linki hemen açıyoruz (popup engeli olmasın), sayaç arka planda güncellenir.
+  const handleRegisterClick = (training) => {
+    const url = training?.registration_url;
+    if (url) {
+      window.open(url, "_blank", "noopener");
+    } else {
+      showToast(t("trainingDetail.noRegLink"), "error");
+    }
+    // Sayaç — sonucu beklemeden (fire-and-forget)
+    fetch(`${API_URL}/trainings/${training.id}/register-click`, { method: "POST" }).catch(() => {});
+  };
+
   const handleJoinTraining = async (trainingId) => {
     try {
       const token = localStorage.getItem("token");
@@ -3843,6 +3857,8 @@ export default function Muuvlink() {
   const month = dateObj.toLocaleDateString(localeMap[lang] || "en-US", { month: "short", timeZone: "UTC" }).toLocaleUpperCase("en-US");
 
   const accentColor = trainingAccentColor(training.id);
+  const isPaid = !!training.is_paid;
+  const subtitleName = isPaid ? training.organizer : (training.team_name || training.creator_display);
 
   return (
     <div
@@ -3860,15 +3876,22 @@ export default function Muuvlink() {
 
       {/* Sağ: İçerik */}
       <div className="flex-1 pl-5 flex flex-col justify-center gap-1 min-w-0">
-        <h3 className="font-display font-bold text-slate-900 group-hover:text-brand-700 transition-colors line-clamp-1 leading-snug"
-          style={{fontSize:"1.05rem", letterSpacing:"-0.01em"}}>
-          {training.title}
-        </h3>
+        <div className="flex items-center gap-2 min-w-0">
+          {isPaid && (
+            <span className="flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-700">
+              <Ticket className="w-3 h-3"/> {t("trainings.paidBadge")}
+            </span>
+          )}
+          <h3 className="font-display font-bold text-slate-900 group-hover:text-brand-700 transition-colors line-clamp-1 leading-snug"
+            style={{fontSize:"1.05rem", letterSpacing:"-0.01em"}}>
+            {training.title}
+          </h3>
+        </div>
         <p className="text-sm text-slate-400 italic">
           {training.training_time && <span>{training.training_time}</span>}
-          {training.training_time && (training.team_name || training.creator_display || training.location_name) && <span className="mx-2">·</span>}
-          {(training.team_name || training.creator_display) && <span className="not-italic font-medium text-brand-700">{training.team_name || training.creator_display}</span>}
-          {(training.team_name || training.creator_display) && training.location_name && <span className="mx-2">-</span>}
+          {training.training_time && (subtitleName || training.location_name) && <span className="mx-2">·</span>}
+          {subtitleName && <span className="not-italic font-medium text-brand-700">{subtitleName}</span>}
+          {subtitleName && training.location_name && <span className="mx-2">-</span>}
           {training.location_name && <span>{training.location_name}</span>}
         </p>
         {distanceKm != null && (
@@ -3878,6 +3901,13 @@ export default function Muuvlink() {
           </p>
         )}
       </div>
+
+      {/* Ücretli etkinlik görseli (varsa) */}
+      {isPaid && training.image_url && (
+        <div className="hidden sm:block flex-shrink-0 self-center ml-3">
+          <img src={training.image_url} alt="" className="w-16 h-16 rounded-xl object-cover border border-slate-100"/>
+        </div>
+      )}
 
       {/* Sağ ok */}
       <div className="flex items-center pl-4 flex-shrink-0">
@@ -5242,6 +5272,7 @@ export default function Muuvlink() {
     const isParticipant = user && selectedTraining.attendees?.some(a => a.id === user.id);
     const isFull = (selectedTraining.attendees?.length || 0) >= selectedTraining.capacity;
     const isMyTraining = false; // herkes join/leave yapabilir
+    const isPaid = !!selectedTraining.is_paid; // ücretli etkinlik (yarış vb.)
     const [comment, setComment] = useState("");
     const [editMode, setEditMode] = useState(false);
     const [editData, setEditData] = useState({
@@ -5282,16 +5313,30 @@ export default function Muuvlink() {
         </button>
 
         <div className="bg-white rounded-2xl p-6 sm:p-8 border">
+          {/* Ücretli etkinlik görseli */}
+          {isPaid && selectedTraining.image_url && (
+            <div className="-mx-6 sm:-mx-8 -mt-6 sm:-mt-8 mb-6 overflow-hidden rounded-t-2xl">
+              <img src={selectedTraining.image_url} alt={selectedTraining.title}
+                className="w-full max-h-72 object-cover"/>
+            </div>
+          )}
           <div className="mb-6">
             <h1 className="font-display font-bold mb-3" style={{fontSize:"clamp(1.8rem,4vw,2.4rem)", letterSpacing:"-0.01em"}}>{selectedTraining.title}</h1>
             <div className="flex flex-wrap gap-2 items-center">
+              {isPaid && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold bg-amber-100 text-amber-700">
+                  <Ticket className="w-3.5 h-3.5"/> {t("trainings.paidBadge")}
+                </span>
+              )}
               <span className="px-3 py-1 bg-brand-100 text-brand-600 rounded-full text-sm font-medium">
                 {selectedTraining.sport || selectedTraining.team_sport || "Genel"}
               </span>
+              {!isPaid && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-brand-50 text-brand-700 rounded-full text-sm font-medium">
                 <span className="text-brand-600"><LevelIcon lv={TRAINING_LEVELS.find((l) => l.val === selectedTraining.difficulty) || { bars: 0 }} size={14} /></span>
                 {{ "Kolay": t("trainings.levelEasy"), "Orta": t("trainings.levelMid"), "Zor": t("trainings.levelHard"), "Her Seviye": t("trainings.levelAll") }[selectedTraining.difficulty] || selectedTraining.difficulty}
               </span>
+              )}
               <button
                 onClick={async () => {
                   const link = `${window.location.origin}/etkinlikler?etkinlik=${selectedTraining.id}`;
@@ -5526,8 +5571,21 @@ export default function Muuvlink() {
             );
           })()}
 
+          {/* Ücretli etkinlik: organizatör */}
+          {isPaid && selectedTraining.organizer && (
+            <div className="flex items-center gap-3 p-4 rounded-2xl border border-amber-100 bg-amber-50/60 mb-6">
+              <div className="w-11 h-11 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 border-2 border-white shadow-sm">
+                <Ticket className="w-5 h-5 text-amber-600" />
+              </div>
+              <div className="min-w-0">
+                <p className="font-semibold text-slate-800 text-sm truncate">{selectedTraining.organizer}</p>
+                <p className="text-xs text-slate-500">{t("trainingDetail.organizer")}</p>
+              </div>
+            </div>
+          )}
+
           {/* Bireysel etkinlik: takım yerine maskeli oluşturan */}
-          {!selectedTraining.team_id && selectedTraining.creator_display && (
+          {!isPaid && !selectedTraining.team_id && selectedTraining.creator_display && (
             <div className="flex items-center gap-3 p-4 rounded-2xl border border-slate-100 bg-slate-50 mb-6">
               <div className="w-11 h-11 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0 border-2 border-white shadow-sm">
                 <User className="w-5 h-5 text-brand-600" />
@@ -5583,6 +5641,7 @@ export default function Muuvlink() {
               </div>
               <p>{selectedTraining.training_time}</p>
             </div>
+            {!isPaid && (
             <div className="p-4 bg-gray-50 rounded-xl">
               <div className="flex items-center text-gray-600 mb-2">
                 <Users className="w-5 h-5 mr-2" />
@@ -5592,8 +5651,10 @@ export default function Muuvlink() {
                 {selectedTraining.attendees?.length || 0}/{selectedTraining.capacity}
               </p>
             </div>
+            )}
           </div>
 
+          {!isPaid && (
           <div className="mb-6">
             <h3 className="text-xl font-medium mb-4">
               {t("trainingDetail.joinedList")} ({selectedTraining.attendees?.length || 0})
@@ -5624,7 +5685,9 @@ export default function Muuvlink() {
               <p className="text-gray-500">{t("trainingDetail.noParticipants")}</p>
             )}
           </div>
+          )}
 
+          {!isPaid && (
           <div className="mb-6">
             <h3 className="text-xl font-medium mb-4 flex items-center">
               <MessageCircle className="w-5 h-5 mr-2" />
@@ -5691,8 +5754,17 @@ export default function Muuvlink() {
               <p className="text-gray-500 text-center py-4">{t("trainingDetail.noComments")}</p>
             )}
           </div>
+          )}
 
-          {!user ? (
+          {isPaid ? (
+            <button
+              onClick={() => handleRegisterClick(selectedTraining)}
+              className="w-full py-4 font-semibold text-white rounded-xl transition hover:opacity-90 hover:shadow-lg flex items-center justify-center gap-2"
+              style={{background:"linear-gradient(135deg,#f59e0b,#d97706)"}}
+            >
+              <Ticket className="w-5 h-5"/> {t("trainingDetail.registerBtn")}
+            </button>
+          ) : !user ? (
             <div className="rounded-2xl overflow-hidden border border-brand-100 shadow-sm">
               {/* Üst gradient şerit */}
               <div className="h-1.5" style={{background:"linear-gradient(90deg,#00b7ba,#981dd8,#00b7ba)"}}/>

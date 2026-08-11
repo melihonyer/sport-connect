@@ -2437,6 +2437,25 @@ app.get('/api/trainings/:id', optionalAuth, async (req, res) => {
   }
 });
 
+// Ücretli etkinlikte "Kayıt Ol" tıklanınca: sayacı artır ve kayıt linkini döndür.
+// Auth gerekmez (giriş yapmamış kullanıcılar da yarışa kaydolabilir). Link sadece
+// bu uç üzerinden döner — böylece tıklama sayısı admin panelinde takip edilebilir.
+app.post('/api/trainings/:id/register-click', async (req, res) => {
+  try {
+    const r = await pool.query(
+      `UPDATE trainings SET registration_clicks = COALESCE(registration_clicks,0) + 1
+       WHERE id = $1 AND is_paid = true
+       RETURNING registration_url`,
+      [req.params.id]
+    );
+    if (r.rows.length === 0) return res.status(404).json({ error: 'Ücretli etkinlik bulunamadı.' });
+    res.json({ registration_url: r.rows[0].registration_url || null });
+  } catch (error) {
+    console.error('Register-click error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 app.post('/api/trainings/:id/join', authenticateToken, async (req, res) => {
   try {
     const trainingId = req.params.id;
@@ -3645,6 +3664,120 @@ app.delete('/api/admin/banners/:id', isAdmin, async (req, res) => {
 });
 
 // =====================================================
+// ÜCRETLİ ETKİNLİKLER (yarış vb.) — sadece panelden yönetilir.
+// trainings tablosunda is_paid=true satırlar; normal etkinlik akışında görünürler.
+// =====================================================
+
+// Admin: ücretli etkinlikleri listele (tıklama sayısıyla)
+app.get('/api/admin/paid-events', isAdmin, async (req, res) => {
+  try {
+    const r = await pool.query(
+      `SELECT id, title, description, sport, organizer, registration_url, image_url,
+              registration_clicks, training_date, training_time,
+              location_name, location_lat, location_lng, location_address, is_public
+       FROM trainings WHERE is_paid = true
+       ORDER BY training_date DESC, training_time DESC`
+    );
+    res.json(r.rows);
+  } catch (e) {
+    console.error('Admin paid-events list error:', e);
+    res.status(500).json({ error: 'Ücretli etkinlikler alınamadı.' });
+  }
+});
+
+// Admin: ücretli etkinlik oluştur
+app.post('/api/admin/paid-events', isAdmin, async (req, res) => {
+  try {
+    const { title, description, sport, organizer, registration_url,
+            training_date, training_time, location_name, location_lat,
+            location_lng, location_address } = req.body;
+    if (!title || !training_date) {
+      return res.status(400).json({ error: 'Başlık ve tarih zorunludur.' });
+    }
+    const r = await pool.query(
+      `INSERT INTO trainings
+        (team_id, sport, created_by, title, description, training_date, training_time,
+         duration_minutes, location_name, location_lat, location_lng, location_address,
+         capacity, is_public, difficulty, is_paid, organizer, registration_url)
+       VALUES (NULL,$1,$2,$3,$4,$5,$6,60,$7,$8,$9,$10,0,true,NULL,true,$11,$12)
+       RETURNING *`,
+      [sport || null, req.user.id, title, description || '', training_date,
+       training_time || null, location_name || null,
+       location_lat || null, location_lng || null, location_address || null,
+       organizer || null, registration_url || null]
+    );
+    res.json(r.rows[0]);
+  } catch (e) {
+    console.error('Admin paid-event create error:', e);
+    res.status(500).json({ error: 'Ücretli etkinlik oluşturulamadı.' });
+  }
+});
+
+// Admin: ücretli etkinlik güncelle
+app.put('/api/admin/paid-events/:id', isAdmin, async (req, res) => {
+  try {
+    const { title, description, sport, organizer, registration_url,
+            training_date, training_time, location_name, location_lat,
+            location_lng, location_address } = req.body;
+    const r = await pool.query(
+      `UPDATE trainings SET
+         title = COALESCE($1, title),
+         description = COALESCE($2, description),
+         sport = $3,
+         organizer = $4,
+         registration_url = $5,
+         training_date = COALESCE($6, training_date),
+         training_time = $7,
+         location_name = $8,
+         location_lat = $9,
+         location_lng = $10,
+         location_address = $11
+       WHERE id = $12 AND is_paid = true
+       RETURNING *`,
+      [title || null, description ?? null, sport || null, organizer || null,
+       registration_url || null, training_date || null, training_time || null,
+       location_name || null, location_lat || null, location_lng || null,
+       location_address || null, req.params.id]
+    );
+    if (r.rows.length === 0) return res.status(404).json({ error: 'Ücretli etkinlik bulunamadı.' });
+    res.json(r.rows[0]);
+  } catch (e) {
+    console.error('Admin paid-event update error:', e);
+    res.status(500).json({ error: 'Ücretli etkinlik güncellenemedi.' });
+  }
+});
+
+// Admin: ücretli etkinlik görseli yükle (yarış görseli)
+app.post('/api/admin/paid-events/:id/image', isAdmin, uploadBanner.single('image'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Dosya yüklenmedi.' });
+    const fileName = `paid-event-${req.params.id}-${Date.now()}.webp`;
+    const webpBuffer = await toWebP(req.file.buffer, 1600);
+    const imageUrl = await uploadToSupabase('banners', fileName, webpBuffer, 'image/webp');
+    const r = await pool.query(
+      'UPDATE trainings SET image_url=$1 WHERE id=$2 AND is_paid = true RETURNING *',
+      [imageUrl, req.params.id]
+    );
+    if (r.rows.length === 0) return res.status(404).json({ error: 'Ücretli etkinlik bulunamadı.' });
+    res.json(r.rows[0]);
+  } catch (e) {
+    console.error('Admin paid-event image error:', e);
+    res.status(500).json({ error: 'Görsel yüklenemedi.' });
+  }
+});
+
+// Admin: ücretli etkinlik sil
+app.delete('/api/admin/paid-events/:id', isAdmin, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM trainings WHERE id=$1 AND is_paid = true', [req.params.id]);
+    res.json({ message: 'Ücretli etkinlik silindi.' });
+  } catch (e) {
+    console.error('Admin paid-event delete error:', e);
+    res.status(500).json({ error: 'Ücretli etkinlik silinemedi.' });
+  }
+});
+
+// =====================================================
 // HOME NEWS
 // =====================================================
 
@@ -4039,6 +4172,13 @@ pool.query(`ALTER TABLE training_attendees ADD COLUMN IF NOT EXISTS created_at T
 // Etkinliğin spor dalı — hem bireysel hem takım etkinlikleri için (takım etkinliğinde
 // takımın dalları arasından seçilir; yoksa geriye dönük olarak team_sport'a düşülür).
 pool.query(`ALTER TABLE trainings ADD COLUMN IF NOT EXISTS sport TEXT`).catch(() => {});
+// Ücretli etkinlik (panelden eklenen yarış vb.). Normal etkinlik akışında ve haritada
+// görünür ama uygulama içi katılım yerine dış "Kayıt Ol" linkine yönlendirir.
+pool.query(`ALTER TABLE trainings ADD COLUMN IF NOT EXISTS is_paid BOOLEAN DEFAULT false`).catch(() => {});
+pool.query(`ALTER TABLE trainings ADD COLUMN IF NOT EXISTS registration_url TEXT`).catch(() => {});
+pool.query(`ALTER TABLE trainings ADD COLUMN IF NOT EXISTS image_url TEXT`).catch(() => {});
+pool.query(`ALTER TABLE trainings ADD COLUMN IF NOT EXISTS organizer TEXT`).catch(() => {});
+pool.query(`ALTER TABLE trainings ADD COLUMN IF NOT EXISTS registration_clicks INT DEFAULT 0`).catch(() => {});
 // Takımın spor dalları (çoklu). Eski takımlar için tekil sport'tan doldur.
 pool.query(`ALTER TABLE teams ADD COLUMN IF NOT EXISTS sports TEXT[]`).catch(() => {});
 pool.query(`UPDATE teams SET sports = ARRAY[sport] WHERE (sports IS NULL OR array_length(sports,1) IS NULL) AND sport IS NOT NULL`).catch(() => {});

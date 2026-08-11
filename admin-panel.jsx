@@ -6,7 +6,10 @@ import {
   ChevronRight, Lock, Globe, Image, Plus, Edit2, ToggleLeft, ToggleRight,
   Upload, GripVertical, ChevronUp, ChevronDown, Newspaper, GalleryHorizontal, Menu,
   Trophy, User, ClipboardList, CheckCircle2, DoorOpen, Sparkles, Target, Flag,
+  Ticket, MapPin, ExternalLink, MousePointerClick,
 } from "lucide-react";
+
+const SPORT_TYPES = ["Basketbol","Bisiklet","Crossfit","Futbol","Kano","Koşu","Kürek","Padel","Pilates","Tenis","Trekking","Triatlon","Voleybol","Yoga","Yüzme","Diğer"];
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   Legend, ResponsiveContainer,
@@ -284,6 +287,204 @@ function HomeGalleryTab({ items, setItems, api, token, showToast }) {
   );
 }
 
+// ─── Ücretli Etkinlikler sekmesi ───────────────────────────
+const emptyPaidEvent = {
+  title:"", description:"", sport:"", organizer:"", registration_url:"",
+  training_date:"", training_time:"", location_name:"",
+  location_lat:"", location_lng:"", location_address:"",
+};
+function PaidEventsTab({ items, setItems, api, token, showToast }) {
+  const [showForm, setShowForm] = React.useState(false);
+  const [editId, setEditId]     = React.useState(null);
+  const [saving, setSaving]     = React.useState(false);
+  const [form, setForm]         = React.useState(emptyPaidEvent);
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const startNew  = () => { setForm(emptyPaidEvent); setEditId(null); setShowForm(true); };
+  const startEdit = (it) => {
+    setForm({
+      title: it.title || "", description: it.description || "", sport: it.sport || "",
+      organizer: it.organizer || "", registration_url: it.registration_url || "",
+      training_date: it.training_date ? it.training_date.slice(0,10) : "",
+      training_time: it.training_time ? it.training_time.slice(0,5) : "",
+      location_name: it.location_name || "",
+      location_lat: it.location_lat ?? "", location_lng: it.location_lng ?? "",
+      location_address: it.location_address || "",
+    });
+    setEditId(it.id); setShowForm(true);
+  };
+
+  // "41.0082, 28.9784" veya Google Maps linkini yapıştırınca lat/lng'yi ayıkla
+  const parseCoords = (text) => {
+    if (!text) return;
+    const m = text.match(/(-?\d{1,3}\.\d+)[,\s]+(-?\d{1,3}\.\d+)/);
+    if (m) setForm(f => ({ ...f, location_lat: m[1], location_lng: m[2] }));
+  };
+
+  const handleSave = async () => {
+    if (!form.title.trim()) { showToast("Başlık zorunlu.", "error"); return; }
+    if (!form.training_date) { showToast("Tarih zorunlu.", "error"); return; }
+    setSaving(true);
+    try {
+      const body = {
+        ...form,
+        location_lat: form.location_lat === "" ? null : Number(form.location_lat),
+        location_lng: form.location_lng === "" ? null : Number(form.location_lng),
+      };
+      if (editId) {
+        const r = await api(`/admin/paid-events/${editId}`, { method:"PUT", body:JSON.stringify(body) });
+        if (r) { setItems(prev => prev.map(i => i.id===editId ? { ...i, ...r } : i)); showToast("Güncellendi.", "success"); }
+      } else {
+        const r = await api("/admin/paid-events", { method:"POST", body:JSON.stringify(body) });
+        if (r) { setItems(prev => [r, ...prev]); showToast("Oluşturuldu. Şimdi görsel yükleyebilirsiniz.", "success"); }
+      }
+      setShowForm(false); setEditId(null);
+    } catch (e) {
+      showToast(e.message || "Kaydedilemedi.", "error");
+    } finally { setSaving(false); }
+  };
+
+  const handleDelete = async (it) => {
+    if (!window.confirm(`"${it.title}" silinecek. Emin misiniz?`)) return;
+    await api(`/admin/paid-events/${it.id}`, { method:"DELETE" });
+    setItems(prev => prev.filter(i => i.id !== it.id));
+  };
+
+  const lbl = "block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5";
+  const inp = "w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-400 bg-white";
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h2 className="font-display font-bold text-slate-900 text-xl" style={{letterSpacing:"-0.01em"}}>Ücretli Etkinlikler</h2>
+          <p className="text-slate-400 text-sm mt-0.5">Yarış vb. ücretli etkinlikler. Normal etkinlik akışında ve haritada görünür; "Kayıt Ol" butonu dış kayıt linkini açar.</p>
+        </div>
+        <button onClick={startNew}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white transition hover:opacity-90 shadow-lg"
+          style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}>
+          <Plus className="w-4 h-4"/> Yeni Ücretli Etkinlik
+        </button>
+      </div>
+
+      {showForm && (
+        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
+          <div>
+            <label className={lbl}>Başlık *</label>
+            <input className={inp} value={form.title} onChange={e=>set("title", e.target.value)} placeholder="Örn. İstanbul Bisiklet Yarışı 2026"/>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className={lbl}>Spor Dalı</label>
+              <select className={inp} value={form.sport} onChange={e=>set("sport", e.target.value)}>
+                <option value="">Seçiniz…</option>
+                {SPORT_TYPES.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={lbl}>Organizatör</label>
+              <input className={inp} value={form.organizer} onChange={e=>set("organizer", e.target.value)} placeholder="Örn. Muuvlink Spor Kulübü"/>
+            </div>
+          </div>
+          <div>
+            <label className={lbl}>Kayıt Linki (Kayıt Ol butonu buraya götürür)</label>
+            <input className={inp} value={form.registration_url} onChange={e=>set("registration_url", e.target.value)} placeholder="https://..."/>
+          </div>
+          <div>
+            <label className={lbl}>Açıklama</label>
+            <textarea className={inp} rows={3} value={form.description} onChange={e=>set("description", e.target.value)} placeholder="Etkinlik detayları…"/>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={lbl}>Tarih *</label>
+              <input type="date" className={inp} value={form.training_date} onChange={e=>set("training_date", e.target.value)}/>
+            </div>
+            <div>
+              <label className={lbl}>Saat</label>
+              <input type="time" className={inp} value={form.training_time} onChange={e=>set("training_time", e.target.value)}/>
+            </div>
+          </div>
+          <div>
+            <label className={lbl}>Konum Adı</label>
+            <input className={inp} value={form.location_name} onChange={e=>set("location_name", e.target.value)} placeholder="Örn. Caddebostan Sahili"/>
+          </div>
+          <div>
+            <label className={lbl}>Koordinat (haritada görünmesi için)</label>
+            <input className={inp} placeholder="41.0082, 28.9784  — veya Google Maps linkini yapıştırın"
+              defaultValue={form.location_lat && form.location_lng ? `${form.location_lat}, ${form.location_lng}` : ""}
+              onChange={e=>parseCoords(e.target.value)}/>
+            <p className="text-xs text-slate-400 mt-1">Google Maps'te sağ tıkla → koordinatı kopyala, buraya yapıştır. Lat: {form.location_lat || "—"} · Lng: {form.location_lng || "—"}</p>
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button onClick={()=>{setShowForm(false);setEditId(null);}} className="px-4 py-2 text-sm text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50">İptal</button>
+            <button onClick={handleSave} disabled={saving}
+              className="flex-1 py-2 text-sm font-semibold text-white rounded-xl disabled:opacity-50 transition hover:opacity-90"
+              style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}>
+              {saving?"Kaydediliyor…":(editId?"Güncelle":"Oluştur")}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {items.length === 0 && !showForm && (
+          <div className="md:col-span-2 text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200 text-slate-400">
+            <Ticket className="w-10 h-10 mx-auto mb-3 opacity-30"/>
+            <p>Henüz ücretli etkinlik eklenmedi</p>
+          </div>
+        )}
+        {items.map(it => (
+          <div key={it.id} className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm flex flex-col">
+            <div className="h-36 relative bg-slate-100 overflow-hidden">
+              {it.image_url
+                ? <img src={it.image_url} alt="" className="w-full h-full object-cover"/>
+                : <div className="w-full h-full flex items-center justify-center text-slate-300"><Upload className="w-6 h-6"/></div>}
+              <span className="absolute top-2 left-2 text-xs px-2 py-0.5 rounded-full font-semibold bg-amber-100 text-amber-700 flex items-center gap-1">
+                <Ticket className="w-3 h-3"/> Ücretli
+              </span>
+              {it.sport && <span className="absolute top-2 right-2 text-xs px-2 py-0.5 rounded-full font-medium bg-brand-100 text-brand-700">{it.sport}</span>}
+            </div>
+            <div className="p-4 flex flex-col gap-2 flex-1">
+              <div className="font-semibold text-slate-800 leading-tight">{it.title}</div>
+              <div className="text-xs text-slate-500 flex flex-wrap gap-x-3 gap-y-1">
+                {it.organizer && <span>{it.organizer}</span>}
+                <span className="flex items-center gap-1"><Calendar className="w-3 h-3"/>{fmt(it.training_date)}{it.training_time?` · ${it.training_time.slice(0,5)}`:""}</span>
+                {it.location_name && <span className="flex items-center gap-1"><MapPin className="w-3 h-3"/>{it.location_name}</span>}
+              </div>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-brand-50 text-brand-700">
+                  <MousePointerClick className="w-3.5 h-3.5"/> {it.registration_clicks || 0} kayıt tıklaması
+                </span>
+                {it.registration_url && (
+                  <a href={it.registration_url} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-brand-600 truncate">
+                    <ExternalLink className="w-3 h-3 flex-shrink-0"/> <span className="truncate max-w-[140px]">{it.registration_url}</span>
+                  </a>
+                )}
+              </div>
+              <div className="mt-auto pt-2 flex flex-col gap-2">
+                <ImageUploadBtn itemId={it.id} endpoint={`/admin/paid-events/${it.id}/image`} token={token}
+                  currentUrl={it.image_url} onUploaded={r=>setItems(prev=>prev.map(i=>i.id===it.id?{...i,...r}:i))} onError={showToast}/>
+                <div className="flex gap-2">
+                  <button onClick={()=>startEdit(it)}
+                    className="flex-1 py-1.5 text-xs font-medium rounded-lg border border-slate-200 hover:bg-slate-50 transition text-slate-600 flex items-center justify-center gap-1">
+                    <Edit2 className="w-3.5 h-3.5"/> Düzenle
+                  </button>
+                  <button onClick={()=>handleDelete(it)}
+                    className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 transition text-red-500">
+                    <Trash2 className="w-3.5 h-3.5"/>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Yardımcı: tarih formatı ───────────────────────────────
 const fmt = (d) => d ? new Date(d).toLocaleDateString("tr-TR", { day:"numeric", month:"short", year:"numeric" }) : "—";
 const fmtFull = (d) => d ? new Date(d).toLocaleString("tr-TR") : "—";
@@ -331,6 +532,7 @@ export default function AdminPanel() {
   const [banners, setBanners]   = useState([]);
   const [homeNews, setHomeNews] = useState([]);
   const [homeGallery, setHomeGallery] = useState([]);
+  const [paidEvents, setPaidEvents] = useState([]);
   const [logs, setLogs]         = useState([]);
   const [analytics, setAnalytics] = useState(null);
   const [reports, setReports]   = useState([]);
@@ -428,6 +630,7 @@ export default function AdminPanel() {
       else if (t === "banners") { const d = await api("/admin/banners"); if (reqId === loadReqRef.current) setBanners(d || []); }
       else if (t === "home-news") { const d = await api("/admin/home-news"); if (reqId === loadReqRef.current) setHomeNews(d || []); }
       else if (t === "home-gallery") { const d = await api("/admin/home-gallery"); if (reqId === loadReqRef.current) setHomeGallery(d || []); }
+      else if (t === "paid-events") { const d = await api("/admin/paid-events"); if (reqId === loadReqRef.current) setPaidEvents(d || []); }
       else if (t === "reports") { const d = await api("/admin/flags"); if (reqId === loadReqRef.current) setReports(d || []); }
       else if (t === "logs") {
         const [logsData, analyticsData] = await Promise.all([api("/admin/logs"), api("/admin/analytics")]);
@@ -544,6 +747,7 @@ export default function AdminPanel() {
     { id: "dashboard", label: "Genel Bakış", icon: LayoutDashboard },
     { id: "users",     label: "Kullanıcılar", icon: Users },
     { id: "trainings", label: "Etkinlikler", icon: Activity },
+    { id: "paid-events", label: "Ücretli Etkinlikler", icon: Ticket },
     { id: "teams",     label: "Takımlar",     icon: Shield },
     { id: "logs",      label: "Loglar",       icon: Activity },
     { id: "messages",  label: "Mesajlar",     icon: MessageSquare,
@@ -1739,6 +1943,13 @@ export default function AdminPanel() {
           {!loading && tab === "home-gallery" && (
             <HomeGalleryTab
               items={homeGallery} setItems={setHomeGallery} api={api} token={token} showToast={showToast}
+            />
+          )}
+
+          {/* ── PAID EVENTS ──────────────────────────────── */}
+          {!loading && tab === "paid-events" && (
+            <PaidEventsTab
+              items={paidEvents} setItems={setPaidEvents} api={api} token={token} showToast={showToast}
             />
           )}
 

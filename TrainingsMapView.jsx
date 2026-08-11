@@ -34,6 +34,25 @@ const makeTrainingIcon = (color, letter, highlight = false) => {
   });
 };
 
+// Ücretli etkinlik pini — diğer etkinliklerden ayrışsın diye altın/amber renkte,
+// ortasında bilet ikonu. (İleride özel bir grafik verilirse burada image divIcon'a geçilebilir.)
+const PAID_COLOR = "#f59e0b";
+const makePaidIcon = (highlight = false) => {
+  const size = highlight ? 42 : 36;
+  const shadow = highlight
+    ? `0 0 0 4px ${PAID_COLOR}33, 0 4px 16px ${PAID_COLOR}77`
+    : `0 3px 10px ${PAID_COLOR}66`;
+  return L.divIcon({
+    className: "",
+    html: `<div style="width:${size}px;height:${size}px;background:linear-gradient(135deg,#fbbf24,${PAID_COLOR});border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2.5px solid white;box-shadow:${shadow};display:flex;align-items:center;justify-content:center;">
+      <svg width="${highlight?17:15}" height="${highlight?17:15}" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(45deg);">
+        <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/>
+      </svg>
+    </div>`,
+    iconSize: [size, size], iconAnchor: [size/2, size], popupAnchor: [0, -(size+4)],
+  });
+};
+
 // Mount sonrası Leaflet'in iç ölçümünü tazele — lazy-load sırasında 0-genişlikle
 // başlayan harita yanlış boyutta kalıp sayfa düzenini bozabiliyor.
 const MapSizeFixer = () => {
@@ -123,22 +142,26 @@ const TrainingsMapView = ({ trainings, onSelectTraining, t, containerStyle }) =>
           <FitBoundsToTrainings trainings={mapped}/>
           {mapped.map(tr => {
             const teamLetter = (tr.team_name || tr.team_sport || "T").charAt(0).toLocaleUpperCase("en-US");
-            const teamColor  = teamColors[tr.team_id] || SPORT_COLORS[tr.sport || tr.team_sport] || "#00b7ba";
+            const teamColor  = tr.is_paid ? PAID_COLOR : (teamColors[tr.team_id] || SPORT_COLORS[tr.sport || tr.team_sport] || "#00b7ba");
+            const icon = tr.is_paid
+              ? makePaidIcon(active === tr.id)
+              : makeTrainingIcon(teamColor, teamLetter, active === tr.id);
             return (
               <Marker
                 key={`${tr.id}-${teamColor}`}
                 position={[parseFloat(tr.location_lat), parseFloat(tr.location_lng)]}
-                icon={makeTrainingIcon(teamColor, teamLetter, active === tr.id)}
+                icon={icon}
                 eventHandlers={{ click: () => setActive(tr.id), popupclose: () => setActive(null) }}
               >
                 <Popup className="training-map-popup" minWidth={220} maxWidth={280}>
                   <div style={{ fontFamily:"system-ui,sans-serif", padding:"4px 0" }}>
                     <div style={{ display:"flex", alignItems:"center", gap:"6px", marginBottom:"8px" }}>
+                      {tr.is_paid && <span style={{ display:"inline-block", padding:"2px 8px", background:"#fef3c7", color:"#b45309", borderRadius:"6px", fontSize:"11px", fontWeight:800 }}>Ücretli</span>}
                       <span style={{ display:"inline-block", padding:"2px 8px", background:`${teamColor}18`, color:teamColor, borderRadius:"6px", fontSize:"11px", fontWeight:700 }}>{tr.sport || tr.team_sport || "Spor"}</span>
-                      {tr.difficulty && <span style={{ fontSize:"11px", color:"#94a3b8" }}>{tr.difficulty}</span>}
+                      {!tr.is_paid && tr.difficulty && <span style={{ fontSize:"11px", color:"#94a3b8" }}>{tr.difficulty}</span>}
                     </div>
                     <div style={{ fontWeight:700, fontSize:"14px", color:"#0f172a", marginBottom:"4px", lineHeight:1.3 }}>{tr.title}</div>
-                    <div style={{ fontSize:"12px", color:"#64748b", marginBottom:"8px" }}>{tr.team_name}</div>
+                    <div style={{ fontSize:"12px", color:"#64748b", marginBottom:"8px" }}>{tr.is_paid ? (tr.organizer || "") : tr.team_name}</div>
                     <div style={{ display:"flex", flexDirection:"column", gap:"4px", marginBottom:"12px" }}>
                       <div style={{ display:"flex", alignItems:"center", gap:"6px", fontSize:"12px", color:"#475569" }}>
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -150,10 +173,12 @@ const TrainingsMapView = ({ trainings, onSelectTraining, t, containerStyle }) =>
                           <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", maxWidth:"190px" }}>{tr.location_name}</span>
                         </div>
                       )}
+                      {!tr.is_paid && (
                       <div style={{ display:"flex", alignItems:"center", gap:"6px", fontSize:"12px", color:"#475569" }}>
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
                         {tr.attendee_count || 0} / {tr.capacity} katılımcı
                       </div>
+                      )}
                     </div>
                     <button onClick={() => onSelectTraining(tr.id)} style={{ width:"100%", padding:"8px 0", borderRadius:"8px", border:"none", cursor:"pointer", background:`linear-gradient(135deg,${teamColor},${teamColor}cc)`, color:"white", fontSize:"12px", fontWeight:700 }}>
                       Detayı Gör →

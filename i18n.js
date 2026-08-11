@@ -322,6 +322,7 @@ export const translations = {
                       de: "Versuche es im Freien oder nutze die Adresssuche." },
     gpsNotWorking:  { tr: "GPS Çalışmıyor",                en: "GPS Not Working",         de: "GPS funktioniert nicht"  },
     away:           { tr: "uzakta",                       en: "away",                    de: "entfernt"                },
+    paidBadge:      { tr: "Ücretli",                      en: "Paid",                    de: "Kostenpflichtig"         },
     gpsNotWorkingHint: { tr: "Cihazınızda konum servisleri açık mı? Ayarlar > Gizlilik > Konum Servisleri'ni kontrol edin.",
                          en: "Is location enabled on your device? Check Settings > Privacy > Location Services.",
                          de: "Ist der Standort auf deinem Gerät aktiviert? Prüfe Einstellungen > Datenschutz > Standortdienste." },
@@ -350,6 +351,9 @@ export const translations = {
     loginFeat3:     { tr: "Takım üyeliği & iletişim",     en: "Team membership & communication", de: "Teammitgliedschaft & Kommunikation" },
     joinBtn:        { tr: "Katıl",                         en: "Join",                    de: "Mitmachen"               },
     alreadyMember:  { tr: "Bu takımın üyesisiniz.",         en: "You're a member.",        de: "Du bist Mitglied."       },
+    registerBtn:    { tr: "Kayıt Ol",                      en: "Register",                de: "Anmelden"                },
+    organizer:      { tr: "Organizatör",                  en: "Organizer",               de: "Organisator"             },
+    noRegLink:      { tr: "Kayıt linki bulunamadı.",       en: "Registration link not found.", de: "Anmeldelink nicht gefunden." },
   },
   messageLike: {
     like:          { tr: "Beğen",                          en: "Like",                    de: "Gefällt mir"             },
