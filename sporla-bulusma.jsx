@@ -2302,6 +2302,81 @@ export default function Muuvlink() {
     let canonical = document.querySelector('link[rel="canonical"]');
     if (!canonical) { canonical = document.createElement("link"); canonical.rel = "canonical"; document.head.appendChild(canonical); }
     canonical.href = url;
+
+    // ── JSON-LD yapısal veri (SEO/GEO — Google zengin sonuçları) ──
+    const ORIGIN = "https://muuvlink.app";
+    const DEFAULT_IMG = `${ORIGIN}/og-image.jpg`;
+    const setJsonLd = (data) => {
+      let el = document.getElementById("muuv-detail-jsonld");
+      if (!data) { if (el) el.remove(); return; }
+      if (!el) { el = document.createElement("script"); el.type = "application/ld+json"; el.id = "muuv-detail-jsonld"; document.head.appendChild(el); }
+      el.textContent = JSON.stringify(data);
+    };
+    const crumb = (listName, listPath, leafName) => ({
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Ana Sayfa", item: `${ORIGIN}/` },
+        { "@type": "ListItem", position: 2, name: listName, item: `${ORIGIN}${listPath}` },
+        { "@type": "ListItem", position: 3, name: leafName, item: url },
+      ],
+    });
+
+    if (currentPage === "team-detail" && selectedTeam) {
+      setJsonLd([
+        {
+          "@context": "https://schema.org",
+          "@type": "SportsTeam",
+          name: selectedTeam.name,
+          sport: selectedTeam.sport || undefined,
+          url,
+          description: selectedTeam.description || undefined,
+          logo: absImg(selectedTeam.avatar) || undefined,
+          location: selectedTeam.location ? { "@type": "Place", name: selectedTeam.location } : undefined,
+        },
+        crumb("Takımlar", "/takimlar", selectedTeam.name),
+      ]);
+    } else if (currentPage === "training-detail" && selectedTraining) {
+      const tr = selectedTraining;
+      let startDate;
+      if (tr.training_datetime_utc) startDate = new Date(tr.training_datetime_utc).toISOString();
+      else if (tr.training_date && tr.training_time) {
+        const d = new Date(`${String(tr.training_date).slice(0, 10)}T${tr.training_time}`);
+        if (!isNaN(d)) startDate = d.toISOString();
+      }
+      const endDate = startDate ? new Date(new Date(startDate).getTime() + (tr.duration_minutes || 60) * 60000).toISOString() : undefined;
+      const offers = tr.is_paid
+        ? { "@type": "Offer", url: tr.registration_url || url, availability: "https://schema.org/InStock" }
+        : { "@type": "Offer", price: "0", priceCurrency: "TRY", availability: "https://schema.org/InStock", url };
+      setJsonLd([
+        {
+          "@context": "https://schema.org",
+          "@type": "SportsEvent",
+          name: tr.title,
+          description: tr.description || undefined,
+          startDate: startDate || undefined,
+          endDate,
+          eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+          eventStatus: "https://schema.org/EventScheduled",
+          sport: tr.sport || tr.team_sport || undefined,
+          image: absImg(tr.image_url) || DEFAULT_IMG,
+          url,
+          location: {
+            "@type": "Place",
+            name: tr.location_name || tr.location_address || "Muuvlink",
+            address: tr.location_address || undefined,
+            geo: (tr.location_lat && tr.location_lng)
+              ? { "@type": "GeoCoordinates", latitude: tr.location_lat, longitude: tr.location_lng }
+              : undefined,
+          },
+          organizer: { "@type": "Organization", name: tr.team_name || "Muuvlink", url: ORIGIN },
+          offers,
+        },
+        crumb("Etkinlikler", "/etkinlikler", tr.title),
+      ]);
+    } else {
+      setJsonLd(null);
+    }
   }, [currentPage, selectedTeam, selectedTraining]);
 
   // Tarayıcı geri/ileri tuşu
