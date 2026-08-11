@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
 
+Sitemap: https://muuvlink.app/api/sitemap.xml
 Sitemap: https://muuvlink.app/sitemap.xml

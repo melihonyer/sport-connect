@@ -976,6 +976,76 @@ const updateUserStats = async (userId) => {
 };
 
 // ============================================
+// DYNAMIC SITEMAP (SEO — AUTH GEREKMİYOR)
+// Statik sayfalar + herkese açık takımlar + yaklaşan herkese açık etkinlikler.
+// robots.txt bunu işaret eder. Hata olursa en azından statik URL'leri döndürür.
+// ============================================
+const SITE_ORIGIN = 'https://muuvlink.app';
+const xmlEscape = (s) => String(s).replace(/[<>&'"]/g, (c) =>
+  ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' }[c]));
+
+app.get('/api/sitemap.xml', async (req, res) => {
+  const today = new Date().toISOString().slice(0, 10);
+  const urls = [
+    { loc: `${SITE_ORIGIN}/`, changefreq: 'daily', priority: '1.0', lastmod: today },
+    { loc: `${SITE_ORIGIN}/antrenmanlar`, changefreq: 'hourly', priority: '0.9', lastmod: today },
+    { loc: `${SITE_ORIGIN}/etkinlikler`, changefreq: 'hourly', priority: '0.9', lastmod: today },
+    { loc: `${SITE_ORIGIN}/takimlar`, changefreq: 'hourly', priority: '0.9', lastmod: today },
+    { loc: `${SITE_ORIGIN}/iletisim`, changefreq: 'monthly', priority: '0.5', lastmod: today },
+  ];
+
+  try {
+    // Herkese açık takımlar (özel olanlar hariç)
+    const teams = await pool.query(
+      `SELECT id, updated_at FROM teams WHERE is_private = false ORDER BY updated_at DESC LIMIT 20000`
+    );
+    for (const t of teams.rows) {
+      urls.push({
+        loc: `${SITE_ORIGIN}/takimlar?takim=${t.id}`,
+        changefreq: 'weekly',
+        priority: '0.7',
+        lastmod: (t.updated_at ? new Date(t.updated_at) : new Date()).toISOString().slice(0, 10),
+      });
+    }
+
+    // Yaklaşan herkese açık etkinlikler (geçmiş etkinlikler dahil edilmez)
+    const trainings = await pool.query(
+      `SELECT id, updated_at FROM trainings
+        WHERE is_public = true AND ${trainingUtcExpr('')} >= NOW()
+        ORDER BY training_date ASC LIMIT 20000`
+    );
+    for (const tr of trainings.rows) {
+      urls.push({
+        loc: `${SITE_ORIGIN}/etkinlikler?etkinlik=${tr.id}`,
+        changefreq: 'daily',
+        priority: '0.8',
+        lastmod: (tr.updated_at ? new Date(tr.updated_at) : new Date()).toISOString().slice(0, 10),
+      });
+    }
+  } catch (err) {
+    // DB erişilemezse sitemap yine de statik URL'lerle döner (asla 500 verme)
+    console.error('[SITEMAP] dynamic query failed, serving static URLs only:', err.message);
+  }
+
+  const body =
+    `<?xml version="1.0" encoding="UTF-8"?>\n` +
+    `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
+    urls.map((u) =>
+      `  <url>\n` +
+      `    <loc>${xmlEscape(u.loc)}</loc>\n` +
+      `    <lastmod>${u.lastmod}</lastmod>\n` +
+      `    <changefreq>${u.changefreq}</changefreq>\n` +
+      `    <priority>${u.priority}</priority>\n` +
+      `  </url>`
+    ).join('\n') +
+    `\n</urlset>\n`;
+
+  res.set('Content-Type', 'application/xml; charset=utf-8');
+  res.set('Cache-Control', 'public, max-age=3600');
+  res.send(body);
+});
+
+// ============================================
 // PUBLIC TRAININGS (AUTH GEREKMİYOR)
 // ============================================
 app.get('/api/trainings/public', async (req, res) => {
