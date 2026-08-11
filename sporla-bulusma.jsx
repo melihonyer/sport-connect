@@ -2165,30 +2165,25 @@ export default function Muuvlink() {
     const takimId = params.get("takim");
     if (takimId) {
       const tab = params.get("tab"); // "duvar" → wall, yoksa members
-      window.history.replaceState({}, "", window.location.pathname);
       teamActiveTabRef.current = tab === "duvar" ? "wall" : "members";
+      // Canonical URL'i koru (SEO + paylaşım): fazladan paramları at, ?takim'i bırak
+      window.history.replaceState({}, "", `${window.location.pathname}?takim=${takimId}`);
+      // Giriş yapmamış ziyaretçi de public takımı görür (detay sayfasında giriş CTA'sı var).
+      // Giriş sonrası tam erişimle tekrar açılabilsin diye işaretle.
       const token = localStorage.getItem("token");
-      if (token) {
-        fetchTeamDetails(takimId);
-      } else {
+      if (!token) {
         localStorage.setItem("pendingTeam", takimId);
         localStorage.setItem("pendingTeamTab", tab || "members");
-        setAuthMode("login");
-        setIsAuthModalOpen(true);
       }
+      fetchTeamDetails(takimId);
     }
     // Etkinlik deep-link: ?etkinlik=ID (paylaşılan link) — eski ?antrenman=ID de kabul edilir
     const etkinlikId = params.get("etkinlik") || params.get("antrenman");
     if (etkinlikId) {
-      window.history.replaceState({}, "", window.location.pathname);
+      window.history.replaceState({}, "", `${window.location.pathname}?etkinlik=${etkinlikId}`);
       const token = localStorage.getItem("token");
-      if (token) {
-        fetchTrainingDetails(etkinlikId);
-      } else {
-        localStorage.setItem("pendingTraining", etkinlikId);
-        setAuthMode("login");
-        setIsAuthModalOpen(true);
-      }
+      if (!token) localStorage.setItem("pendingTraining", etkinlikId);
+      fetchTrainingDetails(etkinlikId);
     }
   }, []);
 
@@ -2228,17 +2223,37 @@ export default function Muuvlink() {
 
   // Sayfa değişince URL + title + meta güncelle
   useEffect(() => {
-    const meta  = PAGE_META[currentPage];
-    const path  = PAGE_TO_PATH[currentPage];
-    const title = meta?.title || "Muuvlink";
-    const desc  = meta?.desc  || t("home.heroSubtitleFallback");
-    const url   = `https://muuvlink.app${path || "/"}`;
+    // Görseli mutlak URL'e çevir (og:image için)
+    const absImg = (src) => {
+      if (!src) return null;
+      return /^https?:\/\//.test(src) ? src : `https://muuvlink.app${src.startsWith("/") ? "" : "/"}${src}`;
+    };
+
+    let title, desc, url, ogImage = null;
+
+    if (currentPage === "team-detail" && selectedTeam) {
+      // Detay sayfası: takıma özel meta (SEO — her takım ayrı indekslenebilir sayfa)
+      title   = `${selectedTeam.name} — Muuvlink`;
+      desc    = (selectedTeam.description || t("teams.pageSubtitle") || "").slice(0, 160);
+      url     = `https://muuvlink.app/takimlar?takim=${selectedTeam.id}`;
+      ogImage = absImg(selectedTeam.avatar);
+    } else if (currentPage === "training-detail" && selectedTraining) {
+      title   = `${selectedTraining.title} — Muuvlink`;
+      desc    = (selectedTraining.description || t("trainings.pageSubtitle") || "").slice(0, 160);
+      url     = `https://muuvlink.app/etkinlikler?etkinlik=${selectedTraining.id}`;
+      ogImage = absImg(selectedTraining.image_url);
+    } else {
+      const meta = PAGE_META[currentPage];
+      const path = PAGE_TO_PATH[currentPage];
+      title = meta?.title || "Muuvlink";
+      desc  = meta?.desc  || t("home.heroSubtitleFallback");
+      url   = `https://muuvlink.app${path || "/"}`;
+      if (path && window.location.pathname !== path) {
+        window.history.pushState({ page: currentPage }, title, path);
+      }
+    }
 
     document.title = title;
-
-    if (path && window.location.pathname !== path) {
-      window.history.pushState({ page: currentPage }, title, path);
-    }
 
     const setMeta = (sel, attr, val) => { const el = document.querySelector(sel); if (el) el.setAttribute(attr, val); };
     setMeta('meta[name="description"]',          "content", desc);
@@ -2248,11 +2263,16 @@ export default function Muuvlink() {
     setMeta('meta[name="twitter:title"]',         "content", title);
     setMeta('meta[name="twitter:description"]',   "content", desc);
     setMeta('meta[name="twitter:url"]',           "content", url);
+    // og:image — detayda o takım/etkinlik görseli varsa onu kullan, yoksa varsayılan kalsın
+    if (ogImage) {
+      setMeta('meta[property="og:image"]',  "content", ogImage);
+      setMeta('meta[name="twitter:image"]', "content", ogImage);
+    }
 
     let canonical = document.querySelector('link[rel="canonical"]');
     if (!canonical) { canonical = document.createElement("link"); canonical.rel = "canonical"; document.head.appendChild(canonical); }
     canonical.href = url;
-  }, [currentPage]);
+  }, [currentPage, selectedTeam, selectedTraining]);
 
   // Tarayıcı geri/ileri tuşu
   useEffect(() => {
@@ -2980,7 +3000,7 @@ export default function Muuvlink() {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(`${API_URL}/teams/${teamId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
       if (response.ok) {
