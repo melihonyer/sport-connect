@@ -999,6 +999,31 @@ async function shareLink({ title, text, url }) {
   }
 }
 
+// Sadece temiz URL'yi panoya kopyalar — paylaşım menüsüne hiç girmez.
+// Instagram "bio link" gibi tek satır URL isteyen yerler için (başlık eklenmez).
+async function copyPlainLink(url) {
+  try {
+    await navigator.clipboard.writeText(url);
+    return "copied";
+  } catch (_) {
+    // Eski/native WebView fallback
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = url;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      return ok ? "copied" : "failed";
+    } catch (_) {
+      return "failed";
+    }
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════
 //  ROZET GÖRSELLERİ — perspektifli üçgen "madalya" rozetler
 //  Tek kaynak: hem sayfadaki SVG hem de paylaşım kartı (PNG) buradan üretilir.
@@ -5279,6 +5304,18 @@ export default function Muuvlink() {
               >
                 <Share2 className="w-3.5 h-3.5" /> {t("common.share")}
               </button>
+              <button
+                onClick={async () => {
+                  const link = `${window.location.origin}/etkinlikler?etkinlik=${selectedTraining.id}`;
+                  const res = await copyPlainLink(link);
+                  if (res === "copied") showToast(t("toast.linkCopied"), "success");
+                  else showToast(t("toast.shareFail"), "error");
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full text-sm font-medium transition-colors"
+                title={t("common.copyLink")}
+              >
+                <Link className="w-3.5 h-3.5" /> {t("common.copyLink")}
+              </button>
               {user && !canManage && (
                 <button
                   onClick={() => setReportModal({ type: "training", id: selectedTraining.id })}
@@ -5891,6 +5928,18 @@ export default function Muuvlink() {
                 title={t("common.share")}
               >
                 <Share2 className="w-4 h-4" /> {t("common.share")}
+              </button>
+              <button
+                onClick={async () => {
+                  const link = `${window.location.origin}/takimlar?takim=${selectedTeam.id}`;
+                  const res = await copyPlainLink(link);
+                  if (res === "copied") showToast(t("toast.linkCopied"), "success");
+                  else showToast(t("toast.shareFail"), "error");
+                }}
+                className="flex items-center gap-1.5 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-sm font-semibold transition-colors backdrop-blur"
+                title={t("common.copyLink")}
+              >
+                <Link className="w-4 h-4" /> {t("common.copyLink")}
               </button>
             </div>
           </div>

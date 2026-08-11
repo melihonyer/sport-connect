@@ -76,6 +76,7 @@ export const translations = {
     required:     { tr: "Bu alan zorunludur.", en: "This field is required.", de: "Pflichtfeld." },
     back:         { tr: "Geri",            en: "Back",          de: "Zurück"      },
     share:        { tr: "Paylaş",          en: "Share",         de: "Teilen"      },
+    copyLink:     { tr: "Linki kopyala",   en: "Copy link",     de: "Link kopieren" },
     yes:          { tr: "Evet",            en: "Yes",           de: "Ja"          },
     no:           { tr: "Hayır",           en: "No",            de: "Nein"        },
     all:          { tr: "Tümü",            en: "All",           de: "Alle"        },
