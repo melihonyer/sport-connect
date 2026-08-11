@@ -34,22 +34,32 @@ const makeTrainingIcon = (color, letter, highlight = false) => {
   });
 };
 
-// Ücretli etkinlik pini — diğer etkinliklerden ayrışsın diye altın/amber renkte,
-// ortasında bilet ikonu. (İleride özel bir grafik verilirse burada image divIcon'a geçilebilir.)
-const PAID_COLOR = "#f59e0b";
-const makePaidIcon = (highlight = false) => {
-  const size = highlight ? 42 : 36;
-  const shadow = highlight
-    ? `0 0 0 4px ${PAID_COLOR}33, 0 4px 16px ${PAID_COLOR}77`
-    : `0 3px 10px ${PAID_COLOR}66`;
+// Ücretli etkinlik pini — verilen PNG grafiği (mor konum pini + krem kuşak + alt üçgen).
+// Yarışın adı kuşağın üstüne HTML metin olarak bindirilir; sığmazsa CSS ile "…" olur.
+// Konum noktası = grafiğin alt ucundaki üçgenin ucu (iconAnchor).
+const PAID_COLOR = "#9c17d6"; // pinle uyumlu mor — popup aksanı da bunu kullanır
+const PAID_TEXT = "#3d0a55";
+const PAID_PIN_URL = "/pin-ucretli.png";
+const PAID_PIN_RATIO = 1.026; // PNG yükseklik/genişlik oranı (1500x1539)
+// Kuşak (metin bandı) konumu — PNG yüksekliğine göre yüzdelik. Görsele göre ince ayar.
+const RIBBON_TOP = 54, RIBBON_HEIGHT = 15, RIBBON_INSET = 13; // %
+const escapeXml = (s) => String(s || "").replace(/[<>&'"]/g, c => (
+  { "<": "&lt;", ">": "&gt;", "&": "&amp;", "'": "&apos;", '"': "&quot;" }[c]));
+const makePaidIcon = (title, highlight = false) => {
+  const w = highlight ? 118 : 102;
+  const h = Math.round(w * PAID_PIN_RATIO);
+  const fs = highlight ? 15 : 13;
+  const label = escapeXml((title || "").toLocaleUpperCase("tr-TR"));
+  const html = `<div style="position:relative;width:${w}px;height:${h}px;filter:drop-shadow(0 3px 4px rgba(0,0,0,.32))">
+    <img src="${PAID_PIN_URL}" style="width:${w}px;height:${h}px;display:block" alt=""/>
+    <div style="position:absolute;left:${RIBBON_INSET}%;right:${RIBBON_INSET}%;top:${RIBBON_TOP}%;height:${RIBBON_HEIGHT}%;display:flex;align-items:center;justify-content:center;">
+      <span style="font-family:'Barlow Condensed','Barlow',system-ui,sans-serif;font-weight:800;font-size:${fs}px;line-height:1;color:${PAID_TEXT};text-transform:uppercase;letter-spacing:-0.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">${label}</span>
+    </div>
+  </div>`;
   return L.divIcon({
     className: "",
-    html: `<div style="width:${size}px;height:${size}px;background:linear-gradient(135deg,#fbbf24,${PAID_COLOR});border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2.5px solid white;box-shadow:${shadow};display:flex;align-items:center;justify-content:center;">
-      <svg width="${highlight?17:15}" height="${highlight?17:15}" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(45deg);">
-        <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/>
-      </svg>
-    </div>`,
-    iconSize: [size, size], iconAnchor: [size/2, size], popupAnchor: [0, -(size+4)],
+    html,
+    iconSize: [w, h], iconAnchor: [w / 2, h], popupAnchor: [0, -h * 0.52],
   });
 };
 
@@ -144,7 +154,7 @@ const TrainingsMapView = ({ trainings, onSelectTraining, t, containerStyle }) =>
             const teamLetter = (tr.team_name || tr.team_sport || "T").charAt(0).toLocaleUpperCase("en-US");
             const teamColor  = tr.is_paid ? PAID_COLOR : (teamColors[tr.team_id] || SPORT_COLORS[tr.sport || tr.team_sport] || "#00b7ba");
             const icon = tr.is_paid
-              ? makePaidIcon(active === tr.id)
+              ? makePaidIcon(tr.title, active === tr.id)
               : makeTrainingIcon(teamColor, teamLetter, active === tr.id);
             return (
               <Marker
