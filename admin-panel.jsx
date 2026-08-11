@@ -8,8 +8,14 @@ import {
   Trophy, User, ClipboardList, CheckCircle2, DoorOpen, Sparkles, Target, Flag,
   Ticket, MapPin, ExternalLink, MousePointerClick,
 } from "lucide-react";
+import LocationPicker from "./LocationPicker";
+import { createT, detectLang } from "./i18n.js";
 
 const SPORT_TYPES = ["Basketbol","Bisiklet","Crossfit","Futbol","Kano","Koşu","Kürek","Padel","Pilates","Tenis","Trekking","Triatlon","Voleybol","Yoga","Yüzme","Diğer"];
+
+// Ana uygulamayla birebir aynı konum seçici (arama + haritadan seçme)
+const adminLang = detectLang();
+const adminT = createT(adminLang);
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   Legend, ResponsiveContainer,
@@ -315,13 +321,6 @@ function PaidEventsTab({ items, setItems, api, token, showToast }) {
     setEditId(it.id); setShowForm(true);
   };
 
-  // "41.0082, 28.9784" veya Google Maps linkini yapıştırınca lat/lng'yi ayıkla
-  const parseCoords = (text) => {
-    if (!text) return;
-    const m = text.match(/(-?\d{1,3}\.\d+)[,\s]+(-?\d{1,3}\.\d+)/);
-    if (m) setForm(f => ({ ...f, location_lat: m[1], location_lng: m[2] }));
-  };
-
   const handleSave = async () => {
     if (!form.title.trim()) { showToast("Başlık zorunlu.", "error"); return; }
     if (!form.training_date) { showToast("Tarih zorunlu.", "error"); return; }
@@ -406,15 +405,16 @@ function PaidEventsTab({ items, setItems, api, token, showToast }) {
             </div>
           </div>
           <div>
-            <label className={lbl}>Konum Adı</label>
-            <input className={inp} value={form.location_name} onChange={e=>set("location_name", e.target.value)} placeholder="Örn. Caddebostan Sahili"/>
-          </div>
-          <div>
-            <label className={lbl}>Koordinat (haritada görünmesi için)</label>
-            <input className={inp} placeholder="41.0082, 28.9784  — veya Google Maps linkini yapıştırın"
-              defaultValue={form.location_lat && form.location_lng ? `${form.location_lat}, ${form.location_lng}` : ""}
-              onChange={e=>parseCoords(e.target.value)}/>
-            <p className="text-xs text-slate-400 mt-1">Google Maps'te sağ tıkla → koordinatı kopyala, buraya yapıştır. Lat: {form.location_lat || "—"} · Lng: {form.location_lng || "—"}</p>
+            <label className={lbl}>Konum (arama + haritadan seç)</label>
+            <LocationPicker
+              locationName={form.location_name}
+              lat={form.location_lat === "" ? null : form.location_lat}
+              lng={form.location_lng === "" ? null : form.location_lng}
+              onLocationName={(v)=>set("location_name", v)}
+              onLat={(v)=>set("location_lat", v)}
+              onLng={(v)=>set("location_lng", v)}
+              t={adminT} lang={adminLang} isNative={false}
+            />
           </div>
           <div className="flex gap-3 pt-2">
             <button onClick={()=>{setShowForm(false);setEditId(null);}} className="px-4 py-2 text-sm text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50">İptal</button>
