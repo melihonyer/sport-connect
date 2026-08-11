@@ -1062,6 +1062,85 @@ app.get('/api/sitemap.xml', async (req, res) => {
 });
 
 // ============================================
+// OG PRERENDER (SEO — sosyal paylaşım kartları)
+// nginx YALNIZCA sosyal/preview botlarını (facebookexternalhit, WhatsApp, Twitterbot...)
+// bu route'a yönlendirir; insanlar SPA'yı statik index.html'den alır. Bu bot'lar JS
+// çalıştırmadığı için detay sayfasının OG etiketlerini sunucudan gömüyoruz.
+// İçerik herkese açık olduğundan (public takım/etkinlik) cloaking yok — bot ile insan aynı sayfayı görür.
+// ============================================
+const parseDetailPathBackend = (pathname) => {
+  let m = pathname.match(/^\/takim\/.*-(\d+)$/);
+  if (m) return { kind: 'team', id: m[1] };
+  m = pathname.match(/^\/etkinlik\/.*-(\d+)$/);
+  if (m) return { kind: 'training', id: m[1] };
+  return null;
+};
+
+const getIndexHtml = () => {
+  try { return fs.readFileSync(path.join(__dirname, '..', 'dist', 'index.html'), 'utf8'); }
+  catch (e) { console.error('[OG] index.html okunamadı:', e.message); return ''; }
+};
+
+const htmlAttrEscape = (s) => String(s || '').replace(/[<>&"]/g, (c) =>
+  ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]));
+
+const injectOgTags = (html, meta) => {
+  const T = htmlAttrEscape(meta.title);
+  const D = htmlAttrEscape(meta.description);
+  const U = htmlAttrEscape(meta.url);
+  const I = htmlAttrEscape(meta.image);
+  return html
+    .replace(/<title>[\s\S]*?<\/title>/, `<title>${T}</title>`)
+    .replace(/(<meta name="description" content=")[^"]*(">)/, `$1${D}$2`)
+    .replace(/(<link rel="canonical" href=")[^"]*(">)/, `$1${U}$2`)
+    .replace(/(<meta property="og:url" content=")[^"]*(">)/, `$1${U}$2`)
+    .replace(/(<meta property="og:title" content=")[^"]*(">)/, `$1${T}$2`)
+    .replace(/(<meta property="og:description" content=")[^"]*(">)/, `$1${D}$2`)
+    .replace(/(<meta property="og:image" content=")[^"]*(">)/, `$1${I}$2`)
+    .replace(/(<meta name="twitter:url" content=")[^"]*(">)/, `$1${U}$2`)
+    .replace(/(<meta name="twitter:title" content=")[^"]*(">)/, `$1${T}$2`)
+    .replace(/(<meta name="twitter:description" content=")[^"]*(">)/, `$1${D}$2`)
+    .replace(/(<meta name="twitter:image" content=")[^"]*(">)/, `$1${I}$2`);
+};
+
+app.get(['/takim/*', '/etkinlik/*'], async (req, res, next) => {
+  const parsed = parseDetailPathBackend(req.path);
+  const html = getIndexHtml();
+  if (!parsed || !html) return next();
+  const DEFAULT_IMG = `${SITE_ORIGIN}/og-image.jpg`;
+  res.set('Content-Type', 'text/html; charset=utf-8');
+  try {
+    let meta;
+    if (parsed.kind === 'team') {
+      const r = await pool.query('SELECT id, name, description, avatar, is_private FROM teams WHERE id = $1', [parsed.id]);
+      const t0 = r.rows[0];
+      if (!t0 || t0.is_private) return res.send(html); // yok / gizli → varsayılan kart
+      meta = {
+        title: `${t0.name} — Muuvlink`,
+        description: (t0.description || 'Çevrende spor yapan insanları bul, kendi takımını kur, etkinlikler planla.').slice(0, 200),
+        url: `${SITE_ORIGIN}/takim/${slugify(t0.name)}-${t0.id}`,
+        image: t0.avatar || DEFAULT_IMG,
+      };
+    } else {
+      const r = await pool.query('SELECT id, title, description, image_url, is_public FROM trainings WHERE id = $1', [parsed.id]);
+      const e0 = r.rows[0];
+      if (!e0 || e0.is_public === false) return res.send(html);
+      meta = {
+        title: `${e0.title} — Muuvlink`,
+        description: (e0.description || 'Muuvlink etkinliği — katıl, birlikte spor yap.').slice(0, 200),
+        url: `${SITE_ORIGIN}/etkinlik/${slugify(e0.title)}-${e0.id}`,
+        image: e0.image_url || DEFAULT_IMG,
+      };
+    }
+    res.set('Cache-Control', 'public, max-age=300');
+    return res.send(injectOgTags(html, meta));
+  } catch (e) {
+    console.error('[OG] render hatası:', e.message);
+    return res.send(html); // hata → varsayılan kart (asla 500 verme)
+  }
+});
+
+// ============================================
 // PUBLIC TRAININGS (AUTH GEREKMİYOR)
 // ============================================
 app.get('/api/trainings/public', async (req, res) => {
