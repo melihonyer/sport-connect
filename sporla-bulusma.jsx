@@ -1579,6 +1579,36 @@ async function shareBadgeCard(badge, earned, dateStr, texts) {
   return "failed";
 }
 
+// ── SEO dostu URL yardımcıları ───────────────────────────
+// Türkçe karakterleri sadeleştirip güvenli slug üretir. Backend sitemap'teki
+// slugify ile aynı kuralları uygular (canonical == sitemap URL olsun diye).
+// Not: dosyada rozetler için ayrı bir slugify (Türkçe-farkında değil) var; çakışmasın diye urlSlug.
+const urlSlug = (s) =>
+  (s || "")
+    .toString()
+    .replace(/İ/g, "i").replace(/I/g, "i").replace(/ı/g, "i")
+    .replace(/Ğ/g, "g").replace(/ğ/g, "g")
+    .replace(/Ü/g, "u").replace(/ü/g, "u")
+    .replace(/Ş/g, "s").replace(/ş/g, "s")
+    .replace(/Ö/g, "o").replace(/ö/g, "o")
+    .replace(/Ç/g, "c").replace(/ç/g, "c")
+    .toLowerCase()
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60) || "x";
+
+// Detay path'i üret / çözümle:  /takim/<slug>-<id>  ·  /etkinlik/<slug>-<id>
+const teamPath = (team) => `/takim/${urlSlug(team?.name)}-${team?.id}`;
+const trainingPath = (tr) => `/etkinlik/${urlSlug(tr?.title)}-${tr?.id}`;
+const parseDetailPath = (pathname) => {
+  let m = pathname.match(/^\/takim\/.*-(\d+)$/);
+  if (m) return { kind: "team", id: m[1] };
+  m = pathname.match(/^\/etkinlik\/.*-(\d+)$/);
+  if (m) return { kind: "training", id: m[1] };
+  return null;
+};
+
 export default function Muuvlink() {
   // ── URL ↔ sayfa eşlemesi ─────────────────────────────
   const PAGE_TO_PATH = {
@@ -1635,8 +1665,11 @@ export default function Muuvlink() {
   const [currentPage, setCurrentPage] = useState(() => {
     // Native'de URL path'i yok say — stale pushState'ten gelen yanlış sayfa flashını önle
     if (isNative) return localStorage.getItem("token") ? "home" : "profile";
-    const fromPath = PATH_TO_PAGE[window.location.pathname] ?? (window.location.pathname === "/" ? "home" : "not-found");
-    return fromPath;
+    const p = window.location.pathname;
+    // Slug'lı detay URL'i (/takim/..-id, /etkinlik/..-id): detay yüklenirken arka planda liste göster (not-found flash'ı önle)
+    const detail = parseDetailPath(p);
+    if (detail) return detail.kind === "team" ? "teams" : "trainings";
+    return PATH_TO_PAGE[p] ?? (p === "/" ? "home" : "not-found");
   });
   const [user, setUser] = useState(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -2161,29 +2194,26 @@ export default function Muuvlink() {
         showToast(t("toast.inviteLogin"), "info");
       }
     }
-    // Takım deep-link: ?takim=ID  /  mail'deki duvara git: ?takim=ID&tab=duvar
-    const takimId = params.get("takim");
+    // Detay deep-link: yeni slug path (/takim/..-id, /etkinlik/..-id) VEYA eski ?takim=/?etkinlik= linkleri.
+    // fetch fonksiyonları adres çubuğunu slug URL'e çevirir (replace: geçmişe fazladan kayıt ekleme).
+    const detail = parseDetailPath(window.location.pathname);
+    const takimId = detail?.kind === "team" ? detail.id : params.get("takim");
     if (takimId) {
       const tab = params.get("tab"); // "duvar" → wall, yoksa members
       teamActiveTabRef.current = tab === "duvar" ? "wall" : "members";
-      // Canonical URL'i koru (SEO + paylaşım): fazladan paramları at, ?takim'i bırak
-      window.history.replaceState({}, "", `${window.location.pathname}?takim=${takimId}`);
       // Giriş yapmamış ziyaretçi de public takımı görür (detay sayfasında giriş CTA'sı var).
-      // Giriş sonrası tam erişimle tekrar açılabilsin diye işaretle.
       const token = localStorage.getItem("token");
       if (!token) {
         localStorage.setItem("pendingTeam", takimId);
         localStorage.setItem("pendingTeamTab", tab || "members");
       }
-      fetchTeamDetails(takimId);
+      fetchTeamDetails(takimId, { replace: true });
     }
-    // Etkinlik deep-link: ?etkinlik=ID (paylaşılan link) — eski ?antrenman=ID de kabul edilir
-    const etkinlikId = params.get("etkinlik") || params.get("antrenman");
+    const etkinlikId = detail?.kind === "training" ? detail.id : (params.get("etkinlik") || params.get("antrenman"));
     if (etkinlikId) {
-      window.history.replaceState({}, "", `${window.location.pathname}?etkinlik=${etkinlikId}`);
       const token = localStorage.getItem("token");
       if (!token) localStorage.setItem("pendingTraining", etkinlikId);
-      fetchTrainingDetails(etkinlikId);
+      fetchTrainingDetails(etkinlikId, { replace: true });
     }
   }, []);
 
@@ -2235,12 +2265,12 @@ export default function Muuvlink() {
       // Detay sayfası: takıma özel meta (SEO — her takım ayrı indekslenebilir sayfa)
       title   = `${selectedTeam.name} — Muuvlink`;
       desc    = (selectedTeam.description || t("teams.pageSubtitle") || "").slice(0, 160);
-      url     = `https://muuvlink.app/takimlar?takim=${selectedTeam.id}`;
+      url     = `https://muuvlink.app${teamPath(selectedTeam)}`;
       ogImage = absImg(selectedTeam.avatar);
     } else if (currentPage === "training-detail" && selectedTraining) {
       title   = `${selectedTraining.title} — Muuvlink`;
       desc    = (selectedTraining.description || t("trainings.pageSubtitle") || "").slice(0, 160);
-      url     = `https://muuvlink.app/etkinlikler?etkinlik=${selectedTraining.id}`;
+      url     = `https://muuvlink.app${trainingPath(selectedTraining)}`;
       ogImage = absImg(selectedTraining.image_url);
     } else {
       const meta = PAGE_META[currentPage];
@@ -2277,6 +2307,13 @@ export default function Muuvlink() {
   // Tarayıcı geri/ileri tuşu
   useEffect(() => {
     const onPop = () => {
+      // Geri/ileri ile bir detay URL'ine dönülürse detayı tekrar aç
+      const detail = parseDetailPath(window.location.pathname);
+      if (detail) {
+        if (detail.kind === "team") fetchTeamDetails(detail.id, { replace: true });
+        else fetchTrainingDetails(detail.id, { replace: true });
+        return;
+      }
       const page = PATH_TO_PAGE[window.location.pathname] ?? (window.location.pathname === "/" ? "home" : "not-found");
       setCurrentPage(page);
     };
@@ -2605,7 +2642,7 @@ export default function Muuvlink() {
     }
   };
 
-  const fetchTrainingDetails = async (trainingId) => {
+  const fetchTrainingDetails = async (trainingId, { replace = false } = {}) => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(`${API_URL}/trainings/${trainingId}`, {
@@ -2616,6 +2653,11 @@ export default function Muuvlink() {
         const data = await response.json();
         setSelectedTraining(data.training);
         setCurrentPage("training-detail");
+        // Adres çubuğunu slug URL'e getir (SEO + paylaşım + yenileme tutarlılığı)
+        const dpath = trainingPath(data.training);
+        if (window.location.pathname !== dpath) {
+          window.history[replace ? "replaceState" : "pushState"]({ page: "training-detail" }, "", dpath);
+        }
       } else {
         const data = await response.json().catch(() => ({}));
         // Giriş gerektiren içerik → login modal aç
@@ -2996,7 +3038,7 @@ export default function Muuvlink() {
     } catch { showToast(t("toast.networkError"), "error"); }
   };
 
-  const fetchTeamDetails = async (teamId) => {
+  const fetchTeamDetails = async (teamId, { replace = false } = {}) => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(`${API_URL}/teams/${teamId}`, {
@@ -3007,6 +3049,11 @@ export default function Muuvlink() {
         const data = await response.json();
         setSelectedTeam(data.team);
         setCurrentPage("team-detail");
+        // Adres çubuğunu slug URL'e getir (SEO + paylaşım + yenileme tutarlılığı)
+        const dpath = teamPath(data.team);
+        if (window.location.pathname !== dpath) {
+          window.history[replace ? "replaceState" : "pushState"]({ page: "team-detail" }, "", dpath);
+        }
         // owner/coach ise bekleyen davetleri çek
         const myRole = data.team?.members?.find(m => m.id === user?.id)?.role;
         if (myRole === 'owner' || myRole === 'editor' || myRole === 'coach' || myRole === 'captain') {
@@ -3216,8 +3263,10 @@ export default function Muuvlink() {
       return false;
     }
 
-    const takimId     = params.get("takim");
-    const etkinlikId = params.get("etkinlik") || params.get("antrenman"); // eski bildirim URL'leri
+    // Yeni slug'lı detay path'i (/takim/..-id, /etkinlik/..-id) de desteklenir
+    const detail = parseDetailPath(pathname);
+    const takimId     = detail?.kind === "team" ? detail.id : params.get("takim");
+    const etkinlikId = detail?.kind === "training" ? detail.id : (params.get("etkinlik") || params.get("antrenman")); // eski bildirim URL'leri
 
     if (etkinlikId) {
       fetchTrainingDetails(etkinlikId);
@@ -4964,7 +5013,7 @@ export default function Muuvlink() {
               )}
               <button
                 onClick={async () => {
-                  const link = `${window.location.origin}/etkinlikler?etkinlik=${selectedTraining.id}`;
+                  const link = `${window.location.origin}${trainingPath(selectedTraining)}`;
                   const res = await shareLink({ title: selectedTraining.title, text: selectedTraining.title, url: link });
                   if (res === "copied") showToast(t("toast.linkCopied"), "success");
                   else if (res === "failed") showToast(t("toast.shareFail"), "error");
@@ -4976,7 +5025,7 @@ export default function Muuvlink() {
               </button>
               <button
                 onClick={async () => {
-                  const link = `${window.location.origin}/etkinlikler?etkinlik=${selectedTraining.id}`;
+                  const link = `${window.location.origin}${trainingPath(selectedTraining)}`;
                   const res = await copyPlainLink(link);
                   if (res === "copied") showToast(t("toast.linkCopied"), "success");
                   else showToast(t("toast.shareFail"), "error");
@@ -5616,7 +5665,7 @@ export default function Muuvlink() {
               )}
               <button
                 onClick={async () => {
-                  const link = `${window.location.origin}/takimlar?takim=${selectedTeam.id}`;
+                  const link = `${window.location.origin}${teamPath(selectedTeam)}`;
                   const res = await shareLink({ title: selectedTeam.name, text: selectedTeam.name, url: link });
                   if (res === "copied") showToast(t("toast.linkCopied"), "success");
                   else if (res === "failed") showToast(t("toast.shareFail"), "error");
@@ -5628,7 +5677,7 @@ export default function Muuvlink() {
               </button>
               <button
                 onClick={async () => {
-                  const link = `${window.location.origin}/takimlar?takim=${selectedTeam.id}`;
+                  const link = `${window.location.origin}${teamPath(selectedTeam)}`;
                   const res = await copyPlainLink(link);
                   if (res === "copied") showToast(t("toast.linkCopied"), "success");
                   else showToast(t("toast.shareFail"), "error");

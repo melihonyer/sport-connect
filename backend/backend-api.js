@@ -983,6 +983,22 @@ const updateUserStats = async (userId) => {
 const SITE_ORIGIN = 'https://muuvlink.app';
 const xmlEscape = (s) => String(s).replace(/[<>&'"]/g, (c) =>
   ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' }[c]));
+// SEO dostu slug — frontend sporla-bulusma.jsx'teki slugify ile AYNI kurallar
+// (canonical == sitemap URL olsun diye birebir eşleşmeli).
+const slugify = (s) =>
+  (s || '')
+    .toString()
+    .replace(/İ/g, 'i').replace(/I/g, 'i').replace(/ı/g, 'i')
+    .replace(/Ğ/g, 'g').replace(/ğ/g, 'g')
+    .replace(/Ü/g, 'u').replace(/ü/g, 'u')
+    .replace(/Ş/g, 's').replace(/ş/g, 's')
+    .replace(/Ö/g, 'o').replace(/ö/g, 'o')
+    .replace(/Ç/g, 'c').replace(/ç/g, 'c')
+    .toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60) || 'x';
 
 app.get('/api/sitemap.xml', async (req, res) => {
   const today = new Date().toISOString().slice(0, 10);
@@ -997,11 +1013,11 @@ app.get('/api/sitemap.xml', async (req, res) => {
   try {
     // Herkese açık takımlar (özel olanlar hariç)
     const teams = await pool.query(
-      `SELECT id, updated_at FROM teams WHERE is_private = false ORDER BY updated_at DESC LIMIT 20000`
+      `SELECT id, name, updated_at FROM teams WHERE is_private = false ORDER BY updated_at DESC LIMIT 20000`
     );
     for (const t of teams.rows) {
       urls.push({
-        loc: `${SITE_ORIGIN}/takimlar?takim=${t.id}`,
+        loc: `${SITE_ORIGIN}/takim/${slugify(t.name)}-${t.id}`,
         changefreq: 'weekly',
         priority: '0.7',
         lastmod: (t.updated_at ? new Date(t.updated_at) : new Date()).toISOString().slice(0, 10),
@@ -1010,13 +1026,13 @@ app.get('/api/sitemap.xml', async (req, res) => {
 
     // Yaklaşan herkese açık etkinlikler (geçmiş etkinlikler dahil edilmez)
     const trainings = await pool.query(
-      `SELECT id, updated_at FROM trainings
+      `SELECT id, title, updated_at FROM trainings
         WHERE is_public = true AND ${trainingUtcExpr('')} >= NOW()
         ORDER BY training_date ASC LIMIT 20000`
     );
     for (const tr of trainings.rows) {
       urls.push({
-        loc: `${SITE_ORIGIN}/etkinlikler?etkinlik=${tr.id}`,
+        loc: `${SITE_ORIGIN}/etkinlik/${slugify(tr.title)}-${tr.id}`,
         changefreq: 'daily',
         priority: '0.8',
         lastmod: (tr.updated_at ? new Date(tr.updated_at) : new Date()).toISOString().slice(0, 10),
