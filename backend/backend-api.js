@@ -2909,6 +2909,42 @@ app.post('/api/comments/:id/like', authenticateToken, async (req, res) => {
   }
 });
 
+// Etkinlik yorumunu sil (soft-delete). Yetki: yorumun sahibi VEYA (takım etkinliğinde)
+// takım yönetimi; bireysel etkinlikte etkinliği oluşturan. Şikayet/geri alma sistemiyle
+// uyumlu olsun diye is_deleted=true yapılır (kayıt silinmez).
+app.delete('/api/comments/:id', authenticateToken, async (req, res) => {
+  try {
+    const cRes = await pool.query(
+      'SELECT id, user_id, training_id FROM training_comments WHERE id = $1 AND is_deleted IS NOT TRUE',
+      [req.params.id]
+    );
+    if (cRes.rows.length === 0) return res.status(404).json({ error: 'Mesaj bulunamadı.' });
+    const c = cRes.rows[0];
+
+    let allowed = c.user_id === req.user.id;
+    if (!allowed) {
+      const tr = await pool.query('SELECT team_id, created_by FROM trainings WHERE id = $1', [c.training_id]);
+      const training = tr.rows[0];
+      if (training?.team_id) {
+        const role = await pool.query(
+          'SELECT role FROM team_members WHERE team_id = $1 AND user_id = $2',
+          [training.team_id, req.user.id]
+        );
+        allowed = TRAINING_MANAGER_ROLES.includes(role.rows[0]?.role);
+      } else if (training) {
+        allowed = training.created_by === req.user.id;
+      }
+    }
+    if (!allowed) return res.status(403).json({ error: 'Bu mesajı silme yetkiniz yok.' });
+
+    await pool.query('UPDATE training_comments SET is_deleted = true WHERE id = $1', [req.params.id]);
+    res.json({ message: 'Mesaj silindi.' });
+  } catch (error) {
+    console.error('Delete comment error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Takım duvarı gönderisini beğen / beğenmekten vazgeç (yorum beğenisinin aynısı)
 app.post('/api/team-posts/:id/like', authenticateToken, async (req, res) => {
   try {
@@ -2961,6 +2997,35 @@ app.post('/api/team-posts/:id/like', authenticateToken, async (req, res) => {
     res.json({ liked, count: agg.rows[0].count, likers: agg.rows[0].likers });
   } catch (error) {
     console.error('Team post like error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Takım duvarı gönderisini sil (soft-delete). Yetki: gönderinin sahibi VEYA takım yönetimi
+// (sahip / antrenör / kaptan / editör).
+app.delete('/api/team-posts/:id', authenticateToken, async (req, res) => {
+  try {
+    const pRes = await pool.query(
+      'SELECT id, user_id, team_id FROM team_posts WHERE id = $1 AND is_deleted IS NOT TRUE',
+      [req.params.id]
+    );
+    if (pRes.rows.length === 0) return res.status(404).json({ error: 'Gönderi bulunamadı.' });
+    const post = pRes.rows[0];
+
+    let allowed = post.user_id === req.user.id;
+    if (!allowed && post.team_id) {
+      const role = await pool.query(
+        'SELECT role FROM team_members WHERE team_id = $1 AND user_id = $2',
+        [post.team_id, req.user.id]
+      );
+      allowed = TRAINING_MANAGER_ROLES.includes(role.rows[0]?.role);
+    }
+    if (!allowed) return res.status(403).json({ error: 'Bu gönderiyi silme yetkiniz yok.' });
+
+    await pool.query('UPDATE team_posts SET is_deleted = true WHERE id = $1', [req.params.id]);
+    res.json({ message: 'Gönderi silindi.' });
+  } catch (error) {
+    console.error('Delete team post error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

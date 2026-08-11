@@ -2911,6 +2911,52 @@ export default function Muuvlink() {
     }
   };
 
+  // Etkinlik yorumunu sil (yazarı veya takım yönetimi). Onay ister.
+  const handleDeleteComment = (commentId, trainingId) => {
+    showConfirm(t("moderation.confirmDeleteComment"), async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API_URL}/comments/${commentId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          showToast(t("moderation.deleted"), "success");
+          fetchTrainingDetails(trainingId);
+        } else {
+          const d = await res.json().catch(() => ({}));
+          showToast(d.error || t("moderation.deleteFail"), "error");
+        }
+      } catch (error) {
+        console.error("Delete comment error:", error);
+        showToast(t("toast.networkError"), "error");
+      }
+    }, { danger: true });
+  };
+
+  // Takım duvarı gönderisini sil (yazarı veya takım yönetimi). Onay ister.
+  const handleDeleteWallPost = (postId, teamId) => {
+    showConfirm(t("moderation.confirmDeletePost"), async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API_URL}/team-posts/${postId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          showToast(t("moderation.deleted"), "success");
+          fetchTeamDetails(teamId);
+        } else {
+          const d = await res.json().catch(() => ({}));
+          showToast(d.error || t("moderation.deleteFail"), "error");
+        }
+      } catch (error) {
+        console.error("Delete wall post error:", error);
+        showToast(t("toast.networkError"), "error");
+      }
+    }, { danger: true });
+  };
+
   // ── Mesaj beğeni (göz kırpan) ikonu + sayı + kimler beğendi ──
   const EYE_ACTIVE = [
     "M39.1,3.8c0-2.1-1.7-3.8-3.8-3.8s-4,1.7-4,3.8-1.7,4-3.8,4-4-1.9-4-4-1.7-3.8-3.8-3.8-3.8,1.7-3.8,3.8c0,6.4,5.2,11.6,11.6,11.6s11.6-5.2,11.6-11.6h0Z",
@@ -5475,20 +5521,33 @@ export default function Muuvlink() {
                         <div className="font-semibold text-sm">{c.user_name}</div>
                         <div className="text-xs text-gray-500">{fmtDateShort(c.created_at)}</div>
                       </div>
-                      {user && c.user_id !== user.id && (
+                      {user && (
                         <div className="flex gap-1">
-                          <button
-                            onClick={() => setReportModal({ type: "comment", id: c.id })}
-                            className="text-xs text-slate-400 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors"
-                          >
-                            <Flag className="w-3 h-3" />
-                          </button>
-                          <button
-                            onClick={() => handleBlock(c.user_id, c.user_name)}
-                            className="text-xs text-slate-400 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors"
-                          >
-                            {t("block.btn")}
-                          </button>
+                          {c.user_id !== user.id && (
+                            <>
+                              <button
+                                onClick={() => setReportModal({ type: "comment", id: c.id })}
+                                className="text-xs text-slate-400 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors"
+                              >
+                                <Flag className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={() => handleBlock(c.user_id, c.user_name)}
+                                className="text-xs text-slate-400 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors"
+                              >
+                                {t("block.btn")}
+                              </button>
+                            </>
+                          )}
+                          {(canManage || c.user_id === user.id) && (
+                            <button
+                              onClick={() => handleDeleteComment(c.id, selectedTraining.id)}
+                              title={t("moderation.delete")}
+                              className="text-xs text-slate-400 hover:text-red-600 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -5828,20 +5887,33 @@ export default function Muuvlink() {
                           <div className="font-semibold text-sm text-slate-800">{post.user_name}</div>
                           <div className="text-xs text-slate-400">{fmtDateShort(post.created_at)}</div>
                         </div>
-                        {user && post.user_id !== user.id && (
+                        {user && (
                           <div className="flex gap-1">
-                            <button
-                              onClick={() => setReportModal({ type: "wall_post", id: post.id })}
-                              className="text-slate-300 hover:text-red-400 p-1 rounded-lg hover:bg-red-50 transition-colors"
-                            >
-                              <Flag className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleBlock(post.user_id, post.user_name)}
-                              className="text-xs text-slate-300 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors"
-                            >
-                              {t("block.btn")}
-                            </button>
+                            {post.user_id !== user.id && (
+                              <>
+                                <button
+                                  onClick={() => setReportModal({ type: "wall_post", id: post.id })}
+                                  className="text-slate-300 hover:text-red-400 p-1 rounded-lg hover:bg-red-50 transition-colors"
+                                >
+                                  <Flag className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleBlock(post.user_id, post.user_name)}
+                                  className="text-xs text-slate-300 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors"
+                                >
+                                  {t("block.btn")}
+                                </button>
+                              </>
+                            )}
+                            {(canManage || post.user_id === user.id) && (
+                              <button
+                                onClick={() => handleDeleteWallPost(post.id, selectedTeam.id)}
+                                title={t("moderation.delete")}
+                                className="text-slate-300 hover:text-red-600 p-1 rounded-lg hover:bg-red-50 transition-colors"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                           </div>
                         )}
                       </div>

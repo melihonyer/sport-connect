@@ -355,6 +355,13 @@ export const translations = {
     organizer:      { tr: "Organizatör",                  en: "Organizer",               de: "Organisator"             },
     noRegLink:      { tr: "Kayıt linki bulunamadı.",       en: "Registration link not found.", de: "Anmeldelink nicht gefunden." },
   },
+  moderation: {
+    delete:               { tr: "Sil",                        en: "Delete",                  de: "Löschen"                 },
+    deleted:              { tr: "Silindi.",                   en: "Deleted.",                de: "Gelöscht."               },
+    deleteFail:           { tr: "Silinemedi.",                en: "Could not delete.",       de: "Konnte nicht gelöscht werden." },
+    confirmDeleteComment: { tr: "Bu mesajı silmek istediğinize emin misiniz?", en: "Delete this message?", de: "Diese Nachricht löschen?" },
+    confirmDeletePost:    { tr: "Bu gönderiyi silmek istediğinize emin misiniz?", en: "Delete this post?", de: "Diesen Beitrag löschen?" },
+  },
   messageLike: {
     like:          { tr: "Beğen",                          en: "Like",                    de: "Gefällt mir"             },
     unlike:        { tr: "Beğeniyi geri al",               en: "Unlike",                  de: "Gefällt mir nicht mehr"  },
