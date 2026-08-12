@@ -468,6 +468,7 @@ export const translations = {
       coach:   { tr: "Antrenör",   en: "Coach",   de: "Trainer"  },
       captain: { tr: "Kaptan",     en: "Captain", de: "Kapitän"  },
       member:  { tr: "Üye",        en: "Member",  de: "Mitglied" },
+      admin:   { tr: "Admin",      en: "Admin",   de: "Admin"    },
     },
     changeRole:     { tr: "Rol Değiştir",                 en: "Change Role",             de: "Rolle ändern"            },
     removeMember:   { tr: "Üyeyi Çıkar",                  en: "Remove Member",           de: "Mitglied entfernen"      },

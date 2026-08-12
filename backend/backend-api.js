@@ -1594,7 +1594,7 @@ app.get('/api/teams/:id', optionalAuth, async (req, res) => {
     }
 
     const membersResult = await pool.query(
-      `SELECT u.id, u.name, u.avatar, tm.role, tm.joined_at
+      `SELECT u.id, u.name, u.avatar, u.is_admin, tm.role, tm.joined_at
        FROM team_members tm
        JOIN users u ON tm.user_id = u.id
        WHERE tm.team_id = $1
