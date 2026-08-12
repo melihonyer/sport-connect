@@ -579,7 +579,7 @@ function inviteEmailNew({ teamName, teamSport, inviterName, avatar }) {
 
 // Rol etiketleri (TR)
 const ROLE_LABELS_TR = {
-  owner: 'Sahip',
+  owner: 'Takım Lideri',
   editor: 'Editör',
   coach: 'Antrenör',
   captain: 'Kaptan',
