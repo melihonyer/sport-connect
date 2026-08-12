@@ -297,7 +297,7 @@ async function canManageTeam(teamId, userId) {
   const r = await pool.query(
     `SELECT 1 FROM teams t
        LEFT JOIN team_members tm ON tm.team_id = t.id AND tm.user_id = $2
-      WHERE t.id = $1 AND (t.owner_id = $2 OR tm.role = 'editor')
+      WHERE t.id = $1 AND (t.owner_id = $2 OR tm.role IN ('editor','owner'))
       LIMIT 1`,
     [teamId, userId]
   );
@@ -1946,9 +1946,9 @@ app.put('/api/teams/:teamId/members/:userId/role', authenticateToken, async (req
     const { teamId, userId } = req.params;
     const { role } = req.body;
 
-    const ALLOWED_ROLES = ['member', 'coach', 'captain', 'editor'];
+    const ALLOWED_ROLES = ['member', 'coach', 'captain', 'editor', 'owner'];
     if (!ALLOWED_ROLES.includes(role)) {
-      return res.status(400).json({ error: 'Geçersiz rol. İzin verilenler: member, coach, captain, editor' });
+      return res.status(400).json({ error: 'Geçersiz rol. İzin verilenler: member, coach, captain, editor, owner' });
     }
 
     const ownerCheck = await pool.query(
@@ -1973,6 +1973,13 @@ app.put('/api/teams/:teamId/members/:userId/role', authenticateToken, async (req
     );
     if (!prev.rows.length) return res.status(404).json({ error: 'Üye bulunamadı.' });
     const oldRole = prev.rows[0].role;
+
+    // "Sahip" rolünü yalnızca takımın ASIL sahibi (owner_id) verebilir veya geri alabilir.
+    // Editör/co-owner başka birini sahip yapamaz; başka bir sahibin rolüne dokunamaz.
+    const isPrimaryOwner = req.user.id === ownerCheck.rows[0].owner_id;
+    if ((role === 'owner' || oldRole === 'owner') && !isPrimaryOwner) {
+      return res.status(403).json({ error: 'Sahip rolünü yalnızca takımın asıl sahibi yönetebilir.' });
+    }
 
     await pool.query(
       'UPDATE team_members SET role = $1 WHERE team_id = $2 AND user_id = $3',
@@ -3587,6 +3594,17 @@ app.delete('/api/admin/users/:id', isAdmin, async (req, res) => {
 app.put('/api/admin/users/:id/toggle-admin', isAdmin, async (req, res) => {
   try {
     const { id } = req.params;
+    const cur = await pool.query('SELECT is_admin FROM users WHERE id = $1', [id]);
+    if (!cur.rows.length) return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
+
+    // Son admini yetkisiz bırakma — kilitlenmeyi önle.
+    if (cur.rows[0].is_admin) {
+      const c = await pool.query('SELECT COUNT(*)::int AS n FROM users WHERE is_admin = true');
+      if (c.rows[0].n <= 1) {
+        return res.status(400).json({ error: 'Son admin yetkisi kaldırılamaz. Önce başka bir admin atayın.' });
+      }
+    }
+
     const result = await pool.query(
       'UPDATE users SET is_admin = NOT is_admin WHERE id = $1 RETURNING id, name, is_admin',
       [id]

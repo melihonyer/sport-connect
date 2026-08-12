@@ -5665,9 +5665,10 @@ export default function Muuvlink() {
     const isMember = !!myMembership;
     const isCoach = myRole === "coach";
     const isEditor = myRole === "editor";
-    // Editör, sahip ile aynı yönetim yetkilerine sahiptir (takımı silme ve sahibin
-    // rolüne dokunma hariç). canAdmin: ayarlar/avatar/rol değiştirme yetkisi.
-    const canAdmin = isOwner || isEditor;
+    // Editör ve co-owner (role='owner' ama asıl sahip değil), sahip ile aynı yönetim
+    // yetkilerine sahiptir (takımı silme ve "sahip" rolü atama hariç — bunlar yalnız
+    // asıl sahibe aittir). canAdmin: ayarlar/avatar/rol değiştirme yetkisi.
+    const canAdmin = isOwner || isEditor || myRole === "owner";
     const canManage = canAdmin || isCoach || myRole === "captain";
     const canSeeMembers = !selectedTeam.is_private || isMember;
 
@@ -5997,7 +5998,7 @@ export default function Muuvlink() {
                         </div>
                       </div>
 
-                      {canAdmin && !isThisOwner && (
+                      {canAdmin && !isThisOwner && (member.role !== "owner" || isOwner) && (
                         <div className="flex items-center gap-2">
                           <select value={member.role}
                             onChange={(e) => handleChangeMemberRole(selectedTeam.id, member.id, e.target.value)}
@@ -6006,6 +6007,8 @@ export default function Muuvlink() {
                             <option value="captain">{t("teamDetail.roles.captain")}</option>
                             <option value="coach">{t("teamDetail.roles.coach")}</option>
                             <option value="editor">{t("teamDetail.roles.editor")}</option>
+                            {/* "Sahip" rolünü yalnızca asıl sahip atayabilir */}
+                            {isOwner && <option value="owner">{t("teamDetail.roles.owner")}</option>}
                           </select>
                           <button onClick={() => handleRemoveMember(selectedTeam.id, member.id)}
                             className="w-9 h-9 flex items-center justify-center bg-red-50 text-red-400 rounded-xl hover:bg-red-100 transition-colors">

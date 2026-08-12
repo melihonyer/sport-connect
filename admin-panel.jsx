@@ -649,6 +649,21 @@ export default function AdminPanel() {
     loadTab(reload);
   };
 
+  // Kullanıcıya admin yetkisi ver / al (sadece panelden yönetilir)
+  const toggleAdmin = async (u) => {
+    const makeAdmin = !u.is_admin;
+    if (!window.confirm(`"${u.name}" ${makeAdmin ? "ADMIN yapılacak" : "adminlikten çıkarılacak"}. Emin misiniz?`)) return;
+    try {
+      const r = await api(`/admin/users/${u.id}/toggle-admin`, { method: "PUT" });
+      if (r) {
+        setUsers(prev => prev.map(x => x.id === u.id ? { ...x, is_admin: r.is_admin } : x));
+        showToast(r.is_admin ? "Admin yapıldı." : "Admin yetkisi kaldırıldı.", "success");
+      }
+    } catch (e) {
+      showToast(e.message || "İşlem başarısız.", "error");
+    }
+  };
+
   const markRead = async (id) => {
     await api(`/admin/contact/${id}/read`, { method: "PUT" });
     setMessages(prev => prev.map(m => m.id === id ? { ...m, is_read: true } : m));
@@ -1295,12 +1310,18 @@ export default function AdminPanel() {
                         <span>{fmt(u.created_at)}</span>
                       </div>
                     </div>
-                    {!u.is_admin && (
-                      <button onClick={() => del(`/admin/users/${u.id}`, u.name, "users")}
-                        className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0">
-                        <Trash2 className="w-4 h-4" />
+                    <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                      <button onClick={() => toggleAdmin(u)}
+                        className={`px-2 py-1 rounded-lg text-[11px] font-medium border transition-colors ${u.is_admin ? "border-amber-200 text-amber-700" : "border-brand-200 text-brand-700"}`}>
+                        {u.is_admin ? "Admin kaldır" : "Admin yap"}
                       </button>
-                    )}
+                      {!u.is_admin && (
+                        <button onClick={() => del(`/admin/users/${u.id}`, u.name, "users")}
+                          className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -1344,12 +1365,18 @@ export default function AdminPanel() {
                         </td>
                         <td className="px-4 py-3.5 text-slate-400 text-xs">{fmt(u.created_at)}</td>
                         <td className="px-4 py-3.5">
-                          {!u.is_admin && (
-                            <button onClick={() => del(`/admin/users/${u.id}`, u.name, "users")}
-                              className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                              <Trash2 className="w-4 h-4" />
+                          <div className="flex items-center gap-1.5 justify-end">
+                            <button onClick={() => toggleAdmin(u)}
+                              className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${u.is_admin ? "border-amber-200 text-amber-700 hover:bg-amber-50" : "border-brand-200 text-brand-700 hover:bg-brand-50"}`}>
+                              {u.is_admin ? "Admin kaldır" : "Admin yap"}
                             </button>
-                          )}
+                            {!u.is_admin && (
+                              <button onClick={() => del(`/admin/users/${u.id}`, u.name, "users")}
+                                className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
