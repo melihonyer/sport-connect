@@ -293,11 +293,24 @@ function attachCreatorDisplay(rows) {
 // Editör, takım sahibiyle (owner) aynı yönetim yetkilerine sahiptir; yalnızca
 // takımı SİLMEK ve takım sahibinin rolüne dokunmak sahibe özeldir.
 // Sahiplik, teams.owner_id ile takip edilir; editörlük ise team_members.role='editor'.
+// Platform admini mi? (users.is_admin — panelden yönetilir)
+async function isPlatformAdmin(userId) {
+  if (!userId) return false;
+  const r = await pool.query('SELECT is_admin FROM users WHERE id = $1', [userId]);
+  return r.rows[0]?.is_admin === true;
+}
+
 async function canManageTeam(teamId, userId) {
+  // Yetki: asıl sahip, editör/co-owner, VEYA takıma üye olan platform admini.
   const r = await pool.query(
     `SELECT 1 FROM teams t
        LEFT JOIN team_members tm ON tm.team_id = t.id AND tm.user_id = $2
-      WHERE t.id = $1 AND (t.owner_id = $2 OR tm.role IN ('editor','owner'))
+       LEFT JOIN users u ON u.id = $2
+      WHERE t.id = $1 AND (
+        t.owner_id = $2
+        OR tm.role IN ('editor','owner')
+        OR (u.is_admin = true AND tm.user_id IS NOT NULL)
+      )
       LIMIT 1`,
     [teamId, userId]
   );
@@ -1717,7 +1730,7 @@ app.post('/api/teams/:id/invite', authenticateToken, async (req, res) => {
       [teamId, req.user.id]
     );
 
-    if (memberCheck.rows.length === 0 || !INVITE_MANAGER_ROLES.includes(memberCheck.rows[0].role)) {
+    if (memberCheck.rows.length === 0 || (!INVITE_MANAGER_ROLES.includes(memberCheck.rows[0].role) && !(await isPlatformAdmin(req.user.id)))) {
       return res.status(403).json({ error: 'Only team owners/editors/coaches can invite members' });
     }
 
@@ -1822,7 +1835,7 @@ app.get('/api/teams/:id/invitations', authenticateToken, async (req, res) => {
       `SELECT role FROM team_members WHERE team_id = $1 AND user_id = $2`,
       [teamId, req.user.id]
     );
-    if (!memberCheck.rows.length || !INVITE_MANAGER_ROLES.includes(memberCheck.rows[0].role)) {
+    if (!memberCheck.rows.length || (!INVITE_MANAGER_ROLES.includes(memberCheck.rows[0].role) && !(await isPlatformAdmin(req.user.id)))) {
       return res.status(403).json({ error: 'Yetki yok.' });
     }
     const result = await pool.query(
@@ -1848,7 +1861,7 @@ app.delete('/api/teams/:id/invitations/:inviteId', authenticateToken, async (req
       `SELECT role FROM team_members WHERE team_id = $1 AND user_id = $2`,
       [teamId, req.user.id]
     );
-    if (!memberCheck.rows.length || !INVITE_MANAGER_ROLES.includes(memberCheck.rows[0].role)) {
+    if (!memberCheck.rows.length || (!INVITE_MANAGER_ROLES.includes(memberCheck.rows[0].role) && !(await isPlatformAdmin(req.user.id)))) {
       return res.status(403).json({ error: 'Yetki yok.' });
     }
     await pool.query(
@@ -1977,7 +1990,7 @@ app.put('/api/teams/:teamId/members/:userId/role', authenticateToken, async (req
     // "Sahip" rolünü yalnızca takımın ASIL sahibi (owner_id) verebilir veya geri alabilir.
     // Editör/co-owner başka birini sahip yapamaz; başka bir sahibin rolüne dokunamaz.
     const isPrimaryOwner = req.user.id === ownerCheck.rows[0].owner_id;
-    if ((role === 'owner' || oldRole === 'owner') && !isPrimaryOwner) {
+    if ((role === 'owner' || oldRole === 'owner') && !isPrimaryOwner && !(await isPlatformAdmin(req.user.id))) {
       return res.status(403).json({ error: 'Sahip rolünü yalnızca takımın asıl sahibi yönetebilir.' });
     }
 
@@ -2052,13 +2065,15 @@ app.delete('/api/teams/:teamId/members/:userId', authenticateToken, async (req, 
     const isCoach = myRole.rows[0]?.role === 'coach';
     const isEditor = myRole.rows[0]?.role === 'editor';
     const isSelf = req.user.id === parseInt(userId);
+    // Takıma üye olan platform admini de üye çıkarabilir.
+    const isAdminMember = myRole.rows.length > 0 && (await isPlatformAdmin(req.user.id));
 
     // Sahip çıkarılamaz
     if (parseInt(userId) === ownerCheck.rows[0].owner_id) {
       return res.status(403).json({ error: 'Takım sahibi çıkarılamaz.' });
     }
 
-    if (!isOwner && !isCoach && !isEditor && !isSelf) {
+    if (!isOwner && !isCoach && !isEditor && !isSelf && !isAdminMember) {
       return res.status(403).json({ error: 'Bu işlem için yetkiniz yok.' });
     }
 
