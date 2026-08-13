@@ -2411,6 +2411,50 @@ export default function Muuvlink() {
     return () => window.removeEventListener("popstate", onPop);
   }, []);
 
+  // ── Android donanım "geri" tuşu (Capacitor) ──────────────────────
+  // Web'de pushState/popstate yeterli; ama native Android'de donanım geri
+  // tuşu, birikmiş webview history'sinde dönüp durduğu için kullanıcı ana
+  // ekrandan uygulamadan çıkamıyordu. Bir backButton dinleyicisi kaydedince
+  // Capacitor varsayılan davranışı (webview.goBack/çıkış) devre dışı kalır ve
+  // geri tuşunu tamamen biz yönetiriz. Ref sayesinde her zaman güncel state okunur.
+  const backNavRef = useRef(() => true);
+  backNavRef.current = () => {
+    // 1) Açık bir modal/katman varsa önce onu kapat (en üsttekinden başla)
+    if (legalModal)        { setLegalModal(null);        return true; }
+    if (reportModal)       { setReportModal(null);       return true; }
+    if (confirmModal)      { setConfirmModal(null);       return true; }
+    if (showDeleteModal)   { setShowDeleteModal(false);   return true; }
+    if (showManualLocation){ setShowManualLocation(false);return true; }
+    if (showInviteModal)   { setShowInviteModal(false);   return true; }
+    if (showProfileEdit)   { setShowProfileEdit(false);   return true; }
+    if (showNotifPrefs)    { setShowNotifPrefs(false);    return true; }
+    if (showNotifications) { setShowNotifications(false); return true; }
+    if (isAuthModalOpen)   { setIsAuthModalOpen(false);   return true; }
+
+    // 2) Detay sayfasındaysa ilgili listeye dön
+    if (currentPage === "training-detail") { setSelectedTraining(null); setCurrentPage("trainings"); return true; }
+    if (currentPage === "team-detail")     { setSelectedTeam(null);     setCurrentPage("teams");     return true; }
+
+    // 3) Ana/kök sayfa değilse köke dön
+    const rootPage = localStorage.getItem("token") ? "home" : "profile";
+    if (currentPage !== rootPage) { setCurrentPage(rootPage); return true; }
+
+    // 4) Kök sayfadaysa: uygulamadan çık (arka plana al)
+    return false;
+  };
+
+  useEffect(() => {
+    if (!isNative) return;
+    let sub;
+    import("@capacitor/app").then(({ App }) => {
+      sub = App.addListener("backButton", () => {
+        const handled = backNavRef.current();
+        if (!handled) App.exitApp();
+      });
+    }).catch(() => {});
+    return () => { try { sub && sub.remove(); } catch {} };
+  }, []);
+
   // Sayfa değişince en üste scroll
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
