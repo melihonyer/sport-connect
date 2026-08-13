@@ -34,32 +34,34 @@ const makeTrainingIcon = (color, letter, highlight = false) => {
   });
 };
 
-// Ücretli etkinlik pini — verilen SVG grafiği (yatay kuşak/banner + altta damla işaretçi).
-// Yarışın adı bannerın ortasına HTML metin olarak bindirilir; sığmazsa CSS ile "…" olur.
-// Konum noktası = işaretçinin alt ucu (iconAnchor).
-const PAID_COLOR = "#981dd8"; // işaretçi moru — popup aksanı da bunu kullanır
-const PAID_TEXT = "#ffffff";  // banner marka yeşili (#00b7ba) → beyaz metin
+// Ücretli etkinlik pini — verilen damla-pin SVG'si (mor→teal gradient).
+// Yarışın adı pinin SOLUNA, kalın siyah büyük harf olarak yazılır (harita üzerinde
+// okunurluk için beyaz hâle/halo verilir). Konum noktası = pinin alt ucu (iconAnchor).
+const PAID_COLOR = "#7b2fb0"; // popup aksanı — pin gradient moruna yakın
 const PAID_PIN_URL = "/pin-ucretli.svg";
-const PAID_PIN_RATIO = 86.2 / 194.1; // SVG yükseklik/genişlik oranı (194.1x86.2)
-// Banner metin bandı konumu — SVG'ye göre yüzdelik.
-const RIBBON_TOP = 11, RIBBON_HEIGHT = 36, RIBBON_INSET = 8; // %
+const PAID_PIN_RATIO = 320.4 / 215.3; // SVG yükseklik/genişlik oranı (dikey pin)
+const PAID_TIP_X = 107.9 / 215.3;     // pin ucunun yatay konumu (≈ merkez)
 const escapeXml = (s) => String(s || "").replace(/[<>&'"]/g, c => (
   { "<": "&lt;", ">": "&gt;", "&": "&amp;", "'": "&apos;", '"': "&quot;" }[c]));
 const makePaidIcon = (title, highlight = false) => {
-  const w = highlight ? 150 : 128;
-  const h = Math.round(w * PAID_PIN_RATIO);
-  const fs = Math.max(11, Math.round(w * 0.105));
+  const pw = highlight ? 56 : 46;                 // pin genişliği
+  const ph = Math.round(pw * PAID_PIN_RATIO);     // pin yüksekliği
+  const labelW = highlight ? 128 : 116;           // ad etiketi kutusu
+  const gap = 5;
+  const fs = highlight ? 14 : 12.5;
   const label = escapeXml((title || "").toLocaleUpperCase("tr-TR"));
-  const html = `<div style="position:relative;width:${w}px;height:${h}px;filter:drop-shadow(0 3px 4px rgba(0,0,0,.32))">
-    <img src="${PAID_PIN_URL}" style="width:${w}px;height:${h}px;display:block" alt=""/>
-    <div style="position:absolute;left:${RIBBON_INSET}%;right:${RIBBON_INSET}%;top:${RIBBON_TOP}%;height:${RIBBON_HEIGHT}%;display:flex;align-items:center;justify-content:center;">
-      <span style="font-family:'Montserrat',system-ui,sans-serif;font-weight:800;font-size:${fs}px;line-height:1;color:${PAID_TEXT};text-shadow:0 1px 2px rgba(0,0,0,.28);text-transform:uppercase;letter-spacing:-0.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">${label}</span>
-    </div>
+  const halo = "0 0 3px #fff,0 0 3px #fff,0 1px 2px #fff,0 -1px 2px #fff,1px 0 2px #fff,-1px 0 2px #fff";
+  const html = `<div style="display:flex;align-items:center;gap:${gap}px;width:${labelW + gap + pw}px;height:${ph}px;">
+    <span style="flex:0 0 ${labelW}px;text-align:right;font-family:'Montserrat',system-ui,sans-serif;font-weight:800;font-size:${fs}px;line-height:1.07;color:#171717;text-transform:uppercase;letter-spacing:-0.3px;text-shadow:${halo};word-break:break-word;">${label}</span>
+    <img src="${PAID_PIN_URL}" style="flex:0 0 ${pw}px;width:${pw}px;height:${ph}px;display:block;filter:drop-shadow(0 3px 5px rgba(0,0,0,.3));" alt=""/>
   </div>`;
+  const anchorX = labelW + gap + Math.round(pw * PAID_TIP_X);
   return L.divIcon({
     className: "",
     html,
-    iconSize: [w, h], iconAnchor: [w / 2, h * 0.98], popupAnchor: [0, -h * 0.95],
+    iconSize: [labelW + gap + pw, ph],
+    iconAnchor: [anchorX, ph],
+    popupAnchor: [Math.round(pw * PAID_TIP_X) - Math.round(pw / 2), -ph + 6],
   });
 };
 
@@ -165,13 +167,20 @@ const TrainingsMapView = ({ trainings, onSelectTraining, t, containerStyle }) =>
               >
                 <Popup className="training-map-popup" minWidth={220} maxWidth={280}>
                   <div style={{ fontFamily:"system-ui,sans-serif", padding:"4px 0" }}>
-                    <div style={{ display:"flex", alignItems:"center", gap:"6px", marginBottom:"8px" }}>
-                      {tr.is_paid && <span style={{ display:"inline-block", padding:"2px 8px", background:"#00b7ba", color:"#fff", borderRadius:"6px", fontSize:"11px", fontWeight:800 }}>Ücretli</span>}
-                      <span style={{ display:"inline-block", padding:"2px 8px", background:`${teamColor}18`, color:teamColor, borderRadius:"6px", fontSize:"11px", fontWeight:700 }}>{tr.sport || tr.team_sport || "Spor"}</span>
-                      {!tr.is_paid && tr.difficulty && <span style={{ fontSize:"11px", color:"#94a3b8" }}>{tr.difficulty}</span>}
+                    <div style={{ display:"flex", gap:"8px", alignItems:"flex-start" }}>
+                      <div style={{ flex:"1 1 auto", minWidth:0 }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:"6px", marginBottom:"8px", flexWrap:"wrap" }}>
+                          {tr.is_paid && <span style={{ display:"inline-block", padding:"2px 8px", background:"#00b7ba", color:"#fff", borderRadius:"6px", fontSize:"11px", fontWeight:800 }}>Ücretli</span>}
+                          <span style={{ display:"inline-block", padding:"2px 8px", background:`${teamColor}18`, color:teamColor, borderRadius:"6px", fontSize:"11px", fontWeight:700 }}>{tr.sport || tr.team_sport || "Spor"}</span>
+                          {!tr.is_paid && tr.difficulty && <span style={{ fontSize:"11px", color:"#94a3b8" }}>{tr.difficulty}</span>}
+                        </div>
+                        <div style={{ fontWeight:700, fontSize:"14px", color:"#0f172a", marginBottom:"4px", lineHeight:1.3 }}>{tr.title}</div>
+                        <div style={{ fontSize:"12px", color:"#64748b", marginBottom:"8px" }}>{tr.is_paid ? (tr.organizer || "") : tr.team_name}</div>
+                      </div>
+                      {tr.is_paid && tr.image_url && (
+                        <img src={tr.image_url} alt="" style={{ flex:"0 0 auto", width:"52px", height:"52px", borderRadius:"8px", objectFit:"cover", border:"1px solid #e2e8f0" }}/>
+                      )}
                     </div>
-                    <div style={{ fontWeight:700, fontSize:"14px", color:"#0f172a", marginBottom:"4px", lineHeight:1.3 }}>{tr.title}</div>
-                    <div style={{ fontSize:"12px", color:"#64748b", marginBottom:"8px" }}>{tr.is_paid ? (tr.organizer || "") : tr.team_name}</div>
                     <div style={{ display:"flex", flexDirection:"column", gap:"4px", marginBottom:"12px" }}>
                       <div style={{ display:"flex", alignItems:"center", gap:"6px", fontSize:"12px", color:"#475569" }}>
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
