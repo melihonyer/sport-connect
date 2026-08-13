@@ -248,6 +248,21 @@ const trainingAccentColor = (id) => {
   return TRAINING_ACCENT_COLORS[hash % TRAINING_ACCENT_COLORS.length];
 };
 
+// Etkinlik takvim ikonunun üst şerit rengi — bu paletten seçilir. Etkinlik id'sine
+// göre "rastgele ama sabit" (yeniden render'da titremesin diye deterministik).
+const CAL_BAND_COLORS = [
+  "#FAFFA3", "#C6E772", "#66D47E", "#073835",
+  "#FFEED0", "#F4C180", "#00A79D", "#007064",
+  "#9765C8", "#099A97", "#15CDA9", "#F0E4E4",
+];
+const calBandColor = (id) => CAL_BAND_COLORS[((((id || 0) * 2654435761) >>> 0) + 7) % CAL_BAND_COLORS.length];
+// Şerit açık renkse koyu, koyu renkse beyaz metin (kontrast).
+const calBandTextColor = (hex) => {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) > 150 ? "#1f2937" : "#ffffff";
+};
+
 const DEFAULT_MOTTOS = {
   tr: ["Birlikte Hareket Et!", "Yeni Dostlar Edin!", "Limitlerini Aş!", "En İyini Keşfet!"],
   en: ["Move Together!", "Make New Friends!", "Push Your Limits!", "Discover Your Best!"],
@@ -3651,7 +3666,6 @@ export default function Muuvlink() {
   const localeMap = { tr: "tr-TR", en: "en-US", de: "de-DE" };
   const month = dateObj.toLocaleDateString(localeMap[lang] || "en-US", { month: "short", timeZone: "UTC" }).toLocaleUpperCase("en-US");
 
-  const accentColor = trainingAccentColor(training.id);
   const isPaid = !!training.is_paid;
   const subtitleName = isPaid ? training.organizer : (training.team_name || training.creator_display);
 
@@ -3660,10 +3674,24 @@ export default function Muuvlink() {
       onClick={() => onClick(training.id)}
       className="group flex items-stretch gap-0 bg-white border-b border-dashed border-slate-100 cursor-pointer transition-all duration-200 py-6 px-2 hover:bg-slate-50/80 hover:border-slate-200 active:scale-[0.99]"
     >
-      {/* Sol: Takvim tarihi */}
-      <div className="flex flex-col items-center justify-center w-20 flex-shrink-0 pr-5">
-        <span className="font-smooch leading-none" style={{fontSize:"3rem", fontWeight:800, color: accentColor, fontVariantNumeric:"tabular-nums", letterSpacing:"-0.02em"}}>{day}</span>
-        <span className="font-smooch text-[11px] tracking-[0.18em] mt-0.5 uppercase" style={{fontWeight:600, color: accentColor, opacity: 0.55}}>{month}</span>
+      {/* Sol: Takvim ikonu (üst şerit rengi paletten rastgele) */}
+      <div className="flex items-center justify-center w-20 flex-shrink-0 pr-5">
+        {(() => {
+          const band = calBandColor(training.id);
+          const bandText = calBandTextColor(band);
+          return (
+            <div className="w-[54px] rounded-2xl overflow-hidden bg-white shadow-md border border-slate-100 flex flex-col group-hover:shadow-lg group-hover:-translate-y-0.5 transition-all duration-200">
+              <div className="text-center uppercase font-bold tracking-[0.1em] text-[10px] leading-none pt-[6px] pb-[5px]"
+                style={{ background: band, color: bandText }}>
+                {month}
+              </div>
+              <div className="text-center bg-white py-1.5">
+                <span className="font-display font-extrabold text-slate-900 leading-none"
+                  style={{ fontSize: "1.65rem", letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums" }}>{day}</span>
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Dikey ayraç */}
