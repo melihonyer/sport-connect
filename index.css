@@ -20,6 +20,9 @@
     text-rendering: optimizeLegibility;
     overflow-x: clip;
     max-width: 100vw;
+    /* Orta yaş okunurluğu: ferah satır yüksekliği + Montserrat için hafif optik ayar */
+    line-height: 1.6;
+    letter-spacing: -0.005em;
   }
 
   #root {
@@ -68,26 +71,28 @@
 }
 
 /* ─────────────────────────────────────────────
-   TYPOGRAPHY — Barlow Condensed display headings
+   TYPOGRAPHY — Montserrat display headings
+   (condensed kaldırıldı; ağırlık + boyutla ayrışır,
+    orta yaş okunurluğu için daha ferah satır yüksekliği)
 ───────────────────────────────────────────── */
 @layer components {
   .font-display {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Montserrat', sans-serif;
   }
 
   /* Büyük ekran başlıkları için impact style */
   .heading-display {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Montserrat', sans-serif;
     font-weight: 700;
-    letter-spacing: -0.01em;
-    line-height: 1.0;
+    letter-spacing: -0.02em;
+    line-height: 1.12;
   }
 
   .heading-section {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Montserrat', sans-serif;
     font-weight: 700;
-    letter-spacing: -0.01em;
-    line-height: 1.05;
+    letter-spacing: -0.015em;
+    line-height: 1.18;
   }
 }
 
@@ -279,25 +284,26 @@ input:focus, select:focus, textarea:focus {
    MOTTO / HERO TYPOGRAPHY
 ───────────────────────────────────────────── */
 .bn-motto {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 7rem;
-  font-weight: 800;
-  line-height: 1.18;
+  font-family: 'Montserrat', sans-serif;
+  /* Montserrat, Barlow Condensed'a göre çok daha geniş — boyut düşürüldü */
+  font-size: clamp(2.2rem, 9vw, 3rem);
+  font-weight: 700;
+  line-height: 1.15;
   letter-spacing: -0.02em;
   white-space: normal;
   padding-bottom: 0.08em;
 }
 @media (min-width: 768px) {
   .bn-motto {
-    font-size: clamp(2.8rem, 5.5vw, 4.5rem);
-    line-height: 1.18;
+    font-size: clamp(2.6rem, 4.5vw, 3.8rem);
+    line-height: 1.14;
     padding-bottom: 0.08em;
   }
 }
 
 /* Hero h1 display title */
 .bn-title {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   letter-spacing: -0.02em;
 }
 
@@ -362,10 +368,10 @@ input:focus, select:focus, textarea:focus {
    SECTION LABEL — küçük üst etiket
 ───────────────────────────────────────────── */
 .section-label {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 0.7rem;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.35em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   color: #006d6f; /* brand-800 — WCAG AA kontrast 6:1 */
 }

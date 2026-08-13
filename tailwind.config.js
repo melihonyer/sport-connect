@@ -6,9 +6,9 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans:    ['Barlow', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        display: ['Barlow Condensed', 'ui-sans-serif', 'sans-serif'],
-        smooch:  ['Smooch Sans', 'ui-sans-serif', 'sans-serif'],
+        sans:    ['Montserrat', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        display: ['Montserrat', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        smooch:  ['Montserrat', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
       colors: {
         brand: {

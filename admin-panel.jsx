@@ -1017,7 +1017,7 @@ export default function AdminPanel() {
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between flex-wrap gap-3">
             <h2 className="font-display font-bold text-slate-900 text-lg" style={{letterSpacing:"-0.01em"}}>Aktivite Akışı
-              <span className="ml-2 text-slate-400 font-normal text-sm" style={{fontFamily:"'Barlow',sans-serif"}}>({filteredLogs.length})</span>
+              <span className="ml-2 text-slate-400 font-normal text-sm" style={{fontFamily:"'Montserrat',sans-serif"}}>({filteredLogs.length})</span>
             </h2>
             <div className="flex flex-wrap gap-1.5">
               {LOG_FILTERS.map(f => (

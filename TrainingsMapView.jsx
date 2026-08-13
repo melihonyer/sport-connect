@@ -28,7 +28,7 @@ const makeTrainingIcon = (color, letter, highlight = false) => {
   return L.divIcon({
     className: "",
     html: `<div style="width:${size}px;height:${size}px;background:linear-gradient(135deg,${color},${color}cc);border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2.5px solid white;box-shadow:${shadow};display:flex;align-items:center;justify-content:center;">
-      <span style="transform:rotate(45deg);color:white;font-weight:900;font-size:${highlight?15:13}px;font-family:'Barlow Condensed','Barlow',system-ui,sans-serif;line-height:1;letter-spacing:-0.5px;">${letter}</span>
+      <span style="transform:rotate(45deg);color:white;font-weight:900;font-size:${highlight?15:13}px;font-family:'Montserrat',system-ui,sans-serif;line-height:1;letter-spacing:-0.5px;">${letter}</span>
     </div>`,
     iconSize: [size, size], iconAnchor: [size/2, size], popupAnchor: [0, -(size+4)],
   });
@@ -53,7 +53,7 @@ const makePaidIcon = (title, highlight = false) => {
   const html = `<div style="position:relative;width:${w}px;height:${h}px;filter:drop-shadow(0 3px 4px rgba(0,0,0,.32))">
     <img src="${PAID_PIN_URL}" style="width:${w}px;height:${h}px;display:block" alt=""/>
     <div style="position:absolute;left:${RIBBON_INSET}%;right:${RIBBON_INSET}%;top:${RIBBON_TOP}%;height:${RIBBON_HEIGHT}%;display:flex;align-items:center;justify-content:center;">
-      <span style="font-family:'Barlow Condensed','Barlow',system-ui,sans-serif;font-weight:800;font-size:${fs}px;line-height:1;color:${PAID_TEXT};text-shadow:0 1px 2px rgba(0,0,0,.28);text-transform:uppercase;letter-spacing:-0.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">${label}</span>
+      <span style="font-family:'Montserrat',system-ui,sans-serif;font-weight:800;font-size:${fs}px;line-height:1;color:${PAID_TEXT};text-shadow:0 1px 2px rgba(0,0,0,.28);text-transform:uppercase;letter-spacing:-0.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">${label}</span>
     </div>
   </div>`;
   return L.divIcon({
