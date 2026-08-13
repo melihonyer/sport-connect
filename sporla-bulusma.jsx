@@ -5563,17 +5563,17 @@ export default function Muuvlink() {
 
             {user && (
               <form onSubmit={handleSubmitComment} className="mb-4">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
+                <div className="flex gap-2 items-end">
+                  <textarea
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
                     placeholder={t("trainingDetail.addComment")}
-                    className="flex-1 px-4 py-2 border rounded-xl"
+                    rows={2}
+                    className="flex-1 px-4 py-2.5 border rounded-xl resize-y leading-relaxed min-h-[46px]"
                   />
                   <button
                     type="submit"
-                    className="px-6 py-2 bg-brand-600 text-white rounded-xl font-semibold hover:bg-brand-700"
+                    className="px-6 py-3 bg-brand-600 text-white rounded-xl font-semibold hover:bg-brand-700 flex items-center justify-center"
                   >
                     <Send className="w-5 h-5" />
                   </button>
@@ -5623,7 +5623,7 @@ export default function Muuvlink() {
                         </div>
                       )}
                     </div>
-                    <p className="text-gray-700">{c.comment}</p>
+                    <p className="text-gray-700 whitespace-pre-wrap break-words">{c.comment}</p>
                     <div className="flex justify-end mt-1.5 -mb-0.5">
                       <MessageLike item={c} endpoint={`${API_URL}/comments/${c.id}/like`} />
                     </div>
@@ -5940,13 +5940,14 @@ export default function Muuvlink() {
           {activeTab === "wall" && isMember && (
             <div>
               <form onSubmit={handleSubmitPost} className="mb-6">
-                <div className="flex gap-2">
-                  <input type="text" value={message}
+                <div className="flex gap-2 items-end">
+                  <textarea value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder={t("teamDetail.postPlaceholder")}
-                    className={`flex-1 ${iCls}`} />
+                    rows={2}
+                    className="flex-1 w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition-colors resize-y leading-relaxed min-h-[46px]" />
                   <button type="submit"
-                    className="px-5 bg-brand-600 text-white rounded-xl hover:bg-brand-700 transition-colors flex items-center justify-center">
+                    className="px-5 py-3 bg-brand-600 text-white rounded-xl hover:bg-brand-700 transition-colors flex items-center justify-center">
                     <Send className="w-4 h-4" />
                   </button>
                 </div>
@@ -5994,7 +5995,7 @@ export default function Muuvlink() {
                           </div>
                         )}
                       </div>
-                      <p className="text-slate-700 text-sm leading-relaxed">{post.message}</p>
+                      <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-wrap break-words">{post.message}</p>
                       <div className="flex justify-end mt-1.5 -mb-0.5">
                         <MessageLike item={post} endpoint={`${API_URL}/team-posts/${post.id}/like`} />
                       </div>
