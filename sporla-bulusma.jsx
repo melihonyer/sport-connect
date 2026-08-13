@@ -5563,7 +5563,7 @@ export default function Muuvlink() {
 
             {user && (
               <form onSubmit={handleSubmitComment} className="mb-4">
-                <div className="flex gap-2 items-end">
+                <div className="flex gap-2 items-stretch">
                   <textarea
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
@@ -5573,7 +5573,7 @@ export default function Muuvlink() {
                   />
                   <button
                     type="submit"
-                    className="px-6 py-3 bg-brand-600 text-white rounded-xl font-semibold hover:bg-brand-700 flex items-center justify-center"
+                    className="px-6 bg-brand-600 text-white rounded-xl font-semibold hover:bg-brand-700 flex items-center justify-center self-stretch"
                   >
                     <Send className="w-5 h-5" />
                   </button>
@@ -5940,14 +5940,14 @@ export default function Muuvlink() {
           {activeTab === "wall" && isMember && (
             <div>
               <form onSubmit={handleSubmitPost} className="mb-6">
-                <div className="flex gap-2 items-end">
+                <div className="flex gap-2 items-stretch">
                   <textarea value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder={t("teamDetail.postPlaceholder")}
                     rows={2}
                     className="flex-1 w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition-colors resize-y leading-relaxed min-h-[46px]" />
                   <button type="submit"
-                    className="px-5 py-3 bg-brand-600 text-white rounded-xl hover:bg-brand-700 transition-colors flex items-center justify-center">
+                    className="px-5 bg-brand-600 text-white rounded-xl hover:bg-brand-700 transition-colors flex items-center justify-center self-stretch">
                     <Send className="w-4 h-4" />
                   </button>
                 </div>
