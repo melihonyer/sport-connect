@@ -1312,7 +1312,7 @@ export default function AdminPanel() {
                     </div>
                     <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
                       <button onClick={() => toggleAdmin(u)}
-                        className={`px-2 py-1 rounded-lg text-[11px] font-medium border transition-colors ${u.is_admin ? "border-amber-200 text-amber-700" : "border-brand-200 text-brand-700"}`}>
+                        className={`px-2 py-1 rounded-lg text-[11px] font-medium border transition-colors ${u.is_admin ? "border-purple-200 text-purple-700 hover:bg-purple-50" : "border-brand-200 text-brand-700 hover:bg-brand-50"}`}>
                         {u.is_admin ? "Admin kaldır" : "Admin yap"}
                       </button>
                       {!u.is_admin && (
@@ -1367,7 +1367,7 @@ export default function AdminPanel() {
                         <td className="px-4 py-3.5">
                           <div className="flex items-center gap-1.5 justify-end">
                             <button onClick={() => toggleAdmin(u)}
-                              className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${u.is_admin ? "border-amber-200 text-amber-700 hover:bg-amber-50" : "border-brand-200 text-brand-700 hover:bg-brand-50"}`}>
+                              className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${u.is_admin ? "border-purple-200 text-purple-700 hover:bg-purple-50" : "border-brand-200 text-brand-700 hover:bg-brand-50"}`}>
                               {u.is_admin ? "Admin kaldır" : "Admin yap"}
                             </button>
                             {!u.is_admin && (
