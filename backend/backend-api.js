@@ -952,6 +952,7 @@ const checkAndAwardBadges = async (userId) => {
               message: `"${badge.name}" rozetini kazandın!`,
               type: 'badge',
               refId: badge.id,
+              url: '/rozetlerim',
             });
           }
         });
