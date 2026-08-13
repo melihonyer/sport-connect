@@ -3499,6 +3499,32 @@ export default function Muuvlink() {
     }
   };
 
+  const handleMarkAllNotificationsRead = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      await fetch(`${API_URL}/notifications/read-all`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      fetchNotifications(token);
+    } catch (error) {
+      console.error("Mark all notifications error:", error);
+    }
+  };
+
+  const handleDeleteAllNotifications = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      await fetch(`${API_URL}/notifications`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      fetchNotifications(token);
+    } catch (error) {
+      console.error("Delete all notifications error:", error);
+    }
+  };
+
   const fetchBadges = async () => {
     try {
       const response = await fetch(`${API_URL}/badges`);
@@ -6734,13 +6760,33 @@ export default function Muuvlink() {
         className="absolute bg-white flex flex-col overflow-hidden shadow-2xl
           inset-0 sm:inset-auto sm:right-4 sm:top-20 sm:w-96 sm:max-h-[600px] sm:rounded-2xl sm:border"
         style={isNative ? { paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" } : {}}>
-        <div className="p-4 border-b flex justify-between items-center">
-          <h3 className="font-semibold text-lg">
-            {t("notifications.title")} {unreadCount > 0 && `(${unreadCount})`}
-          </h3>
-          <button onClick={() => setShowNotifications(false)} aria-label="Kapat" className="p-1 -m-1 text-slate-500 hover:text-slate-800">
-            <X className="w-5 h-5" />
-          </button>
+        <div className="p-4 border-b">
+          <div className="flex justify-between items-center">
+            <h3 className="font-semibold text-lg">
+              {t("notifications.title")} {unreadCount > 0 && `(${unreadCount})`}
+            </h3>
+            <button onClick={() => setShowNotifications(false)} aria-label="Kapat" className="p-1 -m-1 text-slate-500 hover:text-slate-800">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          {notifications.length > 0 && (
+            <div className="flex items-center gap-2 mt-3">
+              {unreadCount > 0 && (
+                <button
+                  onClick={handleMarkAllNotificationsRead}
+                  className="text-xs font-medium text-blue-600 hover:bg-blue-50 rounded-lg px-2.5 py-1.5 transition-colors"
+                >
+                  {t("notifications.markAllRead")}
+                </button>
+              )}
+              <button
+                onClick={handleDeleteAllNotifications}
+                className="text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg px-2.5 py-1.5 transition-colors ml-auto"
+              >
+                {t("notifications.clearAll")}
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="overflow-y-auto flex-1">

@@ -769,6 +769,7 @@ export const translations = {
   notifications: {
     title:          { tr: "Bildirimler",                  en: "Notifications",           de: "Benachrichtigungen"      },
     markAllRead:    { tr: "Tümünü okundu işaretle",       en: "Mark all as read",        de: "Alle als gelesen markieren" },
+    clearAll:       { tr: "Hepsini sil",                  en: "Clear all",               de: "Alle löschen"            },
     noNotifications:{ tr: "Henüz bildirim yok.",          en: "No notifications yet.",   de: "Noch keine Benachrichtigungen." },
     inviteAccepted: { tr: "Takıma başarıyla katıldınız!", en: "Successfully joined the team!", de: "Team erfolgreich beigetreten!" },
     inviteNotFound: { tr: "Davet bulunamadı.",            en: "Invitation not found.",   de: "Einladung nicht gefunden." },

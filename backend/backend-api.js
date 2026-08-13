@@ -3387,6 +3387,40 @@ app.put('/api/notifications/:id/read', authenticateToken, async (req, res) => {
   }
 });
 
+// Hepsini okundu işaretle
+app.put('/api/notifications/read-all', authenticateToken, async (req, res) => {
+  try {
+    await pool.query(
+      'UPDATE notifications SET is_read = true WHERE user_id = $1 AND is_read = false',
+      [req.user.id]
+    );
+
+    sendBadgeUpdate(req.user.id).catch(() => {});   // uygulama ikonu rozetini güncelle
+
+    res.json({ message: 'All notifications marked as read' });
+  } catch (error) {
+    console.error('Mark all notifications error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Hepsini sil
+app.delete('/api/notifications', authenticateToken, async (req, res) => {
+  try {
+    await pool.query(
+      'DELETE FROM notifications WHERE user_id = $1',
+      [req.user.id]
+    );
+
+    sendBadgeUpdate(req.user.id).catch(() => {});   // rozet sıfırlansın
+
+    res.json({ message: 'All notifications deleted' });
+  } catch (error) {
+    console.error('Delete all notifications error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 app.delete('/api/notifications/:id', authenticateToken, async (req, res) => {
   try {
     await pool.query(
