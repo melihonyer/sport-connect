@@ -4,7 +4,7 @@
   <defs>
     <style>
       .st0 {
-        fill: url(#linear-gradient);
+        fill: #00b7ba;
       }
 
       .st0, .st1 {
@@ -14,19 +14,16 @@
       }
 
       .st1 {
-        fill: url(#linear-gradient1);
+        fill: url(#New_Gradient_Swatch);
         fill-rule: evenodd;
       }
     </style>
-    <linearGradient id="linear-gradient" x1=".8" y1="26.1" x2="193.4" y2="26.1" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#ca9bc7"/>
-      <stop offset="1" stop-color="#8ecaba"/>
-    </linearGradient>
-    <linearGradient id="linear-gradient1" x1="83.4" y1="64.2" x2="110.7" y2="64.2" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#6b4c9f"/>
-      <stop offset="1" stop-color="#3c9b9f"/>
+    <linearGradient id="New_Gradient_Swatch" data-name="New Gradient Swatch" x1="83.4" y1="64.6" x2="110.7" y2="64.6" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#981dd8"/>
+      <stop offset="0" stop-color="#9223d7"/>
+      <stop offset="1" stop-color="#00b7ba"/>
     </linearGradient>
   </defs>
-  <path class="st0" d="M174.5.8H19.6C9.2.8.8,9.2.8,19.6v31.8h78.6c.9-2.7,2.4-5.1,4.5-7.2,3.5-3.5,8.3-5.5,13.2-5.5,4.9,0,9.7,2,13.2,5.5,2.1,2.1,3.6,4.6,4.5,7.2h78.6v-31.8c0-10.4-8.4-18.8-18.8-18.8Z"/>
-  <path id="SVGID" class="st1" d="M97.1,84.7l-11.8-20.5c-3.1-5.5-2.1-12.2,2.2-16.5,2.6-2.6,6.1-4,9.7-4,3.6,0,7.1,1.4,9.7,4,4.3,4.3,5.3,11,2.2,16.5l-11.8,20.5Z"/>
+  <path class="st0" d="M174.5,1.1H19.6C9.2,1.1.7,9.6.7,20v31.8h78.6c.9-2.7,2.4-5.1,4.5-7.2,3.5-3.5,8.3-5.5,13.2-5.5,4.9,0,9.7,2,13.2,5.5,2.1,2.1,3.6,4.6,4.5,7.2h78.6v-31.8c0-10.4-8.4-18.8-18.8-18.8Z"/>
+  <path id="SVGID" class="st1" d="M97,85.1l-11.8-20.5c-3.1-5.5-2.1-12.2,2.2-16.5,2.6-2.6,6.1-4,9.7-4,3.6,0,7.1,1.4,9.7,4,4.3,4.3,5.3,11,2.2,16.5l-11.8,20.5Z"/>
 </svg>

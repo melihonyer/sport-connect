@@ -37,8 +37,8 @@ const makeTrainingIcon = (color, letter, highlight = false) => {
 // Ücretli etkinlik pini — verilen SVG grafiği (yatay kuşak/banner + altta damla işaretçi).
 // Yarışın adı bannerın ortasına HTML metin olarak bindirilir; sığmazsa CSS ile "…" olur.
 // Konum noktası = işaretçinin alt ucu (iconAnchor).
-const PAID_COLOR = "#6b4c9f"; // işaretçiyle uyumlu mor — popup aksanı da bunu kullanır
-const PAID_TEXT = "#33244d";
+const PAID_COLOR = "#981dd8"; // işaretçi moru — popup aksanı da bunu kullanır
+const PAID_TEXT = "#ffffff";  // banner marka yeşili (#00b7ba) → beyaz metin
 const PAID_PIN_URL = "/pin-ucretli.svg";
 const PAID_PIN_RATIO = 86.2 / 194.1; // SVG yükseklik/genişlik oranı (194.1x86.2)
 // Banner metin bandı konumu — SVG'ye göre yüzdelik.
@@ -53,7 +53,7 @@ const makePaidIcon = (title, highlight = false) => {
   const html = `<div style="position:relative;width:${w}px;height:${h}px;filter:drop-shadow(0 3px 4px rgba(0,0,0,.32))">
     <img src="${PAID_PIN_URL}" style="width:${w}px;height:${h}px;display:block" alt=""/>
     <div style="position:absolute;left:${RIBBON_INSET}%;right:${RIBBON_INSET}%;top:${RIBBON_TOP}%;height:${RIBBON_HEIGHT}%;display:flex;align-items:center;justify-content:center;">
-      <span style="font-family:'Barlow Condensed','Barlow',system-ui,sans-serif;font-weight:800;font-size:${fs}px;line-height:1;color:${PAID_TEXT};text-transform:uppercase;letter-spacing:-0.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">${label}</span>
+      <span style="font-family:'Barlow Condensed','Barlow',system-ui,sans-serif;font-weight:800;font-size:${fs}px;line-height:1;color:${PAID_TEXT};text-shadow:0 1px 2px rgba(0,0,0,.28);text-transform:uppercase;letter-spacing:-0.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">${label}</span>
     </div>
   </div>`;
   return L.divIcon({
