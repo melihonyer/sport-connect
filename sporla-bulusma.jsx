@@ -3820,8 +3820,8 @@ export default function Muuvlink() {
       {/* Dekoratif üst şerit */}
       <div className="h-1.5 w-full" style={{background:"linear-gradient(90deg,#00b7ba,#009295,#06B6D4)"}}/>
       <div className="p-5">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center gap-3">
+        <div className="flex items-start justify-between mb-3 gap-2">
+          <div className="flex items-center gap-3 min-w-0">
             <div className="w-12 h-12 rounded-xl overflow-hidden flex items-center justify-center text-white text-lg font-bold flex-shrink-0"
               style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}>
               {(team.avatar?.startsWith("/uploads/") || team.avatar?.startsWith("http"))
@@ -3830,9 +3830,9 @@ export default function Muuvlink() {
             </div>
             <div className="min-w-0">
               <h3 className="font-medium text-slate-900 truncate group-hover:text-brand-700 transition-colors">{team.name}</h3>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="px-2 py-0.5 bg-brand-50 text-brand-600 rounded-md text-xs font-semibold">{team.sport}</span>
-                {team.location && <span className="text-slate-400 text-xs truncate flex items-center gap-1"><MapPin className="w-3 h-3 flex-shrink-0"/>{team.location}</span>}
+              <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
+                <span className="px-2 py-0.5 bg-brand-50 text-brand-600 rounded-md text-xs font-semibold flex-shrink-0 whitespace-nowrap">{team.sport}</span>
+                {team.location && <span className="text-slate-400 text-xs flex items-center gap-1 min-w-0"><MapPin className="w-3 h-3 flex-shrink-0"/><span className="truncate">{team.location}</span></span>}
               </div>
             </div>
           </div>
