@@ -4669,7 +4669,8 @@ export default function Muuvlink() {
       const matchesSearch = !q || t.title?.toLowerCase().includes(q) || t.location_name?.toLowerCase().includes(q) || t.description?.toLowerCase().includes(q);
       // Etkinliğin KENDİ dalı önceliklidir; eski takım etkinliklerinde (dalı boş) takımın dalına düşülür.
       const matchesSport = !sportFilter || (t.sport || t.team_sport) === sportFilter;
-      const matchesDifficulty = !levelFilter || t.difficulty === levelFilter;
+      // "Her Seviye" etkinlikleri, belirli bir seviye (Kolay/Orta/Zor) seçilse de görünür.
+      const matchesDifficulty = !levelFilter || t.difficulty === levelFilter || t.difficulty === "Her Seviye";
       return matchesSearch && matchesSport && matchesDifficulty;
     });
 
