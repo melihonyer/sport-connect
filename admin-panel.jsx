@@ -440,7 +440,7 @@ function PaidEventsTab({ items, setItems, api, token, showToast }) {
               {it.image_url
                 ? <img src={it.image_url} alt="" className="w-full h-full object-cover"/>
                 : <div className="w-full h-full flex items-center justify-center text-slate-300"><Upload className="w-6 h-6"/></div>}
-              <span className="absolute top-2 left-2 text-xs px-2 py-0.5 rounded-full font-semibold bg-amber-100 text-amber-700 flex items-center gap-1">
+              <span className="absolute top-2 left-2 text-xs px-2 py-0.5 rounded-full font-semibold bg-brand-600 text-white flex items-center gap-1">
                 <Ticket className="w-3 h-3"/> Ücretli
               </span>
               {it.sport && <span className="absolute top-2 right-2 text-xs px-2 py-0.5 rounded-full font-medium bg-brand-100 text-brand-700">{it.sport}</span>}

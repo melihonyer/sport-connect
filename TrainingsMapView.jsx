@@ -166,7 +166,7 @@ const TrainingsMapView = ({ trainings, onSelectTraining, t, containerStyle }) =>
                 <Popup className="training-map-popup" minWidth={220} maxWidth={280}>
                   <div style={{ fontFamily:"system-ui,sans-serif", padding:"4px 0" }}>
                     <div style={{ display:"flex", alignItems:"center", gap:"6px", marginBottom:"8px" }}>
-                      {tr.is_paid && <span style={{ display:"inline-block", padding:"2px 8px", background:"#fef3c7", color:"#b45309", borderRadius:"6px", fontSize:"11px", fontWeight:800 }}>Ücretli</span>}
+                      {tr.is_paid && <span style={{ display:"inline-block", padding:"2px 8px", background:"#00b7ba", color:"#fff", borderRadius:"6px", fontSize:"11px", fontWeight:800 }}>Ücretli</span>}
                       <span style={{ display:"inline-block", padding:"2px 8px", background:`${teamColor}18`, color:teamColor, borderRadius:"6px", fontSize:"11px", fontWeight:700 }}>{tr.sport || tr.team_sport || "Spor"}</span>
                       {!tr.is_paid && tr.difficulty && <span style={{ fontSize:"11px", color:"#94a3b8" }}>{tr.difficulty}</span>}
                     </div>

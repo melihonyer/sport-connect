@@ -3701,7 +3701,7 @@ export default function Muuvlink() {
       <div className="flex-1 pl-5 flex flex-col justify-center gap-1 min-w-0">
         <div className="flex items-center gap-2 min-w-0">
           {isPaid && (
-            <span className="flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-700">
+            <span className="flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-brand-600 text-white">
               <Ticket className="w-3 h-3"/> {t("trainings.paidBadge")}
             </span>
           )}
@@ -5147,7 +5147,7 @@ export default function Muuvlink() {
             <h1 className="font-display font-bold mb-3" style={{fontSize:"clamp(1.8rem,4vw,2.4rem)", letterSpacing:"-0.01em"}}>{selectedTraining.title}</h1>
             <div className="flex flex-wrap gap-2 items-center">
               {isPaid && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold bg-amber-100 text-amber-700">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold bg-brand-600 text-white">
                   <Ticket className="w-3.5 h-3.5"/> {t("trainings.paidBadge")}
                 </span>
               )}
@@ -5396,9 +5396,9 @@ export default function Muuvlink() {
 
           {/* Ücretli etkinlik: organizatör */}
           {isPaid && selectedTraining.organizer && (
-            <div className="flex items-center gap-3 p-4 rounded-2xl border border-amber-100 bg-amber-50/60 mb-6">
-              <div className="w-11 h-11 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 border-2 border-white shadow-sm">
-                <Ticket className="w-5 h-5 text-amber-600" />
+            <div className="flex items-center gap-3 p-4 rounded-2xl border border-brand-100 bg-brand-50 mb-6">
+              <div className="w-11 h-11 rounded-full bg-brand-600 flex items-center justify-center flex-shrink-0 border-2 border-white shadow-sm">
+                <Ticket className="w-5 h-5 text-white" />
               </div>
               <div className="min-w-0">
                 <p className="font-semibold text-slate-800 text-sm truncate">{selectedTraining.organizer}</p>
@@ -5596,7 +5596,7 @@ export default function Muuvlink() {
             <button
               onClick={() => handleRegisterClick(selectedTraining)}
               className="w-full py-4 font-semibold text-white rounded-xl transition hover:opacity-90 hover:shadow-lg flex items-center justify-center gap-2"
-              style={{background:"linear-gradient(135deg,#f59e0b,#d97706)"}}
+              style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}
             >
               <Ticket className="w-5 h-5"/> {t("trainingDetail.registerBtn")}
             </button>
