@@ -825,7 +825,7 @@ export const translations = {
 
   // ── NEWS SECTION ─────────────────────────────────────────
   news: {
-    title:     { tr: "Takım Etkinlikleri",                        en: "Team Events",                               de: "Team-Events"                              },
+    title:     { tr: "Haberler",                                  en: "News",                                      de: "Nachrichten"                              },
     subtitle:  { tr: "Muuvlink topluluğundan etkinlik haberleri", en: "Event news from the Muuvlink community",    de: "Eventsnews der Muuvlink-Community" },
     published: { tr: "Yayın",                                     en: "Published",                                 de: "Veröffentlicht"                           },
     cta:       { tr: "Takımınızın etkinliğini Muuvlink topluluğuyla paylaşmak ister misiniz?",
