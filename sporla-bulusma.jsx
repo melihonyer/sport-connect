@@ -4971,7 +4971,7 @@ export default function Muuvlink() {
                   <X className="w-3.5 h-3.5"/> {t("trainings.clearFilters")}
                 </button>
               )}
-              <span className="ml-auto text-xs text-slate-400 font-semibold">{filteredTeams.length} {t("teams.members")}</span>
+              <span className="ml-auto text-xs text-slate-400 font-semibold">{filteredTeams.length} {t("teams.teamsCount")}</span>
             </div>
           </div>
         </div>

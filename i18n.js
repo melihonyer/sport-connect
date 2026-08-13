@@ -431,6 +431,7 @@ export const translations = {
     leave:          { tr: "Ayrıl",                        en: "Leave",                   de: "Verlassen"               },
     privateTeam:    { tr: "Gizli Takım",                  en: "Private Team",            de: "Privates Team"           },
     members:        { tr: "üye",                          en: "members",                 de: "Mitglieder"              },
+    teamsCount:     { tr: "takım",                        en: "teams",                   de: "Teams"                   },
     trainingsCount: { tr: "etkinlik",                    en: "events",               de: "Events"               },
     noTeams:        { tr: "Henüz takım yok.",              en: "No teams yet.",           de: "Noch keine Teams."       },
     loginToJoin:    { tr: "Katılmak için giriş yapın.",   en: "Log in to join.",         de: "Zum Beitreten anmelden." },
