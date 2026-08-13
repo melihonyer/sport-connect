@@ -351,7 +351,7 @@ export const translations = {
     loginFeat3:     { tr: "Takım üyeliği & iletişim",     en: "Team membership & communication", de: "Teammitgliedschaft & Kommunikation" },
     joinBtn:        { tr: "Katıl",                         en: "Join",                    de: "Mitmachen"               },
     alreadyMember:  { tr: "Bu takımın üyesisiniz.",         en: "You're a member.",        de: "Du bist Mitglied."       },
-    registerBtn:    { tr: "Kayıt Ol",                      en: "Register",                de: "Anmelden"                },
+    registerBtn:    { tr: "Kayıt Sayfasına Git",           en: "Go to Registration",      de: "Zur Anmeldung"           },
     organizer:      { tr: "Organizatör",                  en: "Organizer",               de: "Organisator"             },
     noRegLink:      { tr: "Kayıt linki bulunamadı.",       en: "Registration link not found.", de: "Anmeldelink nicht gefunden." },
   },
