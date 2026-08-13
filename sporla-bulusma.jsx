@@ -3828,12 +3828,18 @@ export default function Muuvlink() {
             <span>{t("teams.members")}</span>
           </div>
           {team.my_role && (
-            <span className="px-2.5 py-1 text-xs font-medium rounded-lg" style={{
-              background: team.my_role === 'owner' ? '#FEF3C7' : team.my_role === 'editor' ? '#FEF3C7' : team.my_role === 'coach' ? '#EDE9FE' : team.my_role === 'captain' ? '#DCFCE7' : '#F0FDF4',
-              color: team.my_role === 'owner' ? '#92400E' : team.my_role === 'editor' ? '#92400E' : team.my_role === 'coach' ? '#5B21B6' : team.my_role === 'captain' ? '#006d6f' : '#006d6f',
-            }}>
-              {team.my_role === 'owner' ? <><Crown className="w-3 h-3 inline mr-1"/>{t("teamDetail.roles.owner")}</> : team.my_role === 'editor' ? <><Edit className="w-3 h-3 inline mr-1"/>{t("teamDetail.roles.editor")}</> : team.my_role === 'coach' ? <><Target className="w-3 h-3 inline mr-1"/>{t("teamDetail.roles.coach")}</> : team.my_role === 'captain' ? <><Navigation2 className="w-3 h-3 inline mr-1"/>{t("teamDetail.roles.captain")}</> : <><User className="w-3 h-3 inline mr-1"/>{t("teamDetail.roles.member")}</>}
-            </span>
+            user?.is_admin ? (
+              <span className="px-2.5 py-1 text-xs font-medium rounded-lg inline-flex items-center gap-1" style={{ background: '#F3E8FF', color: '#7E22CE' }}>
+                <ShieldCheck className="w-3 h-3"/>{t("teamDetail.roles.admin")}
+              </span>
+            ) : (
+              <span className="px-2.5 py-1 text-xs font-medium rounded-lg" style={{
+                background: team.my_role === 'owner' ? '#00b7ba' : team.my_role === 'editor' ? '#e5f9f9' : team.my_role === 'coach' ? '#EDE9FE' : team.my_role === 'captain' ? '#DCFCE7' : '#F0FDF4',
+                color: team.my_role === 'owner' ? '#ffffff' : team.my_role === 'editor' ? '#009295' : team.my_role === 'coach' ? '#5B21B6' : team.my_role === 'captain' ? '#006d6f' : '#006d6f',
+              }}>
+                {team.my_role === 'owner' ? <><Crown className="w-3 h-3 inline mr-1"/>{t("teamDetail.roles.owner")}</> : team.my_role === 'editor' ? <><Edit className="w-3 h-3 inline mr-1"/>{t("teamDetail.roles.editor")}</> : team.my_role === 'coach' ? <><Target className="w-3 h-3 inline mr-1"/>{t("teamDetail.roles.coach")}</> : team.my_role === 'captain' ? <><Navigation2 className="w-3 h-3 inline mr-1"/>{t("teamDetail.roles.captain")}</> : <><User className="w-3 h-3 inline mr-1"/>{t("teamDetail.roles.member")}</>}
+              </span>
+            )
           )}
         </div>
       </div>
@@ -5762,8 +5768,8 @@ export default function Muuvlink() {
       // Platform admini için rol yerine "Admin" rozeti gösterilir.
       if (member?.is_admin) return <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold flex items-center gap-1"><ShieldCheck className="w-3 h-3" /> {t("teamDetail.roles.admin")}</span>;
       const role = member?.role;
-      if (role === "owner")   return <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold flex items-center gap-1"><Crown className="w-3 h-3" /> {t("teamDetail.roles.owner")}</span>;
-      if (role === "editor")  return <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-xs font-semibold flex items-center gap-1"><Edit className="w-3 h-3" /> {t("teamDetail.roles.editor")}</span>;
+      if (role === "owner")   return <span className="px-2 py-0.5 bg-brand-600 text-white rounded-full text-xs font-semibold flex items-center gap-1"><Crown className="w-3 h-3" /> {t("teamDetail.roles.owner")}</span>;
+      if (role === "editor")  return <span className="px-2 py-0.5 bg-brand-50 text-brand-700 rounded-full text-xs font-semibold flex items-center gap-1"><Edit className="w-3 h-3" /> {t("teamDetail.roles.editor")}</span>;
       if (role === "coach")   return <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold flex items-center gap-1"><Target className="w-3 h-3" /> {t("teamDetail.roles.coach")}</span>;
       if (role === "captain") return <span className="px-2 py-0.5 bg-brand-100 text-brand-700 rounded-full text-xs font-semibold flex items-center gap-1"><ShieldCheck className="w-3 h-3" /> {t("teamDetail.roles.captain")}</span>;
       return <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-semibold flex items-center gap-1"><User className="w-3 h-3" /> {t("teamDetail.roles.member")}</span>;
