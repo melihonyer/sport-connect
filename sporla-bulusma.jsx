@@ -3680,14 +3680,14 @@ export default function Muuvlink() {
           const band = calBandColor(training.id);
           const bandText = calBandTextColor(band);
           return (
-            <div className="w-[54px] aspect-square rounded-2xl overflow-hidden bg-slate-50 border border-slate-200 flex flex-col">
-              <div className="text-center uppercase font-bold tracking-[0.1em] text-[10px] leading-none pt-[6px] pb-[5px]"
+            <div className="w-[64px] aspect-square rounded-2xl overflow-hidden bg-slate-50 border border-slate-200 flex flex-col">
+              <div className="text-center uppercase font-bold tracking-[0.1em] text-[11px] leading-none pt-[7px] pb-[6px]"
                 style={{ background: band, color: bandText }}>
                 {month}
               </div>
               <div className="flex-1 flex items-center justify-center bg-slate-50">
                 <span className="font-display font-extrabold text-slate-900 leading-none"
-                  style={{ fontSize: "1.65rem", letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums" }}>{day}</span>
+                  style={{ fontSize: "2rem", letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums" }}>{day}</span>
               </div>
             </div>
           );
