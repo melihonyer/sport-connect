@@ -3686,8 +3686,8 @@ export default function Muuvlink() {
                 {month}
               </div>
               <div className="flex-1 flex items-center justify-center bg-slate-50">
-                <span className="font-display font-extrabold text-slate-900 leading-none"
-                  style={{ fontSize: "2rem", letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums" }}>{day}</span>
+                <span className="font-display font-medium text-slate-800 leading-none"
+                  style={{ fontSize: "1.5rem", letterSpacing: "-0.01em", fontVariantNumeric: "tabular-nums" }}>{day}</span>
               </div>
             </div>
           );
