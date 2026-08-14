@@ -1280,7 +1280,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       await pool.query('DELETE FROM team_invitations WHERE id = $1', [inv.id]);
     }
 
-    logActivity('user_register', user.id, user.name, { email });
+    logActivity('user_register', user.id, user.name, { email }, `user_register_${user.id}`);
     res.status(201).json({ message: 'User registered successfully', user, token });
   } catch (error) {
     console.error('Register error:', error);
@@ -1505,7 +1505,7 @@ app.post('/api/teams', authenticateToken, async (req, res) => {
 
     await updateUserStats(req.user.id);
 
-    logActivity('team_create', req.user.id, null, { team_name: name, sport: primarySport });
+    logActivity('team_create', req.user.id, null, { team_name: name, sport: primarySport }, `team_create_${team.id}`);
     res.status(201).json({ message: 'Team created successfully', team });
   } catch (error) {
     console.error('Create team error:', error);
@@ -2342,7 +2342,7 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
       [training.id, req.user.id, 'confirmed']
     );
 
-    logActivity('training_create', req.user.id, null, { training_title: title, team_name: team_id ? undefined : 'Bireysel' });
+    logActivity('training_create', req.user.id, null, { training_title: title, team_name: team_id ? undefined : 'Bireysel' }, `training_create_${training.id}`);
 
     // Rozet kontrolü — "Organizatör" gibi oluşturma bazlı rozetler
     checkAndAwardBadges(req.user.id).catch(e => console.error('Badge check (create) error:', e.message));
@@ -4506,11 +4506,16 @@ pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS notif_prefs JSONB DEFAULT
 pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS onboarding_done BOOLEAN DEFAULT false`).catch(() => {});
 pool.query(`ALTER TABLE team_members      ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW()`).catch(() => {});
 
-async function logActivity(event_type, user_id, user_name, meta = {}) {
+// source_ref: olay başına BENZERSİZ anahtar (ör. 'user_register_42').
+// Tabloda source_ref üzerinde partial unique index var; aynı olayın ikinci kez
+// yazılmasını veritabanı seviyesinde engeller. Yalnızca "varlık başına bir kez"
+// olabilen olaylarda verilir (kayıt/takım kurma/etkinlik oluşturma).
+// Tekrarlanabilen olaylarda (katıl/ayrıl) boş bırakılır.
+async function logActivity(event_type, user_id, user_name, meta = {}, source_ref = null) {
   try {
     await pool.query(
-      'INSERT INTO activity_logs (event_type, user_id, user_name, meta) VALUES ($1, $2, $3, $4)',
-      [event_type, user_id || null, user_name || null, JSON.stringify(meta)]
+      'INSERT INTO activity_logs (event_type, user_id, user_name, meta, source_ref) VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING',
+      [event_type, user_id || null, user_name || null, JSON.stringify(meta), source_ref]
     );
   } catch (e) { /* sessiz */ }
 }
@@ -4583,8 +4588,14 @@ async function backfillActivityLogs() {
   }
 }
 
-// Server hazır olduktan sonra backfill çalıştır
-setTimeout(backfillActivityLogs, 3000);
+// Backfill ARTIK OTOMATİK ÇALIŞMIYOR.
+// Görevi tek seferlikti: canlı loglama öncesindeki geçmiş kayıtları içeri almak.
+// Her açılışta çalıştığında, canlı logActivity() satırlarını (source_ref boş
+// olduğu için) göremeyip aynı olayı ikinci kez yazıyordu → admin panelinde
+// kayıtlar "çifter çifter" görünüyordu. Artık her olay canlı loglanıyor ve
+// source_ref ile benzersiz; yeniden çalıştırmaya gerek yok.
+// Gerekirse elle çağrılabilir: RUN_BACKFILL=1 ile başlat.
+if (process.env.RUN_BACKFILL === '1') setTimeout(backfillActivityLogs, 3000);
 
 pool.query(`
   CREATE TABLE IF NOT EXISTS home_news (
