@@ -1337,7 +1337,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
 app.get('/api/auth/me', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, name, email, phone, avatar, is_admin, created_at, notif_prefs FROM users WHERE id = $1',
+      'SELECT id, name, email, phone, avatar, is_admin, created_at, notif_prefs, onboarding_done FROM users WHERE id = $1',
       [req.user.id]
     );
 
@@ -1348,6 +1348,19 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
     res.json({ user: result.rows[0] });
   } catch (error) {
     console.error('Get user error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Tanıtım turu durumu. done=false ile gönderilirse tur tekrar izlenebilir
+// (profil → "Tanıtım turunu tekrar izle").
+app.post('/api/auth/onboarding', authenticateToken, async (req, res) => {
+  try {
+    const done = req.body?.done !== false;
+    await pool.query('UPDATE users SET onboarding_done = $1 WHERE id = $2', [done, req.user.id]);
+    res.json({ onboarding_done: done });
+  } catch (error) {
+    console.error('Onboarding update error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -4487,6 +4500,10 @@ pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ`).
 
 // Bildirim tercihleri: { key: { app: bool, email: bool } }. Varsayılan app AÇIK, e-posta KAPALI.
 pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS notif_prefs JSONB DEFAULT '{}'::jsonb`).catch(() => {});
+
+// Tanıtım turu (onboarding): kişi başına BİR kez gösterilir. localStorage yerine
+// hesapta tutulur → cihaz değişse/uygulama silinse de tekrar açılmaz.
+pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS onboarding_done BOOLEAN DEFAULT false`).catch(() => {});
 pool.query(`ALTER TABLE team_members      ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW()`).catch(() => {});
 
 async function logActivity(event_type, user_id, user_name, meta = {}) {

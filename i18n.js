@@ -825,6 +825,60 @@ export const translations = {
     shareFail:      { tr: "Paylaşım başarısız.", en: "Sharing failed.",      de: "Teilen fehlgeschlagen."         },
   },
 
+  // ── TANITIM TURU (onboarding) ────────────────────────────
+  tour: {
+    next:   { tr: "İleri",  en: "Next",   de: "Weiter"    },
+    skip:   { tr: "Atla",   en: "Skip",   de: "Überspringen" },
+    finish: { tr: "Bitir",  en: "Finish", de: "Fertig"    },
+    replay: { tr: "Tanıtım turunu tekrar izle", en: "Replay the intro tour", de: "Einführung erneut ansehen" },
+
+    teamsTabTitle: { tr: "Takımlar",  en: "Teams",  de: "Teams" },
+    teamsTabText:  { tr: "Muuvlink'te her şey takımla başlar. Hadi başlayalım.",
+                     en: "On Muuvlink everything starts with a team. Let's go.",
+                     de: "Bei Muuvlink beginnt alles mit einem Team. Los geht's." },
+
+    createTeamTitle: { tr: "Kendi takımını kur", en: "Create your team", de: "Gründe dein Team" },
+    createTeamText:  { tr: "Kendi takımını kur, arkadaşlarını topla.",
+                       en: "Create your own team and gather your friends.",
+                       de: "Gründe dein eigenes Team und hole deine Freunde dazu." },
+
+    joinTeamTitle: { tr: "Ya da bir takıma katıl", en: "Or join a team", de: "Oder tritt einem Team bei" },
+    joinTeamText:  { tr: "Hazır bir takıma katıl — sana uygun olanı seç.",
+                     en: "Join an existing team — pick the one that suits you.",
+                     de: "Tritt einem bestehenden Team bei — wähle das passende aus." },
+
+    createEventTitle: { tr: "İlk etkinliğini yarat", en: "Create your first event", de: "Erstelle dein erstes Event" },
+    createEventText:  { tr: "Takımın için ilk etkinliğini oluştur.",
+                        en: "Create the first event for your team.",
+                        de: "Erstelle das erste Event für dein Team." },
+    joinEventText:    { tr: "Etkinlikleri keşfet ve birine katıl.",
+                        en: "Discover events and join one.",
+                        de: "Entdecke Events und nimm an einem teil." },
+
+    nearbyTitle: { tr: "Yakınındakileri keşfet", en: "Discover what's nearby", de: "Entdecke die Umgebung" },
+    nearbyText:  { tr: "Çevrendeki etkinlikleri haritada gör.",
+                   en: "See events around you on the map.",
+                   de: "Sieh dir Events in deiner Nähe auf der Karte an." },
+  },
+
+  // ── BAŞLANGIÇ GÖREV LİSTESİ (checklist) ──────────────────
+  checklist: {
+    title:      { tr: "Başlangıç",  en: "Get started", de: "Erste Schritte" },
+    progress:   { tr: "{done}/{total} tamamlandı", en: "{done}/{total} done", de: "{done}/{total} erledigt" },
+    teamTitle:  { tr: "Bir takımın olsun", en: "Get on a team", de: "Werde Teil eines Teams" },
+    teamText:   { tr: "Kendi takımını kur ya da bir takıma katıl.",
+                  en: "Create your own team or join one.",
+                  de: "Gründe ein Team oder tritt einem bei." },
+    eventTitle: { tr: "Etkinliğe adım at", en: "Get into an event", de: "Mach bei einem Event mit" },
+    eventText:  { tr: "Bir etkinlik oluştur ya da birine katıl.",
+                  en: "Create an event or join one.",
+                  de: "Erstelle ein Event oder nimm an einem teil." },
+    nearbyTitle:{ tr: "Yakınındakileri ara", en: "Search nearby", de: "In der Nähe suchen" },
+    nearbyText: { tr: "Çevrendeki etkinlikleri keşfet.",
+                  en: "Discover events around you.",
+                  de: "Entdecke Events in deiner Nähe." },
+  },
+
   // ── NEWS SECTION ─────────────────────────────────────────
   news: {
     title:     { tr: "Haberler",                                  en: "News",                                      de: "Nachrichten"                              },

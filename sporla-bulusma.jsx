@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { detectLang, createT } from "./i18n.js";
+import Tour from "./Tour.jsx";
 import {
   MapPin,
   Users,
@@ -51,6 +52,7 @@ import {
   Share2,
   Ticket,
   Flag,
+  Sparkles,
 } from "lucide-react";
 import SharedLocationPicker from "./LocationPicker";
 // Ağır kütüphaneler lazy yüklenir — ilk bundle'ı küçültür
@@ -1739,6 +1741,8 @@ export default function Muuvlink() {
   const [platformStats, setPlatformStats] = useState(null);
   const [blockedUsers, setBlockedUsers] = useState([]);
   const [reportModal, setReportModal] = useState(null); // { type, id } veya null
+  const [tourActive, setTourActive] = useState(false);  // tanıtım turu açık mı
+  const [nearbyUsed, setNearbyUsed] = useState(() => localStorage.getItem("nearbyUsed") === "true");
 
   // Avatar'ı render et: URL ise <img>, değilse emoji/harf
   const renderAvatar = (avatar, name, className = "") => {
@@ -2455,6 +2459,62 @@ export default function Muuvlink() {
     return () => { try { sub && sub.remove(); } catch {} };
   }, []);
 
+  // ── Tanıtım turu ────────────────────────────────────────────────
+  // Hedef öğelerden ekranda hangisi varsa onu kullan (masaüstü menü /
+  // mobil çekmece / alt menü farklı DOM'lar).
+  const firstPresentTarget = (...keys) =>
+    keys.find(k => document.querySelector(`[data-tour="${k}"]`)) || keys[0];
+
+  const hasTeam = myTeams.length > 0;
+  const tourSteps = [
+    {
+      target: firstPresentTarget("teams-tab-bottom", "teams-tab", "teams-tab-mobile"),
+      title: t("tour.teamsTabTitle"), text: t("tour.teamsTabText"),
+    },
+    // Takımı olan kullanıcı (davetle gelmiş olabilir) için kur/katıl adımları atlanır
+    ...(hasTeam ? [] : [
+      {
+        target: "create-team", before: () => setCurrentPage("teams"),
+        title: t("tour.createTeamTitle"), text: t("tour.createTeamText"),
+      },
+      {
+        target: "teams-list", before: () => setCurrentPage("teams"),
+        title: t("tour.joinTeamTitle"), text: t("tour.joinTeamText"),
+      },
+    ]),
+    {
+      target: "create-event", before: () => setCurrentPage("trainings"),
+      title: t("tour.createEventTitle"),
+      text: hasTeam ? t("tour.createEventText") : t("tour.joinEventText"),
+    },
+    {
+      target: "nearby", before: () => setCurrentPage("trainings"),
+      title: t("tour.nearbyTitle"), text: t("tour.nearbyText"),
+    },
+  ];
+
+  const setOnboardingDone = async (done) => {
+    try {
+      await fetch(`${API_URL}/auth/onboarding`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("token")}` },
+        body: JSON.stringify({ done }),
+      });
+    } catch { /* sessiz geç — tur akışını bozmasın */ }
+    setUser(prev => (prev ? { ...prev, onboarding_done: done } : prev));
+  };
+
+  const finishTour = () => { setTourActive(false); setOnboardingDone(true); };
+  const replayTour = () => { setCurrentPage("home"); setTimeout(() => setTourActive(true), 400); };
+
+  // İlk girişte, ana ekrana gelindiğinde bir kez başlat
+  useEffect(() => {
+    if (!user || user.onboarding_done !== false) return;
+    if (currentPage !== "home" || isAuthModalOpen || tourActive) return;
+    const timer = setTimeout(() => setTourActive(true), 900);
+    return () => clearTimeout(timer);
+  }, [user?.id, user?.onboarding_done, currentPage, isAuthModalOpen]); // eslint-disable-line
+
   // Sayfa değişince en üste scroll
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -2724,6 +2784,9 @@ export default function Muuvlink() {
     setShowManualLocation(false);
     setGpsErrorCode(null);
     setNearbyMode(true);
+    // Başlangıç görev listesi için: "yakınındakileri ara" adımı tamamlandı
+    localStorage.setItem("nearbyUsed", "true");
+    setNearbyUsed(true);
     setCurrentPage("trainings");
 
     const failWith = (code) => {
@@ -4064,6 +4127,8 @@ export default function Muuvlink() {
           )}
         </div>
 
+        <StarterChecklist />
+
         {/* Yaklaşan etkinlikler */}
         <div className="py-8 bg-white px-4">
           <div className="flex items-center justify-between mb-4">
@@ -4100,6 +4165,62 @@ export default function Muuvlink() {
     );
   };
 
+  // Başlangıç görev listesi — tur tek seferlik, bu kart oturumlar arası kalır.
+  // Kullanıcı adımları tamamladıkça kendiliğinden ✓'lenir; hepsi bitince kaybolur.
+  const StarterChecklist = () => {
+    if (!user) return null;
+    const items = [
+      { key: "team",   done: myTeams.length > 0,
+        title: t("checklist.teamTitle"),   text: t("checklist.teamText"),
+        onClick: () => setCurrentPage("teams") },
+      { key: "event",  done: myTrainings.length > 0 || joinedTrainings.length > 0,
+        title: t("checklist.eventTitle"),  text: t("checklist.eventText"),
+        onClick: () => setCurrentPage("trainings") },
+      { key: "nearby", done: nearbyUsed,
+        title: t("checklist.nearbyTitle"), text: t("checklist.nearbyText"),
+        onClick: () => handleNearbySearch() },
+    ];
+    const doneCount = items.filter(i => i.done).length;
+    if (doneCount === items.length) return null; // hepsi bitti → kartı gizle
+
+    return (
+      <div className="bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 pt-10">
+          <div className="rounded-2xl border border-brand-100 p-5 sm:p-6" style={{background:"linear-gradient(135deg,#e5f9f9,#f0fdfd)"}}>
+            <div className="flex items-center justify-between mb-4 gap-3">
+              <h3 className="font-display font-bold text-brand-900 text-lg">{t("checklist.title")}</h3>
+              <span className="text-xs font-semibold text-brand-700 flex-shrink-0">
+                {t("checklist.progress").replace("{done}", doneCount).replace("{total}", items.length)}
+              </span>
+            </div>
+            <div className="h-1.5 rounded-full bg-white/70 mb-5 overflow-hidden">
+              <div className="h-full rounded-full transition-all duration-500"
+                style={{width:`${(doneCount/items.length)*100}%`, background:"linear-gradient(90deg,#00b7ba,#009295)"}}/>
+            </div>
+            <div className="space-y-2">
+              {items.map(item => (
+                <button key={item.key} onClick={item.done ? undefined : item.onClick}
+                  disabled={item.done}
+                  className={`w-full flex items-start gap-3 p-3 rounded-xl text-left transition-colors ${item.done ? "opacity-60 cursor-default" : "bg-white/60 hover:bg-white cursor-pointer"}`}>
+                  <span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5"
+                    style={item.done
+                      ? {background:"#00b7ba"}
+                      : {border:"2px solid #97e7e8", background:"transparent"}}>
+                    {item.done && <Check className="w-3 h-3 text-white" strokeWidth={3}/>}
+                  </span>
+                  <span className="min-w-0">
+                    <span className={`block text-sm font-semibold ${item.done ? "text-slate-500 line-through" : "text-slate-800"}`}>{item.title}</span>
+                    {!item.done && <span className="block text-xs text-slate-500 mt-0.5">{item.text}</span>}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const HomePage = () => (
     <>
       <HeroSection
@@ -4115,6 +4236,7 @@ export default function Muuvlink() {
         t={t}
         lang={lang}
       />
+      <StarterChecklist />
       <FeaturesSection />
 
       {/* ── GPS SEARCH + UPCOMING TRAININGS — yan yana ── */}
@@ -4390,6 +4512,17 @@ export default function Muuvlink() {
           <div className="flex-1 min-w-0">
             <div className="font-semibold text-slate-800">{t("notifPrefs.title")}</div>
             <div className="text-xs text-slate-400">{t("notifPrefs.rowHint")}</div>
+          </div>
+          <ChevronRight className="w-5 h-5 text-slate-300 flex-shrink-0" />
+        </button>
+        {/* Tanıtım turunu tekrar izle */}
+        <button onClick={replayTour}
+          className="w-full flex items-center gap-3.5 bg-white rounded-2xl border border-slate-100 p-4 mb-6 hover:shadow-md active:scale-[0.995] transition text-left">
+          <div className="w-11 h-11 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0">
+            <Sparkles className="w-5 h-5 text-brand-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-slate-800">{t("tour.replay")}</div>
           </div>
           <ChevronRight className="w-5 h-5 text-slate-300 flex-shrink-0" />
         </button>
@@ -4740,6 +4873,7 @@ export default function Muuvlink() {
               {user && (
                 <button
                   onClick={() => setCurrentPage("create-training")}
+                  data-tour="create-event"
                   className="flex-shrink-0 flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium text-white text-sm transition-all hover:opacity-90"
                   style={{background:"linear-gradient(135deg,#00b7ba,#009295)", boxShadow:"0 8px 24px rgba(0,183,186,0.35)"}}
                 >
@@ -4820,6 +4954,7 @@ export default function Muuvlink() {
                 {t("common.all")}
               </button>
               <button onClick={() => handleNearbySearch()} disabled={locationLoading}
+                data-tour="nearby"
                 className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-xl transition-all border shadow-sm disabled:opacity-50"
                 style={nearbyMode
                   ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff", borderColor:"transparent", boxShadow:"0 1px 8px rgba(0,183,186,0.25)"}
@@ -4967,6 +5102,7 @@ export default function Muuvlink() {
               {user && (
                 <button
                   onClick={() => setCurrentPage("create-team")}
+                  data-tour="create-team"
                   className="flex items-center gap-2 px-6 py-3 rounded-xl font-medium text-white text-sm transition-all hover:opacity-90 flex-shrink-0"
                   style={{background:"linear-gradient(135deg,#0EA5E9,#06B6D4)", boxShadow:"0 8px 24px rgba(14,165,233,0.3)"}}
                 >
@@ -5006,7 +5142,7 @@ export default function Muuvlink() {
         {/* ── Content ── */}
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-10">
           {filteredTeams.length > 0 ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5" data-tour="teams-list">
               {filteredTeams.map((team) => (
                 <TeamCard key={team.id} team={team} onClick={fetchTeamDetails} />
               ))}
@@ -7104,6 +7240,7 @@ export default function Muuvlink() {
     const navLink = (page, label) => (
       <button
         onClick={() => setCurrentPage(page)}
+        data-tour={page === "teams" ? "teams-tab" : undefined}
         className="relative text-sm font-medium tracking-wide transition-all duration-200"
         style={{color: isActive(page) ? "#009295" : "#64748b"}}
         onMouseEnter={e=>{ if(!isActive(page)) e.currentTarget.style.color="#006d6f"; }}
@@ -7123,6 +7260,7 @@ export default function Muuvlink() {
       <button
         key={page}
         onClick={() => { setCurrentPage(page); setMobileOpen(false); }}
+        data-tour={page === "teams" ? "teams-tab-mobile" : undefined}
         className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-sm font-medium transition-colors"
         style={{
           background: isActive(page) ? "linear-gradient(135deg,#e5f9f9,#e5f9f9)" : "transparent",
@@ -8061,6 +8199,7 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
             const active = currentPage === tab.key;
             return (
               <button key={tab.key} onClick={() => { triggerHaptic("light"); setCurrentPage(tab.key); }}
+                data-tour={tab.key === "teams" ? "teams-tab-bottom" : undefined}
                 className="flex-1 flex flex-col items-center gap-1 py-3 transition-all"
                 style={{color: active ? "#00b7ba" : "#94a3b8"}}>
                 <div className="relative" style={{transform: active ? "scale(1.1)" : "scale(1)", transition:"transform 0.15s"}}>
@@ -8159,6 +8298,7 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
       <LegalModal />
       <ReportModal />
       <CookieBanner />
+      {tourActive && <Tour steps={tourSteps} onFinish={finishTour} t={t} />}
       <Toast />
       {!isNative && <Footer />}
       </div>
