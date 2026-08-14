@@ -4442,11 +4442,30 @@ export default function Muuvlink() {
                 <p className="text-slate-400 text-sm mt-0.5">{user?.email}</p>
               </div>
             </div>
-            <button onClick={() => setShowProfileEdit(true)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all"
-              style={{background:"white", color:"#009295", border:"1px solid #cbf3f3"}}>
-              <Settings className="w-4 h-4"/> {t("profile.editProfile")}
-            </button>
+            <div className="flex items-center gap-2.5">
+              <button onClick={() => setShowProfileEdit(true)}
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all"
+                style={{background:"white", color:"#009295", border:"1px solid #cbf3f3"}}>
+                <Settings className="w-4 h-4"/> {t("profile.editProfile")}
+              </button>
+              {/* Bildirimler — sadece ikon + okunmamış sayısı */}
+              {(() => {
+                const unread = notifications.filter((n) => !n.is_read).length;
+                return (
+                  <button onClick={() => setShowNotifications(true)}
+                    aria-label={t("notifications.title")} title={t("notifications.title")}
+                    className="relative flex items-center justify-center w-11 h-11 rounded-xl flex-shrink-0 transition-all"
+                    style={{background:"white", border:"1px solid #cbf3f3"}}>
+                    <Bell className="w-5 h-5" style={{color:"#009295"}}/>
+                    {unread > 0 && (
+                      <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1 rounded-full bg-red-500 text-white text-[11px] font-bold flex items-center justify-center border-2 border-white">
+                        {unread > 99 ? "99+" : unread}
+                      </span>
+                    )}
+                  </button>
+                );
+              })()}
+            </div>
           </div>
 
           {/* Dil seçimi — Profili Düzenle'nin altında */}
@@ -4483,52 +4502,6 @@ export default function Muuvlink() {
 
       {/* ── Content ── */}
       <div className="max-w-5xl mx-auto px-4 sm:px-8 py-10">
-        {/* Bildirimler satırı */}
-        {(() => {
-          const unread = notifications.filter((n) => !n.is_read).length;
-          return (
-            <button onClick={() => setShowNotifications(true)}
-              className="w-full flex items-center gap-3.5 bg-white rounded-2xl border border-slate-100 p-4 mb-6 hover:shadow-md active:scale-[0.995] transition text-left">
-              <div className="relative w-11 h-11 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0">
-                <Bell className="w-5 h-5 text-brand-600" />
-                {unread > 0 && <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-red-500 border-2 border-white" />}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-semibold text-slate-800">{t("notifications.title")}</div>
-                <div className="text-xs text-slate-400">
-                  {unread > 0 ? `${unread} ${t("notifications.unread")}` : t("notifications.allRead")}
-                </div>
-              </div>
-              {unread > 0 && (
-                <span className="flex-shrink-0 min-w-[22px] h-[22px] px-1.5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center">{unread}</span>
-              )}
-              <ChevronRight className="w-5 h-5 text-slate-300 flex-shrink-0" />
-            </button>
-          );
-        })()}
-        {/* Bildirim Tercihleri satırı */}
-        <button onClick={() => setShowNotifPrefs(true)}
-          className="w-full flex items-center gap-3.5 bg-white rounded-2xl border border-slate-100 p-4 mb-6 hover:shadow-md active:scale-[0.995] transition text-left">
-          <div className="w-11 h-11 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0">
-            <Settings className="w-5 h-5 text-brand-600" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="font-semibold text-slate-800">{t("notifPrefs.title")}</div>
-            <div className="text-xs text-slate-400">{t("notifPrefs.rowHint")}</div>
-          </div>
-          <ChevronRight className="w-5 h-5 text-slate-300 flex-shrink-0" />
-        </button>
-        {/* Tanıtım turunu tekrar izle */}
-        <button onClick={replayTour}
-          className="w-full flex items-center gap-3.5 bg-white rounded-2xl border border-slate-100 p-4 mb-6 hover:shadow-md active:scale-[0.995] transition text-left">
-          <div className="w-11 h-11 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0">
-            <Sparkles className="w-5 h-5 text-brand-600" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="font-semibold text-slate-800">{t("tour.replay")}</div>
-          </div>
-          <ChevronRight className="w-5 h-5 text-slate-300 flex-shrink-0" />
-        </button>
         <div className="grid md:grid-cols-3 gap-6 min-w-0">
 
           {/* Left: Quick actions */}
@@ -4671,6 +4644,18 @@ export default function Muuvlink() {
                 </div>
               </div>
             )}
+
+            {/* Tanıtım turunu tekrar izle — çıkışın hemen üstünde */}
+            <button onClick={replayTour}
+              className="w-full flex items-center gap-3.5 bg-white rounded-2xl border border-slate-100 p-4 mb-3 hover:shadow-md active:scale-[0.995] transition text-left">
+              <div className="w-11 h-11 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0">
+                <Sparkles className="w-5 h-5 text-brand-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-slate-800">{t("tour.replay")}</div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-slate-300 flex-shrink-0" />
+            </button>
 
             {/* Oturum — güvenli işlem */}
             <div className="bg-white rounded-2xl p-4 border border-slate-100">
@@ -7133,6 +7118,19 @@ export default function Muuvlink() {
                 className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold"
               >
                 {t("common.save")}
+              </button>
+
+              {/* Bildirim tercihleri — profil düzenleme içinden açılır */}
+              <button type="button" onClick={() => setShowNotifPrefs(true)}
+                className="w-full flex items-center gap-3 pt-4 mt-2 border-t border-slate-100 text-left">
+                <div className="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0">
+                  <Bell className="w-5 h-5 text-brand-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-slate-800 text-sm">{t("notifPrefs.title")}</div>
+                  <div className="text-xs text-slate-400">{t("notifPrefs.rowHint")}</div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-slate-300 flex-shrink-0" />
               </button>
             </form>
           ) : (
