@@ -848,17 +848,19 @@ export const translations = {
                      de: "Tritt einem bestehenden Team bei — wähle das passende aus." },
 
     createEventTitle: { tr: "İlk etkinliğini yarat", en: "Create your first event", de: "Erstelle dein erstes Event" },
-    createEventText:  { tr: "Takımın için ilk etkinliğini oluştur.",
-                        en: "Create the first event for your team.",
-                        de: "Erstelle das erste Event für dein Team." },
-    joinEventText:    { tr: "Etkinlikleri keşfet ve birine katıl.",
-                        en: "Discover events and join one.",
-                        de: "Entdecke Events und nimm an einem teil." },
+    createEventText:  { tr: "İlk etkinliğini yarat ya da etkinlikleri keşfet ve birine katıl.",
+                        en: "Create your first event, or discover events and join one.",
+                        de: "Erstelle dein erstes Event oder entdecke Events und nimm an einem teil." },
 
-    nearbyTitle: { tr: "Yakınındakileri keşfet", en: "Discover what's nearby", de: "Entdecke die Umgebung" },
-    nearbyText:  { tr: "Çevrendeki etkinlikleri haritada gör.",
-                   en: "See events around you on the map.",
-                   de: "Sieh dir Events in deiner Nähe auf der Karte an." },
+    mapTitle: { tr: "Yakınındakileri keşfet", en: "Discover what's nearby", de: "Entdecke die Umgebung" },
+    mapText:  { tr: "Çevrendeki etkinlikleri haritada gör.",
+                en: "See events around you on the map.",
+                de: "Sieh dir Events in deiner Nähe auf der Karte an." },
+
+    nearbyTitle: { tr: "Yakınındakileri bul", en: "Find what's near you", de: "Finde Events in deiner Nähe" },
+    nearbyText:  { tr: "Konumuna göre seçtiğin km yarıçapındaki etkinlikleri keşfet.",
+                   en: "Discover events within the distance you choose around you.",
+                   de: "Entdecke Events im selbst gewählten Umkreis um dich." },
   },
 
   // ── BAŞLANGIÇ GÖREV LİSTESİ (checklist) ──────────────────

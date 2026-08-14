@@ -99,9 +99,23 @@ const Tour = ({ steps, onFinish, t }) => {
   };
   const vw = window.innerWidth, vh = window.innerHeight;
 
-  // Baloncuk: yer varsa altta, yoksa üstte; yatayda ekran içinde tutulur.
-  const below = hole.top + hole.height + GAP + 190 < vh;
-  const bubbleTop = below ? hole.top + hole.height + GAP : Math.max(12, hole.top - GAP - 190);
+  // Baloncuk yerleşimi. Hedef ekrandan uzunsa (ör. tüm takım listesi) delik
+  // yukarı/aşağı taşar; bu durumda baloncuğu deliğin dışına değil, GÖRÜNEN
+  // alanın içine koyarız — yoksa ekranın üstünden taşıp kırpılıyordu.
+  const BUBBLE_H = 190;
+  const spaceBelow = vh - (hole.top + hole.height);
+  const spaceAbove = hole.top;
+  let bubbleTop;
+  if (spaceBelow >= BUBBLE_H + GAP) {
+    bubbleTop = hole.top + hole.height + GAP;             // altta yer var
+  } else if (spaceAbove >= BUBBLE_H + GAP) {
+    bubbleTop = hole.top - GAP - BUBBLE_H;                // üstte yer var
+  } else {
+    // Hiçbir yanda yer yok (hedef ekrandan uzun) → görünen alanın üst kısmına,
+    // deliğin başladığı yerin hemen altına yerleştir.
+    bubbleTop = Math.max(12, Math.min(hole.top + GAP, vh - BUBBLE_H - 12));
+  }
+  bubbleTop = Math.max(12, Math.min(bubbleTop, vh - BUBBLE_H - 12)); // her hâlükârda ekran içi
   const bubbleLeft = Math.min(
     Math.max(12, hole.left + hole.width / 2 - BUBBLE_W / 2),
     vw - BUBBLE_W - 12

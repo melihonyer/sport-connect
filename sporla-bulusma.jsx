@@ -2484,8 +2484,11 @@ export default function Muuvlink() {
     ]),
     {
       target: "create-event", before: () => setCurrentPage("trainings"),
-      title: t("tour.createEventTitle"),
-      text: hasTeam ? t("tour.createEventText") : t("tour.joinEventText"),
+      title: t("tour.createEventTitle"), text: t("tour.createEventText"),
+    },
+    {
+      target: "map-view", before: () => setCurrentPage("trainings"),
+      title: t("tour.mapTitle"), text: t("tour.mapText"),
     },
     {
       target: "nearby", before: () => setCurrentPage("trainings"),
@@ -4903,6 +4906,7 @@ export default function Muuvlink() {
               {/* View toggle — tek buton, aktif moda göre değişir */}
               <button
                 onClick={() => setViewMode(viewMode === "list" ? "map" : "list")}
+                data-tour="map-view"
                 className="flex-shrink-0 whitespace-nowrap px-3.5 py-2.5 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 border shadow-sm"
                 style={viewMode === "map"
                   ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff", borderColor:"transparent", boxShadow:"0 1px 8px rgba(0,183,186,0.35)"}
