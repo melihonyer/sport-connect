@@ -1041,7 +1041,11 @@ export default function AdminPanel() {
             {filteredLogs.map(log => {
               const cfg = EVENT_CONFIG[log.event_type] || { icon: Activity, label: log.event_type, color: "bg-slate-100 text-slate-600" };
               const meta = log.meta || {};
-              const detail = meta.team_name || meta.training_title || meta.email || "";
+              // Etkinlik başlığı önce gelir: bireysel etkinliklerde team_name hep
+              // "Bireysel" olduğu için, farklı etkinlikler listede aynı görünüyordu.
+              const detail = meta.training_title
+                ? (meta.team_name ? `${meta.training_title} · ${meta.team_name}` : meta.training_title)
+                : (meta.team_name || meta.email || "");
               const CfgIcon = cfg.icon;
               return (
                 <div key={log.id} className="flex items-start gap-3 px-4 py-3.5">
@@ -1077,7 +1081,11 @@ export default function AdminPanel() {
                 {filteredLogs.map(log => {
                   const cfg = EVENT_CONFIG[log.event_type] || { icon: Activity, label: log.event_type, color: "bg-slate-100 text-slate-600" };
                   const meta = log.meta || {};
-                  const detail = meta.team_name || meta.training_title || meta.email || "";
+                  // Etkinlik başlığı önce gelir: bireysel etkinliklerde team_name hep
+              // "Bireysel" olduğu için, farklı etkinlikler listede aynı görünüyordu.
+              const detail = meta.training_title
+                ? (meta.team_name ? `${meta.training_title} · ${meta.team_name}` : meta.training_title)
+                : (meta.team_name || meta.email || "");
                   const CfgIconTbl = cfg.icon;
                   return (
                     <tr key={log.id} className="hover:bg-slate-50/50 transition-colors">
