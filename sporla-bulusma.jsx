@@ -778,7 +778,7 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
       </div>
 
       {/* Banner katmanları — cross-fade */}
-      <div className="relative" style={{minHeight:"680px", overflow:"hidden"}}>
+      <div className="relative bn-hero" style={{minHeight:"680px", overflow:"hidden"}}>
         {banners.map((banner, i) => {
           const isActive = i === activeIdx;
           const bgF = banner?.gradient_from || "#052e16";
@@ -951,11 +951,16 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
         @keyframes heroFloat { 0%,100%{transform:translateY(0)} 45%{transform:translateY(-14px)} 70%{transform:translateY(-8px)} }
         @keyframes blink     { 0%,100%{opacity:1} 50%{opacity:0} }
         @media (max-width: 767px) {
-          .bn-grid     { display:flex !important; flex-direction:column !important; min-height:auto !important; padding-top:88px !important; padding-bottom:60px; }
+          /* Slaytlar absolute (cross-fade) olduğu için sarmalayıcı içerikle büyüyemez;
+             sabit 680px en uzun banner'a (~917px) yetmiyor, içerik taşıp slayt noktaları
+             CTA butonunun üstüne biniyordu. Yüksekliği en uzun banner'a göre sabitliyoruz
+             — böylece banner değişiminde sayfa zıplamıyor. İçerik dikeyde ortalanır. */
+          .bn-hero     { min-height:1010px !important; }
+          .bn-grid     { display:flex !important; flex-direction:column !important; justify-content:center !important; min-height:1010px !important; padding-top:88px !important; padding-bottom:76px !important; }
           .bn-text-col { padding-right:0 !important; padding-bottom:0 !important; }
           .bn-img-col  { display:none !important; }
           .bn-banner-img { display:none !important; }
-          .bn-nav      { display:flex !important; }
+          .bn-nav      { display:flex !important; bottom:20px !important; }
           .bn-title    { white-space:normal !important; font-size:4.5rem !important; line-height:1.18 !important; word-break:normal !important; overflow-wrap:normal !important; padding-bottom:0.05em !important; }
           .bn-motto    { white-space:normal !important; font-size:4.5rem !important; line-height:1.18 !important; word-break:normal !important; overflow-wrap:normal !important; padding-bottom:0.1em !important; }
           .bn-stats    { display:none !important; }
