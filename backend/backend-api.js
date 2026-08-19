@@ -4144,12 +4144,13 @@ pool.query(`
 const DISCOVERY_SPORTS = ['Basketbol','Bisiklet','Crossfit','Futbol','Kano','Koşu','Kürek','Padel','Pilates','Tenis','Trekking','Triatlon','Voleybol','Yoga','Yüzme','Diğer'];
 
 // İlk kurulumda kaynak listesi boşsa doldur (panelden düzenlenebilir)
+// Hepsi düz HTML veriyor ve robots.txt izin veriyor (19.08.2026'da tek tek denendi).
+// Federasyon siteleri denendi ve elendi: takvimleri ya 404 ya erişilemez ya da JS ile yükleniyor.
 const DEFAULT_DISCOVERY_SOURCES = [
-  { name: 'Türkiye Atletizm Federasyonu — Yarışma Takvimi', url: 'https://www.taf.org.tr/yarismalar/' },
-  { name: 'Türkiye Triatlon Federasyonu — Faaliyet Takvimi', url: 'https://www.triatlon.gov.tr/faaliyet-takvimi' },
-  { name: 'Türkiye Bisiklet Federasyonu — Faaliyet Takvimi', url: 'https://www.bisiklet.gov.tr/faaliyet-takvimi' },
-  { name: 'Türkiye Yüzme Federasyonu — Faaliyet Takvimi', url: 'https://www.tyf.gov.tr/faaliyet-programi' },
-  { name: 'Türkiye Dağcılık Federasyonu — Faaliyet Takvimi', url: 'https://www.tdf.gov.tr/faaliyet-takvimi/' },
+  { name: 'TAF Yol Yarışları Platformu', url: 'https://kosu.taf.org.tr/' },
+  { name: 'PassTiming — Yarış Takvimi', url: 'https://www.passtiming.org/yarisma-takvimi' },
+  { name: 'TEAM RunBo — Yarış Takvimi', url: 'https://teamrunbo.com/yaristakvimimiz/' },
+  { name: 'kosu.co — Yarış Takvimi', url: 'https://kosu.co/yaris-takvimi/' },
 ];
 
 setTimeout(async () => {
@@ -4414,7 +4415,28 @@ const slugKey = (s) => String(s || '').toLocaleLowerCase('tr')
   .replace(/[çğıöşü]/g, (c) => ({ 'ç':'c','ğ':'g','ı':'i','ö':'o','ş':'s','ü':'u' }[c]))
   .replace(/[^a-z0-9]/g, '');
 
-async function saveCandidate(ev, sourceName, existingKeys) {
+// Aynı yarış kaynaktan kaynağa farklı yazılıyor: "90. Ankara Büyük Atatürk Koşusu" ve
+// "Büyük Atatürk Koşusu" gibi. Başlıktan sıra numarası ve genel sıfatlar atılıp kelime
+// kümesi karşılaştırılıyor; aynı tarihte yeterince örtüşen iki kayıt tek yarış sayılıyor.
+// "Edirne Maratonu" ile "Edirne Yarı Maratonu" ayrı kalsın diye eşik yüksek tutuldu.
+const TITLE_STOPWORDS = new Set(['uluslararasi', 'geleneksel', 'turkiye']);
+function titleTokens(title) {
+  return new Set(
+    String(title || '').toLocaleLowerCase('tr')
+      .replace(/[çğıöşü]/g, (c) => ({ 'ç':'c','ğ':'g','ı':'i','ö':'o','ş':'s','ü':'u' }[c]))
+      .split(/[^a-z0-9]+/)
+      .filter((w) => w.length > 2 && !/^\d+$/.test(w) && !TITLE_STOPWORDS.has(w))
+  );
+}
+function tokenOverlap(a, b) {
+  if (!a.size || !b.size) return 0;
+  let inter = 0;
+  for (const t of a) if (b.has(t)) inter++;
+  return inter / (a.size + b.size - inter); // Jaccard
+}
+const NEAR_DUPLICATE_THRESHOLD = 0.7;
+
+async function saveCandidate(ev, sourceName, index) {
   const title = String(ev.title || '').trim();
   const date = String(ev.date || '').trim();
   if (!title || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
@@ -4425,8 +4447,13 @@ async function saveCandidate(ev, sourceName, existingKeys) {
   if (isNaN(d.getTime()) || d < today || d > limit) return null;
 
   const key = `${slugKey(title).slice(0, 60)}|${date}`;
-  if (existingKeys.has(key)) return null;
-  existingKeys.add(key);
+  if (index.keys.has(key)) return null;
+  const tokens = titleTokens(title);
+  const sameDay = index.byDate.get(date) || [];
+  if (sameDay.some((prev) => tokenOverlap(tokens, prev) >= NEAR_DUPLICATE_THRESHOLD)) return null;
+  index.keys.add(key);
+  sameDay.push(tokens);
+  index.byDate.set(date, sameDay);
 
   const city = String(ev.city || '').trim();
   const locName = String(ev.location_name || '').trim() || city;
@@ -4454,19 +4481,26 @@ async function saveCandidate(ev, sourceName, existingKeys) {
   return r.rows[0] || null;
 }
 
-// Zaten kayıtlı olanların anahtarları (ücretli etkinlikler + tüm adaylar)
-async function loadExistingKeys() {
-  const set = new Set();
+// Zaten kayıtlı olanlar: kesin anahtarlar + tarih bazlı başlık kelime kümeleri
+async function loadExistingIndex() {
+  const keys = new Set();
+  const byDate = new Map();
+  const asDate = (d) => (d instanceof Date ? d.toISOString().slice(0, 10) : String(d || '').slice(0, 10));
+  const add = (title, date) => {
+    const dt = asDate(date);
+    keys.add(`${slugKey(title).slice(0, 60)}|${dt}`);
+    const arr = byDate.get(dt) || [];
+    arr.push(titleTokens(title));
+    byDate.set(dt, arr);
+  };
   const a = await pool.query('SELECT title, training_date FROM trainings WHERE is_paid = true');
-  for (const row of a.rows) {
-    const dt = row.training_date instanceof Date
-      ? row.training_date.toISOString().slice(0, 10)
-      : String(row.training_date || '').slice(0, 10);
-    set.add(`${slugKey(row.title).slice(0, 60)}|${dt}`);
+  for (const row of a.rows) add(row.title, row.training_date);
+  const b = await pool.query('SELECT title, training_date, dedupe_key FROM event_candidates');
+  for (const row of b.rows) {
+    add(row.title, row.training_date);
+    if (row.dedupe_key) keys.add(row.dedupe_key);
   }
-  const b = await pool.query('SELECT dedupe_key FROM event_candidates WHERE dedupe_key IS NOT NULL');
-  for (const row of b.rows) set.add(row.dedupe_key);
-  return set;
+  return { keys, byDate };
 }
 
 // ── Tarama işleri ─────────────────────────────────────────────────────────
@@ -4474,7 +4508,7 @@ async function runSourceScan() {
   const srcRes = await pool.query('SELECT * FROM discovery_sources WHERE is_active = true ORDER BY id');
   const sources = srcRes.rows;
   discoveryState.total = sources.length;
-  const keys = await loadExistingKeys();
+  const index = await loadExistingIndex();
 
   for (const src of sources) {
     discoveryState.current = src.name || src.url;
@@ -4491,7 +4525,7 @@ async function runSourceScan() {
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         let text = htmlToText(await res.text());
-        if (text.length > 18000) { text = text.slice(0, 18000); dlog(`✂️ ${src.url} — sayfa uzun, ilk 18.000 karakter kullanıldı`); }
+        if (text.length > 60000) { text = text.slice(0, 60000); dlog(`✂️ ${src.url} — sayfa uzun, ilk 60.000 karakter kullanıldı`); }
         if (text.length < 200) throw new Error('Sayfa metni okunamadı (muhtemelen JS ile yükleniyor)');
 
         const events = await discoveryModelCall({
@@ -4500,7 +4534,7 @@ async function runSourceScan() {
         });
         discoveryState.found += events.length;
         for (const ev of events) {
-          const saved = await saveCandidate(ev, src.name || src.url, keys);
+          const saved = await saveCandidate(ev, src.name || src.url, index);
           if (saved) { discoveryState.added++; foundHere++; }
         }
         dlog(`✅ ${src.name || src.url} — ${events.length} yarış okundu, ${foundHere} yeni aday`);
@@ -4536,7 +4570,7 @@ async function runWebScan(selectedIds) {
     ? DISCOVERY_QUERIES.filter((x) => selectedIds.includes(x.id))
     : DISCOVERY_QUERIES;
   discoveryState.total = chosen.length;
-  const keys = await loadExistingKeys();
+  const index = await loadExistingIndex();
   const today = new Date().toISOString().slice(0, 10);
 
   for (const { label, q } of chosen) {
@@ -4550,7 +4584,7 @@ async function runWebScan(selectedIds) {
       discoveryState.found += events.length;
       let added = 0;
       for (const ev of events) {
-        const saved = await saveCandidate(ev, 'Web araması', keys);
+        const saved = await saveCandidate(ev, 'Web araması', index);
         if (saved) { discoveryState.added++; added++; }
       }
       dlog(`✅ ${label} — ${events.length} yarış bulundu, ${added} yeni aday`);
@@ -4692,6 +4726,21 @@ app.post('/api/admin/discovery/candidates/:id/reject', isAdmin, async (req, res)
   } catch (e) {
     console.error('Discovery reject error:', e);
     res.status(500).json({ error: 'Aday reddedilemedi.' });
+  }
+});
+
+// Reddedilen adayı onay kuyruğuna geri al
+app.post('/api/admin/discovery/candidates/:id/restore', isAdmin, async (req, res) => {
+  try {
+    const r = await pool.query(
+      `UPDATE event_candidates SET status='pending', reviewed_by=NULL, reviewed_at=NULL
+       WHERE id=$1 AND status='rejected' RETURNING *`, [req.params.id]
+    );
+    if (!r.rows[0]) return res.status(404).json({ error: 'Reddedilmiş aday bulunamadı.' });
+    res.json(r.rows[0]);
+  } catch (e) {
+    console.error('Discovery restore error:', e);
+    res.status(500).json({ error: 'Aday geri alınamadı.' });
   }
 });
 

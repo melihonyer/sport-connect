@@ -604,6 +604,17 @@ function DiscoveryTab({ api, showToast }) {
     finally { setBusyId(null); }
   };
 
+  const restore = async (c) => {
+    setBusyId(c.id);
+    try {
+      await api(`/admin/discovery/candidates/${c.id}/restore`, { method: "POST" });
+      setItems(prev => prev.filter(i => i.id !== c.id));
+      setCounts(p => ({ ...p, rejected: Math.max(0, (p.rejected || 1) - 1), pending: (p.pending || 0) + 1 }));
+      showToast("Aday onay kuyruğuna geri alındı.", "success");
+    } catch (e) { showToast(e.message || "Geri alınamadı.", "error"); }
+    finally { setBusyId(null); }
+  };
+
   const removeItem = async (c) => {
     if (!window.confirm(`"${c.title}" aday listesinden tamamen silinecek. Emin misiniz?`)) return;
     await api(`/admin/discovery/candidates/${c.id}`, { method: "DELETE" });
@@ -902,6 +913,12 @@ function DiscoveryTab({ api, showToast }) {
                   <span className="text-xs text-slate-400 flex-1 self-center">
                     {c.status === "approved" ? "Yayınlandı" : "Reddedildi"}{c.reviewed_at ? ` · ${fmtFull(c.reviewed_at)}` : ""}
                   </span>
+                  {c.status === "rejected" && (
+                    <button onClick={() => restore(c)} disabled={busyId === c.id}
+                      className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 flex items-center gap-1 disabled:opacity-50">
+                      <RefreshCw className="w-3.5 h-3.5" /> Geri Al
+                    </button>
+                  )}
                   <button onClick={() => removeItem(c)} className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-500">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
