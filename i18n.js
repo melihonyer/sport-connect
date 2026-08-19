@@ -354,6 +354,11 @@ export const translations = {
     registerBtn:    { tr: "Kayıt Sayfasına Git",           en: "Go to Registration",      de: "Zur Anmeldung"           },
     organizer:      { tr: "Organizatör",                  en: "Organizer",               de: "Organisator"             },
     noRegLink:      { tr: "Kayıt linki bulunamadı.",       en: "Registration link not found.", de: "Anmeldelink nicht gefunden." },
+    paidNotice:     {
+      tr: "Tarih, saat ve yer organizatör tarafından değiştirilebilir. Katılmadan önce kayıt sayfasından teyit etmeniz önerilir.",
+      en: "The organizer may change the date, time or location. Please confirm the details on the registration page before attending.",
+      de: "Datum, Uhrzeit und Ort können vom Veranstalter geändert werden. Bitte prüfe die Angaben vor der Teilnahme auf der Anmeldeseite.",
+    },
   },
   moderation: {
     delete:               { tr: "Sil",                        en: "Delete",                  de: "Löschen"                 },

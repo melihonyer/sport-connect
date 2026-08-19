@@ -3852,7 +3852,7 @@ export default function Muuvlink() {
           </h3>
         </div>
         <p className="text-sm text-slate-400 italic">
-          {training.training_time && <span>{training.training_time}</span>}
+          {training.training_time && <span>{String(training.training_time).slice(0, 5)}</span>}
           {training.training_time && (subtitleName || training.location_name) && <span className="mx-2">·</span>}
           {subtitleName && <span className="not-italic font-medium text-brand-700">{subtitleName}</span>}
           {subtitleName && training.location_name && <span className="mx-2">-</span>}
@@ -5669,7 +5669,8 @@ export default function Muuvlink() {
                 <Clock className="w-5 h-5 mr-2" />
                 <span className="font-semibold">{t("common.time")}</span>
               </div>
-              <p>{selectedTraining.training_time}</p>
+              {/* Postgres TIME alanı "HH:MM:SS" döner; saniye kullanıcıya gösterilmez */}
+              <p>{String(selectedTraining.training_time || "").slice(0, 5)}</p>
             </div>
             {!isPaid && (
             <div className="p-4 bg-gray-50 rounded-xl">
@@ -5800,6 +5801,13 @@ export default function Muuvlink() {
           )}
 
           {isPaid ? (
+            <>
+            {/* Bilgiler organizatörün yayınından derleniyor; tarih/saat/yer sonradan
+                değişebilir. Kullanıcı kayıt sayfasından teyit etsin diye uyarı. */}
+            <div className="flex items-start gap-2.5 p-3.5 mb-3 rounded-2xl border border-amber-100 bg-amber-50">
+              <Info className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-amber-800 leading-relaxed">{t("trainingDetail.paidNotice")}</p>
+            </div>
             <button
               onClick={() => handleRegisterClick(selectedTraining)}
               className="w-full py-4 font-semibold text-white rounded-xl transition hover:opacity-90 hover:shadow-lg flex items-center justify-center gap-2"
@@ -5807,6 +5815,7 @@ export default function Muuvlink() {
             >
               <Ticket className="w-5 h-5"/> {t("trainingDetail.registerBtn")}
             </button>
+            </>
           ) : !user ? (
             <div className="rounded-2xl overflow-hidden border border-brand-100 shadow-sm">
               {/* Üst gradient şerit */}
