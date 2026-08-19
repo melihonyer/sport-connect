@@ -498,6 +498,9 @@ function DiscoveryTab({ api, showToast }) {
   const [busyId, setBusyId]   = React.useState(null);
   const [editId, setEditId]   = React.useState(null);
   const [form, setForm]       = React.useState(null);
+  const [queries, setQueries] = React.useState([]);
+  const [selQ, setSelQ]       = React.useState([]);
+  const [webOpen, setWebOpen] = React.useState(false);
   const [showSources, setShowSources] = React.useState(false);
   const [sources, setSources] = React.useState([]);
   const [newSrc, setNewSrc]   = React.useState({ name: "", url: "" });
@@ -531,6 +534,7 @@ function DiscoveryTab({ api, showToast }) {
   React.useEffect(() => {
     load(filter);
     poll();
+    api("/admin/discovery/queries").then(d => setQueries(d || [])).catch(() => {});
     return () => clearTimeout(pollRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -538,8 +542,9 @@ function DiscoveryTab({ api, showToast }) {
   React.useEffect(() => { load(filter); }, [filter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const startScan = async (mode) => {
+    if (mode === "web" && selQ.length === 0) { showToast("En az bir sorgu seçin.", "error"); return; }
     try {
-      await api("/admin/discovery/scan", { method: "POST", body: JSON.stringify({ mode }) });
+      await api("/admin/discovery/scan", { method: "POST", body: JSON.stringify({ mode, queries: mode === "web" ? selQ : undefined }) });
       showToast(mode === "web" ? "Web araması başladı." : "Kaynak taraması başladı.", "success");
       clearTimeout(pollRef.current);
       poll();
@@ -649,12 +654,48 @@ function DiscoveryTab({ api, showToast }) {
             style={{ background: "linear-gradient(135deg,#00b7ba,#009295)" }}>
             <ScanSearch className="w-4 h-4" /> Kaynakları Tara
           </button>
-          <button onClick={() => startScan("web")} disabled={running}
+          <button onClick={() => setWebOpen(o => !o)} disabled={running}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition disabled:opacity-50">
             <Globe className="w-4 h-4" /> Web'de Ara
+            <ChevronRight className={`w-3.5 h-3.5 text-slate-300 transition ${webOpen ? "rotate-90" : ""}`} />
           </button>
         </div>
       </div>
+
+      {webOpen && (
+        <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm space-y-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm font-semibold text-slate-700">Hangi sorgular çalışsın?</span>
+            <span className="text-xs text-slate-400">Maliyet sorgu sayısıyla orantılı — sadece ihtiyacın olanı seç.</span>
+            <div className="ml-auto flex gap-2">
+              <button onClick={() => setSelQ(queries.map(q => q.id))} className="text-xs text-brand-600 hover:underline">Tümü</button>
+              <button onClick={() => setSelQ([])} className="text-xs text-slate-400 hover:underline">Temizle</button>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {queries.map(q => {
+              const on = selQ.includes(q.id);
+              return (
+                <button key={q.id}
+                  onClick={() => setSelQ(p => on ? p.filter(x => x !== q.id) : [...p, q.id])}
+                  className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition ${on ? "bg-brand-600 text-white border-brand-600" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"}`}>
+                  {q.label}
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex items-center gap-3 flex-wrap pt-1">
+            <button onClick={() => startScan("web")} disabled={running || selQ.length === 0}
+              className="px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-40"
+              style={{ background: "linear-gradient(135deg,#00b7ba,#009295)" }}>
+              Seçilenleri Tara ({selQ.length})
+            </button>
+            <span className="text-xs text-slate-400">
+              Her sorgu 2-5 dakika sürer{scan?.model ? ` · model: ${scan.model}` : ""}
+            </span>
+          </div>
+        </div>
+      )}
 
       {scan?.configured === false && (
         <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl p-4 text-sm flex items-start gap-2">

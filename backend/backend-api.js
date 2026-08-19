@@ -4183,7 +4183,15 @@ function getAnthropic() {
   return _anthropic;
 }
 
-const DISCOVERY_UA = 'MuuvlinkBot/1.0 (+https://muuvlink.app; etkinlik takvimi taraması)';
+// HTTP başlıkları yalnızca ASCII kabul eder — buraya Türkçe karakter koyma (fetch ByteString hatası verir)
+const DISCOVERY_UA = 'MuuvlinkBot/1.0 (+https://muuvlink.app; event calendar crawler)';
+
+// Ayrıştırma modeli. Sayfa metninden tarih/yer/isim çıkarmak kalıp bir iş olduğu için
+// varsayılan ucuz model; .env'den DISCOVERY_MODEL ile değiştirilebilir (ör. claude-sonnet-5).
+const DISCOVERY_MODEL = process.env.DISCOVERY_MODEL || 'claude-haiku-4-5';
+// 4.6 ve sonrası modeller `effort` ve yeni web arama aracını destekliyor; Haiku 4.5 gibi
+// eski modeller `effort` gönderilince 400 döner ve aracın eski sürümünü kullanır.
+const isModernModel = (m) => /(fable-5|opus-5|opus-4-[678]|sonnet-5|sonnet-4-6)/.test(m);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // ── Tarama durumu (panel 2 sn'de bir sorar) ───────────────────────────────
@@ -4327,6 +4335,7 @@ const DISCOVERY_SYSTEM = [
   '- date alanı kesinlikle YYYY-MM-DD olmalı. Saat bilinmiyorsa time alanını boş bırak ("").',
   '- sport alanı verilen listeden TAM olarak bir değer olmalı; uymuyorsa "Diğer" yaz.',
   '  (koşu/maraton/yarı maraton/ultra → "Koşu", patika/trail/dağ yürüyüşü → "Trekking",',
+  '   HYROX/fonksiyonel fitness yarışları → "Crossfit", duatlon/akuatlon → "Triatlon",',
   '   yol/dağ bisikleti/gran fondo → "Bisiklet", açık su/havuz → "Yüzme")',
   '- description: kaynaktan KOPYALAMA; kendi cümlelerinle en fazla 200 karakter özet yaz (Türkçe).',
   '- Bilinmeyen alanları boş string ("") bırak; asla tahmin uydurma.',
@@ -4337,17 +4346,45 @@ const DISCOVERY_SYSTEM = [
   '- Yarış bulunmuyorsa boş liste döndür.',
 ].join('\n');
 
+// Metin içindeki ilk dengeli JSON nesnesini döndürür (string'lerdeki süslü parantezleri atlar)
+function extractFirstJsonObject(text) {
+  const start = text.indexOf('{');
+  if (start === -1) return null;
+  let depth = 0, inStr = false, esc = false;
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i];
+    if (inStr) {
+      if (esc) esc = false;
+      else if (ch === '\\') esc = true;
+      else if (ch === '"') inStr = false;
+      continue;
+    }
+    if (ch === '"') inStr = true;
+    else if (ch === '{') depth++;
+    else if (ch === '}' && --depth === 0) return text.slice(start, i + 1);
+  }
+  return null;
+}
+
 // Yapılandırılmış JSON döndüren tek istek (pause_turn döngüsü dahil)
-async function discoveryModelCall({ prompt, tools, effort }) {
+async function discoveryModelCall({ prompt, webSearch, effort }) {
   const client = getAnthropic();
   if (!client) throw new Error('ANTHROPIC_API_KEY tanımlı değil — tarama yapılamıyor.');
+  const model = DISCOVERY_MODEL;
+  const modern = isModernModel(model);
   const messages = [{ role: 'user', content: prompt }];
   const base = {
-    model: 'claude-opus-5',
+    model,
     max_tokens: 16000,
     system: DISCOVERY_SYSTEM,
-    output_config: { effort: effort || 'low', format: { type: 'json_schema', schema: DISCOVERY_SCHEMA } },
-    ...(tools ? { tools } : {}),
+    output_config: modern
+      ? { effort: effort || 'low', format: { type: 'json_schema', schema: DISCOVERY_SCHEMA } }
+      : { format: { type: 'json_schema', schema: DISCOVERY_SCHEMA } },
+    ...(webSearch ? { tools: [{
+      type: modern ? 'web_search_20260209' : 'web_search_20250305',
+      name: 'web_search',
+      max_uses: 6,
+    }] } : {}),
   };
   let resp = await client.messages.create({ ...base, messages });
   let guard = 0;
@@ -4362,9 +4399,12 @@ async function discoveryModelCall({ prompt, tools, effort }) {
   try {
     data = JSON.parse(text);
   } catch {
-    const s = text.indexOf('{'), e = text.lastIndexOf('}');
-    if (s === -1 || e === -1) return [];
-    data = JSON.parse(text.slice(s, e + 1));
+    // Model bazen JSON'dan sonra düz metin de yazıyor. İlk dengeli { … } bloğunu ayıkla;
+    // "ilk { → son }" yaklaşımı bu durumda kırılıyor (araya ikinci bir nesne girebiliyor).
+    const raw = extractFirstJsonObject(text);
+    if (!raw) { dlog('⚠️ model yanıtı JSON olarak okunamadı'); return []; }
+    try { data = JSON.parse(raw); }
+    catch { dlog('⚠️ model yanıtı JSON olarak okunamadı'); return []; }
   }
   return Array.isArray(data?.events) ? data.events : [];
 }
@@ -4478,26 +4518,34 @@ async function runSourceScan() {
   }
 }
 
+// Web arama sorguları. Maliyet doğrudan çalıştırılan sorgu sayısıyla orantılı olduğu için
+// panelden seçilerek çalıştırılır; hiçbiri seçilmezse tamamı çalışır.
 const DISCOVERY_QUERIES = [
-  'Türkiye koşu yarışları takvimi — maraton, yarı maraton, 10K',
-  'Türkiye trail / patika / ultra maraton yarışları takvimi',
-  'Türkiye triatlon yarışları takvimi',
-  'Türkiye bisiklet yarışları, gran fondo ve mtb kupa takvimi',
-  'Türkiye açık su yüzme yarışları takvimi',
+  { id: 'kosu',     label: 'Koşu (maraton, yarı maraton, 10K)', q: 'Türkiye koşu yarışları takvimi — maraton, yarı maraton, 10K' },
+  { id: 'trail',    label: 'Trail / patika / ultra',            q: 'Türkiye trail / patika / ultra maraton yarışları takvimi' },
+  { id: 'triatlon', label: 'Triatlon',                          q: 'Türkiye triatlon yarışları takvimi' },
+  { id: 'bisiklet', label: 'Bisiklet',                          q: 'Türkiye bisiklet yarışları, gran fondo ve mtb kupa takvimi' },
+  { id: 'yuzme',    label: 'Açık su yüzme',                     q: 'Türkiye açık su yüzme yarışları takvimi' },
+  { id: 'hyrox',    label: 'HYROX / fitness yarışları',         q: 'HYROX Türkiye yaklaşan yarışları — turkiye.hyrox.com resmi takvimi, İstanbul/Ankara/İzmir tarihleri' },
+  { id: 'ttf',      label: 'Triatlon Federasyonu takvimi',      q: 'Türkiye Triatlon Federasyonu faaliyet takvimi — yaklaşan triatlon, duatlon ve akuatlon yarışları' },
+  { id: 'his',      label: 'Herkes İçin Spor Federasyonu',      q: 'Herkes İçin Spor Federasyonu faaliyet takvimi — halk koşuları, yürüyüş ve kitlesel spor etkinlikleri' },
 ];
 
-async function runWebScan() {
-  discoveryState.total = DISCOVERY_QUERIES.length;
+async function runWebScan(selectedIds) {
+  const chosen = Array.isArray(selectedIds) && selectedIds.length
+    ? DISCOVERY_QUERIES.filter((x) => selectedIds.includes(x.id))
+    : DISCOVERY_QUERIES;
+  discoveryState.total = chosen.length;
   const keys = await loadExistingKeys();
   const today = new Date().toISOString().slice(0, 10);
 
-  for (const q of DISCOVERY_QUERIES) {
-    discoveryState.current = q;
+  for (const { label, q } of chosen) {
+    discoveryState.current = label;
     try {
       const events = await discoveryModelCall({
         effort: 'medium',
-        tools: [{ type: 'web_search_20260209', name: 'web_search', max_uses: 8 }],
-        prompt: `Bugünün tarihi: ${today}\n\nWeb'de ara: "${q}".\nÖnümüzdeki 12 ay içinde Türkiye'de yapılacak yarışları bul ve çıkar.\nBirden fazla kaynağa bak (organizatör siteleri, kayıt platformları, federasyon takvimleri).\nHer yarış için source_url alanına bilgiyi aldığın sayfanın adresini yaz.`,
+        webSearch: true,
+        prompt: `Bugünün tarihi: ${today}\n\nWeb'de ara: "${q}".\nÖnümüzdeki 12 ay içinde Türkiye'de yapılacak yarışları bul ve çıkar.\nBirden fazla kaynağa bak (organizatör siteleri, kayıt platformları, federasyon takvimleri).\nHer yarış için source_url alanına bilgiyi aldığın sayfanın adresini yaz.\n\nÖNEMLİ: Sadece bu sorgunun konusuyla ilgili yarışları çıkar. Açtığın sayfalarda başka\nbranşlardan yarışlar da göreceksin; onları listeleme. Konuya uyan yarış bulamazsan boş liste döndür.`,
       });
       discoveryState.found += events.length;
       let added = 0;
@@ -4505,22 +4553,22 @@ async function runWebScan() {
         const saved = await saveCandidate(ev, 'Web araması', keys);
         if (saved) { discoveryState.added++; added++; }
       }
-      dlog(`✅ "${q}" — ${events.length} yarış bulundu, ${added} yeni aday`);
+      dlog(`✅ ${label} — ${events.length} yarış bulundu, ${added} yeni aday`);
     } catch (e) {
-      dlog(`❌ "${q}" — ${e.message?.slice(0, 200)}`);
+      dlog(`❌ ${label} — ${e.message?.slice(0, 200)}`);
     }
     discoveryState.done++;
   }
 }
 
-async function startDiscoveryScan(mode) {
+async function startDiscoveryScan(mode, queries) {
   Object.assign(discoveryState, {
     running: true, mode, startedAt: new Date().toISOString(), finishedAt: null,
     total: 0, done: 0, found: 0, added: 0, current: '', log: [], error: null,
   });
   dlog(mode === 'web' ? 'Web araması başladı' : 'Kaynak taraması başladı');
   try {
-    if (mode === 'web') await runWebScan();
+    if (mode === 'web') await runWebScan(queries);
     else await runSourceScan();
     dlog(`Tarama bitti — ${discoveryState.added} yeni aday onay bekliyor`);
   } catch (e) {
@@ -4542,12 +4590,18 @@ app.post('/api/admin/discovery/scan', isAdmin, async (req, res) => {
   if (!getAnthropic()) {
     return res.status(400).json({ error: 'ANTHROPIC_API_KEY sunucuda tanımlı değil. backend/.env dosyasına ekleyip servisi yeniden başlatın.' });
   }
-  startDiscoveryScan(mode); // bilerek await edilmiyor
-  res.json({ started: true, mode });
+  const queries = Array.isArray(req.body?.queries) ? req.body.queries : null;
+  startDiscoveryScan(mode, queries); // bilerek await edilmiyor
+  res.json({ started: true, mode, model: DISCOVERY_MODEL });
 });
 
 app.get('/api/admin/discovery/status', isAdmin, (req, res) => {
-  res.json({ ...discoveryState, configured: !!getAnthropic() });
+  res.json({ ...discoveryState, configured: !!getAnthropic(), model: DISCOVERY_MODEL });
+});
+
+// Web aramasında çalıştırılabilecek sorgular (panel seçim listesi)
+app.get('/api/admin/discovery/queries', isAdmin, (req, res) => {
+  res.json(DISCOVERY_QUERIES.map(({ id, label }) => ({ id, label })));
 });
 
 // Adayları listele
