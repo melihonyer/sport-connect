@@ -5146,7 +5146,10 @@ pool.query(`
     END IF;
     RETURN NEW;
   END;
-  $$ LANGUAGE plpgsql;
+  $$ LANGUAGE plpgsql
+  -- search_path sabitlenir: aksi halde çağıranın search_path'i ile 'users' başka
+  -- bir şemaya yönlendirilebilir (Supabase linter: function_search_path_mutable).
+  SET search_path = public, pg_temp;
 `).then(() =>
   pool.query(`DROP TRIGGER IF EXISTS trg_muuv_support_editor ON team_members`)
 ).then(() =>
