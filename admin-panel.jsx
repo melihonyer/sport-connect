@@ -615,6 +615,24 @@ function DiscoveryTab({ api, showToast }) {
     finally { setBusyId(null); }
   };
 
+  const [bulkBusy, setBulkBusy] = React.useState(false);
+  const bulk = async (action) => {
+    const n = counts.rejected ?? items.length; // liste 500 ile sınırlı, işlem tüm kayıtlara gider
+    const msg = action === "restore"
+      ? `Reddedilen ${n} aday onay kuyruğuna geri alınacak. Devam edilsin mi?`
+      : `Reddedilen ${n} aday kalıcı olarak silinecek.\n\nDikkat: silinen adaylar "bir daha gösterme" kaydını da kaybeder — bir sonraki taramada tekrar önerilebilirler. Sadece listeyi temizlemek istiyorsan reddedilmiş halde bırakman daha iyi.\n\nDevam edilsin mi?`;
+    if (!window.confirm(msg)) return;
+    setBulkBusy(true);
+    try {
+      const r = await api("/admin/discovery/candidates/bulk", {
+        method: "POST", body: JSON.stringify({ action, status: "rejected" }),
+      });
+      showToast(action === "restore" ? `${r?.affected ?? 0} aday geri alındı.` : `${r?.affected ?? 0} aday silindi.`, "success");
+      load(filter);
+    } catch (e) { showToast(e.message || "İşlem başarısız.", "error"); }
+    finally { setBulkBusy(false); }
+  };
+
   const removeItem = async (c) => {
     if (!window.confirm(`"${c.title}" aday listesinden tamamen silinecek. Emin misiniz?`)) return;
     await api(`/admin/discovery/candidates/${c.id}`, { method: "DELETE" });
@@ -792,6 +810,20 @@ function DiscoveryTab({ api, showToast }) {
           <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
         </button>
       </div>
+
+      {filter === "rejected" && items.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3">
+          <span className="text-sm text-slate-600 flex-1">Reddedilen {counts.rejected ?? items.length} aday</span>
+          <button onClick={() => bulk("restore")} disabled={bulkBusy}
+            className="px-3.5 py-1.5 rounded-xl text-xs font-semibold border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-50 flex items-center gap-1.5">
+            <RefreshCw className="w-3.5 h-3.5" /> Tümünü Onay Bekleyene Al
+          </button>
+          <button onClick={() => bulk("delete")} disabled={bulkBusy}
+            className="px-3.5 py-1.5 rounded-xl text-xs font-semibold border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-50 flex items-center gap-1.5">
+            <Trash2 className="w-3.5 h-3.5" /> Tümünü Sil
+          </button>
+        </div>
+      )}
 
       {/* Adaylar */}
       {loading ? (

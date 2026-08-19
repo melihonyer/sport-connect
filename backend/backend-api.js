@@ -4729,6 +4729,33 @@ app.post('/api/admin/discovery/candidates/:id/reject', isAdmin, async (req, res)
   }
 });
 
+// Toplu işlem: bir durumdaki adayların tamamını geri al veya sil.
+// Silme, adayın dedupe anahtarını da götürür — o yarışlar sonraki taramada
+// yeniden önerilebilir. Reddedilmiş halde bırakmak "bir daha gösterme" demektir.
+app.post('/api/admin/discovery/candidates/bulk', isAdmin, async (req, res) => {
+  try {
+    const { action, status } = req.body || {};
+    if (!['restore', 'delete'].includes(action)) return res.status(400).json({ error: 'Geçersiz işlem.' });
+    if (!['pending', 'approved', 'rejected'].includes(status)) return res.status(400).json({ error: 'Geçersiz durum.' });
+
+    let r;
+    if (action === 'restore') {
+      if (status !== 'rejected') return res.status(400).json({ error: 'Sadece reddedilenler geri alınabilir.' });
+      r = await pool.query(
+        `UPDATE event_candidates SET status='pending', reviewed_by=NULL, reviewed_at=NULL WHERE status='rejected'`
+      );
+    } else {
+      // Yayınlanmış adayı silmek etkinliği silmez; yanlışlıkla yayından kaldırma olmasın diye engelli.
+      if (status === 'approved') return res.status(400).json({ error: 'Yayınlananlar toplu silinemez.' });
+      r = await pool.query('DELETE FROM event_candidates WHERE status = $1', [status]);
+    }
+    res.json({ affected: r.rowCount });
+  } catch (e) {
+    console.error('Discovery bulk error:', e);
+    res.status(500).json({ error: 'Toplu işlem başarısız.' });
+  }
+});
+
 // Reddedilen adayı onay kuyruğuna geri al
 app.post('/api/admin/discovery/candidates/:id/restore', isAdmin, async (req, res) => {
   try {
