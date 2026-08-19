@@ -7,6 +7,7 @@ import {
   Upload, GripVertical, ChevronUp, ChevronDown, Newspaper, GalleryHorizontal, Menu,
   Trophy, User, ClipboardList, CheckCircle2, DoorOpen, Sparkles, Target, Flag,
   Ticket, MapPin, ExternalLink, MousePointerClick,
+  Radar, ScanSearch, RefreshCw, Loader2, XCircle, ListChecks,
 } from "lucide-react";
 import LocationPicker from "./LocationPicker";
 import { createT, detectLang } from "./i18n.js";
@@ -485,6 +486,394 @@ function PaidEventsTab({ items, setItems, api, token, showToast }) {
   );
 }
 
+// ─── Yarış Keşfi sekmesi ───────────────────────────────────
+// İnternetten toplanan yarış adayları. Hiçbiri otomatik yayına girmez;
+// onaylanan aday "Ücretli Etkinlik" olarak yayınlanır ve haritada görünür.
+function DiscoveryTab({ api, showToast }) {
+  const [filter, setFilter]   = React.useState("pending");
+  const [items, setItems]     = React.useState([]);
+  const [counts, setCounts]   = React.useState({});
+  const [scan, setScan]       = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+  const [busyId, setBusyId]   = React.useState(null);
+  const [editId, setEditId]   = React.useState(null);
+  const [form, setForm]       = React.useState(null);
+  const [showSources, setShowSources] = React.useState(false);
+  const [sources, setSources] = React.useState([]);
+  const [newSrc, setNewSrc]   = React.useState({ name: "", url: "" });
+
+  const filterRef = React.useRef(filter);
+  filterRef.current = filter;
+  const pollRef = React.useRef(null);
+
+  const lbl = "block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5";
+  const inp = "w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-400 bg-white";
+
+  const load = React.useCallback(async (st) => {
+    setLoading(true);
+    try {
+      const d = await api(`/admin/discovery/candidates?status=${st}`);
+      if (d) { setItems(d.items || []); setCounts(d.counts || {}); }
+    } catch (e) { showToast(e.message || "Adaylar alınamadı.", "error"); }
+    finally { setLoading(false); }
+  }, [api, showToast]);
+
+  const poll = React.useCallback(async () => {
+    try {
+      const s = await api("/admin/discovery/status");
+      if (!s) return;
+      setScan(s);
+      if (s.running) pollRef.current = setTimeout(poll, 2500);
+      else load(filterRef.current);
+    } catch { /* geçici hata — bir sonraki turda düzelir */ }
+  }, [api, load]);
+
+  React.useEffect(() => {
+    load(filter);
+    poll();
+    return () => clearTimeout(pollRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  React.useEffect(() => { load(filter); }, [filter]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const startScan = async (mode) => {
+    try {
+      await api("/admin/discovery/scan", { method: "POST", body: JSON.stringify({ mode }) });
+      showToast(mode === "web" ? "Web araması başladı." : "Kaynak taraması başladı.", "success");
+      clearTimeout(pollRef.current);
+      poll();
+    } catch (e) { showToast(e.message || "Tarama başlatılamadı.", "error"); }
+  };
+
+  const startEdit = (c) => {
+    setForm({
+      title: c.title || "", description: c.description || "", sport: c.sport || "",
+      organizer: c.organizer || "", registration_url: c.registration_url || "",
+      training_date: c.training_date ? c.training_date.slice(0, 10) : "",
+      training_time: c.training_time ? c.training_time.slice(0, 5) : "",
+      location_name: c.location_name || "",
+      location_lat: c.location_lat ?? "", location_lng: c.location_lng ?? "",
+      location_address: c.location_address || "",
+    });
+    setEditId(c.id);
+  };
+
+  const saveEdit = async () => {
+    setBusyId(editId);
+    try {
+      const body = {
+        ...form,
+        location_lat: form.location_lat === "" ? null : Number(form.location_lat),
+        location_lng: form.location_lng === "" ? null : Number(form.location_lng),
+      };
+      const r = await api(`/admin/discovery/candidates/${editId}`, { method: "PUT", body: JSON.stringify(body) });
+      if (r) { setItems(prev => prev.map(i => i.id === editId ? r : i)); showToast("Aday güncellendi.", "success"); setEditId(null); }
+    } catch (e) { showToast(e.message || "Güncellenemedi.", "error"); }
+    finally { setBusyId(null); }
+  };
+
+  const approve = async (c) => {
+    if (c.location_lat == null || c.location_lng == null) {
+      if (!window.confirm(`"${c.title}" için koordinat yok — haritada görünmez. Yine de yayınlansın mı?`)) return;
+    }
+    setBusyId(c.id);
+    try {
+      const r = await api(`/admin/discovery/candidates/${c.id}/approve`, { method: "POST" });
+      if (r) {
+        setItems(prev => prev.filter(i => i.id !== c.id));
+        setCounts(p => ({ ...p, pending: Math.max(0, (p.pending || 1) - 1), approved: (p.approved || 0) + 1 }));
+        showToast("Yayınlandı — Ücretli Etkinlikler sekmesinde.", "success");
+      }
+    } catch (e) { showToast(e.message || "Yayınlanamadı.", "error"); }
+    finally { setBusyId(null); }
+  };
+
+  const reject = async (c) => {
+    setBusyId(c.id);
+    try {
+      await api(`/admin/discovery/candidates/${c.id}/reject`, { method: "POST" });
+      setItems(prev => prev.filter(i => i.id !== c.id));
+      setCounts(p => ({ ...p, pending: Math.max(0, (p.pending || 1) - 1), rejected: (p.rejected || 0) + 1 }));
+    } catch (e) { showToast(e.message || "Reddedilemedi.", "error"); }
+    finally { setBusyId(null); }
+  };
+
+  const removeItem = async (c) => {
+    if (!window.confirm(`"${c.title}" aday listesinden tamamen silinecek. Emin misiniz?`)) return;
+    await api(`/admin/discovery/candidates/${c.id}`, { method: "DELETE" });
+    setItems(prev => prev.filter(i => i.id !== c.id));
+  };
+
+  const loadSources = async () => {
+    const d = await api("/admin/discovery/sources");
+    if (d) setSources(d);
+  };
+  const toggleSources = () => {
+    const next = !showSources;
+    setShowSources(next);
+    if (next && sources.length === 0) loadSources();
+  };
+  const addSource = async () => {
+    if (!/^https?:\/\//i.test(newSrc.url)) { showToast("http(s) ile başlayan bir adres girin.", "error"); return; }
+    try {
+      const r = await api("/admin/discovery/sources", { method: "POST", body: JSON.stringify(newSrc) });
+      if (r) { setSources(p => [...p, r]); setNewSrc({ name: "", url: "" }); showToast("Kaynak eklendi.", "success"); }
+    } catch (e) { showToast(e.message || "Kaynak eklenemedi.", "error"); }
+  };
+  const toggleSource = async (s) => {
+    const r = await api(`/admin/discovery/sources/${s.id}`, { method: "PUT", body: JSON.stringify({ is_active: !s.is_active }) });
+    if (r) setSources(p => p.map(x => x.id === s.id ? r : x));
+  };
+  const deleteSource = async (s) => {
+    if (!window.confirm(`"${s.name || s.url}" kaynağı silinecek. Emin misiniz?`)) return;
+    await api(`/admin/discovery/sources/${s.id}`, { method: "DELETE" });
+    setSources(p => p.filter(x => x.id !== s.id));
+  };
+
+  const running = !!scan?.running;
+  const pct = scan?.total ? Math.round((scan.done / scan.total) * 100) : 0;
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h2 className="font-display font-bold text-slate-900 text-xl" style={{ letterSpacing: "-0.01em" }}>Yarış Keşfi</h2>
+          <p className="text-slate-400 text-sm mt-0.5">
+            İnternetteki yarış takvimleri taranır, bulunanlar onayınıza düşer. Onayladığınız yarış ücretli etkinlik olarak yayınlanır.
+          </p>
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          <button onClick={() => startScan("sources")} disabled={running}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white transition hover:opacity-90 shadow-lg disabled:opacity-50"
+            style={{ background: "linear-gradient(135deg,#00b7ba,#009295)" }}>
+            <ScanSearch className="w-4 h-4" /> Kaynakları Tara
+          </button>
+          <button onClick={() => startScan("web")} disabled={running}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition disabled:opacity-50">
+            <Globe className="w-4 h-4" /> Web'de Ara
+          </button>
+        </div>
+      </div>
+
+      {scan?.configured === false && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl p-4 text-sm flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+          <span>Sunucuda <code className="font-mono">ANTHROPIC_API_KEY</code> tanımlı değil; tarama çalışmaz. Anahtarı <code className="font-mono">backend/.env</code> dosyasına ekleyip servisi yeniden başlatın.</span>
+        </div>
+      )}
+
+      {(running || scan?.log?.length > 0) && (
+        <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm space-y-3">
+          <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+            {running
+              ? <><Loader2 className="w-4 h-4 animate-spin text-brand-600" /> Tarama sürüyor…</>
+              : <><CheckCircle2 className="w-4 h-4 text-brand-600" /> Son tarama tamamlandı</>}
+            <span className="ml-auto text-xs font-normal text-slate-400">
+              {scan?.done || 0}/{scan?.total || 0} kaynak · {scan?.found || 0} yarış okundu · {scan?.added || 0} yeni aday
+            </span>
+          </div>
+          <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+            <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: "linear-gradient(90deg,#00b7ba,#009295)" }} />
+          </div>
+          {running && scan?.current && <div className="text-xs text-slate-500 truncate">→ {scan.current}</div>}
+          {scan?.log?.length > 0 && (
+            <pre className="text-[11px] leading-relaxed text-slate-500 bg-slate-50 rounded-xl p-3 max-h-40 overflow-auto whitespace-pre-wrap">
+              {scan.log.slice(-12).join("\n")}
+            </pre>
+          )}
+          {scan?.error && <div className="text-xs text-red-500">{scan.error}</div>}
+        </div>
+      )}
+
+      {/* Kaynaklar */}
+      <div className="bg-white border border-slate-100 rounded-2xl shadow-sm">
+        <button onClick={toggleSources} className="w-full flex items-center gap-2 px-4 py-3 text-sm font-semibold text-slate-700">
+          <ListChecks className="w-4 h-4 text-slate-400" /> Taranan Kaynaklar
+          <ChevronRight className={`w-4 h-4 ml-auto text-slate-300 transition ${showSources ? "rotate-90" : ""}`} />
+        </button>
+        {showSources && (
+          <div className="px-4 pb-4 space-y-3 border-t border-slate-100 pt-3">
+            {sources.map(s => (
+              <div key={s.id} className="flex items-center gap-3 text-sm">
+                <button onClick={() => toggleSource(s)} className="flex-shrink-0">
+                  {s.is_active ? <ToggleRight className="w-6 h-6 text-brand-600" /> : <ToggleLeft className="w-6 h-6 text-slate-300" />}
+                </button>
+                <div className="min-w-0 flex-1">
+                  <div className="font-medium text-slate-700 truncate">{s.name || s.url}</div>
+                  <div className="text-xs text-slate-400 truncate">{s.url}</div>
+                  {s.last_scanned_at && (
+                    <div className="text-[11px] text-slate-400 mt-0.5">
+                      Son tarama: {fmtFull(s.last_scanned_at)} · {s.last_status} · {s.last_found} yeni
+                    </div>
+                  )}
+                </div>
+                <button onClick={() => deleteSource(s)} className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 flex-shrink-0">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+            <div className="flex gap-2 pt-2 flex-wrap">
+              <input className={inp + " flex-1 min-w-[140px]"} placeholder="Kaynak adı" value={newSrc.name}
+                onChange={e => setNewSrc(s => ({ ...s, name: e.target.value }))} />
+              <input className={inp + " flex-[2] min-w-[200px]"} placeholder="https://…" value={newSrc.url}
+                onChange={e => setNewSrc(s => ({ ...s, url: e.target.value }))} />
+              <button onClick={addSource} className="px-4 py-2 rounded-xl text-sm font-medium text-white"
+                style={{ background: "linear-gradient(135deg,#00b7ba,#009295)" }}>Ekle</button>
+            </div>
+            <p className="text-xs text-slate-400">
+              Sayfa metni indirilip ayrıştırılır; robots.txt engelliyorsa kaynak atlanır. İçeriği JavaScript ile yüklenen siteler okunamaz.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Durum filtresi */}
+      <div className="flex gap-2 flex-wrap">
+        {[["pending", "Onay Bekleyen"], ["approved", "Yayınlanan"], ["rejected", "Reddedilen"]].map(([k, label]) => (
+          <button key={k} onClick={() => setFilter(k)}
+            className={`px-3.5 py-1.5 rounded-xl text-sm font-medium transition border ${filter === k ? "bg-brand-600 text-white border-brand-600" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"}`}>
+            {label}{counts[k] ? ` (${counts[k]})` : ""}
+          </button>
+        ))}
+        <button onClick={() => load(filter)} className="ml-auto p-2 rounded-xl border border-slate-200 bg-white text-slate-400 hover:text-brand-600">
+          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+        </button>
+      </div>
+
+      {/* Adaylar */}
+      {loading ? (
+        <div className="text-center py-16 text-slate-400">Yükleniyor…</div>
+      ) : items.length === 0 ? (
+        <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200 text-slate-400">
+          <Radar className="w-10 h-10 mx-auto mb-3 opacity-30" />
+          <p>{filter === "pending" ? "Onay bekleyen aday yok — taramayı başlatın." : "Kayıt yok"}</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {items.map(c => (
+            <div key={c.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex flex-col gap-2">
+              <div className="flex items-start gap-2">
+                <div className="font-semibold text-slate-800 leading-tight flex-1">{c.title}</div>
+                {c.sport && <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-brand-100 text-brand-700 flex-shrink-0">{c.sport}</span>}
+              </div>
+              <div className="text-xs text-slate-500 flex flex-wrap gap-x-3 gap-y-1">
+                <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{fmt(c.training_date)}{c.training_time ? ` · ${c.training_time.slice(0, 5)}` : ""}</span>
+                {(c.location_name || c.city) && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{c.location_name || c.city}</span>}
+                {c.organizer && <span>{c.organizer}</span>}
+              </div>
+              {c.description && <p className="text-xs text-slate-500 line-clamp-2">{c.description}</p>}
+              <div className="flex items-center gap-2 flex-wrap text-xs">
+                <span className={`px-2 py-0.5 rounded-lg font-semibold ${c.confidence >= 0.8 ? "bg-emerald-50 text-emerald-700" : c.confidence >= 0.5 ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-600"}`}>
+                  %{Math.round((c.confidence || 0) * 100)} güven
+                </span>
+                {(c.location_lat == null || c.location_lng == null) && (
+                  <span className="px-2 py-0.5 rounded-lg font-semibold bg-red-50 text-red-600">konum yok</span>
+                )}
+                {c.source_url && (
+                  <a href={c.source_url} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-slate-400 hover:text-brand-600 truncate">
+                    <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                    <span className="truncate max-w-[220px]">{c.source_name || c.source_url}</span>
+                  </a>
+                )}
+              </div>
+
+              {editId === c.id && form && (
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3 mt-1">
+                  <div>
+                    <label className={lbl}>Başlık</label>
+                    <input className={inp} value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className={lbl}>Spor Dalı</label>
+                      <select className={inp} value={form.sport} onChange={e => setForm(f => ({ ...f, sport: e.target.value }))}>
+                        <option value="">Seçiniz…</option>
+                        {SPORT_TYPES.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className={lbl}>Organizatör</label>
+                      <input className={inp} value={form.organizer} onChange={e => setForm(f => ({ ...f, organizer: e.target.value }))} />
+                    </div>
+                  </div>
+                  <div>
+                    <label className={lbl}>Kayıt Linki</label>
+                    <input className={inp} value={form.registration_url} onChange={e => setForm(f => ({ ...f, registration_url: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className={lbl}>Açıklama</label>
+                    <textarea className={inp} rows={2} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className={lbl}>Tarih</label>
+                      <input type="date" className={inp} value={form.training_date} onChange={e => setForm(f => ({ ...f, training_date: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className={lbl}>Saat</label>
+                      <input type="time" className={inp} value={form.training_time} onChange={e => setForm(f => ({ ...f, training_time: e.target.value }))} />
+                    </div>
+                  </div>
+                  <div>
+                    <label className={lbl}>Konum (arama + haritadan seç)</label>
+                    <LocationPicker
+                      locationName={form.location_name}
+                      lat={form.location_lat === "" ? null : form.location_lat}
+                      lng={form.location_lng === "" ? null : form.location_lng}
+                      onLocationName={(v) => setForm(f => ({ ...f, location_name: v }))}
+                      onLat={(v) => setForm(f => ({ ...f, location_lat: v }))}
+                      onLng={(v) => setForm(f => ({ ...f, location_lng: v }))}
+                      t={adminT} lang={adminLang} isNative={false}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => setEditId(null)} className="px-4 py-2 text-sm text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50">İptal</button>
+                    <button onClick={saveEdit} disabled={busyId === c.id}
+                      className="flex-1 py-2 text-sm font-semibold text-white rounded-xl disabled:opacity-50"
+                      style={{ background: "linear-gradient(135deg,#00b7ba,#009295)" }}>
+                      {busyId === c.id ? "Kaydediliyor…" : "Kaydet"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {filter === "pending" && editId !== c.id && (
+                <div className="flex gap-2 mt-auto pt-2">
+                  <button onClick={() => approve(c)} disabled={busyId === c.id}
+                    className="flex-1 py-1.5 text-xs font-semibold text-white rounded-lg disabled:opacity-50 flex items-center justify-center gap-1"
+                    style={{ background: "linear-gradient(135deg,#00b7ba,#009295)" }}>
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Onayla ve Yayınla
+                  </button>
+                  <button onClick={() => startEdit(c)}
+                    className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 flex items-center gap-1">
+                    <Edit2 className="w-3.5 h-3.5" /> Düzenle
+                  </button>
+                  <button onClick={() => reject(c)} disabled={busyId === c.id}
+                    className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-500 flex items-center gap-1">
+                    <XCircle className="w-3.5 h-3.5" /> Reddet
+                  </button>
+                </div>
+              )}
+              {filter !== "pending" && (
+                <div className="flex gap-2 mt-auto pt-2">
+                  <span className="text-xs text-slate-400 flex-1 self-center">
+                    {c.status === "approved" ? "Yayınlandı" : "Reddedildi"}{c.reviewed_at ? ` · ${fmtFull(c.reviewed_at)}` : ""}
+                  </span>
+                  <button onClick={() => removeItem(c)} className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-500">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Yardımcı: tarih formatı ───────────────────────────────
 const fmt = (d) => d ? new Date(d).toLocaleDateString("tr-TR", { day:"numeric", month:"short", year:"numeric" }) : "—";
 const fmtFull = (d) => d ? new Date(d).toLocaleString("tr-TR") : "—";
@@ -763,6 +1152,7 @@ export default function AdminPanel() {
     { id: "users",     label: "Kullanıcılar", icon: Users },
     { id: "trainings", label: "Etkinlikler", icon: Activity },
     { id: "paid-events", label: "Ücretli Etkinlikler", icon: Ticket },
+    { id: "discovery",   label: "Yarış Keşfi",       icon: Radar },
     { id: "teams",     label: "Takımlar",     icon: Shield },
     { id: "logs",      label: "Loglar",       icon: Activity },
     { id: "messages",  label: "Mesajlar",     icon: MessageSquare,
@@ -1986,6 +2376,11 @@ export default function AdminPanel() {
             <PaidEventsTab
               items={paidEvents} setItems={setPaidEvents} api={api} token={token} showToast={showToast}
             />
+          )}
+
+          {/* ── DISCOVERY ────────────────────────────────── */}
+          {!loading && tab === "discovery" && (
+            <DiscoveryTab api={api} showToast={showToast} />
           )}
 
           {/* ── LOGS ─────────────────────────────────────── */}

@@ -4089,6 +4089,615 @@ app.delete('/api/admin/paid-events/:id', isAdmin, async (req, res) => {
 });
 
 // =====================================================
+// YARIŞ KEŞFİ (event discovery) — internetteki yarış takvimlerini tarayıp
+// admin onayına düşen "aday etkinlik" havuzu üretir. Onaylanan aday, mevcut
+// ücretli etkinlik (is_paid=true) satırına dönüşür ve haritada görünür.
+//
+// İki tarama modu var:
+//   • sources : discovery_sources tablosundaki sayfaları biz indirip metnini
+//               modele ayrıştırtırız (robots.txt'e uyulur).
+//   • web     : Claude'un sunucu taraflı web arama aracıyla takvim aranır.
+// Hiçbir aday otomatik yayına girmez; hepsi 'pending' olarak beklemeye alınır.
+// =====================================================
+
+pool.query(`
+  CREATE TABLE IF NOT EXISTS discovery_sources (
+    id              SERIAL PRIMARY KEY,
+    name            TEXT,
+    url             TEXT NOT NULL UNIQUE,
+    is_active       BOOLEAN DEFAULT true,
+    last_scanned_at TIMESTAMPTZ,
+    last_status     TEXT,
+    last_found      INTEGER DEFAULT 0,
+    created_at      TIMESTAMPTZ DEFAULT NOW()
+  )
+`).catch(() => {});
+
+pool.query(`
+  CREATE TABLE IF NOT EXISTS event_candidates (
+    id               SERIAL PRIMARY KEY,
+    source_url       TEXT,
+    source_name      TEXT,
+    title            TEXT NOT NULL,
+    description      TEXT,
+    sport            TEXT,
+    organizer        TEXT,
+    registration_url TEXT,
+    training_date    DATE,
+    training_time    TIME,
+    location_name    TEXT,
+    location_lat     NUMERIC(10,7),
+    location_lng     NUMERIC(10,7),
+    location_address TEXT,
+    city             TEXT,
+    confidence       NUMERIC(4,3),
+    dedupe_key       TEXT UNIQUE,
+    status           TEXT DEFAULT 'pending',
+    training_id      INTEGER REFERENCES trainings(id) ON DELETE SET NULL,
+    reviewed_by      INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    reviewed_at      TIMESTAMPTZ,
+    created_at       TIMESTAMPTZ DEFAULT NOW()
+  )
+`).catch(() => {});
+
+// Panelde kullanılan spor listesiyle birebir aynı olmalı (admin-panel.jsx → SPORT_TYPES)
+const DISCOVERY_SPORTS = ['Basketbol','Bisiklet','Crossfit','Futbol','Kano','Koşu','Kürek','Padel','Pilates','Tenis','Trekking','Triatlon','Voleybol','Yoga','Yüzme','Diğer'];
+
+// İlk kurulumda kaynak listesi boşsa doldur (panelden düzenlenebilir)
+const DEFAULT_DISCOVERY_SOURCES = [
+  { name: 'Türkiye Atletizm Federasyonu — Yarışma Takvimi', url: 'https://www.taf.org.tr/yarismalar/' },
+  { name: 'Türkiye Triatlon Federasyonu — Faaliyet Takvimi', url: 'https://www.triatlon.gov.tr/faaliyet-takvimi' },
+  { name: 'Türkiye Bisiklet Federasyonu — Faaliyet Takvimi', url: 'https://www.bisiklet.gov.tr/faaliyet-takvimi' },
+  { name: 'Türkiye Yüzme Federasyonu — Faaliyet Takvimi', url: 'https://www.tyf.gov.tr/faaliyet-programi' },
+  { name: 'Türkiye Dağcılık Federasyonu — Faaliyet Takvimi', url: 'https://www.tdf.gov.tr/faaliyet-takvimi/' },
+];
+
+setTimeout(async () => {
+  try {
+    const c = await pool.query('SELECT COUNT(*)::int AS n FROM discovery_sources');
+    if (c.rows[0]?.n === 0) {
+      for (const s of DEFAULT_DISCOVERY_SOURCES) {
+        await pool.query(
+          'INSERT INTO discovery_sources (name, url) VALUES ($1,$2) ON CONFLICT (url) DO NOTHING',
+          [s.name, s.url]
+        ).catch(() => {});
+      }
+      console.log('[DISCOVERY] varsayılan kaynaklar eklendi');
+    }
+  } catch { /* tablo henüz hazır değilse sessiz geç */ }
+}, 6000);
+
+// ── Anthropic istemcisi (paket veya anahtar yoksa özellik kapalı kalır) ────
+let _anthropic;
+function getAnthropic() {
+  if (_anthropic !== undefined) return _anthropic;
+  _anthropic = null;
+  if (!process.env.ANTHROPIC_API_KEY) return _anthropic;
+  try {
+    const Anthropic = require('@anthropic-ai/sdk');
+    _anthropic = new Anthropic();
+  } catch (e) {
+    console.error('[DISCOVERY] @anthropic-ai/sdk yüklenemedi:', e.message);
+    _anthropic = null;
+  }
+  return _anthropic;
+}
+
+const DISCOVERY_UA = 'MuuvlinkBot/1.0 (+https://muuvlink.app; etkinlik takvimi taraması)';
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// ── Tarama durumu (panel 2 sn'de bir sorar) ───────────────────────────────
+const discoveryState = {
+  running: false, mode: null, startedAt: null, finishedAt: null,
+  total: 0, done: 0, found: 0, added: 0, current: '', log: [], error: null,
+};
+const dlog = (msg) => {
+  discoveryState.log.push(`${new Date().toISOString().slice(11,19)} · ${msg}`);
+  if (discoveryState.log.length > 200) discoveryState.log.shift();
+  console.log('[DISCOVERY]', msg);
+};
+
+// ── robots.txt kontrolü (kaynak modunda) ──────────────────────────────────
+const robotsCache = new Map(); // origin -> { rules:[], at }
+async function robotsAllows(targetUrl) {
+  try {
+    const u = new URL(targetUrl);
+    const cached = robotsCache.get(u.origin);
+    let rules;
+    if (cached && Date.now() - cached.at < 30 * 60 * 1000) {
+      rules = cached.rules;
+    } else {
+      rules = [];
+      try {
+        const res = await fetch(`${u.origin}/robots.txt`, {
+          headers: { 'User-Agent': DISCOVERY_UA },
+          signal: AbortSignal.timeout(10000),
+        });
+        if (res.ok) {
+          const txt = (await res.text()).slice(0, 100000);
+          let inStar = false;
+          for (const raw of txt.split('\n')) {
+            const line = raw.split('#')[0].trim();
+            if (!line) continue;
+            const [kRaw, ...rest] = line.split(':');
+            const k = kRaw.trim().toLowerCase();
+            const v = rest.join(':').trim();
+            if (k === 'user-agent') inStar = (v === '*');
+            else if (inStar && k === 'disallow' && v) rules.push(v);
+            else if (inStar && k === 'allow' && v) rules.push('!' + v);
+          }
+        }
+      } catch { /* robots.txt yoksa/erişilemezse serbest kabul */ }
+      robotsCache.set(u.origin, { rules, at: Date.now() });
+    }
+    const path = u.pathname + u.search;
+    // Allow kuralı Disallow'u ezer (en uzun eşleşme kazanır)
+    let best = null;
+    for (const r of rules) {
+      const allow = r.startsWith('!');
+      const p = allow ? r.slice(1) : r;
+      if (path.startsWith(p) && (!best || p.length > best.len)) best = { allow, len: p.length };
+    }
+    return best ? best.allow : true;
+  } catch {
+    return true;
+  }
+}
+
+// ── HTML → düz metin ──────────────────────────────────────────────────────
+function htmlToText(html) {
+  return String(html)
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<noscript[\s\S]*?<\/noscript>/gi, ' ')
+    .replace(/<!--[\s\S]*?-->/g, ' ')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|li|tr|h[1-6]|section|article)>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&').replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>').replace(/&quot;/gi, '"').replace(/&#0?39;/gi, "'")
+    .replace(/[ \t ]+/g, ' ')
+    .replace(/\n\s*\n+/g, '\n')
+    .trim();
+}
+
+// ── Nominatim ile koordinat çözme (saniyede 1 istek sınırına uyulur) ──────
+async function geocodeTR(query) {
+  if (!query || !query.trim()) return null;
+  try {
+    const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=tr&addressdetails=1&q='
+      + encodeURIComponent(query.trim());
+    const res = await fetch(url, {
+      headers: { 'User-Agent': DISCOVERY_UA, 'Accept-Language': 'tr' },
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) return null;
+    const arr = await res.json();
+    if (!Array.isArray(arr) || !arr[0]) return null;
+    return {
+      lat: Number(arr[0].lat),
+      lng: Number(arr[0].lon),
+      address: arr[0].display_name || null,
+    };
+  } catch {
+    return null;
+  } finally {
+    await sleep(1200); // Nominatim kullanım politikası: en fazla 1 istek/sn
+  }
+}
+
+// ── Model çıktısı için JSON şeması ────────────────────────────────────────
+const DISCOVERY_SCHEMA = {
+  type: 'object',
+  properties: {
+    events: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          title:            { type: 'string' },
+          sport:            { type: 'string', enum: DISCOVERY_SPORTS },
+          description:      { type: 'string' },
+          organizer:        { type: 'string' },
+          registration_url: { type: 'string' },
+          date:             { type: 'string' },
+          time:             { type: 'string' },
+          city:             { type: 'string' },
+          location_name:    { type: 'string' },
+          source_url:       { type: 'string' },
+          confidence:       { type: 'number' },
+        },
+        required: ['title','sport','description','organizer','registration_url','date','time','city','location_name','source_url','confidence'],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ['events'],
+  additionalProperties: false,
+};
+
+const DISCOVERY_SYSTEM = [
+  'Türkiye\'de düzenlenecek spor yarışlarını (koşu, maraton, yarı maraton, trail/patika, ultra,',
+  'triatlon, bisiklet, açık su yüzme, kürek, kano vb.) yapılandırılmış veriye çeviren bir ayrıştırıcısın.',
+  '',
+  'KURALLAR:',
+  '- Sadece TÜRKİYE\'de yapılacak yarışları çıkar. Yurt dışı etkinlikleri atla.',
+  '- Sadece TARİHİ GEÇMEMİŞ yarışları çıkar.',
+  '- Tarihi net olmayan ("yakında", "Mayıs ayında") kayıtları ATLA. Uydurma tarih yazma.',
+  '- date alanı kesinlikle YYYY-MM-DD olmalı. Saat bilinmiyorsa time alanını boş bırak ("").',
+  '- sport alanı verilen listeden TAM olarak bir değer olmalı; uymuyorsa "Diğer" yaz.',
+  '  (koşu/maraton/yarı maraton/ultra → "Koşu", patika/trail/dağ yürüyüşü → "Trekking",',
+  '   yol/dağ bisikleti/gran fondo → "Bisiklet", açık su/havuz → "Yüzme")',
+  '- description: kaynaktan KOPYALAMA; kendi cümlelerinle en fazla 200 karakter özet yaz (Türkçe).',
+  '- Bilinmeyen alanları boş string ("") bırak; asla tahmin uydurma.',
+  '- registration_url: kayıt/detay sayfasının tam adresi; yoksa kaynak sayfanın adresini yaz.',
+  '- city: yarışın yapılacağı il (örn. "İstanbul"). location_name: daha spesifik yer varsa yaz.',
+  '- confidence: bilginin ne kadar güvenilir olduğuna dair 0 ile 1 arası bir sayı.',
+  '- Aynı yarışı birden fazla kez listeleme.',
+  '- Yarış bulunmuyorsa boş liste döndür.',
+].join('\n');
+
+// Yapılandırılmış JSON döndüren tek istek (pause_turn döngüsü dahil)
+async function discoveryModelCall({ prompt, tools, effort }) {
+  const client = getAnthropic();
+  if (!client) throw new Error('ANTHROPIC_API_KEY tanımlı değil — tarama yapılamıyor.');
+  const messages = [{ role: 'user', content: prompt }];
+  const base = {
+    model: 'claude-opus-5',
+    max_tokens: 16000,
+    system: DISCOVERY_SYSTEM,
+    output_config: { effort: effort || 'low', format: { type: 'json_schema', schema: DISCOVERY_SCHEMA } },
+    ...(tools ? { tools } : {}),
+  };
+  let resp = await client.messages.create({ ...base, messages });
+  let guard = 0;
+  while (resp.stop_reason === 'pause_turn' && guard++ < 5) {
+    messages.push({ role: 'assistant', content: resp.content });
+    resp = await client.messages.create({ ...base, messages });
+  }
+  if (resp.stop_reason === 'refusal') throw new Error('Model isteği reddetti.');
+  const text = resp.content.filter((b) => b.type === 'text').map((b) => b.text).join('').trim();
+  if (!text) return [];
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    const s = text.indexOf('{'), e = text.lastIndexOf('}');
+    if (s === -1 || e === -1) return [];
+    data = JSON.parse(text.slice(s, e + 1));
+  }
+  return Array.isArray(data?.events) ? data.events : [];
+}
+
+// ── Adayı normalize et + kaydet ───────────────────────────────────────────
+const slugKey = (s) => String(s || '').toLocaleLowerCase('tr')
+  .replace(/[çğıöşü]/g, (c) => ({ 'ç':'c','ğ':'g','ı':'i','ö':'o','ş':'s','ü':'u' }[c]))
+  .replace(/[^a-z0-9]/g, '');
+
+async function saveCandidate(ev, sourceName, existingKeys) {
+  const title = String(ev.title || '').trim();
+  const date = String(ev.date || '').trim();
+  if (!title || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+
+  const d = new Date(date + 'T00:00:00Z');
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const limit = new Date(); limit.setMonth(limit.getMonth() + 18);
+  if (isNaN(d.getTime()) || d < today || d > limit) return null;
+
+  const key = `${slugKey(title).slice(0, 60)}|${date}`;
+  if (existingKeys.has(key)) return null;
+  existingKeys.add(key);
+
+  const city = String(ev.city || '').trim();
+  const locName = String(ev.location_name || '').trim() || city;
+  let geo = null;
+  if (locName || city) geo = await geocodeTR([locName, city, 'Türkiye'].filter(Boolean).join(', '));
+
+  const time = /^\d{2}:\d{2}$/.test(String(ev.time || '').trim()) ? ev.time.trim() : null;
+  const sport = DISCOVERY_SPORTS.includes(ev.sport) ? ev.sport : 'Diğer';
+  const conf = Math.max(0, Math.min(1, Number(ev.confidence) || 0.5));
+
+  const r = await pool.query(
+    `INSERT INTO event_candidates
+       (source_url, source_name, title, description, sport, organizer, registration_url,
+        training_date, training_time, location_name, location_lat, location_lng,
+        location_address, city, confidence, dedupe_key)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+     ON CONFLICT (dedupe_key) DO NOTHING
+     RETURNING *`,
+    [String(ev.source_url || '').trim() || null, sourceName || null, title,
+     String(ev.description || '').trim().slice(0, 500) || null, sport,
+     String(ev.organizer || '').trim() || null, String(ev.registration_url || '').trim() || null,
+     date, time, locName || null, geo?.lat ?? null, geo?.lng ?? null,
+     geo?.address ?? null, city || null, conf, key]
+  );
+  return r.rows[0] || null;
+}
+
+// Zaten kayıtlı olanların anahtarları (ücretli etkinlikler + tüm adaylar)
+async function loadExistingKeys() {
+  const set = new Set();
+  const a = await pool.query('SELECT title, training_date FROM trainings WHERE is_paid = true');
+  for (const row of a.rows) {
+    const dt = row.training_date instanceof Date
+      ? row.training_date.toISOString().slice(0, 10)
+      : String(row.training_date || '').slice(0, 10);
+    set.add(`${slugKey(row.title).slice(0, 60)}|${dt}`);
+  }
+  const b = await pool.query('SELECT dedupe_key FROM event_candidates WHERE dedupe_key IS NOT NULL');
+  for (const row of b.rows) set.add(row.dedupe_key);
+  return set;
+}
+
+// ── Tarama işleri ─────────────────────────────────────────────────────────
+async function runSourceScan() {
+  const srcRes = await pool.query('SELECT * FROM discovery_sources WHERE is_active = true ORDER BY id');
+  const sources = srcRes.rows;
+  discoveryState.total = sources.length;
+  const keys = await loadExistingKeys();
+
+  for (const src of sources) {
+    discoveryState.current = src.name || src.url;
+    let status = 'ok', foundHere = 0;
+    try {
+      if (!(await robotsAllows(src.url))) {
+        status = 'robots.txt engelledi';
+        dlog(`⛔ ${src.url} — robots.txt izin vermiyor, atlandı`);
+      } else {
+        const res = await fetch(src.url, {
+          headers: { 'User-Agent': DISCOVERY_UA, 'Accept-Language': 'tr,en;q=0.8' },
+          signal: AbortSignal.timeout(25000),
+          redirect: 'follow',
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        let text = htmlToText(await res.text());
+        if (text.length > 18000) { text = text.slice(0, 18000); dlog(`✂️ ${src.url} — sayfa uzun, ilk 18.000 karakter kullanıldı`); }
+        if (text.length < 200) throw new Error('Sayfa metni okunamadı (muhtemelen JS ile yükleniyor)');
+
+        const events = await discoveryModelCall({
+          effort: 'low',
+          prompt: `Aşağıda bir yarış takvimi sayfasının metni var.\nKaynak adresi: ${src.url}\nBugünün tarihi: ${new Date().toISOString().slice(0,10)}\n\nBu metindeki Türkiye yarışlarını çıkar. source_url alanına ${src.url} yaz (yarışın kendi sayfası metinde geçiyorsa onu yaz).\n\n--- SAYFA METNİ ---\n${text}`,
+        });
+        discoveryState.found += events.length;
+        for (const ev of events) {
+          const saved = await saveCandidate(ev, src.name || src.url, keys);
+          if (saved) { discoveryState.added++; foundHere++; }
+        }
+        dlog(`✅ ${src.name || src.url} — ${events.length} yarış okundu, ${foundHere} yeni aday`);
+      }
+    } catch (e) {
+      status = e.message?.slice(0, 200) || 'hata';
+      dlog(`❌ ${src.name || src.url} — ${status}`);
+    }
+    await pool.query(
+      'UPDATE discovery_sources SET last_scanned_at = NOW(), last_status = $1, last_found = $2 WHERE id = $3',
+      [status, foundHere, src.id]
+    ).catch(() => {});
+    discoveryState.done++;
+    await sleep(1500); // kaynak siteleri yormamak için
+  }
+}
+
+const DISCOVERY_QUERIES = [
+  'Türkiye koşu yarışları takvimi — maraton, yarı maraton, 10K',
+  'Türkiye trail / patika / ultra maraton yarışları takvimi',
+  'Türkiye triatlon yarışları takvimi',
+  'Türkiye bisiklet yarışları, gran fondo ve mtb kupa takvimi',
+  'Türkiye açık su yüzme yarışları takvimi',
+];
+
+async function runWebScan() {
+  discoveryState.total = DISCOVERY_QUERIES.length;
+  const keys = await loadExistingKeys();
+  const today = new Date().toISOString().slice(0, 10);
+
+  for (const q of DISCOVERY_QUERIES) {
+    discoveryState.current = q;
+    try {
+      const events = await discoveryModelCall({
+        effort: 'medium',
+        tools: [{ type: 'web_search_20260209', name: 'web_search', max_uses: 8 }],
+        prompt: `Bugünün tarihi: ${today}\n\nWeb'de ara: "${q}".\nÖnümüzdeki 12 ay içinde Türkiye'de yapılacak yarışları bul ve çıkar.\nBirden fazla kaynağa bak (organizatör siteleri, kayıt platformları, federasyon takvimleri).\nHer yarış için source_url alanına bilgiyi aldığın sayfanın adresini yaz.`,
+      });
+      discoveryState.found += events.length;
+      let added = 0;
+      for (const ev of events) {
+        const saved = await saveCandidate(ev, 'Web araması', keys);
+        if (saved) { discoveryState.added++; added++; }
+      }
+      dlog(`✅ "${q}" — ${events.length} yarış bulundu, ${added} yeni aday`);
+    } catch (e) {
+      dlog(`❌ "${q}" — ${e.message?.slice(0, 200)}`);
+    }
+    discoveryState.done++;
+  }
+}
+
+async function startDiscoveryScan(mode) {
+  Object.assign(discoveryState, {
+    running: true, mode, startedAt: new Date().toISOString(), finishedAt: null,
+    total: 0, done: 0, found: 0, added: 0, current: '', log: [], error: null,
+  });
+  dlog(mode === 'web' ? 'Web araması başladı' : 'Kaynak taraması başladı');
+  try {
+    if (mode === 'web') await runWebScan();
+    else await runSourceScan();
+    dlog(`Tarama bitti — ${discoveryState.added} yeni aday onay bekliyor`);
+  } catch (e) {
+    discoveryState.error = e.message || 'Tarama başarısız';
+    dlog(`Tarama durdu: ${discoveryState.error}`);
+  } finally {
+    discoveryState.running = false;
+    discoveryState.current = '';
+    discoveryState.finishedAt = new Date().toISOString();
+  }
+}
+
+// ── Endpoint'ler ──────────────────────────────────────────────────────────
+
+// Taramayı başlat (arka planda çalışır, durum /status'tan izlenir)
+app.post('/api/admin/discovery/scan', isAdmin, async (req, res) => {
+  const mode = req.body?.mode === 'web' ? 'web' : 'sources';
+  if (discoveryState.running) return res.status(409).json({ error: 'Zaten devam eden bir tarama var.' });
+  if (!getAnthropic()) {
+    return res.status(400).json({ error: 'ANTHROPIC_API_KEY sunucuda tanımlı değil. backend/.env dosyasına ekleyip servisi yeniden başlatın.' });
+  }
+  startDiscoveryScan(mode); // bilerek await edilmiyor
+  res.json({ started: true, mode });
+});
+
+app.get('/api/admin/discovery/status', isAdmin, (req, res) => {
+  res.json({ ...discoveryState, configured: !!getAnthropic() });
+});
+
+// Adayları listele
+app.get('/api/admin/discovery/candidates', isAdmin, async (req, res) => {
+  try {
+    const status = ['pending', 'approved', 'rejected'].includes(req.query.status) ? req.query.status : 'pending';
+    const r = await pool.query(
+      `SELECT * FROM event_candidates WHERE status = $1
+       ORDER BY (location_lat IS NULL), training_date ASC, id DESC LIMIT 500`,
+      [status]
+    );
+    const counts = await pool.query(
+      `SELECT status, COUNT(*)::int AS n FROM event_candidates GROUP BY status`
+    );
+    res.json({
+      items: r.rows,
+      counts: counts.rows.reduce((a, x) => (a[x.status] = x.n, a), {}),
+    });
+  } catch (e) {
+    console.error('Discovery candidates list error:', e);
+    res.status(500).json({ error: 'Adaylar alınamadı.' });
+  }
+});
+
+// Adayı düzenle (onaylamadan önce eksikleri tamamlamak için)
+app.put('/api/admin/discovery/candidates/:id', isAdmin, async (req, res) => {
+  try {
+    const { title, description, sport, organizer, registration_url, training_date,
+            training_time, location_name, location_lat, location_lng, location_address } = req.body;
+    const r = await pool.query(
+      `UPDATE event_candidates SET
+         title = COALESCE($1, title), description = $2, sport = $3, organizer = $4,
+         registration_url = $5, training_date = COALESCE($6, training_date), training_time = $7,
+         location_name = $8, location_lat = $9, location_lng = $10, location_address = $11
+       WHERE id = $12 AND status = 'pending' RETURNING *`,
+      [title || null, description ?? null, sport || null, organizer || null,
+       registration_url || null, training_date || null, training_time || null,
+       location_name || null, location_lat ?? null, location_lng ?? null,
+       location_address || null, req.params.id]
+    );
+    if (!r.rows[0]) return res.status(404).json({ error: 'Aday bulunamadı.' });
+    res.json(r.rows[0]);
+  } catch (e) {
+    console.error('Discovery candidate update error:', e);
+    res.status(500).json({ error: 'Aday güncellenemedi.' });
+  }
+});
+
+// Onayla → ücretli etkinlik olarak yayına al
+app.post('/api/admin/discovery/candidates/:id/approve', isAdmin, async (req, res) => {
+  try {
+    const c = (await pool.query('SELECT * FROM event_candidates WHERE id = $1', [req.params.id])).rows[0];
+    if (!c) return res.status(404).json({ error: 'Aday bulunamadı.' });
+    if (c.status === 'approved') return res.status(400).json({ error: 'Bu aday zaten onaylanmış.' });
+    if (!c.training_date) return res.status(400).json({ error: 'Tarihi olmayan aday yayınlanamaz.' });
+
+    const t = await pool.query(
+      `INSERT INTO trainings
+        (team_id, sport, created_by, title, description, training_date, training_time,
+         duration_minutes, location_name, location_lat, location_lng, location_address,
+         capacity, is_public, difficulty, is_paid, organizer, registration_url)
+       VALUES (NULL,$1,$2,$3,$4,$5,$6,60,$7,$8,$9,$10,0,true,NULL,true,$11,$12)
+       RETURNING *`,
+      [c.sport || null, req.user.id, c.title, c.description || '', c.training_date,
+       c.training_time || null, c.location_name || null, c.location_lat, c.location_lng,
+       c.location_address || null, c.organizer || null, c.registration_url || null]
+    );
+    await pool.query(
+      `UPDATE event_candidates SET status='approved', training_id=$1, reviewed_by=$2, reviewed_at=NOW() WHERE id=$3`,
+      [t.rows[0].id, req.user.id, c.id]
+    );
+    res.json({ candidate_id: c.id, training: t.rows[0] });
+  } catch (e) {
+    console.error('Discovery approve error:', e);
+    res.status(500).json({ error: 'Aday yayınlanamadı.' });
+  }
+});
+
+// Reddet (bir daha aynı yarış aday olarak eklenmez — dedupe_key kalır)
+app.post('/api/admin/discovery/candidates/:id/reject', isAdmin, async (req, res) => {
+  try {
+    const r = await pool.query(
+      `UPDATE event_candidates SET status='rejected', reviewed_by=$1, reviewed_at=NOW()
+       WHERE id=$2 RETURNING id`, [req.user.id, req.params.id]
+    );
+    if (!r.rows[0]) return res.status(404).json({ error: 'Aday bulunamadı.' });
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('Discovery reject error:', e);
+    res.status(500).json({ error: 'Aday reddedilemedi.' });
+  }
+});
+
+app.delete('/api/admin/discovery/candidates/:id', isAdmin, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM event_candidates WHERE id=$1', [req.params.id]);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Aday silinemedi.' });
+  }
+});
+
+// Kaynak yönetimi
+app.get('/api/admin/discovery/sources', isAdmin, async (req, res) => {
+  try {
+    const r = await pool.query('SELECT * FROM discovery_sources ORDER BY id');
+    res.json(r.rows);
+  } catch (e) {
+    res.status(500).json({ error: 'Kaynaklar alınamadı.' });
+  }
+});
+
+app.post('/api/admin/discovery/sources', isAdmin, async (req, res) => {
+  try {
+    const { name, url } = req.body;
+    if (!url || !/^https?:\/\//i.test(url)) return res.status(400).json({ error: 'Geçerli bir adres girin.' });
+    const r = await pool.query(
+      'INSERT INTO discovery_sources (name, url) VALUES ($1,$2) ON CONFLICT (url) DO NOTHING RETURNING *',
+      [name || null, url.trim()]
+    );
+    if (!r.rows[0]) return res.status(409).json({ error: 'Bu adres zaten ekli.' });
+    res.json(r.rows[0]);
+  } catch (e) {
+    res.status(500).json({ error: 'Kaynak eklenemedi.' });
+  }
+});
+
+app.put('/api/admin/discovery/sources/:id', isAdmin, async (req, res) => {
+  try {
+    const r = await pool.query(
+      'UPDATE discovery_sources SET is_active = COALESCE($1, is_active), name = COALESCE($2, name) WHERE id=$3 RETURNING *',
+      [typeof req.body?.is_active === 'boolean' ? req.body.is_active : null, req.body?.name ?? null, req.params.id]
+    );
+    if (!r.rows[0]) return res.status(404).json({ error: 'Kaynak bulunamadı.' });
+    res.json(r.rows[0]);
+  } catch (e) {
+    res.status(500).json({ error: 'Kaynak güncellenemedi.' });
+  }
+});
+
+app.delete('/api/admin/discovery/sources/:id', isAdmin, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM discovery_sources WHERE id=$1', [req.params.id]);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Kaynak silinemedi.' });
+  }
+});
+
+// =====================================================
 // HOME NEWS
 // =====================================================
 
