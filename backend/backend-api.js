@@ -5200,6 +5200,29 @@ pool.query(`
   )
 `).catch(() => {});
 
+// ── GÜVENLİK: public şemadaki her tabloda RLS açık olsun ──────────────────
+// Supabase'de `anon` rolünün public tablolarda tam yetkisi var; RLS kapalıysa
+// proje URL'ini bilen herkes tabloyu Data API üzerinden okuyup değiştirebiliyor
+// (Supabase bunu "rls_disabled_in_public" kritik uyarısı olarak bildiriyor).
+// Uygulama açılışta tablo oluşturduğu için yeni tablolar RLS'siz doğuyor —
+// bu yüzden her açılışta eksik kalanları tamamlıyoruz. Backend `postgres`
+// rolüyle ve BYPASSRLS yetkisiyle bağlandığından uygulama bundan etkilenmez.
+setTimeout(() => {
+  pool.query(`
+    DO $$
+    DECLARE r record;
+    BEGIN
+      FOR r IN SELECT c.relname
+               FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+               WHERE n.nspname = 'public' AND c.relkind = 'r' AND NOT c.relrowsecurity
+      LOOP
+        EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', r.relname);
+        RAISE NOTICE 'RLS enabled on %', r.relname;
+      END LOOP;
+    END $$;
+  `).catch((e) => console.error('RLS guard error:', e.message));
+}, 8000);
+
 // İçerik şikayeti
 app.post('/api/report', authenticateToken, async (req, res) => {
   const { content_type, content_id, reason } = req.body;
