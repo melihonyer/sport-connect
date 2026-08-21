@@ -2369,9 +2369,17 @@ export default function Muuvlink() {
         if (!isNaN(d)) startDate = d.toISOString();
       }
       const endDate = startDate ? new Date(new Date(startDate).getTime() + (tr.duration_minutes || 60) * 60000).toISOString() : undefined;
+      // validFrom: teklifin/kaydın geçerli olduğu tarih — etkinliğin oluşturulma tarihini kullanırız.
+      const validFrom = tr.created_at ? new Date(tr.created_at).toISOString() : undefined;
+      // Ücretsiz etkinlikte tam Offer (fiyat 0). Ücretli etkinliğin fiyatı DB'de tutulmuyor (kayıt
+      // dış siteden) — uydurma fiyat vermemek için offers'ı hiç eklemiyoruz; SportsEvent offers'sız da geçerli.
       const offers = tr.is_paid
-        ? { "@type": "Offer", url: tr.registration_url || url, availability: "https://schema.org/InStock" }
-        : { "@type": "Offer", price: "0", priceCurrency: "TRY", availability: "https://schema.org/InStock", url };
+        ? undefined
+        : { "@type": "Offer", price: "0", priceCurrency: "TRY", availability: "https://schema.org/InStock", url, validFrom };
+      // performer: etkinliği "sahneleyen" taraf — takım varsa takım, yoksa platform.
+      const performer = tr.team_name
+        ? { "@type": "SportsTeam", name: tr.team_name }
+        : { "@type": "Organization", name: "Muuvlink" };
       setJsonLd([
         {
           "@context": "https://schema.org",
@@ -2394,6 +2402,7 @@ export default function Muuvlink() {
               : undefined,
           },
           organizer: { "@type": "Organization", name: tr.team_name || "Muuvlink", url: ORIGIN },
+          performer,
           offers,
         },
         crumb("Etkinlikler", "/etkinlikler", tr.title),
