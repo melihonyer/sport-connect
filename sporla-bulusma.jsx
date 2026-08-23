@@ -1047,6 +1047,31 @@ async function copyPlainLink(url) {
   }
 }
 
+// Paylaş / davet butonlarının üzerine gelince "neden paylaşmalıyım" açıklaması.
+// Mobilde hover yok; orada butona basmak zaten aksiyonu çalıştırdığı için ipucu gizli kalır.
+function HoverTip({ text, align = "center", children }) {
+  const pos = align === "right"
+    ? "right-0"
+    : align === "left"
+      ? "left-0"
+      : "left-1/2 -translate-x-1/2";
+  return (
+    <span className="relative inline-flex group">
+      {children}
+      <span
+        role="tooltip"
+        className={`pointer-events-none absolute bottom-full mb-2 ${pos} z-50 w-60 max-w-[70vw]
+                    rounded-xl bg-slate-900 px-3 py-2 text-xs font-medium leading-snug text-white
+                    shadow-lg opacity-0 translate-y-1 transition-all duration-150
+                    group-hover:opacity-100 group-hover:translate-y-0
+                    hidden sm:block`}
+      >
+        {text}
+      </span>
+    </span>
+  );
+}
+
 // ═══════════════════════════════════════════════════════════════
 //  ROZET GÖRSELLERİ — perspektifli üçgen "madalya" rozetler
 //  Tek kaynak: hem sayfadaki SVG hem de paylaşım kartı (PNG) buradan üretilir.
@@ -5376,6 +5401,7 @@ export default function Muuvlink() {
                 {{ "Kolay": t("trainings.levelEasy"), "Orta": t("trainings.levelMid"), "Zor": t("trainings.levelHard"), "Her Seviye": t("trainings.levelAll") }[selectedTraining.difficulty] || selectedTraining.difficulty}
               </span>
               )}
+              <HoverTip text={t("tips.shareTraining")}>
               <button
                 onClick={async () => {
                   const link = `${window.location.origin}${trainingPath(selectedTraining)}`;
@@ -5384,10 +5410,11 @@ export default function Muuvlink() {
                   else if (res === "failed") showToast(t("toast.shareFail"), "error");
                 }}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full text-sm font-medium transition-colors"
-                title={t("common.share")}
               >
                 <Share2 className="w-3.5 h-3.5" /> {t("common.share")}
               </button>
+              </HoverTip>
+              <HoverTip text={t("tips.copyLinkTraining")}>
               <button
                 onClick={async () => {
                   const link = `${window.location.origin}${trainingPath(selectedTraining)}`;
@@ -5396,10 +5423,10 @@ export default function Muuvlink() {
                   else showToast(t("toast.shareFail"), "error");
                 }}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full text-sm font-medium transition-colors"
-                title={t("common.copyLink")}
               >
                 <Link className="w-3.5 h-3.5" /> {t("common.copyLink")}
               </button>
+              </HoverTip>
               {user && !canManage && (
                 <button
                   onClick={() => setReportModal({ type: "training", id: selectedTraining.id })}
@@ -6050,11 +6077,14 @@ export default function Muuvlink() {
             {/* aksiyon butonları — sağ alt */}
             <div className="flex justify-end gap-2 mt-4">
               {canManage && (
+                <HoverTip text={t("tips.inviteTeam")} align="left">
                 <button onClick={() => setShowInviteModal(true)}
                   className="flex items-center gap-1.5 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-sm font-semibold transition-colors backdrop-blur">
                   <UserPlus className="w-4 h-4" /> {t("teamDetail.invite")}
                 </button>
+                </HoverTip>
               )}
+              <HoverTip text={t("tips.shareTeam")}>
               <button
                 onClick={async () => {
                   const link = `${window.location.origin}${teamPath(selectedTeam)}`;
@@ -6063,10 +6093,11 @@ export default function Muuvlink() {
                   else if (res === "failed") showToast(t("toast.shareFail"), "error");
                 }}
                 className="flex items-center gap-1.5 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-sm font-semibold transition-colors backdrop-blur"
-                title={t("common.share")}
               >
                 <Share2 className="w-4 h-4" /> {t("common.share")}
               </button>
+              </HoverTip>
+              <HoverTip text={t("tips.copyLinkTeam")} align="right">
               <button
                 onClick={async () => {
                   const link = `${window.location.origin}${teamPath(selectedTeam)}`;
@@ -6075,10 +6106,10 @@ export default function Muuvlink() {
                   else showToast(t("toast.shareFail"), "error");
                 }}
                 className="flex items-center gap-1.5 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-sm font-semibold transition-colors backdrop-blur"
-                title={t("common.copyLink")}
               >
                 <Link className="w-4 h-4" /> {t("common.copyLink")}
               </button>
+              </HoverTip>
             </div>
           </div>
 
@@ -6200,10 +6231,12 @@ export default function Muuvlink() {
               <div className="flex items-center justify-between mb-5">
                 <h3 className="font-bold text-slate-800 text-lg">{t("teamDetail.membersTab")} <span className="text-slate-400 font-normal text-base">({selectedTeam.members?.length || 0})</span></h3>
                 {canManage && (
+                  <HoverTip text={t("tips.inviteTeam")} align="right">
                   <button onClick={() => setShowInviteModal(true)}
                     className="flex items-center gap-1.5 px-4 py-2 bg-brand-50 text-brand-700 rounded-xl text-sm font-semibold hover:bg-brand-100 transition-colors">
                     <UserPlus className="w-4 h-4" /> {t("teamDetail.invite")}
                   </button>
+                  </HoverTip>
                 )}
               </div>
 

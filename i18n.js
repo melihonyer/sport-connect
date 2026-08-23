@@ -106,6 +106,35 @@ export const translations = {
     navigate:     { tr: "Yol Tarifi",          en: "Navigate",              de: "Navigation"                     },
   },
 
+  // ── PAYLAŞ / DAVET İPUÇLARI (hover) ──────────────────────
+  tips: {
+    shareTeam: {
+      tr: "Takımını paylaş, herkesi davet et. Takım ne kadar kalabalıksa açtığın etkinlikler o kadar çok kişiye ulaşır.",
+      en: "Share your team and invite everyone. The bigger your team, the more people hear about the events you create.",
+      de: "Teile dein Team und lade alle ein. Je größer dein Team, desto mehr Menschen erfahren von deinen Events.",
+    },
+    copyLinkTeam: {
+      tr: "Linki kopyala, WhatsApp veya Instagram'a yapıştır. Tıklayan doğrudan takım sayfana gelip katılabilir.",
+      en: "Copy the link and paste it into WhatsApp or Instagram. Anyone who clicks lands right on your team page.",
+      de: "Kopiere den Link und füge ihn in WhatsApp oder Instagram ein. Wer klickt, landet direkt auf deiner Teamseite.",
+    },
+    inviteTeam: {
+      tr: "Arkadaşlarını e-posta ile davet et. Katıldıklarında açtığın her etkinlikten anında haberleri olur.",
+      en: "Invite your friends by email. Once they join, they're notified about every event you create.",
+      de: "Lade Freunde per E-Mail ein. Sobald sie beitreten, werden sie über jedes deiner Events benachrichtigt.",
+    },
+    shareTraining: {
+      tr: "Etkinliğini paylaş. Ne kadar çok kişi görürse kontenjan o kadar hızlı dolar, buluşma o kadar keyifli olur.",
+      en: "Share your event. The more people see it, the faster it fills up and the better the turnout.",
+      de: "Teile dein Event. Je mehr Leute es sehen, desto schneller füllt es sich.",
+    },
+    copyLinkTraining: {
+      tr: "Linki kopyala ve grubuna at. Tıklayan etkinlik sayfasından tek dokunuşla katılır.",
+      en: "Copy the link and drop it in your group chat. One tap on the event page and they're in.",
+      de: "Kopiere den Link und teile ihn in deiner Gruppe. Ein Tipp auf der Eventseite genügt zum Beitreten.",
+    },
+  },
+
   // ── HOME PAGE ────────────────────────────────────────────
   home: {
     heroTagline:    { tr: "Spor topluluğun seni bekliyor",    en: "Your sports community is waiting",   de: "Deine Sportgemeinschaft wartet" },
