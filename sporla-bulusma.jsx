@@ -5436,6 +5436,11 @@ export default function Muuvlink() {
                 </button>
               )}
             </div>
+            {/* Mobilde hover ipucu yok — nedeni tek satır olarak burada duruyor. */}
+            <p className="sm:hidden mt-2 flex items-start gap-1.5 text-xs leading-snug text-slate-400">
+              <Share2 className="w-3.5 h-3.5 mt-px flex-shrink-0" />
+              <span>{t("tips.shareTrainingMobile")}</span>
+            </p>
           </div>
 
           {canManage && (
@@ -6111,6 +6116,11 @@ export default function Muuvlink() {
               </button>
               </HoverTip>
             </div>
+            {/* Mobilde hover ipucu yok — nedeni tek satır olarak burada duruyor. */}
+            <p className="sm:hidden mt-2 flex items-start gap-1.5 text-xs leading-snug text-white/70">
+              <Share2 className="w-3.5 h-3.5 mt-px flex-shrink-0" />
+              <span>{t("tips.shareTeamMobile")}</span>
+            </p>
           </div>
 
           {/* dekoratif daire */}

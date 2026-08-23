@@ -128,6 +128,16 @@ export const translations = {
       en: "Share your event. The more people see it, the faster it fills up and the better the turnout.",
       de: "Teile dein Event. Je mehr Leute es sehen, desto schneller füllt es sich.",
     },
+    shareTeamMobile: {
+      tr: "Takımı paylaştıkça üye artar; her yeni üye açtığın etkinlikleri anında görür.",
+      en: "The more you share your team, the more members you get — and each one sees your events instantly.",
+      de: "Je mehr du dein Team teilst, desto mehr Mitglieder — und jedes sieht deine Events sofort.",
+    },
+    shareTrainingMobile: {
+      tr: "Etkinliği paylaştıkça daha çok kişi görür, kontenjan daha hızlı dolar.",
+      en: "The more you share this event, the more people see it and the faster it fills up.",
+      de: "Je öfter du das Event teilst, desto mehr Leute sehen es und desto schneller füllt es sich.",
+    },
     copyLinkTraining: {
       tr: "Linki kopyala ve grubuna at. Tıklayan etkinlik sayfasından tek dokunuşla katılır.",
       en: "Copy the link and drop it in your group chat. One tap on the event page and they're in.",
