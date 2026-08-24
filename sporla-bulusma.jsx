@@ -5378,12 +5378,12 @@ export default function Muuvlink() {
 
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200">
           {/* BAŞLIK BLOĞU — kartın üstüne tam oturur */}
-          <div className="-mx-6 sm:-mx-8 -mt-6 sm:-mt-8 mb-6 rounded-t-3xl overflow-hidden">
+          <div className="-mx-6 sm:-mx-8 -mt-6 sm:-mt-8 mb-6 rounded-t-3xl overflow-hidden bg-slate-900 text-white">
             {isPaid && selectedTraining.image_url && (
               <img src={selectedTraining.image_url} alt={selectedTraining.title}
                 className="w-full max-h-72 object-cover"/>
             )}
-            <div className="px-6 sm:px-8 pt-6 sm:pt-7">
+            <div className="px-6 sm:px-8 pt-6 sm:pt-7 pb-6 sm:pb-7">
             {/* 1) Kimlik etiketleri — başlığın üstünde, sadece "bu ne" bilgisi */}
             <div className="flex flex-wrap items-center gap-2">
               {isPaid && (
@@ -5391,11 +5391,11 @@ export default function Muuvlink() {
                   <Ticket className="w-3.5 h-3.5"/> {t("trainings.paidBadge")}
                 </span>
               )}
-              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-brand-50 text-brand-700">
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-white/10 ring-1 ring-white/15 text-white">
                 {selectedTraining.sport || selectedTraining.team_sport || "Genel"}
               </span>
               {!isPaid && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/10 ring-1 ring-white/15 text-slate-200">
                   <span className="text-slate-400"><LevelIcon lv={TRAINING_LEVELS.find((l) => l.val === selectedTraining.difficulty) || { bars: 0 }} size={13} /></span>
                   {{ "Kolay": t("trainings.levelEasy"), "Orta": t("trainings.levelMid"), "Zor": t("trainings.levelHard"), "Her Seviye": t("trainings.levelAll") }[selectedTraining.difficulty] || selectedTraining.difficulty}
                 </span>
@@ -5403,10 +5403,10 @@ export default function Muuvlink() {
             </div>
 
             {/* 2) Başlık */}
-            <h1 className="font-display font-bold mt-3 text-slate-900" style={{fontSize:"clamp(1.6rem,4vw,2.4rem)", letterSpacing:"-0.01em", lineHeight:1.15}}>{selectedTraining.title}</h1>
+            <h1 className="font-display font-bold mt-3 text-white" style={{fontSize:"clamp(1.6rem,4vw,2.4rem)", letterSpacing:"-0.01em", lineHeight:1.15}}>{selectedTraining.title}</h1>
 
             {/* 3) Aksiyonlar — ince çizgiyle ayrılmış kendi şeridinde; şikayet sessiz ikon */}
-            <div className="mt-5 pt-4 border-t border-slate-200/80 flex items-center gap-2">
+            <div className="mt-5 pt-4 border-t border-white/10 flex items-center gap-2">
               <HoverTip text={t("tips.shareTraining")} align="left">
                 <button
                   onClick={async () => {
@@ -5415,7 +5415,7 @@ export default function Muuvlink() {
                     if (res === "copied") showToast(t("toast.linkCopied"), "success");
                     else if (res === "failed") showToast(t("toast.shareFail"), "error");
                   }}
-                  className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-semibold transition-colors"
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-semibold transition-colors"
                 >
                   <Share2 className="w-4 h-4" /> {t("common.share")}
                 </button>
@@ -5428,7 +5428,7 @@ export default function Muuvlink() {
                     if (res === "copied") showToast(t("toast.linkCopied"), "success");
                     else showToast(t("toast.shareFail"), "error");
                   }}
-                  className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-semibold transition-colors"
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-semibold transition-colors"
                 >
                   <Link className="w-4 h-4" /> {t("common.copyLink")}
                 </button>
@@ -5438,7 +5438,7 @@ export default function Muuvlink() {
                   onClick={() => setReportModal({ type: "training", id: selectedTraining.id })}
                   title={t("report.btn")}
                   aria-label={t("report.btn")}
-                  className="ml-auto w-9 h-9 rounded-full flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+                  className="ml-auto w-9 h-9 rounded-full flex items-center justify-center text-white/40 hover:text-red-400 hover:bg-white/10 transition-colors"
                 >
                   <Flag className="w-4 h-4" />
                 </button>
@@ -6018,7 +6018,7 @@ export default function Muuvlink() {
         </button>
 
         {/* HEADER KARTI */}
-        <div className="relative rounded-3xl overflow-hidden mb-4 border border-slate-200 bg-white">
+        <div className="relative rounded-3xl overflow-hidden mb-4 bg-slate-900 text-white">
           <div className="px-5 sm:px-8 pt-6 sm:pt-7 pb-5 sm:pb-6">
             {/* üst satır */}
             <div className="flex items-start gap-4">
@@ -6050,7 +6050,7 @@ export default function Muuvlink() {
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h1 className="font-display font-bold leading-tight text-slate-900" style={{fontSize:"clamp(1.35rem,5vw,1.8rem)", letterSpacing:"-0.01em"}}>{selectedTeam.name}</h1>
+                  <h1 className="font-display font-bold leading-tight text-white" style={{fontSize:"clamp(1.35rem,5vw,1.8rem)", letterSpacing:"-0.01em"}}>{selectedTeam.name}</h1>
                   {myRole && (() => {
                     const roleIcons = { owner: Crown, editor: Edit, coach: Target, captain: Navigation2, member: User };
                     const roleLabels = { owner: t("teamDetail.roles.owner"), editor: t("teamDetail.roles.editor"), coach: t("teamDetail.roles.coach"), captain: t("teamDetail.roles.captain"), member: t("teamDetail.roles.member") };
@@ -6068,35 +6068,35 @@ export default function Muuvlink() {
             {/* spor etiketleri — kimlik bilgisi, tek bir grup olarak */}
             <div className="flex flex-wrap gap-1.5 mt-4">
               {(selectedTeam.sports?.length ? selectedTeam.sports : [selectedTeam.sport]).filter(Boolean).map((sp) => (
-                <span key={sp} className="px-2.5 py-1 rounded-lg bg-brand-50 text-brand-700 text-xs font-semibold">{t(`sports.${sp}`)}</span>
+                <span key={sp} className="px-2.5 py-1 rounded-lg bg-white/10 ring-1 ring-white/15 text-white text-xs font-semibold">{t(`sports.${sp}`)}</span>
               ))}
             </div>
 
             {/* meta satırı — üye / konum / gizlilik aynı ağırlıkta, tek satırda */}
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-3.5 text-[13px] text-slate-500">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-3.5 text-[13px] text-slate-400">
               <span className="inline-flex items-center gap-1.5">
-                <Users className="w-4 h-4 text-slate-400" />
-                <b className="font-semibold text-slate-900">{selectedTeam.members?.length || 0}</b> {t("teams.members")}
+                <Users className="w-4 h-4 text-slate-500" />
+                <b className="font-semibold text-white">{selectedTeam.members?.length || 0}</b> {t("teams.members")}
               </span>
               <span className="inline-flex items-center gap-1.5">
                 {selectedTeam.is_private
-                  ? <><Lock className="w-4 h-4 text-slate-400" /> {t("common.private")}</>
-                  : <><Globe className="w-4 h-4 text-slate-400" /> {t("common.public")}</>}
+                  ? <><Lock className="w-4 h-4 text-slate-500" /> {t("common.private")}</>
+                  : <><Globe className="w-4 h-4 text-slate-500" /> {t("common.public")}</>}
               </span>
               {selectedTeam.location && (
                 <span className="inline-flex items-center gap-1.5 min-w-0 max-w-full">
-                  <MapPin className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                  <MapPin className="w-4 h-4 text-slate-500 flex-shrink-0" />
                   <span className="truncate">{selectedTeam.location}</span>
                 </span>
               )}
             </div>
 
             {selectedTeam.description && (
-              <p className="mt-3.5 text-sm text-slate-600 leading-relaxed">{selectedTeam.description}</p>
+              <p className="mt-3.5 text-sm text-slate-300 leading-relaxed">{selectedTeam.description}</p>
             )}
 
             {/* aksiyonlar — ince çizgiyle ayrılmış kendi şeridinde; mobilde iki sütun */}
-            <div className="mt-5 pt-4 border-t border-slate-200/80 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+            <div className="mt-5 pt-4 border-t border-white/10 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
               {canManage && (
                 <HoverTip text={t("tips.inviteTeam")} align="left" className="col-span-2 sm:col-span-1">
                   <button onClick={() => setShowInviteModal(true)}
@@ -6113,7 +6113,7 @@ export default function Muuvlink() {
                     if (res === "copied") showToast(t("toast.linkCopied"), "success");
                     else if (res === "failed") showToast(t("toast.shareFail"), "error");
                   }}
-                  className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-semibold transition-colors"
+                  className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-semibold transition-colors"
                 >
                   <Share2 className="w-4 h-4" /> {t("common.share")}
                 </button>
@@ -6126,7 +6126,7 @@ export default function Muuvlink() {
                     if (res === "copied") showToast(t("toast.linkCopied"), "success");
                     else showToast(t("toast.shareFail"), "error");
                   }}
-                  className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-semibold transition-colors"
+                  className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-semibold transition-colors"
                 >
                   <Link className="w-4 h-4" /> {t("common.copyLink")}
                 </button>
