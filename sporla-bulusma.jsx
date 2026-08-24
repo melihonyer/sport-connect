@@ -89,7 +89,7 @@ class ErrorBoundary extends React.Component {
         </div>
         <button onClick={reset}
           className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white"
-          style={{ background: "linear-gradient(135deg,#00b7ba,#009295)" }}>
+          style={{ background: "linear-gradient(135deg,#114956,#0e3c47)" }}>
           {_t("retry")}
         </button>
       </div>
@@ -229,17 +229,17 @@ const _placeType = (cls, typ, lang="tr") => {
   if (entry) {
     const color = {
       village:"#15803d",hamlet:"#15803d",suburb:"#7c3aed",neighbourhood:"#7c3aed",quarter:"#7c3aed",
-      city:"#0891b2",town:"#0891b2",cafe:"#d97706",restaurant:"#ea580c",fast_food:"#ea580c",
-      gym:"#0891b2",sports_centre:"#0891b2",swimming_pool:"#0284c7",park:"#16a34a",garden:"#16a34a",
+      city:"#0e3c47",town:"#0e3c47",cafe:"#d97706",restaurant:"#ea580c",fast_food:"#ea580c",
+      gym:"#0e3c47",sports_centre:"#0e3c47",swimming_pool:"#0e3c47",park:"#16a34a",garden:"#16a34a",
       school:"#64748b",university:"#64748b",hospital:"#dc2626",clinic:"#dc2626",
-      stadium:"#0891b2",beach:"#f59e0b",
-    }[typ] || "#00b7ba";
+      stadium:"#0e3c47",beach:"#f59e0b",
+    }[typ] || "#114956";
     return { label: entry[l] || entry.en, color };
   }
   if (cls==="natural")  return { label: {tr:"Doğa", en:"Nature",  de:"Natur" }[l],   color:"#15803d" };
   if (cls==="highway")  return { label: {tr:"Sokak", en:"Street",  de:"Straße"}[l],   color:"#94a3b8" };
   if (cls==="shop")     return { label: {tr:"Mağaza", en:"Shop",   de:"Geschäft"}[l], color:"#9333ea" };
-  return { label: {tr:"Yer", en:"Place", de:"Ort"}[l], color:"#00b7ba" };
+  return { label: {tr:"Yer", en:"Place", de:"Ort"}[l], color:"#114956" };
 };
 
 // Hafta bazlı marka renk rotasyonu — aynı hafta içindeki etkinlikler aynı rengi paylaşır,
@@ -289,7 +289,7 @@ const _brightness = hex => {
   return (r*299 + g*587 + b*114) / 1000;
 };
 
-const Typewriter = React.memo(({ mottos, color1 = "#00b7ba", color2 = "#981dd8" }) => {
+const Typewriter = React.memo(({ mottos, color1 = "#114956", color2 = "#643e87" }) => {
   const [idx,   setIdx]   = useState(0);
   const [count, setCount] = useState(0);   // kaç karakter görünüyor
   const [phase, setPhase] = useState("typing"); // typing | holding | fading
@@ -415,7 +415,7 @@ const AuthModal = ({ authMode, setAuthMode, onClose, handleLogin, handleRegister
       <div className="bg-white rounded-3xl max-w-md w-full relative overflow-hidden shadow-2xl modal-content">
 
         {/* Üst gradient şerit */}
-        <div className="h-1.5" style={{background:"linear-gradient(90deg,#00b7ba,#981dd8)"}}/>
+        <div className="h-1.5" style={{background:"linear-gradient(90deg,#00a499,#643e87)"}}/>
 
         <div className="px-8 pt-7 pb-8">
           {/* Kapat butonu */}
@@ -513,7 +513,7 @@ const AuthModal = ({ authMode, setAuthMode, onClose, handleLogin, handleRegister
 
             <button type="submit" disabled={loading || (authMode === "register" && !kvkkChecked)}
               className="w-full py-3.5 text-white rounded-xl font-semibold text-sm disabled:opacity-60 flex items-center justify-center gap-2 transition-opacity hover:opacity-90 mt-2"
-              style={{background:"linear-gradient(90deg,#00b7ba,#981dd8)"}}>
+              style={{background:"linear-gradient(90deg,#00a499,#643e87)"}}>
               {loading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>}
               {authMode === "login" ? t("auth.loginBtn") : authMode === "register" ? t("auth.registerBtn") : t("auth.sendResetBtn")}
             </button>
@@ -749,16 +749,16 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
   if (!bannersLoaded || banners.length === 0) return null;
 
   const activeBanner = banners[activeIdx];
-  const gFrom = activeBanner?.gradient_from || "#052e16";
-  const gVia  = activeBanner?.gradient_via  || "#004849";
-  const gTo   = activeBanner?.gradient_to   || "#006d6f";
+  const gFrom = activeBanner?.gradient_from || "#08232a";
+  const gVia  = activeBanner?.gradient_via  || "#08232a";
+  const gTo   = activeBanner?.gradient_to   || "#0b2f38";
   // Nav butonları için aktif banner'ın kontrast durumu
   const activeIsLightBg = (
     _brightness(activeBanner?.gradient_from) +
     _brightness(activeBanner?.gradient_via) +
     _brightness(activeBanner?.gradient_to)
   ) / 3 > 140;
-  const navActiveColor   = activeIsLightBg ? "#0d6b6d"            : "#00b7ba";
+  const navActiveColor   = activeIsLightBg ? "#114956"            : "#114956";
   const navInactiveColor = activeIsLightBg ? "rgba(0,0,0,0.2)"    : "rgba(255,255,255,0.3)";
 
   return (
@@ -770,9 +770,9 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
       {/* Arka plan dekorları */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -left-32 top-1/4 w-[600px] h-[600px] rounded-full"
-          style={{background:"radial-gradient(circle,rgba(0,183,186,0.18) 0%,transparent 65%)"}}/>
+          style={{background:"radial-gradient(circle,rgba(17,73,86,0.18) 0%,transparent 65%)"}}/>
         <div className="absolute right-[-60px] top-[-40px] w-[700px] h-[700px] rounded-full"
-          style={{background:"radial-gradient(circle,rgba(0,183,186,0.1) 0%,transparent 60%)"}}/>
+          style={{background:"radial-gradient(circle,rgba(17,73,86,0.1) 0%,transparent 60%)"}}/>
         <div className="absolute inset-0 opacity-[0.03]"
           style={{backgroundImage:"linear-gradient(rgba(255,255,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px)", backgroundSize:"64px 64px"}}/>
       </div>
@@ -781,7 +781,7 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
       <div className="relative bn-hero" style={{minHeight:"680px", overflow:"hidden"}}>
         {banners.map((banner, i) => {
           const isActive = i === activeIdx;
-          const bgF = banner?.gradient_from || "#052e16";
+          const bgF = banner?.gradient_from || "#08232a";
           const hasImg = banner?.image_url && banner.image_url !== "";
           // Arka plan parlaklığına göre otomatik kontrast
           const _bgBrightness = (
@@ -812,7 +812,7 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                     {banner?.badge_text && (
                       <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full text-sm font-semibold border backdrop-blur-sm"
                         style={{background:uiBadgeBg, borderColor:uiBorder, color:uiText}}>
-                        <span className="w-2 h-2 rounded-full animate-pulse" style={{background:"#00b7ba"}}/>
+                        <span className="w-2 h-2 rounded-full animate-pulse" style={{background:"#00a499"}}/>
                         {banner.badge_text}
                       </div>
                     )}
@@ -825,8 +825,8 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                         {isActive
                           ? <Typewriter
                               mottos={(banner?.mottos?.length > 0 && lang === "tr") ? banner.mottos : (DEFAULT_MOTTOS[lang] || DEFAULT_MOTTOS.en)}
-                              color1={banner?.motto_color_1 || "#00b7ba"}
-                              color2={banner?.motto_color_2 || "#981dd8"}
+                              color1={banner?.motto_color_1 || "#114956"}
+                              color2={banner?.motto_color_2 || "#643e87"}
                             />
                           : <span>&nbsp;</span>
                         }
@@ -842,7 +842,7 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                         <button
                           onClick={() => { setAuthMode("register"); setIsAuthModalOpen(true); }}
                           className="group relative flex items-center gap-2.5 px-7 py-3.5 font-medium text-white text-sm overflow-hidden transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl"
-                          style={{background:"linear-gradient(135deg,#00b7ba,#009295)", borderRadius:"14px", boxShadow:"0 8px 32px rgba(0,183,186,0.4)"}}
+                          style={{background:"linear-gradient(135deg,#114956,#0e3c47)", borderRadius:"14px", boxShadow:"0 8px 32px rgba(17,73,86,0.4)"}}
                         >
                           <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-[14px]"/>
                           {t ? t("home.startBtn") : "Get Started"}
@@ -854,7 +854,7 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                         onClick={() => handleCtaClick(banner?.cta_primary_url, () => setCurrentPage("trainings"))}
                         className={`flex items-center gap-2 px-7 py-3.5 font-semibold text-sm transition-all duration-300 rounded-[14px] ${user ? "group relative overflow-hidden hover:scale-[1.03] hover:shadow-2xl" : ""}`}
                         style={user
-                          ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff", borderRadius:"14px", boxShadow:"0 8px 32px rgba(0,183,186,0.4)"}
+                          ? {background:"linear-gradient(135deg,#114956,#0e3c47)", color:"#fff", borderRadius:"14px", boxShadow:"0 8px 32px rgba(17,73,86,0.4)"}
                           : {color:uiText, border:`1px solid ${uiBorder}`, background:"transparent"}}
                         onMouseEnter={e=>{ if(!user) e.currentTarget.style.background=uiSecHover; }}
                         onMouseLeave={e=>{ if(!user) e.currentTarget.style.background="transparent"; }}
@@ -877,14 +877,14 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                               <div className="flex items-center gap-2.5">
                                 <div style={{
                                   width:"30px", height:"30px", borderRadius:"9px", flexShrink:0,
-                                  background: isLightBg ? "rgba(0,183,186,0.14)" : "rgba(0,183,186,0.22)",
+                                  background: isLightBg ? "rgba(17,73,86,0.14)" : "rgba(17,73,86,0.22)",
                                   display:"flex", alignItems:"center", justifyContent:"center",
                                 }}>
-                                  <Icon style={{width:"14px", height:"14px", color:"#00b7ba"}}/>
+                                  <Icon style={{width:"14px", height:"14px", color:"#114956"}}/>
                                 </div>
                                 <span style={{
                                   fontSize:"1.6rem", fontWeight:800, lineHeight:1,
-                                  color: isLightBg ? "#0d6b6d" : "#00b7ba",
+                                  color: isLightBg ? "#114956" : "#114956",
                                 }}>{s.value}</span>
                               </div>
                               <div style={{
@@ -908,7 +908,7 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                 <>
                   {/* Glow */}
                   <div className="absolute pointer-events-none"
-                    style={{right:"10%", bottom:0, width:"500px", height:"400px", borderRadius:"50%", filter:"blur(80px)", background:"radial-gradient(ellipse,rgba(0,183,186,0.2) 0%,rgba(0,183,186,0.1) 55%,transparent 70%)"}}/>
+                    style={{right:"10%", bottom:0, width:"500px", height:"400px", borderRadius:"50%", filter:"blur(80px)", background:"radial-gradient(ellipse,rgba(17,73,86,0.2) 0%,rgba(17,73,86,0.1) 55%,transparent 70%)"}}/>
                   {/* Görsel: right side, bottom:-50px → float sırasında alt kenar görünmez */}
                   <div className="bn-banner-img absolute pointer-events-none"
                     style={{right:0, top:0, bottom:"-50px", width:"52%", display:"flex", justifyContent:"center", alignItems:"flex-end", animation:"heroFloat 5s ease-in-out infinite"}}>
@@ -1061,7 +1061,7 @@ function HoverTip({ text, align = "center", className = "", children }) {
       <span
         role="tooltip"
         className={`pointer-events-none absolute bottom-full mb-2 ${pos} z-50 w-60 max-w-[70vw]
-                    rounded-xl bg-slate-900 px-3 py-2 text-xs font-medium leading-snug text-white
+                    rounded-xl bg-brand-700 px-3 py-2 text-xs font-medium leading-snug text-white
                     shadow-lg opacity-0 translate-y-1 transition-all duration-150
                     group-hover:opacity-100 group-hover:translate-y-0
                     hidden sm:block`}
@@ -1080,19 +1080,19 @@ function HoverTip({ text, align = "center", className = "", children }) {
 // Rozet adına göre renk teması + sembol. Bilinmeyen rozet → varsayılan (teal).
 const BADGE_THEME = {
   "Başlangıç":      { c1: "#34d399", c2: "#059669", glyph: "rosette" },
-  "Düzenli":        { c1: "#38bdf8", c2: "#0284c7", glyph: "star"    },
+  "Düzenli":        { c1: "#38bdf8", c2: "#0e3c47", glyph: "star"    },
   "Azimli":         { c1: "#fb923c", c2: "#ea580c", glyph: "flame"   },
   "Sporcu":         { c1: "#a78bfa", c2: "#6d28d9", glyph: "dumbbell"},
   "Efsane":         { c1: "#fbbf24", c2: "#d97706", glyph: "trophy"  },
   "Şampiyon":       { c1: "#fb7185", c2: "#be123c", glyph: "medal"   },
-  "Takım Oyuncusu": { c1: "#2dd4bf", c2: "#0d9488", glyph: "users"   },
+  "Takım Oyuncusu": { c1: "#54889a", c2: "#2d6779", glyph: "users"   },
   "Lider":          { c1: "#fcd34d", c2: "#d97706", glyph: "crown"   },
   "Organizatör":    { c1: "#818cf8", c2: "#4338ca", glyph: "megaphone" },
   "Sohbetçi":       { c1: "#f472b6", c2: "#db2777", glyph: "chat"    },
   // Spor dalı rozetleri
-  "Bisikletçi":     { c1: "#2dd4bf", c2: "#0d9488" },
+  "Bisikletçi":     { c1: "#54889a", c2: "#2d6779" },
   "Koşucu":         { c1: "#fb923c", c2: "#ea580c" },
-  "Yüzücü":         { c1: "#38bdf8", c2: "#0284c7" },
+  "Yüzücü":         { c1: "#38bdf8", c2: "#0e3c47" },
   "Tenisçi":        { c1: "#a3e635", c2: "#4d7c0f" },
   "Kanocu":         { c1: "#22d3ee", c2: "#0e7490" },
   "Futbolcu":       { c1: "#34d399", c2: "#047857" },
@@ -1101,7 +1101,7 @@ const BADGE_THEME = {
   "Yogi":           { c1: "#c4b5fd", c2: "#6d28d9" },
   "Kaşif":          { c1: "#8fbf9f", c2: "#3f7a5a" },
 };
-const badgeTheme = (name) => BADGE_THEME[name] || { c1: "#2dd4bf", c2: "#0d9488", glyph: "rosette" };
+const badgeTheme = (name) => BADGE_THEME[name] || { c1: "#54889a", c2: "#2d6779", glyph: "rosette" };
 
 // Rozet adı → sabit ascii dosya adı (paylaşım kartı için önceden üretilmiş PNG'ler).
 const BADGE_SLUG = {
@@ -1982,7 +1982,7 @@ export default function Muuvlink() {
           <div className="px-4 py-3 border-t border-slate-100 flex-shrink-0">
             <button onClick={save} disabled={busy}
               className="w-full h-12 rounded-xl text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
-              style={{ background: "linear-gradient(135deg,#00b7ba,#009295)" }}>
+              style={{ background: "linear-gradient(135deg,#114956,#0e3c47)" }}>
               {busy && <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />}
               {t("notifPrefs.save")}
             </button>
@@ -3193,7 +3193,7 @@ export default function Muuvlink() {
           </button>
         )}
         {showPop && (
-          <div className="absolute bottom-full right-0 mb-2 z-30 min-w-[120px] max-w-[220px] bg-slate-800 text-white text-xs rounded-xl shadow-xl py-2 px-3">
+          <div className="absolute bottom-full right-0 mb-2 z-30 min-w-[120px] max-w-[220px] bg-brand-700 text-white text-xs rounded-xl shadow-xl py-2 px-3">
             <div className="font-semibold text-slate-300 mb-1">{t("messageLike.likedBy")}</div>
             {likers.slice(0, 15).map((l) => <div key={l.id} className="truncate leading-relaxed">{l.name}</div>)}
             {likers.length > 15 && <div className="text-slate-400 mt-0.5">+{likers.length - 15}</div>}
@@ -3699,8 +3699,8 @@ export default function Muuvlink() {
   const FeaturesSection = () => {
     const editorialFeatures = [
       {
-        num:"01", icon: MapPin, accent:"#006d6f",
-        bg:"linear-gradient(135deg,#e5f9f9 0%,#e5f9f9 50%,#cbf3f3 100%)",
+        num:"01", icon: MapPin, accent:"#0b2f38",
+        bg:"linear-gradient(135deg,#eef4f6 0%,#eef4f6 50%,#d6e5e9 100%)",
         image: "/uploads/feature-01.webp",
         sub:   t("home.ef1Sub"),
         title: t("home.ef1Title"),
@@ -3708,8 +3708,8 @@ export default function Muuvlink() {
         points:[t("home.ef1p1"), t("home.ef1p2"), t("home.ef1p3")],
       },
       {
-        num:"02", icon: Users, accent:"#006d6f",
-        bg:"linear-gradient(135deg,#e5f9f9 0%,#cbf3f3 50%,#97e7e8 100%)",
+        num:"02", icon: Users, accent:"#0b2f38",
+        bg:"linear-gradient(135deg,#eef4f6 0%,#d6e5e9 50%,#97e7e8 100%)",
         image: "/uploads/feature-02.webp",
         sub:   t("home.ef2Sub"),
         title: t("home.ef2Title"),
@@ -3717,8 +3717,8 @@ export default function Muuvlink() {
         points:[t("home.ef2p1"), t("home.ef2p2"), t("home.ef2p3")],
       },
       {
-        num:"03", icon: Trophy, accent:"#006d6f",
-        bg:"linear-gradient(135deg,#e5f9f9 0%,#00b7ba 50%,#009295 100%)",
+        num:"03", icon: Trophy, accent:"#0b2f38",
+        bg:"linear-gradient(135deg,#eef4f6 0%,#114956 50%,#0e3c47 100%)",
         image: "/uploads/feature-03.webp",
         sub:   t("home.ef3Sub"),
         title: t("home.ef3Title"),
@@ -3734,12 +3734,12 @@ export default function Muuvlink() {
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8">
             <div>
               <span className="text-[11px] font-bold tracking-[0.4em] uppercase block mb-5"
-                style={{color:"#006d6f"}}>{t("home.platform")}</span>
+                style={{color:"#0b2f38"}}>{t("home.platform")}</span>
               <h2 className="font-display font-bold tracking-tight leading-[0.88]"
                 style={{fontSize:"clamp(3.6rem,8vw,6.5rem)"}}>
                 <span className="text-slate-900 block">{t("home.whyNeden")}</span>
                 <span style={{
-                  background:"linear-gradient(90deg,#00b7ba 0%,#009295 100%)",
+                  background:"linear-gradient(90deg,#114956 0%,#0e3c47 100%)",
                   WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text",
                 }}>{t("home.whyMuuvlink")}</span>
               </h2>
@@ -3876,7 +3876,7 @@ export default function Muuvlink() {
       <div className="flex-1 pl-5 flex flex-col justify-center gap-1 min-w-0">
         <div className="flex items-center gap-2 min-w-0">
           {isPaid && (
-            <span className="flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-brand-600 text-white">
+            <span className="flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-pop-400 text-ink-900">
               <Ticket className="w-3 h-3"/> {t("trainings.paidBadge")}
             </span>
           )}
@@ -3923,12 +3923,12 @@ export default function Muuvlink() {
       className="group bg-white rounded-2xl border border-slate-100 hover:border-brand-200 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 cursor-pointer overflow-hidden"
     >
       {/* Dekoratif üst şerit */}
-      <div className="h-1.5 w-full" style={{background:"linear-gradient(90deg,#00b7ba,#009295,#06B6D4)"}}/>
+      <div className="h-1.5 w-full" style={{background:"linear-gradient(90deg,#00a499,#643e87)"}}/>
       <div className="p-5">
         <div className="flex items-start justify-between mb-3 gap-2">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-12 h-12 rounded-xl overflow-hidden flex items-center justify-center text-white text-lg font-bold flex-shrink-0"
-              style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}>
+              style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}>
               {(team.avatar?.startsWith("/uploads/") || team.avatar?.startsWith("http"))
                 ? <img src={team.avatar.startsWith("http") ? team.avatar : `${BASE_URL}${team.avatar}`} alt="" className="w-full h-full object-cover" />
                 : (team.name?.[0]?.toLocaleUpperCase("en-US") || "T")}
@@ -3965,8 +3965,8 @@ export default function Muuvlink() {
               </span>
             ) : (
               <span className="px-2.5 py-1 text-xs font-medium rounded-lg" style={{
-                background: team.my_role === 'owner' ? '#00b7ba' : team.my_role === 'editor' ? '#e5f9f9' : team.my_role === 'coach' ? '#EDE9FE' : team.my_role === 'captain' ? '#DCFCE7' : '#F0FDF4',
-                color: team.my_role === 'owner' ? '#ffffff' : team.my_role === 'editor' ? '#009295' : team.my_role === 'coach' ? '#5B21B6' : team.my_role === 'captain' ? '#006d6f' : '#006d6f',
+                background: team.my_role === 'owner' ? '#114956' : team.my_role === 'editor' ? '#eef4f6' : team.my_role === 'coach' ? '#EDE9FE' : team.my_role === 'captain' ? '#DCFCE7' : '#F0FDF4',
+                color: team.my_role === 'owner' ? '#ffffff' : team.my_role === 'editor' ? '#0e3c47' : team.my_role === 'coach' ? '#5B21B6' : team.my_role === 'captain' ? '#0b2f38' : '#0b2f38',
               }}>
                 {team.my_role === 'owner' ? <><Crown className="w-3 h-3 inline mr-1"/>{t("teamDetail.roles.owner")}</> : team.my_role === 'editor' ? <><Edit className="w-3 h-3 inline mr-1"/>{t("teamDetail.roles.editor")}</> : team.my_role === 'coach' ? <><Target className="w-3 h-3 inline mr-1"/>{t("teamDetail.roles.coach")}</> : team.my_role === 'captain' ? <><Navigation2 className="w-3 h-3 inline mr-1"/>{t("teamDetail.roles.captain")}</> : <><User className="w-3 h-3 inline mr-1"/>{t("teamDetail.roles.member")}</>}
               </span>
@@ -4085,7 +4085,7 @@ export default function Muuvlink() {
       ? activeBanner.mottos : (DEFAULT_MOTTOS[lang] || DEFAULT_MOTTOS.tr);
     const gradFrom = activeBanner?.gradient_from || "#d4f09a";
     const gradVia  = activeBanner?.gradient_via  || "#5de8c0";
-    const gradTo   = activeBanner?.gradient_to   || "#00b7ba";
+    const gradTo   = activeBanner?.gradient_to   || "#114956";
     const bgBrightness = (_brightness(gradFrom) + _brightness(gradVia) + _brightness(gradTo)) / 3;
     const isLightBg = bgBrightness > 140;
     const textColor = activeBanner?.title_color || (isLightBg ? "#1a2e2e" : "#ffffff");
@@ -4228,7 +4228,7 @@ export default function Muuvlink() {
     return (
       <div className="bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 pt-10">
-          <div className="rounded-2xl border border-brand-100 p-5 sm:p-6" style={{background:"linear-gradient(135deg,#e5f9f9,#f0fdfd)"}}>
+          <div className="rounded-2xl border border-brand-100 p-5 sm:p-6" style={{background:"linear-gradient(135deg,#eef4f6,#f4f8f9)"}}>
             <div className="flex items-center justify-between mb-4 gap-3">
               <h3 className="font-display font-bold text-brand-900 text-lg">{t("checklist.title")}</h3>
               <span className="text-xs font-semibold text-brand-700 flex-shrink-0">
@@ -4237,7 +4237,7 @@ export default function Muuvlink() {
             </div>
             <div className="h-1.5 rounded-full bg-white/70 mb-5 overflow-hidden">
               <div className="h-full rounded-full transition-all duration-500"
-                style={{width:`${(doneCount/items.length)*100}%`, background:"linear-gradient(90deg,#00b7ba,#009295)"}}/>
+                style={{width:`${(doneCount/items.length)*100}%`, background:"linear-gradient(90deg,#114956,#0e3c47)"}}/>
             </div>
             <div className="space-y-2">
               {items.map(item => (
@@ -4246,7 +4246,7 @@ export default function Muuvlink() {
                   className={`w-full flex items-start gap-3 p-3 rounded-xl text-left transition-colors ${item.done ? "opacity-60 cursor-default" : "bg-white/60 hover:bg-white cursor-pointer"}`}>
                   <span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5"
                     style={item.done
-                      ? {background:"#00b7ba"}
+                      ? {background:"#114956"}
                       : {border:"2px solid #97e7e8", background:"transparent"}}>
                     {item.done && <Check className="w-3 h-3 text-white" strokeWidth={3}/>}
                   </span>
@@ -4303,10 +4303,10 @@ export default function Muuvlink() {
                     onClick={() => setNearbyDistance(km)}
                     className="px-4 py-2 rounded-xl text-xs font-medium transition-all duration-300 hover:scale-105 hover:shadow-md"
                     style={nearbyDistance === km
-                      ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff", boxShadow:"0 4px 20px rgba(0,183,186,0.35)"}
-                      : {background:"#e5f9f9", color:"#006d6f", border:"1px solid #cbf3f3", boxShadow:"0 2px 8px rgba(0,183,186,0.0)"}}
-                    onMouseEnter={e => { if(nearbyDistance !== km) e.currentTarget.style.boxShadow="0 4px 16px rgba(0,183,186,0.25)"; }}
-                    onMouseLeave={e => { if(nearbyDistance !== km) e.currentTarget.style.boxShadow="0 2px 8px rgba(0,183,186,0.0)"; }}
+                      ? {background:"linear-gradient(135deg,#114956,#0e3c47)", color:"#fff", boxShadow:"0 4px 20px rgba(17,73,86,0.35)"}
+                      : {background:"#eef4f6", color:"#0b2f38", border:"1px solid #d6e5e9", boxShadow:"0 2px 8px rgba(17,73,86,0.0)"}}
+                    onMouseEnter={e => { if(nearbyDistance !== km) e.currentTarget.style.boxShadow="0 4px 16px rgba(17,73,86,0.25)"; }}
+                    onMouseLeave={e => { if(nearbyDistance !== km) e.currentTarget.style.boxShadow="0 2px 8px rgba(17,73,86,0.0)"; }}
                   >
                     {km} km
                   </button>
@@ -4316,7 +4316,7 @@ export default function Muuvlink() {
                 onClick={() => handleNearbySearch()}
                 disabled={locationLoading}
                 className="flex items-center gap-2 px-6 py-3 rounded-xl font-medium text-white text-sm transition-all duration-300 hover:opacity-90 hover:scale-105 disabled:opacity-50 disabled:scale-100"
-                style={{background:"linear-gradient(135deg,#00b7ba,#009295)", boxShadow:"0 6px 24px rgba(0,183,186,0.3)"}}
+                style={{background:"linear-gradient(135deg,#114956,#0e3c47)", boxShadow:"0 6px 24px rgba(17,73,86,0.3)"}}
               >
                 {locationLoading
                   ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/> {t("home.gettingLocation")}</>
@@ -4340,7 +4340,7 @@ export default function Muuvlink() {
                 <button
                   onClick={() => setCurrentPage("trainings")}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium transition-all hover:shadow-md flex-shrink-0"
-                  style={{background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff"}}
+                  style={{background:"linear-gradient(135deg,#114956,#0e3c47)", color:"#fff"}}
                 >
                   {t("home.viewAll")}
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
@@ -4374,28 +4374,28 @@ export default function Muuvlink() {
 
       {/* ── CTA — Full Bleed Cinematic ── */}
       {!user && (
-        <div className="relative overflow-hidden py-28" style={{background:"linear-gradient(135deg,#052e16 0%,#004849 40%,#006d6f 70%,#009295 100%)"}}>
+        <div className="relative overflow-hidden py-28" style={{background:"linear-gradient(135deg,#08232a 0%,#08232a 40%,#0b2f38 70%,#0e3c47 100%)"}}>
           {/* grid */}
           <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
             style={{backgroundImage:"linear-gradient(rgba(255,255,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px)", backgroundSize:"60px 60px"}}/>
           {/* glow orbs */}
           <div className="absolute -left-32 top-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full pointer-events-none"
-            style={{background:"radial-gradient(circle,rgba(0,183,186,0.18) 0%,transparent 65%)"}}/>
+            style={{background:"radial-gradient(circle,rgba(17,73,86,0.18) 0%,transparent 65%)"}}/>
           <div className="absolute -right-32 top-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full pointer-events-none"
             style={{background:"radial-gradient(circle,rgba(134,239,172,0.12) 0%,transparent 65%)"}}/>
 
           <div className="relative max-w-4xl mx-auto px-4 text-center">
             {/* Big line decoration */}
             <div className="flex items-center justify-center gap-4 mb-8">
-              <div className="h-px flex-1 max-w-20" style={{background:"linear-gradient(90deg,transparent,rgba(0,183,186,0.5))"}}/>
-              <Dumbbell className="w-8 h-8" style={{color:"#00b7ba"}}/>
-              <div className="h-px flex-1 max-w-20" style={{background:"linear-gradient(90deg,rgba(0,183,186,0.5),transparent)"}}/>
+              <div className="h-px flex-1 max-w-20" style={{background:"linear-gradient(90deg,transparent,rgba(17,73,86,0.5))"}}/>
+              <Dumbbell className="w-8 h-8" style={{color:"#114956"}}/>
+              <div className="h-px flex-1 max-w-20" style={{background:"linear-gradient(90deg,rgba(17,73,86,0.5),transparent)"}}/>
             </div>
             <span className="text-xs font-semibold tracking-[0.4em] text-brand-800 uppercase block mb-6">{t("home.ctaJoinCommunity")}</span>
             <h2 className="font-display font-bold text-white mb-6 leading-[0.92]"
               style={{fontSize:"clamp(4rem,10vw,7.5rem)", letterSpacing:"-0.02em"}}>
               {t("home.ctaLine1")}<br/>
-              <span style={{background:"linear-gradient(90deg,#00b7ba,#981dd8)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent"}}>
+              <span style={{background:"linear-gradient(90deg,#114956,#643e87)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent"}}>
                 {t("home.ctaLine2")}
               </span>
             </h2>
@@ -4406,7 +4406,7 @@ export default function Muuvlink() {
               <button
                 onClick={() => { setAuthMode("register"); setIsAuthModalOpen(true); }}
                 className="inline-flex items-center gap-2.5 px-10 py-4 rounded-2xl font-semibold text-white text-base transition-all hover:scale-105 hover:shadow-2xl"
-                style={{background:"linear-gradient(135deg,#00b7ba,#009295)", boxShadow:"0 12px 40px rgba(0,183,186,0.4)"}}
+                style={{background:"linear-gradient(135deg,#114956,#0e3c47)", boxShadow:"0 12px 40px rgba(17,73,86,0.4)"}}
               >
                 {t("home.startFree")}
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
@@ -4430,7 +4430,7 @@ export default function Muuvlink() {
       return (
         <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center px-6 text-center gap-5">
           <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-white"
-            style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}>
+            style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}>
             <User className="w-7 h-7"/>
           </div>
           <div>
@@ -4440,7 +4440,7 @@ export default function Muuvlink() {
           <div className="flex flex-col gap-3 w-full max-w-xs">
             <button onClick={() => { setAuthMode("login"); setIsAuthModalOpen(true); }}
               className="w-full px-6 py-3 rounded-xl font-semibold text-white text-sm"
-              style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}>
+              style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}>
               {t("nav.login")}
             </button>
             <button onClick={() => { setAuthMode("register"); setIsAuthModalOpen(true); }}
@@ -4454,18 +4454,18 @@ export default function Muuvlink() {
     return (
     <div className="min-h-screen bg-slate-50">
       {/* ── Profile hero header ── */}
-      <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#e5f9f9 0%,#e5f9f9 60%,#cbf3f3 100%)"}}>
+      <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#eef4f6 0%,#eef4f6 60%,#d6e5e9 100%)"}}>
         <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
           style={{backgroundImage:"linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px)", backgroundSize:"50px 50px"}}/>
         <div className="absolute inset-0 pointer-events-none"
-          style={{background:"radial-gradient(ellipse at 30% center,rgba(0,183,186,0.18) 0%,transparent 65%)"}}/>
+          style={{background:"radial-gradient(ellipse at 30% center,rgba(17,73,86,0.18) 0%,transparent 65%)"}}/>
         <div className="relative max-w-5xl mx-auto px-4 sm:px-8 py-12">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
             {/* Avatar + name */}
             <div className="flex items-center gap-5">
               <div className="relative cursor-pointer group" onClick={() => setShowProfileEdit(true)} title="Profili düzenle">
                 <div className="w-20 h-20 rounded-2xl overflow-hidden flex items-center justify-center text-white text-2xl font-bold flex-shrink-0"
-                  style={{background:"linear-gradient(135deg,#00b7ba,#009295)", boxShadow:"0 8px 24px rgba(0,183,186,0.4)"}}>
+                  style={{background:"linear-gradient(135deg,#114956,#0e3c47)", boxShadow:"0 8px 24px rgba(17,73,86,0.4)"}}>
                   {(user?.avatar?.startsWith("/uploads/") || user?.avatar?.startsWith("http")) ? (
                     <img src={user.avatar.startsWith("http") ? user.avatar : `${BASE_URL}${user.avatar}`} alt="avatar" className="w-full h-full object-cover" />
                   ) : (
@@ -4484,7 +4484,7 @@ export default function Muuvlink() {
             <div className="flex items-center gap-2.5">
               <button onClick={() => setShowProfileEdit(true)}
                 className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all"
-                style={{background:"white", color:"#009295", border:"1px solid #cbf3f3"}}>
+                style={{background:"white", color:"#0e3c47", border:"1px solid #d6e5e9"}}>
                 <Settings className="w-4 h-4"/> {t("profile.editProfile")}
               </button>
               {/* Bildirimler — sadece ikon + okunmamış sayısı */}
@@ -4494,8 +4494,8 @@ export default function Muuvlink() {
                   <button onClick={() => setShowNotifications(true)}
                     aria-label={t("notifications.title")} title={t("notifications.title")}
                     className="relative flex items-center justify-center w-11 h-11 rounded-xl flex-shrink-0 transition-all"
-                    style={{background:"white", border:"1px solid #cbf3f3"}}>
-                    <Bell className="w-5 h-5" style={{color:"#009295"}}/>
+                    style={{background:"white", border:"1px solid #d6e5e9"}}>
+                    <Bell className="w-5 h-5" style={{color:"#0e3c47"}}/>
                     {unread > 0 && (
                       <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1 rounded-full bg-red-500 text-white text-[11px] font-bold flex items-center justify-center border-2 border-white">
                         {unread > 99 ? "99+" : unread}
@@ -4516,7 +4516,7 @@ export default function Muuvlink() {
               {[{ code:"tr", label:"TR" }, { code:"en", label:"EN" }, { code:"de", label:"DE" }].map(({ code, label }) => (
                 <button key={code} onClick={() => changeLang(code)}
                   className="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all"
-                  style={lang === code ? {background:"#00b7ba", color:"#fff"} : {color:"#64748b"}}>
+                  style={lang === code ? {background:"#114956", color:"#fff"} : {color:"#64748b"}}>
                   {label}
                 </button>
               ))}
@@ -4526,11 +4526,11 @@ export default function Muuvlink() {
           {/* Stats strip */}
           <div className="grid grid-cols-3 gap-px mt-10 rounded-2xl overflow-hidden" style={{background:"rgba(255,255,255,0.06)"}}>
             {[
-              {val: userStats?.total_trainings || 0, label: t("home.statTrainings"), accent:"#00b7ba"},
-              {val: myTeams.length,                  label: t("home.statTeams"),     accent:"#981dd8"},
+              {val: userStats?.total_trainings || 0, label: t("home.statTrainings"), accent:"#114956"},
+              {val: myTeams.length,                  label: t("home.statTeams"),     accent:"#643e87"},
               {val: userBadges.length,               label: t("home.statBadges"),    accent:"#f59e0b"},
             ].map((s, i) => (
-              <div key={i} className="px-6 py-5" style={{background:"rgba(0,183,186,0.15)"}}>
+              <div key={i} className="px-6 py-5" style={{background:"rgba(17,73,86,0.15)"}}>
                 <div className="text-2xl font-semibold text-brand-700">{s.val}</div>
                 <div className="text-[10px] text-brand-600 mt-1 uppercase tracking-widest font-semibold">{s.label}</div>
               </div>
@@ -4547,8 +4547,8 @@ export default function Muuvlink() {
           <div className="space-y-3 min-w-0">
             <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase mb-4">{t("home.quickAccess")}</div>
             {[
-              {label: t("createTraining.pageTitle"), icon:Plus,   page:"create-training", grad:"linear-gradient(135deg,#00b7ba,#009295)", shadow:"rgba(0,183,186,0.3)"},
-              {label: t("teams.create"),             icon:Users,  page:"create-team",     grad:"linear-gradient(135deg,#0EA5E9,#06B6D4)", shadow:"rgba(14,165,233,0.3)"},
+              {label: t("createTraining.pageTitle"), icon:Plus,   page:"create-training", grad:"linear-gradient(135deg,#114956,#0e3c47)", shadow:"rgba(17,73,86,0.3)"},
+              {label: t("teams.create"),             icon:Users,  page:"create-team",     grad:"linear-gradient(135deg,#54889a,#00a499)", shadow:"rgba(14,165,233,0.3)"},
               {label: t("badges.pageTitle"),         icon:Trophy, page:"badges",          grad:"linear-gradient(135deg,#F59E0B,#FBBF24)", shadow:"rgba(245,158,11,0.3)"},
             ].map((a) => (
               <button key={a.label} onClick={() => setCurrentPage(a.page)}
@@ -4644,7 +4644,7 @@ export default function Muuvlink() {
                     <button key={team.id} onClick={() => fetchTeamDetails(team.id)}
                       className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-100 hover:border-brand-200 hover:bg-brand-50/30 transition-all text-left">
                       <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center text-white text-base font-bold flex-shrink-0"
-                        style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}>
+                        style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}>
                         {(team.avatar?.startsWith("/uploads/") || team.avatar?.startsWith("http"))
                           ? <img src={team.avatar.startsWith("http") ? team.avatar : `${BASE_URL}${team.avatar}`} alt="" className="w-full h-full object-cover" />
                           : (team.name?.[0]?.toLocaleUpperCase("en-US") || "T")}
@@ -4885,11 +4885,11 @@ export default function Muuvlink() {
     return (
       <div className="min-h-screen bg-slate-50">
         {/* ── Dark athletic page header ── */}
-        <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#e5f9f9 0%,#e5f9f9 60%,#cbf3f3 100%)"}}>
+        <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#eef4f6 0%,#eef4f6 60%,#d6e5e9 100%)"}}>
           <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
             style={{backgroundImage:"linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px)", backgroundSize:"50px 50px"}}/>
           <div className="absolute right-0 top-0 w-[500px] h-full pointer-events-none"
-            style={{background:"radial-gradient(ellipse at right center,rgba(0,183,186,0.15) 0%,transparent 65%)"}}/>
+            style={{background:"radial-gradient(ellipse at right center,rgba(17,73,86,0.15) 0%,transparent 65%)"}}/>
           <div className="relative max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-12">
             <div className="flex items-center justify-between gap-4">
               <div>
@@ -4902,7 +4902,7 @@ export default function Muuvlink() {
                   onClick={() => setCurrentPage("create-training")}
                   data-tour="create-event"
                   className="flex-shrink-0 flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium text-white text-sm transition-all hover:opacity-90"
-                  style={{background:"linear-gradient(135deg,#00b7ba,#009295)", boxShadow:"0 8px 24px rgba(0,183,186,0.35)"}}
+                  style={{background:"linear-gradient(135deg,#114956,#0e3c47)", boxShadow:"0 8px 24px rgba(17,73,86,0.35)"}}
                 >
                   <Plus className="w-4 h-4" />
                   <span className="hidden sm:inline">{t("trainings.create")}</span>
@@ -4933,8 +4933,8 @@ export default function Muuvlink() {
                 data-tour="map-view"
                 className="flex-shrink-0 whitespace-nowrap px-3.5 py-2.5 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 border shadow-sm"
                 style={viewMode === "map"
-                  ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff", borderColor:"transparent", boxShadow:"0 1px 8px rgba(0,183,186,0.35)"}
-                  : {background:"linear-gradient(135deg,rgba(0,183,186,0.06),rgba(0,146,149,0.06))", color:"#00a0a3", borderColor:"rgba(0,183,186,0.3)"}}>
+                  ? {background:"linear-gradient(135deg,#114956,#0e3c47)", color:"#fff", borderColor:"transparent", boxShadow:"0 1px 8px rgba(17,73,86,0.35)"}
+                  : {background:"linear-gradient(135deg,rgba(17,73,86,0.06),rgba(0,146,149,0.06))", color:"#00a0a3", borderColor:"rgba(17,73,86,0.3)"}}>
                 {viewMode === "map" ? (
                   <>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -4977,7 +4977,7 @@ export default function Muuvlink() {
               <button onClick={handleExitNearby}
                 className="px-4 py-2 text-xs font-semibold rounded-xl transition-all border shadow-sm"
                 style={!nearbyMode
-                  ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff", borderColor:"transparent", boxShadow:"0 1px 8px rgba(0,183,186,0.25)"}
+                  ? {background:"linear-gradient(135deg,#114956,#0e3c47)", color:"#fff", borderColor:"transparent", boxShadow:"0 1px 8px rgba(17,73,86,0.25)"}
                   : {background:"#fff", color:"#94a3b8", borderColor:"#e2e8f0"}}>
                 {t("common.all")}
               </button>
@@ -4985,7 +4985,7 @@ export default function Muuvlink() {
                 data-tour="nearby"
                 className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-xl transition-all border shadow-sm disabled:opacity-50"
                 style={nearbyMode
-                  ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff", borderColor:"transparent", boxShadow:"0 1px 8px rgba(0,183,186,0.25)"}
+                  ? {background:"linear-gradient(135deg,#114956,#0e3c47)", color:"#fff", borderColor:"transparent", boxShadow:"0 1px 8px rgba(17,73,86,0.25)"}
                   : {background:"#fff", color:"#64748b", borderColor:"#e2e8f0"}}>
                 {locationLoading
                   ? <div className="w-3 h-3 border-2 border-current/30 border-t-current rounded-full animate-spin"/>
@@ -5006,7 +5006,7 @@ export default function Muuvlink() {
                   <button key={km} onClick={() => handleDistanceChange(km)} disabled={nearbyLoading}
                     className="px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all disabled:opacity-50"
                     style={nearbyDistance === km
-                      ? {background:"linear-gradient(135deg,#00b7ba,#009295)", color:"#fff", borderColor:"transparent"}
+                      ? {background:"linear-gradient(135deg,#114956,#0e3c47)", color:"#fff", borderColor:"transparent"}
                       : {borderColor:"#e2e8f0", color:"#64748b", background:"#fff"}}>
                     {km} km
                   </button>
@@ -5048,7 +5048,7 @@ export default function Muuvlink() {
             // min-h: mesafe değiştirilince liste yerini yükleme göstergesi alıyor.
             // Yükseklik korunmazsa sayfa kısalıyor ve tarayıcı kullanıcıyı en üste atıyor.
             <div className="flex flex-col items-center justify-center py-32 gap-5 min-h-[70vh]">
-              <div className="w-14 h-14 border-4 border-brand-100 rounded-full" style={{borderTopColor:"#00b7ba", animation:"spin 0.8s linear infinite"}}/>
+              <div className="w-14 h-14 border-4 border-brand-100 rounded-full" style={{borderTopColor:"#114956", animation:"spin 0.8s linear infinite"}}/>
               <p className="text-slate-500 font-semibold">{nearbyDistance} km içinde aranıyor…</p>
             </div>
           ) : displayedTrainings.length > 0 ? (
@@ -5062,8 +5062,8 @@ export default function Muuvlink() {
               {nearbyMode ? (
                 <>
                   <div className="w-20 h-20 rounded-3xl mx-auto mb-5 flex items-center justify-center"
-                    style={{background:"rgba(0,183,186,0.08)", border:"1px solid rgba(0,183,186,0.15)"}}>
-                    <MapPin className="w-9 h-9" style={{color:"rgba(0,183,186,0.4)"}}/>
+                    style={{background:"rgba(17,73,86,0.08)", border:"1px solid rgba(17,73,86,0.15)"}}>
+                    <MapPin className="w-9 h-9" style={{color:"rgba(17,73,86,0.4)"}}/>
                   </div>
                   <p className="text-slate-800 font-semibold text-xl mb-2">{nearbyDistance} km {t("trainings.noNearby")}</p>
                   <p className="text-slate-400 text-sm mb-7 max-w-sm mx-auto">{t("trainings.nearbyGpsNote")}</p>
@@ -5079,15 +5079,15 @@ export default function Muuvlink() {
               ) : (
                 <>
                   <div className="w-20 h-20 rounded-3xl mx-auto mb-5 flex items-center justify-center"
-                    style={{background:"rgba(0,183,186,0.08)", border:"1px solid rgba(0,183,186,0.15)"}}>
-                    <Activity className="w-9 h-9" style={{color:"rgba(0,183,186,0.4)"}}/>
+                    style={{background:"rgba(17,73,86,0.08)", border:"1px solid rgba(17,73,86,0.15)"}}>
+                    <Activity className="w-9 h-9" style={{color:"rgba(17,73,86,0.4)"}}/>
                   </div>
                   <p className="text-slate-800 font-semibold text-xl mb-2">{t("trainings.noTrainings")}</p>
                   <p className="text-slate-400 text-sm mb-7 max-w-xs mx-auto">{t("trainings.noTrainingsHint")}</p>
                   {user && (
                     <button onClick={() => setCurrentPage("create-training")}
                       className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-medium text-white text-sm transition-all hover:opacity-90 hover:shadow-lg"
-                      style={{background:"linear-gradient(135deg,#00b7ba,#009295)", boxShadow:"0 8px 24px rgba(0,183,186,0.3)"}}>
+                      style={{background:"linear-gradient(135deg,#114956,#0e3c47)", boxShadow:"0 8px 24px rgba(17,73,86,0.3)"}}>
                       <Plus className="w-4 h-4"/> {t("trainings.create")}
                     </button>
                   )}
@@ -5115,7 +5115,7 @@ export default function Muuvlink() {
     return (
       <div className="min-h-screen bg-slate-50">
         {/* ── Dark athletic page header ── */}
-        <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#e5f9f9 0%,#e5f9f9 60%,#cbf3f3 100%)"}}>
+        <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#eef4f6 0%,#eef4f6 60%,#d6e5e9 100%)"}}>
           <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
             style={{backgroundImage:"linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px)", backgroundSize:"50px 50px"}}/>
           <div className="absolute left-0 top-0 w-[500px] h-full pointer-events-none"
@@ -5132,7 +5132,7 @@ export default function Muuvlink() {
                   onClick={() => setCurrentPage("create-team")}
                   data-tour="create-team"
                   className="flex items-center gap-2 px-6 py-3 rounded-xl font-medium text-white text-sm transition-all hover:opacity-90 flex-shrink-0"
-                  style={{background:"linear-gradient(135deg,#0EA5E9,#06B6D4)", boxShadow:"0 8px 24px rgba(14,165,233,0.3)"}}
+                  style={{background:"linear-gradient(135deg,#54889a,#00a499)", boxShadow:"0 8px 24px rgba(14,165,233,0.3)"}}
                 >
                   <Plus className="w-4 h-4" /> {t("teams.create")}
                 </button>
@@ -5197,7 +5197,7 @@ export default function Muuvlink() {
               ) : user && (
                 <button onClick={() => setCurrentPage("create-team")}
                   className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-medium text-white text-sm transition-all hover:opacity-90 hover:shadow-lg"
-                  style={{background:"linear-gradient(135deg,#0EA5E9,#06B6D4)", boxShadow:"0 8px 24px rgba(14,165,233,0.3)"}}>
+                  style={{background:"linear-gradient(135deg,#54889a,#00a499)", boxShadow:"0 8px 24px rgba(14,165,233,0.3)"}}>
                   <Plus className="w-4 h-4"/> {t("teams.create")}
                 </button>
               )}
@@ -5227,17 +5227,17 @@ export default function Muuvlink() {
     return (
     <div className="min-h-screen bg-slate-50">
       {/* ── Light green header ── */}
-      <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#e5f9f9 0%,#e5f9f9 60%,#cbf3f3 100%)"}}>
+      <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#eef4f6 0%,#eef4f6 60%,#d6e5e9 100%)"}}>
         <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
           style={{backgroundImage:"linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px)", backgroundSize:"50px 50px"}}/>
         <div className="absolute inset-0 pointer-events-none"
-          style={{background:"radial-gradient(ellipse at center,rgba(0,183,186,0.08) 0%,transparent 65%)"}}/>
+          style={{background:"radial-gradient(ellipse at center,rgba(17,73,86,0.08) 0%,transparent 65%)"}}/>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-8 py-12">
           <button onClick={() => setCurrentPage("profile")}
             className="flex items-center gap-2 text-sm font-semibold mb-6 transition-colors"
-            style={{color:"#009295"}}
-            onMouseEnter={e=>e.currentTarget.style.color="#006d6f"}
-            onMouseLeave={e=>e.currentTarget.style.color="#009295"}>
+            style={{color:"#0e3c47"}}
+            onMouseEnter={e=>e.currentTarget.style.color="#0b2f38"}
+            onMouseLeave={e=>e.currentTarget.style.color="#0e3c47"}>
             <ArrowLeft className="w-4 h-4"/> {t("common.back")}
           </button>
           <div className="flex items-end justify-between gap-6">
@@ -5253,7 +5253,7 @@ export default function Muuvlink() {
                 <div className="text-xs text-brand-600 font-semibold uppercase tracking-wider mt-1">{t("badges.earned")}</div>
               </div>
               <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
-                style={{background:"rgba(0,183,186,0.12)", border:"1px solid rgba(0,183,186,0.25)"}}>
+                style={{background:"rgba(17,73,86,0.12)", border:"1px solid rgba(17,73,86,0.25)"}}>
                 <Trophy className="w-7 h-7 text-brand-600"/>
               </div>
             </div>
@@ -5262,11 +5262,11 @@ export default function Muuvlink() {
           <div className="mt-8 max-w-md">
             <div className="flex justify-between text-xs font-medium text-brand-700 mb-2">
               <span>{t("badges.progress")}</span>
-              <span style={{color:"#009295"}}>{pctAll}%</span>
+              <span style={{color:"#0e3c47"}}>{pctAll}%</span>
             </div>
             <div className="h-1.5 bg-brand-100 rounded-full overflow-hidden">
               <div className="h-full rounded-full transition-all duration-700"
-                style={{width:`${pctAll}%`, background:"linear-gradient(90deg,#00b7ba,#009295)"}}/>
+                style={{width:`${pctAll}%`, background:"linear-gradient(90deg,#114956,#0e3c47)"}}/>
             </div>
           </div>
         </div>
@@ -5378,7 +5378,7 @@ export default function Muuvlink() {
 
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200">
           {/* BAŞLIK BLOĞU — kartın üstüne tam oturur */}
-          <div className="-mx-6 sm:-mx-8 -mt-6 sm:-mt-8 mb-6 rounded-t-3xl overflow-hidden bg-slate-900 text-white">
+          <div className="-mx-6 sm:-mx-8 -mt-6 sm:-mt-8 mb-6 rounded-t-3xl overflow-hidden bg-brand-600 text-white">
             {isPaid && selectedTraining.image_url && (
               <img src={selectedTraining.image_url} alt={selectedTraining.title}
                 className="w-full max-h-72 object-cover"/>
@@ -5387,7 +5387,7 @@ export default function Muuvlink() {
             {/* 1) Kimlik etiketleri — başlığın üstünde, sadece "bu ne" bilgisi */}
             <div className="flex flex-wrap items-center gap-2">
               {isPaid && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-brand-600 text-white">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-pop-400 text-ink-900">
                   <Ticket className="w-3.5 h-3.5"/> {t("trainings.paidBadge")}
                 </span>
               )}
@@ -5580,7 +5580,7 @@ export default function Muuvlink() {
 
                 <button type="submit"
                   className="w-full h-12 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 hover:shadow-lg"
-                  style={{background:"linear-gradient(135deg,#00b7ba,#009295)", boxShadow:"0 4px 14px rgba(0,183,186,0.3)"}}>
+                  style={{background:"linear-gradient(135deg,#114956,#0e3c47)", boxShadow:"0 4px 14px rgba(17,73,86,0.3)"}}>
                   {t("common.save")}
                 </button>
               </form>
@@ -5606,7 +5606,7 @@ export default function Muuvlink() {
                     />
                   ) : (
                     <div className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 border-2 border-white shadow-sm text-white text-lg font-bold"
-                      style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}>
+                      style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}>
                       {selectedTraining.team_name?.[0]?.toLocaleUpperCase("tr-TR") || <Users className="w-5 h-5 text-white" />}
                     </div>
                   )}
@@ -5629,7 +5629,7 @@ export default function Muuvlink() {
                       onClick={() => handleJoinTeam(selectedTraining.team_id)}
                       disabled={joiningTeamId === selectedTraining.team_id}
                       className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-60"
-                      style={{background:"linear-gradient(135deg,#00b7ba,#009295)", boxShadow:"0 2px 10px rgba(0,183,186,0.3)"}}
+                      style={{background:"linear-gradient(135deg,#114956,#0e3c47)", boxShadow:"0 2px 10px rgba(17,73,86,0.3)"}}
                     >
                       {joiningTeamId === selectedTraining.team_id
                         ? <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"/>
@@ -5641,7 +5641,7 @@ export default function Muuvlink() {
                   <button
                     onClick={() => { setAuthMode("login"); setIsAuthModalOpen(true); }}
                     className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all"
-                    style={{background:"linear-gradient(135deg,#00b7ba,#009295)", boxShadow:"0 2px 10px rgba(0,183,186,0.3)"}}
+                    style={{background:"linear-gradient(135deg,#114956,#0e3c47)", boxShadow:"0 2px 10px rgba(17,73,86,0.3)"}}
                   >
                     <UserPlus className="w-4 h-4"/>
                     {t("teamDetail.joinTeam")}
@@ -5698,7 +5698,7 @@ export default function Muuvlink() {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white"
-                      style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}
+                      style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}
                     >
                       <MapPin className="w-3 h-3" />
                       {t("common.navigate")}
@@ -5787,7 +5787,7 @@ export default function Muuvlink() {
                   />
                   <button
                     type="submit"
-                    className="px-6 bg-brand-600 text-white rounded-xl font-semibold hover:bg-brand-700 flex items-center justify-center self-stretch"
+                    className="px-6 bg-brand-600 text-white rounded-xl font-semibold hover:bg-pop-400 hover:text-brand-600 flex items-center justify-center self-stretch"
                   >
                     <Send className="w-5 h-5" />
                   </button>
@@ -5861,7 +5861,7 @@ export default function Muuvlink() {
             <button
               onClick={() => handleRegisterClick(selectedTraining)}
               className="w-full py-4 font-semibold text-white rounded-xl transition hover:opacity-90 hover:shadow-lg flex items-center justify-center gap-2"
-              style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}
+              style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}
             >
               <Ticket className="w-5 h-5"/> {t("trainingDetail.registerBtn")}
             </button>
@@ -5869,11 +5869,11 @@ export default function Muuvlink() {
           ) : !user ? (
             <div className="rounded-2xl overflow-hidden border border-brand-100 shadow-sm">
               {/* Üst gradient şerit */}
-              <div className="h-1.5" style={{background:"linear-gradient(90deg,#00b7ba,#981dd8,#00b7ba)"}}/>
+              <div className="h-1.5" style={{background:"linear-gradient(90deg,#00a499,#643e87,#00a499)"}}/>
               <div className="p-6 bg-gradient-to-br from-brand-50 to-brand-50">
                 <div className="text-center mb-5">
                   <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-md"
-                    style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}>
+                    style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}>
                     <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
                     </svg>
@@ -5901,7 +5901,7 @@ export default function Muuvlink() {
                   <button
                     onClick={() => { setAuthMode("register"); setIsAuthModalOpen(true); }}
                     className="flex-1 py-3 font-semibold text-white text-sm rounded-xl transition hover:opacity-90 hover:shadow-lg"
-                    style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}
+                    style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}
                   >
                     {t("home.ctaBtn")}
                   </button>
@@ -5938,7 +5938,7 @@ export default function Muuvlink() {
               onClick={() => handleJoinTraining(selectedTraining.id)}
               disabled={joiningTrainingId === selectedTraining.id}
               className="w-full py-4 font-semibold text-white rounded-xl transition hover:opacity-90 hover:shadow-lg disabled:opacity-60"
-              style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}
+              style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}
             >
               {joiningTrainingId === selectedTraining.id
                 ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>{t("trainings.joining")}</span>
@@ -6018,13 +6018,13 @@ export default function Muuvlink() {
         </button>
 
         {/* HEADER KARTI */}
-        <div className="relative rounded-3xl overflow-hidden mb-4 bg-slate-900 text-white">
+        <div className="relative rounded-3xl overflow-hidden mb-4 bg-brand-600 text-white">
           <div className="px-5 sm:px-8 pt-6 sm:pt-7 pb-5 sm:pb-6">
             {/* üst satır */}
             <div className="flex items-start gap-4">
               <div className="flex items-start gap-3.5 sm:gap-4 min-w-0 flex-1">
                 <div className="relative w-14 h-14 sm:w-16 sm:h-16 flex-shrink-0">
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 bg-brand-600 rounded-2xl overflow-hidden flex items-center justify-center text-white text-2xl font-bold">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 bg-white/10 ring-1 ring-white/20 rounded-2xl overflow-hidden flex items-center justify-center text-white text-2xl font-bold">
                     {(selectedTeam.avatar?.startsWith("/uploads/") || selectedTeam.avatar?.startsWith("http"))
                       ? <img src={selectedTeam.avatar.startsWith("http") ? selectedTeam.avatar : `${BASE_URL}${selectedTeam.avatar}`} alt="" className="w-full h-full object-cover" />
                       : (selectedTeam.name?.[0]?.toLocaleUpperCase("en-US") || "T")}
@@ -6056,7 +6056,7 @@ export default function Muuvlink() {
                     const roleLabels = { owner: t("teamDetail.roles.owner"), editor: t("teamDetail.roles.editor"), coach: t("teamDetail.roles.coach"), captain: t("teamDetail.roles.captain"), member: t("teamDetail.roles.member") };
                     const RoleIcon = roleIcons[myRole] || User;
                     return (
-                      <span className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand-600 text-white text-[11px] font-bold uppercase tracking-wide">
+                      <span className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-pop-400 text-ink-900 text-[11px] font-bold uppercase tracking-wide">
                         <RoleIcon className="w-3 h-3"/>{roleLabels[myRole] || myRole}
                       </span>
                     );
@@ -6100,7 +6100,7 @@ export default function Muuvlink() {
               {canManage && (
                 <HoverTip text={t("tips.inviteTeam")} align="left" className="col-span-2 sm:col-span-1">
                   <button onClick={() => setShowInviteModal(true)}
-                    className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 bg-brand-600 text-white hover:bg-brand-700 rounded-xl text-sm font-bold transition-colors">
+                    className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 bg-pop-400 text-ink-900 hover:bg-pop-300 rounded-xl text-sm font-bold transition-colors">
                     <UserPlus className="w-4 h-4" /> {t("teamDetail.invite")}
                   </button>
                 </HoverTip>
@@ -6145,7 +6145,7 @@ export default function Muuvlink() {
         {!isMember && !selectedTeam.is_private && (
           <button onClick={() => handleJoinTeam(selectedTeam.id)}
             disabled={joiningTeamId === selectedTeam.id}
-            className="w-full h-14 mb-4 bg-brand-600 hover:bg-brand-700 text-white rounded-2xl font-bold text-base shadow-lg shadow-brand-600/20 transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
+            className="w-full h-14 mb-4 bg-pop-400 hover:bg-pop-300 text-ink-900 rounded-2xl font-bold text-base transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
             {joiningTeamId === selectedTeam.id
               ? <><Loader2 className="w-5 h-5 animate-spin" /> {t("teams.joining")}</>
               : <><UserPlus className="w-5 h-5" /> {t("teamDetail.joinTeam")}</>}
@@ -6182,7 +6182,7 @@ export default function Muuvlink() {
                     rows={2}
                     className="flex-1 w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition-colors resize-y leading-relaxed min-h-[46px]" />
                   <button type="submit"
-                    className="px-5 bg-brand-600 text-white rounded-xl hover:bg-brand-700 transition-colors flex items-center justify-center self-stretch">
+                    className="px-5 bg-brand-600 text-white rounded-xl hover:bg-pop-400 hover:text-brand-600 transition-colors flex items-center justify-center self-stretch">
                     <Send className="w-4 h-4" />
                   </button>
                 </div>
@@ -6412,7 +6412,7 @@ export default function Muuvlink() {
 
               <div className="flex gap-3 pt-1">
                 <button type="submit"
-                  className="flex-1 h-12 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-semibold transition-colors">
+                  className="flex-1 h-12 bg-brand-600 hover:bg-pop-400 hover:text-brand-600 text-white rounded-xl font-semibold transition-colors">
                   {t("common.save")}
                 </button>
                 {isOwner && (
@@ -6730,7 +6730,7 @@ export default function Muuvlink() {
               type="submit"
               disabled={isSubmitting}
               className="flex-1 h-12 rounded-xl text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:opacity-90 hover:shadow-lg flex items-center justify-center gap-2"
-              style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}
+              style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}
             >
               {isSubmitting && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
               {isSubmitting ? t("createTraining.submitting") : t("createTraining.submitBtn")}
@@ -6860,7 +6860,7 @@ export default function Muuvlink() {
               <button
                 type="submit"
                 className="flex-1 h-12 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 hover:shadow-lg"
-                style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}
+                style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}
               >
                 {t("createTeam.submitBtn")}
               </button>
@@ -6915,7 +6915,7 @@ export default function Muuvlink() {
         <div className="bg-white rounded-3xl shadow-xl max-w-md w-full p-8">
           <div className="text-center mb-8">
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-              style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}>
+              style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}>
               <Lock className="w-8 h-8 text-white"/>
             </div>
             <h1 className="text-2xl font-medium text-slate-900">{t("reset.title")}</h1>
@@ -7154,7 +7154,7 @@ export default function Muuvlink() {
               <div className="flex flex-col items-center gap-3 pb-2">
                 <div className="relative">
                   <div className="w-24 h-24 rounded-2xl overflow-hidden flex items-center justify-center text-white text-3xl font-bold shadow-lg"
-                    style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}>
+                    style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}>
                     {(formData.avatar?.startsWith("/uploads/") || formData.avatar?.startsWith("http")) ? (
                       <img src={formData.avatar.startsWith("http") ? formData.avatar : `${BASE_URL}${formData.avatar}`} alt="avatar" className="w-full h-full object-cover" />
                     ) : (
@@ -7323,14 +7323,14 @@ export default function Muuvlink() {
         onClick={() => setCurrentPage(page)}
         data-tour={page === "teams" ? "teams-tab" : undefined}
         className="relative text-sm font-medium tracking-wide transition-all duration-200"
-        style={{color: isActive(page) ? "#009295" : "#64748b"}}
-        onMouseEnter={e=>{ if(!isActive(page)) e.currentTarget.style.color="#006d6f"; }}
+        style={{color: isActive(page) ? "#0e3c47" : "#64748b"}}
+        onMouseEnter={e=>{ if(!isActive(page)) e.currentTarget.style.color="#0b2f38"; }}
         onMouseLeave={e=>{ if(!isActive(page)) e.currentTarget.style.color="#64748b"; }}
       >
         {label}
         <span className="absolute -bottom-[24px] left-0 right-0 h-0.5 rounded-full transition-all duration-300"
           style={{
-            background:"linear-gradient(90deg,#00b7ba,#22C55E)",
+            background:"linear-gradient(90deg,#114956,#22C55E)",
             opacity: isActive(page) ? 1 : 0,
             transform: isActive(page) ? "scaleX(1)" : "scaleX(0)",
           }}/>
@@ -7344,8 +7344,8 @@ export default function Muuvlink() {
         data-tour={page === "teams" ? "teams-tab-mobile" : undefined}
         className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-sm font-medium transition-colors"
         style={{
-          background: isActive(page) ? "linear-gradient(135deg,#e5f9f9,#e5f9f9)" : "transparent",
-          color: isActive(page) ? "#009295" : "#475569",
+          background: isActive(page) ? "linear-gradient(135deg,#eef4f6,#eef4f6)" : "transparent",
+          color: isActive(page) ? "#0e3c47" : "#475569",
         }}
       >
         {icon}
@@ -7397,11 +7397,11 @@ export default function Muuvlink() {
                       <button key={code}
                         onClick={() => { changeLang(code); setLangDropOpen(false); }}
                         className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-left transition-colors hover:bg-slate-50"
-                        style={lang === code ? {background:"rgba(0,183,186,0.07)", color:"#009295", fontWeight:600} : {color:"#475569"}}
+                        style={lang === code ? {background:"rgba(17,73,86,0.07)", color:"#0e3c47", fontWeight:600} : {color:"#475569"}}
                       >
                         <span className="text-[10px] font-bold tracking-widest w-6 text-slate-400">{code.toLocaleUpperCase("en-US")}</span>
                         <span className="flex-1">{label}</span>
-                        {lang === code && <Check className="w-3.5 h-3.5 flex-shrink-0" style={{color:"#00b7ba"}}/>}
+                        {lang === code && <Check className="w-3.5 h-3.5 flex-shrink-0" style={{color:"#114956"}}/>}
                       </button>
                     ))}
                   </div>
@@ -7413,7 +7413,7 @@ export default function Muuvlink() {
                   <button
                     onClick={() => setCurrentPage("create-training")}
                     className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium text-white transition-all hover:opacity-90 hover:shadow-lg"
-                    style={{background:"linear-gradient(135deg,#00b7ba,#009295)", boxShadow:"0 4px 14px rgba(0,183,186,0.3)"}}
+                    style={{background:"linear-gradient(135deg,#114956,#0e3c47)", boxShadow:"0 4px 14px rgba(17,73,86,0.3)"}}
                   >
                     <Plus className="w-4 h-4" /> {t("nav.createTraining")}
                   </button>
@@ -7434,7 +7434,7 @@ export default function Muuvlink() {
                   <button onClick={() => setCurrentPage("profile")}
                     className="flex items-center gap-2 pl-1 pr-3 py-1.5 rounded-xl hover:bg-slate-100 transition-colors">
                     <div className="w-7 h-7 rounded-lg overflow-hidden flex items-center justify-center text-white font-medium text-xs flex-shrink-0"
-                      style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}>
+                      style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}>
                       {(user.avatar?.startsWith("/uploads/") || user.avatar?.startsWith("http")) ? (
                         <img src={user.avatar.startsWith("http") ? user.avatar : `${BASE_URL}${user.avatar}`} alt="" className="w-full h-full object-cover" />
                       ) : (
@@ -7460,7 +7460,7 @@ export default function Muuvlink() {
                   <button
                     onClick={() => { setAuthMode("register"); setIsAuthModalOpen(true); }}
                     className="px-5 py-2.5 rounded-xl text-sm font-medium text-white transition-all hover:opacity-90 hover:shadow-lg"
-                    style={{background:"linear-gradient(135deg,#00b7ba,#009295)", boxShadow:"0 4px 14px rgba(0,183,186,0.3)"}}
+                    style={{background:"linear-gradient(135deg,#114956,#0e3c47)", boxShadow:"0 4px 14px rgba(17,73,86,0.3)"}}
                   >
                     {t("nav.register")}
                   </button>
@@ -7509,7 +7509,7 @@ export default function Muuvlink() {
                   <button
                     onClick={() => { setCurrentPage("create-training"); setMobileOpen(false); }}
                     className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-sm font-medium text-white transition-all"
-                    style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}
+                    style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}
                   >
                     <Plus className="w-4 h-4"/> {t("nav.createTrainingFull")}
                   </button>
@@ -7518,7 +7518,7 @@ export default function Muuvlink() {
                     className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
                   >
                     <div className="w-5 h-5 rounded-md overflow-hidden flex items-center justify-center text-white text-[10px] font-medium flex-shrink-0"
-                      style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}>
+                      style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}>
                       {(user.avatar?.startsWith("/uploads/") || user.avatar?.startsWith("http")) ? (
                         <img src={user.avatar.startsWith("http") ? user.avatar : `${BASE_URL}${user.avatar}`} alt="" className="w-full h-full object-cover" />
                       ) : (user.avatar || user.name[0].toLocaleUpperCase("en-US"))}
@@ -7544,7 +7544,7 @@ export default function Muuvlink() {
                     <button
                       onClick={() => { setAuthMode("register"); setIsAuthModalOpen(true); setMobileOpen(false); }}
                       className="flex-1 py-3 rounded-xl text-sm font-medium text-white transition-all"
-                      style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}
+                      style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}
                     >
                       {t("nav.register")}
                     </button>
@@ -7565,11 +7565,11 @@ export default function Muuvlink() {
                           onClick={() => { changeLang(code); setMobileOpen(false); }}
                           className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl text-sm text-left transition-colors"
                           style={lang === code
-                            ? {background:"rgba(0,183,186,0.07)", color:"#009295", fontWeight:600}
+                            ? {background:"rgba(17,73,86,0.07)", color:"#0e3c47", fontWeight:600}
                             : {color:"#475569"}}>
                           <span className="text-[10px] font-bold tracking-widest w-6 text-slate-400">{code.toLocaleUpperCase("en-US")}</span>
                           <span className="flex-1">{label}</span>
-                          {lang === code && <Check className="w-3.5 h-3.5 flex-shrink-0" style={{color:"#00b7ba"}}/>}
+                          {lang === code && <Check className="w-3.5 h-3.5 flex-shrink-0" style={{color:"#114956"}}/>}
                         </button>
                       ))}
                     </div>
@@ -7624,15 +7624,15 @@ export default function Muuvlink() {
     return (
       <div className="min-h-screen bg-slate-50">
         {/* ── Header ── */}
-        <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#e5f9f9 0%,#e5f9f9 60%,#cbf3f3 100%)"}}>
+        <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#eef4f6 0%,#eef4f6 60%,#d6e5e9 100%)"}}>
           <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
             style={{backgroundImage:"linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px)", backgroundSize:"50px 50px"}}/>
           <div className="absolute inset-0 pointer-events-none"
-            style={{background:"radial-gradient(ellipse at center,rgba(0,183,186,0.15) 0%,transparent 65%)"}}/>
+            style={{background:"radial-gradient(ellipse at center,rgba(17,73,86,0.15) 0%,transparent 65%)"}}/>
           <div className="relative max-w-7xl mx-auto px-4 sm:px-8 py-14 text-center">
             <div className="w-16 h-16 rounded-2xl mx-auto mb-5 flex items-center justify-center"
-              style={{background:"rgba(0,183,186,0.15)", border:"1px solid rgba(0,183,186,0.3)"}}>
-              <MessageCircle className="w-8 h-8" style={{color:"#00b7ba"}}/>
+              style={{background:"rgba(17,73,86,0.15)", border:"1px solid rgba(17,73,86,0.3)"}}>
+              <MessageCircle className="w-8 h-8" style={{color:"#114956"}}/>
             </div>
             <span className="section-label block mb-3">{t("contact.support")}</span>
             <h1 className="font-display font-bold text-brand-900 leading-none mb-4" style={{fontSize:"clamp(3.5rem,8vw,5.5rem)", letterSpacing:"-0.02em"}}>{t("contact.pageTitle")}</h1>
@@ -7692,11 +7692,11 @@ export default function Muuvlink() {
               </div>
 
               {/* Bilgi notu */}
-              <div className="rounded-2xl p-5 border border-brand-100" style={{background:"linear-gradient(135deg,#e5f9f9,#f0fdfd)"}}>
+              <div className="rounded-2xl p-5 border border-brand-100" style={{background:"linear-gradient(135deg,#eef4f6,#f4f8f9)"}}>
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
-                    style={{background:"rgba(0,183,186,0.15)"}}>
-                    <MessageCircle className="w-4 h-4" style={{color:"#00b7ba"}}/>
+                    style={{background:"rgba(17,73,86,0.15)"}}>
+                    <MessageCircle className="w-4 h-4" style={{color:"#114956"}}/>
                   </div>
                   <div>
                     <div className="font-display font-bold text-brand-900 text-sm mb-1">{t("contact.quickReply")}</div>
@@ -7783,17 +7783,17 @@ export default function Muuvlink() {
                 <div className="space-y-2">
                   {faqs.map((faq, i) => (
                     <div key={i} className="border border-slate-100 rounded-xl overflow-hidden transition-all duration-200"
-                      style={openFaq === i ? {borderColor:"#cbf3f3", boxShadow:"0 0 0 3px rgba(0,183,186,0.07)"} : {}}>
+                      style={openFaq === i ? {borderColor:"#d6e5e9", boxShadow:"0 0 0 3px rgba(17,73,86,0.07)"} : {}}>
                       <button
                         onClick={() => setOpenFaq(openFaq === i ? null : i)}
                         className="w-full flex items-center justify-between px-5 py-4 text-left transition-colors"
-                        style={openFaq === i ? {background:"#f0fdfd"} : {}}
+                        style={openFaq === i ? {background:"#f4f8f9"} : {}}
                         onMouseEnter={e => { if (openFaq !== i) e.currentTarget.style.background = "#f8fafc"; }}
                         onMouseLeave={e => { if (openFaq !== i) e.currentTarget.style.background = ""; }}
                       >
                         <span className="font-semibold text-slate-800 text-sm pr-4">{faq.q}</span>
                         <ChevronDown className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 ${openFaq === i ? "rotate-180" : "text-slate-400"}`}
-                          style={openFaq === i ? {color:"#00b7ba"} : {}}/>
+                          style={openFaq === i ? {color:"#114956"} : {}}/>
                       </button>
                       {openFaq === i && (
                         <div className="px-5 pb-5 border-t border-brand-100">
@@ -7810,7 +7810,7 @@ export default function Muuvlink() {
           {/* İndirme CTA — yalnızca web */}
           {!isNative && (
             <div className="mt-10 rounded-3xl overflow-hidden relative"
-              style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}>
+              style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}>
               <div className="px-8 py-10 sm:px-12 sm:py-12 flex flex-col md:flex-row items-center justify-between gap-8 text-white">
                 <div className="text-center md:text-left max-w-lg">
                   <h2 className="font-display font-bold leading-tight mb-2" style={{fontSize:"clamp(1.6rem,3vw,2.2rem)"}}>
@@ -8004,7 +8004,7 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
           <div
             className="overflow-y-auto px-6 py-5 text-sm text-slate-600 leading-relaxed space-y-3 prose prose-sm max-w-none"
             dangerouslySetInnerHTML={{__html: content.body}}
-            style={{"--tw-prose-headings":"#1e293b","--tw-prose-links":"#981dd8"}}
+            style={{"--tw-prose-headings":"#1e293b","--tw-prose-links":"#643e87"}}
           />
         </div>
       </div>
@@ -8018,7 +8018,7 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
     if (isNative) return null;
     if (cookieConsent) return null;
     return (
-      <div className="fixed left-0 right-0 z-[250] bg-slate-900/95 backdrop-blur-sm border-t border-slate-700 px-4 py-4 shadow-2xl"
+      <div className="fixed left-0 right-0 z-[250] bg-brand-700/95 backdrop-blur-sm border-t border-white/10 px-4 py-4 shadow-2xl"
         style={isNative ? {bottom:"calc(env(safe-area-inset-bottom) + 64px)"} : {bottom:0}}>
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <div className="flex-1 text-sm text-slate-300 leading-relaxed">
@@ -8031,14 +8031,14 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
           <div className="flex items-center gap-3 flex-shrink-0">
             <button
               onClick={() => setLegalModal("cerez")}
-              className="px-4 py-2 rounded-xl text-sm font-medium text-slate-300 hover:text-white border border-slate-600 hover:border-slate-400 transition-colors"
+              className="px-4 py-2 rounded-xl text-sm font-medium text-white/80 hover:text-white border border-white/25 hover:border-white/50 transition-colors"
             >
               {t("cookie.details")}
             </button>
             <button
               onClick={() => { setCookieConsent(true); localStorage.setItem("cookieConsent", "true"); }}
-              className="px-5 py-2 rounded-xl text-sm font-medium text-white transition-all hover:opacity-90"
-              style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}
+              className="px-5 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-90"
+              style={{background:"#F4F818", color:"#1F2121"}}
             >
               {t("cookie.accept")}
             </button>
@@ -8097,7 +8097,7 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
     ));
 
     return (
-      <footer className="bg-slate-900 text-white mt-16">
+      <footer className="bg-brand-700 text-white mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
 
@@ -8164,7 +8164,7 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
                 <button
                   onClick={() => setCurrentPage("contact")}
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
-                  style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}
+                  style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}
                 >
                   <MessageCircle className="w-4 h-4" /> {t("footer.reach")}
                 </button>
@@ -8205,7 +8205,7 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
         {/* Büyük 404 */}
         <div className="relative mb-8">
           <div className="text-[10rem] font-black leading-none select-none"
-            style={{ background: "linear-gradient(135deg, #981dd8 0%, #00b7ba 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+            style={{ background: "linear-gradient(135deg, #643e87 0%, #114956 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
             404
           </div>
           <div className="absolute inset-0 flex items-center justify-center">
@@ -8225,7 +8225,7 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <button
             onClick={() => setCurrentPage("home")}
-            className="px-6 py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold transition-all shadow-lg shadow-brand-200 hover:shadow-brand-300 hover:-translate-y-0.5 active:translate-y-0"
+            className="px-6 py-3 rounded-xl bg-brand-600 hover:bg-pop-400 hover:text-brand-600 text-white font-semibold transition-all shadow-lg shadow-brand-200 hover:shadow-brand-300 hover:-translate-y-0.5 active:translate-y-0"
           >
             {t("notFound.btn")}
           </button>
@@ -8282,7 +8282,7 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
               <button key={tab.key} onClick={() => { triggerHaptic("light"); setCurrentPage(tab.key); }}
                 data-tour={tab.key === "teams" ? "teams-tab-bottom" : undefined}
                 className="flex-1 flex flex-col items-center gap-1 py-3 transition-all"
-                style={{color: active ? "#00b7ba" : "#94a3b8"}}>
+                style={{color: active ? "#114956" : "#94a3b8"}}>
                 <div className="relative" style={{transform: active ? "scale(1.1)" : "scale(1)", transition:"transform 0.15s"}}>
                   {tab.icon}
                   {/* Profil ikonunda okunmamış bildirim kırmızı noktası */}
@@ -8333,7 +8333,7 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
           </div>
           <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer"
             className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white active:scale-95 transition"
-            style={{ background: "linear-gradient(135deg,#00b7ba,#009295)" }}>
+            style={{ background: "linear-gradient(135deg,#114956,#0e3c47)" }}>
             <Download className="w-4 h-4" /> İndir
           </a>
           <button onClick={dismiss} aria-label="Kapat" className="flex-shrink-0 p-1.5 text-slate-400 hover:text-slate-600">

@@ -14,10 +14,10 @@ L.Icon.Default.mergeOptions({
 });
 
 const SPORT_COLORS = {
-  Koşu:"#00b7ba", Bisiklet:"#009295", Yüzme:"#0284c7", Futbol:"#16a34a",
+  Koşu:"#114956", Bisiklet:"#0e3c47", Yüzme:"#0e3c47", Futbol:"#16a34a",
   Basketbol:"#d97706", Voleybol:"#7c3aed", Tenis:"#b45309", Padel:"#b45309",
-  Yoga:"#9333ea", Pilates:"#db2777", Crossfit:"#dc2626", Triatlon:"#0891b2",
-  Kano:"#0369a1", Kürek:"#1d4ed8", Trekking:"#15803d", Diğer:"#00b7ba",
+  Yoga:"#9333ea", Pilates:"#db2777", Crossfit:"#dc2626", Triatlon:"#0e3c47",
+  Kano:"#0369a1", Kürek:"#1d4ed8", Trekking:"#15803d", Diğer:"#114956",
 };
 
 const makeTrainingIcon = (color, letter, highlight = false) => {
@@ -130,14 +130,14 @@ const TrainingsMapView = ({ trainings, onSelectTraining, t, containerStyle }) =>
           {mapped.length}/{trainings.length} {t ? t("map.trainingsOnMap") : "trainings on map"}
         </div>
       )}
-      <div className="absolute top-3 right-3 z-[1000] flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/90 backdrop-blur border border-slate-200 shadow-sm" style={{ color:"#009295" }}>
+      <div className="absolute top-3 right-3 z-[1000] flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/90 backdrop-blur border border-slate-200 shadow-sm" style={{ color:"#0e3c47" }}>
         <Activity className="w-3.5 h-3.5"/>
         {mapped.length} {t ? t("map.trainingsCount") : "trainings"}
       </div>
 
       {mapped.length === 0 ? (
         <div className="h-full flex flex-col items-center justify-center bg-slate-50 gap-4">
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background:"rgba(0,183,186,0.1)" }}>
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background:"rgba(17,73,86,0.1)" }}>
             <MapPin className="w-8 h-8 text-brand-400"/>
           </div>
           <p className="text-slate-500 font-medium text-sm">{t ? t("map.noLocationData") : "No location data"}</p>
@@ -154,7 +154,7 @@ const TrainingsMapView = ({ trainings, onSelectTraining, t, containerStyle }) =>
           <FitBoundsToTrainings trainings={mapped}/>
           {mapped.map(tr => {
             const teamLetter = (tr.team_name || tr.team_sport || "T").charAt(0).toLocaleUpperCase("en-US");
-            const teamColor  = tr.is_paid ? PAID_COLOR : (teamColors[tr.team_id] || SPORT_COLORS[tr.sport || tr.team_sport] || "#00b7ba");
+            const teamColor  = tr.is_paid ? PAID_COLOR : (teamColors[tr.team_id] || SPORT_COLORS[tr.sport || tr.team_sport] || "#114956");
             const icon = tr.is_paid
               ? makePaidIcon(tr.title, active === tr.id)
               : makeTrainingIcon(teamColor, teamLetter, active === tr.id);
@@ -170,7 +170,7 @@ const TrainingsMapView = ({ trainings, onSelectTraining, t, containerStyle }) =>
                     <div style={{ display:"flex", gap:"8px", alignItems:"flex-start" }}>
                       <div style={{ flex:"1 1 auto", minWidth:0 }}>
                         <div style={{ display:"flex", alignItems:"center", gap:"6px", marginBottom:"8px", flexWrap:"wrap" }}>
-                          {tr.is_paid && <span style={{ display:"inline-block", padding:"2px 8px", background:"#00b7ba", color:"#fff", borderRadius:"6px", fontSize:"11px", fontWeight:800 }}>Ücretli</span>}
+                          {tr.is_paid && <span style={{ display:"inline-block", padding:"2px 8px", background:"#114956", color:"#fff", borderRadius:"6px", fontSize:"11px", fontWeight:800 }}>Ücretli</span>}
                           <span style={{ display:"inline-block", padding:"2px 8px", background:`${teamColor}18`, color:teamColor, borderRadius:"6px", fontSize:"11px", fontWeight:700 }}>{tr.sport || tr.team_sport || "Spor"}</span>
                           {!tr.is_paid && tr.difficulty && <span style={{ fontSize:"11px", color:"#94a3b8" }}>{tr.difficulty}</span>}
                         </div>

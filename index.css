@@ -15,6 +15,8 @@
   }
 
   body {
+    background-color: #F4F4F4; /* 04 White Smoke */
+    color: #1F2121;            /* 03 Carbon Black */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
@@ -48,7 +50,7 @@
   }
 
   /* Firefox scrollbar */
-  * { scrollbar-width: thin; scrollbar-color: rgba(0,183,186,0.30) transparent; }
+  * { scrollbar-width: thin; scrollbar-color: rgba(17,73,86,0.30) transparent; }
 
   /* iOS zoom engelleyici — font-size 16px altındaki inputlar WebKit'te otomatik zoom yapar */
   input, textarea, select {
@@ -104,16 +106,19 @@
   .btn-primary {
     @apply relative inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-white text-sm
            transition-all duration-200 select-none overflow-hidden;
-    background: linear-gradient(135deg, #00b7ba, #009295);
-    box-shadow: 0 4px 14px rgba(0,183,186,0.35);
+    background: linear-gradient(135deg, #114956, #0e3c47);
+    box-shadow: 0 4px 14px rgba(17,73,86,0.35);
   }
+  /* Hover'da palet tersine döner: 02 sarı zemin + 01 deep teal metin */
   .btn-primary:hover {
-    box-shadow: 0 8px 28px rgba(0,183,186,0.45);
+    background: #F4F818;
+    color: #114956;
+    box-shadow: 0 8px 28px rgba(17,73,86,0.28);
     transform: translateY(-1px);
   }
   .btn-primary:active {
     transform: scale(0.97) translateY(0);
-    box-shadow: 0 2px 8px rgba(0,183,186,0.25);
+    box-shadow: 0 2px 8px rgba(17,73,86,0.25);
   }
 
   /* Ghost buton */
@@ -190,7 +195,7 @@
 input:focus, select:focus, textarea:focus {
   outline: none !important;
   border-color: #2fcfd0 !important;
-  box-shadow: 0 0 0 3px rgba(0,183,186,0.15) !important;
+  box-shadow: 0 0 0 3px rgba(17,73,86,0.15) !important;
   transition: box-shadow 0.15s ease, border-color 0.15s ease;
 }
 
@@ -224,8 +229,8 @@ input:focus, select:focus, textarea:focus {
 }
 
 @keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(0,183,186,0.4); }
-  50%       { box-shadow: 0 0 0 8px rgba(0,183,186,0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(17,73,86,0.4); }
+  50%       { box-shadow: 0 0 0 8px rgba(17,73,86,0); }
 }
 
 @keyframes gradientShift {
@@ -380,13 +385,13 @@ input:focus, select:focus, textarea:focus {
    GRADIENT TEXT UTILITY
 ───────────────────────────────────────────── */
 .text-gradient-brand {
-  background: linear-gradient(90deg, #00b7ba, #009295);
+  background: linear-gradient(90deg, #114956, #0e3c47);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 .text-gradient-vivid {
-  background: linear-gradient(90deg, #00b7ba, #981dd8);
+  background: linear-gradient(90deg, #114956, #643e87);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -396,7 +401,7 @@ input:focus, select:focus, textarea:focus {
    FOCUS VISIBLE — keyboard accessibility
 ───────────────────────────────────────────── */
 :focus-visible {
-  outline: 2px solid #00b7ba;
+  outline: 2px solid #114956;
   outline-offset: 2px;
   border-radius: 6px;
 }
