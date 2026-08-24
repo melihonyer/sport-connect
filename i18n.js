@@ -129,9 +129,9 @@ export const translations = {
       de: "Teile dein Event. Je mehr Leute es sehen, desto schneller füllt es sich.",
     },
     shareTeamMobile: {
-      tr: "Takımı paylaştıkça üye artar; her yeni üye açtığın etkinlikleri anında görür.",
-      en: "The more you share your team, the more members you get — and each one sees your events instantly.",
-      de: "Je mehr du dein Team teilst, desto mehr Mitglieder — und jedes sieht deine Events sofort.",
+      tr: "Paylaştıkça üye artar, her yeni üye etkinliklerini anında görür.",
+      en: "More sharing means more members — and each one sees your events instantly.",
+      de: "Mehr Teilen heißt mehr Mitglieder — und jedes sieht deine Events sofort.",
     },
     shareTrainingMobile: {
       tr: "Etkinliği paylaştıkça daha çok kişi görür, kontenjan daha hızlı dolar.",
