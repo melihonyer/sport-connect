@@ -138,7 +138,8 @@ const live = {
   presence: new Map(), // userId -> { ts, label }
   visitors: new Map(), // visitorHash -> { ts, label }
 };
-const liveUserNames = new Map(); // userId -> name (tembel doldurulur)
+const liveUserNames = new Map();     // userId -> name (tembel doldurulur)
+const liveEntityNames = new Map();   // "team:12" | "training:107" | "user:3" -> ad
 const LIVE_VISITOR_SALT = crypto.randomBytes(16).toString('hex');
 const liveVisitorId = (req) => crypto.createHash('sha256')
   .update(LIVE_VISITOR_SALT + (req.ip || '') + (req.headers['user-agent'] || ''))
@@ -172,6 +173,30 @@ function liveDescribe(method, p) {
   return null;
 }
 
+// İstemci türü — User-Agent'tan. Sunucu günlüklerindeki gerçek trafiğe bakılarak yazıldı:
+// Capacitor iOS (WKWebView) "Mobile/15E148" ile biter ve Safari/CriOS token'ı taşımaz;
+// Capacitor Android (WebView) UA'sında "wv" işareti bulunur. Tarayıcılarda ikisi de vardır.
+function livePlatform(ua) {
+  const s = String(ua || '');
+  if (!s) return 'unknown';
+  if (/bot|crawler|spider|uptimerobot|slurp|bingpreview|headlesschrome|python-requests|curl\/|wget/i.test(s)) return 'bot';
+  if (/;\s*wv\)/i.test(s)) return 'android-app';
+  if (/iPhone|iPad|iPod/i.test(s)) {
+    return (!/Safari\//.test(s) && !/CriOS\//.test(s) && !/FxiOS\//.test(s)) ? 'ios-app' : 'ios-web';
+  }
+  if (/Android/i.test(s)) return 'android-web';
+  if (/Macintosh|Windows|X11|Linux/i.test(s)) return 'desktop';
+  return 'unknown';
+}
+
+// Bakılan kayıt: /teams/12 → { t:'team', id:12 }. İsimler okuma anında çözülür.
+const LIVE_ENTITY_RE = /^\/(teams|trainings|users)\/(\d+)/;
+function liveEntity(p) {
+  const m = LIVE_ENTITY_RE.exec(p);
+  if (!m) return null;
+  return { t: { teams: 'team', trainings: 'training', users: 'user' }[m[1]], id: Number(m[2]) };
+}
+
 app.use('/api', (req, res, next) => {
   try {
     const p = req.path;
@@ -196,11 +221,18 @@ app.use('/api', (req, res, next) => {
     if (userId) bucket.users.add(userId); else bucket.visitors.add(vid);
 
     const label = liveDescribe(req.method, p);
-    if (userId) live.presence.set(userId, { ts: now, label: label || live.presence.get(userId)?.label || null });
-    else live.visitors.set(vid, { ts: now, label: label || live.visitors.get(vid)?.label || null });
+    const plat = livePlatform(req.headers['user-agent']);
+    const entity = liveEntity(p);
+    if (userId) {
+      const prev = live.presence.get(userId);
+      live.presence.set(userId, { ts: now, plat, label: label || prev?.label || null, entity: entity || (label ? null : prev?.entity) || null });
+    } else {
+      const prev = live.visitors.get(vid);
+      live.visitors.set(vid, { ts: now, plat, label: label || prev?.label || null });
+    }
 
     if (label) {
-      live.feed.unshift({ ts: now, userId, vid, label, path: p });
+      live.feed.unshift({ ts: now, userId, vid, label, path: p, plat, entity });
       if (live.feed.length > LIVE_FEED_MAX) live.feed.length = LIVE_FEED_MAX;
     }
   } catch { /* izleme asla isteği bozmasın */ }
@@ -5090,6 +5122,25 @@ app.get('/api/admin/live', isAdmin, async (req, res) => {
     }
     const nameOf = (id) => liveUserNames.get(id) || `#${id}`;
 
+    // Bakılan takım/etkinlik/profil adlarını çöz (yalnızca önbellekte olmayanlar sorgulanır)
+    const wanted = { team: new Set(), training: new Set(), user: new Set() };
+    const wantEntity = (e) => { if (e && wanted[e.t] && !liveEntityNames.has(`${e.t}:${e.id}`)) wanted[e.t].add(e.id); };
+    for (const f of live.feed.slice(0, 60)) wantEntity(f.entity);
+    for (const v of live.presence.values()) wantEntity(v.entity);
+    const entityQueries = [
+      ['team', 'SELECT id, name FROM teams WHERE id = ANY($1)'],
+      ['training', 'SELECT id, title AS name FROM trainings WHERE id = ANY($1)'],
+      ['user', 'SELECT id, name FROM users WHERE id = ANY($1)'],
+    ];
+    await Promise.all(entityQueries.map(async ([t, sql]) => {
+      const ids = [...wanted[t]];
+      if (!ids.length) return;
+      const r = await pool.query(sql, [ids]);
+      for (const row of r.rows) liveEntityNames.set(`${t}:${row.id}`, row.name);
+      for (const id of ids) if (!liveEntityNames.has(`${t}:${id}`)) liveEntityNames.set(`${t}:${id}`, null);
+    }));
+    const entityNameOf = (e) => (e ? liveEntityNames.get(`${e.t}:${e.id}`) || null : null);
+
     // Şu an içeride: açık SSE bağlantısı olanlar + son 5 dk içinde istek atanlar
     const onlineIds = new Set([...sseClients.keys()].filter((id) => (sseClients.get(id)?.size || 0) > 0));
     for (const [id, v] of live.presence) if (now - v.ts <= LIVE_ONLINE_WINDOW_MS) onlineIds.add(id);
@@ -5098,10 +5149,23 @@ app.get('/api/admin/live', isAdmin, async (req, res) => {
       name: nameOf(id),
       connected: (sseClients.get(id)?.size || 0) > 0, // uygulama açık ve ön planda
       lastLabel: live.presence.get(id)?.label || null,
+      lastTarget: entityNameOf(live.presence.get(id)?.entity),
+      platform: live.presence.get(id)?.plat || null,
       secondsAgo: live.presence.has(id) ? Math.round((now - live.presence.get(id).ts) / 1000) : null,
     })).sort((a, b) => (a.secondsAgo ?? 1e9) - (b.secondsAgo ?? 1e9));
 
-    const activeVisitors = [...live.visitors.values()].filter((v) => now - v.ts <= LIVE_ONLINE_WINDOW_MS).length;
+    // Son 5 dakikada kim hangi cihazdan: üyeler + anonim ziyaretçiler birlikte
+    const platforms = {};
+    for (const v of [...live.presence.values(), ...live.visitors.values()]) {
+      if (now - v.ts > LIVE_ONLINE_WINDOW_MS) continue;
+      const k = v.plat || 'unknown';
+      platforms[k] = (platforms[k] || 0) + 1;
+    }
+
+    const liveVisitorVals = [...live.visitors.values()];
+    // Botlar ziyaretçi sayılmaz — sayıyı şişirirler; ayrı gösterilir.
+    const activeVisitors = liveVisitorVals.filter((v) => now - v.ts <= LIVE_ONLINE_WINDOW_MS && v.plat !== 'bot').length;
+    const activeBots = liveVisitorVals.filter((v) => now - v.ts <= LIVE_ONLINE_WINDOW_MS && v.plat === 'bot').length;
 
     // Son 60 dakika, boş dakikalar sıfırla doldurulur (grafik kesintisiz olsun)
     const thisMinute = Math.floor(now / 60000) * 60000;
@@ -5125,6 +5189,8 @@ app.get('/api/admin/live', isAdmin, async (req, res) => {
       who: f.userId ? nameOf(f.userId) : `Ziyaretçi ${f.vid}`,
       isUser: !!f.userId,
       label: f.label,
+      target: entityNameOf(f.entity),
+      platform: f.plat || null,
       path: f.path,
     }));
 
@@ -5134,7 +5200,8 @@ app.get('/api/admin/live', isAdmin, async (req, res) => {
       activeVisitors,
       minutes,
       feed,
-      totals: { onlineUsers: online.length, activeVisitors, last5, last60 },
+      platforms,
+      totals: { onlineUsers: online.length, activeVisitors, activeBots, last5, last60 },
     });
   } catch (e) {
     console.error('Admin live error:', e);

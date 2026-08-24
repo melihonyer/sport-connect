@@ -967,6 +967,20 @@ function DiscoveryTab({ api, showToast }) {
 // ─── Canlı sekmesi ─────────────────────────────────────────
 // Sunucuda bellekte tutulan anlık trafiği gösterir (DB'ye hiçbir şey yazılmaz).
 // Sayfa arka plana alınınca sorgu durur — boşuna istek atmasın.
+const PLATFORMS = {
+  "ios-app":     { label: "iOS uygulama",     short: "iOS",     cls: "bg-slate-800 text-white" },
+  "android-app": { label: "Android uygulama", short: "Android", cls: "bg-emerald-600 text-white" },
+  "ios-web":     { label: "iPhone tarayıcı",  short: "iPhone",  cls: "bg-slate-100 text-slate-600" },
+  "android-web": { label: "Android tarayıcı", short: "Android", cls: "bg-slate-100 text-slate-600" },
+  "desktop":     { label: "Masaüstü",         short: "Masaüstü", cls: "bg-brand-50 text-brand-700" },
+  "bot":         { label: "Bot",              short: "Bot",     cls: "bg-amber-50 text-amber-700" },
+  "unknown":     { label: "Bilinmiyor",       short: "—",       cls: "bg-slate-100 text-slate-400" },
+};
+const PlatformBadge = ({ p }) => {
+  const d = PLATFORMS[p] || PLATFORMS.unknown;
+  return <span title={d.label} className={`px-1.5 py-0.5 rounded text-[10px] font-semibold flex-shrink-0 ${d.cls}`}>{d.short}</span>;
+};
+
 function LiveTab({ api, showToast }) {
   const [data, setData] = React.useState(null);
   const [err, setErr]   = React.useState(null);
@@ -1039,6 +1053,20 @@ function LiveTab({ api, showToast }) {
         ))}
       </div>
 
+      {data?.platforms && Object.keys(data.platforms).length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap bg-white rounded-2xl border border-slate-100 shadow-sm px-4 py-3">
+          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide mr-1">Son 5 dk · cihaz dağılımı</span>
+          {Object.entries(data.platforms).sort((a, b) => b[1] - a[1]).map(([k, n]) => (
+            <span key={k} className="flex items-center gap-1.5 text-xs text-slate-600">
+              <PlatformBadge p={k} /> {n}
+            </span>
+          ))}
+          {data.totals?.activeBots > 0 && (
+            <span className="text-xs text-slate-400 ml-auto">{data.totals.activeBots} bot (ziyaretçi sayısına dahil değil)</span>
+          )}
+        </div>
+      )}
+
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-slate-800 text-sm">Dakikalık istek trafiği — son 60 dakika</h3>
@@ -1087,8 +1115,14 @@ function LiveTab({ api, showToast }) {
                   <span className={`w-2 h-2 rounded-full flex-shrink-0 ${u.connected ? "bg-emerald-500" : "bg-amber-400"}`}
                     title={u.connected ? "Uygulama açık" : "Son 5 dakikada aktifti"} />
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium text-slate-700 truncate">{u.name}</div>
-                    <div className="text-xs text-slate-400 truncate">{u.lastLabel || "geziniyor"}</div>
+                    <div className="text-sm font-medium text-slate-700 truncate flex items-center gap-1.5">
+                      <span className="truncate">{u.name}</span>
+                      <PlatformBadge p={u.platform} />
+                    </div>
+                    <div className="text-xs text-slate-400 truncate">
+                      {u.lastLabel || "geziniyor"}
+                      {u.lastTarget && <span className="text-slate-500 font-medium"> · {u.lastTarget}</span>}
+                    </div>
                   </div>
                   <span className="text-xs text-slate-400 flex-shrink-0">{ago(u.secondsAgo)}</span>
                 </div>
@@ -1112,8 +1146,12 @@ function LiveTab({ api, showToast }) {
               {data.feed.map((f, i) => (
                 <div key={`${f.ts}-${i}`} className="flex items-start gap-2.5 py-1.5 text-sm">
                   <span className="text-[11px] text-slate-300 font-mono flex-shrink-0 pt-0.5">{hhmmss(f.ts)}</span>
+                  <PlatformBadge p={f.platform} />
                   <span className={`font-medium flex-shrink-0 ${f.isUser ? "text-brand-700" : "text-slate-400"}`}>{f.who}</span>
-                  <span className="text-slate-500 min-w-0">{f.label}</span>
+                  <span className="text-slate-500 min-w-0">
+                    {f.label}
+                    {f.target && <span className="text-slate-700 font-medium"> · {f.target}</span>}
+                  </span>
                 </div>
               ))}
             </div>
