@@ -87,7 +87,7 @@ class ErrorBoundary extends React.Component {
             {this.state.error?.message || _t("unexpected")}
           </p>
         </div>
-        <button data-btn="solid" onClick={reset}
+        <button onClick={reset}
           className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white"
           style={{ background: "#114956" }}>
           {_t("retry")}
@@ -850,7 +850,7 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                         </button>
                       )}
                       {/* Buton 2: Admin panelinden düzenlenebilir — her zaman göster */}
-                      <button data-btn="solid"
+                      <button
                         onClick={() => handleCtaClick(banner?.cta_primary_url, () => setCurrentPage("trainings"))}
                         className={`flex items-center gap-2 px-7 py-3.5 font-semibold text-sm transition-all duration-300 rounded-[14px] ${user ? "group relative overflow-hidden hover:scale-[1.03] hover:shadow-2xl" : ""}`}
                         style={user
@@ -1980,7 +1980,7 @@ export default function Muuvlink() {
           </div>
           {/* Kaydet */}
           <div className="px-4 py-3 border-t border-slate-100 flex-shrink-0">
-            <button data-btn="solid" onClick={save} disabled={busy}
+            <button onClick={save} disabled={busy}
               className="w-full h-12 rounded-xl text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
               style={{ background: "#114956" }}>
               {busy && <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />}
@@ -4298,7 +4298,7 @@ export default function Muuvlink() {
               </p>
               <div className="flex flex-wrap gap-2 mb-4">
                 {[5, 10, 25, 50].map((km) => (
-                  <button data-btn="solid"
+                  <button
                     key={km}
                     onClick={() => setNearbyDistance(km)}
                     className="px-4 py-2 rounded-xl text-xs font-medium transition-all duration-300 hover:scale-105 hover:shadow-md"
@@ -4514,7 +4514,7 @@ export default function Muuvlink() {
             </div>
             <div className="flex items-center gap-1 bg-white/70 rounded-xl p-1">
               {[{ code:"tr", label:"TR" }, { code:"en", label:"EN" }, { code:"de", label:"DE" }].map(({ code, label }) => (
-                <button data-btn="solid" key={code} onClick={() => changeLang(code)}
+                <button key={code} onClick={() => changeLang(code)}
                   className="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all"
                   style={lang === code ? {background:"#114956", color:"#fff"} : {color:"#64748b"}}>
                   {label}
@@ -4931,7 +4931,7 @@ export default function Muuvlink() {
                 />
               </div>
               {/* View toggle — tek buton, aktif moda göre değişir */}
-              <button data-btn="solid"
+              <button
                 onClick={() => setViewMode(viewMode === "list" ? "map" : "list")}
                 data-tour="map-view"
                 className="flex-shrink-0 whitespace-nowrap px-3.5 py-2.5 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 border shadow-sm"
@@ -4977,14 +4977,14 @@ export default function Muuvlink() {
 
             {/* Satır 3: GPS toggle */}
             <div className="flex items-center gap-2">
-              <button data-btn="solid" onClick={handleExitNearby}
+              <button onClick={handleExitNearby}
                 className="px-4 py-2 text-xs font-semibold rounded-xl transition-all border shadow-sm"
                 style={!nearbyMode
                   ? {background:"#114956", color:"#fff", borderColor:"transparent", boxShadow:"0 1px 8px rgba(17,73,86,0.25)"}
                   : {background:"#fff", color:"#94a3b8", borderColor:"#e2e8f0"}}>
                 {t("common.all")}
               </button>
-              <button data-btn="solid" onClick={() => handleNearbySearch()} disabled={locationLoading}
+              <button onClick={() => handleNearbySearch()} disabled={locationLoading}
                 data-tour="nearby"
                 className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-xl transition-all border shadow-sm disabled:opacity-50"
                 style={nearbyMode
@@ -5006,7 +5006,7 @@ export default function Muuvlink() {
             {nearbyMode && (
               <div className="flex items-center gap-2 flex-wrap">
                 {[5,10,25,50].map(km => (
-                  <button data-btn="solid" key={km} onClick={() => handleDistanceChange(km)} disabled={nearbyLoading}
+                  <button key={km} onClick={() => handleDistanceChange(km)} disabled={nearbyLoading}
                     className="px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all disabled:opacity-50"
                     style={nearbyDistance === km
                       ? {background:"#114956", color:"#fff", borderColor:"transparent"}
@@ -5788,9 +5788,9 @@ export default function Muuvlink() {
                     rows={2}
                     className="flex-1 px-4 py-2.5 border rounded-xl resize-y leading-relaxed min-h-[46px]"
                   />
-                  <button
+                  <button data-btn="solid"
                     type="submit"
-                    className="px-6 bg-brand-600 text-white rounded-xl font-semibold hover:bg-pop-400 hover:text-brand-600 flex items-center justify-center self-stretch"
+                    className="px-6 bg-brand-600 text-white rounded-xl font-semibold flex items-center justify-center self-stretch"
                   >
                     <Send className="w-5 h-5" />
                   </button>
@@ -6184,8 +6184,8 @@ export default function Muuvlink() {
                     placeholder={t("teamDetail.postPlaceholder")}
                     rows={2}
                     className="flex-1 w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition-colors resize-y leading-relaxed min-h-[46px]" />
-                  <button type="submit"
-                    className="px-5 bg-brand-600 text-white rounded-xl hover:bg-pop-400 hover:text-brand-600 transition-colors flex items-center justify-center self-stretch">
+                  <button data-btn="solid" type="submit"
+                    className="px-5 bg-brand-600 text-white rounded-xl transition-colors flex items-center justify-center self-stretch">
                     <Send className="w-4 h-4" />
                   </button>
                 </div>
@@ -6414,8 +6414,8 @@ export default function Muuvlink() {
               </div>
 
               <div className="flex gap-3 pt-1">
-                <button type="submit"
-                  className="flex-1 h-12 bg-brand-600 hover:bg-pop-400 hover:text-brand-600 text-white rounded-xl font-semibold transition-colors">
+                <button data-btn="solid" type="submit"
+                  className="flex-1 h-12 bg-brand-600 text-white rounded-xl font-semibold transition-colors">
                   {t("common.save")}
                 </button>
                 {isOwner && (
@@ -8226,9 +8226,9 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
 
         {/* Butonlar */}
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <button
+          <button data-btn="solid"
             onClick={() => setCurrentPage("home")}
-            className="px-6 py-3 rounded-xl bg-brand-600 hover:bg-pop-400 hover:text-brand-600 text-white font-semibold transition-all shadow-lg shadow-brand-200 hover:shadow-brand-300 hover:-translate-y-0.5 active:translate-y-0"
+            className="px-6 py-3 rounded-xl bg-brand-600 text-white font-semibold transition-all shadow-lg shadow-brand-200 hover:shadow-brand-300 hover:-translate-y-0.5 active:translate-y-0"
           >
             {t("notFound.btn")}
           </button>
@@ -8282,7 +8282,7 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
           {tabs.map(tab => {
             const active = currentPage === tab.key;
             return (
-              <button data-btn="solid" key={tab.key} onClick={() => { triggerHaptic("light"); setCurrentPage(tab.key); }}
+              <button key={tab.key} onClick={() => { triggerHaptic("light"); setCurrentPage(tab.key); }}
                 data-tour={tab.key === "teams" ? "teams-tab-bottom" : undefined}
                 className="flex-1 flex flex-col items-center gap-1 py-3 transition-all"
                 style={{color: active ? "#114956" : "#94a3b8"}}>
@@ -8334,7 +8334,7 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
             <p className="text-sm font-bold text-slate-800 leading-tight">Muuvlink uygulaması</p>
             <p className="text-[11px] text-slate-500 leading-tight truncate">Google Play'den indir — daha hızlı deneyim</p>
           </div>
-          <a data-btn="solid" href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer"
+          <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer"
             className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white active:scale-95 transition"
             style={{ background: "#114956" }}>
             <Download className="w-4 h-4" /> İndir
