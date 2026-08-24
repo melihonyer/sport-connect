@@ -179,7 +179,10 @@ function liveDescribe(method, p) {
 function livePlatform(ua) {
   const s = String(ua || '');
   if (!s) return 'unknown';
-  if (/bot|crawler|spider|uptimerobot|slurp|bingpreview|headlesschrome|python-requests|curl\/|wget/i.test(s)) return 'bot';
+  // Arama motoru / izleme botları ile betik-komut satırı istemcileri ayrı sınıflar:
+  // ilki normal ve beklenen, ikincisi kayıt/giriş yollarında dikkat çekici.
+  if (/bot\b|crawler|spider|uptimerobot|slurp|bingpreview|facebookexternalhit|whatsapp|telegram/i.test(s)) return 'bot';
+  if (/curl\/|wget|python-requests|httpie|postman|insomnia|go-http-client|okhttp|java\/|node-fetch|axios\/|headlesschrome|puppeteer|playwright|scrapy/i.test(s)) return 'script';
   if (/;\s*wv\)/i.test(s)) return 'android-app';
   if (/iPhone|iPad|iPod/i.test(s)) {
     return (!/Safari\//.test(s) && !/CriOS\//.test(s) && !/FxiOS\//.test(s)) ? 'ios-app' : 'ios-web';
@@ -190,6 +193,11 @@ function livePlatform(ua) {
 }
 
 // Bakılan kayıt: /teams/12 → { t:'team', id:12 }. İsimler okuma anında çözülür.
+// Tarayıcı olmayan bir istemciden gelen kayıt/giriş denemesi — gerçek bir spam
+// kaydı da tam bu imzayı taşır, akışta işaretlenip göze çarpsın.
+const LIVE_AUTH_RE = /^\/auth\/(register|login|forgot-password|reset-password)$/;
+const liveSuspicious = (p, plat) => LIVE_AUTH_RE.test(p) && ['bot', 'script', 'unknown'].includes(plat);
+
 const LIVE_ENTITY_RE = /^\/(teams|trainings|users)\/(\d+)/;
 function liveEntity(p) {
   const m = LIVE_ENTITY_RE.exec(p);
@@ -221,7 +229,7 @@ app.use('/api', (req, res, next) => {
     const plat = livePlatform(req.headers['user-agent']);
     // Botlar istek sayısına girer (gerçek yük) ama misafir sayılmaz — sayıyı şişirirler.
     if (userId) bucket.users.add(userId);
-    else if (plat !== 'bot') bucket.visitors.add(vid);
+    else if (plat !== 'bot' && plat !== 'script') bucket.visitors.add(vid);
 
     const label = liveDescribe(req.method, p);
     const entity = liveEntity(p);
@@ -234,7 +242,7 @@ app.use('/api', (req, res, next) => {
     }
 
     if (label) {
-      live.feed.unshift({ ts: now, userId, vid, label, path: p, plat, entity });
+      live.feed.unshift({ ts: now, userId, vid, label, path: p, plat, entity, suspicious: liveSuspicious(p, plat) });
       if (live.feed.length > LIVE_FEED_MAX) live.feed.length = LIVE_FEED_MAX;
     }
   } catch { /* izleme asla isteği bozmasın */ }
@@ -5166,7 +5174,7 @@ app.get('/api/admin/live', isAdmin, async (req, res) => {
 
     // Misafirler de üyeler gibi tek tek listelenir (son hareketi ve cihazıyla)
     const guests = [...live.visitors.entries()]
-      .filter(([, v]) => now - v.ts <= LIVE_ONLINE_WINDOW_MS && v.plat !== 'bot')
+      .filter(([, v]) => now - v.ts <= LIVE_ONLINE_WINDOW_MS && v.plat !== 'bot' && v.plat !== 'script')
       .map(([vid, v]) => ({
         vid,
         platform: v.plat || null,
@@ -5177,8 +5185,10 @@ app.get('/api/admin/live', isAdmin, async (req, res) => {
 
     const liveVisitorVals = [...live.visitors.values()];
     // Botlar ziyaretçi sayılmaz — sayıyı şişirirler; ayrı gösterilir.
-    const activeVisitors = liveVisitorVals.filter((v) => now - v.ts <= LIVE_ONLINE_WINDOW_MS && v.plat !== 'bot').length;
-    const activeBots = liveVisitorVals.filter((v) => now - v.ts <= LIVE_ONLINE_WINDOW_MS && v.plat === 'bot').length;
+    const fresh = (v) => now - v.ts <= LIVE_ONLINE_WINDOW_MS;
+    const activeVisitors = liveVisitorVals.filter((v) => fresh(v) && v.plat !== 'bot' && v.plat !== 'script').length;
+    const activeBots = liveVisitorVals.filter((v) => fresh(v) && v.plat === 'bot').length;
+    const activeScripts = liveVisitorVals.filter((v) => fresh(v) && v.plat === 'script').length;
 
     // Son 60 dakika, boş dakikalar sıfırla doldurulur (grafik kesintisiz olsun)
     const thisMinute = Math.floor(now / 60000) * 60000;
@@ -5205,6 +5215,7 @@ app.get('/api/admin/live', isAdmin, async (req, res) => {
       label: f.label,
       target: entityNameOf(f.entity),
       platform: f.plat || null,
+      suspicious: !!f.suspicious,
       path: f.path,
     }));
 
@@ -5216,7 +5227,11 @@ app.get('/api/admin/live', isAdmin, async (req, res) => {
       minutes,
       feed,
       platforms,
-      totals: { onlineUsers: online.length, activeVisitors, activeBots, last5, last60 },
+      totals: {
+        onlineUsers: online.length, activeVisitors, activeBots, activeScripts, last5, last60,
+        // Son bir saatte tarayıcı olmayan istemciden gelen kayıt/giriş denemesi
+        suspiciousAuth: live.feed.filter((f) => f.suspicious).length,
+      },
     });
   } catch (e) {
     console.error('Admin live error:', e);

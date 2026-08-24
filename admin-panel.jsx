@@ -973,7 +973,8 @@ const PLATFORMS = {
   "ios-web":     { label: "iPhone tarayıcı",  short: "iPhone",  cls: "bg-slate-100 text-slate-600" },
   "android-web": { label: "Android tarayıcı", short: "Android", cls: "bg-slate-100 text-slate-600" },
   "desktop":     { label: "Masaüstü",         short: "Masaüstü", cls: "bg-brand-50 text-brand-700" },
-  "bot":         { label: "Bot",              short: "Bot",     cls: "bg-amber-50 text-amber-700" },
+  "bot":         { label: "Arama motoru / izleme botu", short: "Bot", cls: "bg-amber-50 text-amber-700" },
+  "script":      { label: "Betik / komut satırı (curl, script…)", short: "Betik", cls: "bg-purple-100 text-purple-700" },
   "unknown":     { label: "Bilinmiyor",       short: "—",       cls: "bg-slate-100 text-slate-400" },
 };
 const PlatformBadge = ({ p }) => {
@@ -1061,6 +1062,16 @@ function LiveTab({ api, showToast }) {
         ))}
       </div>
 
+      {data?.totals?.suspiciousAuth > 0 && (
+        <div className="flex items-start gap-2.5 p-4 rounded-2xl border border-red-100 bg-red-50">
+          <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-red-700">
+            Son bir saatte tarayıcı olmayan bir istemciden <strong>{data.totals.suspiciousAuth}</strong> kayıt/giriş denemesi geldi.
+            Akışta kırmızı işaretli satırlar. Kendi testin değilse otomatik hesap açma girişimi olabilir.
+          </p>
+        </div>
+      )}
+
       {data?.platforms && Object.keys(data.platforms).length > 0 && (
         <div className="flex items-center gap-2 flex-wrap bg-white rounded-2xl border border-slate-100 shadow-sm px-4 py-3">
           <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide mr-1">Son 5 dk · cihaz dağılımı</span>
@@ -1069,8 +1080,12 @@ function LiveTab({ api, showToast }) {
               <PlatformBadge p={k} /> {n}
             </span>
           ))}
-          {data.totals?.activeBots > 0 && (
-            <span className="text-xs text-slate-400 ml-auto">{data.totals.activeBots} bot (sayımlara dahil değil)</span>
+          {(data.totals?.activeBots > 0 || data.totals?.activeScripts > 0) && (
+            <span className="text-xs text-slate-400 ml-auto">
+              {[data.totals.activeBots ? `${data.totals.activeBots} bot` : null,
+                data.totals.activeScripts ? `${data.totals.activeScripts} betik` : null]
+                .filter(Boolean).join(" · ")} — misafir sayısına dahil değil
+            </span>
           )}
         </div>
       )}
@@ -1163,9 +1178,11 @@ function LiveTab({ api, showToast }) {
               ))}
             </div>
           )}
-          {data?.totals?.activeBots > 0 && (
+          {(data?.totals?.activeBots > 0 || data?.totals?.activeScripts > 0) && (
             <p className="text-xs text-slate-400 mt-3 pt-3 border-t border-slate-100">
-              Ayrıca {data.totals.activeBots} bot geziniyor (arama motoru / izleme servisi) — sayımlara dahil değil.
+              Ayrıca {data.totals.activeBots > 0 && `${data.totals.activeBots} bot (arama motoru / izleme servisi)`}
+              {data.totals.activeBots > 0 && data.totals.activeScripts > 0 && " ve "}
+              {data.totals.activeScripts > 0 && `${data.totals.activeScripts} betik (curl vb.)`} geziniyor — misafir sayısına dahil değil.
             </p>
           )}
         </div>
@@ -1178,13 +1195,15 @@ function LiveTab({ api, showToast }) {
           ) : (
             <div className="space-y-1 max-h-80 overflow-auto">
               {data.feed.map((f, i) => (
-                <div key={`${f.ts}-${i}`} className="flex items-start gap-2.5 py-1.5 text-sm">
+                <div key={`${f.ts}-${i}`}
+                  className={`flex items-start gap-2.5 py-1.5 text-sm ${f.suspicious ? "bg-red-50 border border-red-100 rounded-lg px-2 -mx-1" : ""}`}>
                   <span className="text-[11px] text-slate-300 font-mono flex-shrink-0 pt-0.5">{hhmmss(f.ts)}</span>
                   <PlatformBadge p={f.platform} />
-                  <span className={`font-medium flex-shrink-0 ${f.isUser ? "text-brand-700" : "text-slate-400"}`}>{f.who}</span>
-                  <span className="text-slate-500 min-w-0">
+                  <span className={`font-medium flex-shrink-0 ${f.suspicious ? "text-red-600" : f.isUser ? "text-brand-700" : "text-slate-400"}`}>{f.who}</span>
+                  <span className={f.suspicious ? "text-red-700 min-w-0" : "text-slate-500 min-w-0"}>
                     {f.label}
                     {f.target && <span className="text-slate-700 font-medium"> · {f.target}</span>}
+                    {f.suspicious && <span className="font-semibold"> — tarayıcıdan gelmedi</span>}
                   </span>
                 </div>
               ))}
