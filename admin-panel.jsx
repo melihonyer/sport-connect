@@ -1010,8 +1010,8 @@ function LiveTab({ api, showToast }) {
   const peak = Math.max(1, ...chartData.map(m => m.requests));
 
   const cards = [
-    { label: "Şu an içeride", value: data?.totals?.onlineUsers ?? "—", hint: "üye (son 5 dk)", icon: Users },
-    { label: "Aktif ziyaretçi", value: data?.totals?.activeVisitors ?? "—", hint: "üye olmayan (son 5 dk)", icon: Globe },
+    { label: "Kayıtlı üye", value: data?.totals?.onlineUsers ?? "—", hint: "giriş yapmış · son 5 dk", icon: Users },
+    { label: "Misafir", value: data?.totals?.activeVisitors ?? "—", hint: "giriş yapmamış · son 5 dk", icon: Globe },
     { label: "Son 5 dakika", value: data?.totals?.last5 ?? "—", hint: "istek", icon: Activity },
     { label: "Son 1 saat", value: data?.totals?.last60 ?? "—", hint: "istek", icon: TrendingUp },
   ];
@@ -1062,7 +1062,7 @@ function LiveTab({ api, showToast }) {
             </span>
           ))}
           {data.totals?.activeBots > 0 && (
-            <span className="text-xs text-slate-400 ml-auto">{data.totals.activeBots} bot (ziyaretçi sayısına dahil değil)</span>
+            <span className="text-xs text-slate-400 ml-auto">{data.totals.activeBots} bot (sayımlara dahil değil)</span>
           )}
         </div>
       )}
@@ -1086,17 +1086,19 @@ function LiveTab({ api, showToast }) {
               <YAxis tick={{ fontSize: 10, fill: "#94a3b8" }} tickLine={false} axisLine={false} allowDecimals={false} />
               <Tooltip
                 contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 12 }}
-                formatter={(v, n) => [v, n === "requests" ? "istek" : "tekil kişi"]}
+                formatter={(v, n) => [v, n === "requests" ? "istek" : n === "members" ? "kayıtlı üye" : "misafir"]}
                 labelFormatter={(l) => `${l}`}
               />
               <Area type="monotone" dataKey="requests" stroke="#00b7ba" strokeWidth={2} fill="url(#liveFill)" />
-              <Area type="monotone" dataKey="visitors" stroke="#981dd8" strokeWidth={1.5} fillOpacity={0} />
+              <Area type="monotone" dataKey="members" stroke="#981dd8" strokeWidth={1.5} fillOpacity={0} />
+              <Area type="monotone" dataKey="guests" stroke="#f59e0b" strokeWidth={1.5} strokeDasharray="4 3" fillOpacity={0} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
         <div className="flex items-center gap-4 mt-2 text-xs text-slate-400">
           <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 rounded" style={{ background: "#00b7ba" }} /> istek/dk</span>
-          <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 rounded" style={{ background: "#981dd8" }} /> tekil kişi/dk</span>
+          <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 rounded" style={{ background: "#981dd8" }} /> kayıtlı üye/dk</span>
+          <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 rounded" style={{ background: "#f59e0b" }} /> misafir/dk</span>
         </div>
       </div>
 
@@ -1104,13 +1106,18 @@ function LiveTab({ api, showToast }) {
         {/* Şu an içeride */}
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
           <h3 className="font-semibold text-slate-800 text-sm mb-3">
-            Şu an içeride {data?.online?.length ? `(${data.online.length})` : ""}
+            Şu an içeride {(data?.online?.length || data?.guests?.length) ? `(${(data.online?.length || 0) + (data.guests?.length || 0)})` : ""}
           </h3>
-          {!data?.online?.length ? (
-            <p className="text-slate-400 text-sm py-8 text-center">Şu anda giriş yapmış aktif kullanıcı yok</p>
+          {!data?.online?.length && !data?.guests?.length ? (
+            <p className="text-slate-400 text-sm py-8 text-center">Şu anda sitede kimse yok</p>
           ) : (
             <div className="space-y-2 max-h-80 overflow-auto">
-              {data.online.map(u => (
+              {data.online?.length > 0 && (
+                <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide pt-1">
+                  Kayıtlı üye ({data.online.length})
+                </div>
+              )}
+              {(data.online || []).map(u => (
                 <div key={u.id} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50">
                   <span className={`w-2 h-2 rounded-full flex-shrink-0 ${u.connected ? "bg-emerald-500" : "bg-amber-400"}`}
                     title={u.connected ? "Uygulama açık" : "Son 5 dakikada aktifti"} />
@@ -1127,11 +1134,30 @@ function LiveTab({ api, showToast }) {
                   <span className="text-xs text-slate-400 flex-shrink-0">{ago(u.secondsAgo)}</span>
                 </div>
               ))}
+
+              {data.guests?.length > 0 && (
+                <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide pt-3">
+                  Misafir ({data.guests.length}) · giriş yapmamış
+                </div>
+              )}
+              {(data.guests || []).map(g => (
+                <div key={g.vid} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50">
+                  <span className="w-2 h-2 rounded-full flex-shrink-0 bg-slate-300" title="Giriş yapmamış ziyaretçi" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium text-slate-500 truncate flex items-center gap-1.5">
+                      <span className="truncate">Misafir {g.vid}</span>
+                      <PlatformBadge p={g.platform} />
+                    </div>
+                    <div className="text-xs text-slate-400 truncate">{g.lastLabel || "geziniyor"}</div>
+                  </div>
+                  <span className="text-xs text-slate-400 flex-shrink-0">{ago(g.secondsAgo)}</span>
+                </div>
+              ))}
             </div>
           )}
-          {data?.activeVisitors > 0 && (
+          {data?.totals?.activeBots > 0 && (
             <p className="text-xs text-slate-400 mt-3 pt-3 border-t border-slate-100">
-              Ayrıca {data.activeVisitors} üye olmayan ziyaretçi geziniyor.
+              Ayrıca {data.totals.activeBots} bot geziniyor (arama motoru / izleme servisi) — sayımlara dahil değil.
             </p>
           )}
         </div>

@@ -218,10 +218,12 @@ app.use('/api', (req, res, next) => {
       try { userId = jwt.verify(token, JWT_SECRET)?.id ?? null; } catch { userId = null; }
     }
     const vid = userId ? null : liveVisitorId(req);
-    if (userId) bucket.users.add(userId); else bucket.visitors.add(vid);
+    const plat = livePlatform(req.headers['user-agent']);
+    // Botlar istek sayısına girer (gerçek yük) ama misafir sayılmaz — sayıyı şişirirler.
+    if (userId) bucket.users.add(userId);
+    else if (plat !== 'bot') bucket.visitors.add(vid);
 
     const label = liveDescribe(req.method, p);
-    const plat = livePlatform(req.headers['user-agent']);
     const entity = liveEntity(p);
     if (userId) {
       const prev = live.presence.get(userId);
@@ -5162,6 +5164,17 @@ app.get('/api/admin/live', isAdmin, async (req, res) => {
       platforms[k] = (platforms[k] || 0) + 1;
     }
 
+    // Misafirler de üyeler gibi tek tek listelenir (son hareketi ve cihazıyla)
+    const guests = [...live.visitors.entries()]
+      .filter(([, v]) => now - v.ts <= LIVE_ONLINE_WINDOW_MS && v.plat !== 'bot')
+      .map(([vid, v]) => ({
+        vid,
+        platform: v.plat || null,
+        lastLabel: v.label || null,
+        secondsAgo: Math.round((now - v.ts) / 1000),
+      }))
+      .sort((a, b) => a.secondsAgo - b.secondsAgo);
+
     const liveVisitorVals = [...live.visitors.values()];
     // Botlar ziyaretçi sayılmaz — sayıyı şişirirler; ayrı gösterilir.
     const activeVisitors = liveVisitorVals.filter((v) => now - v.ts <= LIVE_ONLINE_WINDOW_MS && v.plat !== 'bot').length;
@@ -5176,7 +5189,8 @@ app.get('/api/admin/live', isAdmin, async (req, res) => {
       minutes.push({
         t,
         requests: b?.requests || 0,
-        visitors: (b?.visitors.size || 0) + (b?.users.size || 0),
+        members: b?.users.size || 0,
+        guests: b?.visitors.size || 0,
       });
     }
 
@@ -5186,7 +5200,7 @@ app.get('/api/admin/live', isAdmin, async (req, res) => {
 
     const feed = live.feed.slice(0, 40).map((f) => ({
       ts: f.ts,
-      who: f.userId ? nameOf(f.userId) : `Ziyaretçi ${f.vid}`,
+      who: f.userId ? nameOf(f.userId) : `Misafir ${f.vid}`,
       isUser: !!f.userId,
       label: f.label,
       target: entityNameOf(f.entity),
@@ -5197,6 +5211,7 @@ app.get('/api/admin/live', isAdmin, async (req, res) => {
     res.json({
       now,
       online,
+      guests,
       activeVisitors,
       minutes,
       feed,
