@@ -977,9 +977,17 @@ const PLATFORMS = {
   "script":      { label: "Betik / komut satırı (curl, script…)", short: "Betik", cls: "bg-purple-100 text-purple-700" },
   "unknown":     { label: "Bilinmiyor",       short: "—",       cls: "bg-slate-100 text-slate-400" },
 };
-const PlatformBadge = ({ p }) => {
+// Bot ve betiklerde rozet, jenerik "Bot" yerine istemcinin adını yazar (Googlebot,
+// UptimeRobot, curl…) — hangi otomatik istemci olduğu ilk bakışta anlaşılsın.
+const PlatformBadge = ({ p, client }) => {
   const d = PLATFORMS[p] || PLATFORMS.unknown;
-  return <span title={d.label} className={`px-1.5 py-0.5 rounded text-[10px] font-semibold flex-shrink-0 ${d.cls}`}>{d.short}</span>;
+  const text = client || d.short;
+  return (
+    <span title={client ? `${client} — ${d.label}` : d.label}
+      className={`px-1.5 py-0.5 rounded text-[10px] font-semibold flex-shrink-0 whitespace-nowrap ${d.cls}`}>
+      {text}
+    </span>
+  );
 };
 
 function LiveTab({ api, showToast }) {
@@ -1198,7 +1206,7 @@ function LiveTab({ api, showToast }) {
                 <div key={`${f.ts}-${i}`}
                   className={`flex items-start gap-2.5 py-1.5 text-sm ${f.suspicious ? "bg-red-50 border border-red-100 rounded-lg px-2 -mx-1" : ""}`}>
                   <span className="text-[11px] text-slate-300 font-mono flex-shrink-0 pt-0.5">{hhmmss(f.ts)}</span>
-                  <PlatformBadge p={f.platform} />
+                  <PlatformBadge p={f.platform} client={f.client} />
                   <span className={`font-medium flex-shrink-0 ${f.suspicious ? "text-red-600" : f.isUser ? "text-brand-700" : "text-slate-400"}`}>{f.who}</span>
                   <span className={f.suspicious ? "text-red-700 min-w-0" : "text-slate-500 min-w-0"}>
                     {f.label}

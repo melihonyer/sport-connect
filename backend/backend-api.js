@@ -192,6 +192,45 @@ function livePlatform(ua) {
   return 'unknown';
 }
 
+// Bot/betik ise adını çıkar — panelde "Bot" yerine "Googlebot" yazsın, hangi
+// otomatik istemci olduğunu anlamak için sunucu günlüğüne bakmak gerekmesin.
+const LIVE_CLIENT_NAMES = [
+  [/googlebot|google-inspectiontool/i, 'Googlebot'],
+  [/bingbot|adidxbot/i,          'Bingbot'],
+  [/yandex(bot|images)/i,        'YandexBot'],
+  [/applebot/i,                  'Applebot'],
+  [/duckduckbot|duckassistbot/i, 'DuckDuckBot'],
+  [/amazonbot|amzn-searchbot/i,  'Amazonbot'],
+  [/gptbot|chatgpt-user|oai-searchbot/i, 'OpenAI'],
+  [/claudebot|claude-web|anthropic/i,    'ClaudeBot'],
+  [/perplexity/i,                'Perplexity'],
+  [/bytespider/i,                'Bytespider'],
+  [/semrushbot/i,                'SemrushBot'],
+  [/ahrefsbot/i,                 'AhrefsBot'],
+  [/mj12bot|dotbot|dataforseo/i, 'SEO tarayıcı'],
+  [/uptimerobot/i,               'UptimeRobot'],
+  [/facebookexternalhit|meta-externalagent/i, 'Facebook önizleme'],
+  [/whatsapp/i,                  'WhatsApp önizleme'],
+  [/telegram/i,                  'Telegram önizleme'],
+  [/slackbot|discordbot|twitterbot/i, 'Link önizleme'],
+  [/curl\//i,                    'curl'],
+  [/wget/i,                      'wget'],
+  [/python-requests|httpx|aiohttp/i, 'Python'],
+  [/postman/i,                   'Postman'],
+  [/insomnia/i,                  'Insomnia'],
+  [/httpie/i,                    'HTTPie'],
+  [/okhttp|java\//i,             'Java/OkHttp'],
+  [/go-http-client/i,            'Go'],
+  [/node-fetch|axios\//i,        'Node'],
+  [/headlesschrome|puppeteer|playwright/i, 'Headless tarayıcı'],
+  [/scrapy/i,                    'Scrapy'],
+];
+function liveClientName(ua) {
+  const s = String(ua || '');
+  for (const [re, name] of LIVE_CLIENT_NAMES) if (re.test(s)) return name;
+  return null;
+}
+
 // Bakılan kayıt: /teams/12 → { t:'team', id:12 }. İsimler okuma anında çözülür.
 // Tarayıcı olmayan bir istemciden gelen kayıt/giriş denemesi — gerçek bir spam
 // kaydı da tam bu imzayı taşır, akışta işaretlenip göze çarpsın.
@@ -233,16 +272,17 @@ app.use('/api', (req, res, next) => {
 
     const label = liveDescribe(req.method, p);
     const entity = liveEntity(p);
+    const client = (plat === 'bot' || plat === 'script') ? liveClientName(req.headers['user-agent']) : null;
     if (userId) {
       const prev = live.presence.get(userId);
       live.presence.set(userId, { ts: now, plat, label: label || prev?.label || null, entity: entity || (label ? null : prev?.entity) || null });
     } else {
       const prev = live.visitors.get(vid);
-      live.visitors.set(vid, { ts: now, plat, label: label || prev?.label || null });
+      live.visitors.set(vid, { ts: now, plat, client, label: label || prev?.label || null });
     }
 
     if (label) {
-      live.feed.unshift({ ts: now, userId, vid, label, path: p, plat, entity, suspicious: liveSuspicious(p, plat) });
+      live.feed.unshift({ ts: now, userId, vid, label, path: p, plat, entity, client, suspicious: liveSuspicious(p, plat) });
       if (live.feed.length > LIVE_FEED_MAX) live.feed.length = LIVE_FEED_MAX;
     }
   } catch { /* izleme asla isteği bozmasın */ }
@@ -5215,6 +5255,7 @@ app.get('/api/admin/live', isAdmin, async (req, res) => {
       label: f.label,
       target: entityNameOf(f.entity),
       platform: f.plat || null,
+      client: f.client || null,
       suspicious: !!f.suspicious,
       path: f.path,
     }));
