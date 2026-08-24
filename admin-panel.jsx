@@ -964,6 +964,166 @@ function DiscoveryTab({ api, showToast }) {
   );
 }
 
+// ─── Canlı sekmesi ─────────────────────────────────────────
+// Sunucuda bellekte tutulan anlık trafiği gösterir (DB'ye hiçbir şey yazılmaz).
+// Sayfa arka plana alınınca sorgu durur — boşuna istek atmasın.
+function LiveTab({ api, showToast }) {
+  const [data, setData] = React.useState(null);
+  const [err, setErr]   = React.useState(null);
+  const [paused, setPaused] = React.useState(false);
+  const timerRef = React.useRef(null);
+  const pausedRef = React.useRef(paused);
+  pausedRef.current = paused;
+
+  const tick = React.useCallback(async () => {
+    if (document.visibilityState === "visible" && !pausedRef.current) {
+      try { const d = await api("/admin/live"); if (d) { setData(d); setErr(null); } }
+      catch (e) { setErr(e.message || "Canlı veri alınamadı."); }
+    }
+    timerRef.current = setTimeout(tick, 5000);
+  }, [api]);
+
+  React.useEffect(() => {
+    tick();
+    return () => clearTimeout(timerRef.current);
+  }, [tick]);
+
+  const hhmm = (t) => new Date(t).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+  const hhmmss = (t) => new Date(t).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  const ago = (s) => s == null ? "—" : s < 60 ? `${s} sn önce` : `${Math.floor(s / 60)} dk önce`;
+
+  const chartData = (data?.minutes || []).map(m => ({ ...m, label: hhmm(m.t) }));
+  const peak = Math.max(1, ...chartData.map(m => m.requests));
+
+  const cards = [
+    { label: "Şu an içeride", value: data?.totals?.onlineUsers ?? "—", hint: "üye (son 5 dk)", icon: Users },
+    { label: "Aktif ziyaretçi", value: data?.totals?.activeVisitors ?? "—", hint: "üye olmayan (son 5 dk)", icon: Globe },
+    { label: "Son 5 dakika", value: data?.totals?.last5 ?? "—", hint: "istek", icon: Activity },
+    { label: "Son 1 saat", value: data?.totals?.last60 ?? "—", hint: "istek", icon: TrendingUp },
+  ];
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h2 className="font-display font-bold text-slate-900 text-xl flex items-center gap-2" style={{ letterSpacing: "-0.01em" }}>
+            Canlı
+            <span className="relative flex h-2.5 w-2.5">
+              {!paused && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />}
+              <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${paused ? "bg-slate-300" : "bg-emerald-500"}`} />
+            </span>
+          </h2>
+          <p className="text-slate-400 text-sm mt-0.5">
+            Son bir saatin trafiği ve şu anki hareketler. Veriler sunucu belleğinde tutulur, veritabanına yazılmaz; servis yeniden başlarsa sıfırlanır.
+          </p>
+        </div>
+        <button onClick={() => setPaused(p => !p)}
+          className="px-4 py-2 rounded-xl text-sm font-medium border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition">
+          {paused ? "Devam Et" : "Duraklat"}
+        </button>
+      </div>
+
+      {err && (
+        <div className="bg-red-50 border border-red-100 text-red-600 rounded-2xl p-3 text-sm">{err}</div>
+      )}
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {cards.map(c => (
+          <div key={c.label} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
+            <div className="flex items-center gap-2 text-slate-400 text-xs font-semibold uppercase tracking-wide mb-2">
+              <c.icon className="w-3.5 h-3.5" /> {c.label}
+            </div>
+            <div className="font-display font-bold text-slate-900 text-3xl leading-none">{c.value}</div>
+            <div className="text-xs text-slate-400 mt-1">{c.hint}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-slate-800 text-sm">Dakikalık istek trafiği — son 60 dakika</h3>
+          <span className="text-xs text-slate-400">tepe: {peak} istek/dk</span>
+        </div>
+        <div style={{ width: "100%", height: 220 }}>
+          <ResponsiveContainer>
+            <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+              <defs>
+                <linearGradient id="liveFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#00b7ba" stopOpacity={0.35} />
+                  <stop offset="100%" stopColor="#00b7ba" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#94a3b8" }} interval={9} tickLine={false} axisLine={false} />
+              <YAxis tick={{ fontSize: 10, fill: "#94a3b8" }} tickLine={false} axisLine={false} allowDecimals={false} />
+              <Tooltip
+                contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 12 }}
+                formatter={(v, n) => [v, n === "requests" ? "istek" : "tekil kişi"]}
+                labelFormatter={(l) => `${l}`}
+              />
+              <Area type="monotone" dataKey="requests" stroke="#00b7ba" strokeWidth={2} fill="url(#liveFill)" />
+              <Area type="monotone" dataKey="visitors" stroke="#981dd8" strokeWidth={1.5} fillOpacity={0} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="flex items-center gap-4 mt-2 text-xs text-slate-400">
+          <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 rounded" style={{ background: "#00b7ba" }} /> istek/dk</span>
+          <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 rounded" style={{ background: "#981dd8" }} /> tekil kişi/dk</span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Şu an içeride */}
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+          <h3 className="font-semibold text-slate-800 text-sm mb-3">
+            Şu an içeride {data?.online?.length ? `(${data.online.length})` : ""}
+          </h3>
+          {!data?.online?.length ? (
+            <p className="text-slate-400 text-sm py-8 text-center">Şu anda giriş yapmış aktif kullanıcı yok</p>
+          ) : (
+            <div className="space-y-2 max-h-80 overflow-auto">
+              {data.online.map(u => (
+                <div key={u.id} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50">
+                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${u.connected ? "bg-emerald-500" : "bg-amber-400"}`}
+                    title={u.connected ? "Uygulama açık" : "Son 5 dakikada aktifti"} />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium text-slate-700 truncate">{u.name}</div>
+                    <div className="text-xs text-slate-400 truncate">{u.lastLabel || "geziniyor"}</div>
+                  </div>
+                  <span className="text-xs text-slate-400 flex-shrink-0">{ago(u.secondsAgo)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {data?.activeVisitors > 0 && (
+            <p className="text-xs text-slate-400 mt-3 pt-3 border-t border-slate-100">
+              Ayrıca {data.activeVisitors} üye olmayan ziyaretçi geziniyor.
+            </p>
+          )}
+        </div>
+
+        {/* Canlı akış */}
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+          <h3 className="font-semibold text-slate-800 text-sm mb-3">Canlı akış</h3>
+          {!data?.feed?.length ? (
+            <p className="text-slate-400 text-sm py-8 text-center">Son bir saatte kayda değer hareket yok</p>
+          ) : (
+            <div className="space-y-1 max-h-80 overflow-auto">
+              {data.feed.map((f, i) => (
+                <div key={`${f.ts}-${i}`} className="flex items-start gap-2.5 py-1.5 text-sm">
+                  <span className="text-[11px] text-slate-300 font-mono flex-shrink-0 pt-0.5">{hhmmss(f.ts)}</span>
+                  <span className={`font-medium flex-shrink-0 ${f.isUser ? "text-brand-700" : "text-slate-400"}`}>{f.who}</span>
+                  <span className="text-slate-500 min-w-0">{f.label}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Yardımcı: tarih formatı ───────────────────────────────
 const fmt = (d) => d ? new Date(d).toLocaleDateString("tr-TR", { day:"numeric", month:"short", year:"numeric" }) : "—";
 const fmtFull = (d) => d ? new Date(d).toLocaleString("tr-TR") : "—";
@@ -1239,6 +1399,7 @@ export default function AdminPanel() {
   // ─── ADMIN PANEL (giriş yapıldıktan sonra) ──────────────
   const navItems = [
     { id: "dashboard", label: "Genel Bakış", icon: LayoutDashboard },
+    { id: "live",      label: "Canlı",       icon: Activity },
     { id: "users",     label: "Kullanıcılar", icon: Users },
     { id: "trainings", label: "Etkinlikler", icon: Activity },
     { id: "paid-events", label: "Ücretli Etkinlikler", icon: Ticket },
@@ -2467,6 +2628,9 @@ export default function AdminPanel() {
               items={paidEvents} setItems={setPaidEvents} api={api} token={token} showToast={showToast}
             />
           )}
+
+          {/* ── LIVE ────────────────────────────────────── */}
+          {!loading && tab === "live" && <LiveTab api={api} showToast={showToast} />}
 
           {/* ── DISCOVERY ────────────────────────────────── */}
           {!loading && tab === "discovery" && (

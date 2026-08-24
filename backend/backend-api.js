@@ -119,6 +119,105 @@ app.use('/api', (req, res, next) => {
   next();
 });
 
+// ── CANLI TRAFİK ─────────────────────────────────────────────────────────
+// Admin panelindeki "Canlı" sekmesini besler. Tamamen BELLEKTE tutulur:
+// veritabanına tek satır yazılmaz, istek başına maliyet bir dizi push'u kadardır.
+// Sunucu yeniden başlarsa geçmiş sıfırlanır — bu bilinçli, kalıcı istatistik
+// zaten activity_logs + /admin/analytics tarafında duruyor.
+//
+// GİZLİLİK: IP adresi hiçbir yerde saklanmıyor. Anonim ziyaretçiler, süreç
+// ömrü boyunca geçerli rastgele bir tuzla hash'lenip 8 haneli takma ada
+// dönüşüyor; süreç yeniden başladığında aynı ziyaretçi yeni bir ada düşer.
+const LIVE_FEED_MAX = 400;
+const LIVE_MINUTES = 60;
+const LIVE_ONLINE_WINDOW_MS = 5 * 60 * 1000;
+
+const live = {
+  feed: [],            // en yeni en başta
+  minutes: new Map(),  // dakika (epoch ms) -> { requests, visitors:Set, users:Set }
+  presence: new Map(), // userId -> { ts, label }
+  visitors: new Map(), // visitorHash -> { ts, label }
+};
+const liveUserNames = new Map(); // userId -> name (tembel doldurulur)
+const LIVE_VISITOR_SALT = crypto.randomBytes(16).toString('hex');
+const liveVisitorId = (req) => crypto.createHash('sha256')
+  .update(LIVE_VISITOR_SALT + (req.ip || '') + (req.headers['user-agent'] || ''))
+  .digest('hex').slice(0, 8);
+
+// Yol → insan diliyle eylem. null dönenler akışta gösterilmez (gürültü),
+// ama trafik sayacına yine de girer.
+const LIVE_RULES = [
+  ['POST',   /^\/auth\/login$/,                     'giriş yaptı'],
+  ['POST',   /^\/auth\/register$/,                  'kayıt oldu'],
+  ['GET',    /^\/notifications\/stream$/,           'uygulamayı açtı'],
+  ['GET',    /^\/trainings$/,                       'etkinlikleri gezdi'],
+  ['GET',    /^\/trainings\/\d+$/,                  'etkinlik detayına baktı'],
+  ['POST',   /^\/trainings$/,                       'etkinlik oluşturdu'],
+  ['POST',   /^\/trainings\/\d+\/join$/,            'etkinliğe katıldı'],
+  ['DELETE', /^\/trainings\/\d+\/leave$/,           'etkinlikten ayrıldı'],
+  ['POST',   /^\/trainings\/\d+\/comments$/,        'etkinliğe yorum yaptı'],
+  ['POST',   /^\/trainings\/\d+\/register-click$/,  'yarış kayıt linkine tıkladı'],
+  ['GET',    /^\/teams$/,                           'takımları gezdi'],
+  ['GET',    /^\/teams\/\d+$/,                      'takım sayfasına baktı'],
+  ['POST',   /^\/teams$/,                           'takım kurdu'],
+  ['POST',   /^\/teams\/\d+\/join$/,                'takıma katıldı'],
+  ['POST',   /^\/teams\/\d+\/posts$/,               'takıma gönderi paylaştı'],
+  ['GET',    /^\/users\/\d+$/,                      'profil görüntüledi'],
+  ['POST',   /^\/contact$/,                         'iletişim formu gönderdi'],
+  ['POST',   /^\/report$/,                          'içerik şikayet etti'],
+];
+
+function liveDescribe(method, p) {
+  for (const [m, re, label] of LIVE_RULES) if (m === method && re.test(p)) return label;
+  return null;
+}
+
+app.use('/api', (req, res, next) => {
+  try {
+    const p = req.path;
+    // Admin panelinin kendi trafiği ve sağlık kontrolü sayılmaz — yoksa panel
+    // açık dururken grafik kendi isteklerini çizer.
+    if (p.startsWith('/admin') || p === '/health') return next();
+
+    const now = Date.now();
+    const minute = Math.floor(now / 60000) * 60000;
+    let bucket = live.minutes.get(minute);
+    if (!bucket) { bucket = { requests: 0, visitors: new Set(), users: new Set() }; live.minutes.set(minute, bucket); }
+    bucket.requests++;
+
+    // Kullanıcıyı token'dan çöz (DB'ye gitmeden). Token yoksa anonim.
+    let userId = null;
+    const auth = req.headers['authorization'];
+    const token = (auth && auth.split(' ')[1]) || req.query?.token;
+    if (token) {
+      try { userId = jwt.verify(token, JWT_SECRET)?.id ?? null; } catch { userId = null; }
+    }
+    const vid = userId ? null : liveVisitorId(req);
+    if (userId) bucket.users.add(userId); else bucket.visitors.add(vid);
+
+    const label = liveDescribe(req.method, p);
+    if (userId) live.presence.set(userId, { ts: now, label: label || live.presence.get(userId)?.label || null });
+    else live.visitors.set(vid, { ts: now, label: label || live.visitors.get(vid)?.label || null });
+
+    if (label) {
+      live.feed.unshift({ ts: now, userId, vid, label, path: p });
+      if (live.feed.length > LIVE_FEED_MAX) live.feed.length = LIVE_FEED_MAX;
+    }
+  } catch { /* izleme asla isteği bozmasın */ }
+  next();
+});
+
+// Eski kayıtları temizle (dakikada bir)
+setInterval(() => {
+  const cutoffMinute = Math.floor((Date.now() - LIVE_MINUTES * 60000) / 60000) * 60000;
+  for (const k of live.minutes.keys()) if (k < cutoffMinute) live.minutes.delete(k);
+  const cutoff = Date.now() - 30 * 60000;
+  for (const [k, v] of live.presence) if (v.ts < cutoff) live.presence.delete(k);
+  for (const [k, v] of live.visitors) if (v.ts < cutoff) live.visitors.delete(k);
+  const feedCutoff = Date.now() - 60 * 60000;
+  live.feed = live.feed.filter((f) => f.ts >= feedCutoff);
+}, 60000).unref?.();
+
 app.use(express.json({ limit: '2mb' }));
 
 // Statik dosyalar (upload edilen görseller)
@@ -4972,6 +5071,74 @@ app.get('/api/admin/logs', isAdmin, async (req, res) => {
   } catch (e) {
     console.error('admin logs error:', e);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin: canlı trafik anlık görüntüsü. Tamamı bellekten okunur; tek DB sorgusu
+// isim çözmek için, o da yalnızca önbellekte olmayan kullanıcılar varsa.
+app.get('/api/admin/live', isAdmin, async (req, res) => {
+  try {
+    const now = Date.now();
+
+    // İsimleri tamamla
+    const needed = [...live.presence.keys()].filter((id) => !liveUserNames.has(id));
+    for (const f of live.feed.slice(0, 60)) if (f.userId && !liveUserNames.has(f.userId) && !needed.includes(f.userId)) needed.push(f.userId);
+    if (needed.length) {
+      const r = await pool.query('SELECT id, name FROM users WHERE id = ANY($1)', [needed]);
+      for (const row of r.rows) liveUserNames.set(row.id, row.name);
+      for (const id of needed) if (!liveUserNames.has(id)) liveUserNames.set(id, `#${id}`);
+    }
+    const nameOf = (id) => liveUserNames.get(id) || `#${id}`;
+
+    // Şu an içeride: açık SSE bağlantısı olanlar + son 5 dk içinde istek atanlar
+    const onlineIds = new Set([...sseClients.keys()].filter((id) => (sseClients.get(id)?.size || 0) > 0));
+    for (const [id, v] of live.presence) if (now - v.ts <= LIVE_ONLINE_WINDOW_MS) onlineIds.add(id);
+    const online = [...onlineIds].map((id) => ({
+      id,
+      name: nameOf(id),
+      connected: (sseClients.get(id)?.size || 0) > 0, // uygulama açık ve ön planda
+      lastLabel: live.presence.get(id)?.label || null,
+      secondsAgo: live.presence.has(id) ? Math.round((now - live.presence.get(id).ts) / 1000) : null,
+    })).sort((a, b) => (a.secondsAgo ?? 1e9) - (b.secondsAgo ?? 1e9));
+
+    const activeVisitors = [...live.visitors.values()].filter((v) => now - v.ts <= LIVE_ONLINE_WINDOW_MS).length;
+
+    // Son 60 dakika, boş dakikalar sıfırla doldurulur (grafik kesintisiz olsun)
+    const thisMinute = Math.floor(now / 60000) * 60000;
+    const minutes = [];
+    for (let i = LIVE_MINUTES - 1; i >= 0; i--) {
+      const t = thisMinute - i * 60000;
+      const b = live.minutes.get(t);
+      minutes.push({
+        t,
+        requests: b?.requests || 0,
+        visitors: (b?.visitors.size || 0) + (b?.users.size || 0),
+      });
+    }
+
+    const since5 = now - 5 * 60000;
+    const last5 = minutes.filter((m) => m.t >= since5).reduce((a, m) => a + m.requests, 0);
+    const last60 = minutes.reduce((a, m) => a + m.requests, 0);
+
+    const feed = live.feed.slice(0, 40).map((f) => ({
+      ts: f.ts,
+      who: f.userId ? nameOf(f.userId) : `Ziyaretçi ${f.vid}`,
+      isUser: !!f.userId,
+      label: f.label,
+      path: f.path,
+    }));
+
+    res.json({
+      now,
+      online,
+      activeVisitors,
+      minutes,
+      feed,
+      totals: { onlineUsers: online.length, activeVisitors, last5, last60 },
+    });
+  } catch (e) {
+    console.error('Admin live error:', e);
+    res.status(500).json({ error: 'Canlı veriler alınamadı.' });
   }
 });
 
