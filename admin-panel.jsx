@@ -1031,10 +1031,18 @@ function LiveTab({ api, showToast }) {
             Son bir saatin trafiği ve şu anki hareketler. Veriler sunucu belleğinde tutulur, veritabanına yazılmaz; servis yeniden başlarsa sıfırlanır.
           </p>
         </div>
-        <button onClick={() => setPaused(p => !p)}
-          className="px-4 py-2 rounded-xl text-sm font-medium border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition">
-          {paused ? "Devam Et" : "Duraklat"}
-        </button>
+        <div className="flex flex-col items-end gap-1">
+          <button onClick={() => setPaused(p => !p)}
+            title="Akış hızlı akarken okumayı kolaylaştırır. Yük azaltmak için gerekmez."
+            className="px-4 py-2 rounded-xl text-sm font-medium border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition">
+            {paused ? "Akışı Sürdür" : "Akışı Dondur"}
+          </button>
+          <span className="text-[11px] text-slate-400 text-right max-w-[240px]">
+            {paused
+              ? "Ekran donduruldu — sayılar güncellenmiyor."
+              : "Okurken kaymasın diye. Sekmeden çıkınca sorgu zaten kendiliğinden durur."}
+          </span>
+        </div>
       </div>
 
       {err && (
