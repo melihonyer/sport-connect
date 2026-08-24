@@ -1085,12 +1085,12 @@ const BADGE_THEME = {
   "Sporcu":         { c1: "#a78bfa", c2: "#6d28d9", glyph: "dumbbell"},
   "Efsane":         { c1: "#fbbf24", c2: "#d97706", glyph: "trophy"  },
   "Şampiyon":       { c1: "#fb7185", c2: "#be123c", glyph: "medal"   },
-  "Takım Oyuncusu": { c1: "#54889a", c2: "#2d6779", glyph: "users"   },
+  "Takım Oyuncusu": { c1: "#54889a", c2: "#00a499", glyph: "users"   },
   "Lider":          { c1: "#fcd34d", c2: "#d97706", glyph: "crown"   },
   "Organizatör":    { c1: "#818cf8", c2: "#4338ca", glyph: "megaphone" },
   "Sohbetçi":       { c1: "#f472b6", c2: "#db2777", glyph: "chat"    },
   // Spor dalı rozetleri
-  "Bisikletçi":     { c1: "#54889a", c2: "#2d6779" },
+  "Bisikletçi":     { c1: "#54889a", c2: "#00a499" },
   "Koşucu":         { c1: "#fb923c", c2: "#ea580c" },
   "Yüzücü":         { c1: "#38bdf8", c2: "#0e3c47" },
   "Tenisçi":        { c1: "#a3e635", c2: "#4d7c0f" },
@@ -1101,7 +1101,7 @@ const BADGE_THEME = {
   "Yogi":           { c1: "#c4b5fd", c2: "#6d28d9" },
   "Kaşif":          { c1: "#8fbf9f", c2: "#3f7a5a" },
 };
-const badgeTheme = (name) => BADGE_THEME[name] || { c1: "#54889a", c2: "#2d6779", glyph: "rosette" };
+const badgeTheme = (name) => BADGE_THEME[name] || { c1: "#54889a", c2: "#00a499", glyph: "rosette" };
 
 // Rozet adı → sabit ascii dosya adı (paylaşım kartı için önceden üretilmiş PNG'ler).
 const BADGE_SLUG = {
@@ -3700,7 +3700,7 @@ export default function Muuvlink() {
     const editorialFeatures = [
       {
         num:"01", icon: MapPin, accent:"#0b2f38",
-        bg:"linear-gradient(135deg,#eef4f6 0%,#eef4f6 50%,#d6e5e9 100%)",
+        bg:"linear-gradient(135deg,#e6f7f5 0%,#e6f7f5 50%,#c2ede9 100%)",
         image: "/uploads/feature-01.webp",
         sub:   t("home.ef1Sub"),
         title: t("home.ef1Title"),
@@ -3709,7 +3709,7 @@ export default function Muuvlink() {
       },
       {
         num:"02", icon: Users, accent:"#0b2f38",
-        bg:"linear-gradient(135deg,#eef4f6 0%,#d6e5e9 50%,#97e7e8 100%)",
+        bg:"linear-gradient(135deg,#e6f7f5 0%,#c2ede9 50%,#8fdcd5 100%)",
         image: "/uploads/feature-02.webp",
         sub:   t("home.ef2Sub"),
         title: t("home.ef2Title"),
@@ -3718,7 +3718,7 @@ export default function Muuvlink() {
       },
       {
         num:"03", icon: Trophy, accent:"#0b2f38",
-        bg:"linear-gradient(135deg,#eef4f6 0%,#114956 50%,#0e3c47 100%)",
+        bg:"linear-gradient(135deg,#e6f7f5 0%,#114956 50%,#0e3c47 100%)",
         image: "/uploads/feature-03.webp",
         sub:   t("home.ef3Sub"),
         title: t("home.ef3Title"),
@@ -3965,7 +3965,7 @@ export default function Muuvlink() {
               </span>
             ) : (
               <span className="px-2.5 py-1 text-xs font-medium rounded-lg" style={{
-                background: team.my_role === 'owner' ? '#114956' : team.my_role === 'editor' ? '#eef4f6' : team.my_role === 'coach' ? '#EDE9FE' : team.my_role === 'captain' ? '#DCFCE7' : '#F0FDF4',
+                background: team.my_role === 'owner' ? '#114956' : team.my_role === 'editor' ? '#e6f7f5' : team.my_role === 'coach' ? '#EDE9FE' : team.my_role === 'captain' ? '#DCFCE7' : '#F0FDF4',
                 color: team.my_role === 'owner' ? '#ffffff' : team.my_role === 'editor' ? '#0e3c47' : team.my_role === 'coach' ? '#5B21B6' : team.my_role === 'captain' ? '#0b2f38' : '#0b2f38',
               }}>
                 {team.my_role === 'owner' ? <><Crown className="w-3 h-3 inline mr-1"/>{t("teamDetail.roles.owner")}</> : team.my_role === 'editor' ? <><Edit className="w-3 h-3 inline mr-1"/>{t("teamDetail.roles.editor")}</> : team.my_role === 'coach' ? <><Target className="w-3 h-3 inline mr-1"/>{t("teamDetail.roles.coach")}</> : team.my_role === 'captain' ? <><Navigation2 className="w-3 h-3 inline mr-1"/>{t("teamDetail.roles.captain")}</> : <><User className="w-3 h-3 inline mr-1"/>{t("teamDetail.roles.member")}</>}
@@ -4228,7 +4228,7 @@ export default function Muuvlink() {
     return (
       <div className="bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 pt-10">
-          <div className="rounded-2xl border border-brand-100 p-5 sm:p-6" style={{background:"linear-gradient(135deg,#eef4f6,#f4f8f9)"}}>
+          <div className="rounded-2xl border border-brand-100 p-5 sm:p-6" style={{background:"linear-gradient(135deg,#e6f7f5,#f0fbfa)"}}>
             <div className="flex items-center justify-between mb-4 gap-3">
               <h3 className="font-display font-bold text-brand-900 text-lg">{t("checklist.title")}</h3>
               <span className="text-xs font-semibold text-brand-700 flex-shrink-0">
@@ -4247,7 +4247,7 @@ export default function Muuvlink() {
                   <span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5"
                     style={item.done
                       ? {background:"#114956"}
-                      : {border:"2px solid #97e7e8", background:"transparent"}}>
+                      : {border:"2px solid #8fdcd5", background:"transparent"}}>
                     {item.done && <Check className="w-3 h-3 text-white" strokeWidth={3}/>}
                   </span>
                   <span className="min-w-0">
@@ -4304,7 +4304,7 @@ export default function Muuvlink() {
                     className="px-4 py-2 rounded-xl text-xs font-medium transition-all duration-300 hover:scale-105 hover:shadow-md"
                     style={nearbyDistance === km
                       ? {background:"#114956", color:"#fff", boxShadow:"0 2px 8px rgba(17,73,86,0.18)"}
-                      : {background:"#eef4f6", color:"#0b2f38", border:"1px solid #d6e5e9", boxShadow:"0 2px 8px rgba(17,73,86,0.0)"}}
+                      : {background:"#e6f7f5", color:"#0b2f38", border:"1px solid #c2ede9", boxShadow:"0 2px 8px rgba(17,73,86,0.0)"}}
                     onMouseEnter={e => { if(nearbyDistance !== km) e.currentTarget.style.boxShadow="0 4px 16px rgba(17,73,86,0.25)"; }}
                     onMouseLeave={e => { if(nearbyDistance !== km) e.currentTarget.style.boxShadow="0 2px 8px rgba(17,73,86,0.0)"; }}
                   >
@@ -4454,7 +4454,7 @@ export default function Muuvlink() {
     return (
     <div className="min-h-screen bg-slate-50">
       {/* ── Profile hero header ── */}
-      <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#eef4f6 0%,#eef4f6 60%,#d6e5e9 100%)"}}>
+      <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#e6f7f5 0%,#e6f7f5 60%,#c2ede9 100%)"}}>
         <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
           style={{backgroundImage:"linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px)", backgroundSize:"50px 50px"}}/>
         <div className="absolute inset-0 pointer-events-none"
@@ -4484,7 +4484,7 @@ export default function Muuvlink() {
             <div className="flex items-center gap-2.5">
               <button onClick={() => setShowProfileEdit(true)}
                 className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all"
-                style={{background:"white", color:"#0e3c47", border:"1px solid #d6e5e9"}}>
+                style={{background:"white", color:"#0e3c47", border:"1px solid #c2ede9"}}>
                 <Settings className="w-4 h-4"/> {t("profile.editProfile")}
               </button>
               {/* Bildirimler — sadece ikon + okunmamış sayısı */}
@@ -4494,7 +4494,7 @@ export default function Muuvlink() {
                   <button onClick={() => setShowNotifications(true)}
                     aria-label={t("notifications.title")} title={t("notifications.title")}
                     className="relative flex items-center justify-center w-11 h-11 rounded-xl flex-shrink-0 transition-all"
-                    style={{background:"white", border:"1px solid #d6e5e9"}}>
+                    style={{background:"white", border:"1px solid #c2ede9"}}>
                     <Bell className="w-5 h-5" style={{color:"#0e3c47"}}/>
                     {unread > 0 && (
                       <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1 rounded-full bg-red-500 text-white text-[11px] font-bold flex items-center justify-center border-2 border-white">
@@ -4524,15 +4524,15 @@ export default function Muuvlink() {
           </div>
 
           {/* Stats strip */}
-          <div className="grid grid-cols-3 gap-px mt-10 rounded-2xl overflow-hidden" style={{background:"rgba(255,255,255,0.06)"}}>
+          <div className="grid grid-cols-3 gap-3 mt-10">
             {[
               {val: userStats?.total_trainings || 0, label: t("home.statTrainings"), accent:"#114956"},
-              {val: myTeams.length,                  label: t("home.statTeams"),     accent:"#643e87"},
-              {val: userBadges.length,               label: t("home.statBadges"),    accent:"#f59e0b"},
+              {val: myTeams.length,                  label: t("home.statTeams"),     accent:"#00a499"},
+              {val: userBadges.length,               label: t("home.statBadges"),    accent:"#643e87"},
             ].map((s, i) => (
-              <div key={i} className="px-6 py-5" style={{background:"rgba(17,73,86,0.15)"}}>
-                <div className="text-2xl font-semibold text-brand-700">{s.val}</div>
-                <div className="text-[10px] text-brand-600 mt-1 uppercase tracking-widest font-semibold">{s.label}</div>
+              <div key={i} className="px-5 py-4 rounded-2xl bg-white border border-brand-100">
+                <div className="text-3xl font-bold leading-none" style={{color:s.accent}}>{s.val}</div>
+                <div className="text-[10px] text-slate-500 mt-2 uppercase tracking-widest font-bold">{s.label}</div>
               </div>
             ))}
           </div>
@@ -4547,13 +4547,16 @@ export default function Muuvlink() {
           <div className="space-y-3 min-w-0">
             <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase mb-4">{t("home.quickAccess")}</div>
             {[
-              {label: t("createTraining.pageTitle"), icon:Plus,   page:"create-training", grad:"#114956", shadow:"rgba(17,73,86,0.3)"},
-              {label: t("teams.create"),             icon:Users,  page:"create-team",     grad:"#114956", shadow:"rgba(14,165,233,0.3)"},
-              {label: t("badges.pageTitle"),         icon:Trophy, page:"badges",          grad:"linear-gradient(135deg,#F59E0B,#FBBF24)", shadow:"rgba(245,158,11,0.3)"},
+              {label: t("createTraining.pageTitle"), icon:Plus,   page:"create-training", tone:"solid"},
+              {label: t("teams.create"),             icon:Users,  page:"create-team",     tone:"solid"},
+              {label: t("badges.pageTitle"),         icon:Trophy, page:"badges",          tone:"pop"},
             ].map((a) => (
               <button key={a.label} onClick={() => setCurrentPage(a.page)}
-                className="w-full flex items-center gap-3 px-5 py-3.5 rounded-xl font-medium text-white text-sm transition-all hover:opacity-90 hover:shadow-lg"
-                style={{background:a.grad, boxShadow:`0 6px 20px ${a.shadow}`}}>
+                data-btn={a.tone}
+                className="w-full flex items-center gap-3 px-5 py-3.5 rounded-xl font-semibold text-sm transition-all"
+                style={a.tone === "pop"
+                  ? {background:"#F4F818", color:"#1F2121"}
+                  : {background:"#114956", color:"#fff"}}>
                 <a.icon className="w-4 h-4"/> {a.label}
               </button>
             ))}
@@ -4885,7 +4888,7 @@ export default function Muuvlink() {
     return (
       <div className="min-h-screen bg-slate-50">
         {/* ── Dark athletic page header ── */}
-        <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#eef4f6 0%,#eef4f6 60%,#d6e5e9 100%)"}}>
+        <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#e6f7f5 0%,#e6f7f5 60%,#c2ede9 100%)"}}>
           <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
             style={{backgroundImage:"linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px)", backgroundSize:"50px 50px"}}/>
           <div className="absolute right-0 top-0 w-[500px] h-full pointer-events-none"
@@ -5115,7 +5118,7 @@ export default function Muuvlink() {
     return (
       <div className="min-h-screen bg-slate-50">
         {/* ── Dark athletic page header ── */}
-        <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#eef4f6 0%,#eef4f6 60%,#d6e5e9 100%)"}}>
+        <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#e6f7f5 0%,#e6f7f5 60%,#c2ede9 100%)"}}>
           <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
             style={{backgroundImage:"linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px)", backgroundSize:"50px 50px"}}/>
           <div className="absolute left-0 top-0 w-[500px] h-full pointer-events-none"
@@ -5227,7 +5230,7 @@ export default function Muuvlink() {
     return (
     <div className="min-h-screen bg-slate-50">
       {/* ── Light green header ── */}
-      <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#eef4f6 0%,#eef4f6 60%,#d6e5e9 100%)"}}>
+      <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#e6f7f5 0%,#e6f7f5 60%,#c2ede9 100%)"}}>
         <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
           style={{backgroundImage:"linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px)", backgroundSize:"50px 50px"}}/>
         <div className="absolute inset-0 pointer-events-none"
@@ -7344,7 +7347,7 @@ export default function Muuvlink() {
         data-tour={page === "teams" ? "teams-tab-mobile" : undefined}
         className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-sm font-medium transition-colors"
         style={{
-          background: isActive(page) ? "linear-gradient(135deg,#eef4f6,#eef4f6)" : "transparent",
+          background: isActive(page) ? "linear-gradient(135deg,#e6f7f5,#e6f7f5)" : "transparent",
           color: isActive(page) ? "#0e3c47" : "#475569",
         }}
       >
@@ -7624,7 +7627,7 @@ export default function Muuvlink() {
     return (
       <div className="min-h-screen bg-slate-50">
         {/* ── Header ── */}
-        <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#eef4f6 0%,#eef4f6 60%,#d6e5e9 100%)"}}>
+        <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#e6f7f5 0%,#e6f7f5 60%,#c2ede9 100%)"}}>
           <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
             style={{backgroundImage:"linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px)", backgroundSize:"50px 50px"}}/>
           <div className="absolute inset-0 pointer-events-none"
@@ -7692,7 +7695,7 @@ export default function Muuvlink() {
               </div>
 
               {/* Bilgi notu */}
-              <div className="rounded-2xl p-5 border border-brand-100" style={{background:"linear-gradient(135deg,#eef4f6,#f4f8f9)"}}>
+              <div className="rounded-2xl p-5 border border-brand-100" style={{background:"linear-gradient(135deg,#e6f7f5,#f0fbfa)"}}>
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
                     style={{background:"rgba(17,73,86,0.15)"}}>
@@ -7783,11 +7786,11 @@ export default function Muuvlink() {
                 <div className="space-y-2">
                   {faqs.map((faq, i) => (
                     <div key={i} className="border border-slate-100 rounded-xl overflow-hidden transition-all duration-200"
-                      style={openFaq === i ? {borderColor:"#d6e5e9", boxShadow:"0 0 0 3px rgba(17,73,86,0.07)"} : {}}>
+                      style={openFaq === i ? {borderColor:"#c2ede9", boxShadow:"0 0 0 3px rgba(17,73,86,0.07)"} : {}}>
                       <button
                         onClick={() => setOpenFaq(openFaq === i ? null : i)}
                         className="w-full flex items-center justify-between px-5 py-4 text-left transition-colors"
-                        style={openFaq === i ? {background:"#f4f8f9"} : {}}
+                        style={openFaq === i ? {background:"#f0fbfa"} : {}}
                         onMouseEnter={e => { if (openFaq !== i) e.currentTarget.style.background = "#f8fafc"; }}
                         onMouseLeave={e => { if (openFaq !== i) e.currentTarget.style.background = ""; }}
                       >

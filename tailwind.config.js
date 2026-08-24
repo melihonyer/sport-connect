@@ -17,13 +17,15 @@ export default {
         // 03 Carbon     #1F2121 → metin (büyük zemin olarak KULLANILMAZ)
         // 04 WhiteSmoke #F4F4F4 → sayfa zemini
         // Ana1/Ana2 logo renkleri sadece ikon, ok, çizgi gibi küçük öğelerde.
+        // Açık uç Ana1 (#00a499) canlı tealinden türer — aydınlık zeminler diri kalsın.
+        // Koyu uç 01 Deep Teal (#114956) — büyük yüzeyler ve birincil aksiyon.
         brand: {
-          50:  '#eef4f6',
-          100: '#d6e5e9',
-          200: '#adc9d1',
-          300: '#7fa9b5',
-          400: '#54889a',
-          500: '#2d6779',
+          50:  '#e6f7f5',
+          100: '#c2ede9',
+          200: '#8fdcd5',
+          300: '#55c6bd',
+          400: '#16a99e',
+          500: '#00a499',
           600: '#114956',
           700: '#0e3c47',
           800: '#0b2f38',

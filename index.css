@@ -119,6 +119,11 @@
   }
   [data-btn="solid"]:hover:not(:disabled) svg { color: #114956 !important; }
 
+  /* Sarı zeminli buton: hover'da Deep Teal'e döner */
+  [data-btn="pop"] { transition: background-color .18s ease, color .18s ease; }
+  [data-btn="pop"]:hover:not(:disabled) { background: #114956 !important; color: #fff !important; }
+  [data-btn="pop"]:hover:not(:disabled) svg { color: #fff !important; }
+
   .btn-primary:hover {
     background: #F4F818;
     color: #114956;
