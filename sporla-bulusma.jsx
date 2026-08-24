@@ -87,9 +87,9 @@ class ErrorBoundary extends React.Component {
             {this.state.error?.message || _t("unexpected")}
           </p>
         </div>
-        <button onClick={reset}
+        <button data-btn="solid" onClick={reset}
           className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white"
-          style={{ background: "linear-gradient(135deg,#114956,#0e3c47)" }}>
+          style={{ background: "#114956" }}>
           {_t("retry")}
         </button>
       </div>
@@ -839,10 +839,10 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                     <div className="flex flex-wrap items-center gap-4 pt-1">
                       {!user && (
                         /* Buton 1: Statik "Hemen Başla" — sadece giriş yapılmamışken */
-                        <button
+                        <button data-btn="solid"
                           onClick={() => { setAuthMode("register"); setIsAuthModalOpen(true); }}
                           className="group relative flex items-center gap-2.5 px-7 py-3.5 font-medium text-white text-sm overflow-hidden transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl"
-                          style={{background:"linear-gradient(135deg,#114956,#0e3c47)", borderRadius:"14px", boxShadow:"0 8px 32px rgba(17,73,86,0.4)"}}
+                          style={{background:"#114956", borderRadius:"14px", boxShadow:"0 2px 8px rgba(17,73,86,0.18)"}}
                         >
                           <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-[14px]"/>
                           {t ? t("home.startBtn") : "Get Started"}
@@ -850,11 +850,11 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                         </button>
                       )}
                       {/* Buton 2: Admin panelinden düzenlenebilir — her zaman göster */}
-                      <button
+                      <button data-btn="solid"
                         onClick={() => handleCtaClick(banner?.cta_primary_url, () => setCurrentPage("trainings"))}
                         className={`flex items-center gap-2 px-7 py-3.5 font-semibold text-sm transition-all duration-300 rounded-[14px] ${user ? "group relative overflow-hidden hover:scale-[1.03] hover:shadow-2xl" : ""}`}
                         style={user
-                          ? {background:"linear-gradient(135deg,#114956,#0e3c47)", color:"#fff", borderRadius:"14px", boxShadow:"0 8px 32px rgba(17,73,86,0.4)"}
+                          ? {background:"#114956", color:"#fff", borderRadius:"14px", boxShadow:"0 2px 8px rgba(17,73,86,0.18)"}
                           : {color:uiText, border:`1px solid ${uiBorder}`, background:"transparent"}}
                         onMouseEnter={e=>{ if(!user) e.currentTarget.style.background=uiSecHover; }}
                         onMouseLeave={e=>{ if(!user) e.currentTarget.style.background="transparent"; }}
@@ -1980,9 +1980,9 @@ export default function Muuvlink() {
           </div>
           {/* Kaydet */}
           <div className="px-4 py-3 border-t border-slate-100 flex-shrink-0">
-            <button onClick={save} disabled={busy}
+            <button data-btn="solid" onClick={save} disabled={busy}
               className="w-full h-12 rounded-xl text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
-              style={{ background: "linear-gradient(135deg,#114956,#0e3c47)" }}>
+              style={{ background: "#114956" }}>
               {busy && <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />}
               {t("notifPrefs.save")}
             </button>
@@ -3928,7 +3928,7 @@ export default function Muuvlink() {
         <div className="flex items-start justify-between mb-3 gap-2">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-12 h-12 rounded-xl overflow-hidden flex items-center justify-center text-white text-lg font-bold flex-shrink-0"
-              style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}>
+              style={{background:"#114956"}}>
               {(team.avatar?.startsWith("/uploads/") || team.avatar?.startsWith("http"))
                 ? <img src={team.avatar.startsWith("http") ? team.avatar : `${BASE_URL}${team.avatar}`} alt="" className="w-full h-full object-cover" />
                 : (team.name?.[0]?.toLocaleUpperCase("en-US") || "T")}
@@ -4298,12 +4298,12 @@ export default function Muuvlink() {
               </p>
               <div className="flex flex-wrap gap-2 mb-4">
                 {[5, 10, 25, 50].map((km) => (
-                  <button
+                  <button data-btn="solid"
                     key={km}
                     onClick={() => setNearbyDistance(km)}
                     className="px-4 py-2 rounded-xl text-xs font-medium transition-all duration-300 hover:scale-105 hover:shadow-md"
                     style={nearbyDistance === km
-                      ? {background:"linear-gradient(135deg,#114956,#0e3c47)", color:"#fff", boxShadow:"0 4px 20px rgba(17,73,86,0.35)"}
+                      ? {background:"#114956", color:"#fff", boxShadow:"0 2px 8px rgba(17,73,86,0.18)"}
                       : {background:"#eef4f6", color:"#0b2f38", border:"1px solid #d6e5e9", boxShadow:"0 2px 8px rgba(17,73,86,0.0)"}}
                     onMouseEnter={e => { if(nearbyDistance !== km) e.currentTarget.style.boxShadow="0 4px 16px rgba(17,73,86,0.25)"; }}
                     onMouseLeave={e => { if(nearbyDistance !== km) e.currentTarget.style.boxShadow="0 2px 8px rgba(17,73,86,0.0)"; }}
@@ -4312,11 +4312,11 @@ export default function Muuvlink() {
                   </button>
                 ))}
               </div>
-              <button
+              <button data-btn="solid"
                 onClick={() => handleNearbySearch()}
                 disabled={locationLoading}
                 className="flex items-center gap-2 px-6 py-3 rounded-xl font-medium text-white text-sm transition-all duration-300 hover:opacity-90 hover:scale-105 disabled:opacity-50 disabled:scale-100"
-                style={{background:"linear-gradient(135deg,#114956,#0e3c47)", boxShadow:"0 6px 24px rgba(17,73,86,0.3)"}}
+                style={{background:"#114956", boxShadow:"0 2px 8px rgba(17,73,86,0.18)"}}
               >
                 {locationLoading
                   ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/> {t("home.gettingLocation")}</>
@@ -4337,10 +4337,10 @@ export default function Muuvlink() {
                     {t("home.upcoming")}
                   </h2>
                 </div>
-                <button
+                <button data-btn="solid"
                   onClick={() => setCurrentPage("trainings")}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium transition-all hover:shadow-md flex-shrink-0"
-                  style={{background:"linear-gradient(135deg,#114956,#0e3c47)", color:"#fff"}}
+                  style={{background:"#114956", color:"#fff"}}
                 >
                   {t("home.viewAll")}
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
@@ -4403,10 +4403,10 @@ export default function Muuvlink() {
               {t("home.ctaSignupDesc")}
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
-              <button
+              <button data-btn="solid"
                 onClick={() => { setAuthMode("register"); setIsAuthModalOpen(true); }}
                 className="inline-flex items-center gap-2.5 px-10 py-4 rounded-2xl font-semibold text-white text-base transition-all hover:scale-105 hover:shadow-2xl"
-                style={{background:"linear-gradient(135deg,#114956,#0e3c47)", boxShadow:"0 12px 40px rgba(17,73,86,0.4)"}}
+                style={{background:"#114956", boxShadow:"0 2px 8px rgba(17,73,86,0.18)"}}
               >
                 {t("home.startFree")}
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
@@ -4430,7 +4430,7 @@ export default function Muuvlink() {
       return (
         <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center px-6 text-center gap-5">
           <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-white"
-            style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}>
+            style={{background:"#114956"}}>
             <User className="w-7 h-7"/>
           </div>
           <div>
@@ -4438,9 +4438,9 @@ export default function Muuvlink() {
             <p className="text-slate-400 text-sm">{t("home.heroTagline")}</p>
           </div>
           <div className="flex flex-col gap-3 w-full max-w-xs">
-            <button onClick={() => { setAuthMode("login"); setIsAuthModalOpen(true); }}
+            <button data-btn="solid" onClick={() => { setAuthMode("login"); setIsAuthModalOpen(true); }}
               className="w-full px-6 py-3 rounded-xl font-semibold text-white text-sm"
-              style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}>
+              style={{background:"#114956"}}>
               {t("nav.login")}
             </button>
             <button onClick={() => { setAuthMode("register"); setIsAuthModalOpen(true); }}
@@ -4465,7 +4465,7 @@ export default function Muuvlink() {
             <div className="flex items-center gap-5">
               <div className="relative cursor-pointer group" onClick={() => setShowProfileEdit(true)} title="Profili düzenle">
                 <div className="w-20 h-20 rounded-2xl overflow-hidden flex items-center justify-center text-white text-2xl font-bold flex-shrink-0"
-                  style={{background:"linear-gradient(135deg,#114956,#0e3c47)", boxShadow:"0 8px 24px rgba(17,73,86,0.4)"}}>
+                  style={{background:"#114956", boxShadow:"0 2px 8px rgba(17,73,86,0.18)"}}>
                   {(user?.avatar?.startsWith("/uploads/") || user?.avatar?.startsWith("http")) ? (
                     <img src={user.avatar.startsWith("http") ? user.avatar : `${BASE_URL}${user.avatar}`} alt="avatar" className="w-full h-full object-cover" />
                   ) : (
@@ -4514,7 +4514,7 @@ export default function Muuvlink() {
             </div>
             <div className="flex items-center gap-1 bg-white/70 rounded-xl p-1">
               {[{ code:"tr", label:"TR" }, { code:"en", label:"EN" }, { code:"de", label:"DE" }].map(({ code, label }) => (
-                <button key={code} onClick={() => changeLang(code)}
+                <button data-btn="solid" key={code} onClick={() => changeLang(code)}
                   className="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all"
                   style={lang === code ? {background:"#114956", color:"#fff"} : {color:"#64748b"}}>
                   {label}
@@ -4547,8 +4547,8 @@ export default function Muuvlink() {
           <div className="space-y-3 min-w-0">
             <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase mb-4">{t("home.quickAccess")}</div>
             {[
-              {label: t("createTraining.pageTitle"), icon:Plus,   page:"create-training", grad:"linear-gradient(135deg,#114956,#0e3c47)", shadow:"rgba(17,73,86,0.3)"},
-              {label: t("teams.create"),             icon:Users,  page:"create-team",     grad:"linear-gradient(135deg,#54889a,#00a499)", shadow:"rgba(14,165,233,0.3)"},
+              {label: t("createTraining.pageTitle"), icon:Plus,   page:"create-training", grad:"#114956", shadow:"rgba(17,73,86,0.3)"},
+              {label: t("teams.create"),             icon:Users,  page:"create-team",     grad:"#114956", shadow:"rgba(14,165,233,0.3)"},
               {label: t("badges.pageTitle"),         icon:Trophy, page:"badges",          grad:"linear-gradient(135deg,#F59E0B,#FBBF24)", shadow:"rgba(245,158,11,0.3)"},
             ].map((a) => (
               <button key={a.label} onClick={() => setCurrentPage(a.page)}
@@ -4644,7 +4644,7 @@ export default function Muuvlink() {
                     <button key={team.id} onClick={() => fetchTeamDetails(team.id)}
                       className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-100 hover:border-brand-200 hover:bg-brand-50/30 transition-all text-left">
                       <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center text-white text-base font-bold flex-shrink-0"
-                        style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}>
+                        style={{background:"#114956"}}>
                         {(team.avatar?.startsWith("/uploads/") || team.avatar?.startsWith("http"))
                           ? <img src={team.avatar.startsWith("http") ? team.avatar : `${BASE_URL}${team.avatar}`} alt="" className="w-full h-full object-cover" />
                           : (team.name?.[0]?.toLocaleUpperCase("en-US") || "T")}
@@ -4898,11 +4898,11 @@ export default function Muuvlink() {
                 <p className="text-slate-400 mt-2 text-sm sm:text-base">{t("trainings.pageSubtitle")}</p>
               </div>
               {user && (
-                <button
+                <button data-btn="solid"
                   onClick={() => setCurrentPage("create-training")}
                   data-tour="create-event"
                   className="flex-shrink-0 flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium text-white text-sm transition-all hover:opacity-90"
-                  style={{background:"linear-gradient(135deg,#114956,#0e3c47)", boxShadow:"0 8px 24px rgba(17,73,86,0.35)"}}
+                  style={{background:"#114956", boxShadow:"0 2px 8px rgba(17,73,86,0.18)"}}
                 >
                   <Plus className="w-4 h-4" />
                   <span className="hidden sm:inline">{t("trainings.create")}</span>
@@ -4928,12 +4928,12 @@ export default function Muuvlink() {
                 />
               </div>
               {/* View toggle — tek buton, aktif moda göre değişir */}
-              <button
+              <button data-btn="solid"
                 onClick={() => setViewMode(viewMode === "list" ? "map" : "list")}
                 data-tour="map-view"
                 className="flex-shrink-0 whitespace-nowrap px-3.5 py-2.5 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 border shadow-sm"
                 style={viewMode === "map"
-                  ? {background:"linear-gradient(135deg,#114956,#0e3c47)", color:"#fff", borderColor:"transparent", boxShadow:"0 1px 8px rgba(17,73,86,0.35)"}
+                  ? {background:"#114956", color:"#fff", borderColor:"transparent", boxShadow:"0 1px 8px rgba(17,73,86,0.35)"}
                   : {background:"linear-gradient(135deg,rgba(17,73,86,0.06),rgba(0,146,149,0.06))", color:"#00a0a3", borderColor:"rgba(17,73,86,0.3)"}}>
                 {viewMode === "map" ? (
                   <>
@@ -4974,18 +4974,18 @@ export default function Muuvlink() {
 
             {/* Satır 3: GPS toggle */}
             <div className="flex items-center gap-2">
-              <button onClick={handleExitNearby}
+              <button data-btn="solid" onClick={handleExitNearby}
                 className="px-4 py-2 text-xs font-semibold rounded-xl transition-all border shadow-sm"
                 style={!nearbyMode
-                  ? {background:"linear-gradient(135deg,#114956,#0e3c47)", color:"#fff", borderColor:"transparent", boxShadow:"0 1px 8px rgba(17,73,86,0.25)"}
+                  ? {background:"#114956", color:"#fff", borderColor:"transparent", boxShadow:"0 1px 8px rgba(17,73,86,0.25)"}
                   : {background:"#fff", color:"#94a3b8", borderColor:"#e2e8f0"}}>
                 {t("common.all")}
               </button>
-              <button onClick={() => handleNearbySearch()} disabled={locationLoading}
+              <button data-btn="solid" onClick={() => handleNearbySearch()} disabled={locationLoading}
                 data-tour="nearby"
                 className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-xl transition-all border shadow-sm disabled:opacity-50"
                 style={nearbyMode
-                  ? {background:"linear-gradient(135deg,#114956,#0e3c47)", color:"#fff", borderColor:"transparent", boxShadow:"0 1px 8px rgba(17,73,86,0.25)"}
+                  ? {background:"#114956", color:"#fff", borderColor:"transparent", boxShadow:"0 1px 8px rgba(17,73,86,0.25)"}
                   : {background:"#fff", color:"#64748b", borderColor:"#e2e8f0"}}>
                 {locationLoading
                   ? <div className="w-3 h-3 border-2 border-current/30 border-t-current rounded-full animate-spin"/>
@@ -5003,10 +5003,10 @@ export default function Muuvlink() {
             {nearbyMode && (
               <div className="flex items-center gap-2 flex-wrap">
                 {[5,10,25,50].map(km => (
-                  <button key={km} onClick={() => handleDistanceChange(km)} disabled={nearbyLoading}
+                  <button data-btn="solid" key={km} onClick={() => handleDistanceChange(km)} disabled={nearbyLoading}
                     className="px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all disabled:opacity-50"
                     style={nearbyDistance === km
-                      ? {background:"linear-gradient(135deg,#114956,#0e3c47)", color:"#fff", borderColor:"transparent"}
+                      ? {background:"#114956", color:"#fff", borderColor:"transparent"}
                       : {borderColor:"#e2e8f0", color:"#64748b", background:"#fff"}}>
                     {km} km
                   </button>
@@ -5085,9 +5085,9 @@ export default function Muuvlink() {
                   <p className="text-slate-800 font-semibold text-xl mb-2">{t("trainings.noTrainings")}</p>
                   <p className="text-slate-400 text-sm mb-7 max-w-xs mx-auto">{t("trainings.noTrainingsHint")}</p>
                   {user && (
-                    <button onClick={() => setCurrentPage("create-training")}
+                    <button data-btn="solid" onClick={() => setCurrentPage("create-training")}
                       className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-medium text-white text-sm transition-all hover:opacity-90 hover:shadow-lg"
-                      style={{background:"linear-gradient(135deg,#114956,#0e3c47)", boxShadow:"0 8px 24px rgba(17,73,86,0.3)"}}>
+                      style={{background:"#114956", boxShadow:"0 2px 8px rgba(17,73,86,0.18)"}}>
                       <Plus className="w-4 h-4"/> {t("trainings.create")}
                     </button>
                   )}
@@ -5128,11 +5128,11 @@ export default function Muuvlink() {
                 <p className="text-slate-400 mt-3 text-base">{t("teams.pageSubtitle")}</p>
               </div>
               {user && (
-                <button
+                <button data-btn="solid"
                   onClick={() => setCurrentPage("create-team")}
                   data-tour="create-team"
                   className="flex items-center gap-2 px-6 py-3 rounded-xl font-medium text-white text-sm transition-all hover:opacity-90 flex-shrink-0"
-                  style={{background:"linear-gradient(135deg,#54889a,#00a499)", boxShadow:"0 8px 24px rgba(14,165,233,0.3)"}}
+                  style={{background:"#114956", boxShadow:"0 2px 8px rgba(17,73,86,0.18)"}}
                 >
                   <Plus className="w-4 h-4" /> {t("teams.create")}
                 </button>
@@ -5195,9 +5195,9 @@ export default function Muuvlink() {
                   {t("trainings.clearFilters")}
                 </button>
               ) : user && (
-                <button onClick={() => setCurrentPage("create-team")}
+                <button data-btn="solid" onClick={() => setCurrentPage("create-team")}
                   className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-medium text-white text-sm transition-all hover:opacity-90 hover:shadow-lg"
-                  style={{background:"linear-gradient(135deg,#54889a,#00a499)", boxShadow:"0 8px 24px rgba(14,165,233,0.3)"}}>
+                  style={{background:"#114956", boxShadow:"0 2px 8px rgba(17,73,86,0.18)"}}>
                   <Plus className="w-4 h-4"/> {t("teams.create")}
                 </button>
               )}
@@ -5578,9 +5578,9 @@ export default function Muuvlink() {
                   </div>
                 </div>
 
-                <button type="submit"
+                <button data-btn="solid" type="submit"
                   className="w-full h-12 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 hover:shadow-lg"
-                  style={{background:"linear-gradient(135deg,#114956,#0e3c47)", boxShadow:"0 4px 14px rgba(17,73,86,0.3)"}}>
+                  style={{background:"#114956", boxShadow:"0 4px 14px rgba(17,73,86,0.3)"}}>
                   {t("common.save")}
                 </button>
               </form>
@@ -5606,7 +5606,7 @@ export default function Muuvlink() {
                     />
                   ) : (
                     <div className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 border-2 border-white shadow-sm text-white text-lg font-bold"
-                      style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}>
+                      style={{background:"#114956"}}>
                       {selectedTraining.team_name?.[0]?.toLocaleUpperCase("tr-TR") || <Users className="w-5 h-5 text-white" />}
                     </div>
                   )}
@@ -5625,11 +5625,11 @@ export default function Muuvlink() {
                       {t("trainingDetail.alreadyMember") || "Üyesiniz"}
                     </span>
                   ) : (
-                    <button
+                    <button data-btn="solid"
                       onClick={() => handleJoinTeam(selectedTraining.team_id)}
                       disabled={joiningTeamId === selectedTraining.team_id}
                       className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-60"
-                      style={{background:"linear-gradient(135deg,#114956,#0e3c47)", boxShadow:"0 2px 10px rgba(17,73,86,0.3)"}}
+                      style={{background:"#114956", boxShadow:"0 2px 10px rgba(17,73,86,0.3)"}}
                     >
                       {joiningTeamId === selectedTraining.team_id
                         ? <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"/>
@@ -5638,10 +5638,10 @@ export default function Muuvlink() {
                     </button>
                   )
                 ) : (
-                  <button
+                  <button data-btn="solid"
                     onClick={() => { setAuthMode("login"); setIsAuthModalOpen(true); }}
                     className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all"
-                    style={{background:"linear-gradient(135deg,#114956,#0e3c47)", boxShadow:"0 2px 10px rgba(17,73,86,0.3)"}}
+                    style={{background:"#114956", boxShadow:"0 2px 10px rgba(17,73,86,0.3)"}}
                   >
                     <UserPlus className="w-4 h-4"/>
                     {t("teamDetail.joinTeam")}
@@ -5693,12 +5693,12 @@ export default function Muuvlink() {
                   </div>
                   <p className="text-slate-700 mb-3">{selectedTraining.location_name}</p>
                   {mapsUrl && (
-                    <a
+                    <a data-btn="solid"
                       href={mapsUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white"
-                      style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}
+                      style={{background:"#114956"}}
                     >
                       <MapPin className="w-3 h-3" />
                       {t("common.navigate")}
@@ -5858,10 +5858,10 @@ export default function Muuvlink() {
               <Info className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
               <p className="text-xs text-amber-800 leading-relaxed">{t("trainingDetail.paidNotice")}</p>
             </div>
-            <button
+            <button data-btn="solid"
               onClick={() => handleRegisterClick(selectedTraining)}
               className="w-full py-4 font-semibold text-white rounded-xl transition hover:opacity-90 hover:shadow-lg flex items-center justify-center gap-2"
-              style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}
+              style={{background:"#114956"}}
             >
               <Ticket className="w-5 h-5"/> {t("trainingDetail.registerBtn")}
             </button>
@@ -5873,7 +5873,7 @@ export default function Muuvlink() {
               <div className="p-6 bg-gradient-to-br from-brand-50 to-brand-50">
                 <div className="text-center mb-5">
                   <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-md"
-                    style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}>
+                    style={{background:"#114956"}}>
                     <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
                     </svg>
@@ -5898,10 +5898,10 @@ export default function Muuvlink() {
 
                 {/* Butonlar */}
                 <div className="flex gap-3">
-                  <button
+                  <button data-btn="solid"
                     onClick={() => { setAuthMode("register"); setIsAuthModalOpen(true); }}
                     className="flex-1 py-3 font-semibold text-white text-sm rounded-xl transition hover:opacity-90 hover:shadow-lg"
-                    style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}
+                    style={{background:"#114956"}}
                   >
                     {t("home.ctaBtn")}
                   </button>
@@ -5934,11 +5934,11 @@ export default function Muuvlink() {
               {t("trainings.full")}
             </div>
           ) : (
-            <button
+            <button data-btn="solid"
               onClick={() => handleJoinTraining(selectedTraining.id)}
               disabled={joiningTrainingId === selectedTraining.id}
               className="w-full py-4 font-semibold text-white rounded-xl transition hover:opacity-90 hover:shadow-lg disabled:opacity-60"
-              style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}
+              style={{background:"#114956"}}
             >
               {joiningTrainingId === selectedTraining.id
                 ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>{t("trainings.joining")}</span>
@@ -6726,11 +6726,11 @@ export default function Muuvlink() {
             >
               {t("common.cancel")}
             </button>
-            <button
+            <button data-btn="solid"
               type="submit"
               disabled={isSubmitting}
               className="flex-1 h-12 rounded-xl text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:opacity-90 hover:shadow-lg flex items-center justify-center gap-2"
-              style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}
+              style={{background:"#114956"}}
             >
               {isSubmitting && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
               {isSubmitting ? t("createTraining.submitting") : t("createTraining.submitBtn")}
@@ -6857,10 +6857,10 @@ export default function Muuvlink() {
               >
                 {t("common.cancel")}
               </button>
-              <button
+              <button data-btn="solid"
                 type="submit"
                 className="flex-1 h-12 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 hover:shadow-lg"
-                style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}
+                style={{background:"#114956"}}
               >
                 {t("createTeam.submitBtn")}
               </button>
@@ -6915,7 +6915,7 @@ export default function Muuvlink() {
         <div className="bg-white rounded-3xl shadow-xl max-w-md w-full p-8">
           <div className="text-center mb-8">
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-              style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}>
+              style={{background:"#114956"}}>
               <Lock className="w-8 h-8 text-white"/>
             </div>
             <h1 className="text-2xl font-medium text-slate-900">{t("reset.title")}</h1>
@@ -7154,7 +7154,7 @@ export default function Muuvlink() {
               <div className="flex flex-col items-center gap-3 pb-2">
                 <div className="relative">
                   <div className="w-24 h-24 rounded-2xl overflow-hidden flex items-center justify-center text-white text-3xl font-bold shadow-lg"
-                    style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}>
+                    style={{background:"#114956"}}>
                     {(formData.avatar?.startsWith("/uploads/") || formData.avatar?.startsWith("http")) ? (
                       <img src={formData.avatar.startsWith("http") ? formData.avatar : `${BASE_URL}${formData.avatar}`} alt="avatar" className="w-full h-full object-cover" />
                     ) : (
@@ -7410,10 +7410,10 @@ export default function Muuvlink() {
 
               {user ? (
                 <>
-                  <button
+                  <button data-btn="solid"
                     onClick={() => setCurrentPage("create-training")}
                     className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium text-white transition-all hover:opacity-90 hover:shadow-lg"
-                    style={{background:"linear-gradient(135deg,#114956,#0e3c47)", boxShadow:"0 4px 14px rgba(17,73,86,0.3)"}}
+                    style={{background:"#114956", boxShadow:"0 4px 14px rgba(17,73,86,0.3)"}}
                   >
                     <Plus className="w-4 h-4" /> {t("nav.createTraining")}
                   </button>
@@ -7434,7 +7434,7 @@ export default function Muuvlink() {
                   <button onClick={() => setCurrentPage("profile")}
                     className="flex items-center gap-2 pl-1 pr-3 py-1.5 rounded-xl hover:bg-slate-100 transition-colors">
                     <div className="w-7 h-7 rounded-lg overflow-hidden flex items-center justify-center text-white font-medium text-xs flex-shrink-0"
-                      style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}>
+                      style={{background:"#114956"}}>
                       {(user.avatar?.startsWith("/uploads/") || user.avatar?.startsWith("http")) ? (
                         <img src={user.avatar.startsWith("http") ? user.avatar : `${BASE_URL}${user.avatar}`} alt="" className="w-full h-full object-cover" />
                       ) : (
@@ -7457,10 +7457,10 @@ export default function Muuvlink() {
                   >
                     {t("nav.login")}
                   </button>
-                  <button
+                  <button data-btn="solid"
                     onClick={() => { setAuthMode("register"); setIsAuthModalOpen(true); }}
                     className="px-5 py-2.5 rounded-xl text-sm font-medium text-white transition-all hover:opacity-90 hover:shadow-lg"
-                    style={{background:"linear-gradient(135deg,#114956,#0e3c47)", boxShadow:"0 4px 14px rgba(17,73,86,0.3)"}}
+                    style={{background:"#114956", boxShadow:"0 4px 14px rgba(17,73,86,0.3)"}}
                   >
                     {t("nav.register")}
                   </button>
@@ -7506,10 +7506,10 @@ export default function Muuvlink() {
 
               {user ? (
                 <>
-                  <button
+                  <button data-btn="solid"
                     onClick={() => { setCurrentPage("create-training"); setMobileOpen(false); }}
                     className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-sm font-medium text-white transition-all"
-                    style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}
+                    style={{background:"#114956"}}
                   >
                     <Plus className="w-4 h-4"/> {t("nav.createTrainingFull")}
                   </button>
@@ -7518,7 +7518,7 @@ export default function Muuvlink() {
                     className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
                   >
                     <div className="w-5 h-5 rounded-md overflow-hidden flex items-center justify-center text-white text-[10px] font-medium flex-shrink-0"
-                      style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}>
+                      style={{background:"#114956"}}>
                       {(user.avatar?.startsWith("/uploads/") || user.avatar?.startsWith("http")) ? (
                         <img src={user.avatar.startsWith("http") ? user.avatar : `${BASE_URL}${user.avatar}`} alt="" className="w-full h-full object-cover" />
                       ) : (user.avatar || user.name[0].toLocaleUpperCase("en-US"))}
@@ -7541,10 +7541,10 @@ export default function Muuvlink() {
                     >
                       {t("nav.login")}
                     </button>
-                    <button
+                    <button data-btn="solid"
                       onClick={() => { setAuthMode("register"); setIsAuthModalOpen(true); setMobileOpen(false); }}
                       className="flex-1 py-3 rounded-xl text-sm font-medium text-white transition-all"
-                      style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}
+                      style={{background:"#114956"}}
                     >
                       {t("nav.register")}
                     </button>
@@ -7810,7 +7810,7 @@ export default function Muuvlink() {
           {/* İndirme CTA — yalnızca web */}
           {!isNative && (
             <div className="mt-10 rounded-3xl overflow-hidden relative"
-              style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}>
+              style={{background:"#114956"}}>
               <div className="px-8 py-10 sm:px-12 sm:py-12 flex flex-col md:flex-row items-center justify-between gap-8 text-white">
                 <div className="text-center md:text-left max-w-lg">
                   <h2 className="font-display font-bold leading-tight mb-2" style={{fontSize:"clamp(1.6rem,3vw,2.2rem)"}}>
@@ -8161,10 +8161,10 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
                 </li>
               </ul>
               <div className="mt-5">
-                <button
+                <button data-btn="solid"
                   onClick={() => setCurrentPage("contact")}
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
-                  style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}
+                  style={{background:"#114956"}}
                 >
                   <MessageCircle className="w-4 h-4" /> {t("footer.reach")}
                 </button>
@@ -8205,7 +8205,7 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
         {/* Büyük 404 */}
         <div className="relative mb-8">
           <div className="text-[10rem] font-black leading-none select-none"
-            style={{ background: "linear-gradient(135deg, #643e87 0%, #114956 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+            style={{ background: "#643e87", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
             404
           </div>
           <div className="absolute inset-0 flex items-center justify-center">
@@ -8279,7 +8279,7 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
           {tabs.map(tab => {
             const active = currentPage === tab.key;
             return (
-              <button key={tab.key} onClick={() => { triggerHaptic("light"); setCurrentPage(tab.key); }}
+              <button data-btn="solid" key={tab.key} onClick={() => { triggerHaptic("light"); setCurrentPage(tab.key); }}
                 data-tour={tab.key === "teams" ? "teams-tab-bottom" : undefined}
                 className="flex-1 flex flex-col items-center gap-1 py-3 transition-all"
                 style={{color: active ? "#114956" : "#94a3b8"}}>
@@ -8331,9 +8331,9 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
             <p className="text-sm font-bold text-slate-800 leading-tight">Muuvlink uygulaması</p>
             <p className="text-[11px] text-slate-500 leading-tight truncate">Google Play'den indir — daha hızlı deneyim</p>
           </div>
-          <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer"
+          <a data-btn="solid" href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer"
             className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white active:scale-95 transition"
-            style={{ background: "linear-gradient(135deg,#114956,#0e3c47)" }}>
+            style={{ background: "#114956" }}>
             <Download className="w-4 h-4" /> İndir
           </a>
           <button onClick={dismiss} aria-label="Kapat" className="flex-shrink-0 p-1.5 text-slate-400 hover:text-slate-600">

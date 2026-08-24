@@ -109,7 +109,16 @@
     background: linear-gradient(135deg, #114956, #0e3c47);
     box-shadow: 0 4px 14px rgba(17,73,86,0.35);
   }
-  /* Hover'da palet tersine döner: 02 sarı zemin + 01 deep teal metin */
+  /* Hover'da palet tersine döner: 02 sarı zemin + 01 deep teal metin.
+     Aynı davranış, düz Deep Teal zeminli tüm buton/linklerde data-btn="solid" ile. */
+  [data-btn="solid"] { transition: background-color .18s ease, color .18s ease, box-shadow .18s ease; }
+  [data-btn="solid"]:hover:not(:disabled) {
+    background: #F4F818 !important;
+    color: #114956 !important;
+    box-shadow: 0 2px 10px rgba(17,73,86,0.18) !important;
+  }
+  [data-btn="solid"]:hover:not(:disabled) svg { color: #114956 !important; }
+
   .btn-primary:hover {
     background: #F4F818;
     color: #114956;
