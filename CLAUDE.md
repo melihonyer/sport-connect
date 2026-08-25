@@ -10,8 +10,12 @@ deploy'dan önce doğrulanır.
 
 **Gerçek kullanıcı içeriğinde test yapılmaz.** Yorum, duvar gönderisi,
 etkinliğe katılma/ayrılma, davet, mesaj — gerçek bir kullanıcının oluşturduğu
-hiçbir kayda yazılmaz. "Sonra silerim" gerekçe değil: yazı düştüğü anda üyeler
-görür ve bildirim gider.
+hiçbir kayda yazılmaz.
+
+"Sonra silerim" gerekçe değil. Tek bir yorum **üç ayrı kanala** birden dağılır:
+uygulama içi bildirim (silinebilir), cihaza push bildirimi (**geri alınamaz**) ve
+e-posta (**geri alınamaz**). Veritabanı satırını silmek gönderilmiş push'u ve
+e-postayı geri getirmez.
 
 - Gerçek kayıtlarda **sadece okuma**: GET istekleri, DB SELECT, sayfayı tarayıcıda görüntüleme.
 - Yazma gerektiren doğrulama için: geçici kullanıcı aç → **o kullanıcının kendi**
