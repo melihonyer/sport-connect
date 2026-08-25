@@ -2300,6 +2300,52 @@ export default function Muuvlink() {
     };
   }, [user?.id]);
 
+  // ── AÇIK SAYFAYI TAZE TUT ────────────────────────────────
+  // Uygulama saatlerce açık kalabiliyor (özellikle mobilde arka planda).
+  // Yorum/katılımcı gibi başkalarının eklediği içerik görünmüyordu.
+  // Tetikleyiciler: uygulama öne gelince, sekme tekrar görünür olunca,
+  // ağ geri gelince ve sayfa açıkken 60 saniyede bir.
+  const refreshOpenPageRef = useRef(() => {});
+  refreshOpenPageRef.current = () => {
+    if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
+    if (currentPage === "training-detail" && selectedTraining?.id) {
+      fetchTrainingDetails(selectedTraining.id, { silent: true });
+    } else if (currentPage === "team-detail" && selectedTeam?.id) {
+      fetchTeamDetails(selectedTeam.id, { silent: true });
+    } else if (currentPage === "trainings") {
+      fetchTrainings();
+    } else if (currentPage === "teams") {
+      fetchTeams();
+    }
+  };
+
+  useEffect(() => {
+    const run = () => refreshOpenPageRef.current();
+    const onVisible = () => { if (document.visibilityState === "visible") run(); };
+
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", run);
+    window.addEventListener("online", run);
+    const timer = setInterval(run, 60000);
+
+    // Native: uygulama arka plandan öne geldiğinde
+    let removeResume = null;
+    if (isNative) {
+      import("@capacitor/app")
+        .then(({ App }) => App.addListener("appStateChange", ({ isActive }) => { if (isActive) run(); }))
+        .then((handle) => { removeResume = () => handle.remove(); })
+        .catch(() => {});
+    }
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", run);
+      window.removeEventListener("online", run);
+      clearInterval(timer);
+      removeResume?.();
+    };
+  }, []);
+
   // Sayfa değişince URL + title + meta güncelle
   useEffect(() => {
     // Görseli mutlak URL'e çevir (og:image için)
@@ -2881,7 +2927,7 @@ export default function Muuvlink() {
     }
   };
 
-  const fetchTrainingDetails = async (trainingId, { replace = false } = {}) => {
+  const fetchTrainingDetails = async (trainingId, { replace = false, silent = false } = {}) => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(`${API_URL}/trainings/${trainingId}`, {
@@ -2891,6 +2937,9 @@ export default function Muuvlink() {
       if (response.ok) {
         const data = await response.json();
         setSelectedTraining(data.training);
+        // silent: zaten açık olan sayfanın verisini tazeliyoruz — sayfayı ve
+        // geçmişi hiç ellemiyoruz ki kullanıcı bu sırada başka yere gittiyse geri sıçramasın.
+        if (silent) return;
         setCurrentPage("training-detail");
         // Adres çubuğunu slug URL'e getir (SEO + paylaşım + yenileme tutarlılığı)
         const dpath = trainingPath(data.training);
@@ -3323,7 +3372,7 @@ export default function Muuvlink() {
     } catch { showToast(t("toast.networkError"), "error"); }
   };
 
-  const fetchTeamDetails = async (teamId, { replace = false } = {}) => {
+  const fetchTeamDetails = async (teamId, { replace = false, silent = false } = {}) => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(`${API_URL}/teams/${teamId}`, {
@@ -3333,11 +3382,15 @@ export default function Muuvlink() {
       if (response.ok) {
         const data = await response.json();
         setSelectedTeam(data.team);
-        setCurrentPage("team-detail");
-        // Adres çubuğunu slug URL'e getir (SEO + paylaşım + yenileme tutarlılığı)
-        const dpath = teamPath(data.team);
-        if (window.location.pathname !== dpath) {
-          window.history[replace ? "replaceState" : "pushState"]({ page: "team-detail" }, "", dpath);
+        // silent: zaten açık olan sayfanın verisini tazeliyoruz — sayfayı ve
+        // geçmişi hiç ellemiyoruz ki kullanıcı bu sırada başka yere gittiyse geri sıçramasın.
+        if (!silent) {
+          setCurrentPage("team-detail");
+          // Adres çubuğunu slug URL'e getir (SEO + paylaşım + yenileme tutarlılığı)
+          const dpath = teamPath(data.team);
+          if (window.location.pathname !== dpath) {
+            window.history[replace ? "replaceState" : "pushState"]({ page: "team-detail" }, "", dpath);
+          }
         }
         // owner/coach ise bekleyen davetleri çek
         const myRole = data.team?.members?.find(m => m.id === user?.id)?.role;
