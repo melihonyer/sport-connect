@@ -1722,6 +1722,13 @@ export default function Muuvlink() {
   const [user, setUser] = useState(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState("login");
+
+  // Kayıt formunu AÇIP tamamlamayanlar, retargeting'in en verimli dilimi.
+  // Modal onlarca yerden açılıyor; tek tek çağırmak yerine burada tek
+  // noktadan yakalanıyor — login'den kayda geçiş de dahil.
+  useEffect(() => {
+    if (isAuthModalOpen && authMode === "register") MetaEvents.startRegistration();
+  }, [isAuthModalOpen, authMode]);
   const [trainings, setTrainings] = useState([]);
   const [teams, setTeams] = useState([]);
   const [myTrainings, setMyTrainings] = useState([]);

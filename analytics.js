@@ -22,6 +22,7 @@ const ATTRIBUTION_KEY = 'mv_attribution';
 let initialized = false;
 let lastPageViewPath = null;
 let lastViewedContent = null;
+let startRegistrationSent = false;
 
 /* ------------------------------------------------------------------ */
 /* Yardımcılar                                                         */
@@ -211,8 +212,13 @@ export const MetaEvents = {
     return track('Search', { search_string: query ? String(query).slice(0, 100) : undefined });
   },
 
-  /** Kayıt formu açıldı — tamamlamayanlar retargeting'in en verimli dilimi. */
+  /**
+   * Kayıt formu açıldı — tamamlamayanlar retargeting'in en verimli dilimi.
+   * Oturum başına bir kez: kullanıcı formu kapatıp açtıkça olay şişmesin.
+   */
   startRegistration() {
+    if (startRegistrationSent) return null;
+    startRegistrationSent = true;
     return trackCustom('StartRegistration');
   },
 
