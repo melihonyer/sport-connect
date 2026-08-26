@@ -2,6 +2,11 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './sporla-bulusma.jsx';
 import './index.css';
+import { initAnalytics } from './analytics.js';
+
+// Meta pixel'i React'ten önce başlat: reklamdan gelen kullanıcının kaynağı
+// (utm/fbclid) uygulama açılırken URL'den yakalanır, sonra temizlenebilir.
+initAnalytics();
 
 // eslint-disable-next-line no-undef
 window.__BUILD_TIME__ = typeof __BUILD_TIME__ !== 'undefined' ? __BUILD_TIME__ : 0;

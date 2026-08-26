@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { detectLang, createT } from "./i18n.js";
 import Tour from "./Tour.jsx";
+import { MetaEvents, newEventId, getMatchSignals, getAttribution, trackPageView } from "./analytics.js";
 import {
   MapPin,
   Users,
@@ -2380,6 +2381,15 @@ export default function Muuvlink() {
 
     document.title = title;
 
+    // Tek sayfa uygulamasında rota değişimi tarayıcı için sayfa yüklemesi
+    // değildir; bildirilmezse tüm gezinme tek ziyaret olarak sayılır.
+    trackPageView();
+    if (currentPage === "training-detail" && selectedTraining) {
+      MetaEvents.viewContent("training", selectedTraining.id, selectedTraining.title);
+    } else if (currentPage === "team-detail" && selectedTeam) {
+      MetaEvents.viewContent("team", selectedTeam.id, selectedTeam.name);
+    }
+
     const setMeta = (sel, attr, val) => { const el = document.querySelector(sel); if (el) el.setAttribute(attr, val); };
     setMeta('meta[name="description"]',          "content", desc);
     setMeta('meta[property="og:title"]',          "content", title);
@@ -2698,15 +2708,23 @@ export default function Muuvlink() {
 
   const handleRegister = async (name, email, password, setError) => {
     try {
+      // Pixel ve sunucu aynı kimlikle gönderir → Meta tekilleştirir.
+      const eventId = newEventId();
       const response = await fetch(`${API_URL}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({
+          name, email, password,
+          _eid: eventId,
+          _attr: getAttribution(),
+          ...getMatchSignals(),
+        }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
+        MetaEvents.completeRegistration(eventId);
         localStorage.setItem("token", data.token);
         setUser(data.user);
         setIsAuthModalOpen(false);
@@ -2981,12 +2999,15 @@ export default function Muuvlink() {
         return;
       }
       setJoiningTrainingId(trainingId);
+      const eventId = newEventId();
       const response = await fetch(`${API_URL}/trainings/${trainingId}/join`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ _eid: eventId, ...getMatchSignals() }),
       });
 
       if (response.ok) {
+        MetaEvents.joinTraining(trainingId, eventId);
         triggerHaptic("success");
         showToast(t("toast.joinTraining"), "success");
         fetchTrainings();
@@ -3445,12 +3466,15 @@ export default function Muuvlink() {
         return;
       }
       setJoiningTeamId(teamId);
+      const eventId = newEventId();
       const response = await fetch(`${API_URL}/teams/${teamId}/join`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ _eid: eventId, ...getMatchSignals() }),
       });
 
       if (response.ok) {
+        MetaEvents.joinTeam(teamId, eventId);
         showToast(t("teams.joinSuccess"), "success");
         fetchTeams();
         fetchMyTeams(token);

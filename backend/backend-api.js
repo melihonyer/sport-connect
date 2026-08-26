@@ -1431,9 +1431,21 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
 
     const passwordHash = await bcrypt.hash(password, 10);
 
+    // Kazanım kaynağı — tarayıcıdaki ilk dokunuşta yakalanıp kayıtla taşınır.
+    const attr = req.body._attr || {};
+    const platform = req.body._src || null;
+    const trim255 = (v) => (v == null ? null : String(v).slice(0, 255));
+
     const result = await pool.query(
-      'INSERT INTO users (name, email, password_hash, phone, notif_prefs) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, avatar, created_at, notif_prefs',
-      [name, email, passwordHash, phone, JSON.stringify(DEFAULT_NOTIF_PREFS)]
+      `INSERT INTO users (name, email, password_hash, phone, notif_prefs,
+                          utm_source, utm_medium, utm_campaign, utm_content, utm_term,
+                          fbclid, acquisition_platform, landing_page, referrer)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+       RETURNING id, name, email, avatar, created_at, notif_prefs`,
+      [name, email, passwordHash, phone, JSON.stringify(DEFAULT_NOTIF_PREFS),
+       trim255(attr.utm_source), trim255(attr.utm_medium), trim255(attr.utm_campaign),
+       trim255(attr.utm_content), trim255(attr.utm_term), trim255(attr.fbclid),
+       trim255(platform), trim255(attr.landing_page), trim255(attr.referrer)]
     );
 
     const user = result.rows[0];
@@ -1462,6 +1474,22 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
     }
 
     logActivity('user_register', user.id, user.name, { email }, `user_register_${user.id}`);
+
+    // Ana dönüşüm olayı. Tarayıcı aynı _eid ile pixel'i de ateşler; Meta
+    // ikisini tekilleştirir. Kampanyalar başlangıçta buna optimize edilecek.
+    const signals = metaSignalsFrom(req);
+    trackMeta('CompleteRegistration', {
+      ...signals,
+      userId: user.id,
+      email,
+      phone,
+      firstName: String(name || '').trim().split(/\s+/)[0],
+      customData: {
+        registration_source: attr.utm_source || 'direct',
+        platform: platform || 'web',
+      },
+    });
+
     res.status(201).json({ message: 'User registered successfully', user, token });
   } catch (error) {
     console.error('Register error:', error);
@@ -1687,6 +1715,10 @@ app.post('/api/teams', authenticateToken, async (req, res) => {
     await updateUserStats(req.user.id);
 
     logActivity('team_create', req.user.id, null, { team_name: name, sport: primarySport }, `team_create_${team.id}`);
+    trackMeta('CreateTeam', {
+      ...metaSignalsFrom(req), userId: req.user.id, email: req.user.email,
+      customData: { content_ids: [String(team.id)], sport: primarySport || undefined },
+    });
     res.status(201).json({ message: 'Team created successfully', team });
   } catch (error) {
     console.error('Create team error:', error);
@@ -1903,6 +1935,10 @@ app.post('/api/teams/:id/join', authenticateToken, async (req, res) => {
     await updateUserStats(req.user.id);
 
     logActivity('team_join', req.user.id, joinerName, { team_name: team.name });
+    trackMeta('JoinTeam', {
+      ...metaSignalsFrom(req), userId: req.user.id, email: req.user.email,
+      customData: { content_ids: [String(team.id ?? req.params.id)] },
+    });
     res.json({ message: 'Successfully joined the team' });
   } catch (error) {
     console.error('Join team error:', error);
@@ -2524,6 +2560,12 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
     );
 
     logActivity('training_create', req.user.id, null, { training_title: title, team_name: team_id ? undefined : 'Bireysel' }, `training_create_${training.id}`);
+    // Arz tarafı: etkinlik oluşturanlar ayrı bir Lookalike kaynağı olacak —
+    // organizatör bulmak, katılımcı bulmaktan farklı bir iş.
+    trackMeta('CreateTraining', {
+      ...metaSignalsFrom(req), userId: req.user.id, email: req.user.email,
+      customData: { content_ids: [String(training.id)], sport: sport || undefined },
+    });
 
     // Rozet kontrolü — "Organizatör" gibi oluşturma bazlı rozetler
     checkAndAwardBadges(req.user.id).catch(e => console.error('Badge check (create) error:', e.message));
@@ -2942,6 +2984,12 @@ app.post('/api/trainings/:id/join', authenticateToken, async (req, res) => {
     }
 
     logActivity('training_join', req.user.id, null, { training_title: training.title });
+    // Asıl değer olayı. Haftada 50 katılım eşiği aşıldığında kampanyalar
+    // CompleteRegistration yerine buna optimize edilecek.
+    trackMeta('JoinTraining', {
+      ...metaSignalsFrom(req), userId: req.user.id, email: req.user.email,
+      customData: { content_ids: [String(trainingId)], sport: training.sport || undefined },
+    });
     res.json({ message: 'Successfully joined the training' });
   } catch (error) {
     console.error('Join training error:', error);
@@ -5549,6 +5597,158 @@ pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS notif_prefs JSONB DEFAULT
 // hesapta tutulur → cihaz değişse/uygulama silinse de tekrar açılmaz.
 pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS onboarding_done BOOLEAN DEFAULT false`).catch(() => {});
 pool.query(`ALTER TABLE team_members      ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW()`).catch(() => {});
+
+// Kazanım kaynağı: kaydın hangi reklamdan/kanaldan geldiği. Meta "50 kayıt
+// geldi" der ama o kayıtların kaçının gerçekten etkinliğe katıldığını sadece
+// burada görebiliriz — gerçek kullanıcı edinme maliyeti bu kolonlardan çıkar.
+pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS utm_source TEXT`).catch(() => {});
+pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS utm_medium TEXT`).catch(() => {});
+pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS utm_campaign TEXT`).catch(() => {});
+pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS utm_content TEXT`).catch(() => {});
+pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS utm_term TEXT`).catch(() => {});
+pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS fbclid TEXT`).catch(() => {});
+pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS acquisition_platform TEXT`).catch(() => {});
+pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS landing_page TEXT`).catch(() => {});
+pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS referrer TEXT`).catch(() => {});
+pool.query(`CREATE INDEX IF NOT EXISTS users_utm_source_idx ON users(utm_source) WHERE utm_source IS NOT NULL`).catch(() => {});
+
+// ── Meta Conversions API ─────────────────────────────────────────────────
+// Tarayıcıdaki pixel olayların %30-50'sini kaybeder: iOS izleme engeli,
+// reklam engelleyiciler, sekmenin erken kapanması. Sunucudan giden olay
+// bunlardan etkilenmez, çünkü kullanıcının tarayıcısından geçmez.
+//
+// İkisi BİRLİKTE çalışır, biri diğerinin yerine geçmez. Aynı event_id'yi
+// taşıdıkları için Meta tekilleştirir. Taşımazlarsa dönüşüm ÇİFT sayılır:
+// rapor şişer, algoritma yanlış öğrenir, bütçe yanlış yere akar.
+//
+// Anahtarlar tanımlı değilse tüm gönderim sessizce atlanır — pixel
+// kurulmadan önceki dönemde ve yerel geliştirmede güvenli.
+const META_PIXEL_ID = process.env.META_PIXEL_ID || '';
+const META_CAPI_TOKEN = process.env.META_CAPI_TOKEN || '';
+const META_TEST_EVENT_CODE = process.env.META_TEST_EVENT_CODE || '';
+const META_API_VERSION = 'v23.0';
+const META_ENABLED = Boolean(META_PIXEL_ID && META_CAPI_TOKEN);
+
+if (!META_ENABLED) {
+  console.log('[Meta CAPI] META_PIXEL_ID / META_CAPI_TOKEN tanımlı değil — sunucu taraflı olay gönderimi kapalı.');
+}
+
+/** Meta kişisel veriyi yalnızca SHA-256 hash'lenmiş kabul eder. */
+function metaHash(value) {
+  if (value == null) return null;
+  const normalized = String(value).trim().toLowerCase();
+  if (!normalized) return null;
+  return crypto.createHash('sha256').update(normalized).digest('hex');
+}
+
+/**
+ * Telefon E.164 rakamlarına indirgenir. Ülke kodu belirsizse GÖNDERİLMEZ:
+ * yanlış normalize edilmiş numara eşleşmez, üstelik eşleşme kalitesini düşürür.
+ */
+function metaHashPhone(phone) {
+  if (!phone) return null;
+  const raw = String(phone).trim();
+  let digits = raw.replace(/\D/g, '');
+  if (raw.startsWith('+')) {
+    // Zaten uluslararası biçimde
+  } else if (digits.startsWith('0') && digits.length === 11) {
+    digits = `90${digits.slice(1)}`;      // 0 5xx xxx xx xx → TR
+  } else if (digits.length === 10) {
+    digits = `90${digits}`;               // 5xx xxx xx xx → TR
+  } else if (!digits.startsWith('90')) {
+    return null;                          // ülke kodu belirsiz — gönderme
+  }
+  return digits.length >= 11 ? crypto.createHash('sha256').update(digits).digest('hex') : null;
+}
+
+/**
+ * Tarayıcıdan gelen eşleşme sinyallerini istekten toplar.
+ * `_fbp`/`_fbc` Meta'nın kişiyi tanımasındaki en güçlü sinyallerdir;
+ * bunlar olmadan eşleşme kalitesi (EMQ) belirgin şekilde düşer.
+ */
+function metaSignalsFrom(req) {
+  const body = req.body || {};
+  return {
+    eventId: body._eid || null,
+    fbp: body._fbp || null,
+    fbc: body._fbc || null,
+    sourceUrl: body._url || null,
+    platform: body._src || null,
+    clientIp: req.ip || null,
+    userAgent: req.get('user-agent') || null,
+  };
+}
+
+/**
+ * Olayı Meta'ya gönderir. Bilerek `await` edilmeden çağrılır — ölçüm
+ * kullanıcının isteğini yavaşlatmamalı ve Meta'daki bir arıza uygulamayı
+ * etkilememeli.
+ */
+async function sendMetaEvent(eventName, opts = {}) {
+  if (!META_ENABLED) return;
+
+  const {
+    eventId, userId, email, phone, firstName,
+    fbp, fbc, clientIp, userAgent, sourceUrl,
+    platform, customData,
+  } = opts;
+
+  const userData = {};
+  const em = metaHash(email);
+  if (em) userData.em = [em];
+  const ph = metaHashPhone(phone);
+  if (ph) userData.ph = [ph];
+  const fn = metaHash(firstName);
+  if (fn) userData.fn = [fn];
+  // external_id: aynı kişiyi cihazlar arasında birleştirir.
+  const ext = metaHash(userId);
+  if (ext) userData.external_id = [ext];
+  if (clientIp) userData.client_ip_address = clientIp;
+  if (userAgent) userData.client_user_agent = userAgent;
+  if (fbp) userData.fbp = fbp;
+  if (fbc) userData.fbc = fbc;
+
+  // Hiçbir tanımlayıcı yoksa olay eşleşemez — göndermek boş yere kota harcar.
+  if (!userData.em && !userData.external_id && !userData.fbp && !userData.fbc) return;
+
+  const event = {
+    event_name: eventName,
+    event_time: Math.floor(Date.now() / 1000),
+    action_source: platform && platform !== 'web' ? 'app' : 'website',
+    user_data: userData,
+  };
+  if (eventId) event.event_id = eventId;
+  if (sourceUrl) event.event_source_url = sourceUrl;
+  if (customData && Object.keys(customData).length) event.custom_data = customData;
+
+  const payload = { data: [event], access_token: META_CAPI_TOKEN };
+  if (META_TEST_EVENT_CODE) payload.test_event_code = META_TEST_EVENT_CODE;
+
+  try {
+    const response = await fetch(
+      `https://graph.facebook.com/${META_API_VERSION}/${META_PIXEL_ID}/events`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(8000),
+      }
+    );
+    if (!response.ok) {
+      const detail = await response.text().catch(() => '');
+      console.warn(`[Meta CAPI] ${eventName} reddedildi (${response.status}): ${detail.slice(0, 300)}`);
+    } else if (META_TEST_EVENT_CODE) {
+      console.log(`[Meta CAPI] ${eventName} gönderildi (test modu, event_id=${eventId || '-'})`);
+    }
+  } catch (err) {
+    console.warn(`[Meta CAPI] ${eventName} gönderilemedi: ${err.message}`);
+  }
+}
+
+/** Çağrı yerlerini kısaltmak için: hata yutulur, akış beklemez. */
+function trackMeta(eventName, opts) {
+  sendMetaEvent(eventName, opts).catch(() => {});
+}
 
 // source_ref: olay başına BENZERSİZ anahtar (ör. 'user_register_42').
 // Tabloda source_ref üzerinde partial unique index var; aynı olayın ikinci kez
