@@ -92,10 +92,18 @@ export default function VectorBasemap() {
             const field = layer.layout?.["text-field"];
             if (!field || !JSON.stringify(field).includes("name")) continue;
             gl.setLayoutProperty(layer.id, "text-field", [
-              "coalesce",
-              ["get", `name:${labelLang}`],
-              ["get", "name:latin"],
-              ["get", "name"],
+              "case",
+              // Ülkenin resmî adı 2022'den beri Türkiye; arayüz hangi dilde
+              // olursa olsun harita "Turkey" yazmasın. OSM'de hem name hem
+              // name:tr "Türkiye" olduğu için ikisinden biri yeter.
+              ["any",
+                ["==", ["get", "name:tr"], "Türkiye"],
+                ["==", ["get", "name"], "Türkiye"]],
+              "Türkiye",
+              ["coalesce",
+                ["get", `name:${labelLang}`],
+                ["get", "name:latin"],
+                ["get", "name"]],
             ]);
           }
         } catch { /* stil henüz hazır değilse sonraki styledata'da tekrar dener */ }
