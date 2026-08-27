@@ -4086,6 +4086,15 @@ export default function Muuvlink() {
               <Ticket className="w-3 h-3"/> {t("trainings.paidBadge")}
             </span>
           )}
+          {/* Dış kayıt linki var — burada doğrudan dışarı ÇIKARMIYORUZ,
+              yalnız işaret. Tıklama etkinlik sayfasına götürür, Katıl orada
+              birincil kalır. */}
+          {!isPaid && training.registration_url && (
+            <span className="flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold"
+              style={{background:"#e6f7f5", color:"#114956"}}>
+              <ExternalLink className="w-3 h-3"/> {t("trainingDetail.extRegBadge")}
+            </span>
+          )}
           <h3 className="font-display font-bold text-slate-900 group-hover:text-brand-700 transition-colors line-clamp-1 leading-snug"
             style={{fontSize:"1.05rem", letterSpacing:"-0.01em"}}>
             {training.title}
@@ -5567,11 +5576,17 @@ export default function Muuvlink() {
       capacity: selectedTraining.capacity || 20,
       difficulty: selectedTraining.difficulty || "Orta",
       sport: selectedTraining.sport || selectedTraining.team_sport || "",
+      registration_url: selectedTraining.registration_url || "",
     });
 
     const handleSubmitEdit = (e) => {
       e.preventDefault();
-      handleUpdateTraining(selectedTraining.id, editData);
+      const u = (editData.registration_url || "").trim();
+      if (u && !/^https?:\/\//i.test(u)) {
+        showToast(t("createTraining.regUrlInvalid"), "error");
+        return;
+      }
+      handleUpdateTraining(selectedTraining.id, { ...editData, registration_url: u });
       setEditMode(false);
     };
 
@@ -5794,6 +5809,20 @@ export default function Muuvlink() {
                     />
                   </div>
                 </div>
+
+                {/* Dış kayıt adresi — yalnız takım etkinliğinde. Boş bırakılıp
+                    kaydedilirse mevcut link silinir (backend regTouched'a bakar). */}
+                {selectedTraining.team_id && (
+                  <div>
+                    <label className={lCls}>{t("createTraining.regUrlLabel")}</label>
+                    <input type="url" inputMode="url" value={editData.registration_url}
+                      onChange={(e) => setEditData((d) => ({ ...d, registration_url: e.target.value }))}
+                      className={iCls} placeholder="https://..." maxLength={500} />
+                    <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                      {t("createTraining.regUrlHint")}
+                    </p>
+                  </div>
+                )}
 
                 <button data-btn="solid" type="submit"
                   className="w-full h-12 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 hover:shadow-lg"
@@ -6162,6 +6191,38 @@ export default function Muuvlink() {
                 : t("trainingDetail.joinBtn")}
             </button>
           )}
+
+          {/* ── Dış kayıt sayfası ─────────────────────────────────────────
+              Takım etkinliğine eklenmiş isteğe bağlı adres. Katıl BİRİNCİL
+              kalsın diye bu ikincil biçimde ve altında durur. Kullanıcı
+              nereye gittiğini görsün diye hedef alan adı yazılır; bağlantı
+              yeni sekmede ve rel="noopener noreferrer nofollow" ile açılır.
+              Ücretli etkinliklerin kendi "Kayıt Ol" akışı ayrı (yukarıda). */}
+          {!isPaid && selectedTraining.registration_url && (() => {
+            let host = "";
+            try { host = new URL(selectedTraining.registration_url).hostname.replace(/^www\./, ""); } catch { return null; }
+            return (
+              <div className="mt-3">
+                <a
+                  href={selectedTraining.registration_url}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  onClick={() => { fetch(`${API_URL}/trainings/${selectedTraining.id}/register-click`, { method: "POST" }).catch(() => {}); }}
+                  className="w-full py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 border transition-colors hover:bg-brand-50"
+                  style={{ borderColor: "#c2ede9", color: "#114956" }}
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  {t("trainingDetail.extRegBtn")}
+                </a>
+                <p className="text-center text-xs mt-1.5" style={{ color: "#66757A" }}>
+                  {host}
+                  {selectedTraining.can_manage && selectedTraining.registration_clicks > 0 && (
+                    <> · {selectedTraining.registration_clicks} {t("trainingDetail.extRegClicks")}</>
+                  )}
+                </p>
+              </div>
+            );
+          })()}
         </div>
       </div>
     );
@@ -6690,6 +6751,7 @@ export default function Muuvlink() {
       team_id: null,   // null = bireysel (takımsız) etkinlik
       sport: "",       // yalnızca bireysel etkinlikte kullanılır
       is_public: true,
+      registration_url: "", // yalnızca TAKIM etkinliğinde; bireysele geçince temizlenir
     });
 
     // Seçili takım nesnesini bul (team_id null ise bireysel)
@@ -6704,7 +6766,8 @@ export default function Muuvlink() {
     const handleTeamChange = (val) => {
       if (!val) {
         // Bireysel — dalı kullanıcı seçsin
-        setFormData((f) => ({ ...f, team_id: null, is_public: true, sport: "" }));
+        // Kayıt linki takım etkinliğine ait; bireysele dönünce taşınmasın.
+        setFormData((f) => ({ ...f, team_id: null, is_public: true, sport: "", registration_url: "" }));
         return;
       }
       const team = eligibleTeams.find((t) => t.id === parseInt(val));
@@ -6724,6 +6787,11 @@ export default function Muuvlink() {
 
     const submitOnce = async () => {
       if (isSubmitting) return;
+      const u = (formData.registration_url || "").trim();
+      if (u && !/^https?:\/\//i.test(u)) {
+        showToast(t("createTraining.regUrlInvalid"), "error");
+        return;
+      }
       setIsSubmitting(true);
       try {
         await handleCreateTraining(formData);
@@ -6930,6 +6998,26 @@ export default function Muuvlink() {
                   t={t}
                 />
               </div>
+
+              {/* Dış kayıt adresi — YALNIZ takım etkinliğinde. Bireysel
+                  etkinliklerde alan hiç görünmez, backend de yok sayar. */}
+              {!isIndividual && (
+                <div>
+                  <label className={labelCls}>{t("createTraining.regUrlLabel")}</label>
+                  <input
+                    type="url"
+                    inputMode="url"
+                    value={formData.registration_url}
+                    onChange={(e) => setFormData({ ...formData, registration_url: e.target.value })}
+                    className={inputCls}
+                    placeholder="https://..."
+                    maxLength={500}
+                  />
+                  <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                    {t("createTraining.regUrlHint")}
+                  </p>
+                </div>
+              )}
             </div>
 
           </div>

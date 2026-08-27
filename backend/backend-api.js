@@ -1170,6 +1170,24 @@ const updateUserStats = async (userId) => {
   }
 };
 
+// ── Dış kayıt linki ────────────────────────────────────────────────────────
+// Takım etkinliklerine isteğe bağlı bir dış kayıt adresi eklenebilir (form,
+// bilet, lisans başvurusu). Kullanıcı girdisi butona dönüştüğü için şema
+// KISITLI: yalnız http/https. `javascript:` ve `data:` gibi şemalar buradan
+// geçemez — tarayıcı tarafındaki kontrole güvenilmez.
+// Bireysel etkinliklerde bu alan yok sayılır (çağıran team_id'yi geçirir).
+const sanitizeRegistrationUrl = (raw, teamId) => {
+  if (!teamId) return null;                       // bireysel → alan yok
+  const v = (raw ?? '').toString().trim();
+  if (!v) return null;
+  if (v.length > 500) return null;
+  try {
+    const u = new URL(v);
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
+    return u.toString();
+  } catch { return null; }
+};
+
 // ============================================
 // DYNAMIC SITEMAP (SEO — AUTH GEREKMİYOR)
 // Statik sayfalar + herkese açık takımlar + yaklaşan herkese açık etkinlikler.
@@ -2860,10 +2878,18 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
       capacity,
       is_public,
       difficulty,
+      registration_url,
     } = req.body;
 
     if (!title || !training_date || !training_time || !location_name) {
       return res.status(400).json({ error: 'Required fields missing' });
+    }
+
+    // Dış kayıt linki YALNIZ takım etkinliklerinde. Bireyselde gelirse
+    // sessizce yok sayılır (sanitize fonksiyonu teamId yoksa null döner).
+    const regUrl = sanitizeRegistrationUrl(registration_url, team_id);
+    if (team_id && registration_url && !regUrl) {
+      return res.status(400).json({ error: 'Kayıt adresi geçersiz. http:// veya https:// ile başlamalı.' });
     }
 
     // team_id varsa takım etkinliği: yetki + gizlilik takımdan.
@@ -2908,8 +2934,8 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
       `INSERT INTO trainings (
         team_id, sport, created_by, title, description, training_date, training_time, duration_minutes,
         location_name, location_lat, location_lng, location_address, capacity, is_public, difficulty,
-        training_timezone
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+        training_timezone, registration_url
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
       RETURNING *`,
       [
         team_id || null,
@@ -2928,6 +2954,7 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
         finalIsPublic,
         difficulty || 'Orta',
         trainingTimezone,
+        regUrl,
       ]
     );
 
@@ -3249,6 +3276,9 @@ app.get('/api/trainings/:id', optionalAuth, async (req, res) => {
       }
     }
 
+    // Kayıt sayfası tıklama sayısı yalnız etkinliği yönetenlere görünür.
+    if (!training.can_manage) delete training.registration_clicks;
+
     const attendeesResult = await pool.query(
       `SELECT u.id, u.name, u.avatar, ta.status, ta.joined_at
        FROM training_attendees ta
@@ -3288,18 +3318,18 @@ app.get('/api/trainings/:id', optionalAuth, async (req, res) => {
   }
 });
 
-// Ücretli etkinlikte "Kayıt Ol" tıklanınca: sayacı artır ve kayıt linkini döndür.
-// Auth gerekmez (giriş yapmamış kullanıcılar da yarışa kaydolabilir). Link sadece
-// bu uç üzerinden döner — böylece tıklama sayısı admin panelinde takip edilebilir.
+// "Kayıt Sayfası" tıklanınca: sayacı artır ve kayıt linkini döndür.
+// Ücretli etkinliklerin yanı sıra, dış kayıt linki olan TAKIM etkinlikleri de
+// buradan geçer. Auth gerekmez (giriş yapmamış kullanıcı da kaydolabilir).
 app.post('/api/trainings/:id/register-click', async (req, res) => {
   try {
     const r = await pool.query(
       `UPDATE trainings SET registration_clicks = COALESCE(registration_clicks,0) + 1
-       WHERE id = $1 AND is_paid = true
+       WHERE id = $1 AND registration_url IS NOT NULL
        RETURNING registration_url`,
       [req.params.id]
     );
-    if (r.rows.length === 0) return res.status(404).json({ error: 'Ücretli etkinlik bulunamadı.' });
+    if (r.rows.length === 0) return res.status(404).json({ error: 'Kayıt linki olan etkinlik bulunamadı.' });
     res.json({ registration_url: r.rows[0].registration_url || null });
   } catch (error) {
     console.error('Register-click error:', error);
@@ -3725,7 +3755,7 @@ app.delete('/api/team-posts/:id', authenticateToken, async (req, res) => {
 app.put('/api/trainings/:id', authenticateToken, async (req, res) => {
   try {
     const trainingId = req.params.id;
-    const { title, description, training_date, training_time, location_name, location_lat, location_lng, capacity, difficulty, sport } = req.body;
+    const { title, description, training_date, training_time, location_name, location_lat, location_lng, capacity, difficulty, sport, registration_url } = req.body;
 
     const trainingResult = await pool.query(
       'SELECT team_id, created_by FROM trainings WHERE id = $1',
@@ -3755,16 +3785,25 @@ app.put('/api/trainings/:id', authenticateToken, async (req, res) => {
     // Konum değişmiş olabilir → saat dilimini yeniden hesapla (trigger UTC'yi günceller)
     const trainingTimezone = resolveTrainingTimezone(location_lat, location_lng);
 
+    // Kayıt linki yalnız takım etkinliğinde tutulur. Alan formdan HİÇ
+    // gelmediyse (eski istemci) mevcut değere dokunulmaz; boş geldiyse silinir.
+    const regTouched = Object.prototype.hasOwnProperty.call(req.body, 'registration_url');
+    const regUrl = sanitizeRegistrationUrl(registration_url, trg.team_id);
+    if (regTouched && trg.team_id && registration_url && !regUrl) {
+      return res.status(400).json({ error: 'Kayıt adresi geçersiz. http:// veya https:// ile başlamalı.' });
+    }
+
     const result = await pool.query(
       `UPDATE trainings
        SET title = $1, description = $2, training_date = $3, training_time = $4,
            location_name = $5, location_lat = $6, location_lng = $7,
            capacity = $8, difficulty = $9, training_timezone = $10,
            sport = COALESCE($12, sport),
+           registration_url = CASE WHEN $13 THEN $14 ELSE registration_url END,
            updated_at = CURRENT_TIMESTAMP
        WHERE id = $11
        RETURNING *`,
-      [title, description, training_date, training_time, location_name, location_lat || null, location_lng || null, capacity, difficulty, trainingTimezone, trainingId, sport || null]
+      [title, description, training_date, training_time, location_name, location_lat || null, location_lng || null, capacity, difficulty, trainingTimezone, trainingId, sport || null, regTouched, regUrl]
     );
 
     const updated = result.rows[0];

@@ -393,6 +393,15 @@ export const translations = {
     registerBtn:    { tr: "Kayıt Sayfasına Git",           en: "Go to Registration",      de: "Zur Anmeldung"           },
     organizer:      { tr: "Organizatör",                  en: "Organizer",               de: "Organisator"             },
     noRegLink:      { tr: "Kayıt linki bulunamadı.",       en: "Registration link not found.", de: "Anmeldelink nicht gefunden." },
+    // Takım etkinliklerine eklenebilen isteğe bağlı dış kayıt adresi.
+    // Katıl birincil kalır; bu ikincil bir buton olarak altında durur.
+    extRegBtn:      { tr: "Kayıt Sayfası",                 en: "Registration Page",       de: "Anmeldeseite"            },
+    extRegHint:     { tr: "Katılımını burada da bildirmeyi unutma.",
+                      en: "Remember to mark your attendance here too.",
+                      de: "Vergiss nicht, deine Teilnahme auch hier zu markieren." },
+    extRegClicks:   { tr: "kişi kayıt sayfasına gitti",    en: "people opened the registration page",
+                      de: "Personen haben die Anmeldeseite geöffnet" },
+    extRegBadge:    { tr: "Kayıt linki",                    en: "Registration link",       de: "Anmeldelink"             },
     paidNotice:     {
       tr: "Tarih, saat ve yer organizatör tarafından değiştirilebilir. Katılmadan önce kayıt sayfasından teyit etmeniz önerilir.",
       en: "The organizer may change the date, time or location. Please confirm the details on the registration page before attending.",
@@ -416,6 +425,14 @@ export const translations = {
   // ── CREATE TRAINING ─────────────────────────────────────
   createTraining: {
     pageTitle:      { tr: "Etkinlik Oluştur",            en: "Create Event",         de: "Event erstellen"      },
+    regUrlLabel:    { tr: "Dış kayıt adresi (isteğe bağlı)", en: "External registration link (optional)",
+                      de: "Externer Anmeldelink (optional)" },
+    regUrlHint:     { tr: "Yarış kaydı, form ya da bilet sayfası varsa buraya ekle. Etkinlik sayfasında Katıl düğmesinin altında ikinci bir düğme olarak görünür.",
+                      en: "Add a race registration, form or ticket page. It appears as a second button under Join on the event page.",
+                      de: "Füge eine Anmeldung, ein Formular oder eine Ticketseite hinzu. Sie erscheint als zweite Schaltfläche unter „Teilnehmen“." },
+    regUrlInvalid:  { tr: "Adres http:// veya https:// ile başlamalı.",
+                      en: "The link must start with http:// or https://.",
+                      de: "Der Link muss mit http:// oder https:// beginnen." },
     pageSubtitle:   { tr: "Bireysel ya da takımınla yeni bir etkinlik planla.",
                       en: "Plan a new event individually or with your team.",
                       de: "Plane ein neues Event einzeln oder mit deinem Team." },
