@@ -40,22 +40,50 @@ const makeTrainingIcon = (color, letter, highlight = false) => {
 // okunurluk için beyaz hâle/halo verilir). Konum noktası = pinin alt ucu (iconAnchor).
 const PAID_COLOR = "#643e87"; // Ana2 logo moru (palet). Eski #7b2fb0, kaldırılan
                               // pin degradesine uydurulmuştu; palet dışıydı.
-const PAID_PIN_URL = "/pin-ucretli.svg";
-const PAID_PIN_RATIO = 320.4 / 215.3; // SVG yükseklik/genişlik oranı (dikey pin)
-const PAID_TIP_X = 107.9 / 215.3;     // pin ucunun yatay konumu (≈ merkez)
+// Ücretli etkinlik pini SATIR İÇİ SVG'dir: dış dosya (<img>) degrade
+// alamıyordu. Gövde Ana1 → Ana2 (logo yeşili → mor) degradesi. Palet büyük
+// yüzeylerde degradeyi yasaklar; bu küçük bir işaret, Ana1/Ana2'nin tam da
+// izin verilen kullanımı.
+//
+// Takım pininden AYRIŞSIN diye iki fark var: biçim (klasik damla + beyaz
+// halka; takım pini köşesi sivri yuvarlak kare) ve boyut (belirgin daha
+// büyük). Etkinlik adı pinin SOLUNDA kalmaya devam eder.
+const PAID_PIN_RATIO = 84 / 64;   // viewBox oranı
+const PAID_TIP_X = 0.5;           // pin ucu yatayda tam ortada
+
+// Degrade tanımı SVG içinde id ile anılır; aynı sayfada birden çok pin
+// olduğu için id'ler çakışmasın diye sıra numarası veriliyor.
+let paidPinSeq = 0;
+
+const paidPinSvg = (w, h) => {
+  const gid = `muuvPaidPin${++paidPinSeq}`;
+  return `<svg width="${w}" height="${h}" viewBox="0 0 64 84" xmlns="http://www.w3.org/2000/svg" style="display:block;filter:drop-shadow(0 4px 6px rgba(0,0,0,.35));">
+      <defs>
+        <linearGradient id="${gid}" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#00a499"/>
+          <stop offset="100%" stop-color="#643e87"/>
+        </linearGradient>
+      </defs>
+      <path d="M32 1.5C15.7 1.5 2.5 14.7 2.5 31c0 8.6 4.6 17.6 11 25.6 6.4 8 13.9 14.6 17 17.2a2.3 2.3 0 0 0 3 0c3.1-2.6 10.6-9.2 17-17.2 6.4-8 11-17 11-25.6C61.5 14.7 48.3 1.5 32 1.5Z"
+            fill="url(#${gid})" stroke="#ffffff" stroke-width="3"/>
+      <circle cx="32" cy="31" r="10.5" fill="#ffffff"/>
+    </svg>`;
+};
+
 const escapeXml = (s) => String(s || "").replace(/[<>&'"]/g, c => (
   { "<": "&lt;", ">": "&gt;", "&": "&amp;", "'": "&apos;", '"': "&quot;" }[c]));
+
 const makePaidIcon = (title, highlight = false) => {
-  const pw = highlight ? 56 : 46;                 // pin genişliği
-  const ph = Math.round(pw * PAID_PIN_RATIO);     // pin yüksekliği
-  const labelW = highlight ? 128 : 116;           // ad etiketi kutusu
-  const gap = 5;
+  const pw = highlight ? 68 : 58;                 // takım pini 34/40 — belirgin fark
+  const ph = Math.round(pw * PAID_PIN_RATIO);
+  const labelW = highlight ? 132 : 120;           // ad etiketi kutusu
+  const gap = 6;
   const fs = highlight ? 14 : 12.5;
   const label = escapeXml((title || "").toLocaleUpperCase("tr-TR"));
   const halo = "0 0 3px #fff,0 0 3px #fff,0 1px 2px #fff,0 -1px 2px #fff,1px 0 2px #fff,-1px 0 2px #fff";
   const html = `<div style="display:flex;align-items:center;gap:${gap}px;width:${labelW + gap + pw}px;height:${ph}px;">
     <span style="flex:0 0 ${labelW}px;text-align:right;font-family:'Montserrat',system-ui,sans-serif;font-weight:800;font-size:${fs}px;line-height:1.07;color:#171717;text-transform:uppercase;letter-spacing:-0.3px;text-shadow:${halo};word-break:break-word;">${label}</span>
-    <img src="${PAID_PIN_URL}" style="flex:0 0 ${pw}px;width:${pw}px;height:${ph}px;display:block;filter:drop-shadow(0 3px 5px rgba(0,0,0,.3));" alt=""/>
+    <span style="flex:0 0 ${pw}px;">${paidPinSvg(pw, ph)}</span>
   </div>`;
   const anchorX = labelW + gap + Math.round(pw * PAID_TIP_X);
   return L.divIcon({
@@ -63,7 +91,7 @@ const makePaidIcon = (title, highlight = false) => {
     html,
     iconSize: [labelW + gap + pw, ph],
     iconAnchor: [anchorX, ph],
-    popupAnchor: [Math.round(pw * PAID_TIP_X) - Math.round(pw / 2), -ph + 6],
+    popupAnchor: [0, -ph + 6],
   });
 };
 
