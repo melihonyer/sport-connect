@@ -23,7 +23,7 @@ import { useMap } from "react-leaflet";
 // OpenFreeMap stilleri: positron (gri, sade) · bright (ılık, mavi deniz,
 // yumuşak yeşil) · liberty (tam renkli, turuncu yollar) · fiord (minimal) ·
 // dark. Değiştirmek için yalnız bu satır yeter.
-const STYLE_URL = "https://tiles.openfreemap.org/styles/fiord";
+const STYLE_URL = "https://tiles.openfreemap.org/styles/positron";
 const ATTRIBUTION =
   '&copy; <a href="https://openfreemap.org">OpenFreeMap</a> · ' +
   '<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
