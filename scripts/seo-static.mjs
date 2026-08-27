@@ -51,7 +51,7 @@ const textBlock = `
       <h1 style="${S.h1}">Muuvlink — spor arkadaşı bul, takım kur, etkinliğe katıl</h1>
       <p style="${S.lead}">${esc(faq[0].a)}</p>
       <ul style="${S.nav}">
-        <li><a style="${S.a}" href="${ORIGIN}/antrenmanlar">Etkinlikler</a></li>
+        <li><a style="${S.a}" href="${ORIGIN}/etkinlikler">Etkinlikler</a></li>
         <li><a style="${S.a}" href="${ORIGIN}/takimlar">Takımlar</a></li>
         <li><a style="${S.a}" href="${ORIGIN}/iletisim">İletişim</a></li>
       </ul>
