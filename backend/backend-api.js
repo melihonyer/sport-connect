@@ -1176,6 +1176,25 @@ const updateUserStats = async (userId) => {
 // KISITLI: yalnız http/https. `javascript:` ve `data:` gibi şemalar buradan
 // geçemez — tarayıcı tarafındaki kontrole güvenilmez.
 // Bireysel etkinliklerde bu alan yok sayılır (çağıran team_id'yi geçirir).
+// Buton yazısı düzenleyen tarafından girilir ("Formu Doldur", "Listeye
+// Eklen", "Bilet Al"...). Boşsa arayüz varsayılan metni kullanır.
+pool.query(`ALTER TABLE trainings ADD COLUMN IF NOT EXISTS registration_label TEXT`).catch(() => {});
+
+const REG_LABEL_MAX = 24;
+
+// Yazı serbest metin ama butona basılıyor: satır sonu ve görünmez karakterler
+// düzeni bozar, aşırı uzunluk butonu taşırır. Kırpılır, tek satıra indirilir.
+const sanitizeRegistrationLabel = (raw, teamId, url) => {
+  if (!teamId || !url) return null;          // link yoksa yazının anlamı yok
+  const v = (raw ?? '')
+    .toString()
+    .replace(/[\u0000-\u001F\u007F\u200B-\u200F\u2028\u2029]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, REG_LABEL_MAX);
+  return v || null;
+};
+
 const sanitizeRegistrationUrl = (raw, teamId) => {
   if (!teamId) return null;                       // bireysel → alan yok
   const v = (raw ?? '').toString().trim();
@@ -2879,6 +2898,7 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
       is_public,
       difficulty,
       registration_url,
+      registration_label,
     } = req.body;
 
     if (!title || !training_date || !training_time || !location_name) {
@@ -2891,6 +2911,7 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
     if (team_id && registration_url && !regUrl) {
       return res.status(400).json({ error: 'Kayıt adresi geçersiz. http:// veya https:// ile başlamalı.' });
     }
+    const regLabel = sanitizeRegistrationLabel(registration_label, team_id, regUrl);
 
     // team_id varsa takım etkinliği: yetki + gizlilik takımdan.
     // team_id yoksa BİREYSEL etkinlik: her giriş yapmış kullanıcı oluşturabilir, spor formdan gelir.
@@ -2934,8 +2955,8 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
       `INSERT INTO trainings (
         team_id, sport, created_by, title, description, training_date, training_time, duration_minutes,
         location_name, location_lat, location_lng, location_address, capacity, is_public, difficulty,
-        training_timezone, registration_url
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+        training_timezone, registration_url, registration_label
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
       RETURNING *`,
       [
         team_id || null,
@@ -2955,6 +2976,7 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
         difficulty || 'Orta',
         trainingTimezone,
         regUrl,
+        regLabel,
       ]
     );
 
@@ -3755,7 +3777,7 @@ app.delete('/api/team-posts/:id', authenticateToken, async (req, res) => {
 app.put('/api/trainings/:id', authenticateToken, async (req, res) => {
   try {
     const trainingId = req.params.id;
-    const { title, description, training_date, training_time, location_name, location_lat, location_lng, capacity, difficulty, sport, registration_url } = req.body;
+    const { title, description, training_date, training_time, location_name, location_lat, location_lng, capacity, difficulty, sport, registration_url, registration_label } = req.body;
 
     const trainingResult = await pool.query(
       'SELECT team_id, created_by FROM trainings WHERE id = $1',
@@ -3792,6 +3814,8 @@ app.put('/api/trainings/:id', authenticateToken, async (req, res) => {
     if (regTouched && trg.team_id && registration_url && !regUrl) {
       return res.status(400).json({ error: 'Kayıt adresi geçersiz. http:// veya https:// ile başlamalı.' });
     }
+    // Yazı linke bağlı: link silinirse yazı da silinir (aynı CASE ile yazılır).
+    const regLabel = sanitizeRegistrationLabel(registration_label, trg.team_id, regUrl);
 
     const result = await pool.query(
       `UPDATE trainings
@@ -3800,10 +3824,11 @@ app.put('/api/trainings/:id', authenticateToken, async (req, res) => {
            capacity = $8, difficulty = $9, training_timezone = $10,
            sport = COALESCE($12, sport),
            registration_url = CASE WHEN $13 THEN $14 ELSE registration_url END,
+           registration_label = CASE WHEN $13 THEN $15 ELSE registration_label END,
            updated_at = CURRENT_TIMESTAMP
        WHERE id = $11
        RETURNING *`,
-      [title, description, training_date, training_time, location_name, location_lat || null, location_lng || null, capacity, difficulty, trainingTimezone, trainingId, sport || null, regTouched, regUrl]
+      [title, description, training_date, training_time, location_name, location_lat || null, location_lng || null, capacity, difficulty, trainingTimezone, trainingId, sport || null, regTouched, regUrl, regLabel]
     );
 
     const updated = result.rows[0];

@@ -5577,6 +5577,7 @@ export default function Muuvlink() {
       difficulty: selectedTraining.difficulty || "Orta",
       sport: selectedTraining.sport || selectedTraining.team_sport || "",
       registration_url: selectedTraining.registration_url || "",
+      registration_label: selectedTraining.registration_label || "",
     });
 
     const handleSubmitEdit = (e) => {
@@ -5821,6 +5822,17 @@ export default function Muuvlink() {
                     <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
                       {t("createTraining.regUrlHint")}
                     </p>
+                    {editData.registration_url.trim() && (
+                      <div className="mt-4">
+                        <label className={lCls}>{t("createTraining.regLabelLabel")}</label>
+                        <input type="text" value={editData.registration_label}
+                          onChange={(e) => setEditData((d) => ({ ...d, registration_label: e.target.value }))}
+                          className={iCls} placeholder={t("trainingDetail.extRegBtn")} maxLength={24} />
+                        <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                          {t("createTraining.regLabelHint")}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -6212,7 +6224,7 @@ export default function Muuvlink() {
                   style={{ borderColor: "#c2ede9", color: "#114956" }}
                 >
                   <ExternalLink className="w-4 h-4" />
-                  {t("trainingDetail.extRegBtn")}
+                  {selectedTraining.registration_label || t("trainingDetail.extRegBtn")}
                 </a>
                 <p className="text-center text-xs mt-1.5" style={{ color: "#66757A" }}>
                   {host}
@@ -6752,6 +6764,7 @@ export default function Muuvlink() {
       sport: "",       // yalnızca bireysel etkinlikte kullanılır
       is_public: true,
       registration_url: "", // yalnızca TAKIM etkinliğinde; bireysele geçince temizlenir
+      registration_label: "", // buton yazısı; boşsa arayüz varsayılanı kullanır
     });
 
     // Seçili takım nesnesini bul (team_id null ise bireysel)
@@ -6767,7 +6780,7 @@ export default function Muuvlink() {
       if (!val) {
         // Bireysel — dalı kullanıcı seçsin
         // Kayıt linki takım etkinliğine ait; bireysele dönünce taşınmasın.
-        setFormData((f) => ({ ...f, team_id: null, is_public: true, sport: "", registration_url: "" }));
+        setFormData((f) => ({ ...f, team_id: null, is_public: true, sport: "", registration_url: "", registration_label: "" }));
         return;
       }
       const team = eligibleTeams.find((t) => t.id === parseInt(val));
@@ -7016,6 +7029,24 @@ export default function Muuvlink() {
                   <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
                     {t("createTraining.regUrlHint")}
                   </p>
+
+                  {/* Buton yazısı — yalnız adres girilmişse anlamlı. */}
+                  {formData.registration_url.trim() && (
+                    <div className="mt-4">
+                      <label className={labelCls}>{t("createTraining.regLabelLabel")}</label>
+                      <input
+                        type="text"
+                        value={formData.registration_label}
+                        onChange={(e) => setFormData({ ...formData, registration_label: e.target.value })}
+                        className={inputCls}
+                        placeholder={t("trainingDetail.extRegBtn")}
+                        maxLength={24}
+                      />
+                      <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                        {t("createTraining.regLabelHint")}
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
