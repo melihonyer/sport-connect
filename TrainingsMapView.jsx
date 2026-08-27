@@ -144,11 +144,15 @@ const TrainingsMapView = ({ trainings, onSelectTraining, t, containerStyle }) =>
           <p className="text-slate-400 text-xs">{t ? t("map.noLocationHint") : "Add a location when creating a training"}</p>
         </div>
       ) : (
-        <MapContainer center={[39.0, 35.0]} zoom={6} style={{ height:"100%", width:"100%" }} zoomControl={true}>
+        <MapContainer center={[39.0, 35.0]} zoom={6} style={{ height:"100%", width:"100%" }} zoomControl={true} className="muuv-map">
+          {/* CARTO 2026'da altlık için API anahtarı istemeye başladı ve
+              anahtarsız isteklerde "API KEY REQUIRED" damgasını doğrudan
+              görselin İÇİNE basıyor. OpenStreetMap anahtarsız ve serbest;
+              renkleri paletle uyuşsun diye .muuv-map ile hafif soluklaştırılır. */}
           <TileLayer
-            attribution='&copy; <a href="https://carto.com">CARTO</a>'
-            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-            subdomains="abcd"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> katkıda bulunanlar'
+            url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+            maxZoom={19}
           />
           <MapSizeFixer/>
           <FitBoundsToTrainings trainings={mapped}/>

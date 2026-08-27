@@ -434,3 +434,11 @@ input:focus, select:focus, textarea:focus {
   100% { transform: scale(1) scaleY(1); }
 }
 .msg-like-wink { animation: msg-like-wink 0.45s ease-out; transform-origin: center; }
+
+/* ── Harita altlığı ─────────────────────────────────────────
+   OpenStreetMap altlığı kurumsal palete göre fazla doygun.
+   Yalnız döşemeler soluklaştırılır; işaretçiler ve etiketler
+   (marker-pane, popup-pane) dokunulmadan tam renkte kalır. */
+.muuv-map .leaflet-tile-pane {
+  filter: saturate(0.72) brightness(1.03) contrast(0.96);
+}

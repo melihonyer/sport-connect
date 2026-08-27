@@ -66,11 +66,13 @@ const LocationPickerMap = ({ pickedPos, flyTarget, onPick, onDragEnd, onBoundsCh
     zoom={pickedPos ? 14 : 6}
     style={{ height: "100%", width: "100%" }}
     zoomControl={true}
+    className="muuv-map"
   >
+    {/* Bkz. TrainingsMapView.jsx — CARTO anahtar istiyor, OSM'e geçildi. */}
     <TileLayer
-      attribution='&copy; <a href="https://carto.com">CARTO</a>'
-      url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-      subdomains="abcd"
+      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> katkıda bulunanlar'
+      url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+      maxZoom={19}
     />
     <MapSizeFixer/>
     <FlyToLocation target={flyTarget}/>
