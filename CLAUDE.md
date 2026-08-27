@@ -28,7 +28,8 @@ e-postayı geri getirmez.
 |---|---|
 | `sporla-bulusma.jsx` | Ana site (tek dosya, ~8500 satır) |
 | `admin-panel.jsx` + `admin-main.jsx` | Yönetim paneli |
-| `i18n.js` | tr/en/de metinleri — **ikisi de kullanır** |
+| `i18n.js` | tr/en/de metinleri — **ikisi de kullanır**; SEO metinlerinin de TEK kaynağı |
+| `scripts/seo-static.mjs` | `npm run build` öncesi çalışır: `index.html`'e statik SEO metni + şema + hreflang basar, `public/seo-content.json` üretir |
 | `tailwind.config.js`, `index.css` | Renk token'ları ve ortak stiller — **ikisi de kullanır** |
 | `Tour.jsx`, `TrainingsMapView.jsx`, `ActivityChart.jsx`, `LocationPicker*.jsx` | Site bileşenleri |
 | `backend/backend-api.js` | Express API (tek dosya) |
@@ -48,6 +49,31 @@ Bu yüzden:
 - Deploy öncesi `git status` temiz olmalı; başkasının yarım işi varsa deploy edilmez.
 - Site ve admin ortak dosyalara (`i18n.js`, `tailwind.config.js`, `index.css`)
   dokunduğu için "admin ayrı, site ayrı" diye bölmek güvenli değildir.
+
+## Arama motoru / yapay zeka görünürlüğü
+
+Site React ile çiziliyor; ChatGPT, Perplexity ve Claude'un tarayıcıları
+JavaScript ÇALIŞTIRMAZ. Bu yüzden metin sunucudan basılır.
+
+- **Metin tek yerden yazılır: `i18n.js` (`faq` ve `seo` blokları).** JSX'e ya da
+  `backend-api.js`'e elle SEO cümlesi yazılmaz. `scripts/seo-static.mjs` bunları
+  hem `index.html`'e hem `public/seo-content.json`'a üretir; backend JSON'u
+  `dist/` içinden okur, yani **frontend deploy'u içeriği de taşır.**
+- **Bot yönlendirmesi nginx'te.** `map $http_user_agent $muuv_og_bot` sosyal ve
+  yapay zeka botlarını backend'e düşürür; insanlar statik `index.html`'i
+  nginx'ten alır. Node insan trafiğinin yolunda değildir.
+- **Şema görünür metni işaretler, yerine geçmez.** Bir sayfada FAQPage şeması
+  varsa aynı metin sayfada da olmalı; olmayan sayfalarda şema kaldırılır.
+- **Çok dillilik yalnız dört sabit sayfada**: ana sayfa, etkinlikler, takımlar,
+  iletişim. Türkçe kökte (`/takimlar`), İngilizce/Almanca önekli
+  (`/en/teams`, `/de/teams`). Yol tablosu İKİ yerde: `sporla-bulusma.jsx`
+  `LOCALIZED_PAGE_PATHS` ve `backend-api.js` `SEO_LOCALIZED_PATHS` —
+  **birebir aynı kalmalı.** Detay sayfaları (`/takim/`, `/etkinlik/`) bilerek
+  tek adrestedir: içeriği kullanıcı Türkçe yazıyor.
+- **Adres dili, kayıtlı tercihi ezer.** `/en/events` açıldığında `muuvlang`
+  ne olursa olsun İngilizce gösterilir; yoksa hreflang yalan söyler.
+- **IndexNow anahtar dosyası `public/<key>.txt` silinmemeli** — her bildirimde
+  okunuyor. Bing doğrulama etiketi `msvalidate.01` de silinmemeli.
 
 ## Renk sistemi (kurumsal palet)
 

@@ -1199,12 +1199,22 @@ app.get('/api/sitemap.xml', async (req, res) => {
   const today = new Date().toISOString().slice(0, 10);
   const urls = [
     { loc: `${SITE_ORIGIN}/`, changefreq: 'daily', priority: '1.0', lastmod: today },
-    // NOT: /antrenmanlar sitemap'te YOK. SPA bu yolu /etkinlikler'e çeviriyor,
-    // yani aynı sayfa iki adreste. Tek kanonik adres: /etkinlikler.
-    { loc: `${SITE_ORIGIN}/etkinlikler`, changefreq: 'hourly', priority: '0.9', lastmod: today },
-    { loc: `${SITE_ORIGIN}/takimlar`, changefreq: 'hourly', priority: '0.9', lastmod: today },
-    { loc: `${SITE_ORIGIN}/iletisim`, changefreq: 'monthly', priority: '0.5', lastmod: today },
   ];
+
+  // Dört sabit sayfa üç dilde ayrı adreste (tr kökte, en/de önekli).
+  // NOT: /antrenmanlar sitemap'te YOK. SPA bu yolu /etkinlikler'e çeviriyor,
+  // yani aynı sayfa iki adreste olurdu. Tek kanonik adres: /etkinlikler.
+  for (const [lang, pages] of Object.entries(SEO_LOCALIZED_PATHS)) {
+    for (const [page, p] of Object.entries(pages)) {
+      if (page === 'home' && lang === 'tr') continue; // zaten yukarıda
+      urls.push({
+        loc: `${SITE_ORIGIN}${p}`,
+        changefreq: page === 'contact' ? 'monthly' : 'hourly',
+        priority: page === 'home' ? '0.9' : page === 'contact' ? '0.5' : '0.8',
+        lastmod: today,
+      });
+    }
+  }
 
   try {
     // Herkese açık takımlar (özel olanlar hariç)
@@ -1332,14 +1342,54 @@ const SEO_WRAP_STYLE = 'max-width:820px;margin:0 auto;padding:56px 24px 80px;' +
 
 // Etkinlik tarihini okunur yaz. Etkinliğin kendi saat dilimi varsa onu belirtir;
 // uydurma yerel saat üretmeyiz, kaydedilen değeri olduğu gibi gösteririz.
-const seoFormatDate = (d) => {
+const seoFormatDate = (d, lang = 'tr') => {
   try {
-    return new Intl.DateTimeFormat('tr-TR', {
+    return new Intl.DateTimeFormat({ tr: 'tr-TR', en: 'en-GB', de: 'de-DE' }[lang] || 'tr-TR', {
       day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
     }).format(new Date(d));
   } catch { return ''; }
 };
 
+
+// ── Çok dilli SEO içeriği ──────────────────────────────────────────────────
+// Metinler i18n.js'te; scripts/seo-static.mjs bunları dist/seo-content.json'a
+// üretir (index.html ile aynı klasör → frontend deploy'u içeriği de taşır).
+// Burada ELLE metin yazılmaz; yeni cümle i18n.js'e eklenir.
+let seoContentCache = null;
+let seoContentAt = 0;
+const getSeoContent = () => {
+  if (seoContentCache && Date.now() - seoContentAt < 60000) return seoContentCache;
+  try {
+    seoContentCache = JSON.parse(
+      fs.readFileSync(path.join(__dirname, '..', 'dist', 'seo-content.json'), 'utf8'));
+    seoContentAt = Date.now();
+  } catch (e) {
+    console.error('[SEO] seo-content.json okunamadı:', e.message);
+    if (!seoContentCache) seoContentCache = null;
+  }
+  return seoContentCache;
+};
+
+// Türkçe kökte; İngilizce ve Almanca yalnız bu dört sayfada önek alır.
+// sporla-bulusma.jsx içindeki LOCALIZED_PAGE_PATHS ile BİREBİR aynı olmalı.
+const SEO_LOCALIZED_PATHS = {
+  tr: { home: '/',   trainings: '/etkinlikler', teams: '/takimlar', contact: '/iletisim' },
+  en: { home: '/en', trainings: '/en/events',   teams: '/en/teams', contact: '/en/contact' },
+  de: { home: '/de', trainings: '/de/events',   teams: '/de/teams', contact: '/de/kontakt' },
+};
+const SEO_PATH_LOOKUP = Object.fromEntries(
+  Object.entries(SEO_LOCALIZED_PATHS).flatMap(([lang, pages]) =>
+    Object.entries(pages).map(([page, p]) => [p, { lang, page }])));
+
+// hreflang etiketleri — sayfanın üç dildeki karşılığı + x-default (Türkçe).
+const seoHreflang = (page) => {
+  const rows = Object.entries(SEO_LOCALIZED_PATHS)
+    .map(([l, pages]) => [l, pages[page]]).filter(([, p]) => p);
+  if (!rows.length) return '';
+  return rows.map(([l, p]) => `  <link rel="alternate" hreflang="${l}" href="${SITE_ORIGIN}${p}">`)
+    .concat(`  <link rel="alternate" hreflang="x-default" href="${SITE_ORIGIN}${SEO_LOCALIZED_PATHS.tr[page]}">`)
+    .join('\n');
+};
 
 // Detay sayfası gövde metni — bot bu adreste etkinliğin/takımın kendi
 // bilgisini görsün diye. İnsan aynı bilgiyi SPA'da görür; cloaking yok.
@@ -1465,6 +1515,9 @@ app.get(['/takim/*', '/etkinlik/*'], async (req, res, next) => {
       // adreste etkinliğin/takımın kendi bilgisini görsün, genel SSS'i değil.
       out = replaceSeoRegion(out, 'SEO-TEXT', body);
       out = replaceSeoRegion(out, 'SEO-SCHEMA', '');
+      // Detay adreslerinin dil karşılığı yok; ana sayfanın hreflang'ini
+      // burada bırakmak Google'da "alternatif sayfa dönmüyor" hatası verir.
+      out = replaceSeoRegion(out, 'SEO-HREFLANG', '');
     }
     res.set('Cache-Control', 'public, max-age=300');
     return res.send(out);
@@ -1489,183 +1542,208 @@ app.get(['/takim/*', '/etkinlik/*'], async (req, res, next) => {
 // İnsan da aynı listeyi görür (SPA aynı veriyi API'den çizer) → cloaking yok.
 // ============================================
 
-const seoTrainingsText = async (canonicalPath) => {
+const seoFill = (str, n) => String(str).replace(/\{n\}/g, n);
+
+// Sayfa gövdesi + şema + başlık. Dil, adresten gelir (SEO_PATH_LOOKUP).
+const seoTrainingsText = async (lang) => {
+  const L = getSeoContent()?.seo?.[lang];
+  if (!L) throw new Error('seo-content.json yok');
   const r = await pool.query(
-    `SELECT t.id, t.title, t.sport, t.training_date, t.training_time, t.training_timezone,
-            t.location_name, t.location_address, t.capacity, t.is_paid,
-            teams.name AS team_name
+    `SELECT t.id, t.title, t.sport, t.training_date, t.training_time,
+            t.location_name, t.location_address, t.is_paid, teams.name AS team_name
        FROM trainings t
        LEFT JOIN teams ON t.team_id = teams.id
       WHERE t.is_public = true AND ${trainingUtcExpr('t')} >= NOW()
       ORDER BY t.training_date ASC, t.training_time ASC
-      LIMIT 60`
-  );
+      LIMIT 60`);
   const rows = r.rows;
   const items = rows.map((e) => {
     const url = `${SITE_ORIGIN}/etkinlik/${slugify(e.title)}-${e.id}`;
     const bits = [];
     if (e.sport) bits.push(htmlAttrEscape(e.sport));
-    const d = seoFormatDate(e.training_date);
+    const d = seoFormatDate(e.training_date, lang);
     if (d) bits.push(d + (e.training_time ? ` ${String(e.training_time).slice(0, 5)}` : ''));
     const yer = e.location_name || e.location_address;
     if (yer) bits.push(htmlAttrEscape(yer));
-    if (e.team_name) bits.push(`${htmlAttrEscape(e.team_name)} takımı`);
-    if (e.is_paid) bits.push('kayıt dış kuruluşta');
-    return `        <li style="margin:0 0 12px"><a href="${url}" style="color:#114956;font-weight:600;text-decoration:none">${htmlAttrEscape(e.title)}</a><br><span style="color:#66757A;font-size:.9rem">${bits.join(' · ')}</span></li>`;
+    if (e.team_name) bits.push(htmlAttrEscape(e.team_name));
+    return seoListItem(url, e.title, bits);
   }).join('\n');
 
-  const text = `
-    <div style="${SEO_WRAP_STYLE}">
-      <h1 style="font-size:clamp(1.7rem,4vw,2.3rem);color:#114956;margin:0 0 14px;letter-spacing:-.02em">Yaklaşan spor etkinlikleri</h1>
-      <p style="margin:0 0 8px">Muuvlink'te herkese açık, yaklaşan ${rows.length} spor etkinliği listeleniyor. Her etkinliğin tarihi, yeri ve kontenjanı kendi sayfasında yazar; katılmak için Katıl düğmesine basmak yeterlidir, onay beklenmez.</p>
-      <p style="margin:0 0 26px;color:#66757A;font-size:.95rem">Konum izni verdiğinde uygulama 5, 10, 25 veya 50 kilometre yarıçapındaki etkinlikleri harita üzerinde de gösterir. Liste tarihe göre sıralıdır ve geçmiş etkinlikler yer almaz.</p>
-${rows.length
-    ? `      <ul style="list-style:none;padding:0;margin:0">\n${items}\n      </ul>`
-    : `      <p>Şu anda yaklaşan herkese açık etkinlik yok. Yeni etkinlikler eklendiğinde bu sayfada görünür.</p>`}
-      <p style="margin:30px 0 0"><a href="${SITE_ORIGIN}/takimlar" style="color:#114956;font-weight:600;text-decoration:none">Spor takımları</a> · <a href="${SITE_ORIGIN}/" style="color:#114956;font-weight:600;text-decoration:none">Muuvlink nedir?</a></p>
-    </div>`;
-
-  const schema = {
-    '@context': 'https://schema.org',
-    '@type': 'CollectionPage',
-    name: 'Yaklaşan spor etkinlikleri — Muuvlink',
-    url: `${SITE_ORIGIN}${canonicalPath}`,
-    inLanguage: 'tr',
-    mainEntity: {
-      '@type': 'ItemList',
-      numberOfItems: rows.length,
-      itemListElement: rows.map((e, i) => ({
-        '@type': 'ListItem',
-        position: i + 1,
-        name: e.title,
-        url: `${SITE_ORIGIN}/etkinlik/${slugify(e.title)}-${e.id}`,
-      })),
-    },
-  };
-
   return {
-    text,
-    schema,
-    title: 'Yaklaşan Spor Etkinlikleri — Muuvlink',
-    description: `Muuvlink'te herkese açık ${rows.length} yaklaşan spor etkinliği: futbol, basketbol, koşu, tenis, yüzme ve daha fazlası. Tarih, yer ve kontenjan bilgisiyle.`,
+    page: 'trainings',
+    lang,
+    title: L.eventsTitle,
+    description: seoFill(L.eventsDesc, rows.length),
+    text: seoListPage({
+      lang, h1: L.eventsH1,
+      lead: seoFill(L.eventsLead, rows.length), sub: L.eventsSub,
+      items, empty: L.eventsEmpty, count: rows.length, L,
+    }),
+    schema: seoCollectionSchema(L.eventsH1, `${SITE_ORIGIN}${SEO_LOCALIZED_PATHS[lang].trainings}`, lang,
+      rows.map((e) => ({ name: e.title, url: `${SITE_ORIGIN}/etkinlik/${slugify(e.title)}-${e.id}` }))),
   };
 };
 
-const seoTeamsText = async () => {
+const seoTeamsText = async (lang) => {
+  const L = getSeoContent()?.seo?.[lang];
+  if (!L) throw new Error('seo-content.json yok');
   const r = await pool.query(
-    `SELECT t.id, t.name, t.sport, t.location, t.description,
-            COUNT(tm.user_id)::int AS member_count
-       FROM teams t
-       LEFT JOIN team_members tm ON tm.team_id = t.id
+    `SELECT t.id, t.name, t.sport, t.location, COUNT(tm.user_id)::int AS member_count
+       FROM teams t LEFT JOIN team_members tm ON tm.team_id = t.id
       WHERE t.is_private = false
       GROUP BY t.id
       ORDER BY member_count DESC, t.updated_at DESC
-      LIMIT 60`
-  );
+      LIMIT 60`);
   const rows = r.rows;
   const items = rows.map((t) => {
     const url = `${SITE_ORIGIN}/takim/${slugify(t.name)}-${t.id}`;
     const bits = [];
     if (t.sport) bits.push(htmlAttrEscape(t.sport));
     if (t.location) bits.push(htmlAttrEscape(t.location));
-    bits.push(`${t.member_count} üye`);
-    return `        <li style="margin:0 0 12px"><a href="${url}" style="color:#114956;font-weight:600;text-decoration:none">${htmlAttrEscape(t.name)}</a><br><span style="color:#66757A;font-size:.9rem">${bits.join(' · ')}</span></li>`;
+    bits.push(`${t.member_count} ${L.memberSuffix}`);
+    return seoListItem(url, t.name, bits);
   }).join('\n');
 
+  return {
+    page: 'teams',
+    lang,
+    title: L.teamsTitle,
+    description: seoFill(L.teamsDesc, rows.length),
+    text: seoListPage({
+      lang, h1: L.teamsH1,
+      lead: seoFill(L.teamsLead, rows.length), sub: L.teamsSub,
+      items, empty: L.teamsEmpty, count: rows.length, L,
+    }),
+    schema: seoCollectionSchema(L.teamsH1, `${SITE_ORIGIN}${SEO_LOCALIZED_PATHS[lang].teams}`, lang,
+      rows.map((t) => ({ name: t.name, url: `${SITE_ORIGIN}/takim/${slugify(t.name)}-${t.id}` }))),
+  };
+};
+
+const seoContactText = async (lang) => {
+  const L = getSeoContent()?.seo?.[lang];
+  if (!L) throw new Error('seo-content.json yok');
+  const topics = {
+    tr: ['Üyelik ve hesap', 'Takım kurma', 'Etkinlik soruları', 'Teknik sorun', 'İş birliği ve sponsorluk', 'Öneri ve geri bildirim'],
+    en: ['Account and membership', 'Starting a team', 'Event questions', 'Technical issues', 'Collaboration and sponsorship', 'Suggestions and feedback'],
+    de: ['Konto und Mitgliedschaft', 'Team gründen', 'Eventfragen', 'Technische Probleme', 'Zusammenarbeit und Sponsoring', 'Vorschläge und Feedback'],
+  }[lang];
   const text = `
     <div style="${SEO_WRAP_STYLE}">
-      <h1 style="font-size:clamp(1.7rem,4vw,2.3rem);color:#114956;margin:0 0 14px;letter-spacing:-.02em">Spor takımları</h1>
-      <p style="margin:0 0 8px">Muuvlink'te herkese açık ${rows.length} spor takımı var. Herkese açık takımlara katılım isteği gönderilebilir; özel takımlara yalnız davetle katılınır ve bu listede yer almazlar.</p>
-      <p style="margin:0 0 26px;color:#66757A;font-size:.95rem">Kendi takımını kurmak ücretsizdir: isim, spor dalı, konum ve görünürlük seçilir. Takımına ikinci bir yönetici ekleyebilir, üyelerine tek seferde etkinlik duyurusu yapabilirsin.</p>
-${rows.length
-    ? `      <ul style="list-style:none;padding:0;margin:0">\n${items}\n      </ul>`
-    : `      <p>Şu anda herkese açık takım yok. Yeni takımlar kurulduğunda bu sayfada görünür.</p>`}
-      <p style="margin:30px 0 0"><a href="${SITE_ORIGIN}/etkinlikler" style="color:#114956;font-weight:600;text-decoration:none">Yaklaşan etkinlikler</a> · <a href="${SITE_ORIGIN}/" style="color:#114956;font-weight:600;text-decoration:none">Muuvlink nedir?</a></p>
+      <h1 style="${SEO_H1_STYLE}">${htmlAttrEscape(L.contactH1)}</h1>
+      <p style="margin:0 0 8px">${htmlAttrEscape(L.contactLead)}</p>
+      <p style="margin:0 0 20px;color:#66757A;font-size:.95rem">${htmlAttrEscape(L.contactSub)}</p>
+      <h2 style="font-size:1.2rem;color:#114956;margin:0 0 10px">${htmlAttrEscape(L.contactTopics)}</h2>
+      <ul style="margin:0 0 24px;padding-left:20px">
+${topics.map((x) => `        <li>${htmlAttrEscape(x)}</li>`).join('\n')}
+      </ul>
+      <p style="margin:0"><a href="https://instagram.com/muuvlinkapp" style="${SEO_LINK_STYLE}">Instagram: @muuvlinkapp</a></p>
+${seoFooterLinks(lang, L)}
     </div>`;
-
-  const schema = {
-    '@context': 'https://schema.org',
-    '@type': 'CollectionPage',
-    name: 'Spor takımları — Muuvlink',
-    url: `${SITE_ORIGIN}/takimlar`,
-    inLanguage: 'tr',
-    mainEntity: {
-      '@type': 'ItemList',
-      numberOfItems: rows.length,
-      itemListElement: rows.map((t, i) => ({
-        '@type': 'ListItem',
-        position: i + 1,
-        name: t.name,
-        url: `${SITE_ORIGIN}/takim/${slugify(t.name)}-${t.id}`,
-      })),
+  return {
+    page: 'contact', lang, text,
+    title: L.contactTitle,
+    description: L.contactDesc,
+    schema: {
+      '@context': 'https://schema.org', '@type': 'ContactPage',
+      name: L.contactTitle, url: `${SITE_ORIGIN}${SEO_LOCALIZED_PATHS[lang].contact}`, inLanguage: lang,
     },
   };
-
-  return {
-    text,
-    schema,
-    title: 'Spor Takımları — Muuvlink',
-    description: `Muuvlink'te herkese açık ${rows.length} spor takımı. Takımlara katıl ya da kendi takımını ücretsiz kur.`,
-  };
 };
 
-const seoContactText = async () => {
+// Ana sayfanın İngilizce/Almanca karşılığı. Türkçe ana sayfa statik
+// index.html'den gelir (nginx), Node yolun dışında kalsın diye.
+const seoHomeText = async (lang) => {
+  const c = getSeoContent();
+  const L = c?.seo?.[lang];
+  const faq = c?.faq?.[lang];
+  if (!L || !faq) throw new Error('seo-content.json yok');
   const text = `
     <div style="${SEO_WRAP_STYLE}">
-      <h1 style="font-size:clamp(1.7rem,4vw,2.3rem);color:#114956;margin:0 0 14px;letter-spacing:-.02em">İletişim</h1>
-      <p style="margin:0 0 8px">Sorularınız için buradayız. En kısa sürede dönüş yaparız.</p>
-      <p style="margin:0 0 20px;color:#66757A;font-size:.95rem">Sayfadaki formu doldurarak ya da Instagram üzerinden mesaj göndererek bize ulaşabilirsiniz. Form gönderilirken ad, e-posta, konu ve mesaj alanları istenir.</p>
-      <h2 style="font-size:1.2rem;color:#114956;margin:0 0 10px">Hangi konularda yazabilirsiniz</h2>
-      <ul style="margin:0 0 24px;padding-left:20px">
-        <li>Üyelik ve hesap</li>
-        <li>Takım kurma</li>
-        <li>Etkinlik soruları</li>
-        <li>Teknik sorun</li>
-        <li>İş birliği ve sponsorluk</li>
-        <li>Öneri ve geri bildirim</li>
-      </ul>
-      <p style="margin:0"><a href="https://instagram.com/muuvlinkapp" style="color:#114956;font-weight:600;text-decoration:none">Instagram: @muuvlinkapp</a></p>
-      <p style="margin:30px 0 0"><a href="${SITE_ORIGIN}/etkinlikler" style="color:#114956;font-weight:600;text-decoration:none">Yaklaşan etkinlikler</a> · <a href="${SITE_ORIGIN}/takimlar" style="color:#114956;font-weight:600;text-decoration:none">Spor takımları</a></p>
+      <h1 style="${SEO_H1_STYLE}">${htmlAttrEscape(L.homeH1)}</h1>
+      <p style="font-size:1.05rem;margin:0 0 8px">${htmlAttrEscape(faq[0].a)}</p>
+${seoFooterLinks(lang, L, true)}
+      <h2 style="font-size:1.5rem;color:#114956;margin:40px 0 18px">${htmlAttrEscape(L.faqTitle)}</h2>
+${faq.map((f) => `      <h3 style="font-size:1rem;font-weight:600;color:#1F2121;margin:22px 0 6px">${htmlAttrEscape(f.q)}</h3>\n      <p style="margin:0;font-size:.95rem">${htmlAttrEscape(f.a)}</p>`).join('\n')}
+    </div>`;
+  return {
+    page: 'home', lang, text,
+    title: `Muuvlink — ${L.homeH1.replace(/^Muuvlink — /, '')}`,
+    description: faq[0].a.slice(0, 200),
+    schema: {
+      '@context': 'https://schema.org',
+      '@graph': [
+        { '@type': 'Organization', '@id': `${SITE_ORIGIN}/#organization`, name: 'Muuvlink',
+          url: SITE_ORIGIN, logo: `${SITE_ORIGIN}/icons/favicon.png`, description: faq[0].a },
+        { '@type': 'FAQPage', '@id': `${SITE_ORIGIN}${SEO_LOCALIZED_PATHS[lang].home}#faq`, inLanguage: lang,
+          mainEntity: faq.map((f) => ({ '@type': 'Question', name: f.q,
+            acceptedAnswer: { '@type': 'Answer', text: f.a } })) },
+      ],
+    },
+  };
+};
+
+// ── Ortak parçalar ────────────────────────────────────────────────────────
+const SEO_H1_STYLE = 'font-size:clamp(1.7rem,4vw,2.3rem);color:#114956;margin:0 0 14px;letter-spacing:-.02em';
+const SEO_LINK_STYLE = 'color:#114956;font-weight:600;text-decoration:none';
+
+const seoListItem = (url, name, bits) =>
+  `        <li style="margin:0 0 12px"><a href="${url}" style="${SEO_LINK_STYLE}">${htmlAttrEscape(name)}</a><br><span style="color:#66757A;font-size:.9rem">${bits.join(' · ')}</span></li>`;
+
+const seoFooterLinks = (lang, L, skipHome = false) => {
+  const P = SEO_LOCALIZED_PATHS[lang];
+  const parts = [
+    `<a href="${SITE_ORIGIN}${P.trainings}" style="${SEO_LINK_STYLE}">${htmlAttrEscape(L.navEvents)}</a>`,
+    `<a href="${SITE_ORIGIN}${P.teams}" style="${SEO_LINK_STYLE}">${htmlAttrEscape(L.navTeams)}</a>`,
+    skipHome
+      ? `<a href="${SITE_ORIGIN}${P.contact}" style="${SEO_LINK_STYLE}">${htmlAttrEscape(L.navContact)}</a>`
+      : `<a href="${SITE_ORIGIN}${P.home}" style="${SEO_LINK_STYLE}">${htmlAttrEscape(L.navHome)}</a>`,
+  ];
+  return `      <p style="margin:30px 0 0">${parts.join(' · ')}</p>`;
+};
+
+const seoListPage = ({ lang, h1, lead, sub, items, empty, count, L }) => `
+    <div style="${SEO_WRAP_STYLE}">
+      <h1 style="${SEO_H1_STYLE}">${htmlAttrEscape(h1)}</h1>
+      <p style="margin:0 0 8px">${htmlAttrEscape(lead)}</p>
+      <p style="margin:0 0 26px;color:#66757A;font-size:.95rem">${htmlAttrEscape(sub)}</p>
+${count ? `      <ul style="list-style:none;padding:0;margin:0">\n${items}\n      </ul>`
+        : `      <p>${htmlAttrEscape(empty)}</p>`}
+${seoFooterLinks(lang, L)}
     </div>`;
 
-  const schema = {
-    '@context': 'https://schema.org',
-    '@type': 'ContactPage',
-    name: 'İletişim — Muuvlink',
-    url: `${SITE_ORIGIN}/iletisim`,
-    inLanguage: 'tr',
-  };
+const seoCollectionSchema = (name, url, lang, list) => ({
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name, url, inLanguage: lang,
+  mainEntity: {
+    '@type': 'ItemList',
+    numberOfItems: list.length,
+    itemListElement: list.map((x, i) => ({ '@type': 'ListItem', position: i + 1, name: x.name, url: x.url })),
+  },
+});
 
-  return {
-    text, schema,
-    title: 'İletişim — Muuvlink',
-    description: 'Muuvlink ile iletişime geçin: üyelik, takım kurma, etkinlik soruları, teknik sorun, iş birliği ve geri bildirim.',
-  };
-};
+const SEO_PAGE_BUILDERS = { home: seoHomeText, trainings: seoTrainingsText, teams: seoTeamsText, contact: seoContactText };
 
-const SEO_LIST_PAGES = {
-  // /antrenmanlar eski yol; SPA onu /etkinlikler'e çevirdiği için ikisi de
-  // aynı canonical'ı basar, arama motoru tek sayfada birleştirir.
-  '/antrenmanlar': () => seoTrainingsText('/etkinlikler'),
-  '/etkinlikler': () => seoTrainingsText('/etkinlikler'),
-  '/takimlar': () => seoTeamsText(),
-  '/iletisim': () => seoContactText(),
-};
+// Bot'a açılan yollar: Türkçe ana sayfa HARİÇ (o statik index.html'den gelir,
+// Node insan trafiğinin yolunda kalmasın diye) + eski /antrenmanlar.
+const SEO_BOT_PATHS = Object.keys(SEO_PATH_LOOKUP).filter((p) => p !== '/').concat('/antrenmanlar');
 
-app.get(Object.keys(SEO_LIST_PAGES), async (req, res, next) => {
-  const build = SEO_LIST_PAGES[req.path];
+app.get(SEO_BOT_PATHS, async (req, res, next) => {
+  const hit = SEO_PATH_LOOKUP[req.path] ||
+    (req.path === '/antrenmanlar' ? { lang: 'tr', page: 'trainings' } : null);
   const html = getIndexHtml();
-  if (!build || !html) return next();
+  if (!hit || !html) return next();
   try {
-    const page = await build(req.path);
+    const page = await SEO_PAGE_BUILDERS[hit.page](hit.lang);
+    const canonical = `${SITE_ORIGIN}${SEO_LOCALIZED_PATHS[hit.lang][hit.page]}`;
     let out = injectOgTags(html, {
       title: page.title,
       description: page.description,
-      url: page.schema.url || `${SITE_ORIGIN}${req.path}`,
+      url: canonical,
       image: `${SITE_ORIGIN}/og-image.jpg`,
     });
-    // SSS metni ve FAQPage şeması bu sayfaya ait değil; ikisini birlikte
-    // değiştiriyoruz ki şema ile sayfadaki metin ayrışmasın.
+    out = out.replace('<html lang="tr">', `<html lang="${hit.lang}">`);
+    out = replaceSeoRegion(out, 'SEO-HREFLANG', seoHreflang(hit.page));
     out = replaceSeoRegion(out, 'SEO-TEXT', page.text);
     out = replaceSeoRegion(out, 'SEO-SCHEMA',
       `  <script type="application/ld+json">\n${JSON.stringify(page.schema, null, 2)}\n  </script>`);

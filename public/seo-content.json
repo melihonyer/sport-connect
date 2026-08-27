@@ -1,0 +1,165 @@
+{
+  "faq": {
+    "tr": [
+      {
+        "q": "Muuvlink nedir?",
+        "a": "Muuvlink, çevrendeki spor etkinliklerini bulup katılmanı, kendi takımını kurmanı ve düzenli antrenman planlamanı sağlayan ücretsiz bir spor topluluğu uygulamasıdır. Futbol, basketbol, tenis, koşu, bisiklet, yüzme, yoga ve padel dahil on beşten fazla dalda etkinlik açılabilir. Web'de muuvlink.app adresinden, telefonda iOS ve Android uygulamasıyla kullanılır."
+      },
+      {
+        "q": "Muuvlink ücretsiz mi?",
+        "a": "Evet, ücretsiz. Hesap açmak, etkinlik oluşturmak, takım kurmak ve etkinliklere katılmak için ödeme yapılmaz; abonelik ya da paket satışı yoktur. Haritada “Ücretli” rozetiyle görünen maraton ve turnuva gibi organizasyonlar dış kuruluşlara aittir, kayıt kendi sitelerinden yapılır ve Muuvlink bu ücretlerden pay almaz."
+      },
+      {
+        "q": "Yakınımdaki spor etkinliklerini nasıl bulurum?",
+        "a": "Konum izni verdiğinde Muuvlink 5, 10, 25 veya 50 kilometre yarıçapındaki herkese açık etkinlikleri harita ve liste olarak gösterir. Spor dalına, tarihe ve zorluk seviyesine göre süzebilirsin. Katılmadan önce etkinlik sayfasındaki yorum alanından düzenleyene soru sorabilir, saat ve seviye konusunda anlaşabilirsin."
+      },
+      {
+        "q": "Takım nasıl kurulur?",
+        "a": "Giriş yaptıktan sonra Takımlar sayfasındaki “Takım Oluştur” ile takım açılır: isim, spor dalı, konum ve görünürlük seçilir. Herkese açık takımlar aramada ve arama motorlarında görünür, özel takımlara yalnız davetle katılınır. Takımına ikinci bir yönetici ekleyebilir, üyelerine tek seferde etkinlik duyurusu yapabilirsin."
+      },
+      {
+        "q": "Etkinliğe nasıl katılırım?",
+        "a": "Etkinlik sayfasındaki Katıl düğmesine basmak yeterlidir, ayrıca onay beklemezsin. Her etkinliğin bir kontenjanı vardır ve dolduğunda katılım kapanır. Katıldığın etkinlik profilindeki takvimde görünür, saatinden önce hatırlatma bildirimi alırsın. Vazgeçersen aynı sayfadan ayrılırsın ve yerin diğer sporculara açılır."
+      },
+      {
+        "q": "Muuvlink hangi şehirlerde ve hangi sporlarda kullanılıyor?",
+        "a": "Muuvlink konum tabanlı çalışır: sabit bir şehir listesi yoktur, etkinlikler kullanıcıların bulunduğu her şehirde açılabilir. Desteklenen dallar basketbol, bisiklet, crossfit, futbol, kano, koşu, kürek, padel, pilates, tenis, trekking, triatlon, voleybol, yoga ve yüzmedir. Arayüz Türkçe, İngilizce ve Almanca sunulur."
+      }
+    ],
+    "en": [
+      {
+        "q": "What is Muuvlink?",
+        "a": "Muuvlink is a free sports community app for finding and joining sports events near you, starting your own team and planning regular training. Events can be created in more than fifteen disciplines, including football, basketball, tennis, running, cycling, swimming, yoga and padel. It runs on the web at muuvlink.app and as an iOS and Android app."
+      },
+      {
+        "q": "Is Muuvlink free?",
+        "a": "Yes, it is free. Creating an account, creating an event, starting a team and joining events all cost nothing, and there is no subscription or paid tier. Organised races and tournaments shown with a “Paid” badge belong to outside organisers; you register on their own site and Muuvlink takes no share of those fees."
+      },
+      {
+        "q": "How do I find sports events near me?",
+        "a": "Once you grant location access, Muuvlink lists public events within a 5, 10, 25 or 50 kilometre radius on a map and as a list. You can filter by sport, date and difficulty level. Before joining, the comment area on the event page lets you ask the organiser about the time or the level."
+      },
+      {
+        "q": "How do I start a team?",
+        "a": "After logging in, use “Create Team” on the Teams page: pick a name, a sport, a location and the visibility. Public teams appear in search and in search engines; private teams are joined by invitation only. You can add a second manager to your team and announce an event to all members at once."
+      },
+      {
+        "q": "How do I join an event?",
+        "a": "Press the Join button on the event page; no approval step follows. Every event has a capacity, and joining closes once it is full. Events you joined appear in the calendar on your profile, and you receive a reminder notification before the start. If you change your mind you can leave from the same page and your spot reopens."
+      },
+      {
+        "q": "Which cities and sports does Muuvlink cover?",
+        "a": "Muuvlink works by location rather than from a fixed list of cities: events can be created wherever its users are. The supported sports are basketball, cycling, CrossFit, football, kayaking, running, rowing, padel, pilates, tennis, trekking, triathlon, volleyball, yoga and swimming. The interface is available in Turkish, English and German."
+      }
+    ],
+    "de": [
+      {
+        "q": "Was ist Muuvlink?",
+        "a": "Muuvlink ist eine kostenlose Sport-Community-App, mit der du Sportevents in deiner Nähe findest und daran teilnimmst, ein eigenes Team gründest und regelmäßiges Training planst. Events lassen sich in über fünfzehn Sportarten anlegen, darunter Fußball, Basketball, Tennis, Laufen, Radfahren, Schwimmen, Yoga und Padel. Verfügbar im Web unter muuvlink.app sowie als iOS- und Android-App."
+      },
+      {
+        "q": "Ist Muuvlink kostenlos?",
+        "a": "Ja, kostenlos. Konto anlegen, Events erstellen, ein Team gründen und an Events teilnehmen kosten nichts; es gibt kein Abo und keine kostenpflichtige Stufe. Mit dem Abzeichen „Kostenpflichtig“ markierte Läufe und Turniere stammen von externen Veranstaltern; die Anmeldung läuft über deren Website, und Muuvlink erhält davon keinen Anteil."
+      },
+      {
+        "q": "Wie finde ich Sportevents in meiner Nähe?",
+        "a": "Sobald du den Standortzugriff erlaubst, zeigt Muuvlink öffentliche Events im Umkreis von 5, 10, 25 oder 50 Kilometern auf einer Karte und als Liste. Du kannst nach Sportart, Datum und Schwierigkeitsgrad filtern. Vor der Teilnahme kannst du den Veranstalter im Kommentarbereich der Eventseite nach Uhrzeit und Niveau fragen."
+      },
+      {
+        "q": "Wie gründe ich ein Team?",
+        "a": "Nach dem Anmelden legst du über „Team erstellen“ auf der Teamseite ein Team an: Name, Sportart, Ort und Sichtbarkeit. Öffentliche Teams erscheinen in der Suche und in Suchmaschinen, privaten Teams tritt man nur per Einladung bei. Du kannst eine zweite verwaltende Person hinzufügen und allen Mitgliedern gleichzeitig ein Event ankündigen."
+      },
+      {
+        "q": "Wie nehme ich an einem Event teil?",
+        "a": "Es genügt, auf der Eventseite auf „Teilnehmen“ zu tippen; eine Freigabe ist nicht nötig. Jedes Event hat eine Teilnehmerzahl, und bei Erreichen schließt die Anmeldung. Deine Events erscheinen im Kalender in deinem Profil, und vor Beginn erhältst du eine Erinnerung. Wenn du absagst, verlässt du das Event auf derselben Seite und dein Platz wird wieder frei."
+      },
+      {
+        "q": "Welche Städte und Sportarten deckt Muuvlink ab?",
+        "a": "Muuvlink arbeitet standortbasiert statt mit einer festen Städteliste: Events können überall dort entstehen, wo Nutzerinnen und Nutzer sind. Unterstützt werden Basketball, Radfahren, CrossFit, Fußball, Kanu, Laufen, Rudern, Padel, Pilates, Tennis, Trekking, Triathlon, Volleyball, Yoga und Schwimmen. Die Oberfläche gibt es auf Türkisch, Englisch und Deutsch."
+      }
+    ]
+  },
+  "seo": {
+    "tr": {
+      "homeH1": "Muuvlink — spor arkadaşı bul, takım kur, etkinliğe katıl",
+      "navEvents": "Etkinlikler",
+      "navTeams": "Takımlar",
+      "navContact": "İletişim",
+      "navHome": "Muuvlink nedir?",
+      "eventsH1": "Yaklaşan spor etkinlikleri",
+      "eventsLead": "Muuvlink'te herkese açık, yaklaşan {n} spor etkinliği listeleniyor. Her etkinliğin tarihi, yeri ve kontenjanı kendi sayfasında yazar; katılmak için Katıl düğmesine basmak yeterlidir, onay beklenmez.",
+      "eventsSub": "Konum izni verdiğinde uygulama 5, 10, 25 veya 50 kilometre yarıçapındaki etkinlikleri harita üzerinde de gösterir. Liste tarihe göre sıralıdır ve geçmiş etkinlikler yer almaz.",
+      "eventsEmpty": "Şu anda yaklaşan herkese açık etkinlik yok. Yeni etkinlikler eklendiğinde bu sayfada görünür.",
+      "eventsTitle": "Yaklaşan Spor Etkinlikleri — Muuvlink",
+      "eventsDesc": "Muuvlink'te herkese açık {n} yaklaşan spor etkinliği: futbol, basketbol, koşu, tenis, yüzme ve daha fazlası. Tarih, yer ve kontenjan bilgisiyle.",
+      "teamsH1": "Spor takımları",
+      "teamsLead": "Muuvlink'te herkese açık {n} spor takımı var. Herkese açık takımlara katılım isteği gönderilebilir; özel takımlara yalnız davetle katılınır ve bu listede yer almazlar.",
+      "teamsSub": "Kendi takımını kurmak ücretsizdir: isim, spor dalı, konum ve görünürlük seçilir. Takımına ikinci bir yönetici ekleyebilir, üyelerine tek seferde etkinlik duyurusu yapabilirsin.",
+      "teamsEmpty": "Şu anda herkese açık takım yok. Yeni takımlar kurulduğunda bu sayfada görünür.",
+      "teamsTitle": "Spor Takımları — Muuvlink",
+      "teamsDesc": "Muuvlink'te herkese açık {n} spor takımı. Takımlara katıl ya da kendi takımını ücretsiz kur.",
+      "memberSuffix": "üye",
+      "contactH1": "İletişim",
+      "contactLead": "Sorularınız için buradayız. En kısa sürede dönüş yaparız.",
+      "contactSub": "Sayfadaki formu doldurarak ya da Instagram üzerinden mesaj göndererek bize ulaşabilirsiniz. Form gönderilirken ad, e-posta, konu ve mesaj alanları istenir.",
+      "contactTopics": "Hangi konularda yazabilirsiniz",
+      "contactTitle": "İletişim — Muuvlink",
+      "contactDesc": "Muuvlink ile iletişime geçin: üyelik, takım kurma, etkinlik soruları, teknik sorun, iş birliği ve geri bildirim.",
+      "faqTitle": "Sık sorulan sorular"
+    },
+    "en": {
+      "homeH1": "Muuvlink — find a training partner, start a team, join an event",
+      "navEvents": "Events",
+      "navTeams": "Teams",
+      "navContact": "Contact",
+      "navHome": "What is Muuvlink?",
+      "eventsH1": "Upcoming sports events",
+      "eventsLead": "Muuvlink lists {n} upcoming public sports events. Each event page shows its date, location and capacity; to take part you press Join, with no approval step.",
+      "eventsSub": "With location access the app also shows events within a 5, 10, 25 or 50 kilometre radius on a map. The list is ordered by date and past events are not included.",
+      "eventsEmpty": "There are no upcoming public events right now. New events appear on this page as they are created.",
+      "eventsTitle": "Upcoming Sports Events — Muuvlink",
+      "eventsDesc": "{n} upcoming public sports events on Muuvlink: football, basketball, running, tennis, swimming and more, with date, location and capacity.",
+      "teamsH1": "Sports teams",
+      "teamsLead": "There are {n} public sports teams on Muuvlink. You can request to join a public team; private teams are invitation-only and do not appear in this list.",
+      "teamsSub": "Starting your own team is free: pick a name, a sport, a location and the visibility. You can add a second manager and announce an event to all members at once.",
+      "teamsEmpty": "There are no public teams right now. New teams appear on this page as they are created.",
+      "teamsTitle": "Sports Teams — Muuvlink",
+      "teamsDesc": "{n} public sports teams on Muuvlink. Join a team or start your own for free.",
+      "memberSuffix": "members",
+      "contactH1": "Contact",
+      "contactLead": "We're here for your questions. We'll get back to you soon.",
+      "contactSub": "You can reach us with the form on this page or by message on Instagram. The form asks for your name, email, subject and message.",
+      "contactTopics": "What you can write to us about",
+      "contactTitle": "Contact — Muuvlink",
+      "contactDesc": "Get in touch with Muuvlink: membership, starting a team, event questions, technical issues, collaboration and feedback.",
+      "faqTitle": "Frequently asked questions"
+    },
+    "de": {
+      "homeH1": "Muuvlink — Trainingspartner finden, Team gründen, an Events teilnehmen",
+      "navEvents": "Events",
+      "navTeams": "Teams",
+      "navContact": "Kontakt",
+      "navHome": "Was ist Muuvlink?",
+      "eventsH1": "Kommende Sportevents",
+      "eventsLead": "Muuvlink listet {n} kommende öffentliche Sportevents. Auf jeder Eventseite stehen Datum, Ort und Teilnehmerzahl; zum Mitmachen genügt „Teilnehmen“, eine Freigabe ist nicht nötig.",
+      "eventsSub": "Mit Standortzugriff zeigt die App Events im Umkreis von 5, 10, 25 oder 50 Kilometern auch auf einer Karte. Die Liste ist nach Datum sortiert, vergangene Events fehlen.",
+      "eventsEmpty": "Derzeit gibt es keine kommenden öffentlichen Events. Neue Events erscheinen hier, sobald sie angelegt werden.",
+      "eventsTitle": "Kommende Sportevents — Muuvlink",
+      "eventsDesc": "{n} kommende öffentliche Sportevents auf Muuvlink: Fußball, Basketball, Laufen, Tennis, Schwimmen und mehr, mit Datum, Ort und Teilnehmerzahl.",
+      "teamsH1": "Sportteams",
+      "teamsLead": "Auf Muuvlink gibt es {n} öffentliche Sportteams. Öffentlichen Teams kannst du eine Beitrittsanfrage senden; privaten Teams tritt man nur per Einladung bei, sie erscheinen hier nicht.",
+      "teamsSub": "Ein eigenes Team zu gründen ist kostenlos: Name, Sportart, Ort und Sichtbarkeit wählen. Du kannst eine zweite verwaltende Person hinzufügen und allen Mitgliedern gleichzeitig ein Event ankündigen.",
+      "teamsEmpty": "Derzeit gibt es keine öffentlichen Teams. Neue Teams erscheinen hier, sobald sie gegründet werden.",
+      "teamsTitle": "Sportteams — Muuvlink",
+      "teamsDesc": "{n} öffentliche Sportteams auf Muuvlink. Tritt einem Team bei oder gründe kostenlos dein eigenes.",
+      "memberSuffix": "Mitglieder",
+      "contactH1": "Kontakt",
+      "contactLead": "Wir sind für deine Fragen da. Wir melden uns bald.",
+      "contactSub": "Du erreichst uns über das Formular auf dieser Seite oder per Nachricht auf Instagram. Das Formular fragt Name, E-Mail, Betreff und Nachricht ab.",
+      "contactTopics": "Worüber du uns schreiben kannst",
+      "contactTitle": "Kontakt — Muuvlink",
+      "contactDesc": "Kontaktiere Muuvlink: Mitgliedschaft, Teamgründung, Eventfragen, technische Probleme, Zusammenarbeit und Feedback.",
+      "faqTitle": "Häufige Fragen"
+    }
+  }
+}

@@ -1700,6 +1700,30 @@ const parseDetailPath = (pathname) => {
   return null;
 };
 
+// ── Çok dilli adresler ────────────────────────────────────────────────────
+// Türkçe KÖKTE kalır: mevcut hiçbir adres değişmez, sıralamalar korunur.
+// İngilizce ve Almanca yalnız bu DÖRT sabit sayfa için önek alır.
+// Detay sayfaları (/takim/, /etkinlik/) bilerek tek adreste bırakıldı:
+// içeriği kullanıcı Türkçe yazıyor, çevirisi yok — üç adres kopya olurdu.
+const LOCALIZED_PAGE_PATHS = {
+  tr: { home: "/",    trainings: "/etkinlikler", teams: "/takimlar",  contact: "/iletisim" },
+  en: { home: "/en",  trainings: "/en/events",   teams: "/en/teams",  contact: "/en/contact" },
+  de: { home: "/de",  trainings: "/de/events",   teams: "/de/teams",  contact: "/de/kontakt" },
+};
+// Ters tablo: yol → { lang, page }
+const LOCALIZED_PATH_LOOKUP = Object.fromEntries(
+  Object.entries(LOCALIZED_PAGE_PATHS).flatMap(([lang, pages]) =>
+    Object.entries(pages).map(([page, path]) => [path, { lang, page }])
+  )
+);
+// Sondaki eğik çizgiyi at: "/en/" ile "/en" aynı sayfadır.
+const normalizePath = (p) => (p || "/").replace(/\/+$/, "") || "/";
+// Adres dili belirtiyorsa onu döndür (URL, localStorage tercihini EZER —
+// aksi halde /en/events sayfası Türkçe metin gösterir, hreflang tutarsız olur).
+const langFromPath = (p) => LOCALIZED_PATH_LOOKUP[normalizePath(p)]?.lang ?? null;
+// Dil önekini at: native deep-link'ler ve eski kontroller için.
+const stripLocale = (p) => normalizePath(p).replace(/^\/(en|de)(?=\/|$)/, "") || "/";
+
 export default function Muuvlink() {
   // ── URL ↔ sayfa eşlemesi ─────────────────────────────
   const PAGE_TO_PATH = {
@@ -1717,11 +1741,18 @@ export default function Muuvlink() {
   PATH_TO_PAGE["/antrenmanlar"]  = "trainings";
   PATH_TO_PAGE["/antrenman-ekle"] = "create-training";
 
+  // Tek çözümleyici: önce dilli adresler, sonra Türkçe tablo.
+  const pageFromPath = (p) => {
+    const n = normalizePath(p);
+    return LOCALIZED_PATH_LOOKUP[n]?.page ?? PATH_TO_PAGE[n] ?? (n === "/" ? "home" : "not-found");
+  };
+
   // PAGE_META moved below – uses t() for localised titles/descriptions
 
   // ── Dil ─────────────────────────────────────────────────
   const [lang, setLang] = useState(() => {
-    const l = detectLang();
+    // Adreste dil varsa o kazanır; yoksa kayıtlı tercih / tarayıcı dili.
+    const l = (!isNative && langFromPath(window.location.pathname)) || detectLang();
     document.documentElement.lang = l;
     return l;
   });
@@ -1730,6 +1761,14 @@ export default function Muuvlink() {
     setLang(l);
     localStorage.setItem("muuvlang", l);
     document.documentElement.lang = l;
+    // Dilli dört sayfadaysak adresi de karşılığına taşı; yoksa /en/events
+    // Türkçe içerik gösterir ve hreflang yalan söyler.
+    if (!isNative) {
+      const target = LOCALIZED_PAGE_PATHS[l]?.[currentPage];
+      if (target && normalizePath(window.location.pathname) !== target) {
+        window.history.replaceState({ page: currentPage }, "", target);
+      }
+    }
   };
   const [langDropOpen, setLangDropOpen] = useState(false);
   const langDropRef = useRef(null);
@@ -1760,7 +1799,7 @@ export default function Muuvlink() {
     // Slug'lı detay URL'i (/takim/..-id, /etkinlik/..-id): detay yüklenirken arka planda liste göster (not-found flash'ı önle)
     const detail = parseDetailPath(p);
     if (detail) return detail.kind === "team" ? "teams" : "trainings";
-    return PATH_TO_PAGE[p] ?? (p === "/" ? "home" : "not-found");
+    return pageFromPath(p);
   });
   const [user, setUser] = useState(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -2244,9 +2283,11 @@ export default function Muuvlink() {
             setCurrentPage("teams");
           } else if (!navigateToNotificationTarget(event.url)) {
             // Bilinen bir hedef çıkmadıysa sayfa bazında yönlendir
-            if (pathname.startsWith("/takimlar")) setCurrentPage("teams");
-            else if (pathname.startsWith("/etkinlikler") || pathname.startsWith("/antrenmanlar")) setCurrentPage("trainings");
-            else if (pathname.startsWith("/profil")) setCurrentPage("profile");
+            // Universal Link dilli gelebilir (/en/teams): öneki atıp bak.
+            const bare = stripLocale(pathname);
+            if (bare.startsWith("/takimlar") || bare.startsWith("/teams")) setCurrentPage("teams");
+            else if (bare.startsWith("/etkinlikler") || bare.startsWith("/antrenmanlar") || bare.startsWith("/events")) setCurrentPage("trainings");
+            else if (bare.startsWith("/profil")) setCurrentPage("profile");
           }
         } catch (_) {}
       });
@@ -2417,7 +2458,7 @@ export default function Muuvlink() {
       ogImage = absImg(selectedTraining.image_url);
     } else {
       const meta = PAGE_META[currentPage];
-      const path = PAGE_TO_PATH[currentPage];
+      const path = LOCALIZED_PAGE_PATHS[lang]?.[currentPage] ?? PAGE_TO_PATH[currentPage];
       title = meta?.title || "Muuvlink";
       desc  = meta?.desc  || t("home.heroSubtitleFallback");
       url   = `https://muuvlink.app${path || "/"}`;
@@ -2454,6 +2495,23 @@ export default function Muuvlink() {
     let canonical = document.querySelector('link[rel="canonical"]');
     if (!canonical) { canonical = document.createElement("link"); canonical.rel = "canonical"; document.head.appendChild(canonical); }
     canonical.href = url;
+
+    // hreflang — yalnız üç dilde ayrı adresi olan dört sayfada anlamlı.
+    // Diğer sayfalarda (detay, profil...) etiketler kaldırılır: olmayan bir
+    // karşılığı bildirmek Google'da "alternatif sayfa dönmüyor" hatası verir.
+    document.querySelectorAll('link[rel="alternate"][hreflang]').forEach((el) => el.remove());
+    const alts = Object.entries(LOCALIZED_PAGE_PATHS)
+      .map(([l, pages]) => [l, pages[currentPage]])
+      .filter(([, pth]) => pth);
+    if (alts.length) {
+      const addAlt = (hl, pth) => {
+        const el = document.createElement("link");
+        el.rel = "alternate"; el.hreflang = hl; el.href = `https://muuvlink.app${pth}`;
+        document.head.appendChild(el);
+      };
+      for (const [l, pth] of alts) addAlt(l, pth);
+      addAlt("x-default", LOCALIZED_PAGE_PATHS.tr[currentPage]);
+    }
 
     // ── JSON-LD yapısal veri (SEO/GEO — Google zengin sonuçları) ──
     const ORIGIN = "https://muuvlink.app";
@@ -2538,7 +2596,9 @@ export default function Muuvlink() {
     } else {
       setJsonLd(null);
     }
-  }, [currentPage, selectedTeam, selectedTraining]);
+    // lang de bağımlı: dil değişince başlık, açıklama, canonical ve hreflang
+    // yeniden hesaplanmalı — yoksa /en/teams sayfası Türkçe canonical basar.
+  }, [currentPage, selectedTeam, selectedTraining, lang]);
 
   // Tarayıcı geri/ileri tuşu
   useEffect(() => {
@@ -2550,8 +2610,14 @@ export default function Muuvlink() {
         else fetchTrainingDetails(detail.id, { replace: true });
         return;
       }
-      const page = PATH_TO_PAGE[window.location.pathname] ?? (window.location.pathname === "/" ? "home" : "not-found");
-      setCurrentPage(page);
+      // Geri/ileri ile dilli bir adrese dönülürse dil de o adrese uyar.
+      const hit = LOCALIZED_PATH_LOOKUP[normalizePath(window.location.pathname)];
+      if (hit) {
+        setLang(hit.lang);
+        localStorage.setItem("muuvlang", hit.lang);
+        document.documentElement.lang = hit.lang;
+      }
+      setCurrentPage(pageFromPath(window.location.pathname));
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
@@ -3687,7 +3753,7 @@ export default function Muuvlink() {
       return true;
     }
 
-    const page = PATH_TO_PAGE[pathname.replace(/\/+$/, "") || "/"];
+    const page = LOCALIZED_PATH_LOOKUP[normalizePath(pathname)]?.page ?? PATH_TO_PAGE[normalizePath(pathname)];
     if (page) {
       setCurrentPage(page);
       return true;

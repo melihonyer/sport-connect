@@ -1056,6 +1056,69 @@ export const translations = {
     Diğer:      { tr: "Diğer",      en: "Other",       de: "Sonstiges"   },
   },
 
+  // ── SEO metinleri (sunucudan basılan sayfalar) ──────────
+  // Bu blok hem scripts/seo-static.mjs (index.html statik metni) hem de
+  // backend/backend-api.js (bot prerender) tarafından kullanılır.
+  // Backend'e dist/seo-content.json olarak üretilir — orada elle metin yok.
+  // {n} yer tutucusu çalışma anında sayıyla değiştirilir.
+  seo: {
+    homeH1:      { tr: "Muuvlink — spor arkadaşı bul, takım kur, etkinliğe katıl",
+                   en: "Muuvlink — find a training partner, start a team, join an event",
+                   de: "Muuvlink — Trainingspartner finden, Team gründen, an Events teilnehmen" },
+    navEvents:   { tr: "Etkinlikler",  en: "Events",  de: "Events"  },
+    navTeams:    { tr: "Takımlar",     en: "Teams",   de: "Teams"   },
+    navContact:  { tr: "İletişim",     en: "Contact", de: "Kontakt" },
+    navHome:     { tr: "Muuvlink nedir?", en: "What is Muuvlink?", de: "Was ist Muuvlink?" },
+
+    eventsH1:    { tr: "Yaklaşan spor etkinlikleri",
+                   en: "Upcoming sports events",
+                   de: "Kommende Sportevents" },
+    eventsLead:  { tr: "Muuvlink'te herkese açık, yaklaşan {n} spor etkinliği listeleniyor. Her etkinliğin tarihi, yeri ve kontenjanı kendi sayfasında yazar; katılmak için Katıl düğmesine basmak yeterlidir, onay beklenmez.",
+                   en: "Muuvlink lists {n} upcoming public sports events. Each event page shows its date, location and capacity; to take part you press Join, with no approval step.",
+                   de: "Muuvlink listet {n} kommende öffentliche Sportevents. Auf jeder Eventseite stehen Datum, Ort und Teilnehmerzahl; zum Mitmachen genügt „Teilnehmen“, eine Freigabe ist nicht nötig." },
+    eventsSub:   { tr: "Konum izni verdiğinde uygulama 5, 10, 25 veya 50 kilometre yarıçapındaki etkinlikleri harita üzerinde de gösterir. Liste tarihe göre sıralıdır ve geçmiş etkinlikler yer almaz.",
+                   en: "With location access the app also shows events within a 5, 10, 25 or 50 kilometre radius on a map. The list is ordered by date and past events are not included.",
+                   de: "Mit Standortzugriff zeigt die App Events im Umkreis von 5, 10, 25 oder 50 Kilometern auch auf einer Karte. Die Liste ist nach Datum sortiert, vergangene Events fehlen." },
+    eventsEmpty: { tr: "Şu anda yaklaşan herkese açık etkinlik yok. Yeni etkinlikler eklendiğinde bu sayfada görünür.",
+                   en: "There are no upcoming public events right now. New events appear on this page as they are created.",
+                   de: "Derzeit gibt es keine kommenden öffentlichen Events. Neue Events erscheinen hier, sobald sie angelegt werden." },
+    eventsTitle: { tr: "Yaklaşan Spor Etkinlikleri — Muuvlink",
+                   en: "Upcoming Sports Events — Muuvlink",
+                   de: "Kommende Sportevents — Muuvlink" },
+    eventsDesc:  { tr: "Muuvlink'te herkese açık {n} yaklaşan spor etkinliği: futbol, basketbol, koşu, tenis, yüzme ve daha fazlası. Tarih, yer ve kontenjan bilgisiyle.",
+                   en: "{n} upcoming public sports events on Muuvlink: football, basketball, running, tennis, swimming and more, with date, location and capacity.",
+                   de: "{n} kommende öffentliche Sportevents auf Muuvlink: Fußball, Basketball, Laufen, Tennis, Schwimmen und mehr, mit Datum, Ort und Teilnehmerzahl." },
+
+    teamsH1:     { tr: "Spor takımları", en: "Sports teams", de: "Sportteams" },
+    teamsLead:   { tr: "Muuvlink'te herkese açık {n} spor takımı var. Herkese açık takımlara katılım isteği gönderilebilir; özel takımlara yalnız davetle katılınır ve bu listede yer almazlar.",
+                   en: "There are {n} public sports teams on Muuvlink. You can request to join a public team; private teams are invitation-only and do not appear in this list.",
+                   de: "Auf Muuvlink gibt es {n} öffentliche Sportteams. Öffentlichen Teams kannst du eine Beitrittsanfrage senden; privaten Teams tritt man nur per Einladung bei, sie erscheinen hier nicht." },
+    teamsSub:    { tr: "Kendi takımını kurmak ücretsizdir: isim, spor dalı, konum ve görünürlük seçilir. Takımına ikinci bir yönetici ekleyebilir, üyelerine tek seferde etkinlik duyurusu yapabilirsin.",
+                   en: "Starting your own team is free: pick a name, a sport, a location and the visibility. You can add a second manager and announce an event to all members at once.",
+                   de: "Ein eigenes Team zu gründen ist kostenlos: Name, Sportart, Ort und Sichtbarkeit wählen. Du kannst eine zweite verwaltende Person hinzufügen und allen Mitgliedern gleichzeitig ein Event ankündigen." },
+    teamsEmpty:  { tr: "Şu anda herkese açık takım yok. Yeni takımlar kurulduğunda bu sayfada görünür.",
+                   en: "There are no public teams right now. New teams appear on this page as they are created.",
+                   de: "Derzeit gibt es keine öffentlichen Teams. Neue Teams erscheinen hier, sobald sie gegründet werden." },
+    teamsTitle:  { tr: "Spor Takımları — Muuvlink", en: "Sports Teams — Muuvlink", de: "Sportteams — Muuvlink" },
+    teamsDesc:   { tr: "Muuvlink'te herkese açık {n} spor takımı. Takımlara katıl ya da kendi takımını ücretsiz kur.",
+                   en: "{n} public sports teams on Muuvlink. Join a team or start your own for free.",
+                   de: "{n} öffentliche Sportteams auf Muuvlink. Tritt einem Team bei oder gründe kostenlos dein eigenes." },
+    memberSuffix:{ tr: "üye", en: "members", de: "Mitglieder" },
+
+    contactH1:   { tr: "İletişim", en: "Contact", de: "Kontakt" },
+    contactLead: { tr: "Sorularınız için buradayız. En kısa sürede dönüş yaparız.",
+                   en: "We're here for your questions. We'll get back to you soon.",
+                   de: "Wir sind für deine Fragen da. Wir melden uns bald." },
+    contactSub:  { tr: "Sayfadaki formu doldurarak ya da Instagram üzerinden mesaj göndererek bize ulaşabilirsiniz. Form gönderilirken ad, e-posta, konu ve mesaj alanları istenir.",
+                   en: "You can reach us with the form on this page or by message on Instagram. The form asks for your name, email, subject and message.",
+                   de: "Du erreichst uns über das Formular auf dieser Seite oder per Nachricht auf Instagram. Das Formular fragt Name, E-Mail, Betreff und Nachricht ab." },
+    contactTopics:{ tr: "Hangi konularda yazabilirsiniz", en: "What you can write to us about", de: "Worüber du uns schreiben kannst" },
+    contactTitle:{ tr: "İletişim — Muuvlink", en: "Contact — Muuvlink", de: "Kontakt — Muuvlink" },
+    contactDesc: { tr: "Muuvlink ile iletişime geçin: üyelik, takım kurma, etkinlik soruları, teknik sorun, iş birliği ve geri bildirim.",
+                   en: "Get in touch with Muuvlink: membership, starting a team, event questions, technical issues, collaboration and feedback.",
+                   de: "Kontaktiere Muuvlink: Mitgliedschaft, Teamgründung, Eventfragen, technische Probleme, Zusammenarbeit und Feedback." },
+  },
+
   // ── SSS / FAQ ───────────────────────────────────────────
   // Yapay zeka motorları (ChatGPT, Perplexity, Claude) JavaScript ÇALIŞTIRMAZ;
   // yalnız ham HTML'i okur. Bu metinler hem burada (React) hem de index.html

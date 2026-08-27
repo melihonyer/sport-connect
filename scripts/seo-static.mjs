@@ -34,6 +34,25 @@ const esc = (s) => String(s).replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;
 
 const faq = [1, 2, 3, 4, 5, 6].map((n) => ({ q: tr(`faq.q${n}`), a: tr(`faq.a${n}`) }));
 
+// ── Backend'in okuyacağı içerik dosyası ────────────────────────────────────
+// backend-api.js bunu dist/seo-content.json olarak okur (index.html ile aynı
+// klasör), böylece frontend deploy'u içeriği de taşır — ayrı adım yok.
+const LANGS = ['tr', 'en', 'de'];
+const pick = (key, lang) => {
+  const node = key.split('.').reduce((o, k) => (o ? o[k] : undefined), translations);
+  if (!node || !node[lang]) throw new Error(`i18n anahtarı yok: ${key}.${lang}`);
+  return node[lang];
+};
+const content = { faq: {}, seo: {} };
+for (const l of LANGS) {
+  content.faq[l] = [1, 2, 3, 4, 5, 6].map((n) => ({ q: pick(`faq.q${n}`, l), a: pick(`faq.a${n}`, l) }));
+  content.faq[l].title = pick('faq.title', l);
+  content.seo[l] = Object.fromEntries(Object.keys(translations.seo).map((k) => [k, pick(`seo.${k}`, l)]));
+  content.seo[l].faqTitle = pick('faq.title', l);
+}
+fs.writeFileSync(path.join(ROOT, 'public', 'seo-content.json'), JSON.stringify(content, null, 2));
+
+
 // ── 1. Görünür metin (#root içine) ─────────────────────────────────────────
 const S = {
   wrap: 'max-width:820px;margin:0 auto;padding:56px 24px 80px;font-family:Montserrat,system-ui,sans-serif;color:#333E40;line-height:1.6',
@@ -99,10 +118,20 @@ const replaceRegion = (html, name, body) => {
   return html.replace(re, (_, a, b) => `${a}${body}  ${b}`);
 };
 
+// Ana sayfa için hreflang. Alt sayfalarda backend kendi karşılıklarını basar.
+const hreflangBlock = `
+  <link rel="alternate" hreflang="tr" href="${ORIGIN}/">
+  <link rel="alternate" hreflang="en" href="${ORIGIN}/en">
+  <link rel="alternate" hreflang="de" href="${ORIGIN}/de">
+  <link rel="alternate" hreflang="x-default" href="${ORIGIN}/">
+`;
+
 let html = fs.readFileSync(FILE, 'utf8');
+html = replaceRegion(html, 'SEO-HREFLANG', hreflangBlock);
 html = replaceRegion(html, 'SEO-SCHEMA', schemaBlock);
 html = replaceRegion(html, 'SEO-TEXT', textBlock);
 fs.writeFileSync(FILE, html);
 
 const words = faq.map((f) => `${f.q} ${f.a}`).join(' ').split(/\s+/).length;
 console.log(`[seo-static] index.html güncellendi — ${faq.length} soru, ~${words} kelime görünür metin.`);
+console.log(`[seo-static] public/seo-content.json yazıldı — ${LANGS.join(', ')}.`);
