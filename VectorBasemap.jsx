@@ -31,6 +31,12 @@ const ATTRIBUTION =
 export default function VectorBasemap() {
   const map = useMap();
 
+  // Etiket dili. Stilin varsayılanı İngilizce'ye düşüyor ve ülke adını
+  // "Turkey" yazıyor; resmî ad Türkiye. Uygulamanın diliyle aynı olsun diye
+  // kayıtlı tercihi okuyoruz (i18n ile aynı anahtar).
+  const labelLang =
+    (typeof localStorage !== "undefined" && localStorage.getItem("muuvlang")) || "tr";
+
   useEffect(() => {
     let layer = null;
     let nudge = null;
@@ -73,8 +79,30 @@ export default function VectorBasemap() {
       // olayını tetikler, o da bu işlevi yeniden çağırır; özyineleme aşağıdaki
       // catch tarafından sessizce yutulur ve hata hiç görünmez.
       nudge = () => { try { gl?.resize(); gl?.triggerRepaint(); } catch { /* yok say */ } };
+      // ── Etiket dili ────────────────────────────────────────────────────
+      // Positron'un varsayılan kuralı: latin olmayan adı olan yerlerde
+      // "name:latin + name:nonlatin", yoksa name_en → name. Bu yüzden ülke
+      // "Turkey" çıkıyordu. Sırayı seçili dile çeviriyoruz; karşılığı yoksa
+      // latin, o da yoksa yerel ada düşüyor.
+      // Yol numarası basan katmanlara (text-field = ref) DOKUNULMAZ.
+      const localizeLabels = () => {
+        try {
+          for (const layer of gl.getStyle()?.layers || []) {
+            if (layer.type !== "symbol") continue;
+            const field = layer.layout?.["text-field"];
+            if (!field || !JSON.stringify(field).includes("name")) continue;
+            gl.setLayoutProperty(layer.id, "text-field", [
+              "coalesce",
+              ["get", `name:${labelLang}`],
+              ["get", "name:latin"],
+              ["get", "name"],
+            ]);
+          }
+        } catch { /* stil henüz hazır değilse sonraki styledata'da tekrar dener */ }
+      };
+
       map.invalidateSize();
-      gl?.on("styledata", nudge);
+      gl?.on("styledata", () => { nudge(); localizeLabels(); });
       for (const ms of [0, 300, 900, 1800]) timers.push(setTimeout(nudge, ms));
       map.on("resize", nudge);
     })().catch((e) => {
