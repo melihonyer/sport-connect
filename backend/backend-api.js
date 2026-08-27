@@ -1257,6 +1257,69 @@ app.get('/api/sitemap.xml', async (req, res) => {
   res.send(body);
 });
 
+
+// ============================================
+// INDEXNOW — yeni/değişen adresleri arama motorlarına anında bildir
+// Sitemap taranmasını beklemek yerine Bing (ve IndexNow'ı paylaşan diğer
+// motorlar) değişikliği dakikalar içinde öğrenir.
+//
+// Anahtar dosyası: https://muuvlink.app/<key>.txt — içinde yalnız anahtar
+// yazar (public/ klasöründe, deploy ile gider). Dosya erişilemezse IndexNow
+// bildirimi sessizce reddeder; o yüzden dosya SİLİNMEMELİ.
+//
+// Sadece HERKESE AÇIK adresler bildirilir: gizli takım / özel etkinlik asla.
+// Gönderim ateşle-unut; hata uygulamayı etkilemez, istek akışını yavaşlatmaz.
+// ============================================
+const INDEXNOW_KEY = process.env.INDEXNOW_KEY || 'a77788f8d2620c340afb762b7d932942';
+const INDEXNOW_ENDPOINT = 'https://api.indexnow.org/indexnow';
+
+// Aynı saniyede onlarca kayıt değişirse tek istek atılsın diye küçük bir kuyruk.
+const indexNowQueue = new Set();
+let indexNowTimer = null;
+
+const indexNowFlush = async () => {
+  indexNowTimer = null;
+  const urlList = [...indexNowQueue].slice(0, 10000);
+  indexNowQueue.clear();
+  if (!urlList.length) return;
+  try {
+    const r = await fetch(INDEXNOW_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
+      body: JSON.stringify({
+        host: 'muuvlink.app',
+        key: INDEXNOW_KEY,
+        keyLocation: `${SITE_ORIGIN}/${INDEXNOW_KEY}.txt`,
+        urlList,
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+    // 200/202 = kabul edildi. 4xx genelde anahtar dosyası okunamadı demektir.
+    console.log(`[INDEXNOW] ${urlList.length} adres bildirildi — HTTP ${r.status}`);
+  } catch (e) {
+    console.error('[INDEXNOW] bildirim başarısız:', e.message);
+  }
+};
+
+// Bildirilecek adresleri kuyruğa al. Liste sayfaları da değiştiği için
+// onlar da eklenir — yeni etkinlik /etkinlikler sayfasını da değiştirir.
+const indexNowPing = (urls, { withLists = true } = {}) => {
+  const list = (Array.isArray(urls) ? urls : [urls]).filter(Boolean);
+  if (!list.length) return;
+  for (const u of list) indexNowQueue.add(u);
+  if (withLists) {
+    indexNowQueue.add(`${SITE_ORIGIN}/etkinlikler`);
+    indexNowQueue.add(`${SITE_ORIGIN}/takimlar`);
+  }
+  if (!indexNowTimer) indexNowTimer = setTimeout(indexNowFlush, 10000);
+};
+
+// Etkinlik/takım satırından herkese açık adresi üret; açık değilse null.
+const indexNowTrainingUrl = (t) =>
+  t && t.is_public !== false ? `${SITE_ORIGIN}/etkinlik/${slugify(t.title)}-${t.id}` : null;
+const indexNowTeamUrl = (t) =>
+  t && t.is_private !== true ? `${SITE_ORIGIN}/takim/${slugify(t.name)}-${t.id}` : null;
+
 // index.html içindeki işaretli bölgeyi değiştirir. İşaretler
 // scripts/seo-static.mjs tarafından konur; yoksa HTML olduğu gibi döner.
 const replaceSeoRegion = (html, name, body) => {
@@ -2001,6 +2064,7 @@ app.post('/api/teams', authenticateToken, async (req, res) => {
       customData: { content_ids: [String(team.id)], sport: primarySport || undefined },
     });
     res.status(201).json({ message: 'Team created successfully', team });
+    indexNowPing(indexNowTeamUrl(team));
   } catch (error) {
     console.error('Create team error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -2442,6 +2506,8 @@ app.put('/api/teams/:id', authenticateToken, async (req, res) => {
     );
 
     res.json({ message: 'Team updated', team: result.rows[0] });
+    // Gizliye çevrildiyse de bildiriyoruz: motor adresi yeniden tarayıp düşürsün.
+    indexNowPing(`${SITE_ORIGIN}/takim/${slugify(result.rows[0].name)}-${result.rows[0].id}`);
   } catch (error) {
     console.error('Update team error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -2452,7 +2518,7 @@ app.delete('/api/teams/:id', authenticateToken, async (req, res) => {
   try {
     const teamId = req.params.id;
 
-    const ownerCheck = await pool.query('SELECT owner_id FROM teams WHERE id = $1', [teamId]);
+    const ownerCheck = await pool.query('SELECT owner_id, name, is_private FROM teams WHERE id = $1', [teamId]);
     if (!ownerCheck.rows.length) return res.status(404).json({ error: 'Team not found' });
     if (ownerCheck.rows[0].owner_id !== req.user.id) {
       return res.status(403).json({ error: 'Only team owner can delete the team' });
@@ -2460,6 +2526,7 @@ app.delete('/api/teams/:id', authenticateToken, async (req, res) => {
 
     await pool.query('DELETE FROM teams WHERE id = $1', [teamId]);
     res.json({ message: 'Team deleted' });
+    indexNowPing(indexNowTeamUrl({ ...ownerCheck.rows[0], id: teamId }));
   } catch (error) {
     console.error('Delete team error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -2852,6 +2919,7 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
     checkAndAwardBadges(req.user.id).catch(e => console.error('Badge check (create) error:', e.message));
 
     res.status(201).json({ message: 'Training created successfully', training });
+    indexNowPing(indexNowTrainingUrl(training));
   } catch (error) {
     console.error('Create training error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -3622,6 +3690,7 @@ app.put('/api/trainings/:id', authenticateToken, async (req, res) => {
     );
 
     const updated = result.rows[0];
+    indexNowPing(indexNowTrainingUrl(updated));
 
     // Güncelleyenin adını çek
     const updaterResult = await pool.query('SELECT name FROM users WHERE id = $1', [req.user.id]);
@@ -3683,7 +3752,7 @@ app.delete('/api/trainings/:id', authenticateToken, async (req, res) => {
     const trainingId = req.params.id;
 
     const trainingResult = await pool.query(
-      'SELECT team_id, created_by FROM trainings WHERE id = $1',
+      'SELECT team_id, created_by, title, is_public FROM trainings WHERE id = $1',
       [trainingId]
     );
 
@@ -3710,6 +3779,7 @@ app.delete('/api/trainings/:id', authenticateToken, async (req, res) => {
     await pool.query('DELETE FROM trainings WHERE id = $1', [trainingId]);
 
     res.json({ message: 'Training deleted' });
+    indexNowPing(indexNowTrainingUrl({ ...trg, id: trainingId }));
   } catch (error) {
     console.error('Delete training error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -4528,6 +4598,7 @@ app.post('/api/admin/paid-events', isAdmin, async (req, res) => {
        organizer || null, registration_url || null]
     );
     res.json(r.rows[0]);
+    indexNowPing(indexNowTrainingUrl(r.rows[0]));
   } catch (e) {
     console.error('Admin paid-event create error:', e);
     res.status(500).json({ error: 'Ücretli etkinlik oluşturulamadı.' });
@@ -4562,6 +4633,7 @@ app.put('/api/admin/paid-events/:id', isAdmin, async (req, res) => {
     );
     if (r.rows.length === 0) return res.status(404).json({ error: 'Ücretli etkinlik bulunamadı.' });
     res.json(r.rows[0]);
+    indexNowPing(indexNowTrainingUrl(r.rows[0]));
   } catch (e) {
     console.error('Admin paid-event update error:', e);
     res.status(500).json({ error: 'Ücretli etkinlik güncellenemedi.' });
@@ -4590,8 +4662,10 @@ app.post('/api/admin/paid-events/:id/image', isAdmin, uploadBanner.single('image
 // Admin: ücretli etkinlik sil
 app.delete('/api/admin/paid-events/:id', isAdmin, async (req, res) => {
   try {
-    await pool.query('DELETE FROM trainings WHERE id=$1 AND is_paid = true', [req.params.id]);
+    const gone = await pool.query(
+      'DELETE FROM trainings WHERE id=$1 AND is_paid = true RETURNING id, title, is_public', [req.params.id]);
     res.json({ message: 'Ücretli etkinlik silindi.' });
+    indexNowPing(indexNowTrainingUrl(gone.rows[0]));
   } catch (e) {
     console.error('Admin paid-event delete error:', e);
     res.status(500).json({ error: 'Ücretli etkinlik silinemedi.' });
