@@ -3824,7 +3824,7 @@ export default function Muuvlink() {
     const editorialFeatures = [
       {
         num:"01", icon: MapPin, accent:"#0b2f38",
-        bg:"linear-gradient(135deg,#e6f7f5 0%,#e6f7f5 50%,#c2ede9 100%)",
+        bg:"#e6f7f5",
         image: "/uploads/feature-01.webp",
         sub:   t("home.ef1Sub"),
         title: t("home.ef1Title"),
@@ -3833,7 +3833,7 @@ export default function Muuvlink() {
       },
       {
         num:"02", icon: Users, accent:"#0b2f38",
-        bg:"linear-gradient(135deg,#e6f7f5 0%,#c2ede9 50%,#8fdcd5 100%)",
+        bg:"#c2ede9",
         image: "/uploads/feature-02.webp",
         sub:   t("home.ef2Sub"),
         title: t("home.ef2Title"),
@@ -3842,7 +3842,7 @@ export default function Muuvlink() {
       },
       {
         num:"03", icon: Trophy, accent:"#0b2f38",
-        bg:"linear-gradient(135deg,#e6f7f5 0%,#114956 50%,#0e3c47 100%)",
+        bg:"#8fdcd5",
         image: "/uploads/feature-03.webp",
         sub:   t("home.ef3Sub"),
         title: t("home.ef3Title"),
@@ -3863,7 +3863,7 @@ export default function Muuvlink() {
                 style={{fontSize:"clamp(3.6rem,8vw,6.5rem)"}}>
                 <span className="text-slate-900 block">{t("home.whyNeden")}</span>
                 <span style={{
-                  background:"linear-gradient(90deg,#114956 0%,#0e3c47 100%)",
+                  background:"#114956",
                   WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text",
                 }}>{t("home.whyMuuvlink")}</span>
               </h2>
@@ -4352,7 +4352,7 @@ export default function Muuvlink() {
     return (
       <div className="bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 pt-10">
-          <div className="rounded-2xl border border-brand-100 p-5 sm:p-6" style={{background:"linear-gradient(135deg,#e6f7f5,#f0fbfa)"}}>
+          <div className="rounded-2xl border border-brand-100 p-5 sm:p-6" style={{background:"#e6f7f5"}}>
             <div className="flex items-center justify-between mb-4 gap-3">
               <h3 className="font-display font-bold text-brand-900 text-lg">{t("checklist.title")}</h3>
               <span className="text-xs font-semibold text-brand-700 flex-shrink-0">
@@ -4361,7 +4361,7 @@ export default function Muuvlink() {
             </div>
             <div className="h-1.5 rounded-full bg-white/70 mb-5 overflow-hidden">
               <div className="h-full rounded-full transition-all duration-500"
-                style={{width:`${(doneCount/items.length)*100}%`, background:"linear-gradient(90deg,#114956,#0e3c47)"}}/>
+                style={{width:`${(doneCount/items.length)*100}%`, background:"#114956"}}/>
             </div>
             <div className="space-y-2">
               {items.map(item => (
@@ -4500,39 +4500,42 @@ export default function Muuvlink() {
 
       {/* ── CTA — Full Bleed Cinematic ── */}
       {!user && (
-        <div className="relative overflow-hidden py-28" style={{background:"linear-gradient(135deg,#08232a 0%,#08232a 40%,#0b2f38 70%,#0e3c47 100%)"}}>
+        <div className="relative overflow-hidden py-28" style={{background:"#114956"}}>
           {/* grid */}
           <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
             style={{backgroundImage:"linear-gradient(rgba(255,255,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px)", backgroundSize:"60px 60px"}}/>
           {/* glow orbs */}
           <div className="absolute -left-32 top-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full pointer-events-none"
-            style={{background:"radial-gradient(circle,rgba(17,73,86,0.18) 0%,transparent 65%)"}}/>
+            style={{background:"radial-gradient(circle,rgba(255,255,255,0.06) 0%,transparent 65%)"}}/>
           <div className="absolute -right-32 top-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full pointer-events-none"
-            style={{background:"radial-gradient(circle,rgba(134,239,172,0.12) 0%,transparent 65%)"}}/>
+            style={{background:"radial-gradient(circle,rgba(244,248,24,0.10) 0%,transparent 65%)"}}/>
 
           <div className="relative max-w-4xl mx-auto px-4 text-center">
-            {/* Big line decoration */}
+            {/* Big line decoration — zemin düz Deep Teal olduğu için
+                ayraç ve ikon beyaza alındı; eskiden zemin daha koyuydu. */}
             <div className="flex items-center justify-center gap-4 mb-8">
-              <div className="h-px flex-1 max-w-20" style={{background:"linear-gradient(90deg,transparent,rgba(17,73,86,0.5))"}}/>
-              <Dumbbell className="w-8 h-8" style={{color:"#114956"}}/>
-              <div className="h-px flex-1 max-w-20" style={{background:"linear-gradient(90deg,rgba(17,73,86,0.5),transparent)"}}/>
+              <div className="h-px flex-1 max-w-20" style={{background:"rgba(255,255,255,0.25)"}}/>
+              <Dumbbell className="w-8 h-8" style={{color:"#F4F818"}}/>
+              <div className="h-px flex-1 max-w-20" style={{background:"rgba(255,255,255,0.25)"}}/>
             </div>
-            <span className="text-xs font-semibold tracking-[0.4em] text-brand-800 uppercase block mb-6">{t("home.ctaJoinCommunity")}</span>
+            <span className="text-xs font-semibold tracking-[0.4em] uppercase block mb-6" style={{color:"rgba(255,255,255,0.65)"}}>{t("home.ctaJoinCommunity")}</span>
             <h2 className="font-display font-bold text-white mb-6 leading-[0.92]"
               style={{fontSize:"clamp(4rem,10vw,7.5rem)", letterSpacing:"-0.02em"}}>
               {t("home.ctaLine1")}<br/>
-              <span style={{background:"linear-gradient(90deg,#114956,#643e87)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent"}}>
+              <span style={{color:"#F4F818"}}>
                 {t("home.ctaLine2")}
               </span>
             </h2>
-            <p className="text-slate-400 text-lg mb-10 max-w-xl mx-auto leading-relaxed">
+            <p className="text-lg mb-10 max-w-xl mx-auto leading-relaxed" style={{color:"rgba(255,255,255,0.75)"}}>
               {t("home.ctaSignupDesc")}
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
-              <button data-btn="solid"
+              {/* Koyu teal zemin üstünde birincil aksiyon sarı olur (data-btn="pop"):
+                  aynı renk butonu zeminde kayboluyordu. Hover'da deep teal + beyaz. */}
+              <button data-btn="pop"
                 onClick={() => { setAuthMode("register"); setIsAuthModalOpen(true); }}
-                className="inline-flex items-center gap-2.5 px-10 py-4 rounded-2xl font-semibold text-white text-base transition-all hover:scale-105 hover:shadow-2xl"
-                style={{background:"#114956", boxShadow:"0 2px 8px rgba(17,73,86,0.18)"}}
+                className="inline-flex items-center gap-2.5 px-10 py-4 rounded-2xl font-semibold text-base transition-all hover:scale-105 hover:shadow-2xl"
+                style={{background:"#F4F818", color:"#1F2121", boxShadow:"0 2px 10px rgba(0,0,0,0.18)"}}
               >
                 {t("home.startFree")}
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
@@ -4580,7 +4583,7 @@ export default function Muuvlink() {
     return (
     <div className="min-h-screen bg-slate-50">
       {/* ── Profile hero header ── */}
-      <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#e6f7f5 0%,#e6f7f5 60%,#c2ede9 100%)"}}>
+      <div className="relative overflow-hidden" style={{background:"#e6f7f5"}}>
         <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
           style={{backgroundImage:"linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px)", backgroundSize:"50px 50px"}}/>
         <div className="absolute inset-0 pointer-events-none"
@@ -5014,7 +5017,7 @@ export default function Muuvlink() {
     return (
       <div className="min-h-screen bg-slate-50">
         {/* ── Dark athletic page header ── */}
-        <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#e6f7f5 0%,#e6f7f5 60%,#c2ede9 100%)"}}>
+        <div className="relative overflow-hidden" style={{background:"#e6f7f5"}}>
           <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
             style={{backgroundImage:"linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px)", backgroundSize:"50px 50px"}}/>
           <div className="absolute right-0 top-0 w-[500px] h-full pointer-events-none"
@@ -5063,7 +5066,7 @@ export default function Muuvlink() {
                 className="flex-shrink-0 whitespace-nowrap px-3.5 py-2.5 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 border shadow-sm"
                 style={viewMode === "map"
                   ? {background:"#114956", color:"#fff", borderColor:"transparent", boxShadow:"0 1px 8px rgba(17,73,86,0.35)"}
-                  : {background:"linear-gradient(135deg,rgba(17,73,86,0.06),rgba(0,146,149,0.06))", color:"#00a0a3", borderColor:"rgba(17,73,86,0.3)"}}>
+                  : {background:"#e6f7f5", color:"#114956", borderColor:"rgba(17,73,86,0.3)"}}>
                 {viewMode === "map" ? (
                   <>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -5244,11 +5247,11 @@ export default function Muuvlink() {
     return (
       <div className="min-h-screen bg-slate-50">
         {/* ── Dark athletic page header ── */}
-        <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#e6f7f5 0%,#e6f7f5 60%,#c2ede9 100%)"}}>
+        <div className="relative overflow-hidden" style={{background:"#e6f7f5"}}>
           <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
             style={{backgroundImage:"linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px)", backgroundSize:"50px 50px"}}/>
           <div className="absolute left-0 top-0 w-[500px] h-full pointer-events-none"
-            style={{background:"radial-gradient(ellipse at left center,rgba(56,189,248,0.12) 0%,transparent 65%)"}}/>
+            style={{background:"radial-gradient(ellipse at left center,rgba(0,164,153,0.12) 0%,transparent 65%)"}}/>
           <div className="relative max-w-7xl mx-auto px-4 sm:px-8 py-12">
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
               <div>
@@ -5356,7 +5359,7 @@ export default function Muuvlink() {
     return (
     <div className="min-h-screen bg-slate-50">
       {/* ── Light green header ── */}
-      <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#e6f7f5 0%,#e6f7f5 60%,#c2ede9 100%)"}}>
+      <div className="relative overflow-hidden" style={{background:"#e6f7f5"}}>
         <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
           style={{backgroundImage:"linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px)", backgroundSize:"50px 50px"}}/>
         <div className="absolute inset-0 pointer-events-none"
@@ -5395,7 +5398,7 @@ export default function Muuvlink() {
             </div>
             <div className="h-1.5 bg-brand-100 rounded-full overflow-hidden">
               <div className="h-full rounded-full transition-all duration-700"
-                style={{width:`${pctAll}%`, background:"linear-gradient(90deg,#114956,#0e3c47)"}}/>
+                style={{width:`${pctAll}%`, background:"#114956"}}/>
             </div>
           </div>
         </div>
@@ -7459,7 +7462,7 @@ export default function Muuvlink() {
         {label}
         <span className="absolute -bottom-[24px] left-0 right-0 h-0.5 rounded-full transition-all duration-300"
           style={{
-            background:"linear-gradient(90deg,#114956,#22C55E)",
+            background:"#114956",
             opacity: isActive(page) ? 1 : 0,
             transform: isActive(page) ? "scaleX(1)" : "scaleX(0)",
           }}/>
@@ -7753,7 +7756,7 @@ export default function Muuvlink() {
     return (
       <div className="min-h-screen bg-slate-50">
         {/* ── Header ── */}
-        <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#e6f7f5 0%,#e6f7f5 60%,#c2ede9 100%)"}}>
+        <div className="relative overflow-hidden" style={{background:"#e6f7f5"}}>
           <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
             style={{backgroundImage:"linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px)", backgroundSize:"50px 50px"}}/>
           <div className="absolute inset-0 pointer-events-none"
@@ -7821,7 +7824,7 @@ export default function Muuvlink() {
               </div>
 
               {/* Bilgi notu */}
-              <div className="rounded-2xl p-5 border border-brand-100" style={{background:"linear-gradient(135deg,#e6f7f5,#f0fbfa)"}}>
+              <div className="rounded-2xl p-5 border border-brand-100" style={{background:"#e6f7f5"}}>
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
                     style={{background:"rgba(17,73,86,0.15)"}}>
