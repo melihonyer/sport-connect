@@ -1841,6 +1841,12 @@ export default function Muuvlink() {
   const teamActiveTabRef = useRef("wall");
   const [nearbyMode, setNearbyMode] = useState(false);
   const [nearbyDistance, setNearbyDistance] = useState(10);
+  // Etkinlikler sayfasının liste/harita seçimi ÜST bileşende durur.
+  // TrainingsPage bu bileşenin İÇİNDE tanımlı olduğu için her üst-render'da
+  // yeni bir bileşen kimliği oluşuyor; React alt ağacı söküp yeniden kuruyor
+  // ve içerideki her useState sıfırlanıyor. Sayfa tazeleme (60 sn'de bir)
+  // tam olarak bunu tetikliyor, kullanıcı haritadayken listeye düşüyordu.
+  const [trainingsViewMode, setTrainingsViewMode] = useState("list"); // "list" | "map" 
   const [nearbyTrainings, setNearbyTrainings] = useState([]);
   const [userLocation, setUserLocation] = useState(null);
   const [locationLoading, setLocationLoading] = useState(false);
@@ -2956,7 +2962,14 @@ export default function Muuvlink() {
       const response = await fetch(`${API_URL}/trainings`, { headers, cache: 'no-store' });
       if (response.ok) {
         const data = await response.json();
-        setTrainings(filterPastTrainings(data.trainings || []));
+        const next = filterPastTrainings(data.trainings || []);
+        // Veri DEĞİŞMEDİYSE state'e dokunma. Bu liste 60 saniyede bir sessizce
+        // tazeleniyor; her seferinde setState çağırmak üst bileşeni yeniden
+        // çizdiriyor ve TrainingsPage üst bileşenin İÇİNDE tanımlı olduğu için
+        // React alt ağacı komple söküp yeniden kuruyor — harita her dakika
+        // sıfırdan çiziliyordu.
+        setTrainings((prev) =>
+          JSON.stringify(prev) === JSON.stringify(next) ? prev : next);
       }
     } catch (error) {
       console.error("Fetch trainings error:", error);
@@ -3424,7 +3437,10 @@ export default function Muuvlink() {
 
       if (response.ok) {
         const data = await response.json();
-        setTeams(data.teams || []);
+        // Bkz. fetchTrainings — sessiz tazelemede veri aynıysa yeniden çizme.
+        const nextTeams = data.teams || [];
+        setTeams((prev) =>
+          JSON.stringify(prev) === JSON.stringify(nextTeams) ? prev : nextTeams);
       }
     } catch (error) {
       console.error("Fetch teams error:", error);
@@ -4926,7 +4942,10 @@ export default function Muuvlink() {
       { val: "Zor",        label: t("trainings.levelHard") },
       { val: "Her Seviye", label: t("trainings.levelAll")  },
     ];
-    const [viewMode, setViewMode] = React.useState("list"); // "list" | "map"
+    // Bkz. trainingsViewMode — bu bileşen her üst-render'da yeniden kurulduğu
+    // için seçim burada TUTULAMAZ, üstten okunur.
+    const viewMode = trainingsViewMode;
+    const setViewMode = setTrainingsViewMode;
 
     // Manuel konum arama (GPS çalışmadığında)
     const ManualLocationSearch = () => {
