@@ -74,7 +74,7 @@ const escapeXml = (s) => String(s || "").replace(/[<>&'"]/g, c => (
   { "<": "&lt;", ">": "&gt;", "&": "&amp;", "'": "&apos;", '"': "&quot;" }[c]));
 
 const makePaidIcon = (title, highlight = false) => {
-  const pw = highlight ? 68 : 58;                 // takım pini 34/40 — belirgin fark
+  const pw = highlight ? 48 : 41;                 // takım pini 34/40 — fark korunuyor ama abartısız
   const ph = Math.round(pw * PAID_PIN_RATIO);
   const labelW = highlight ? 132 : 120;           // ad etiketi kutusu
   const gap = 6;
