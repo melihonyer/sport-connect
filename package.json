@@ -7,7 +7,9 @@
     "cap:sync": "npm run build:mobile && npx cap sync && rm -f ios/App/App/public/uploads android/app/src/main/assets/public/uploads dist/uploads",
     "preview": "vite preview",
     "start": "node backend/backend-api.js",
-    "install:all": "npm install && cd backend && npm install"
+    "install:all": "npm install && cd backend && npm install",
+    "prebuild": "node scripts/seo-static.mjs",
+    "prebuild:mobile": "node scripts/seo-static.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.0",

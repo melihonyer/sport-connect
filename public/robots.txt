@@ -1,5 +1,51 @@
+# Muuvlink — https://muuvlink.app
+# Tüm site taramaya açıktır. Aşağıdaki yapay zeka tarayıcıları ayrıca
+# adlarıyla karşılanır: engel olmadığı zaten açık, ama bazı motorlar
+# kendi adına yazılmış bir kural arar ve niyeti belgelemiş oluruz.
+
 User-agent: *
 Allow: /
 
-Sitemap: https://muuvlink.app/api/sitemap.xml
+# ── Yapay zeka / cevap motorları ──────────────────────────────────────
+# GPTBot: eğitim ve indeksleme · OAI-SearchBot: ChatGPT arama sonuçları
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+# Anthropic
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+# Perplexity
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+# Google Gemini / AI Overviews (Googlebot'tan ayrı izin)
+User-agent: Google-Extended
+Allow: /
+
+# Apple Intelligence / Siri
+User-agent: Applebot-Extended
+Allow: /
+
+# Microsoft Copilot
+User-agent: Bingbot
+Allow: /
+
+# ── Sitemap ───────────────────────────────────────────────────────────
+# Tek giriş: /sitemap.xml bir sitemap dizinidir ve dinamik listeyi işaret eder.
 Sitemap: https://muuvlink.app/sitemap.xml

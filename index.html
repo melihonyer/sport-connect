@@ -120,6 +120,84 @@
     ]
   }
   </script>
+
+  <!-- FAQPage + Organization şeması — scripts/seo-static.mjs tarafından
+       i18n.js faq bloğundan üretilir. ELLE DÜZENLEME; build sırasında ezilir. -->
+  <!-- SEO-SCHEMA:START -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://muuvlink.app/#organization",
+        "name": "Muuvlink",
+        "url": "https://muuvlink.app",
+        "logo": "https://muuvlink.app/icons/favicon.png",
+        "description": "Muuvlink, çevrendeki spor etkinliklerini bulup katılmanı, kendi takımını kurmanı ve düzenli antrenman planlamanı sağlayan ücretsiz bir spor topluluğu uygulamasıdır. Futbol, basketbol, tenis, koşu, bisiklet, yüzme, yoga ve padel dahil on beşten fazla dalda etkinlik açılabilir. Web'de muuvlink.app adresinden, telefonda iOS ve Android uygulamasıyla kullanılır.",
+        "sameAs": [
+          "https://apps.apple.com/app/id6781591672"
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://muuvlink.app/#faq",
+        "inLanguage": "tr",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Muuvlink nedir?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Muuvlink, çevrendeki spor etkinliklerini bulup katılmanı, kendi takımını kurmanı ve düzenli antrenman planlamanı sağlayan ücretsiz bir spor topluluğu uygulamasıdır. Futbol, basketbol, tenis, koşu, bisiklet, yüzme, yoga ve padel dahil on beşten fazla dalda etkinlik açılabilir. Web'de muuvlink.app adresinden, telefonda iOS ve Android uygulamasıyla kullanılır."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Muuvlink ücretsiz mi?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Evet, ücretsiz. Hesap açmak, etkinlik oluşturmak, takım kurmak ve etkinliklere katılmak için ödeme yapılmaz; abonelik ya da paket satışı yoktur. Haritada “Ücretli” rozetiyle görünen maraton ve turnuva gibi organizasyonlar dış kuruluşlara aittir, kayıt kendi sitelerinden yapılır ve Muuvlink bu ücretlerden pay almaz."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Yakınımdaki spor etkinliklerini nasıl bulurum?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Konum izni verdiğinde Muuvlink 5, 10, 25 veya 50 kilometre yarıçapındaki herkese açık etkinlikleri harita ve liste olarak gösterir. Spor dalına, tarihe ve zorluk seviyesine göre süzebilirsin. Katılmadan önce etkinlik sayfasındaki yorum alanından düzenleyene soru sorabilir, saat ve seviye konusunda anlaşabilirsin."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Takım nasıl kurulur?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Giriş yaptıktan sonra Takımlar sayfasındaki “Takım Oluştur” ile takım açılır: isim, spor dalı, konum ve görünürlük seçilir. Herkese açık takımlar aramada ve arama motorlarında görünür, özel takımlara yalnız davetle katılınır. Takımına ikinci bir yönetici ekleyebilir, üyelerine tek seferde etkinlik duyurusu yapabilirsin."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Etkinliğe nasıl katılırım?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Etkinlik sayfasındaki Katıl düğmesine basmak yeterlidir, ayrıca onay beklemezsin. Her etkinliğin bir kontenjanı vardır ve dolduğunda katılım kapanır. Katıldığın etkinlik profilindeki takvimde görünür, saatinden önce hatırlatma bildirimi alırsın. Vazgeçersen aynı sayfadan ayrılırsın ve yerin diğer sporculara açılır."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Muuvlink hangi şehirlerde ve hangi sporlarda kullanılıyor?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Muuvlink konum tabanlı çalışır: sabit bir şehir listesi yoktur, etkinlikler kullanıcıların bulunduğu her şehirde açılabilir. Desteklenen dallar basketbol, bisiklet, crossfit, futbol, kano, koşu, kürek, padel, pilates, tenis, trekking, triatlon, voleybol, yoga ve yüzmedir. Arayüz Türkçe, İngilizce ve Almanca sunulur."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+  <!-- SEO-SCHEMA:END -->
 </head>
 <body>
   <!-- Native splash bridge: shows teal overlay until React is ready, removed immediately on web -->
@@ -137,7 +215,35 @@
       }
     })();
   </script>
-  <div id="root"></div>
+  <!-- Bot ve JavaScript öncesi metin. React mount olduğunda createRoot
+       #root içeriğini kendiliğinden siler; insan uygulamayı görür.
+       scripts/seo-static.mjs tarafından üretilir — ELLE DÜZENLEME. -->
+  <div id="root">
+  <!-- SEO-TEXT:START -->
+    <div id="seo-intro" style="max-width:820px;margin:0 auto;padding:56px 24px 80px;font-family:Montserrat,system-ui,sans-serif;color:#333E40;line-height:1.6">
+      <h1 style="font-size:clamp(1.7rem,4vw,2.4rem);line-height:1.15;letter-spacing:-.02em;color:#114956;margin:0 0 14px">Muuvlink — spor arkadaşı bul, takım kur, etkinliğe katıl</h1>
+      <p style="font-size:1.05rem;color:#333E40;margin:0 0 8px">Muuvlink, çevrendeki spor etkinliklerini bulup katılmanı, kendi takımını kurmanı ve düzenli antrenman planlamanı sağlayan ücretsiz bir spor topluluğu uygulamasıdır. Futbol, basketbol, tenis, koşu, bisiklet, yüzme, yoga ve padel dahil on beşten fazla dalda etkinlik açılabilir. Web'de muuvlink.app adresinden, telefonda iOS ve Android uygulamasıyla kullanılır.</p>
+      <ul style="margin:22px 0 34px;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:8px 20px;font-size:.9rem">
+        <li><a style="color:#114956;font-weight:600;text-decoration:none" href="https://muuvlink.app/antrenmanlar">Etkinlikler</a></li>
+        <li><a style="color:#114956;font-weight:600;text-decoration:none" href="https://muuvlink.app/takimlar">Takımlar</a></li>
+        <li><a style="color:#114956;font-weight:600;text-decoration:none" href="https://muuvlink.app/iletisim">İletişim</a></li>
+      </ul>
+      <h2 style="font-size:1.5rem;color:#114956;margin:40px 0 18px;letter-spacing:-.01em">Sık sorulan sorular</h2>
+      <h3 style="font-size:1rem;font-weight:600;color:#1F2121;margin:22px 0 6px">Muuvlink nedir?</h3>
+      <p style="margin:0;font-size:.95rem">Muuvlink, çevrendeki spor etkinliklerini bulup katılmanı, kendi takımını kurmanı ve düzenli antrenman planlamanı sağlayan ücretsiz bir spor topluluğu uygulamasıdır. Futbol, basketbol, tenis, koşu, bisiklet, yüzme, yoga ve padel dahil on beşten fazla dalda etkinlik açılabilir. Web'de muuvlink.app adresinden, telefonda iOS ve Android uygulamasıyla kullanılır.</p>
+      <h3 style="font-size:1rem;font-weight:600;color:#1F2121;margin:22px 0 6px">Muuvlink ücretsiz mi?</h3>
+      <p style="margin:0;font-size:.95rem">Evet, ücretsiz. Hesap açmak, etkinlik oluşturmak, takım kurmak ve etkinliklere katılmak için ödeme yapılmaz; abonelik ya da paket satışı yoktur. Haritada “Ücretli” rozetiyle görünen maraton ve turnuva gibi organizasyonlar dış kuruluşlara aittir, kayıt kendi sitelerinden yapılır ve Muuvlink bu ücretlerden pay almaz.</p>
+      <h3 style="font-size:1rem;font-weight:600;color:#1F2121;margin:22px 0 6px">Yakınımdaki spor etkinliklerini nasıl bulurum?</h3>
+      <p style="margin:0;font-size:.95rem">Konum izni verdiğinde Muuvlink 5, 10, 25 veya 50 kilometre yarıçapındaki herkese açık etkinlikleri harita ve liste olarak gösterir. Spor dalına, tarihe ve zorluk seviyesine göre süzebilirsin. Katılmadan önce etkinlik sayfasındaki yorum alanından düzenleyene soru sorabilir, saat ve seviye konusunda anlaşabilirsin.</p>
+      <h3 style="font-size:1rem;font-weight:600;color:#1F2121;margin:22px 0 6px">Takım nasıl kurulur?</h3>
+      <p style="margin:0;font-size:.95rem">Giriş yaptıktan sonra Takımlar sayfasındaki “Takım Oluştur” ile takım açılır: isim, spor dalı, konum ve görünürlük seçilir. Herkese açık takımlar aramada ve arama motorlarında görünür, özel takımlara yalnız davetle katılınır. Takımına ikinci bir yönetici ekleyebilir, üyelerine tek seferde etkinlik duyurusu yapabilirsin.</p>
+      <h3 style="font-size:1rem;font-weight:600;color:#1F2121;margin:22px 0 6px">Etkinliğe nasıl katılırım?</h3>
+      <p style="margin:0;font-size:.95rem">Etkinlik sayfasındaki Katıl düğmesine basmak yeterlidir, ayrıca onay beklemezsin. Her etkinliğin bir kontenjanı vardır ve dolduğunda katılım kapanır. Katıldığın etkinlik profilindeki takvimde görünür, saatinden önce hatırlatma bildirimi alırsın. Vazgeçersen aynı sayfadan ayrılırsın ve yerin diğer sporculara açılır.</p>
+      <h3 style="font-size:1rem;font-weight:600;color:#1F2121;margin:22px 0 6px">Muuvlink hangi şehirlerde ve hangi sporlarda kullanılıyor?</h3>
+      <p style="margin:0;font-size:.95rem">Muuvlink konum tabanlı çalışır: sabit bir şehir listesi yoktur, etkinlikler kullanıcıların bulunduğu her şehirde açılabilir. Desteklenen dallar basketbol, bisiklet, crossfit, futbol, kano, koşu, kürek, padel, pilates, tenis, trekking, triatlon, voleybol, yoga ve yüzmedir. Arayüz Türkçe, İngilizce ve Almanca sunulur.</p>
+    </div>
+  <!-- SEO-TEXT:END -->
+  </div>
   <script type="module" src="/main.jsx"></script>
 </body>
 </html>

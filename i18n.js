@@ -1055,6 +1055,61 @@ export const translations = {
     Yüzme:      { tr: "Yüzme",      en: "Swimming",    de: "Schwimmen"   },
     Diğer:      { tr: "Diğer",      en: "Other",       de: "Sonstiges"   },
   },
+
+  // ── SSS / FAQ ───────────────────────────────────────────
+  // Yapay zeka motorları (ChatGPT, Perplexity, Claude) JavaScript ÇALIŞTIRMAZ;
+  // yalnız ham HTML'i okur. Bu metinler hem burada (React) hem de index.html
+  // içindeki statik blokta bulunur ve FAQPage şemasıyla BİREBİR aynı olmalıdır.
+  // Metni değiştirirsen index.html'deki karşılığını da güncelle.
+  faq: {
+    title:   { tr: "Sık sorulan sorular", en: "Frequently asked questions", de: "Häufige Fragen" },
+    eyebrow: { tr: "SSS", en: "FAQ", de: "FAQ" },
+    lead:    { tr: "Muuvlink'i ilk kez duyanların en çok sorduğu altı soru.",
+               en: "The six questions newcomers ask most about Muuvlink.",
+               de: "Die sechs Fragen, die Neulinge zu Muuvlink am häufigsten stellen." },
+
+    q1: { tr: "Muuvlink nedir?",
+          en: "What is Muuvlink?",
+          de: "Was ist Muuvlink?" },
+    a1: { tr: "Muuvlink, çevrendeki spor etkinliklerini bulup katılmanı, kendi takımını kurmanı ve düzenli antrenman planlamanı sağlayan ücretsiz bir spor topluluğu uygulamasıdır. Futbol, basketbol, tenis, koşu, bisiklet, yüzme, yoga ve padel dahil on beşten fazla dalda etkinlik açılabilir. Web'de muuvlink.app adresinden, telefonda iOS ve Android uygulamasıyla kullanılır.",
+          en: "Muuvlink is a free sports community app for finding and joining sports events near you, starting your own team and planning regular training. Events can be created in more than fifteen disciplines, including football, basketball, tennis, running, cycling, swimming, yoga and padel. It runs on the web at muuvlink.app and as an iOS and Android app.",
+          de: "Muuvlink ist eine kostenlose Sport-Community-App, mit der du Sportevents in deiner Nähe findest und daran teilnimmst, ein eigenes Team gründest und regelmäßiges Training planst. Events lassen sich in über fünfzehn Sportarten anlegen, darunter Fußball, Basketball, Tennis, Laufen, Radfahren, Schwimmen, Yoga und Padel. Verfügbar im Web unter muuvlink.app sowie als iOS- und Android-App." },
+
+    q2: { tr: "Muuvlink ücretsiz mi?",
+          en: "Is Muuvlink free?",
+          de: "Ist Muuvlink kostenlos?" },
+    a2: { tr: "Evet, ücretsiz. Hesap açmak, etkinlik oluşturmak, takım kurmak ve etkinliklere katılmak için ödeme yapılmaz; abonelik ya da paket satışı yoktur. Haritada “Ücretli” rozetiyle görünen maraton ve turnuva gibi organizasyonlar dış kuruluşlara aittir, kayıt kendi sitelerinden yapılır ve Muuvlink bu ücretlerden pay almaz.",
+          en: "Yes, it is free. Creating an account, creating an event, starting a team and joining events all cost nothing, and there is no subscription or paid tier. Organised races and tournaments shown with a “Paid” badge belong to outside organisers; you register on their own site and Muuvlink takes no share of those fees.",
+          de: "Ja, kostenlos. Konto anlegen, Events erstellen, ein Team gründen und an Events teilnehmen kosten nichts; es gibt kein Abo und keine kostenpflichtige Stufe. Mit dem Abzeichen „Kostenpflichtig“ markierte Läufe und Turniere stammen von externen Veranstaltern; die Anmeldung läuft über deren Website, und Muuvlink erhält davon keinen Anteil." },
+
+    q3: { tr: "Yakınımdaki spor etkinliklerini nasıl bulurum?",
+          en: "How do I find sports events near me?",
+          de: "Wie finde ich Sportevents in meiner Nähe?" },
+    a3: { tr: "Konum izni verdiğinde Muuvlink 5, 10, 25 veya 50 kilometre yarıçapındaki herkese açık etkinlikleri harita ve liste olarak gösterir. Spor dalına, tarihe ve zorluk seviyesine göre süzebilirsin. Katılmadan önce etkinlik sayfasındaki yorum alanından düzenleyene soru sorabilir, saat ve seviye konusunda anlaşabilirsin.",
+          en: "Once you grant location access, Muuvlink lists public events within a 5, 10, 25 or 50 kilometre radius on a map and as a list. You can filter by sport, date and difficulty level. Before joining, the comment area on the event page lets you ask the organiser about the time or the level.",
+          de: "Sobald du den Standortzugriff erlaubst, zeigt Muuvlink öffentliche Events im Umkreis von 5, 10, 25 oder 50 Kilometern auf einer Karte und als Liste. Du kannst nach Sportart, Datum und Schwierigkeitsgrad filtern. Vor der Teilnahme kannst du den Veranstalter im Kommentarbereich der Eventseite nach Uhrzeit und Niveau fragen." },
+
+    q4: { tr: "Takım nasıl kurulur?",
+          en: "How do I start a team?",
+          de: "Wie gründe ich ein Team?" },
+    a4: { tr: "Giriş yaptıktan sonra Takımlar sayfasındaki “Takım Oluştur” ile takım açılır: isim, spor dalı, konum ve görünürlük seçilir. Herkese açık takımlar aramada ve arama motorlarında görünür, özel takımlara yalnız davetle katılınır. Takımına ikinci bir yönetici ekleyebilir, üyelerine tek seferde etkinlik duyurusu yapabilirsin.",
+          en: "After logging in, use “Create Team” on the Teams page: pick a name, a sport, a location and the visibility. Public teams appear in search and in search engines; private teams are joined by invitation only. You can add a second manager to your team and announce an event to all members at once.",
+          de: "Nach dem Anmelden legst du über „Team erstellen“ auf der Teamseite ein Team an: Name, Sportart, Ort und Sichtbarkeit. Öffentliche Teams erscheinen in der Suche und in Suchmaschinen, privaten Teams tritt man nur per Einladung bei. Du kannst eine zweite verwaltende Person hinzufügen und allen Mitgliedern gleichzeitig ein Event ankündigen." },
+
+    q5: { tr: "Etkinliğe nasıl katılırım?",
+          en: "How do I join an event?",
+          de: "Wie nehme ich an einem Event teil?" },
+    a5: { tr: "Etkinlik sayfasındaki Katıl düğmesine basmak yeterlidir, ayrıca onay beklemezsin. Her etkinliğin bir kontenjanı vardır ve dolduğunda katılım kapanır. Katıldığın etkinlik profilindeki takvimde görünür, saatinden önce hatırlatma bildirimi alırsın. Vazgeçersen aynı sayfadan ayrılırsın ve yerin diğer sporculara açılır.",
+          en: "Press the Join button on the event page; no approval step follows. Every event has a capacity, and joining closes once it is full. Events you joined appear in the calendar on your profile, and you receive a reminder notification before the start. If you change your mind you can leave from the same page and your spot reopens.",
+          de: "Es genügt, auf der Eventseite auf „Teilnehmen“ zu tippen; eine Freigabe ist nicht nötig. Jedes Event hat eine Teilnehmerzahl, und bei Erreichen schließt die Anmeldung. Deine Events erscheinen im Kalender in deinem Profil, und vor Beginn erhältst du eine Erinnerung. Wenn du absagst, verlässt du das Event auf derselben Seite und dein Platz wird wieder frei." },
+
+    q6: { tr: "Muuvlink hangi şehirlerde ve hangi sporlarda kullanılıyor?",
+          en: "Which cities and sports does Muuvlink cover?",
+          de: "Welche Städte und Sportarten deckt Muuvlink ab?" },
+    a6: { tr: "Muuvlink konum tabanlı çalışır: sabit bir şehir listesi yoktur, etkinlikler kullanıcıların bulunduğu her şehirde açılabilir. Desteklenen dallar basketbol, bisiklet, crossfit, futbol, kano, koşu, kürek, padel, pilates, tenis, trekking, triatlon, voleybol, yoga ve yüzmedir. Arayüz Türkçe, İngilizce ve Almanca sunulur.",
+          en: "Muuvlink works by location rather than from a fixed list of cities: events can be created wherever its users are. The supported sports are basketball, cycling, CrossFit, football, kayaking, running, rowing, padel, pilates, tennis, trekking, triathlon, volleyball, yoga and swimming. The interface is available in Turkish, English and German.",
+          de: "Muuvlink arbeitet standortbasiert statt mit einer festen Städteliste: Events können überall dort entstehen, wo Nutzerinnen und Nutzer sind. Unterstützt werden Basketball, Radfahren, CrossFit, Fußball, Kanu, Laufen, Rudern, Padel, Pilates, Tennis, Trekking, Triathlon, Volleyball, Yoga und Schwimmen. Die Oberfläche gibt es auf Türkisch, Englisch und Deutsch." },
+  },
 };
 
 // ─── Dil algılama ───────────────────────────────────────────

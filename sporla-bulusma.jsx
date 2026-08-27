@@ -705,6 +705,49 @@ function GallerySection({ items, t, setCurrentPage, titleOverride, subtitleOverr
 }
 
 // ── HERO BANNER SLİDER ─────────────────────────────────────
+// ── SSS bölümü ─────────────────────────────────────────────────────────────
+// Yapay zeka motorları (ChatGPT, Perplexity, Claude) JavaScript çalıştırmaz;
+// bu yüzden aynı metin index.html içinde statik olarak da bulunur ve oradaki
+// FAQPage şeması onu işaretler. Metni değiştirirsen ikisini birlikte güncelle.
+// Açılır-kapanır DEĞİL: katlanmış metni arama motorları düşük ağırlıkla sayar.
+function FaqSection({ t }) {
+  const items = [1, 2, 3, 4, 5, 6].map((n) => ({
+    q: t(`faq.q${n}`),
+    a: t(`faq.a${n}`),
+  }));
+  return (
+    <section className="py-20" style={{ background: "#F4F4F4" }} aria-labelledby="sss-baslik">
+      <div className="max-w-4xl mx-auto px-4 sm:px-8">
+        <div className="flex items-center gap-3 mb-3">
+          <span className="h-px w-8" style={{ background: "#00a499" }} />
+          <span className="text-xs font-semibold tracking-[0.3em] uppercase" style={{ color: "#643e87" }}>
+            {t("faq.eyebrow")}
+          </span>
+        </div>
+        <h2 id="sss-baslik" className="font-display font-bold leading-snug mb-2"
+          style={{ fontSize: "clamp(1.6rem,3vw,2rem)", letterSpacing: "-0.01em", color: "#114956" }}>
+          {t("faq.title")}
+        </h2>
+        <p className="text-sm mb-10" style={{ color: "#66757A" }}>{t("faq.lead")}</p>
+
+        <dl className="grid gap-x-10 gap-y-8 sm:grid-cols-2">
+          {items.map((it, i) => (
+            <div key={i}>
+              <dt className="font-semibold text-[15px] mb-2 flex gap-2.5" style={{ color: "#1F2121" }}>
+                <span className="font-mono text-xs pt-0.5 flex-shrink-0" style={{ color: "#00a499" }}>
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <span>{it.q}</span>
+              </dt>
+              <dd className="text-sm leading-relaxed ml-[26px]" style={{ color: "#333E40" }}>{it.a}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    </section>
+  );
+}
+
 function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode, setIsAuthModalOpen, platformStats, stats, fmtNum, t, lang }) {
   const [activeIdx, setActiveIdx] = useState(0);
   const timerRef = useRef(null);
@@ -4452,6 +4495,8 @@ export default function Muuvlink() {
 
       <NewsSection items={homeNews} t={t} setCurrentPage={setCurrentPage} />
       <GallerySection items={homeGallery} t={t} setCurrentPage={setCurrentPage} />
+
+      <FaqSection t={t} />
 
       {/* ── CTA — Full Bleed Cinematic ── */}
       {!user && (
