@@ -134,7 +134,7 @@ const Tour = ({ steps, onFinish, t }) => {
       {/* Spotlight halkası (tıklamayı engellemez) */}
       <div style={{
         position: "fixed", top: hole.top, left: hole.left, width: hole.width, height: hole.height,
-        borderRadius: RADIUS, boxShadow: "0 0 0 3px rgba(255,255,255,0.9), 0 0 22px 6px rgba(0,183,186,0.45)",
+        borderRadius: RADIUS, boxShadow: "0 0 0 3px rgba(255,255,255,0.9), 0 0 22px 6px rgba(17,73,86,0.45)",
         zIndex: 9999, pointerEvents: "none", transition: "all .25s ease",
       }} />
 
@@ -157,7 +157,7 @@ const Tour = ({ steps, onFinish, t }) => {
             {steps.map((_, i) => (
               <span key={i} style={{
                 width: i === idx ? 16 : 6, height: 6, borderRadius: 99,
-                background: i === idx ? "#00b7ba" : "#cbd5e1", transition: "all .2s",
+                background: i === idx ? "#114956" : "#cbd5e1", transition: "all .2s",
               }} />
             ))}
           </div>
@@ -168,7 +168,7 @@ const Tour = ({ steps, onFinish, t }) => {
             {t ? t("tour.skip") : "Atla"}
           </button>
           <button onClick={goNext} style={{
-            background: "linear-gradient(135deg,#00b7ba,#009295)", border: "none", cursor: "pointer",
+            background: "linear-gradient(135deg,#114956,#0e3c47)", border: "none", cursor: "pointer",
             color: "#fff", fontSize: 12.5, fontWeight: 700, padding: "8px 16px", borderRadius: 10,
           }}>
             {idx + 1 >= total ? (t ? t("tour.finish") : "Bitir") : (t ? t("tour.next") : "İleri")}

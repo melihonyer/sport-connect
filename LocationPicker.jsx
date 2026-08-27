@@ -44,13 +44,13 @@ const _placeType = (cls, typ, lang="tr") => {
       gym:"#0891b2",sports_centre:"#0891b2",swimming_pool:"#0284c7",park:"#16a34a",garden:"#16a34a",
       school:"#64748b",university:"#64748b",hospital:"#dc2626",clinic:"#dc2626",
       stadium:"#0891b2",beach:"#f59e0b",
-    }[typ] || "#00b7ba";
+    }[typ] || "#114956";
     return { label: entry[l] || entry.en, color };
   }
   if (cls==="natural")  return { label: {tr:"Doğa", en:"Nature",  de:"Natur" }[l],   color:"#15803d" };
   if (cls==="highway")  return { label: {tr:"Sokak", en:"Street",  de:"Straße"}[l],   color:"#94a3b8" };
   if (cls==="shop")     return { label: {tr:"Mağaza", en:"Shop",   de:"Geschäft"}[l], color:"#9333ea" };
-  return { label: {tr:"Yer", en:"Place", de:"Ort"}[l], color:"#00b7ba" };
+  return { label: {tr:"Yer", en:"Place", de:"Ort"}[l], color:"#114956" };
 };
 
 export default function LocationPicker({ locationName, lat, lng, onLocationName, onLat, onLng, t, lang, isNative }) {
@@ -395,7 +395,7 @@ export default function LocationPicker({ locationName, lat, lng, onLocationName,
                   setMapQuery(""); setMapResults([]);
                 }}
                 className="w-full py-3.5 rounded-xl text-white text-sm font-semibold disabled:opacity-40 flex items-center justify-center gap-2 transition-opacity"
-                style={{ background: "linear-gradient(135deg,#00b7ba,#009295)" }}
+                style={{ background: "linear-gradient(135deg,#114956,#0e3c47)" }}
               >
                 {confirming
                   ? <><Loader2 className="w-4 h-4 animate-spin"/>{t("location.gettingAddress")}</>

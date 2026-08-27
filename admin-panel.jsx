@@ -108,7 +108,7 @@ function HomeNewsTab({ items, setItems, api, token, showToast }) {
         </div>
         <button onClick={startNew}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white transition hover:opacity-90 shadow-lg"
-          style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}>
+          style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}>
           <Plus className="w-4 h-4"/> Yeni Haber
         </button>
       </div>
@@ -129,7 +129,7 @@ function HomeNewsTab({ items, setItems, api, token, showToast }) {
             <button onClick={()=>{setShowForm(false);setEditId(null);}} className="px-4 py-2 text-sm text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50">İptal</button>
             <button onClick={handleSave} disabled={saving}
               className="flex-1 py-2 text-sm font-semibold text-white rounded-xl disabled:opacity-50 transition hover:opacity-90"
-              style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}>
+              style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}>
               {saving?"Kaydediliyor…":"Kaydet"}
             </button>
           </div>
@@ -226,7 +226,7 @@ function HomeGalleryTab({ items, setItems, api, token, showToast }) {
         </div>
         <button onClick={startNew}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white transition hover:opacity-90 shadow-lg"
-          style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}>
+          style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}>
           <Plus className="w-4 h-4"/> Yeni Kart
         </button>
       </div>
@@ -245,7 +245,7 @@ function HomeGalleryTab({ items, setItems, api, token, showToast }) {
             <button onClick={()=>{setShowForm(false);setEditId(null);}} className="px-4 py-2 text-sm text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50">İptal</button>
             <button onClick={handleSave} disabled={saving}
               className="flex-1 py-2 text-sm font-semibold text-white rounded-xl disabled:opacity-50 transition hover:opacity-90"
-              style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}>
+              style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}>
               {saving?"Kaydediliyor…":"Kaydet"}
             </button>
           </div>
@@ -363,7 +363,7 @@ function PaidEventsTab({ items, setItems, api, token, showToast }) {
         </div>
         <button onClick={startNew}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white transition hover:opacity-90 shadow-lg"
-          style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}>
+          style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}>
           <Plus className="w-4 h-4"/> Yeni Ücretli Etkinlik
         </button>
       </div>
@@ -421,7 +421,7 @@ function PaidEventsTab({ items, setItems, api, token, showToast }) {
             <button onClick={()=>{setShowForm(false);setEditId(null);}} className="px-4 py-2 text-sm text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50">İptal</button>
             <button onClick={handleSave} disabled={saving}
               className="flex-1 py-2 text-sm font-semibold text-white rounded-xl disabled:opacity-50 transition hover:opacity-90"
-              style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}>
+              style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}>
               {saving?"Kaydediliyor…":(editId?"Güncelle":"Oluştur")}
             </button>
           </div>
@@ -680,7 +680,7 @@ function DiscoveryTab({ api, showToast }) {
         <div className="flex gap-2 flex-wrap">
           <button onClick={() => startScan("sources")} disabled={running}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white transition hover:opacity-90 shadow-lg disabled:opacity-50"
-            style={{ background: "linear-gradient(135deg,#00b7ba,#009295)" }}>
+            style={{ background: "linear-gradient(135deg,#114956,#0e3c47)" }}>
             <ScanSearch className="w-4 h-4" /> Kaynakları Tara
           </button>
           <button onClick={() => setWebOpen(o => !o)} disabled={running}
@@ -716,7 +716,7 @@ function DiscoveryTab({ api, showToast }) {
           <div className="flex items-center gap-3 flex-wrap pt-1">
             <button onClick={() => startScan("web")} disabled={running || selQ.length === 0}
               className="px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-40"
-              style={{ background: "linear-gradient(135deg,#00b7ba,#009295)" }}>
+              style={{ background: "linear-gradient(135deg,#114956,#0e3c47)" }}>
               Seçilenleri Tara ({selQ.length})
             </button>
             <span className="text-xs text-slate-400">
@@ -744,7 +744,7 @@ function DiscoveryTab({ api, showToast }) {
             </span>
           </div>
           <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-            <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: "linear-gradient(90deg,#00b7ba,#009295)" }} />
+            <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: "linear-gradient(90deg,#114956,#0e3c47)" }} />
           </div>
           {running && scan?.current && <div className="text-xs text-slate-500 truncate">→ {scan.current}</div>}
           {scan?.log?.length > 0 && (
@@ -789,7 +789,7 @@ function DiscoveryTab({ api, showToast }) {
               <input className={inp + " flex-[2] min-w-[200px]"} placeholder="https://…" value={newSrc.url}
                 onChange={e => setNewSrc(s => ({ ...s, url: e.target.value }))} />
               <button onClick={addSource} className="px-4 py-2 rounded-xl text-sm font-medium text-white"
-                style={{ background: "linear-gradient(135deg,#00b7ba,#009295)" }}>Ekle</button>
+                style={{ background: "linear-gradient(135deg,#114956,#0e3c47)" }}>Ekle</button>
             </div>
             <p className="text-xs text-slate-400">
               Sayfa metni indirilip ayrıştırılır; robots.txt engelliyorsa kaynak atlanır. İçeriği JavaScript ile yüklenen siteler okunamaz.
@@ -916,7 +916,7 @@ function DiscoveryTab({ api, showToast }) {
                     <button onClick={() => setEditId(null)} className="px-4 py-2 text-sm text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50">İptal</button>
                     <button onClick={saveEdit} disabled={busyId === c.id}
                       className="flex-1 py-2 text-sm font-semibold text-white rounded-xl disabled:opacity-50"
-                      style={{ background: "linear-gradient(135deg,#00b7ba,#009295)" }}>
+                      style={{ background: "linear-gradient(135deg,#114956,#0e3c47)" }}>
                       {busyId === c.id ? "Kaydediliyor…" : "Kaydet"}
                     </button>
                   </div>
@@ -927,7 +927,7 @@ function DiscoveryTab({ api, showToast }) {
                 <div className="flex gap-2 mt-auto pt-2">
                   <button onClick={() => approve(c)} disabled={busyId === c.id}
                     className="flex-1 py-1.5 text-xs font-semibold text-white rounded-lg disabled:opacity-50 flex items-center justify-center gap-1"
-                    style={{ background: "linear-gradient(135deg,#00b7ba,#009295)" }}>
+                    style={{ background: "linear-gradient(135deg,#114956,#0e3c47)" }}>
                     <CheckCircle2 className="w-3.5 h-3.5" /> Onayla ve Yayınla
                   </button>
                   <button onClick={() => startEdit(c)}
@@ -1108,8 +1108,8 @@ function LiveTab({ api, showToast }) {
             <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="liveFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#00b7ba" stopOpacity={0.35} />
-                  <stop offset="100%" stopColor="#00b7ba" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#114956" stopOpacity={0.35} />
+                  <stop offset="100%" stopColor="#114956" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -1120,15 +1120,15 @@ function LiveTab({ api, showToast }) {
                 formatter={(v, n) => [v, n === "requests" ? "istek" : n === "members" ? "kayıtlı üye" : "misafir"]}
                 labelFormatter={(l) => `${l}`}
               />
-              <Area type="monotone" dataKey="requests" stroke="#00b7ba" strokeWidth={2} fill="url(#liveFill)" />
-              <Area type="monotone" dataKey="members" stroke="#981dd8" strokeWidth={1.5} fillOpacity={0} />
+              <Area type="monotone" dataKey="requests" stroke="#114956" strokeWidth={2} fill="url(#liveFill)" />
+              <Area type="monotone" dataKey="members" stroke="#643e87" strokeWidth={1.5} fillOpacity={0} />
               <Area type="monotone" dataKey="guests" stroke="#f59e0b" strokeWidth={1.5} strokeDasharray="4 3" fillOpacity={0} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
         <div className="flex items-center gap-4 mt-2 text-xs text-slate-400">
-          <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 rounded" style={{ background: "#00b7ba" }} /> istek/dk</span>
-          <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 rounded" style={{ background: "#981dd8" }} /> kayıtlı üye/dk</span>
+          <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 rounded" style={{ background: "#114956" }} /> istek/dk</span>
+          <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 rounded" style={{ background: "#643e87" }} /> kayıtlı üye/dk</span>
           <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 rounded" style={{ background: "#f59e0b" }} /> misafir/dk</span>
         </div>
       </div>
@@ -1282,7 +1282,7 @@ export default function AdminPanel() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   // Banner form state
-  const emptyBanner = { title:"", subtitle:"", badge_text:"", cta_primary_text:"Hemen Başla", cta_primary_text_en:"", cta_primary_text_de:"", cta_primary_url:"", cta_secondary_text:"Etkinlikleri Keşfet", cta_secondary_url:"", gradient_from:"#0D0B26", gradient_via:"#1a1040", gradient_to:"#0f2044", is_active:true, order_index:0, mottos:[""], motto_color_1:"#00b7ba", motto_color_2:"#981dd8", title_color:"#ffffff", subtitle_color:"rgba(186,230,253,0.75)" };
+  const emptyBanner = { title:"", subtitle:"", badge_text:"", cta_primary_text:"Hemen Başla", cta_primary_text_en:"", cta_primary_text_de:"", cta_primary_url:"", cta_secondary_text:"Etkinlikleri Keşfet", cta_secondary_url:"", gradient_from:"#0D0B26", gradient_via:"#1a1040", gradient_to:"#0f2044", is_active:true, order_index:0, mottos:[""], motto_color_1:"#114956", motto_color_2:"#643e87", title_color:"#ffffff", subtitle_color:"rgba(186,230,253,0.75)" };
   const [bannerForm, setBannerForm] = useState(emptyBanner);
   const [editingBannerId, setEditingBannerId] = useState(null);
   const [showBannerForm, setShowBannerForm] = useState(false);
@@ -1411,11 +1411,11 @@ export default function AdminPanel() {
   // ─── LOGIN SAYFASI ──────────────────────────────────────
   if (!token) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "linear-gradient(135deg,#f0fdf4 0%,#e5f9f9 60%,#bbf7d0 100%)" }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "linear-gradient(135deg,#f0fdf4 0%,#e6f7f5 60%,#bbf7d0 100%)" }}>
         {/* Arka plan blob */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-[-100px] right-[-100px] w-[400px] h-[400px] rounded-full opacity-20" style={{ background: "radial-gradient(circle,#00b7ba,transparent 70%)" }} />
-          <div className="absolute bottom-[-100px] left-[-80px] w-[350px] h-[350px] rounded-full opacity-15" style={{ background: "radial-gradient(circle,#009295,transparent 70%)" }} />
+          <div className="absolute top-[-100px] right-[-100px] w-[400px] h-[400px] rounded-full opacity-20" style={{ background: "radial-gradient(circle,#114956,transparent 70%)" }} />
+          <div className="absolute bottom-[-100px] left-[-80px] w-[350px] h-[350px] rounded-full opacity-15" style={{ background: "radial-gradient(circle,#0e3c47,transparent 70%)" }} />
           <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,.8) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.8) 1px,transparent 1px)", backgroundSize: "60px 60px" }} />
         </div>
 
@@ -1475,7 +1475,7 @@ export default function AdminPanel() {
                 type="submit"
                 disabled={loginLoading}
                 className="w-full py-3 rounded-xl font-medium text-white text-sm transition-all hover:opacity-90 hover:shadow-xl disabled:opacity-60 flex items-center justify-center gap-2"
-                style={{ background: "linear-gradient(135deg,#00b7ba,#009295)" }}
+                style={{ background: "linear-gradient(135deg,#114956,#0e3c47)" }}
               >
                 {loginLoading ? (
                   <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Giriş yapılıyor…</>
@@ -1532,8 +1532,8 @@ export default function AdminPanel() {
       is_active: b.is_active !== false,
       order_index: b.order_index || 0,
       mottos: (Array.isArray(b.mottos) && b.mottos.length > 0) ? b.mottos : [""],
-      motto_color_1: b.motto_color_1 || "#00b7ba",
-      motto_color_2: b.motto_color_2 || "#981dd8",
+      motto_color_1: b.motto_color_1 || "#114956",
+      motto_color_2: b.motto_color_2 || "#643e87",
       title_color: b.title_color || "#ffffff",
       subtitle_color: b.subtitle_color || "rgba(186,230,253,0.75)",
     });
@@ -1582,8 +1582,8 @@ export default function AdminPanel() {
         is_active: false,          // kopya pasif başlasın
         order_index: banners.length,
         mottos: b.mottos || [],
-        motto_color_1: b.motto_color_1 || "#00b7ba",
-        motto_color_2: b.motto_color_2 || "#981dd8",
+        motto_color_1: b.motto_color_1 || "#114956",
+        motto_color_2: b.motto_color_2 || "#643e87",
       }),
     });
     if (created) setBanners(prev => [...prev, created]);
@@ -1734,7 +1734,7 @@ export default function AdminPanel() {
                   <linearGradient id="gUsers"     x1="0" y1="0" x2="0" y2="1"><stop offset="5%"  stopColor="#3B82F6" stopOpacity={show("users")     ? 0.35 : 0}/><stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/></linearGradient>
                   <linearGradient id="gTeams"     x1="0" y1="0" x2="0" y2="1"><stop offset="5%"  stopColor="#8B5CF6" stopOpacity={show("teams")     ? 0.35 : 0}/><stop offset="95%" stopColor="#8B5CF6" stopOpacity={0}/></linearGradient>
                   <linearGradient id="gTeamJoins" x1="0" y1="0" x2="0" y2="1"><stop offset="5%"  stopColor="#6366F1" stopOpacity={show("teamJoins") ? 0.35 : 0}/><stop offset="95%" stopColor="#6366F1" stopOpacity={0}/></linearGradient>
-                  <linearGradient id="gTrainings" x1="0" y1="0" x2="0" y2="1"><stop offset="5%"  stopColor="#00b7ba" stopOpacity={show("trainings") ? 0.35 : 0}/><stop offset="95%" stopColor="#00b7ba" stopOpacity={0}/></linearGradient>
+                  <linearGradient id="gTrainings" x1="0" y1="0" x2="0" y2="1"><stop offset="5%"  stopColor="#114956" stopOpacity={show("trainings") ? 0.35 : 0}/><stop offset="95%" stopColor="#114956" stopOpacity={0}/></linearGradient>
                   <linearGradient id="gJoins"     x1="0" y1="0" x2="0" y2="1"><stop offset="5%"  stopColor="#F59E0B" stopOpacity={show("joins")     ? 0.35 : 0}/><stop offset="95%" stopColor="#F59E0B" stopOpacity={0}/></linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -1746,7 +1746,7 @@ export default function AdminPanel() {
                 <Area type="monotone" dataKey="users"     name="Üye"           stroke={seriesStroke("users",     "#3B82F6")} fill="url(#gUsers)"     strokeWidth={seriesWidth("users")}     dot={false} fillOpacity={seriesFill("users")} />
                 <Area type="monotone" dataKey="teams"     name="Takım Kuruldu" stroke={seriesStroke("teams",     "#8B5CF6")} fill="url(#gTeams)"     strokeWidth={seriesWidth("teams")}     dot={false} fillOpacity={seriesFill("teams")} />
                 <Area type="monotone" dataKey="teamJoins" name="Takıma Katılım" stroke={seriesStroke("teamJoins", "#6366F1")} fill="url(#gTeamJoins)" strokeWidth={seriesWidth("teamJoins")} dot={false} fillOpacity={seriesFill("teamJoins")} />
-                <Area type="monotone" dataKey="trainings" name="Etkinlik"      stroke={seriesStroke("trainings", "#00b7ba")} fill="url(#gTrainings)" strokeWidth={seriesWidth("trainings")} dot={false} fillOpacity={seriesFill("trainings")} />
+                <Area type="monotone" dataKey="trainings" name="Etkinlik"      stroke={seriesStroke("trainings", "#114956")} fill="url(#gTrainings)" strokeWidth={seriesWidth("trainings")} dot={false} fillOpacity={seriesFill("trainings")} />
                 <Area type="monotone" dataKey="joins"     name="Etkinliğe Kat." stroke={seriesStroke("joins",    "#F59E0B")} fill="url(#gJoins)"     strokeWidth={seriesWidth("joins")}     dot={false} fillOpacity={seriesFill("joins")} />
               </AreaChart>
             </ResponsiveContainer>
@@ -1904,7 +1904,7 @@ export default function AdminPanel() {
                   ? "text-white shadow-md"
                   : "text-slate-500 hover:text-brand-700 hover:bg-brand-50"
               }`}
-              style={tab === id ? { background: "linear-gradient(135deg,#00b7ba,#009295)" } : {}}
+              style={tab === id ? { background: "linear-gradient(135deg,#114956,#0e3c47)" } : {}}
             >
               <span className="flex items-center gap-3">
                 <Icon className="w-4 h-4 flex-shrink-0" />
@@ -2005,7 +2005,7 @@ export default function AdminPanel() {
                       <div key={u.id} className="flex items-center justify-between px-6 py-3.5 hover:bg-slate-50 transition-colors">
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-medium text-sm shadow-sm flex-shrink-0"
-                            style={{ background: "linear-gradient(135deg,#00b7ba,#009295)" }}>
+                            style={{ background: "linear-gradient(135deg,#114956,#0e3c47)" }}>
                             {u.name[0].toUpperCase()}
                           </div>
                           <div>
@@ -2037,7 +2037,7 @@ export default function AdminPanel() {
                 {filteredUsers.map(u => (
                   <div key={u.id} className="flex items-center gap-3 px-4 py-3.5">
                     <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
-                      style={{ background: "linear-gradient(135deg,#00b7ba,#009295)" }}>
+                      style={{ background: "linear-gradient(135deg,#114956,#0e3c47)" }}>
                       {(u.avatar?.startsWith("/uploads/") || u.avatar?.startsWith("http"))
                         ? <img src={u.avatar.startsWith("http") ? u.avatar : `${BASE_URL}${u.avatar}`} alt="" className="w-full h-full object-cover" />
                         : u.name[0].toUpperCase()}
@@ -2094,7 +2094,7 @@ export default function AdminPanel() {
                         <td className="px-6 py-3.5">
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center text-white font-bold text-xs flex-shrink-0"
-                              style={{ background: "linear-gradient(135deg,#00b7ba,#009295)" }}>
+                              style={{ background: "linear-gradient(135deg,#114956,#0e3c47)" }}>
                               {(u.avatar?.startsWith("/uploads/") || u.avatar?.startsWith("http"))
                                 ? <img src={u.avatar.startsWith("http") ? u.avatar : `${BASE_URL}${u.avatar}`} alt="" className="w-full h-full object-cover" />
                                 : u.name[0].toUpperCase()}
@@ -2158,7 +2158,7 @@ export default function AdminPanel() {
                   return (
                     <div key={t.id} className="flex items-start gap-3 px-4 py-3.5">
                       <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                        style={{ background: "linear-gradient(135deg,#00b7ba,#009295)" }}>
+                        style={{ background: "linear-gradient(135deg,#114956,#0e3c47)" }}>
                         <Activity className="w-5 h-5 text-white"/>
                       </div>
                       <div className="flex-1 min-w-0">
@@ -2255,7 +2255,7 @@ export default function AdminPanel() {
                 {filteredTeams.map(t => (
                   <div key={t.id} className="flex items-center gap-3 px-4 py-3.5">
                     <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-sm"
-                      style={{ background: "linear-gradient(135deg,#00b7ba,#009295)" }}>
+                      style={{ background: "linear-gradient(135deg,#114956,#0e3c47)" }}>
                       {(t.avatar?.startsWith("/uploads/") || t.avatar?.startsWith("http"))
                         ? <img src={t.avatar.startsWith("http") ? t.avatar : `${BASE_URL}${t.avatar}`} alt="" className="w-full h-full object-cover" />
                         : t.name[0].toUpperCase()}
@@ -2299,7 +2299,7 @@ export default function AdminPanel() {
                         <td className="px-6 py-3.5">
                           <div className="flex items-center gap-3">
                             <div className="w-9 h-9 rounded-xl overflow-hidden flex items-center justify-center text-white font-bold text-base flex-shrink-0 shadow-sm"
-                              style={{ background: "linear-gradient(135deg,#00b7ba,#009295)" }}>
+                              style={{ background: "linear-gradient(135deg,#114956,#0e3c47)" }}>
                               {(t.avatar?.startsWith("/uploads/") || t.avatar?.startsWith("http"))
                                 ? <img src={t.avatar.startsWith("http") ? t.avatar : `${BASE_URL}${t.avatar}`} alt="" className="w-full h-full object-cover" />
                                 : t.name[0].toUpperCase()}
@@ -2345,7 +2345,7 @@ export default function AdminPanel() {
                 <button
                   onClick={() => { setBannerForm(emptyBanner); setEditingBannerId(null); setShowBannerForm(true); }}
                   className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white transition hover:opacity-90 shadow-lg"
-                  style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}
+                  style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}
                 >
                   <Plus className="w-4 h-4"/> Yeni Banner
                 </button>
@@ -2356,7 +2356,7 @@ export default function AdminPanel() {
                 <div className="bg-white rounded-2xl border border-brand-200 shadow-lg overflow-hidden">
                   {/* Header */}
                   <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100"
-                    style={{background:"linear-gradient(90deg,#00b7ba11,#00929511)"}}>
+                    style={{background:"linear-gradient(90deg,#11495611,#0e3c4711)"}}>
                     <h3 className="font-medium text-slate-900">{editingBannerId ? "Banner Düzenle" : "Yeni Banner Ekle"}</h3>
                     <button onClick={() => setShowBannerForm(false)} className="text-slate-400 hover:text-slate-700">
                       <X className="w-5 h-5"/>
@@ -2476,7 +2476,7 @@ export default function AdminPanel() {
                       {/* Ana buton */}
                       <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
                         <div className="flex items-center gap-2 mb-2">
-                          <div className="w-2 h-2 rounded-full" style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}/>
+                          <div className="w-2 h-2 rounded-full" style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}/>
                           <span className="text-xs font-medium text-slate-600">Ana Buton</span>
                           <span className="text-xs text-slate-400">(gradient, öne çıkan)</span>
                         </div>
@@ -2587,28 +2587,28 @@ export default function AdminPanel() {
                       </label>
                       <div className="flex items-center gap-3">
                         <div className="flex items-center gap-2 flex-1 border border-slate-200 rounded-xl px-3 py-2">
-                          <input type="color" value={bannerForm.motto_color_1 || "#00b7ba"}
+                          <input type="color" value={bannerForm.motto_color_1 || "#114956"}
                             onChange={e => setBannerForm(p => ({ ...p, motto_color_1: e.target.value }))}
                             className="w-8 h-8 rounded-lg border-0 cursor-pointer p-0"
                           />
-                          <span className="text-xs text-slate-500 font-mono">{bannerForm.motto_color_1 || "#00b7ba"}</span>
+                          <span className="text-xs text-slate-500 font-mono">{bannerForm.motto_color_1 || "#114956"}</span>
                           <span className="text-xs text-slate-400 ml-auto">Başlangıç</span>
                         </div>
                         <div className="flex items-center justify-center w-6 flex-shrink-0">
-                          <div className="h-0.5 w-4 rounded" style={{background:`linear-gradient(90deg,${bannerForm.motto_color_1||"#00b7ba"},${bannerForm.motto_color_2||"#981dd8"})`}}/>
+                          <div className="h-0.5 w-4 rounded" style={{background:`linear-gradient(90deg,${bannerForm.motto_color_1||"#114956"},${bannerForm.motto_color_2||"#643e87"})`}}/>
                         </div>
                         <div className="flex items-center gap-2 flex-1 border border-slate-200 rounded-xl px-3 py-2">
-                          <input type="color" value={bannerForm.motto_color_2 || "#981dd8"}
+                          <input type="color" value={bannerForm.motto_color_2 || "#643e87"}
                             onChange={e => setBannerForm(p => ({ ...p, motto_color_2: e.target.value }))}
                             className="w-8 h-8 rounded-lg border-0 cursor-pointer p-0"
                           />
-                          <span className="text-xs text-slate-500 font-mono">{bannerForm.motto_color_2 || "#981dd8"}</span>
+                          <span className="text-xs text-slate-500 font-mono">{bannerForm.motto_color_2 || "#643e87"}</span>
                           <span className="text-xs text-slate-400 ml-auto">Bitiş</span>
                         </div>
                       </div>
                       {/* Önizleme */}
                       <div className="mt-2 text-center text-base font-semibold" style={{
-                        background:`linear-gradient(90deg,${bannerForm.motto_color_1||"#00b7ba"},${bannerForm.motto_color_2||"#981dd8"})`,
+                        background:`linear-gradient(90deg,${bannerForm.motto_color_1||"#114956"},${bannerForm.motto_color_2||"#643e87"})`,
                         WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text"
                       }}>
                         {(bannerForm.mottos?.[0]) || "Motto önizlemesi"}
@@ -2623,7 +2623,7 @@ export default function AdminPanel() {
                       </button>
                       <button onClick={saveBanner} disabled={bannerSaving}
                         className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-medium text-white disabled:opacity-60 transition hover:opacity-90"
-                        style={{background:"linear-gradient(135deg,#00b7ba,#009295)"}}>
+                        style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}>
                         {bannerSaving ? <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"/>Kaydediliyor…</> : "Kaydet"}
                       </button>
                     </div>
@@ -2831,7 +2831,7 @@ export default function AdminPanel() {
               )}
               {filteredMessages.map(m => (
                 <div key={m.id} className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition-all ${m.is_read ? "border-slate-100" : "border-brand-200"}`}>
-                  {!m.is_read && <div className="h-1" style={{ background: "linear-gradient(90deg,#00b7ba,#009295)" }} />}
+                  {!m.is_read && <div className="h-1" style={{ background: "linear-gradient(90deg,#114956,#0e3c47)" }} />}
                   <div className="p-4 md:p-6">
                     <div className="flex items-start justify-between gap-3 flex-wrap md:flex-nowrap">
                       <div className="flex-1 min-w-0">

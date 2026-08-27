@@ -36,7 +36,7 @@ class RootErrorBoundary extends React.Component {
           onClick={() => { this.setState({ error: null }); window.location.reload(); }}
           style={{
             padding:'10px 28px', borderRadius:12, border:'none', cursor:'pointer',
-            background:'linear-gradient(135deg,#00b7ba,#009295)',
+            background:'linear-gradient(135deg,#114956,#0e3c47)',
             color:'white', fontWeight:700, fontSize:14,
             fontFamily:"'Montserrat',system-ui,sans-serif"
           }}>

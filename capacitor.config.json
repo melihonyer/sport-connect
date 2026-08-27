@@ -14,7 +14,7 @@
   "plugins": {
     "SplashScreen": {
       "launchShowDuration": 1500,
-      "backgroundColor": "#00b7ba",
+      "backgroundColor": "#114956",
       "showSpinner": false,
       "androidSplashResourceName": "splash",
       "splashFullScreen": true,
@@ -22,7 +22,7 @@
     },
     "StatusBar": {
       "style": "LIGHT",
-      "backgroundColor": "#00b7ba"
+      "backgroundColor": "#114956"
     },
     "PushNotifications": {
       "presentationOptions": ["badge", "sound", "alert"]

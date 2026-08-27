@@ -684,7 +684,7 @@ function emailWrapper(content) {
       <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
         <!-- Header -->
         <tr>
-          <td style="background:linear-gradient(135deg,#00b7ba,#009295);padding:32px 40px;text-align:center;">
+          <td style="background:linear-gradient(135deg,#114956,#0e3c47);padding:32px 40px;text-align:center;">
             <img src="https://muuvlink.app/icons/favicon.png" width="56" height="56" alt="Muuvlink" style="border-radius:14px;margin-bottom:14px;display:inline-block;box-shadow:0 4px 16px rgba(0,0,0,0.15);" />
             <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;letter-spacing:-0.5px;">Muuvlink</h1>
             <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">Spor topluluğun seni bekliyor</p>
@@ -720,17 +720,17 @@ function inviteEmailExisting({ teamName, teamSport, inviterName, teamId, avatar 
 
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:24px;margin-bottom:28px;">
       <div style="display:flex;align-items:center;gap:16px;">
-        <div style="width:56px;height:56px;background:linear-gradient(135deg,#00b7ba,#009295);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;text-align:center;line-height:56px;">${avatar || teamName.charAt(0).toUpperCase()}</div>
+        <div style="width:56px;height:56px;background:linear-gradient(135deg,#114956,#0e3c47);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;text-align:center;line-height:56px;">${avatar || teamName.charAt(0).toUpperCase()}</div>
         <div>
           <div style="font-size:18px;font-weight:700;color:#1e293b;">${teamName}</div>
-          <div style="font-size:14px;color:#00b7ba;margin-top:2px;">${teamSport}</div>
+          <div style="font-size:14px;color:#114956;margin-top:2px;">${teamSport}</div>
         </div>
       </div>
     </div>
 
     <div style="text-align:center;">
       <a href="${APP_URL}?accept_invite=${teamId}"
-         style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#ffffff;text-decoration:none;
+         style="display:inline-block;background:linear-gradient(135deg,#114956,#0e3c47);color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;letter-spacing:0.2px;">
         Takıma Katıl →
       </a>
@@ -751,16 +751,16 @@ function inviteEmailNew({ teamName, teamSport, inviterName, avatar }) {
     </p>
 
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:24px;margin-bottom:28px;">
-      <div style="width:56px;height:56px;background:linear-gradient(135deg,#00b7ba,#009295);border-radius:12px;font-size:22px;font-weight:800;color:#fff;text-align:center;line-height:56px;margin:0 auto 12px;">${avatar || teamName.charAt(0).toUpperCase()}</div>
+      <div style="width:56px;height:56px;background:linear-gradient(135deg,#114956,#0e3c47);border-radius:12px;font-size:22px;font-weight:800;color:#fff;text-align:center;line-height:56px;margin:0 auto 12px;">${avatar || teamName.charAt(0).toUpperCase()}</div>
       <div style="text-align:center;">
         <div style="font-size:18px;font-weight:700;color:#1e293b;">${teamName}</div>
-        <div style="font-size:14px;color:#00b7ba;margin-top:4px;">${teamSport}</div>
+        <div style="font-size:14px;color:#114956;margin-top:4px;">${teamSport}</div>
       </div>
     </div>
 
     <div style="text-align:center;">
       <a href="${APP_URL}?auth=register"
-         style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#ffffff;text-decoration:none;
+         style="display:inline-block;background:linear-gradient(135deg,#114956,#0e3c47);color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
         Hesap Oluştur →
       </a>
@@ -796,7 +796,7 @@ function roleChangeEmail({ teamName, teamId, newRoleLabel, changerName, avatar }
           <td style="vertical-align:middle;padding-right:16px;">${avatarHtml(avatar, teamName, 56)}</td>
           <td style="vertical-align:middle;">
             <div style="font-size:18px;font-weight:700;color:#1e293b;">${teamName}</div>
-            <div style="font-size:14px;color:#00b7ba;margin-top:2px;">Yeni rolün: ${newRoleLabel}</div>
+            <div style="font-size:14px;color:#114956;margin-top:2px;">Yeni rolün: ${newRoleLabel}</div>
           </td>
         </tr>
       </table>
@@ -804,7 +804,7 @@ function roleChangeEmail({ teamName, teamId, newRoleLabel, changerName, avatar }
 
     <div style="text-align:center;">
       <a href="${APP_URL}?takim=${teamId}"
-         style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#ffffff;text-decoration:none;
+         style="display:inline-block;background:linear-gradient(135deg,#114956,#0e3c47);color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;letter-spacing:0.2px;">
         Takımı Görüntüle →
       </a>
@@ -814,7 +814,7 @@ function roleChangeEmail({ teamName, teamId, newRoleLabel, changerName, avatar }
 
 // Şablon 3: Duvar gönderisi bildirimi
 // Avatar URL'sini <img> tag'ine, değilse baş harfe çevirir
-function avatarHtml(avatarValue, name, size = 40, gradient = 'linear-gradient(135deg,#00b7ba,#009295)') {
+function avatarHtml(avatarValue, name, size = 40, gradient = 'linear-gradient(135deg,#114956,#0e3c47)') {
   const isUrl = avatarValue && (avatarValue.startsWith('http') || avatarValue.startsWith('/uploads/'));
   const src = isUrl ? (avatarValue.startsWith('/uploads/') ? `${APP_URL}${avatarValue}` : avatarValue) : null;
   if (src) {
@@ -838,20 +838,20 @@ function wallPostEmail({ teamName, teamId, posterName, posterAvatar, message, po
 
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:24px;margin-bottom:28px;">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-        ${avatarHtml(posterAvatar, posterName, 40, 'linear-gradient(135deg,#00b7ba,#009295)')}
+        ${avatarHtml(posterAvatar, posterName, 40, 'linear-gradient(135deg,#114956,#0e3c47)')}
         <div>
           <div style="font-weight:600;color:#1e293b;font-size:15px;">${posterName}</div>
           <div style="color:#94a3b8;font-size:13px;">${postDate}</div>
         </div>
       </div>
-      <div style="color:#334155;font-size:15px;line-height:1.7;white-space:pre-wrap;border-left:3px solid #00b7ba;padding-left:16px;">
+      <div style="color:#334155;font-size:15px;line-height:1.7;white-space:pre-wrap;border-left:3px solid #114956;padding-left:16px;">
         ${truncated}
       </div>
     </div>
 
     <div style="text-align:center;">
       <a href="${APP_URL}/takimlar?takim=${teamId}&tab=duvar"
-         style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#ffffff;text-decoration:none;
+         style="display:inline-block;background:linear-gradient(135deg,#114956,#0e3c47);color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
         Duvara Git →
       </a>
@@ -875,26 +875,26 @@ function trainingCommentEmail({ commenterName, commenterAvatar, trainingTitle, t
     </p>
 
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px 20px;margin-bottom:20px;">
-      <div style="font-size:13px;color:#009295;font-weight:600;">${trainingTitle}</div>
+      <div style="font-size:13px;color:#0e3c47;font-weight:600;">${trainingTitle}</div>
       <div style="font-size:13px;color:#64748b;margin-top:2px;">${trainingDate}</div>
     </div>
 
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin-bottom:28px;">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-        ${avatarHtml(commenterAvatar, commenterName, 36, 'linear-gradient(135deg,#00b7ba,#009295)')}
+        ${avatarHtml(commenterAvatar, commenterName, 36, 'linear-gradient(135deg,#114956,#0e3c47)')}
         <div>
           <div style="font-weight:600;color:#1e293b;font-size:15px;">${commenterName}</div>
           <div style="color:#94a3b8;font-size:13px;">${postDate}</div>
         </div>
       </div>
-      <div style="color:#334155;font-size:15px;line-height:1.7;white-space:pre-wrap;border-left:3px solid #00b7ba;padding-left:16px;">
+      <div style="color:#334155;font-size:15px;line-height:1.7;white-space:pre-wrap;border-left:3px solid #114956;padding-left:16px;">
         ${truncated}
       </div>
     </div>
 
     <div style="text-align:center;">
       <a href="${trainingLink}"
-         style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#ffffff;text-decoration:none;
+         style="display:inline-block;background:linear-gradient(135deg,#114956,#0e3c47);color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
         Etkinliği Gör →
       </a>
@@ -912,12 +912,12 @@ function trainingUpdateEmail({ teamName, trainingTitle, trainingDate, trainingTi
     </p>
 
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:24px;margin-bottom:28px;">
-      <div style="font-size:18px;font-weight:700;color:#009295;margin-bottom:16px;">Güncel Bilgiler</div>
+      <div style="font-size:18px;font-weight:700;color:#0e3c47;margin-bottom:16px;">Güncel Bilgiler</div>
       <table style="width:100%;border-collapse:collapse;">
         <tr><td style="padding:6px 0;color:#64748b;font-size:14px;width:80px;">Tarih</td><td style="padding:6px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingDate}</td></tr>
         ${trainingTime ? `<tr><td style="padding:6px 0;color:#64748b;font-size:14px;">Saat</td><td style="padding:6px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingTime.slice(0,5)}</td></tr>` : ''}
         ${location ? `<tr><td style="padding:6px 0;color:#64748b;font-size:14px;">Konum</td><td style="padding:6px 0;color:#1e293b;font-size:14px;font-weight:600;">${location}</td></tr>` : ''}
-        ${description ? `<tr><td colspan="2" style="padding:12px 0 4px;color:#334155;font-size:14px;line-height:1.6;border-top:1px solid #e5f9f9;margin-top:8px;">${description}</td></tr>` : ''}
+        ${description ? `<tr><td colspan="2" style="padding:12px 0 4px;color:#334155;font-size:14px;line-height:1.6;border-top:1px solid #e6f7f5;margin-top:8px;">${description}</td></tr>` : ''}
       </table>
     </div>
 
@@ -925,7 +925,7 @@ function trainingUpdateEmail({ teamName, trainingTitle, trainingDate, trainingTi
 
     <div style="text-align:center;">
       <a href="${trainingLink}"
-         style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#ffffff;text-decoration:none;
+         style="display:inline-block;background:linear-gradient(135deg,#114956,#0e3c47);color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
         Etkinliği Gör →
       </a>
@@ -952,7 +952,7 @@ function newTrainingEmail({ teamName, trainingTitle, trainingDate, trainingTime,
     </p>
 
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:24px;margin-bottom:28px;">
-      <div style="font-size:20px;font-weight:700;color:#009295;margin-bottom:12px;">${trainingTitle}</div>
+      <div style="font-size:20px;font-weight:700;color:#0e3c47;margin-bottom:12px;">${trainingTitle}</div>
       <table style="width:100%;border-collapse:collapse;">
         <tr><td style="padding:4px 0;color:#64748b;font-size:14px;">Tarih</td><td style="padding:4px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingDate}</td></tr>
         ${trainingTime ? `<tr><td style="padding:4px 0;color:#64748b;font-size:14px;">Saat</td><td style="padding:4px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingTime.slice(0,5)}</td></tr>` : ''}
@@ -969,7 +969,7 @@ function newTrainingEmail({ teamName, trainingTitle, trainingDate, trainingTime,
 
     <div style="text-align:center;">
       <a href="${trainingLink}"
-         style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#ffffff;text-decoration:none;
+         style="display:inline-block;background:linear-gradient(135deg,#114956,#0e3c47);color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
         Etkinliği Gör →
       </a>
@@ -981,7 +981,7 @@ function newTrainingEmail({ teamName, trainingTitle, trainingDate, trainingTime,
 function trainingReminderEmail({ teamName, trainingTitle, trainingDate, trainingTime, location, daysLeft, trainingId }) {
   const trainingLink = trainingId ? `${APP_URL}/etkinlikler?etkinlik=${trainingId}` : `${APP_URL}/etkinlikler`;
   const urgency = daysLeft === 1 ? 'Yarın!' : `${daysLeft} gün kaldı`;
-  const accent  = '#009295'; // kurumsal teal (sarı/amber yerine)
+  const accent  = '#0e3c47'; // kurumsal teal (sarı/amber yerine)
   return emailWrapper(`
     <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Etkinliğiniz Yaklaşıyor</h2>
     <p style="margin:0 0 28px;color:#64748b;font-size:15px;line-height:1.6;">
@@ -1000,7 +1000,7 @@ function trainingReminderEmail({ teamName, trainingTitle, trainingDate, training
 
     <div style="text-align:center;">
       <a href="${trainingLink}"
-         style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#ffffff;text-decoration:none;
+         style="display:inline-block;background:linear-gradient(135deg,#114956,#0e3c47);color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
         Etkinliği Görüntüle →
       </a>
@@ -1918,12 +1918,12 @@ app.post('/api/teams/:id/join', authenticateToken, async (req, res) => {
             <strong>${joinerName}</strong>, <strong>${team.name}</strong> takımına yeni üye olarak katıldı.
           </p>
           <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:24px;margin-bottom:28px;text-align:center;">
-            <div style="width:56px;height:56px;background:linear-gradient(135deg,#00b7ba,#009295);border-radius:50%;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;line-height:56px;text-align:center;">U</div>
-            <div style="font-size:18px;font-weight:700;color:#009295;">${joinerName}</div>
+            <div style="width:56px;height:56px;background:linear-gradient(135deg,#114956,#0e3c47);border-radius:50%;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;line-height:56px;text-align:center;">U</div>
+            <div style="font-size:18px;font-weight:700;color:#0e3c47;">${joinerName}</div>
           </div>
           <div style="text-align:center;">
             <a href="${process.env.APP_URL || 'https://muuvlink.app'}/takimlar?takim=${teamId}"
-               style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#ffffff;text-decoration:none;
+               style="display:inline-block;background:linear-gradient(135deg,#114956,#0e3c47);color:#ffffff;text-decoration:none;
                       padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
               Takımı Görüntüle →
             </a>
@@ -2964,7 +2964,7 @@ app.post('/api/trainings/:id/join', authenticateToken, async (req, res) => {
           </p>
           <div style="text-align:center;">
             <a href="${APP_URL}/etkinlikler?etkinlik=${trainingId}"
-               style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#ffffff;text-decoration:none;
+               style="display:inline-block;background:linear-gradient(135deg,#114956,#0e3c47);color:#ffffff;text-decoration:none;
                       padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
               Etkinliği Görüntüle →
             </a>
@@ -4018,12 +4018,12 @@ app.post('/api/contact', async (req, res) => {
             <p style="margin:0 0 8px;"><strong>E-posta:</strong> ${email}</p>
             <p style="margin:0 0 8px;"><strong>Konu:</strong> ${subject}</p>
           </div>
-          <div style="background:#f8fafc;border-left:3px solid #00b7ba;border-radius:8px;padding:20px;">
+          <div style="background:#f8fafc;border-left:3px solid #114956;border-radius:8px;padding:20px;">
             <p style="margin:0;color:#334155;line-height:1.7;white-space:pre-wrap;">${message}</p>
           </div>
           <div style="margin-top:24px;text-align:center;">
             <a href="${APP_URL}/admin.html?tab=messages"
-               style="display:inline-block;background:linear-gradient(135deg,#00b7ba,#009295);color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;">
+               style="display:inline-block;background:linear-gradient(135deg,#114956,#0e3c47);color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;">
               Panelde Görüntüle →
             </a>
           </div>
@@ -4040,7 +4040,7 @@ app.post('/api/contact', async (req, res) => {
         <p style="color:#64748b;line-height:1.7;margin:0 0 20px;">
           Mesajınız başarıyla alındı. En kısa sürede size dönüş yapacağız.
         </p>
-        <div style="background:#f8fafc;border-left:3px solid #00b7ba;border-radius:8px;padding:20px;">
+        <div style="background:#f8fafc;border-left:3px solid #114956;border-radius:8px;padding:20px;">
           <p style="margin:0 0 8px;font-weight:600;color:#1e293b;">Konu: ${subject}</p>
           <p style="margin:0;color:#64748b;font-size:14px;white-space:pre-wrap;">${message.slice(0, 200)}${message.length > 200 ? '...' : ''}</p>
         </div>
@@ -4110,8 +4110,8 @@ app.post('/api/admin/banners', isAdmin, async (req, res) => {
   try {
     // mottos ve renk kolonlarını ekle (yoksa)
     await pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS mottos JSONB DEFAULT '[]'`);
-    await pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS motto_color_1 TEXT DEFAULT '#00b7ba'`);
-    await pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS motto_color_2 TEXT DEFAULT '#981dd8'`);
+    await pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS motto_color_1 TEXT DEFAULT '#114956'`);
+    await pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS motto_color_2 TEXT DEFAULT '#643e87'`);
     const { title, subtitle, badge_text, cta_primary_text, cta_primary_text_en, cta_primary_text_de,
             cta_secondary_text, cta_primary_url, cta_secondary_url,
             gradient_from, gradient_via, gradient_to, order_index, is_active, mottos,
@@ -4127,7 +4127,7 @@ app.post('/api/admin/banners', isAdmin, async (req, res) => {
        gradient_from || '#0D0B26', gradient_via || '#1a1040', gradient_to || '#0f2044',
        order_index || 0, is_active !== false,
        JSON.stringify(Array.isArray(mottos) && mottos.length ? mottos : []),
-       motto_color_1 || '#00b7ba', motto_color_2 || '#981dd8',
+       motto_color_1 || '#114956', motto_color_2 || '#643e87',
        title_color || '#ffffff', subtitle_color || 'rgba(186,230,253,0.75)']
     );
     res.json(result.rows[0]);
@@ -4140,8 +4140,8 @@ app.post('/api/admin/banners', isAdmin, async (req, res) => {
 app.put('/api/admin/banners/:id', isAdmin, async (req, res) => {
   try {
     await pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS mottos JSONB DEFAULT '[]'`);
-    await pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS motto_color_1 TEXT DEFAULT '#00b7ba'`);
-    await pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS motto_color_2 TEXT DEFAULT '#981dd8'`);
+    await pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS motto_color_1 TEXT DEFAULT '#114956'`);
+    await pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS motto_color_2 TEXT DEFAULT '#643e87'`);
     const { title, subtitle, badge_text, cta_primary_text, cta_primary_text_en, cta_primary_text_de,
             cta_secondary_text, cta_primary_url, cta_secondary_url,
             gradient_from, gradient_via, gradient_to, order_index, is_active, mottos,
@@ -4159,7 +4159,7 @@ app.put('/api/admin/banners/:id', isAdmin, async (req, res) => {
        cta_secondary_text, cta_primary_url || '', cta_secondary_url || '',
        gradient_from, gradient_via, gradient_to, order_index, is_active,
        JSON.stringify(Array.isArray(mottos) && mottos.length ? mottos : []),
-       motto_color_1 || '#00b7ba', motto_color_2 || '#981dd8',
+       motto_color_1 || '#114956', motto_color_2 || '#643e87',
        title_color || '#ffffff', subtitle_color || 'rgba(186,230,253,0.75)',
        req.params.id]
     );
@@ -5871,8 +5871,8 @@ pool.query(`ALTER TABLE home_gallery  ADD COLUMN IF NOT EXISTS image_url TEXT DE
 pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS mottos JSONB DEFAULT '[]'`).catch(() => {});
 pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS cta_primary_url TEXT DEFAULT ''`).catch(() => {});
 pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS cta_secondary_url TEXT DEFAULT ''`).catch(() => {});
-pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS motto_color_1 TEXT DEFAULT '#00b7ba'`).catch(() => {});
-pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS motto_color_2 TEXT DEFAULT '#981dd8'`).catch(() => {});
+pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS motto_color_1 TEXT DEFAULT '#114956'`).catch(() => {});
+pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS motto_color_2 TEXT DEFAULT '#643e87'`).catch(() => {});
 pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS title_color TEXT DEFAULT '#ffffff'`).catch(() => {});
 pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS subtitle_color TEXT DEFAULT 'rgba(186,230,253,0.75)'`).catch(() => {});
 pool.query(`ALTER TABLE banners ADD COLUMN IF NOT EXISTS cta_primary_text_en TEXT DEFAULT ''`).catch(() => {});
@@ -5917,11 +5917,11 @@ app.post('/api/auth/forgot-password', authLimiter, async (req, res) => {
       to: email,
       subject: 'Muuvlink — Şifre Sıfırlama',
       html: emailWrapper(`
-        <h2 style="color:#00b7ba;margin:0 0 16px">Şifre Sıfırlama</h2>
+        <h2 style="color:#114956;margin:0 0 16px">Şifre Sıfırlama</h2>
         <p style="color:#334155;margin:0 0 12px">Merhaba <strong>${user.name}</strong>,</p>
         <p style="color:#334155;margin:0 0 24px">Şifrenizi sıfırlamak için aşağıdaki butona tıklayın. Link <strong>1 saat</strong> geçerlidir.</p>
         <a href="${resetLink}"
-           style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#00b7ba,#009295);color:#fff;border-radius:12px;text-decoration:none;font-weight:700;font-size:15px;">
+           style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#114956,#0e3c47);color:#fff;border-radius:12px;text-decoration:none;font-weight:700;font-size:15px;">
           Şifremi Sıfırla
         </a>
         <p style="color:#94a3b8;font-size:13px;margin:24px 0 0;">Bu isteği siz yapmadıysanız bu e-postayı görmezden gelebilirsiniz.</p>

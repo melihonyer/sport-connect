@@ -29,7 +29,7 @@ const ActivityChart = ({ activityData, activityMeta, t }) => {
             <XAxis dataKey="day" tick={{fill:"#94a3b8", fontSize:11, fontWeight:600}} axisLine={false} tickLine={false}/>
             <YAxis tick={{fill:"#94a3b8", fontSize:10}} axisLine={false} tickLine={false} allowDecimals={false} width={20}/>
             <Tooltip
-              cursor={{fill:"rgba(0,183,186,0.06)", radius:8}}
+              cursor={{fill:"rgba(17,73,86,0.06)", radius:8}}
               content={({ active, payload }) => {
                 if (!active || !payload?.length) return null;
                 const d = payload[0]?.payload;
@@ -58,11 +58,11 @@ const ActivityChart = ({ activityData, activityMeta, t }) => {
                       x={x} y={isEmpty ? y + height - 4 : y}
                       width={width} height={isEmpty ? 4 : height}
                       rx={6} ry={6}
-                      fill={isEmpty ? (isToday ? "rgba(0,183,186,0.15)" : "#f1f5f9") : "url(#pgrd)"}
+                      fill={isEmpty ? (isToday ? "rgba(17,73,86,0.15)" : "#f1f5f9") : "url(#pgrd)"}
                       opacity={isToday && !isEmpty ? 1 : isEmpty ? 1 : 0.85}
                     />
                     {isToday && !isEmpty && (
-                      <rect x={x + width/2 - 2} y={y - 7} width={4} height={4} rx={2} fill="#00b7ba"/>
+                      <rect x={x + width/2 - 2} y={y - 7} width={4} height={4} rx={2} fill="#114956"/>
                     )}
                   </g>
                 );
@@ -70,8 +70,8 @@ const ActivityChart = ({ activityData, activityMeta, t }) => {
             />
             <defs>
               <linearGradient id="pgrd" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#00b7ba" stopOpacity={1}/>
-                <stop offset="100%" stopColor="#009295" stopOpacity={0.75}/>
+                <stop offset="0%" stopColor="#114956" stopOpacity={1}/>
+                <stop offset="100%" stopColor="#0e3c47" stopOpacity={0.75}/>
               </linearGradient>
             </defs>
           </BarChart>
