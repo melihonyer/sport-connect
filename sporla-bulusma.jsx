@@ -705,6 +705,25 @@ function GallerySection({ items, t, setCurrentPage, titleOverride, subtitleOverr
 }
 
 // ── HERO BANNER SLİDER ─────────────────────────────────────
+// Küçük aç/kapa anahtarı. Nadiren kullanılan alanları formda gizlemek için:
+// alan kapalıyken hiç görünmez, açılınca belirir. Kapatıldığında içerik
+// TEMİZLENİR — görünmeyen bir alanda veri kalmasın.
+function FieldSwitch({ on, onChange, label, hint }) {
+  return (
+    <div className="flex items-start gap-3">
+      <button type="button" onClick={() => onChange(!on)} aria-pressed={on}
+        className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 mt-0.5 ${on ? "bg-brand-500" : "bg-slate-300"}`}>
+        <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${on ? "left-6" : "left-1"}`} />
+      </button>
+      <div className="min-w-0">
+        <button type="button" onClick={() => onChange(!on)}
+          className="text-sm text-slate-700 text-left leading-snug">{label}</button>
+        {hint && <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">{hint}</p>}
+      </div>
+    </div>
+  );
+}
+
 // ── SSS bölümü ─────────────────────────────────────────────────────────────
 // Yapay zeka motorları (ChatGPT, Perplexity, Claude) JavaScript çalıştırmaz;
 // bu yüzden aynı metin index.html içinde statik olarak da bulunur ve oradaki
@@ -5576,6 +5595,8 @@ export default function Muuvlink() {
       capacity: selectedTraining.capacity || 20,
       difficulty: selectedTraining.difficulty || "Orta",
       sport: selectedTraining.sport || selectedTraining.team_sport || "",
+      // Mevcut linki olan etkinlikte anahtar AÇIK başlar.
+      reg_enabled: !!selectedTraining.registration_url,
       registration_url: selectedTraining.registration_url || "",
       registration_label: selectedTraining.registration_label || "",
     });
@@ -5814,6 +5835,19 @@ export default function Muuvlink() {
                 {/* Dış kayıt adresi — yalnız takım etkinliğinde. Boş bırakılıp
                     kaydedilirse mevcut link silinir (backend regTouched'a bakar). */}
                 {selectedTraining.team_id && (
+                  <FieldSwitch
+                    on={editData.reg_enabled}
+                    onChange={(v) => setEditData((d) => ({
+                      ...d,
+                      reg_enabled: v,
+                      ...(v ? {} : { registration_url: "", registration_label: "" }),
+                    }))}
+                    label={t("createTraining.regToggle")}
+                    hint={t("createTraining.regToggleHint")}
+                  />
+                )}
+
+                {selectedTraining.team_id && editData.reg_enabled && (
                   <div>
                     <label className={lCls}>{t("createTraining.regUrlLabel")}</label>
                     <input type="url" inputMode="url" value={editData.registration_url}
@@ -6763,6 +6797,10 @@ export default function Muuvlink() {
       team_id: null,   // null = bireysel (takımsız) etkinlik
       sport: "",       // yalnızca bireysel etkinlikte kullanılır
       is_public: true,
+      // Kayıt linki alanları varsayılan KAPALI: çoğu etkinlikte gerekmiyor,
+      // formu kalabalıklaştırmasın. Anahtar formData içinde tutulur ki
+      // diğer alanlarla aynı ömre sahip olsun.
+      reg_enabled: false,
       registration_url: "", // yalnızca TAKIM etkinliğinde; bireysele geçince temizlenir
       registration_label: "", // buton yazısı; boşsa arayüz varsayılanı kullanır
     });
@@ -6780,7 +6818,7 @@ export default function Muuvlink() {
       if (!val) {
         // Bireysel — dalı kullanıcı seçsin
         // Kayıt linki takım etkinliğine ait; bireysele dönünce taşınmasın.
-        setFormData((f) => ({ ...f, team_id: null, is_public: true, sport: "", registration_url: "", registration_label: "" }));
+        setFormData((f) => ({ ...f, team_id: null, is_public: true, sport: "", reg_enabled: false, registration_url: "", registration_label: "" }));
         return;
       }
       const team = eligibleTeams.find((t) => t.id === parseInt(val));
@@ -7015,6 +7053,22 @@ export default function Muuvlink() {
               {/* Dış kayıt adresi — YALNIZ takım etkinliğinde. Bireysel
                   etkinliklerde alan hiç görünmez, backend de yok sayar. */}
               {!isIndividual && (
+                <div>
+                  <FieldSwitch
+                    on={formData.reg_enabled}
+                    onChange={(v) => setFormData({
+                      ...formData,
+                      reg_enabled: v,
+                      // Kapatınca içerik kalmasın
+                      ...(v ? {} : { registration_url: "", registration_label: "" }),
+                    })}
+                    label={t("createTraining.regToggle")}
+                    hint={t("createTraining.regToggleHint")}
+                  />
+                </div>
+              )}
+
+              {!isIndividual && formData.reg_enabled && (
                 <div>
                   <label className={labelCls}>{t("createTraining.regUrlLabel")}</label>
                   <input

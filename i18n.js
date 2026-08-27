@@ -425,6 +425,12 @@ export const translations = {
   // ── CREATE TRAINING ─────────────────────────────────────
   createTraining: {
     pageTitle:      { tr: "Etkinlik Oluştur",            en: "Create Event",         de: "Event erstellen"      },
+    regToggle:      { tr: "Dış kayıt linki paylaşmak istiyorum",
+                      en: "I want to share an external registration link",
+                      de: "Ich möchte einen externen Anmeldelink teilen" },
+    regToggleHint:  { tr: "Yarış kaydı, form ya da bilet sayfası varsa. Çoğu etkinlikte gerekmez.",
+                      en: "For a race entry, form or ticket page. Most events don't need this.",
+                      de: "Für Anmeldung, Formular oder Tickets. Die meisten Events brauchen das nicht." },
     regUrlLabel:    { tr: "Dış kayıt adresi (isteğe bağlı)", en: "External registration link (optional)",
                       de: "Externer Anmeldelink (optional)" },
     regUrlHint:     { tr: "Yarış kaydı, form ya da bilet sayfası varsa buraya ekle. Etkinlik sayfasında Katıl düğmesinin altında ikinci bir düğme olarak görünür.",
