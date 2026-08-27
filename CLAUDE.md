@@ -32,6 +32,7 @@ e-postayı geri getirmez.
 | `scripts/seo-static.mjs` | `npm run build` öncesi çalışır: `index.html`'e statik SEO metni + şema + hreflang basar, `public/seo-content.json` üretir |
 | `tailwind.config.js`, `index.css` | Renk token'ları ve ortak stiller — **ikisi de kullanır** |
 | `Tour.jsx`, `TrainingsMapView.jsx`, `ActivityChart.jsx`, `LocationPicker*.jsx` | Site bileşenleri |
+| `VectorBasemap.jsx` | Harita altlığı (OpenFreeMap Positron) — iki harita da bunu kullanır |
 | `backend/backend-api.js` | Express API (tek dosya) |
 
 ## Paralel sohbet uyarısı

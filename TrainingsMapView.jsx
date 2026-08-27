@@ -1,6 +1,7 @@
 // Lazy-loaded map component — react-leaflet ve leaflet sadece bu chunk'ta yüklenir
 import React, { useState, useEffect, useRef } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from "react-leaflet";
+import { MapContainer, Marker, Popup, useMap, useMapEvents } from "react-leaflet";
+import VectorBasemap from "./VectorBasemap.jsx";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { MapPin, Activity } from "lucide-react";
@@ -145,15 +146,7 @@ const TrainingsMapView = ({ trainings, onSelectTraining, t, containerStyle }) =>
         </div>
       ) : (
         <MapContainer center={[39.0, 35.0]} zoom={6} style={{ height:"100%", width:"100%" }} zoomControl={true} className="muuv-map">
-          {/* CARTO 2026'da altlık için API anahtarı istemeye başladı ve
-              anahtarsız isteklerde "API KEY REQUIRED" damgasını doğrudan
-              görselin İÇİNE basıyor. OpenStreetMap anahtarsız ve serbest;
-              renkleri paletle uyuşsun diye .muuv-map ile hafif soluklaştırılır. */}
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> katkıda bulunanlar'
-            url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-            maxZoom={19}
-          />
+          <VectorBasemap/>
           <MapSizeFixer/>
           <FitBoundsToTrainings trainings={mapped}/>
           {mapped.map(tr => {

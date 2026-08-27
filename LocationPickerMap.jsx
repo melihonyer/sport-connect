@@ -1,6 +1,7 @@
 // Lazy-loaded map for LocationPicker — leaflet sadece konum seçici açıldığında yüklenir
 import React, { useEffect } from "react";
-import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from "react-leaflet";
+import { MapContainer, Marker, useMap, useMapEvents } from "react-leaflet";
+import VectorBasemap from "./VectorBasemap.jsx";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -68,12 +69,7 @@ const LocationPickerMap = ({ pickedPos, flyTarget, onPick, onDragEnd, onBoundsCh
     zoomControl={true}
     className="muuv-map"
   >
-    {/* Bkz. TrainingsMapView.jsx — CARTO anahtar istiyor, OSM'e geçildi. */}
-    <TileLayer
-      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> katkıda bulunanlar'
-      url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-      maxZoom={19}
-    />
+    <VectorBasemap/>
     <MapSizeFixer/>
     <FlyToLocation target={flyTarget}/>
     <MapBoundsTracker onBoundsChange={onBoundsChange}/>
