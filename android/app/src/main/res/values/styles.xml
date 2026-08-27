@@ -13,10 +13,28 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
+        <!-- Sistem çubuklarının rengi TEMADAN geliyor; kodda Window.setStatusBarColor
+             çağırmıyoruz (o API Android 15'te kullanımdan kalktı ve Play uyarı veriyordu).
+             Android 15+ zaten uçtan uca çiziyor, orada bu değerler yok sayılıyor ve
+             boşluğu web tarafı env(safe-area-inset-*) ile bırakıyor.
+             Android 14 ve altında ise sistem yeri ayırıyor; bant siyah kalmasın diye
+             paletteki White Smoke'u veriyoruz, ikonlar koyu olsun diye light bayrakları. -->
+        <item name="android:statusBarColor">#F4F4F4</item>
+        <item name="android:navigationBarColor">#FFFFFF</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
     </style>
 
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>
+        <!-- MainActivity bu temayı kullanıyor; sistem çubuğu renkleri BURADA olmalı.
+             Kodda Window.setStatusBarColor çağırmıyoruz (Android 15'te kullanımdan
+             kalktı, Play uyarı veriyordu). Android 15+ uçtan uca çizdiği için bu
+             değerleri yok sayar; orada boşluğu web tarafı safe-area ile bırakır. -->
+        <item name="android:statusBarColor">#F4F4F4</item>
+        <item name="android:navigationBarColor">#FFFFFF</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
     </style>
 </resources>

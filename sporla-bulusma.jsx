@@ -512,9 +512,9 @@ const AuthModal = ({ authMode, setAuthMode, onClose, handleLogin, handleRegister
               </label>
             )}
 
-            <button type="submit" disabled={loading || (authMode === "register" && !kvkkChecked)}
-              className="w-full py-3.5 text-white rounded-xl font-semibold text-sm disabled:opacity-60 flex items-center justify-center gap-2 transition-opacity hover:opacity-90 mt-2"
-              style={{background:"linear-gradient(90deg,#00a499,#643e87)"}}>
+            <button type="submit" data-btn="solid" disabled={loading || (authMode === "register" && !kvkkChecked)}
+              className="w-full py-3.5 text-white rounded-xl font-semibold text-sm disabled:opacity-60 flex items-center justify-center gap-2 transition-colors mt-2"
+              style={{background:"#114956"}}>
               {loading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>}
               {authMode === "login" ? t("auth.loginBtn") : authMode === "register" ? t("auth.registerBtn") : t("auth.sendResetBtn")}
             </button>
@@ -2111,15 +2111,12 @@ export default function Muuvlink() {
     return () => clearTimeout(t);
   }, []);
 
-  // Android'de WebView varsayılan olarak status bar'ın arkasına çiziliyor
-  // (logo/header saat-pil ikonlarının altında kalıyor). iOS'ta bu sorun yok
-  // (WKWebView safe-area'yı zaten doğru bildiriyor), o yüzden sadece Android'de düzelt.
-  useEffect(() => {
-    if (window?.Capacitor?.getPlatform?.() !== "android") return;
-    import("@capacitor/status-bar")
-      .then(({ StatusBar }) => StatusBar.setOverlaysWebView({ overlay: false }))
-      .catch(() => {});
-  }, []);
+  // Uçtan uca ekran (edge-to-edge):
+  // Eskiden Android'de StatusBar.setOverlaysWebView({overlay:false}) çağırıyorduk;
+  // bu, Android 15'te desteği sonlandırılan Window.setStatusBarColor API'sini
+  // tetikliyordu ve Play Console uyarı veriyordu. Android 15+ zaten uygulamayı
+  // uçtan uca çiziyor, çağrı da yok sayılıyor. Artık boşluğu tamamen web tarafında
+  // env(safe-area-inset-*) ile veriyoruz (kök kapsayıcı ve alt menüde).
 
   // Push Notifications — sadece native'de
   useEffect(() => {

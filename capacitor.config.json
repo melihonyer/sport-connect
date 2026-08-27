@@ -21,8 +21,11 @@
       "splashImmersive": true
     },
     "StatusBar": {
+      "_not": "Eklenti acilista setBackgroundColor'i KOSULSUZ cagiriyor ve varsayilani",
+      "_not2": "siyah (#000000). Deger vermezsek durum cubugu siyah kaliyor. Android 15+",
+      "_not3": "bu rengi zaten yok sayar; 14 ve altinda paletteki White Smoke gorunur.",
       "style": "LIGHT",
-      "backgroundColor": "#114956"
+      "backgroundColor": "#F4F4F4"
     },
     "PushNotifications": {
       "presentationOptions": ["badge", "sound", "alert"]
