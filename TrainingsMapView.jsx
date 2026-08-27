@@ -1,5 +1,5 @@
 // Lazy-loaded map component — react-leaflet ve leaflet sadece bu chunk'ta yüklenir
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { MapContainer, Marker, Popup, useMap, useMapEvents } from "react-leaflet";
 import VectorBasemap from "./VectorBasemap.jsx";
 import L from "leaflet";
@@ -28,7 +28,7 @@ const makeTrainingIcon = (color, letter, highlight = false) => {
     : `0 3px 10px ${color}55`;
   return L.divIcon({
     className: "",
-    html: `<div style="width:${size}px;height:${size}px;background:linear-gradient(135deg,${color},${color}cc);border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2.5px solid white;box-shadow:${shadow};display:flex;align-items:center;justify-content:center;">
+    html: `<div style="width:${size}px;height:${size}px;background:${color};border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2.5px solid white;box-shadow:${shadow};display:flex;align-items:center;justify-content:center;">
       <span style="transform:rotate(45deg);color:white;font-weight:900;font-size:${highlight?15:13}px;font-family:'Montserrat',system-ui,sans-serif;line-height:1;letter-spacing:-0.5px;">${letter}</span>
     </div>`,
     iconSize: [size, size], iconAnchor: [size/2, size], popupAnchor: [0, -(size+4)],
@@ -38,7 +38,8 @@ const makeTrainingIcon = (color, letter, highlight = false) => {
 // Ücretli etkinlik pini — verilen damla-pin SVG'si (mor→teal gradient).
 // Yarışın adı pinin SOLUNA, kalın siyah büyük harf olarak yazılır (harita üzerinde
 // okunurluk için beyaz hâle/halo verilir). Konum noktası = pinin alt ucu (iconAnchor).
-const PAID_COLOR = "#7b2fb0"; // popup aksanı — pin gradient moruna yakın
+const PAID_COLOR = "#643e87"; // Ana2 logo moru (palet). Eski #7b2fb0, kaldırılan
+                              // pin degradesine uydurulmuştu; palet dışıydı.
 const PAID_PIN_URL = "/pin-ucretli.svg";
 const PAID_PIN_RATIO = 320.4 / 215.3; // SVG yükseklik/genişlik oranı (dikey pin)
 const PAID_TIP_X = 107.9 / 215.3;     // pin ucunun yatay konumu (≈ merkez)
@@ -79,13 +80,21 @@ const MapSizeFixer = () => {
   return null;
 };
 
+// Bağımlılık dizinin KİMLİĞİ değil, koordinatların kendisi olmalı.
+// Aksi halde işaretçiye tıklayınca (setActive → yeniden çizim) yeni bir
+// dizi oluşuyor, efekt tekrar çalışıyor ve harita tüm işaretçilere geri
+// sığıyordu: kullanıcı etkinliğe tıklıyor, harita uzaklaşıyordu.
+const boundsKey = (trainings) =>
+  trainings.map(t => `${t.id}:${t.location_lat},${t.location_lng}`).join("|");
+
 const FitBoundsToTrainings = ({ trainings }) => {
   const map = useMap();
+  const key = boundsKey(trainings);
   useEffect(() => {
     if (!trainings.length) return;
     const bounds = L.latLngBounds(trainings.map(t => [parseFloat(t.location_lat), parseFloat(t.location_lng)]));
     map.fitBounds(bounds, { padding: [48, 48], maxZoom: 13 });
-  }, [trainings, map]);
+  }, [key, map]); // eslint-disable-line react-hooks/exhaustive-deps
   return null;
 };
 
@@ -107,7 +116,10 @@ const TrainingsMapView = ({ trainings, onSelectTraining, t, containerStyle }) =>
   const [active, setActive] = useState(null);
   const [teamColors, setTeamColors] = useState({});
   const processingRef = useRef(new Set());
-  const mapped = trainings.filter(tr => tr.location_lat && tr.location_lng);
+  const mapped = useMemo(
+    () => trainings.filter(tr => tr.location_lat && tr.location_lng),
+    [boundsKey(trainings)] // eslint-disable-line react-hooks/exhaustive-deps
+  );
 
   useEffect(() => {
     mapped.forEach(tr => {
@@ -196,7 +208,7 @@ const TrainingsMapView = ({ trainings, onSelectTraining, t, containerStyle }) =>
                       </div>
                       )}
                     </div>
-                    <button onClick={() => onSelectTraining(tr.id)} style={{ width:"100%", padding:"8px 0", borderRadius:"8px", border:"none", cursor:"pointer", background:`linear-gradient(135deg,${teamColor},${teamColor}cc)`, color:"white", fontSize:"12px", fontWeight:700 }}>
+                    <button onClick={() => onSelectTraining(tr.id)} style={{ width:"100%", padding:"8px 0", borderRadius:"8px", border:"none", cursor:"pointer", background: teamColor, color:"white", fontSize:"12px", fontWeight:700 }}>
                       Detayı Gör →
                     </button>
                   </div>
