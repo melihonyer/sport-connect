@@ -5676,8 +5676,13 @@ export default function Muuvlink() {
             {/* 2) Başlık */}
             <h1 className="font-display font-bold mt-3 text-white" style={{fontSize:"clamp(1.6rem,4vw,2.4rem)", letterSpacing:"-0.01em", lineHeight:1.15}}>{selectedTraining.title}</h1>
 
-            {/* 3) Aksiyonlar — ince çizgiyle ayrılmış kendi şeridinde; şikayet sessiz ikon */}
+            {/* 3) Aksiyonlar — ince çizgiyle ayrılmış kendi şeridinde; şikayet sessiz ikon.
+                   Tarihi geçmiş etkinlikte paylaş/linki kopyala da kapanır: link
+                   yayıldıkça insanlar olmayan bir etkinliğe yönleniyor. Şikayet
+                   ikonu kalır. Şerit tamamen boş kalacaksa hiç çizilmez. */}
+            {(!isPast || (user && !canManage)) && (
             <div className="mt-5 pt-4 border-t border-white/10 flex items-center gap-2">
+              {!isPast && (<>
               <HoverTip text={t("tips.shareTraining")} align="left">
                 <button
                   onClick={async () => {
@@ -5704,6 +5709,7 @@ export default function Muuvlink() {
                   <Link className="w-4 h-4" /> {t("common.copyLink")}
                 </button>
               </HoverTip>
+              </>)}
               {user && !canManage && (
                 <button
                   onClick={() => setReportModal({ type: "training", id: selectedTraining.id })}
@@ -5715,11 +5721,14 @@ export default function Muuvlink() {
                 </button>
               )}
             </div>
+            )}
             {/* Mobilde hover ipucu yok — nedeni tek satır olarak burada duruyor. */}
+            {!isPast && (
             <p className="sm:hidden mt-2.5 flex items-start gap-1.5 text-xs leading-snug text-slate-400">
               <Share2 className="w-3.5 h-3.5 mt-px flex-shrink-0" />
               <span>{t("tips.shareTrainingMobile")}</span>
             </p>
+            )}
             </div>
           </div>
 
