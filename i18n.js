@@ -378,6 +378,8 @@ export const translations = {
     deleteTraining: { tr: "Etkinliği Sil",               en: "Delete Event",         de: "Event löschen"        },
     confirmDelete:  { tr: "Bu etkinliği silmek istediğinizden emin misiniz? Katılımcılara bildirim gönderilecektir.", en: "Are you sure you want to delete this event? Participants will be notified.", de: "Event wirklich löschen? Teilnehmer werden benachrichtigt." },
     noComments:     { tr: "Henüz yorum yok. İlk yorumu sen yap!", en: "No comments yet. Be the first!", de: "Noch keine Kommentare. Sei der Erste!" },
+    noCommentsPast: { tr: "Bu etkinliğe yorum yapılmadı.",  en: "No comments were left on this event.",
+                      de: "Zu diesem Event gibt es keine Kommentare." },
     team:           { tr: "Takım",                        en: "Team",                    de: "Team"                    },
     loginToComment: { tr: "Mesaj göndermek için giriş yapın.", en: "Log in to message.", de: "Zum Senden anmelden." },
     noParticipants: { tr: "Henüz katılımcı yok.",         en: "No participants yet.",    de: "Noch keine Teilnehmer."  },
@@ -402,6 +404,14 @@ export const translations = {
     extRegClicks:   { tr: "kişi kayıt sayfasına gitti",    en: "people opened the registration page",
                       de: "Personen haben die Anmeldeseite geöffnet" },
     extRegBadge:    { tr: "Kayıt linki",                    en: "Registration link",       de: "Anmeldelink"             },
+    // Geçmiş etkinlik: sayfa arşiv olarak açılabilir ama hiçbir işlem yapılamaz.
+    pastTitle:      { tr: "Bu etkinliğin tarihi geçti",     en: "This event has already taken place",
+                      de: "Dieses Event hat bereits stattgefunden" },
+    pastDesc:       { tr: "Katılım, ayrılma ve yorumlar kapandı. Etkinlik yalnızca kayıt olarak görüntüleniyor.",
+                      en: "Joining, leaving and comments are closed. The event is shown for reference only.",
+                      de: "Teilnahme, Abmeldung und Kommentare sind geschlossen. Das Event wird nur noch als Eintrag angezeigt." },
+    pastToast:      { tr: "Bu etkinliğin tarihi geçti.",     en: "This event has already taken place.",
+                      de: "Dieses Event hat bereits stattgefunden." },
     paidNotice:     {
       tr: "Tarih, saat ve yer organizatör tarafından değiştirilebilir. Katılmadan önce kayıt sayfasından teyit etmeniz önerilir.",
       en: "The organizer may change the date, time or location. Please confirm the details on the registration page before attending.",

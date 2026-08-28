@@ -3135,6 +3135,12 @@ export default function Muuvlink() {
     fetch(`${API_URL}/trainings/${training.id}/register-click`, { method: "POST" }).catch(() => {});
   };
 
+  // Sunucu geçmiş etkinliği 409 + code:'training_past' ile reddeder. Sayfa
+  // açıkken tarih geçmiş olabilir (butonlar hâlâ ekranda); uyarıyı kullanıcının
+  // dilinde göster, sunucunun Türkçe metnini olduğu gibi basma.
+  const errText = (data, fallback) =>
+    data?.code === "training_past" ? t("trainingDetail.pastToast") : (data?.error || fallback);
+
   const handleJoinTraining = async (trainingId) => {
     try {
       const token = localStorage.getItem("token");
@@ -3163,7 +3169,7 @@ export default function Muuvlink() {
       } else {
         const data = await response.json();
         triggerHaptic("error");
-        showToast(data.error || t("toast.joinFail"), "error");
+        showToast(errText(data, t("toast.joinFail")), "error");
       }
     } catch (error) {
       console.error("Join training error:", error);
@@ -3192,7 +3198,7 @@ export default function Muuvlink() {
         }
       } else {
         const data = await response.json();
-        showToast(data.error || t("toast.leaveFail"), "error");
+        showToast(errText(data, t("toast.leaveFail")), "error");
       }
     } catch (error) {
       console.error("Leave training error:", error);
@@ -3276,7 +3282,7 @@ export default function Muuvlink() {
   const handleAddComment = async (trainingId, comment) => {
     try {
       const token = localStorage.getItem("token");
-      await fetch(`${API_URL}/trainings/${trainingId}/comments`, {
+      const res = await fetch(`${API_URL}/trainings/${trainingId}/comments`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -3284,6 +3290,13 @@ export default function Muuvlink() {
         },
         body: JSON.stringify({ comment }),
       });
+      // Hata sessizce yutuluyordu: yorum kaydolmasa da form temizleniyor,
+      // kullanıcı gönderdiğini sanıyordu.
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        showToast(errText(d, t("toast.networkError")), "error");
+        return;
+      }
       fetchTrainingDetails(trainingId);
     } catch (error) {
       console.error("Add comment error:", error);
@@ -5582,6 +5595,10 @@ export default function Muuvlink() {
     const isFull = (selectedTraining.attendees?.length || 0) >= selectedTraining.capacity;
     const isMyTraining = false; // herkes join/leave yapabilir
     const isPaid = !!selectedTraining.is_paid; // ücretli etkinlik (yarış vb.)
+    // Tarihi geçmiş etkinlik: sayfa açılır (eski bildirim/paylaşılan link/arama
+    // üzerinden gelinebiliyor) ama katıl, ayrıl, yorum ve kayıt linki kapanır.
+    // Bayrak backend'den gelir; saat dilimi hesabı orada tek noktada yapılıyor.
+    const isPast = !!selectedTraining.is_past;
     const [comment, setComment] = useState("");
     const [editMode, setEditMode] = useState(false);
     const [editData, setEditData] = useState({
@@ -6067,7 +6084,7 @@ export default function Muuvlink() {
               {t("trainingDetail.comments")} ({selectedTraining.comments?.length || 0})
             </h3>
 
-            {user && (
+            {user && !isPast && (
               <form onSubmit={handleSubmitComment} className="mb-4">
                 <div className="flex gap-2 items-stretch">
                   <textarea
@@ -6137,12 +6154,24 @@ export default function Muuvlink() {
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500 text-center py-4">{t("trainingDetail.noComments")}</p>
+              <p className="text-gray-500 text-center py-4">
+                {t(isPast ? "trainingDetail.noCommentsPast" : "trainingDetail.noComments")}
+              </p>
             )}
           </div>
           )}
 
-          {isPaid ? (
+          {isPast ? (
+            /* Geçmiş etkinlik: katıl/ayrıl/kayıt butonlarının hiçbiri çizilmez.
+               Kullanıcı tarihi kaçırmış olabilir; durum tek satırda söylenir. */
+            <div className="flex items-start gap-3 p-4 rounded-2xl border border-slate-200 bg-slate-50">
+              <Clock className="w-5 h-5 text-slate-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <div className="font-semibold text-slate-700 text-sm">{t("trainingDetail.pastTitle")}</div>
+                <p className="text-xs text-slate-500 leading-relaxed mt-0.5">{t("trainingDetail.pastDesc")}</p>
+              </div>
+            </div>
+          ) : isPaid ? (
             <>
             {/* Bilgiler organizatörün yayınından derleniyor; tarih/saat/yer sonradan
                 değişebilir. Kullanıcı kayıt sayfasından teyit etsin diye uyarı. */}
@@ -6244,7 +6273,7 @@ export default function Muuvlink() {
               nereye gittiğini görsün diye hedef alan adı yazılır; bağlantı
               yeni sekmede ve rel="noopener noreferrer nofollow" ile açılır.
               Ücretli etkinliklerin kendi "Kayıt Ol" akışı ayrı (yukarıda). */}
-          {!isPaid && selectedTraining.registration_url && (() => {
+          {!isPaid && !isPast && selectedTraining.registration_url && (() => {
             let host = "";
             try { host = new URL(selectedTraining.registration_url).hostname.replace(/^www\./, ""); } catch { return null; }
             return (

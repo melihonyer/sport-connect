@@ -521,6 +521,23 @@ const trainingUtcExpr = (alias = 't') => {
   return `COALESCE(${p}training_datetime_utc, (${p}training_date + ${p}training_time) AT TIME ZONE COALESCE(NULLIF(${p}training_timezone, ''), 'Europe/Istanbul'))`;
 };
 
+// Etkinliğin başlangıç anı geçti mi?
+//
+// NEDEN: liste uçları geçmiş etkinlikleri eler, ama DETAY sayfası eler değil —
+// eski bir bildirim ("Yeni Etkinlik!"), paylaşılmış bir link, e-posta ya da
+// tarayıcı geçmişi üzerinden geçmiş bir etkinliğin sayfası açılabiliyor.
+// Sayfa açılabilmeli (arşiv), ama üzerine yazı yazılmamalı: katılım geçmiş
+// etkinlik sayacına ve rozetlere işliyor.
+// Yanıtta code:'training_past' da döner — arayüz uyarıyı kullanıcının dilinde gösterir.
+const PAST_TRAINING_MSG = 'Bu etkinliğin tarihi geçti.';
+const isTrainingPast = async (trainingId) => {
+  const r = await pool.query(
+    `SELECT (${trainingUtcExpr('t')} < NOW()) AS past FROM trainings t WHERE t.id = $1`,
+    [trainingId]
+  );
+  return r.rows[0]?.past === true;
+};
+
 // =====================================================
 // REAL-TIME: SSE (Server-Sent Events)
 // =====================================================
@@ -3239,6 +3256,7 @@ app.get('/api/trainings/:id', optionalAuth, async (req, res) => {
 
     const trainingResult = await pool.query(
       `SELECT t.*,
+              (${trainingUtcExpr('t')} < NOW()) AS is_past,
               teams.name as team_name,
               teams.sport as team_sport,
               teams.avatar as team_avatar,
@@ -3345,6 +3363,9 @@ app.get('/api/trainings/:id', optionalAuth, async (req, res) => {
 // buradan geçer. Auth gerekmez (giriş yapmamış kullanıcı da kaydolabilir).
 app.post('/api/trainings/:id/register-click', async (req, res) => {
   try {
+    if (await isTrainingPast(req.params.id)) {
+      return res.status(409).json({ error: PAST_TRAINING_MSG, code: 'training_past' });
+    }
     const r = await pool.query(
       `UPDATE trainings SET registration_clicks = COALESCE(registration_clicks,0) + 1
        WHERE id = $1 AND registration_url IS NOT NULL
@@ -3370,6 +3391,10 @@ app.post('/api/trainings/:id/join', authenticateToken, async (req, res) => {
     }
 
     const training = trainingResult.rows[0];
+
+    if (await isTrainingPast(trainingId)) {
+      return res.status(409).json({ error: PAST_TRAINING_MSG, code: 'training_past' });
+    }
 
     // Gizlilik kontrolü: public değilse sadece takım üyesi katılabilir
     if (!training.is_public) {
@@ -3482,6 +3507,10 @@ app.delete('/api/trainings/:id/leave', authenticateToken, async (req, res) => {
     const trainingId = req.params.id;
     const trainingRow = await pool.query('SELECT title FROM trainings WHERE id = $1', [trainingId]);
     const trainingTitle = trainingRow.rows[0]?.title || '';
+    // Geçmiş etkinlikten ayrılmak da yazma: katılım geçmişi ve rozet sayacı bozulur.
+    if (await isTrainingPast(trainingId)) {
+      return res.status(409).json({ error: PAST_TRAINING_MSG, code: 'training_past' });
+    }
     const result = await pool.query(
       'DELETE FROM training_attendees WHERE training_id = $1 AND user_id = $2 RETURNING id',
       [trainingId, req.user.id]
@@ -3505,6 +3534,10 @@ app.post('/api/trainings/:id/comments', authenticateToken, async (req, res) => {
 
     if (!comment || !comment.trim()) {
       return res.status(400).json({ error: 'Yorum boş olamaz.' });
+    }
+
+    if (await isTrainingPast(trainingId)) {
+      return res.status(409).json({ error: PAST_TRAINING_MSG, code: 'training_past' });
     }
 
     // Yorumu kaydet
