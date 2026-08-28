@@ -1534,14 +1534,19 @@ app.get(['/takim/*', '/etkinlik/*'], async (req, res, next) => {
       const r = await pool.query(
         `SELECT t.id, t.title, t.description, t.image_url, t.is_public, t.sport,
                 t.training_date, t.training_time, t.location_name, t.location_address,
-                t.capacity, t.is_paid, t.organizer, teams.name AS team_name
+                t.capacity, t.is_paid, t.organizer, teams.name AS team_name,
+                (${trainingUtcExpr('t')} < NOW()) AS is_past
            FROM trainings t LEFT JOIN teams ON t.team_id = teams.id
           WHERE t.id = $1`, [parsed.id]);
       const e0 = r.rows[0];
       if (!e0 || e0.is_public === false) return res.send(html);
+      // Tarihi geçmiş etkinlik indekste kalmaya devam ediyor. Arama sonucunda
+      // "olan bir etkinlik" gibi görünmesin diye özet ve alt metin bunu söyler,
+      // okuyucu yaklaşan etkinliklere yönlendirilir.
       meta = {
-        title: `${e0.title} — Muuvlink`,
-        description: (e0.description || 'Muuvlink etkinliği — katıl, birlikte spor yap.').slice(0, 200),
+        title: e0.is_past ? `${e0.title} (tamamlandı) — Muuvlink` : `${e0.title} — Muuvlink`,
+        description: ((e0.is_past ? 'Bu etkinlik tamamlandı. ' : '') +
+          (e0.description || 'Muuvlink etkinliği — katıl, birlikte spor yap.')).slice(0, 200),
         url: `${SITE_ORIGIN}/etkinlik/${slugify(e0.title)}-${e0.id}`,
         image: e0.image_url || DEFAULT_IMG,
       };
@@ -1558,7 +1563,9 @@ app.get(['/takim/*', '/etkinlik/*'], async (req, res, next) => {
         h1: e0.title,
         lead: e0.description || `${e0.title}, Muuvlink üzerinde herkese açık bir spor etkinliği.`,
         bits,
-        tail: e0.is_paid
+        tail: e0.is_past
+          ? 'Bu etkinliğin tarihi geçti; katılım, ayrılma ve yorumlar kapandı. Sayfa yalnızca kayıt olarak duruyor. Yaklaşan etkinlikler için etkinlikler sayfasına göz atabilirsiniz.'
+          : e0.is_paid
           ? 'Bu etkinlik dış bir kuruluş tarafından düzenleniyor; kayıt düzenleyenin kendi sitesinden yapılır. Muuvlink bu ücretten pay almaz.'
           : 'Katılmak için etkinlik sayfasındaki Katıl düğmesine basmak yeterlidir, onay beklenmez. Kontenjan dolduğunda katılım kapanır.',
       });

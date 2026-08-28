@@ -410,6 +410,8 @@ export const translations = {
     pastDesc:       { tr: "Katılım, ayrılma ve yorumlar kapandı. Etkinlik yalnızca kayıt olarak görüntüleniyor.",
                       en: "Joining, leaving and comments are closed. The event is shown for reference only.",
                       de: "Teilnahme, Abmeldung und Kommentare sind geschlossen. Das Event wird nur noch als Eintrag angezeigt." },
+    pastCta:        { tr: "Güncel etkinlikleri keşfet",      en: "Discover upcoming events",
+                      de: "Kommende Events entdecken" },
     pastToast:      { tr: "Bu etkinliğin tarihi geçti.",     en: "This event has already taken place.",
                       de: "Dieses Event hat bereits stattgefunden." },
     paidNotice:     {

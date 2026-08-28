@@ -5649,10 +5649,12 @@ export default function Muuvlink() {
 
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200">
           {/* BAŞLIK BLOĞU — kartın üstüne tam oturur */}
-          <div className="-mx-6 sm:-mx-8 -mt-6 sm:-mt-8 mb-6 rounded-t-3xl overflow-hidden bg-brand-600 text-white">
+          {/* Geçmiş etkinlikte şerit kurumsal teal yerine nötr griye düşer: sayfa
+              ilk bakışta "artık geçerli değil" desin. Görsel de soluklaştırılır. */}
+          <div className={`-mx-6 sm:-mx-8 -mt-6 sm:-mt-8 mb-6 rounded-t-3xl overflow-hidden text-white ${isPast ? "bg-slate-500" : "bg-brand-600"}`}>
             {isPaid && selectedTraining.image_url && (
               <img src={selectedTraining.image_url} alt={selectedTraining.title}
-                className="w-full max-h-72 object-cover"/>
+                className={`w-full max-h-72 object-cover ${isPast ? "grayscale opacity-60" : ""}`}/>
             )}
             <div className="px-6 sm:px-8 pt-6 sm:pt-7 pb-6 sm:pb-7">
             {/* 1) Kimlik etiketleri — başlığın üstünde, sadece "bu ne" bilgisi */}
@@ -6173,12 +6175,23 @@ export default function Muuvlink() {
           {isPast ? (
             /* Geçmiş etkinlik: katıl/ayrıl/kayıt butonlarının hiçbiri çizilmez.
                Kullanıcı tarihi kaçırmış olabilir; durum tek satırda söylenir. */
-            <div className="flex items-start gap-3 p-4 rounded-2xl border border-slate-200 bg-slate-50">
-              <Clock className="w-5 h-5 text-slate-400 flex-shrink-0 mt-0.5" />
-              <div>
-                <div className="font-semibold text-slate-700 text-sm">{t("trainingDetail.pastTitle")}</div>
-                <p className="text-xs text-slate-500 leading-relaxed mt-0.5">{t("trainingDetail.pastDesc")}</p>
+            <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50">
+              <div className="flex items-start gap-3">
+                <Clock className="w-5 h-5 text-slate-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <div className="font-semibold text-slate-700 text-sm">{t("trainingDetail.pastTitle")}</div>
+                  <p className="text-xs text-slate-500 leading-relaxed mt-0.5">{t("trainingDetail.pastDesc")}</p>
+                </div>
               </div>
+              {/* Sayfa aramadan da açılıyor. Kullanıcıyı boş bir kayıtla bırakma:
+                  tek çıkış yolu güncel etkinlikler. */}
+              <button data-btn="solid"
+                onClick={() => { setSelectedTraining(null); setCurrentPage("trainings"); }}
+                className="mt-4 w-full py-3.5 font-semibold text-white rounded-xl transition hover:opacity-90 hover:shadow-lg flex items-center justify-center gap-2"
+                style={{background:"#114956"}}
+              >
+                <Calendar className="w-4 h-4" /> {t("trainingDetail.pastCta")}
+              </button>
             </div>
           ) : isPaid ? (
             <>
