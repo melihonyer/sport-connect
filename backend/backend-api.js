@@ -138,6 +138,16 @@ const live = {
   presence: new Map(), // userId -> { ts, label }
   visitors: new Map(), // visitorHash -> { ts, label }
 };
+// Aynı tarayıcı hem üye hem misafir görünmesin: sayfa açılışındaki bazı genel
+// içerik çağrıları (banner, haber, galeri, rozetler) token taşımıyor ve anonim
+// düşüyordu — giriş yapmış kullanıcı her seferinde yanında bir "misafir" üretiyordu.
+// Parmak izi bir kez token'lı bir istekle görüldüyse, o parmak izinden gelen
+// token'sız istekler de aynı üyeye yazılır.
+// Sınır: aynı IP + aynı User-Agent arkasındaki iki kişi tek parmak izine düşer
+// (misafirlerde zaten öyleydi); bu durumda token'sız istekler son giriş yapan
+// üyeye yazılır. İzleme paneli için kabul edilebilir bir yaklaşıklık.
+const LIVE_HASH_OWNER_MS = 15 * 60 * 1000;
+const liveHashOwner = new Map();    // visitorHash -> { userId, ts }
 const liveUserNames = new Map();     // userId -> name (tembel doldurulur)
 const liveEntityNames = new Map();   // "team:12" | "training:107" | "user:3" -> ad
 const LIVE_VISITOR_SALT = crypto.randomBytes(16).toString('hex');
@@ -264,11 +274,20 @@ app.use('/api', (req, res, next) => {
     if (token) {
       try { userId = jwt.verify(token, JWT_SECRET)?.id ?? null; } catch { userId = null; }
     }
-    const vid = userId ? null : liveVisitorId(req);
+    // Parmak izi her istekte hesaplanır: token'lı isteklerde sahibini öğrenmek,
+    // token'sızlarda sahibini aramak için.
+    const vid = liveVisitorId(req);
+    if (userId) {
+      liveHashOwner.set(vid, { userId, ts: now });
+    } else {
+      const owner = liveHashOwner.get(vid);
+      if (owner && now - owner.ts <= LIVE_HASH_OWNER_MS) userId = owner.userId;
+    }
     const plat = livePlatform(req.headers['user-agent']);
     // Botlar istek sayısına girer (gerçek yük) ama misafir sayılmaz — sayıyı şişirirler.
     if (userId) bucket.users.add(userId);
     else if (plat !== 'bot' && plat !== 'script') bucket.visitors.add(vid);
+    // NOT: userId doluysa vid hiçbir misafir yapısına yazılmaz (aşağıda da).
 
     const label = liveDescribe(req.method, p);
     const entity = liveEntity(p);
@@ -282,7 +301,7 @@ app.use('/api', (req, res, next) => {
     }
 
     if (label) {
-      live.feed.unshift({ ts: now, userId, vid, label, path: p, plat, entity, client, suspicious: liveSuspicious(p, plat) });
+      live.feed.unshift({ ts: now, userId, vid: userId ? null : vid, label, path: p, plat, entity, client, suspicious: liveSuspicious(p, plat) });
       if (live.feed.length > LIVE_FEED_MAX) live.feed.length = LIVE_FEED_MAX;
     }
   } catch { /* izleme asla isteği bozmasın */ }
@@ -296,6 +315,7 @@ setInterval(() => {
   const cutoff = Date.now() - 30 * 60000;
   for (const [k, v] of live.presence) if (v.ts < cutoff) live.presence.delete(k);
   for (const [k, v] of live.visitors) if (v.ts < cutoff) live.visitors.delete(k);
+  for (const [k, v] of liveHashOwner) if (v.ts < cutoff) liveHashOwner.delete(k);
   const feedCutoff = Date.now() - 60 * 60000;
   live.feed = live.feed.filter((f) => f.ts >= feedCutoff);
 }, 60000).unref?.();
