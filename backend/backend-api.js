@@ -131,6 +131,7 @@ app.use('/api', (req, res, next) => {
 const LIVE_FEED_MAX = 400;
 const LIVE_MINUTES = 60;
 const LIVE_ONLINE_WINDOW_MS = 5 * 60 * 1000;
+const LIVE_DEDUPE_MS = 90 * 1000;   // aynı kişi + aynı eylem: 90 sn içinde tek satır
 
 const live = {
   feed: [],            // en yeni en başta
@@ -161,14 +162,17 @@ const LIVE_RULES = [
   ['POST',   /^\/auth\/login$/,                     'giriş yaptı'],
   ['POST',   /^\/auth\/register$/,                  'kayıt oldu'],
   ['GET',    /^\/notifications\/stream$/,           'uygulamayı açtı'],
-  ['GET',    /^\/trainings$/,                       'etkinlikleri gezdi'],
+  // NOT: GET /trainings ve GET /teams akışta YOK. Bunlar sayfa ziyareti değil:
+  // SPA açılışta ikisini birden çekiyor, ayrıca 60 saniyede bir ve sekme öne
+  // gelince tazeliyor. Tek bir sayfa yenilemesi panelde "etkinlikleri gezdi +
+  // takımları gezdi" diye görünüyordu — kullanıcı hiçbirine girmemiş olsa bile.
+  // Sayfa ziyaretini artık SPA'nın kendisi /live/view ile bildiriyor.
   ['GET',    /^\/trainings\/\d+$/,                  'etkinlik detayına baktı'],
   ['POST',   /^\/trainings$/,                       'etkinlik oluşturdu'],
   ['POST',   /^\/trainings\/\d+\/join$/,            'etkinliğe katıldı'],
   ['DELETE', /^\/trainings\/\d+\/leave$/,           'etkinlikten ayrıldı'],
   ['POST',   /^\/trainings\/\d+\/comments$/,        'etkinliğe yorum yaptı'],
   ['POST',   /^\/trainings\/\d+\/register-click$/,  'yarış kayıt linkine tıkladı'],
-  ['GET',    /^\/teams$/,                           'takımları gezdi'],
   ['GET',    /^\/teams\/\d+$/,                      'takım sayfasına baktı'],
   ['POST',   /^\/teams$/,                           'takım kurdu'],
   ['POST',   /^\/teams\/\d+\/join$/,                'takıma katıldı'],
@@ -177,6 +181,20 @@ const LIVE_RULES = [
   ['POST',   /^\/contact$/,                         'iletişim formu gönderdi'],
   ['POST',   /^\/report$/,                          'içerik şikayet etti'],
 ];
+
+// SPA'nın bildirdiği sayfa → insan diliyle eylem. Detay sayfaları burada YOK;
+// onlar /trainings/:id ve /teams/:id ile etkinliğin/takımın adıyla kaydediliyor.
+const LIVE_PAGE_LABELS = {
+  home:            'ana sayfayı açtı',
+  trainings:       'etkinlikleri gezdi',
+  teams:           'takımları gezdi',
+  profile:         'profiline baktı',
+  badges:          'rozetlerine baktı',
+  contact:         'iletişim sayfasını açtı',
+  'create-training': 'etkinlik oluşturuyor',
+  'create-team':   'takım kuruyor',
+  'not-found':     'olmayan bir adrese gitti',
+};
 
 function liveDescribe(method, p) {
   for (const [m, re, label] of LIVE_RULES) if (m === method && re.test(p)) return label;
@@ -289,7 +307,9 @@ app.use('/api', (req, res, next) => {
     else if (plat !== 'bot' && plat !== 'script') bucket.visitors.add(vid);
     // NOT: userId doluysa vid hiçbir misafir yapısına yazılmaz (aşağıda da).
 
-    const label = liveDescribe(req.method, p);
+    const label = p === '/live/view'
+      ? (LIVE_PAGE_LABELS[String(req.query?.p || '')] || null)
+      : liveDescribe(req.method, p);
     const entity = liveEntity(p);
     const client = (plat === 'bot' || plat === 'script') ? liveClientName(req.headers['user-agent']) : null;
     if (userId) {
@@ -301,8 +321,19 @@ app.use('/api', (req, res, next) => {
     }
 
     if (label) {
-      live.feed.unshift({ ts: now, userId, vid: userId ? null : vid, label, path: p, plat, entity, client, suspicious: liveSuspicious(p, plat) });
-      if (live.feed.length > LIVE_FEED_MAX) live.feed.length = LIVE_FEED_MAX;
+      // Aynı kişinin aynı eylemi kısa aralıkla tekrar etmesi tek satır sayılır.
+      // Sayfa açıkken 60 saniyede bir tazeleme ve sekmeye geri dönüş, aynı
+      // etkinliğin detayını arka arkaya kaydediyordu.
+      const actor = userId ? `u${userId}` : `v${vid}`;
+      const dup = live.feed.find((f) =>
+        (f.userId ? `u${f.userId}` : `v${f.vid}`) === actor &&
+        f.label === label && f.entity === entity && now - f.ts < LIVE_DEDUPE_MS);
+      if (!dup) {
+        live.feed.unshift({ ts: now, userId, vid: userId ? null : vid, label, path: p, plat, entity, client, suspicious: liveSuspicious(p, plat) });
+        if (live.feed.length > LIVE_FEED_MAX) live.feed.length = LIVE_FEED_MAX;
+      } else {
+        dup.ts = now;
+      }
     }
   } catch { /* izleme asla isteği bozmasın */ }
   next();
@@ -6050,6 +6081,11 @@ app.get('/health', (req, res) => {
 // Gerçek sağlık kontrolü: veritabanına da dokunur.
 // Ana sayfa statik HTML döndürdüğü için DB çökse bile 200 verir; bu uçtan uca
 // kontrol olmadan izleme aracı arızayı göremez. DB'ye ulaşılamazsa 503 döner.
+// Canlı akış için sayfa bildirimi. Tüm iş yukarıdaki izleme ara katmanında
+// bitiyor; burada yalnız 404 olmasın diye boş bir yanıt dönüyoruz. Veritabanına
+// dokunmaz, gövde yazmaz, kimlik doğrulaması istemez (misafirler de sayılır).
+app.get('/api/live/view', (req, res) => res.status(204).end());
+
 app.get('/api/health', async (req, res) => {
   const started = Date.now();
   try {

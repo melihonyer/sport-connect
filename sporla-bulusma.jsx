@@ -2208,6 +2208,22 @@ export default function Muuvlink() {
     if (currentPage === "home" && isNative) fetchTrainings();
   }, [currentPage]);
 
+  // Canlı akış (admin paneli) için sayfa bildirimi.
+  // NEDEN: akış eskiden API isteklerinden türetiliyordu. Tek bir sayfa
+  // yenilemesi hem /trainings hem /teams çağırdığı için panelde "etkinlikleri
+  // gezdi + takımları gezdi" diye iki satır beliriyordu — kullanıcı hiçbirine
+  // girmemiş olsa bile. Hangi sayfada olunduğunu yalnız SPA bilir, o yüzden
+  // buradan söylüyoruz. Detay sayfaları hariç: onlar /trainings/:id ve
+  // /teams/:id ile etkinliğin/takımın adıyla zaten kaydediliyor.
+  useEffect(() => {
+    if (currentPage === "training-detail" || currentPage === "team-detail") return;
+    const token = localStorage.getItem("token");
+    fetch(`${API_URL}/live/view?p=${encodeURIComponent(currentPage)}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      keepalive: true,
+    }).catch(() => {});
+  }, [currentPage]);
+
   // Native yükleme overlay'ini ilk render'dan sonra kaldır
   useEffect(() => {
     if (!isNative) return;
