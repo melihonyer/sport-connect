@@ -990,6 +990,23 @@ const PlatformBadge = ({ p, client }) => {
   );
 };
 
+// Bot kategorileri (nginx günlüğünden). Renk: beklenen/normal olanlar sakin,
+// zafiyet tarayıcı kırmızı, yapay zeka morda — hangi bot ne için geliyor ilk bakışta.
+const BOT_CATS = {
+  search:  { label: "Arama motoru",       cls: "bg-brand-50 text-brand-700" },
+  ai:      { label: "Yapay zeka",         cls: "bg-purple-100 text-purple-700" },
+  social:  { label: "Link önizleme",      cls: "bg-sky-50 text-sky-700" },
+  monitor: { label: "İzleme servisi",     cls: "bg-emerald-50 text-emerald-700" },
+  seo:     { label: "SEO aracı",          cls: "bg-amber-50 text-amber-700" },
+  scanner: { label: "Zafiyet tarayıcı",   cls: "bg-red-50 text-red-700" },
+  tool:    { label: "Betik / araç",       cls: "bg-slate-100 text-slate-600" },
+  other:   { label: "Diğer bot",          cls: "bg-slate-100 text-slate-500" },
+};
+const CatBadge = ({ cat }) => {
+  const d = BOT_CATS[cat] || BOT_CATS.other;
+  return <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold whitespace-nowrap ${d.cls}`}>{d.label}</span>;
+};
+
 function LiveTab({ api, showToast }) {
   const [data, setData] = React.useState(null);
   const [err, setErr]   = React.useState(null);
@@ -1020,10 +1037,14 @@ function LiveTab({ api, showToast }) {
 
   const cards = [
     { label: "Kayıtlı üye", value: data?.totals?.onlineUsers ?? "—", hint: "giriş yapmış · son 5 dk", icon: Users },
-    { label: "Misafir", value: data?.totals?.activeVisitors ?? "—", hint: "giriş yapmamış · son 5 dk", icon: Globe },
-    { label: "Son 5 dakika", value: data?.totals?.last5 ?? "—", hint: "istek", icon: Activity },
-    { label: "Son 1 saat", value: data?.totals?.last60 ?? "—", hint: "istek", icon: TrendingUp },
+    { label: "Misafir", value: data?.totals?.activeVisitors ?? "—", hint: "tarayıcıda uygulama açık · son 5 dk", icon: Globe },
+    { label: "Bot", value: data?.bots?.ok ? (data.bots.totals.agents5 ?? 0) : "—", hint: "farklı bot · son 5 dk · nginx günlüğü", icon: AlertTriangle },
+    { label: "API isteği", value: data?.totals?.last5 ?? "—", hint: `son 5 dk · saatlik ${data?.totals?.last60 ?? "—"}`, icon: Activity },
   ];
+  const bots = data?.bots;
+  const [showBotFeed, setShowBotFeed] = React.useState(false);
+  const [showHow, setShowHow] = React.useState(false);
+  const cutPath = (p) => (p || "").length > 48 ? p.slice(0, 46) + "…" : p;
 
   return (
     <div className="space-y-5">
@@ -1088,20 +1109,14 @@ function LiveTab({ api, showToast }) {
               <PlatformBadge p={k} /> {n}
             </span>
           ))}
-          {(data.totals?.activeBots > 0 || data.totals?.activeScripts > 0) && (
-            <span className="text-xs text-slate-400 ml-auto">
-              {[data.totals.activeBots ? `${data.totals.activeBots} bot` : null,
-                data.totals.activeScripts ? `${data.totals.activeScripts} betik` : null]
-                .filter(Boolean).join(" · ")} — misafir sayısına dahil değil
-            </span>
-          )}
+          <span className="text-xs text-slate-400 ml-auto">yalnız insanlar — botlar aşağıda ayrı</span>
         </div>
       )}
 
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-slate-800 text-sm">Dakikalık istek trafiği — son 60 dakika</h3>
-          <span className="text-xs text-slate-400">tepe: {peak} istek/dk</span>
+          <h3 className="font-semibold text-slate-800 text-sm">Dakikalık API trafiği — son 60 dakika</h3>
+          <span className="text-xs text-slate-400">tepe: {peak} istek/dk · yalnız /api, sayfa ve görsel yüklemeleri hariç</span>
         </div>
         <div style={{ width: "100%", height: 220 }}>
           <ResponsiveContainer>
@@ -1117,7 +1132,7 @@ function LiveTab({ api, showToast }) {
               <YAxis tick={{ fontSize: 10, fill: "#94a3b8" }} tickLine={false} axisLine={false} allowDecimals={false} />
               <Tooltip
                 contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 12 }}
-                formatter={(v, n) => [v, n === "requests" ? "istek" : n === "members" ? "kayıtlı üye" : "misafir"]}
+                formatter={(v, n) => [v, n === "requests" ? "API isteği" : n === "members" ? "kayıtlı üye" : "misafir"]}
                 labelFormatter={(l) => `${l}`}
               />
               <Area type="monotone" dataKey="requests" stroke="#114956" strokeWidth={2} fill="url(#liveFill)" />
@@ -1127,7 +1142,7 @@ function LiveTab({ api, showToast }) {
           </ResponsiveContainer>
         </div>
         <div className="flex items-center gap-4 mt-2 text-xs text-slate-400">
-          <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 rounded" style={{ background: "#114956" }} /> istek/dk</span>
+          <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 rounded" style={{ background: "#114956" }} /> API isteği/dk</span>
           <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 rounded" style={{ background: "#643e87" }} /> kayıtlı üye/dk</span>
           <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 rounded" style={{ background: "#f59e0b" }} /> misafir/dk</span>
         </div>
@@ -1186,13 +1201,6 @@ function LiveTab({ api, showToast }) {
               ))}
             </div>
           )}
-          {(data?.totals?.activeBots > 0 || data?.totals?.activeScripts > 0) && (
-            <p className="text-xs text-slate-400 mt-3 pt-3 border-t border-slate-100">
-              Ayrıca {data.totals.activeBots > 0 && `${data.totals.activeBots} bot (arama motoru / izleme servisi)`}
-              {data.totals.activeBots > 0 && data.totals.activeScripts > 0 && " ve "}
-              {data.totals.activeScripts > 0 && `${data.totals.activeScripts} betik (curl vb.)`} geziniyor — misafir sayısına dahil değil.
-            </p>
-          )}
         </div>
 
         {/* Canlı akış */}
@@ -1218,6 +1226,91 @@ function LiveTab({ api, showToast }) {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Botlar — nginx günlüğünden. İnsan listesiyle karışmaz. */}
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+        <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+          <h3 className="font-semibold text-slate-800 text-sm">
+            Botlar — son 60 dakika {bots?.ok && bots.list.length ? `(${bots.list.length} farklı)` : ""}
+          </h3>
+          <span className="text-xs text-slate-400">
+            kaynak: nginx erişim günlüğü · {bots?.ok ? `${bots.totals.hits60} istek/saat` : "okunamadı"}
+          </span>
+        </div>
+        {!bots?.ok ? (
+          <p className="text-sm text-red-600">{bots?.error || "Günlük okunamadı."}</p>
+        ) : !bots.list.length ? (
+          <p className="text-slate-400 text-sm py-6 text-center">Son bir saatte bot trafiği yok</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-[11px] text-slate-400 uppercase tracking-wide">
+                  <th className="text-left font-semibold py-1.5 pr-3">Bot</th>
+                  <th className="text-left font-semibold py-1.5 pr-3">Tür</th>
+                  <th className="text-right font-semibold py-1.5 pr-3">5 dk</th>
+                  <th className="text-right font-semibold py-1.5 pr-3">60 dk</th>
+                  <th className="text-right font-semibold py-1.5 pr-3" title="Kaç farklı IP adresinden — adresler saklanmaz">Adres</th>
+                  <th className="text-left font-semibold py-1.5 pr-3">Son</th>
+                  <th className="text-left font-semibold py-1.5">Son istek</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bots.list.map((b) => (
+                  <tr key={b.name} className={`border-t border-slate-50 ${b.cat === "scanner" ? "bg-red-50/40" : ""}`}>
+                    <td className="py-2 pr-3 font-medium text-slate-700 whitespace-nowrap">{b.name}</td>
+                    <td className="py-2 pr-3"><CatBadge cat={b.cat} /></td>
+                    <td className="py-2 pr-3 text-right tabular-nums text-slate-600">{b.hits5 || ""}</td>
+                    <td className="py-2 pr-3 text-right tabular-nums text-slate-700 font-medium">{b.hits60}</td>
+                    <td className="py-2 pr-3 text-right tabular-nums text-slate-500">{b.ips}</td>
+                    <td className="py-2 pr-3 text-slate-400 whitespace-nowrap">{ago(Math.round((data.now - b.lastTs) / 1000))}</td>
+                    <td className="py-2 font-mono text-[11px] text-slate-500" title={b.paths.join("\n")}>{cutPath(b.lastPath)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {bots?.ok && bots.feed?.length > 0 && (
+          <div className="mt-3 pt-3 border-t border-slate-100">
+            <button onClick={() => setShowBotFeed(v => !v)} className="text-xs font-semibold text-brand-700 hover:underline">
+              {showBotFeed ? "Bot akışını gizle" : `Bot akışını göster (son ${bots.feed.length} istek)`}
+            </button>
+            {showBotFeed && (
+              <div className="space-y-1 max-h-72 overflow-auto mt-2">
+                {bots.feed.map((f, i) => (
+                  <div key={`${f.ts}-${i}`} className="flex items-start gap-2.5 py-1 text-xs">
+                    <span className="text-[11px] text-slate-300 font-mono flex-shrink-0">{hhmmss(f.ts)}</span>
+                    <CatBadge cat={f.cat} />
+                    <span className="font-medium text-slate-600 flex-shrink-0">{f.name}</span>
+                    <span className="font-mono text-slate-400 min-w-0 truncate" title={f.path}>{f.method} {cutPath(f.path)}</span>
+                    <span className={`ml-auto flex-shrink-0 tabular-nums ${f.status >= 400 ? "text-red-500" : "text-slate-300"}`}>{f.status}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Sayım kuralları — panel neyi nereden bildiğini söylesin ki sayılara güvenilsin */}
+      <div className="bg-slate-50 rounded-2xl border border-slate-100 p-4">
+        <button onClick={() => setShowHow(v => !v)} className="text-xs font-semibold text-slate-600 hover:text-slate-900">
+          {showHow ? "▾" : "▸"} Nasıl sayılıyor?
+        </button>
+        {showHow && (
+          <ul className="mt-3 space-y-1.5 text-xs text-slate-600 leading-relaxed">
+            <li><strong>Kayıtlı üye:</strong> isteğinde geçerli oturum anahtarı taşıyanlar. Uygulama açık ve ön plandaysa yeşil nokta; son 5 dakikada istek attıysa sarı.</li>
+            <li><strong>Misafir:</strong> giriş yapmamış ama tarayıcısında uygulama çalışan kişiler. Uygulama her sayfa değişiminde hangi sayfada olduğunu kendisi bildirir; "etkinlikleri gezdi" o bildirimden gelir, arka plandaki veri çağrılarından değil. Aynı IP + aynı tarayıcı tek misafir sayılır; bir kişi IPv4/IPv6 arasında geçiş yaparsa iki kez görünebilir.</li>
+            <li><strong>Bot:</strong> nginx erişim günlüğünden, User-Agent'a göre. Sayfa taraması Node'a hiç uğramadığı için tek doğru kaynak bu. Tarayıcı gibi görünen satırlar buraya alınmaz (insanlar üstteki iki gruptan sayılır). Bilinen adı olmayan botlar UA'nın ilk parçasıyla listelenir.</li>
+            <li><strong>Zafiyet tarayıcı:</strong> <code>/wp-admin</code>, <code>/.env</code> gibi bizde olmayan adresleri yoklayanlar; UA ne derse desin bu gruba düşer. Bunlar normaldir, her açık sunucuya gelir.</li>
+            <li><strong>Yapay zeka:</strong> eğitim tarayıcısı (GPTBot, ClaudeBot), arama tarayıcısı (OAI-SearchBot, Claude-SearchBot) ve sohbette linke tıklanınca gelen getirici (ChatGPT-User, Claude-User, Perplexity-User) ayrı ayrı yazılır. Sonuncusu bir insanın o an sohbette Muuvlink'i açtığı anlamına gelir.</li>
+            <li><strong>API isteği:</strong> yalnız <code>/api</code> altına gelen istekler; sayfa, görsel ve dosya yüklemeleri hariç. Admin panelinin kendi istekleri ve sağlık kontrolü sayılmaz.</li>
+            <li><strong>Görülmeyen:</strong> JavaScript çalıştırmayan bir tarayıcıdan sayfayı açan insan (çok nadir) hiçbir grupta görünmez.</li>
+            <li>Her şey sunucu belleğinde; servis yeniden başlayınca son saat sıfırlanır. IP adresi hiçbir yerde saklanmaz.</li>
+          </ul>
+        )}
       </div>
     </div>
   );

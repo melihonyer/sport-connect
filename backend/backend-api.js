@@ -201,16 +201,112 @@ function liveDescribe(method, p) {
   return null;
 }
 
+// ── İstemci sınıflandırma ──────────────────────────────────────────────
+// Tek tablo: hem /api ara katmanı hem nginx günlüğü okuyucusu bunu kullanır.
+// Sıra önemli: özel olan üstte (Applebot-Extended, Applebot'tan önce).
+// Kategoriler: search (arama motoru) · ai (yapay zeka) · social (link önizleme)
+// · monitor (izleme servisi) · seo (SEO tarayıcı) · scanner (zafiyet tarayıcı)
+// · tool (betik / komut satırı) · other (adı bilinmeyen bot).
+const LIVE_AGENTS = [
+  // arama motorları
+  [/googlebot|google-inspectiontool|googleother|storebot-google|adsbot-google|mediapartners-google/i, 'Googlebot', 'search'],
+  [/google-extended/i,                       'Google-Extended (Gemini eğitim)', 'ai'],
+  [/bingbot|adidxbot|bingpreview|microsoftpreview/i, 'Bingbot', 'search'],
+  [/yandex(bot|images|mobilebot|accessibilitybot)/i, 'YandexBot', 'search'],
+  [/applebot-extended/i,                     'Applebot-Extended (Apple AI eğitim)', 'ai'],
+  [/applebot/i,                              'Applebot (Siri/Spotlight)', 'search'],
+  [/duckduckbot|duckassistbot/i,             'DuckDuckBot', 'search'],
+  [/baiduspider/i,                           'Baiduspider', 'search'],
+  [/seznambot/i,                             'SeznamBot', 'search'],
+  [/petalbot/i,                              'PetalBot (Huawei)', 'search'],
+  [/qwantify|qwantbot/i,                     'Qwant', 'search'],
+  [/sogou/i,                                 'Sogou', 'search'],
+  [/amazonbot|amzn-searchbot/i,              'Amazonbot (Alexa)', 'search'],
+  // yapay zeka — eğitim tarayıcısı / arama tarayıcısı / canlı sohbet getiricisi ayrı
+  [/gptbot/i,                                'GPTBot (OpenAI eğitim)', 'ai'],
+  [/oai-searchbot/i,                         'OAI-SearchBot (ChatGPT arama)', 'ai'],
+  [/chatgpt-user/i,                          'ChatGPT-User (sohbette açıldı)', 'ai'],
+  [/claude-searchbot/i,                      'Claude-SearchBot (Claude arama)', 'ai'],
+  [/claude-user/i,                           'Claude-User (sohbette açıldı)', 'ai'],
+  [/claudebot|claude-web|anthropic-ai/i,     'ClaudeBot (Anthropic eğitim)', 'ai'],
+  [/perplexity-user/i,                       'Perplexity-User (sohbette açıldı)', 'ai'],
+  [/perplexitybot/i,                         'PerplexityBot', 'ai'],
+  [/meta-externalagent|meta-externalfetcher|facebookbot/i, 'Meta AI', 'ai'],
+  [/bytespider|tiktokspider/i,               'Bytespider (ByteDance)', 'ai'],
+  [/ccbot/i,                                 'CCBot (Common Crawl)', 'ai'],
+  [/cohere-ai|ai2bot|omgili|diffbot|youbot|mistralai|timpibot|imagesiftbot/i, 'Diğer yapay zeka botu', 'ai'],
+  // sosyal / mesajlaşma link önizlemeleri
+  [/facebookexternalhit|facebot/i,           'Facebook önizleme', 'social'],
+  [/whatsapp/i,                              'WhatsApp önizleme', 'social'],
+  [/telegrambot/i,                           'Telegram önizleme', 'social'],
+  [/twitterbot/i,                            'X (Twitter) önizleme', 'social'],
+  [/linkedinbot/i,                           'LinkedIn önizleme', 'social'],
+  [/slackbot|slack-imgproxy/i,               'Slack önizleme', 'social'],
+  [/discordbot/i,                            'Discord önizleme', 'social'],
+  [/pinterest/i,                             'Pinterest', 'social'],
+  [/redditbot/i,                             'Reddit önizleme', 'social'],
+  [/skypeuripreview|vkshare|embedly|iframely/i, 'Link önizleme', 'social'],
+  // izleme / doğrulama servisleri
+  [/uptimerobot/i,                           'UptimeRobot', 'monitor'],
+  [/pingdom|statuscake|site24x7|betteruptime|better uptime|hetrixtools|freshping|checkly/i, 'İzleme servisi', 'monitor'],
+  [/googleassociationservice/i,              'Google doğrulama', 'monitor'],
+  [/playstore-google|google-play/i,          'Google Play (mağaza kontrolü)', 'monitor'],
+  [/let's encrypt|letsencrypt|certbot/i,     "Let's Encrypt", 'monitor'],
+  // SEO araçları
+  [/semrushbot/i,                            'SemrushBot', 'seo'],
+  [/ahrefsbot/i,                             'AhrefsBot', 'seo'],
+  [/mj12bot|dotbot|dataforseobot|blexbot|barkrowler|serpstatbot|screaming frog|siteauditbot|seokicks|seznam/i, 'SEO tarayıcı', 'seo'],
+  // zafiyet / internet tarayıcıları (UA alanına adres yazanlar da buraya düşer)
+  [/wp-admin|wp-login|xmlrpc|zgrab|masscan|nmap|nikto|sqlmap|censys|shodan|internetmeasurement|expanse|paloalto|stretchoid|netcraft|nuclei|gobuster|dirbuster|l9explore|leakix/i, 'Zafiyet tarayıcı', 'scanner'],
+  // betik / komut satırı / kütüphane
+  [/curl\//i,                                'curl', 'tool'],
+  [/wget/i,                                  'wget', 'tool'],
+  [/python-requests|python-urllib|httpx|aiohttp|scrapy/i, 'Python', 'tool'],
+  [/postman/i,                               'Postman', 'tool'],
+  [/insomnia/i,                              'Insomnia', 'tool'],
+  [/httpie/i,                                'HTTPie', 'tool'],
+  [/okhttp|java\/|apache-httpclient/i,       'Java/OkHttp', 'tool'],
+  [/go-http-client/i,                        'Go', 'tool'],
+  [/node-fetch|axios\/|undici/i,             'Node', 'tool'],
+  [/headlesschrome|puppeteer|playwright|phantomjs|selenium/i, 'Headless tarayıcı', 'tool'],
+  [/libwww|lwp-trivial|php\/|guzzle/i,       'Betik', 'tool'],
+];
+// Yol tabanlı tespit: UA ne derse desin bu adresleri yoklayan bir insan değildir.
+// Sitede .php/.asp/.jsp yok — bu uzantılara gelen her istek yoklamadır.
+const LIVE_PROBE_PATH_RE = /^\/(wp-|wordpress|xmlrpc\.php|\.env|\.git|phpmyadmin|pma\b|admin\.php|cgi-bin|vendor\/phpunit|\.well-known\/(?!acme)|config\.(json|php|yml)|backup|\.aws|actuator|solr|console)|\.(php|asp|aspx|jsp|cgi)(\?|$)/i;
+// Adı tabloda olmayan ama bot olduğu belli olanlar.
+const LIVE_GENERIC_BOT_RE = /bot\b|crawler|spider|crawl|fetcher|scan|monitor|http-client|httpclient|libcurl|feed|validator|archive\.org|archiver/i;
+
+// UA → { kind: 'bot'|'tool'|'browser'|'unknown', name, cat }
+function liveClassifyAgent(ua) {
+  const s = String(ua || '').trim();
+  if (!s || s === '-') return { kind: 'unknown', name: 'UA boş', cat: 'other' };
+  for (const [re, name, cat] of LIVE_AGENTS) {
+    if (re.test(s)) return { kind: cat === 'tool' ? 'tool' : 'bot', name, cat };
+  }
+  if (LIVE_GENERIC_BOT_RE.test(s)) {
+    // Adı yoksa UA'nın ilk parçasını göster ("SomeBot/1.2 (+http…)" → "SomeBot/1.2")
+    const first = s.replace(/^Mozilla\/5\.0\s*\(?(compatible;)?\s*/i, '').split(/[;)(\s]+/)[0] || s;
+    return { kind: 'bot', name: first.slice(0, 40), cat: 'other' };
+  }
+  if (/Mozilla\/|Opera|Safari\/|Chrome\/|Firefox\//i.test(s)) return { kind: 'browser', name: null, cat: null };
+  // Tarayıcıya da bota da benzemeyen UA (özel istemci, kısaltılmış UA…)
+  return { kind: 'unknown', name: s.split(/[;)(\s/]+/)[0].slice(0, 40) || 'Bilinmeyen', cat: 'other' };
+}
+
 // İstemci türü — User-Agent'tan. Sunucu günlüklerindeki gerçek trafiğe bakılarak yazıldı:
 // Capacitor iOS (WKWebView) "Mobile/15E148" ile biter ve Safari/CriOS token'ı taşımaz;
 // Capacitor Android (WebView) UA'sında "wv" işareti bulunur. Tarayıcılarda ikisi de vardır.
 function livePlatform(ua) {
   const s = String(ua || '');
   if (!s) return 'unknown';
-  // Arama motoru / izleme botları ile betik-komut satırı istemcileri ayrı sınıflar:
-  // ilki normal ve beklenen, ikincisi kayıt/giriş yollarında dikkat çekici.
-  if (/bot\b|crawler|spider|uptimerobot|slurp|bingpreview|facebookexternalhit|whatsapp|telegram/i.test(s)) return 'bot';
-  if (/curl\/|wget|python-requests|httpie|postman|insomnia|go-http-client|okhttp|java\/|node-fetch|axios\/|headlesschrome|puppeteer|playwright|scrapy/i.test(s)) return 'script';
+  const a = liveClassifyAgent(s);
+  // Bot ve betik: normal/beklenen (Googlebot) ile dikkat çekici (curl ile kayıt
+  // denemesi) ayrı sınıf. Claude-User, Perplexity-User gibi "Mozilla/5.0" ile
+  // başlayan yapay zeka getiricileri de burada yakalanır; eski kural onları
+  // masaüstü insan sayıyordu.
+  if (a.kind === 'bot') return 'bot';
+  if (a.kind === 'tool') return 'script';
   if (/;\s*wv\)/i.test(s)) return 'android-app';
   if (/iPhone|iPad|iPod/i.test(s)) {
     return (!/Safari\//.test(s) && !/CriOS\//.test(s) && !/FxiOS\//.test(s)) ? 'ios-app' : 'ios-web';
@@ -220,43 +316,10 @@ function livePlatform(ua) {
   return 'unknown';
 }
 
-// Bot/betik ise adını çıkar — panelde "Bot" yerine "Googlebot" yazsın, hangi
-// otomatik istemci olduğunu anlamak için sunucu günlüğüne bakmak gerekmesin.
-const LIVE_CLIENT_NAMES = [
-  [/googlebot|google-inspectiontool/i, 'Googlebot'],
-  [/bingbot|adidxbot/i,          'Bingbot'],
-  [/yandex(bot|images)/i,        'YandexBot'],
-  [/applebot/i,                  'Applebot'],
-  [/duckduckbot|duckassistbot/i, 'DuckDuckBot'],
-  [/amazonbot|amzn-searchbot/i,  'Amazonbot'],
-  [/gptbot|chatgpt-user|oai-searchbot/i, 'OpenAI'],
-  [/claudebot|claude-web|anthropic/i,    'ClaudeBot'],
-  [/perplexity/i,                'Perplexity'],
-  [/bytespider/i,                'Bytespider'],
-  [/semrushbot/i,                'SemrushBot'],
-  [/ahrefsbot/i,                 'AhrefsBot'],
-  [/mj12bot|dotbot|dataforseo/i, 'SEO tarayıcı'],
-  [/uptimerobot/i,               'UptimeRobot'],
-  [/facebookexternalhit|meta-externalagent/i, 'Facebook önizleme'],
-  [/whatsapp/i,                  'WhatsApp önizleme'],
-  [/telegram/i,                  'Telegram önizleme'],
-  [/slackbot|discordbot|twitterbot/i, 'Link önizleme'],
-  [/curl\//i,                    'curl'],
-  [/wget/i,                      'wget'],
-  [/python-requests|httpx|aiohttp/i, 'Python'],
-  [/postman/i,                   'Postman'],
-  [/insomnia/i,                  'Insomnia'],
-  [/httpie/i,                    'HTTPie'],
-  [/okhttp|java\//i,             'Java/OkHttp'],
-  [/go-http-client/i,            'Go'],
-  [/node-fetch|axios\//i,        'Node'],
-  [/headlesschrome|puppeteer|playwright/i, 'Headless tarayıcı'],
-  [/scrapy/i,                    'Scrapy'],
-];
+// Bot/betik ise adını çıkar — panelde "Bot" yerine "Googlebot" yazsın.
 function liveClientName(ua) {
-  const s = String(ua || '');
-  for (const [re, name] of LIVE_CLIENT_NAMES) if (re.test(s)) return name;
-  return null;
+  const a = liveClassifyAgent(ua);
+  return a.kind === 'browser' ? null : a.name;
 }
 
 // Bakılan kayıt: /teams/12 → { t:'team', id:12 }. İsimler okuma anında çözülür.
@@ -264,6 +327,113 @@ function liveClientName(ua) {
 // kaydı da tam bu imzayı taşır, akışta işaretlenip göze çarpsın.
 const LIVE_AUTH_RE = /^\/auth\/(register|login|forgot-password|reset-password)$/;
 const liveSuspicious = (p, plat) => LIVE_AUTH_RE.test(p) && ['bot', 'script', 'unknown'].includes(plat);
+
+// ── Botlar: nginx erişim günlüğünden ─────────────────────────────────────
+// NEDEN: Node yalnız /api isteklerini ve nginx'in ona yönlendirdiği birkaç bot
+// sayfasını görür. İnsanlar statik index.html'i nginx'ten alır; botların asıl
+// işi olan sayfa taraması (Googlebot /etkinlik/…, GPTBot /takimlar) çoğunlukla
+// nginx'te biter ve Node'a hiç uğramaz. Yani "hangi botlar geliyor" sorusunun
+// tek doğru kaynağı nginx günlüğüdür. Buradan yalnız bot/betik satırları
+// alınır; insanlar uygulamanın kendi bildiriminden (/live/view + token) gelir —
+// iki kaynak birbirine karışmaz.
+//
+// Maliyet: dosyanın son ~1,5 MB'ı okunur, 5 sn önbelleklenir. Panel açık
+// değilken hiç okunmaz. IP saklanmaz; yalnız kaç farklı adres olduğu sayılır.
+const NGINX_ACCESS_LOG = process.env.NGINX_ACCESS_LOG || '/var/log/nginx/access.log';
+const LIVE_LOG_RE = /^(\S+) \S+ \S+ \[([^\]]+)\] "(\S+) (\S+)[^"]*" (\d{3}) \d+ "[^"]*" "([^"]*)"/;
+const LIVE_LOG_MONTHS = { Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11 };
+const liveLogTime = (t) => {
+  const m = /^(\d{2})\/(\w{3})\/(\d{4}):(\d{2}):(\d{2}):(\d{2}) ([+-])(\d{2})(\d{2})$/.exec(t);
+  if (!m) return NaN;
+  const utc = Date.UTC(+m[3], LIVE_LOG_MONTHS[m[2]] ?? 0, +m[1], +m[4], +m[5], +m[6]);
+  const off = (+m[8] * 60 + +m[9]) * 60000;
+  return m[7] === '+' ? utc - off : utc + off;
+};
+async function liveReadTail(file, bytes) {
+  const fh = await fs.promises.open(file, 'r');
+  try {
+    const { size } = await fh.stat();
+    const len = Math.min(size, bytes);
+    const buf = Buffer.alloc(len);
+    await fh.read(buf, 0, len, size - len);
+    const text = buf.toString('utf8');
+    const lines = text.split('\n');
+    if (len < size) lines.shift();   // ilk satır yarım kalmış olabilir
+    return lines;
+  } finally { await fh.close(); }
+}
+let liveBotCache = { ts: 0, data: null };
+async function liveBotTraffic() {
+  const now = Date.now();
+  if (now - liveBotCache.ts < 5000 && liveBotCache.data) return liveBotCache.data;
+  const cutoff = now - 60 * 60000;
+  const agents = new Map();   // name -> özet
+  const feed = [];
+  let ok = true, error = null;
+  try {
+    let lines = await liveReadTail(NGINX_ACCESS_LOG, 1.5 * 1024 * 1024);
+    // Günlük az önce döndüyse son saat bir önceki dosyada da olabilir.
+    const firstTs = lines.map((l) => LIVE_LOG_RE.exec(l)).find(Boolean);
+    if (firstTs && liveLogTime(firstTs[2]) > cutoff) {
+      try { lines = (await liveReadTail(NGINX_ACCESS_LOG + '.1', 512 * 1024)).concat(lines); } catch { /* yoksa geç */ }
+    }
+    for (const line of lines) {
+      const m = LIVE_LOG_RE.exec(line);
+      if (!m) continue;
+      const ts = liveLogTime(m[2]);
+      if (!(ts >= cutoff)) continue;
+      const [, ip, , method, path, status, ua] = m;
+      let a = liveClassifyAgent(ua);
+      if (LIVE_PROBE_PATH_RE.test(path)) a = { kind: 'bot', name: 'Zafiyet tarayıcı', cat: 'scanner' };
+      if (a.kind === 'browser') continue;            // insanlar uygulamadan sayılır
+      let rec = agents.get(a.name);
+      if (!rec) { rec = { name: a.name, cat: a.cat, hits60: 0, hits5: 0, lastTs: 0, lastPath: null, paths: [], ips: new Set() }; agents.set(a.name, rec); }
+      rec.hits60++;
+      if (ts >= now - 5 * 60000) rec.hits5++;
+      rec.ips.add(ip);
+      if (ts >= rec.lastTs) { rec.lastTs = ts; rec.lastPath = path; }
+      if (!rec.paths.includes(path) && rec.paths.length < 6) rec.paths.push(path);
+      feed.push({ ts, name: a.name, cat: a.cat, method, path, status: +status });
+    }
+  } catch (e) {
+    ok = false; error = e.code === 'ENOENT' ? 'Günlük dosyası bulunamadı' : e.code === 'EACCES' ? 'Günlük okunamadı (izin)' : e.message;
+  }
+  feed.sort((x, y) => y.ts - x.ts);
+  const list = [...agents.values()]
+    .map((r) => ({ ...r, ips: r.ips.size }))
+    .sort((x, y) => y.hits60 - x.hits60);
+  const data = {
+    ok, error, list, feed: feed.slice(0, 40),
+    totals: {
+      agents5: list.filter((r) => r.hits5 > 0).length,
+      hits5: list.reduce((n, r) => n + r.hits5, 0),
+      hits60: list.reduce((n, r) => n + r.hits60, 0),
+    },
+  };
+  liveBotCache = { ts: now, data };
+  return data;
+}
+
+// Giriş/kayıt başarılı olunca çağrılır. İstek geldiğinde kullanıcı henüz
+// belli değildi: akışa "Misafir 727a9936 giriş yaptı" diye düşüyor ve öyle
+// kalıyordu. Burada o satır(lar) üyeye çevrilir, misafir kaydı üye kaydına
+// taşınır; aynı parmak izinden gelen sonraki token'sız istekler de üyeye yazılır.
+function liveClaim(req, userId) {
+  try {
+    const now = Date.now();
+    const vid = liveVisitorId(req);
+    liveHashOwner.set(vid, { userId, ts: now });
+    for (const f of live.feed) {
+      if (now - f.ts > 60000) break;              // akış en yeniden eskiye sıralı
+      if (f.vid === vid && LIVE_AUTH_RE.test(f.path)) { f.userId = userId; f.vid = null; }
+    }
+    const v = live.visitors.get(vid);
+    if (v) {
+      live.visitors.delete(vid);
+      live.presence.set(userId, { ts: now, plat: v.plat, label: v.label || null, entity: null });
+    }
+  } catch { /* izleme asla akışı bozmasın */ }
+}
 
 const LIVE_ENTITY_RE = /^\/(teams|trainings|users)\/(\d+)/;
 function liveEntity(p) {
@@ -2024,6 +2194,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       },
     });
 
+    liveClaim(req, user.id);
     res.status(201).json({ message: 'User registered successfully', user, token });
   } catch (error) {
     console.error('Register error:', error);
@@ -2069,6 +2240,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     delete user.password_hash;
     delete user.deleted_at;
 
+    liveClaim(req, user.id);
     res.json({ message: 'Login successful', user, token, restored });
   } catch (error) {
     console.error('Login error:', error);
@@ -5841,12 +6013,15 @@ app.get('/api/admin/live', isAdmin, async (req, res) => {
     })).sort((a, b) => (a.secondsAgo ?? 1e9) - (b.secondsAgo ?? 1e9));
 
     // Son 5 dakikada kim hangi cihazdan: üyeler + anonim ziyaretçiler birlikte
+    // Bot ve betikler burada YOK — onlar nginx günlüğünden ayrı listelenir.
     const platforms = {};
     for (const v of [...live.presence.values(), ...live.visitors.values()]) {
       if (now - v.ts > LIVE_ONLINE_WINDOW_MS) continue;
+      if (v.plat === 'bot' || v.plat === 'script') continue;
       const k = v.plat || 'unknown';
       platforms[k] = (platforms[k] || 0) + 1;
     }
+    const bots = await liveBotTraffic();
 
     // Misafirler de üyeler gibi tek tek listelenir (son hareketi ve cihazıyla)
     const guests = [...live.visitors.entries()]
@@ -5860,11 +6035,11 @@ app.get('/api/admin/live', isAdmin, async (req, res) => {
       .sort((a, b) => a.secondsAgo - b.secondsAgo);
 
     const liveVisitorVals = [...live.visitors.values()];
-    // Botlar ziyaretçi sayılmaz — sayıyı şişirirler; ayrı gösterilir.
+    // Botlar ziyaretçi sayılmaz — sayıyı şişirirler; nginx günlüğünden ayrı gösterilir.
     const fresh = (v) => now - v.ts <= LIVE_ONLINE_WINDOW_MS;
     const activeVisitors = liveVisitorVals.filter((v) => fresh(v) && v.plat !== 'bot' && v.plat !== 'script').length;
-    const activeBots = liveVisitorVals.filter((v) => fresh(v) && v.plat === 'bot').length;
-    const activeScripts = liveVisitorVals.filter((v) => fresh(v) && v.plat === 'script').length;
+    const activeBots = bots.totals.agents5;
+    const activeScripts = bots.list.filter((r) => r.cat === 'tool' && r.hits5 > 0).length;
 
     // Son 60 dakika, boş dakikalar sıfırla doldurulur (grafik kesintisiz olsun)
     const thisMinute = Math.floor(now / 60000) * 60000;
@@ -5904,6 +6079,7 @@ app.get('/api/admin/live', isAdmin, async (req, res) => {
       minutes,
       feed,
       platforms,
+      bots,
       totals: {
         onlineUsers: online.length, activeVisitors, activeBots, activeScripts, last5, last60,
         // Son bir saatte tarayıcı olmayan istemciden gelen kayıt/giriş denemesi
