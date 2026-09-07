@@ -178,6 +178,7 @@ const LIVE_RULES = [
   ['POST',   /^\/teams\/\d+\/join$/,                'takıma katıldı'],
   ['POST',   /^\/teams\/\d+\/posts$/,               'takıma gönderi paylaştı'],
   ['GET',    /^\/users\/\d+$/,                      'profil görüntüledi'],
+  ['POST',   /^\/integrations\/training-agents\/verify$/, 'Training Agents antrenmanı getirdi'],
   ['POST',   /^\/contact$/,                         'iletişim formu gönderdi'],
   ['POST',   /^\/report$/,                          'içerik şikayet etti'],
 ];
@@ -6304,6 +6305,87 @@ app.get('/health', (req, res) => {
 // Gerçek sağlık kontrolü: veritabanına da dokunur.
 // Ana sayfa statik HTML döndürdüğü için DB çökse bile 200 verir; bu uçtan uca
 // kontrol olmadan izleme aracı arızayı göremez. DB'ye ulaşılamazsa 503 döner.
+// ── TRAINING AGENTS ENTEGRASYONU ─────────────────────────────────────────
+// Training Agents (trainingagentsapp.com) yapay zekayla bir antrenman yazar:
+// adı ve tarihi vardır. Antrenör "Muuvlink'te yayınla" deyince imzalı bir
+// bağlantıyla buraya gelir, saat/konum/takım seçip yayınlar.
+//
+// NEDEN sunucular arası API değil: yayınlayan, Muuvlink'te oturumu zaten açık
+// olan antrenörün kendisi. Hesap eşleştirmeye, taslak kutusuna, iki sunucunun
+// birbirini tanımasına gerek yok — ve ağ yolundaki aksaklıklar düşünülürse
+// yeni bir sunucular arası bağımlılık eklememek ayrıca iyi.
+//
+// NEDEN imzalı: formda "Training Agents'tan geldi" rozeti gösteriyoruz, bu bir
+// doğruluk iddiası. İçerik ASLA ham URL'den okunmaz; burada doğrulanır.
+// algorithms açıkça HS256'ya sabitlenir (alg=none saldırısına karşı).
+const TA_SHARED_SECRET = process.env.TA_SHARED_SECRET || '';
+const TA_ISSUER = 'training-agents';
+const TA_MAX_SESSIONS = 20;
+
+// Kontrol karakterleri ve yön değiştirme işaretleri gider; satır sonu KALIR
+// (antrenman metni çok satırlı). Sonraki adım satır sonu dışındaki ardışık
+// boşlukları teke indirir.
+const TA_STRIP_RE = new RegExp('[\\u0000-\\u0009\\u000B-\\u001F\\u007F\\u200B-\\u200F\\u2028\\u2029]', 'g');
+const taClean = (v, max) => String(v ?? '')
+  .replace(/\r\n/g, '\n')
+  .replace(TA_STRIP_RE, '')
+  .replace(/[^\S\n]+/g, ' ')
+  .trim()
+  .slice(0, max);
+
+// Tek antrenman → temizlenmiş kayıt, geçersizse null.
+// Takım, saat, konum, kontenjan ve ücret alanları BİLEREK yok: onları
+// Muuvlink'te antrenör seçer. Dışarıdan gelen veri form doldurur, karar vermez.
+const taSession = (s) => {
+  const title = taClean(s?.title, 120);
+  const date = String(s?.date ?? '').slice(0, 10);
+  if (!title) return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+  const d = new Date(date + 'T00:00:00Z');
+  if (Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== date) return null;
+  const dur = parseInt(s?.duration_minutes, 10);
+  return {
+    title,
+    date,
+    description: taClean(s?.description, 2000),
+    duration_minutes: Number.isFinite(dur) && dur >= 15 && dur <= 480 ? dur : 60,
+    sport: taClean(s?.sport, 40) || null,
+  };
+};
+
+// Bağlantıyı doğrula ve temiz içeriği dön. Kimlik doğrulaması İSTEMEZ:
+// hesabı olmayan ya da çıkış yapmış antrenör de ne getirdiğini görebilmeli;
+// giriş/kayıt ondan sonra geliyor.
+app.post('/api/integrations/training-agents/verify', async (req, res) => {
+  if (!TA_SHARED_SECRET) {
+    console.error('[TA] TA_SHARED_SECRET tanımli degil - entegrasyon kapali.');
+    return res.status(503).json({ error: 'Bu entegrasyon şu anda kapalı.', code: 'ta_disabled' });
+  }
+  const token = String(req.body?.token || '');
+  if (!token) return res.status(400).json({ error: 'Bağlantı eksik.', code: 'ta_invalid' });
+
+  let payload;
+  try {
+    payload = jwt.verify(token, TA_SHARED_SECRET, { algorithms: ['HS256'], issuer: TA_ISSUER });
+  } catch (e) {
+    const expired = e?.name === 'TokenExpiredError';
+    return res.status(400).json({
+      error: expired ? 'Bu bağlantının süresi dolmuş.' : 'Bu bağlantı geçersiz.',
+      code: expired ? 'ta_expired' : 'ta_invalid',
+    });
+  }
+  // Süresiz jeton kabul edilmez: bağlantı adres çubuğunda ve sunucu günlüğünde
+  // iz bırakıyor, sonsuza kadar geçerli olmamalı.
+  if (!payload?.exp) return res.status(400).json({ error: 'Bu bağlantı geçersiz.', code: 'ta_invalid' });
+
+  const raw = Array.isArray(payload?.sessions) ? payload.sessions : [];
+  const sessions = raw.slice(0, TA_MAX_SESSIONS).map(taSession).filter(Boolean);
+  if (!sessions.length) {
+    return res.status(400).json({ error: 'Bağlantıda geçerli bir antrenman yok.', code: 'ta_empty' });
+  }
+  res.json({ sessions, source: 'training-agents' });
+});
+
 // Canlı akış için sayfa bildirimi. Tüm iş yukarıdaki izleme ara katmanında
 // bitiyor; burada yalnız 404 olmasın diye boş bir yanıt dönüyoruz. Veritabanına
 // dokunmaz, gövde yazmaz, kimlik doğrulaması istemez (misafirler de sayılır).
