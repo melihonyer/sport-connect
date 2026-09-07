@@ -610,8 +610,21 @@ async function uploadToSupabase(bucket, fileName, buffer, mimetype) {
 // idleTimeoutMillis: boşta bekleyen bağlantıları pool'da tutmayıp serbest bırak (leak önleme).
 // connectionTimeoutMillis kısa tutulur: bağlantı kurulamıyorsa hızlıca pes edip
 // tekrar denemek, kullanıcıyı 20+ saniye bekletmekten iyidir (retry ile birlikte
-// en kötü durum ~7sn). Uzun bekleme, kullanıcının butona tekrar basmasına yol açıyordu.
-const POOL_TIMEOUTS = { connectionTimeoutMillis: 3000, idleTimeoutMillis: 30000 };
+// en kötü durum ~11sn). Uzun bekleme, kullanıcının butona tekrar basmasına yol açıyordu.
+//
+// idleTimeoutMillis 10 dk (eskiden 30 sn) + TCP keepalive — 7 Eylül 2026:
+// Sunucudan Supabase eu-west-1 havuzuna YENİ bağlantı kurmak 3 Eylül'den beri
+// günde birkaç kez 15 sn–6 dk boyunca takılıyor (yol sorunu; havuz ve Postgres
+// günlükleri temiz). 30 sn'de kapanan bağlantılar seyrek trafikte her isteği yeni
+// el sıkışmaya zorluyordu, yani her istek bu riske giriyordu. Açık bağlantı
+// takılan dakikada da çalışmaya devam eder; sıcak tutmak maruziyeti düşürür.
+// 10 boş bağlantı Supabase sınırının (60) çok altında.
+const POOL_TIMEOUTS = {
+  connectionTimeoutMillis: 3000,
+  idleTimeoutMillis: 10 * 60 * 1000,
+  keepAlive: true,
+  keepAliveInitialDelayMillis: 10000,
+};
 
 const pool = process.env.PGHOST
   ? new Pool({
@@ -653,16 +666,21 @@ pool.on('connect', async client => {
 // hiç ulaşmadığı için tekrar etmek yan etki üretmez. Sorgu gönderildikten sonra
 // kopan bağlantılar ("Connection terminated unexpectedly" vb.) bilerek KAPSAM DIŞI —
 // onları tekrarlamak çift kayıt oluşturabilir.
+// İki yeniden deneme (300 ms, 1 sn): takılmalar çoğunlukla 15–40 sn sürüyor ama
+// tek bir el sıkışma 3 sn'de pes ediyor; üç deneme (~11 sn) kısa dalgaların
+// çoğunu kullanıcıya göstermeden geçirir. Uzun dalgalar yine hata döner.
 const DB_CONNECT_FAILED = /timeout exceeded when trying to connect|Connection terminated due to connection timeout/i;
+const DB_RETRY_DELAYS_MS = [300, 1000];
 const rawPoolQuery = pool.query.bind(pool);
 pool.query = async (...args) => {
-  try {
-    return await rawPoolQuery(...args);
-  } catch (err) {
-    if (!DB_CONNECT_FAILED.test(err?.message || '')) throw err;
-    console.warn('[DB] Bağlantı kurulamadı, tekrar deneniyor:', err.message);
-    await new Promise(r => setTimeout(r, 300));
-    return await rawPoolQuery(...args);
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await rawPoolQuery(...args);
+    } catch (err) {
+      if (!DB_CONNECT_FAILED.test(err?.message || '') || attempt >= DB_RETRY_DELAYS_MS.length) throw err;
+      console.warn(`[DB] Bağlantı kurulamadı, tekrar deneniyor (${attempt + 1}/${DB_RETRY_DELAYS_MS.length}):`, err.message);
+      await new Promise(r => setTimeout(r, DB_RETRY_DELAYS_MS[attempt]));
+    }
   }
 };
 
