@@ -114,8 +114,22 @@ dosya kopyalanarak deploy edilir.
 Frontend (önce `npm run build`):
 
 ```bash
-rsync -az --delete-after --exclude uploads -e "ssh -i ~/.ssh/muuvlink" dist/ root@70.40.138.16:/var/www/muuvlink/dist/
+rsync -az --exclude uploads -e "ssh -i ~/.ssh/muuvlink" dist/ root@70.40.138.16:/var/www/muuvlink/dist/
 ```
+
+**`--delete-after` KULLANMA.** Vite her derlemede parça adlarına yeni bir özet
+ekler. Eski dosyalar silinirse, o an sitede AÇIK duran sekmeler bozulur: onların
+`index.html`'i eski parça adlarını biliyor, dosya artık yok, kullanıcı haritayı
+ya da grafiği açtığında "Bir şeyler ters gitti · Failed to fetch dynamically
+imported module" görüyor. 7 Eylül 2026'da canlıda yaşandı.
+
+İki taraflı korumamız var: eski dosyalar silinmediği için açık sekmeler
+çalışmaya devam eder, ayrıca `lazyWithReload` bir parça 404 dönerse sayfayı
+BİR kez yeniler (`sporla-bulusma.jsx`; sessionStorage bayrağı döngüyü keser).
+
+`dist/assets/` zamanla birikir. Gerçekten silinmesi gereken bir dosya olursa
+(ör. kaldırılan bir görsel) elle sil; toplu temizlik gerekirse yayından en az
+bir hafta sonra ve kimse sitede değilken yapılır.
 
 Backend:
 

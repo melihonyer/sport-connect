@@ -57,9 +57,31 @@ import {
 } from "lucide-react";
 import SharedLocationPicker from "./LocationPicker";
 // Ağır kütüphaneler lazy yüklenir — ilk bundle'ı küçültür
-const TrainingsMapViewLazy = React.lazy(() => import("./TrainingsMapView"));
-const ActivityChartLazy    = React.lazy(() => import("./ActivityChart"));
+// Deploy sonrası eski sekme sorunu: rsync --delete-after eski parça dosyalarını
+// siler, ama açık duran sekmedeki index.html hâlâ ESKİ parça adlarını biliyor.
+// Kullanıcı haritayı ilk kez o sekmede açtığında dosya 404 döner ve ekrana
+// "Bir şeyler ters gitti · Failed to fetch dynamically imported module" düşer.
+// Kod doğru, dosya yok. Çözüm: bir kez sayfayı yenile (yeni index.html yeni
+// adları getirir). sessionStorage bayrağı sonsuz yenileme döngüsünü keser;
+// gerçek bir hata varsa ikinci denemede hata olduğu gibi yukarı çıkar.
+const CHUNK_RELOAD_KEY = "chunkReloadedAt";
+const lazyWithReload = (factory) => React.lazy(() => factory().catch((err) => {
+  const gecmisDeneme = Number(sessionStorage.getItem(CHUNK_RELOAD_KEY) || 0);
+  const yakinZamanda = Date.now() - gecmisDeneme < 60000;
+  if (!yakinZamanda) {
+    try { sessionStorage.setItem(CHUNK_RELOAD_KEY, String(Date.now())); } catch { /* yok say */ }
+    window.location.reload();
+    return new Promise(() => {});   // yenileme başlarken bileşen beklemede kalsın
+  }
+  throw err;
+}));
 
+const TrainingsMapViewLazy = lazyWithReload(() => import("./TrainingsMapView"));
+const ActivityChartLazy    = lazyWithReload(() => import("./ActivityChart"));
+
+// Training Agents taslağı: doğrulanmış içerik burada, kendi süresiyle saklanır.
+const TA_DRAFT_KEY = "taDraft";
+const TA_DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
 const API_URL  = import.meta.env.VITE_API_URL  ?? (import.meta.env.DEV ? "http://localhost:3000/api" : "/api");
 
 // ── Global hata yakalayıcı — beyaz ekran yerine kullanıcı dostu mesaj ──
@@ -2336,6 +2358,106 @@ export default function Muuvlink() {
     return () => { listener?.remove?.(); };
   }, []);
 
+  // Training Agents taslağı için ince şerit. Yolculuk bölünebiliyor (kaydol →
+  // takım kur → davet et); yönlendirme zinciri yerine her sayfada görünen bir
+  // dönüş yolu daha sağlam. "Vazgeç" bayat taslağı temizler.
+  const TaDraftStrip = ({ session, more, onPublish, onDiscard }) => (
+    <div className="px-4 py-2.5 border-b border-brand-100" style={{ background: "#e2f1ef" }}>
+      <div className="max-w-6xl mx-auto flex items-center gap-3">
+        <Sparkles className="w-4 h-4 flex-shrink-0" style={{ color: "#114956" }} />
+        <div className="min-w-0 flex-1">
+          <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: "#114956" }}>
+            {t("ta.stripTitle")}
+          </div>
+          <div className="text-sm text-slate-700 truncate">
+            {session.title}
+            <span className="text-slate-400"> · {fmtDateShort(session.date)}</span>
+            {more > 0 && <span className="text-slate-400"> · {t("ta.more").replace("{n}", more)}</span>}
+          </div>
+        </div>
+        <button type="button" data-btn="solid" onClick={onPublish}
+          className="flex-shrink-0 px-4 py-2 rounded-xl text-sm font-semibold text-white transition"
+          style={{ background: "#114956" }}>
+          {t("ta.publish")}
+        </button>
+        <button type="button" onClick={onDiscard}
+          className="flex-shrink-0 px-2 py-2 text-xs font-medium text-slate-500 hover:text-slate-700">
+          {t("ta.discard")}
+        </button>
+      </div>
+    </div>
+  );
+
+  // ── Training Agents taslağı ─────────────────────────────────────────────
+  // Jeton VARIŞTA bir kez doğrulanır ve DOĞRULANMIŞ İÇERİK saklanır, ham jeton
+  // değil: kaydolmak + takım kurmak on dakikayı kolayca geçer ve jetonun kısa
+  // ömrü bu yolculuğa yetmeyebilir. Taslak ÜST bileşende durur; oluşturma
+  // sayfası her üst-render'da yeniden kurulduğu için kendi state'inde duramaz.
+  const [taDraft, setTaDraft] = useState(null);   // { sessions: [...], savedAt }
+  const taCurrent = taDraft?.sessions?.[0] || null;
+
+  const saveTaDraft = (sessions) => {
+    const d = { sessions, savedAt: Date.now() };
+    try { localStorage.setItem(TA_DRAFT_KEY, JSON.stringify(d)); } catch { /* yok say */ }
+    setTaDraft(d);
+  };
+  const clearTaDraft = () => {
+    try { localStorage.removeItem(TA_DRAFT_KEY); } catch { /* yok say */ }
+    setTaDraft(null);
+  };
+  // Yayınlanan antrenmanı taslaktan düşür; sıradaki varsa o güncel olur.
+  const shiftTaDraft = () => {
+    setTaDraft((prev) => {
+      const rest = (prev?.sessions || []).slice(1);
+      try {
+        if (rest.length) localStorage.setItem(TA_DRAFT_KEY, JSON.stringify({ sessions: rest, savedAt: prev.savedAt }));
+        else localStorage.removeItem(TA_DRAFT_KEY);
+      } catch { /* yok say */ }
+      return rest.length ? { sessions: rest, savedAt: prev.savedAt } : null;
+    });
+  };
+
+  // Açılışta taslağı geri yükle; süresi dolduysa at.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(TA_DRAFT_KEY);
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      if (!d?.sessions?.length || Date.now() - (d.savedAt || 0) > TA_DRAFT_TTL_MS) {
+        localStorage.removeItem(TA_DRAFT_KEY);
+        return;
+      }
+      setTaDraft(d);
+    } catch { try { localStorage.removeItem(TA_DRAFT_KEY); } catch { /* yok say */ } }
+  }, []);
+
+  // ?ta=<imzalı jeton> ile gelindi: doğrula, taslağı sakla, oturuma göre yönlendir.
+  useEffect(() => {
+    const tok = new URLSearchParams(window.location.search).get("ta");
+    if (!tok) return;
+    // Jeton adres çubuğunda kalmasın: paylaşılabilir ve geri tuşuyla tekrarlanır.
+    window.history.replaceState({}, "", window.location.pathname);
+    fetch(`${API_URL}/integrations/training-agents/verify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: tok }),
+    })
+      .then(async (r) => ({ ok: r.ok, d: await r.json().catch(() => ({})) }))
+      .then(({ ok, d }) => {
+        if (!ok || !d?.sessions?.length) { showToast(t("ta.linkInvalid"), "error"); return; }
+        saveTaDraft(d.sessions);
+        if (localStorage.getItem("token")) {
+          setCurrentPage("create-training");
+          showToast(t("ta.arrived"), "success");
+        } else {
+          setAuthMode("login");
+          setIsAuthModalOpen(true);
+          showToast(t("ta.authNeeded"), "info");
+        }
+      })
+      .catch(() => showToast(t("ta.linkInvalid"), "error"));
+  }, []);
+
   // URL'de reset_token / auth=register / accept_invite varsa yönlendir
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -2846,6 +2968,8 @@ export default function Muuvlink() {
           localStorage.removeItem("pendingTraining");
           fetchTrainingDetails(pendingTraining);
         }
+        // Training Agents'tan gelen taslak bekliyorsa doğrudan forma götür.
+        if (localStorage.getItem(TA_DRAFT_KEY)) setCurrentPage("create-training");
       } else {
         const msg = data.error || t("auth.loginFail");
         if (setError) setError(
@@ -2885,6 +3009,8 @@ export default function Muuvlink() {
         // Silinmeye zamanlanmış hesap girişle geri geldiyse bildir.
         if (data.restored) showToast(t("settings.accountRestored"), "success");
         if (isNative) setCurrentPage("home");
+        // Kaydol → antrenman taslağı bekliyorsa doğrudan forma götür.
+        if (localStorage.getItem(TA_DRAFT_KEY)) setCurrentPage("create-training");
         fetchUserData(data.token);
         fetchTrainings();
         fetchTeams();
@@ -3238,6 +3364,13 @@ export default function Muuvlink() {
 
       if (response.ok) {
         showToast(t("toast.trainingCreated"), "success");
+        // Training Agents taslağı varsa yayınlanan antrenmanı düş; sırada
+        // başka antrenman varsa şerit onunla görünmeye devam eder.
+        if (taDraft) {
+          const kalan = taDraft.sessions.length - 1;
+          shiftTaDraft();
+          if (kalan > 0) showToast(t("ta.more").replace("{n}", kalan), "info");
+        }
         setCurrentPage("profile");
         fetchTrainings();
         fetchMyTrainings(token);
@@ -3685,7 +3818,10 @@ export default function Muuvlink() {
 
       if (response.ok) {
         showToast(t("createTeam.success"), "success");
-        setCurrentPage("profile");
+        // Antrenman taslağı bekliyorsa profil yerine forma dön: kullanıcı
+        // takımı zaten onu yayınlamak için kurdu.
+        if (taDraft) { showToast(t("ta.teamReady"), "success"); setCurrentPage("create-training"); }
+        else setCurrentPage("profile");
         fetchTeams();
         fetchMyTeams(token);
         fetchMyTrainings(token);
@@ -6851,10 +6987,13 @@ export default function Muuvlink() {
         })
         .catch(() => setEligibleLoading(false));
     }, []);
-    const [formData, setFormData] = useState({
-      title: "",
-      description: "",
-      training_date: "",
+    // Training Agents taslağı varsa ad, tarih, açıklama, süre ve dal ondan gelir.
+    // Saat, konum, takım, kontenjan BİLEREK boş: onları antrenör seçer.
+    const [formData, setFormData] = useState(() => ({
+      title: taCurrent?.title || "",
+      description: taCurrent?.description || "",
+      training_date: taCurrent?.date || "",
+      duration_minutes: taCurrent?.duration_minutes || 60,
       training_time: "",
       location_name: "",
       location_lat: null,
@@ -6862,7 +7001,7 @@ export default function Muuvlink() {
       capacity: 20,
       difficulty: "Orta",
       team_id: null,   // null = bireysel (takımsız) etkinlik
-      sport: "",       // yalnızca bireysel etkinlikte kullanılır
+      sport: taCurrent?.sport || "",  // yalnızca bireysel etkinlikte kullanılır
       is_public: true,
       // Kayıt linki alanları varsayılan KAPALI: çoğu etkinlikte gerekmiyor,
       // formu kalabalıklaştırmasın. Anahtar formData içinde tutulur ki
@@ -6870,7 +7009,7 @@ export default function Muuvlink() {
       reg_enabled: false,
       registration_url: "", // yalnızca TAKIM etkinliğinde; bireysele geçince temizlenir
       registration_label: "", // buton yazısı; boşsa arayüz varsayılanı kullanır
-    });
+    }));
 
     // Seçili takım nesnesini bul (team_id null ise bireysel)
     const selectedTeamObj = eligibleTeams.find((t) => t.id === parseInt(formData.team_id));
@@ -6949,6 +7088,36 @@ export default function Muuvlink() {
             </div>
           )}
 
+          {/* Training Agents'tan gelen antrenman: nereden geldiği yazsın.
+              Uygun takım yoksa tek çıkış yolu takım kurmak — etkinlik
+              oluşturulduktan sonra takımı DEĞİŞTİRİLEMİYOR, o yüzden
+              "şimdilik bireysel yayınla, sonra taşırsın" demiyoruz. */}
+          {taCurrent && (
+            <div className="mb-4 rounded-2xl border p-4" style={{ borderColor: "#c2ede9", background: "#e2f1ef" }}>
+              <div className="flex items-start gap-2.5">
+                <Sparkles className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: "#114956" }} />
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: "#114956" }}>
+                    {t("ta.badge")}
+                  </div>
+                  <div className="text-sm font-medium text-slate-700 truncate">{taCurrent.title}</div>
+                </div>
+              </div>
+              {!eligibleLoading && eligibleTeams.length === 0 && (
+                <div className="mt-3 pt-3 border-t" style={{ borderColor: "#c2ede9" }}>
+                  <div className="text-sm font-semibold text-slate-800">{t("ta.noTeamTitle")}</div>
+                  <p className="text-xs text-slate-500 leading-relaxed mt-1">{t("ta.noTeamDesc")}</p>
+                  <button type="button" data-btn="solid"
+                    onClick={() => setCurrentPage("create-team")}
+                    className="mt-3 w-full py-3 font-semibold text-white rounded-xl transition hover:opacity-90"
+                    style={{ background: "#114956" }}>
+                    {t("ta.noTeamBtn")}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100">
 
             {/* Etkinlik tipi: Bireysel veya Takım */}
@@ -6965,6 +7134,12 @@ export default function Muuvlink() {
                     <option key={team.id} value={team.id}>{team.name}</option>
                   ))}
                 </select>
+                {taCurrent && isIndividual && (
+                  <p className="mt-2 flex items-start gap-1.5 text-xs leading-snug text-amber-700">
+                    <AlertTriangle className="w-3.5 h-3.5 mt-px flex-shrink-0" />
+                    <span>{t("ta.soloWarn")}</span>
+                  </p>
+                )}
                 <button
                   type="button"
                   onClick={() => setCurrentPage("create-team")}
@@ -8805,6 +8980,16 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
     <div className="min-h-screen bg-slate-50 font-sans antialiased" style={isNative ? {paddingTop:"env(safe-area-inset-top)"} : {}}>
       {isNative ? null : <Navigation />}
       {isNative ? null : <AppInstallBanner />}
+
+      {/* Bekleyen antrenman şeridi — form sayfasındayken gösterilmez. */}
+      {taCurrent && currentPage !== "create-training" && (
+        <TaDraftStrip
+          session={taCurrent}
+          more={(taDraft?.sessions?.length || 1) - 1}
+          onPublish={() => setCurrentPage("create-training")}
+          onDiscard={() => showConfirm(t("ta.discardConfirm"), clearTaDraft)}
+        />
+      )}
 
       <div style={isNative ? {paddingBottom:"calc(env(safe-area-inset-bottom) + 60px)"} : {}}>
       {currentPage === "home" && (isNative ? <MobileHomePage /> : <HomePage />)}
