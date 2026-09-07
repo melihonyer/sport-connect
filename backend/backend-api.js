@@ -2010,7 +2010,36 @@ const SEO_PAGE_BUILDERS = { home: seoHomeText, trainings: seoTrainingsText, team
 // Node insan trafiğinin yolunda kalmasın diye) + eski /antrenmanlar.
 const SEO_BOT_PATHS = Object.keys(SEO_PATH_LOOKUP).filter((p) => p !== '/').concat('/antrenmanlar');
 
+// Eski sorgu adresleri (/takimlar?takim=5, /etkinlikler?etkinlik=105) slug detay
+// adresine KALICI taşındı. Query string route eşleşmesine girmediği için bu istekler
+// liste sayfasını render ediyor ve canonical'ı listeye yazıyordu; Google da eski adresi
+// "doğru canonical'lı alternatif sayfa" diye dizinden düşürüp değerini detay sayfası
+// yerine listeye akıtıyordu. 301 doğru sayfaya taşır.
+// Gizli kayıtta yönlendirme YOK: Location başlığı takım/etkinlik adını sızdırmasın —
+// görünürlük kuralı detay prerender'ıyla birebir aynı.
+const legacyDetailRedirect = async (req) => {
+  const teamId = String(req.query.takim ?? '').trim();
+  const trainingId = String(req.query.etkinlik ?? '').trim();
+  try {
+    if (/^\d+$/.test(teamId)) {
+      const r = await pool.query('SELECT id, name, is_private FROM teams WHERE id = $1', [teamId]);
+      const t0 = r.rows[0];
+      if (t0 && !t0.is_private) return `${SITE_ORIGIN}/takim/${slugify(t0.name)}-${t0.id}`;
+    }
+    if (/^\d+$/.test(trainingId)) {
+      const r = await pool.query('SELECT id, title, is_public FROM trainings WHERE id = $1', [trainingId]);
+      const e0 = r.rows[0];
+      if (e0 && e0.is_public !== false) return `${SITE_ORIGIN}/etkinlik/${slugify(e0.title)}-${e0.id}`;
+    }
+  } catch (e) {
+    console.error('[SEO-301] eski adres çözümlenemedi:', e.message);
+  }
+  return null;
+};
+
 app.get(SEO_BOT_PATHS, async (req, res, next) => {
+  const moved = await legacyDetailRedirect(req);
+  if (moved) return res.redirect(301, moved);
   const hit = SEO_PATH_LOOKUP[req.path] ||
     (req.path === '/antrenmanlar' ? { lang: 'tr', page: 'trainings' } : null);
   const html = getIndexHtml();
