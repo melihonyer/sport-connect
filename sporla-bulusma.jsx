@@ -2325,6 +2325,13 @@ export default function Muuvlink() {
           const params = new URLSearchParams(url.search);
           const pathname = url.pathname;
 
+          // Training Agents jetonu her şeyden önce: muuvlink.app'in AASA/assetlinks
+          // dosyaları TÜM adresleri uygulamaya yönlendiriyor, yani uygulaması kurulu
+          // kullanıcı web akışına hiç ulaşamıyor. Jeton uygulamada da işlenmezse
+          // kullanıcı ana sayfada kalıyordu.
+          const taTok = params.get("ta");
+          if (taTok) { handleTaToken(taTok); return; }
+
           const acceptInvite = params.get("accept_invite");
           const resetToken   = params.get("reset_token");
           const takimId      = params.get("takim");
@@ -2354,6 +2361,13 @@ export default function Muuvlink() {
           }
         } catch (_) {}
       });
+      // Uygulama bağlantıyla SIFIRDAN açıldıysa appUrlOpen dinleyici kurulmadan
+      // önce ateşlenmiş olabilir; başlangıç adresini ayrıca soruyoruz.
+      App.getLaunchUrl?.().then((res) => {
+        if (!res?.url) return;
+        const tok = new URL(res.url).searchParams.get("ta");
+        if (tok) handleTaToken(tok);
+      }).catch(() => {});
     }).catch(() => {});
     return () => { listener?.remove?.(); };
   }, []);
@@ -2431,12 +2445,13 @@ export default function Muuvlink() {
     } catch { try { localStorage.removeItem(TA_DRAFT_KEY); } catch { /* yok say */ } }
   }, []);
 
-  // ?ta=<imzalı jeton> ile gelindi: doğrula, taslağı sakla, oturuma göre yönlendir.
-  useEffect(() => {
-    const tok = new URLSearchParams(window.location.search).get("ta");
-    if (!tok) return;
-    // Jeton adres çubuğunda kalmasın: paylaşılabilir ve geri tuşuyla tekrarlanır.
-    window.history.replaceState({}, "", window.location.pathname);
+  // Jetonu doğrula, taslağı sakla, oturuma göre yönlendir.
+  // İKİ yerden çağrılır: web'de adres çubuğundan, uygulamada evrensel
+  // bağlantıdan (appUrlOpen / getLaunchUrl). Akış ikisinde de aynı.
+  const taHandledRef = useRef(null);
+  const handleTaToken = (tok) => {
+    if (!tok || taHandledRef.current === tok) return;   // aynı jetonu iki kez işleme
+    taHandledRef.current = tok;
     fetch(`${API_URL}/integrations/training-agents/verify`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -2456,6 +2471,15 @@ export default function Muuvlink() {
         }
       })
       .catch(() => showToast(t("ta.linkInvalid"), "error"));
+  };
+
+  // Web: ?ta=<imzalı jeton> ile gelindi.
+  useEffect(() => {
+    const tok = new URLSearchParams(window.location.search).get("ta");
+    if (!tok) return;
+    // Jeton adres çubuğunda kalmasın: paylaşılabilir ve geri tuşuyla tekrarlanır.
+    window.history.replaceState({}, "", window.location.pathname);
+    handleTaToken(tok);
   }, []);
 
   // URL'de reset_token / auth=register / accept_invite varsa yönlendir
