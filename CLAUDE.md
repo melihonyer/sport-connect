@@ -142,6 +142,25 @@ Deploy sonrası: `curl -s https://muuvlink.app/api/health` → `{"status":"ok","
 
 Doğrulanmış bir değişiklikten sonra **deploy ve git push tekrar sorulmadan** yapılır.
 
+## Training Agents entegrasyonu
+
+trainingagentsapp.com'da yapay zeka bir antrenman yazar; antrenör imzalı bir
+bağlantıyla (`https://muuvlink.app/?ta=<jwt>`) buraya gelip saat, konum ve takım
+seçerek yayınlar. Sunucular arası API YOK — yayınlayan zaten burada oturumu açık
+olan kullanıcı.
+
+- Uç: `POST /api/integrations/training-agents/verify` (kimlik istemez, DB'ye
+  dokunmaz). HS256'ya sabit, `iss=training-agents` ve `exp` zorunlu. Takım, saat,
+  konum, kontenjan ve ücret alanları payload'dan **kabul edilmez**.
+- Ortak anahtar `TA_SHARED_SECRET`, iki projenin `.env`'inde. Repoya girmez.
+- Jeton varışta bir kez doğrulanır, doğrulanmış içerik 24 saat saklanır; web'de
+  adres çubuğundan, uygulamada `appUrlOpen` + `getLaunchUrl` ile yakalanır
+  (AASA tüm adresleri uygulamaya yönlendiriyor, ikisi de gerekli).
+- **Sözleşmenin tek kaynağı bu depoda değil:**
+  `TT COACH APP/docs/muuvlink-integration.md`. İki taraf da oraya yazıyor.
+- Karar: antrenmanlar arasında takım/konum hatırlanmaz — değişebilen bir alanı
+  önceden doldurmak, yanlış yerde etkinlik yayınlanmasına yol açar.
+
 ## Mobil uygulama
 
 Capacitor `server.url = https://muuvlink.app?src=app` → JS deploy ile OTA gider,
