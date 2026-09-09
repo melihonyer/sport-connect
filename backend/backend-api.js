@@ -2909,10 +2909,15 @@ app.put('/api/teams/:id', authenticateToken, async (req, res) => {
     if (!sportsArr.length && sport) sportsArr.push(sport);
     const primarySport = sportsArr[0] || null;
 
+    // Gizlilik yalnızca AÇIKÇA boolean geldiyse değişir. Eksik/bozuk bir alan
+    // gizli bir takımı sessizce herkese açık yapmasın.
+    const privacyArg = typeof is_private === 'boolean' ? is_private : null;
+
     const result = await pool.query(
-      `UPDATE teams SET name=$1, sport=$2, sports=$3, description=$4, location=$5, is_private=$6, updated_at=CURRENT_TIMESTAMP
+      `UPDATE teams SET name=$1, sport=$2, sports=$3, description=$4, location=$5,
+              is_private=COALESCE($6, is_private), updated_at=CURRENT_TIMESTAMP
        WHERE id=$7 RETURNING *`,
-      [name, primarySport, (sportsArr.length ? sportsArr : null), description, location, is_private, teamId]
+      [name, primarySport, (sportsArr.length ? sportsArr : null), description, location, privacyArg, teamId]
     );
 
     res.json({ message: 'Team updated', team: result.rows[0] });

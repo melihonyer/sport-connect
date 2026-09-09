@@ -60,6 +60,7 @@ export const translations = {
   // ── COMMON (tekrar eden genel metinler) ─────────────────
   common: {
     save:         { tr: "Kaydet",          en: "Save",          de: "Speichern"   },
+    saving:       { tr: "Kaydediliyor…",   en: "Saving…",       de: "Wird gespeichert…" },
     cancel:       { tr: "İptal",           en: "Cancel",        de: "Abbrechen"   },
     delete:       { tr: "Sil",             en: "Delete",        de: "Löschen"     },
     edit:         { tr: "Düzenle",         en: "Edit",          de: "Bearbeiten"  },

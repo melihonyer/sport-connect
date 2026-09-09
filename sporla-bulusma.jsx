@@ -64,6 +64,18 @@ import SharedLocationPicker from "./LocationPicker";
 // Kod doğru, dosya yok. Çözüm: bir kez sayfayı yenile (yeni index.html yeni
 // adları getirir). sessionStorage bayrağı sonsuz yenileme döngüsünü keser;
 // gerçek bir hata varsa ikinci denemede hata olduğu gibi yukarı çıkar.
+// Takım ayarları formunun sunucudaki değerlerden kurulması. id de taşınır ki
+// başka bir takıma geçildiğinde bayat form kullanılmasın.
+const buildTeamEditForm = (team) => ({
+  id: team?.id,
+  name: team?.name || "",
+  sports: team?.sports?.length ? team.sports : (team?.sport ? [team.sport] : []),
+  description: team?.description || "",
+  location: team?.location || "",
+  avatar: team?.avatar || "",
+  is_private: team?.is_private === true,
+});
+
 const CHUNK_RELOAD_KEY = "chunkReloadedAt";
 const lazyWithReload = (factory) => React.lazy(() => factory().catch((err) => {
   const gecmisDeneme = Number(sessionStorage.getItem(CHUNK_RELOAD_KEY) || 0);
@@ -1879,6 +1891,13 @@ export default function Muuvlink() {
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [teamActiveTab, setTeamActiveTab] = useState("wall");
+  // Takım ayarları formu ÜST bileşende durur. TeamDetailPage her üst-render'da
+  // yeniden kurulduğu için form state'i içeride tutulamaz: kaydetme sonrası
+  // gelen tazeleme sırasında form eski (bayat) selectedTeam'den yeniden
+  // doldurulup "Gizli" anahtarını sessizce "Açık"a çeviriyordu. 7 Eylül 2026'da
+  // gerçek bir takım bu yüzden yeniden herkese açık oldu.
+  const [teamEditForm, setTeamEditForm] = useState(null);
+  const [teamSaving, setTeamSaving] = useState(false);
   const teamActiveTabRef = useRef("wall");
   const [nearbyMode, setNearbyMode] = useState(false);
   const [nearbyDistance, setNearbyDistance] = useState(10);
@@ -3668,6 +3687,8 @@ export default function Muuvlink() {
   };
 
   const handleUpdateTeam = async (teamId, formData) => {
+    if (teamSaving) return; // çift dokunuş: ikinci istek bayat değerle gidebiliyordu
+    setTeamSaving(true);
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(`${API_URL}/teams/${teamId}`, {
@@ -3685,6 +3706,7 @@ export default function Muuvlink() {
         showToast(data.error || t("toast.updateFail"), "error");
       }
     } catch { showToast(t("toast.networkError"), "error"); }
+    finally { setTeamSaving(false); }
   };
 
   const handleDeleteTeam = (teamId) => {
@@ -3737,6 +3759,8 @@ export default function Muuvlink() {
       if (response.ok) {
         const data = await response.json();
         setSelectedTeam(data.team);
+        // Sessiz tazelemede forma dokunulmaz — kullanıcının yazdıkları kaybolmasın.
+        if (!silent) setTeamEditForm(buildTeamEditForm(data.team));
         // silent: zaten açık olan sayfanın verisini tazeliyoruz — sayfayı ve
         // geçmişi hiç ellemiyoruz ki kullanıcı bu sırada başka yere gittiyse geri sıçramasın.
         if (!silent) {
@@ -6522,14 +6546,17 @@ export default function Muuvlink() {
     const [showAllMembers, setShowAllMembers] = useState(false);
     const [activeTab, setActiveTabState] = useState(teamActiveTabRef.current);
     const setActiveTab = (tab) => { teamActiveTabRef.current = tab; setActiveTabState(tab); setTeamActiveTab(tab); };
-    const [editForm, setEditForm] = useState({
-      name: selectedTeam.name,
-      sports: selectedTeam.sports?.length ? selectedTeam.sports : (selectedTeam.sport ? [selectedTeam.sport] : []),
-      description: selectedTeam.description || "",
-      location: selectedTeam.location || "",
-      avatar: selectedTeam.avatar || "",
-      is_private: selectedTeam.is_private || false,
-    });
+    // Form state'i üst bileşende (teamEditForm). Buradaki useState, bu bileşen
+    // her üst-render'da yeniden kurulduğu için kullanıcının seçimini kaybediyordu.
+    const editForm =
+      teamEditForm && teamEditForm.id === selectedTeam.id
+        ? teamEditForm
+        : buildTeamEditForm(selectedTeam);
+    const setEditForm = (upd) =>
+      setTeamEditForm((f) => {
+        const base = f && f.id === selectedTeam.id ? f : buildTeamEditForm(selectedTeam);
+        return typeof upd === "function" ? upd(base) : upd;
+      });
 
     const roleBadge = (member) => {
       // Platform admini için rol yerine "Admin" rozeti gösterilir.
@@ -6962,9 +6989,9 @@ export default function Muuvlink() {
               </div>
 
               <div className="flex gap-3 pt-1">
-                <button data-btn="solid" type="submit"
-                  className="flex-1 h-12 bg-brand-600 text-white rounded-xl font-semibold transition-colors">
-                  {t("common.save")}
+                <button data-btn="solid" type="submit" disabled={teamSaving}
+                  className="flex-1 h-12 bg-brand-600 text-white rounded-xl font-semibold transition-colors disabled:opacity-60">
+                  {teamSaving ? t("common.saving") : t("common.save")}
                 </button>
                 {isOwner && (
                   <button type="button" onClick={() => handleDeleteTeam(selectedTeam.id)}
