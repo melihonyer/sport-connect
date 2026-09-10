@@ -1111,8 +1111,11 @@ export const translations = {
   // ── SPORTS LIST ──────────────────────────────────────────
   sports: {
     Basketbol:  { tr: "Basketbol",  en: "Basketball",  de: "Basketball"  },
+    Bikejoring: { tr: "Bikejoring", en: "Bikejoring",  de: "Bikejöring"  },
     Bisiklet:   { tr: "Bisiklet",   en: "Cycling",     de: "Radfahren"   },
+    Canicross:  { tr: "Canicross",  en: "Canicross",   de: "Canicross"   },
     Crossfit:   { tr: "Crossfit",   en: "CrossFit",    de: "CrossFit"    },
+    "Dog Triatlon": { tr: "Dog Triatlon", en: "Dog Triathlon", de: "Dog-Triathlon" },
     Futbol:     { tr: "Futbol",     en: "Football",    de: "Fußball"     },
     Kano:       { tr: "Kano",       en: "Kayaking",    de: "Kanu"        },
     Koşu:       { tr: "Koşu",       en: "Running",     de: "Laufen"      },

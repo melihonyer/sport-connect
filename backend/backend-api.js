@@ -5183,7 +5183,7 @@ pool.query(`
 `).catch(() => {});
 
 // Panelde kullanılan spor listesiyle birebir aynı olmalı (admin-panel.jsx → SPORT_TYPES)
-const DISCOVERY_SPORTS = ['Basketbol','Bisiklet','Crossfit','Futbol','Kano','Koşu','Kürek','Padel','Pilates','Tenis','Trekking','Triatlon','Voleybol','Yoga','Yüzme','Diğer'];
+const DISCOVERY_SPORTS = ['Basketbol','Bikejoring','Bisiklet','Canicross','Crossfit','Dog Triatlon','Futbol','Kano','Koşu','Kürek','Padel','Pilates','Tenis','Trekking','Triatlon','Voleybol','Yoga','Yüzme','Diğer'];
 
 // İlk kurulumda kaynak listesi boşsa doldur (panelden düzenlenebilir)
 // Hepsi düz HTML veriyor ve robots.txt izin veriyor (19.08.2026'da tek tek denendi).
@@ -5379,7 +5379,9 @@ const DISCOVERY_SYSTEM = [
   '- sport alanı verilen listeden TAM olarak bir değer olmalı; uymuyorsa "Diğer" yaz.',
   '  (koşu/maraton/yarı maraton/ultra → "Koşu", patika/trail/dağ yürüyüşü → "Trekking",',
   '   HYROX/fonksiyonel fitness yarışları → "Crossfit", duatlon/akuatlon → "Triatlon",',
-  '   yol/dağ bisikleti/gran fondo → "Bisiklet", açık su/havuz → "Yüzme")',
+  '   yol/dağ bisikleti/gran fondo → "Bisiklet", açık su/havuz → "Yüzme",',
+  '   köpekle koşu → "Canicross", köpekle bisiklet → "Bikejoring",',
+  '   köpekle üç disiplinli yarış → "Dog Triatlon")',
   '- description: kaynaktan KOPYALAMA; kendi cümlelerinle en fazla 200 karakter özet yaz (Türkçe).',
   '- Bilinmeyen alanları boş string ("") bırak; asla tahmin uydurma.',
   '- registration_url: kayıt/detay sayfasının tam adresi; yoksa kaynak sayfanın adresini yaz.',

@@ -204,7 +204,7 @@ const LevelSelect = ({ value, onChange, t }) => (
 );
 
 // ── Spor dalları ────────────────────────────────────────────────────────────
-const SPORT_TYPES = ["Basketbol","Bisiklet","Crossfit","Futbol","Kano","Koşu","Kürek","Padel","Pilates","Tenis","Trekking","Triatlon","Voleybol","Yoga","Yüzme","Diğer"];
+const SPORT_TYPES = ["Basketbol","Bikejoring","Bisiklet","Canicross","Crossfit","Dog Triatlon","Futbol","Kano","Koşu","Kürek","Padel","Pilates","Tenis","Trekking","Triatlon","Voleybol","Yoga","Yüzme","Diğer"];
 
 // Bildirim tercihi satırları (backend NOTIF_TYPE_TO_KEY ile hizalı). email:false → sadece uygulama.
 const NOTIF_PREF_ROWS = [
@@ -2161,24 +2161,6 @@ export default function Muuvlink() {
     { icon: Activity, label: t("home.statsTrainings"), value: fmtNum(platformStats?.trainings), color: "text-cyan-400" },
     { icon: Target,   label: t("home.statsTeams"),     value: fmtNum(platformStats?.teams),     color: "text-brand-400" },
     { icon: Award,    label: t("home.statsBadges"),    value: fmtNum(platformStats?.badges),    color: "text-amber-400" },
-  ];
-
-  const sportTypes = [
-    "Basketbol",
-    "Bisiklet",
-    "Crossfit",
-    "Futbol",
-    "Kano",
-    "Koşu",
-    "Kürek",
-    "Padel",
-    "Pilates",
-    "Tenis",
-    "Trekking",
-    "Triatlon",
-    "Voleybol",
-    "Yoga",
-    "Yüzme",
   ];
 
   useEffect(() => {
@@ -5176,7 +5158,7 @@ export default function Muuvlink() {
   };
 
   const TrainingsPage = () => {
-    const sports = ["Basketbol", "Bisiklet", "Crossfit", "Futbol", "Kano", "Koşu", "Kürek", "Padel", "Pilates", "Tenis", "Trekking", "Triatlon", "Voleybol", "Yoga", "Yüzme", "Diğer"];
+    const sports = SPORT_TYPES; // tek kaynak: yukarıdaki SPORT_TYPES
     const difficulties = [
       { val: "Kolay",      label: t("trainings.levelEasy") },
       { val: "Orta",       label: t("trainings.levelMid")  },
@@ -5559,7 +5541,7 @@ export default function Muuvlink() {
   };
 
   const TeamsPage = () => {
-    const sports = ["Basketbol", "Bisiklet", "Crossfit", "Futbol", "Kano", "Koşu", "Kürek", "Padel", "Pilates", "Tenis", "Trekking", "Triatlon", "Voleybol", "Yoga", "Yüzme", "Diğer"];
+    const sports = SPORT_TYPES; // tek kaynak: yukarıdaki SPORT_TYPES
     const [teamSearch, setTeamSearch] = useState("");
     const [teamSport, setTeamSport] = useState("");
 

@@ -19,6 +19,7 @@ const SPORT_COLORS = {
   Basketbol:"#d97706", Voleybol:"#7c3aed", Tenis:"#b45309", Padel:"#b45309",
   Yoga:"#9333ea", Pilates:"#db2777", Crossfit:"#dc2626", Triatlon:"#0e3c47",
   Kano:"#0369a1", Kürek:"#1d4ed8", Trekking:"#15803d", Diğer:"#114956",
+  Canicross:"#4d7c0f", Bikejoring:"#a16207", "Dog Triatlon":"#0f766e",
 };
 
 const makeTrainingIcon = (color, letter, highlight = false) => {
