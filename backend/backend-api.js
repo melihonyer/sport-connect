@@ -956,6 +956,19 @@ function emailWrapper(content) {
         <!-- Footer -->
         <tr>
           <td style="background:#f8fafc;padding:24px 40px;text-align:center;border-top:1px solid #e2e8f0;">
+            <!-- Sosyal medya. Görsel yok: e-posta istemcilerinin çoğu resimleri
+                 varsayılan olarak engelliyor, SVG'yi ise hiç çizmiyor. -->
+            <p style="margin:0 0 12px;color:#64748b;font-size:13px;font-weight:600;">Bizi takip et</p>
+            <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 18px;">
+              <tr>
+                <td style="padding:0 5px;">
+                  <a href="https://www.instagram.com/muuvlinkapp/" style="display:inline-block;padding:9px 18px;background:#ffffff;border:1px solid #e2e8f0;border-radius:9px;color:#114956;text-decoration:none;font-size:13px;font-weight:600;">Instagram</a>
+                </td>
+                <td style="padding:0 5px;">
+                  <a href="https://www.youtube.com/@Muuvlink" style="display:inline-block;padding:9px 18px;background:#ffffff;border:1px solid #e2e8f0;border-radius:9px;color:#114956;text-decoration:none;font-size:13px;font-weight:600;">YouTube</a>
+                </td>
+              </tr>
+            </table>
             <p style="margin:0;color:#94a3b8;font-size:13px;">Bu maili Muuvlink üzerinden aldınız.</p>
             <p style="margin:4px 0 0;color:#94a3b8;font-size:13px;">© 2026 Muuvlink. Tüm hakları saklıdır.</p>
           </td>
