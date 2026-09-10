@@ -956,16 +956,23 @@ function emailWrapper(content) {
         <!-- Footer -->
         <tr>
           <td style="background:#f8fafc;padding:24px 40px;text-align:center;border-top:1px solid #e2e8f0;">
-            <!-- Sosyal medya. Görsel yok: e-posta istemcilerinin çoğu resimleri
-                 varsayılan olarak engelliyor, SVG'yi ise hiç çizmiyor. -->
-            <p style="margin:0 0 12px;color:#64748b;font-size:13px;font-weight:600;">Bizi takip et</p>
+            <!-- Sosyal medya. PNG kullanılıyor: e-posta istemcileri SVG çizmez.
+                 Görseller engellenirse alt metni ("Instagram"/"YouTube") okunur
+                 kalsın diye img'ye renk ve kalınlık verildi. -->
+            <p style="margin:0 0 14px;color:#64748b;font-size:13px;font-weight:600;">Bizi takip et</p>
             <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 18px;">
               <tr>
-                <td style="padding:0 5px;">
-                  <a href="https://www.instagram.com/muuvlinkapp/" style="display:inline-block;padding:9px 18px;background:#ffffff;border:1px solid #e2e8f0;border-radius:9px;color:#114956;text-decoration:none;font-size:13px;font-weight:600;">Instagram</a>
+                <td style="padding:0 7px;">
+                  <a href="https://www.instagram.com/muuvlinkapp/" style="text-decoration:none;">
+                    <img src="https://muuvlink.app/icons/social-instagram.png" width="34" height="34" alt="Instagram"
+                         style="display:block;border:0;outline:none;border-radius:9px;color:#114956;font-family:'Segoe UI',Arial,sans-serif;font-size:13px;font-weight:600;text-decoration:none;" />
+                  </a>
                 </td>
-                <td style="padding:0 5px;">
-                  <a href="https://www.youtube.com/@Muuvlink" style="display:inline-block;padding:9px 18px;background:#ffffff;border:1px solid #e2e8f0;border-radius:9px;color:#114956;text-decoration:none;font-size:13px;font-weight:600;">YouTube</a>
+                <td style="padding:0 7px;">
+                  <a href="https://www.youtube.com/@Muuvlink" style="text-decoration:none;">
+                    <img src="https://muuvlink.app/icons/social-youtube.png" width="34" height="34" alt="YouTube"
+                         style="display:block;border:0;outline:none;border-radius:9px;color:#114956;font-family:'Segoe UI',Arial,sans-serif;font-size:13px;font-weight:600;text-decoration:none;" />
+                  </a>
                 </td>
               </tr>
             </table>
