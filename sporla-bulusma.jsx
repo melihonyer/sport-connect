@@ -76,6 +76,16 @@ const buildTeamEditForm = (team) => ({
   is_private: team?.is_private === true,
 });
 
+// Sayfa bileşenleri üst bileşenin İÇİNDE tanımlı; her üst-render'da yeni bir
+// fonksiyon kimliği alıyorlar ve React alt ağacı söküp yeniden kuruyor. Görünen
+// sonuç: kaydetme sırasında sayfa 5 kez yeniden çiziliyor, imlecin altındaki
+// düğme hover rengini kaybedip geri alıyor (yanıp sönme), logo src'leri sıfırlanıyor.
+// PageHost kimliği SABİT bir kabuk: sayfa fonksiyonunu prop olarak alıp çağırır,
+// böylece hook'lar bu sabit fiber'a bağlanır ve ağaç ayakta kalır.
+// Kural: her sayfa kendi sabit key'i ile kullanılır ve içinde hook'lardan ÖNCE
+// koşullu return bulunmamalı (hook sırası bozulur) — koşul çağrı yerinde olur.
+const PageHost = ({ render }) => render();
+
 const CHUNK_RELOAD_KEY = "chunkReloadedAt";
 const lazyWithReload = (factory) => React.lazy(() => factory().catch((err) => {
   const gecmisDeneme = Number(sessionStorage.getItem(CHUNK_RELOAD_KEY) || 0);
@@ -6511,7 +6521,8 @@ export default function Muuvlink() {
   };
 
   const TeamDetailPage = () => {
-    if (!selectedTeam) return null;
+    // Not: buraya hook'lardan önce koşullu return KONULMAZ. selectedTeam kontrolü
+    // çağrı yerinde (PageHost'un render edilip edilmemesinde) yapılıyor.
 
     const isOwner = user && selectedTeam.owner_id === user.id;
     const myMembership = selectedTeam.members?.find((m) => m.id === user?.id);
@@ -9014,7 +9025,7 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans antialiased" style={isNative ? {paddingTop:"env(safe-area-inset-top)"} : {}}>
-      {isNative ? null : <Navigation />}
+      {isNative ? null : <PageHost key="nav" render={Navigation} />}
       {isNative ? null : <AppInstallBanner />}
 
       {/* Bekleyen antrenman şeridi — form sayfasındayken gösterilmez. */}
@@ -9034,7 +9045,7 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
       {currentPage === "teams" && <TeamsPage />}
       {currentPage === "badges" && <BadgesPage />}
       {currentPage === "training-detail" && <TrainingDetailPage />}
-      {currentPage === "team-detail" && <TeamDetailPage />}
+      {currentPage === "team-detail" && selectedTeam && <PageHost key="team-detail" render={TeamDetailPage} />}
       {currentPage === "create-training" && <CreateTrainingPage />}
       {currentPage === "create-team" && <CreateTeamPage />}
       {currentPage === "contact" && <ContactPage />}
@@ -9059,9 +9070,9 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
       <CookieBanner />
       {tourActive && <Tour steps={tourSteps} onFinish={finishTour} t={t} />}
       <Toast />
-      {!isNative && <Footer />}
+      {!isNative && <PageHost key="footer" render={Footer} />}
       </div>
-      {isNative && <BottomNav />}
+      {isNative && <PageHost key="bottomnav" render={BottomNav} />}
     </div>
   );
 }
