@@ -204,7 +204,7 @@ const LevelSelect = ({ value, onChange, t }) => (
 );
 
 // ── Spor dalları ────────────────────────────────────────────────────────────
-const SPORT_TYPES = ["Basketbol","Bikejoring","Bisiklet","Canicross","Crossfit","Dog Triatlon","Futbol","Kano","Koşu","Kürek","Padel","Pilates","Tenis","Trekking","Triatlon","Voleybol","Yoga","Yüzme","Diğer"];
+const SPORT_TYPES = ["Basketbol","Bikejoring","Bisiklet","Canicross","Crossfit","Dog Triatlon","Futbol","Kano","Koşu","Kürek","Padel","Pilates","Tenis","Trekking","Triatlon","Voleybol","Yoga","Yürüyüş","Yüzme","Diğer"];
 
 // Bildirim tercihi satırları (backend NOTIF_TYPE_TO_KEY ile hizalı). email:false → sadece uygulama.
 const NOTIF_PREF_ROWS = [
@@ -1897,7 +1897,10 @@ export default function Muuvlink() {
   // doldurulup "Gizli" anahtarını sessizce "Açık"a çeviriyordu. 7 Eylül 2026'da
   // gerçek bir takım bu yüzden yeniden herkese açık oldu.
   const [teamEditForm, setTeamEditForm] = useState(null);
-  const [teamSaving, setTeamSaving] = useState(false);
+  // Çift gönderim kilidi REF'te tutulur, state'te değil: üst bileşende bir state
+  // değişimi TeamDetailPage'i baştan kurduğu için düğme gözle görülür şekilde
+  // yanıp sönüyordu. Ref hiç yeniden çizim tetiklemez.
+  const teamSavingRef = useRef(false);
   const teamActiveTabRef = useRef("wall");
   const [nearbyMode, setNearbyMode] = useState(false);
   const [nearbyDistance, setNearbyDistance] = useState(10);
@@ -3669,8 +3672,8 @@ export default function Muuvlink() {
   };
 
   const handleUpdateTeam = async (teamId, formData) => {
-    if (teamSaving) return; // çift dokunuş: ikinci istek bayat değerle gidebiliyordu
-    setTeamSaving(true);
+    if (teamSavingRef.current) return; // çift dokunuş: ikinci istek bayat değerle gidebiliyordu
+    teamSavingRef.current = true;
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(`${API_URL}/teams/${teamId}`, {
@@ -3688,7 +3691,7 @@ export default function Muuvlink() {
         showToast(data.error || t("toast.updateFail"), "error");
       }
     } catch { showToast(t("toast.networkError"), "error"); }
-    finally { setTeamSaving(false); }
+    finally { teamSavingRef.current = false; }
   };
 
   const handleDeleteTeam = (teamId) => {
@@ -6971,9 +6974,9 @@ export default function Muuvlink() {
               </div>
 
               <div className="flex gap-3 pt-1">
-                <button data-btn="solid" type="submit" disabled={teamSaving}
-                  className="flex-1 h-12 bg-brand-600 text-white rounded-xl font-semibold transition-colors disabled:opacity-60">
-                  {teamSaving ? t("common.saving") : t("common.save")}
+                <button data-btn="solid" type="submit"
+                  className="flex-1 h-12 bg-brand-600 text-white rounded-xl font-semibold transition-colors">
+                  {t("common.save")}
                 </button>
                 {isOwner && (
                   <button type="button" onClick={() => handleDeleteTeam(selectedTeam.id)}

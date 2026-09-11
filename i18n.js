@@ -1127,6 +1127,7 @@ export const translations = {
     Triatlon:   { tr: "Triatlon",   en: "Triathlon",   de: "Triathlon"   },
     Voleybol:   { tr: "Voleybol",   en: "Volleyball",  de: "Volleyball"  },
     Yoga:       { tr: "Yoga",       en: "Yoga",        de: "Yoga"        },
+    Yürüyüş:    { tr: "Yürüyüş",    en: "Walking",     de: "Walking"     },
     Yüzme:      { tr: "Yüzme",      en: "Swimming",    de: "Schwimmen"   },
     Diğer:      { tr: "Diğer",      en: "Other",       de: "Sonstiges"   },
   },

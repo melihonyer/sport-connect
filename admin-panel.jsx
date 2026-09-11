@@ -12,7 +12,7 @@ import {
 import LocationPicker from "./LocationPicker";
 import { createT, detectLang } from "./i18n.js";
 
-const SPORT_TYPES = ["Basketbol","Bikejoring","Bisiklet","Canicross","Crossfit","Dog Triatlon","Futbol","Kano","Koşu","Kürek","Padel","Pilates","Tenis","Trekking","Triatlon","Voleybol","Yoga","Yüzme","Diğer"];
+const SPORT_TYPES = ["Basketbol","Bikejoring","Bisiklet","Canicross","Crossfit","Dog Triatlon","Futbol","Kano","Koşu","Kürek","Padel","Pilates","Tenis","Trekking","Triatlon","Voleybol","Yoga","Yürüyüş","Yüzme","Diğer"];
 
 // Ana uygulamayla birebir aynı konum seçici (arama + haritadan seçme)
 const adminLang = detectLang();
