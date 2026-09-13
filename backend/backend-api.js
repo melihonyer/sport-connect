@@ -4606,12 +4606,14 @@ app.get('/api/admin/users', isAdmin, async (req, res) => {
     const result = await pool.query(`
       SELECT
         u.id, u.name, u.email, u.avatar, u.is_admin, u.created_at,
+        -- deleted_at doluysa kullanıcı hesabını silmiş (30 gün geri gelebilir, sonra purge siler)
+        u.deleted_at,
         COUNT(DISTINCT tm.team_id) as team_count,
         COUNT(DISTINCT ta.training_id) as training_count
       FROM users u
       LEFT JOIN team_members tm ON u.id = tm.user_id
       LEFT JOIN training_attendees ta ON u.id = ta.user_id
-      GROUP BY u.id, u.name, u.email, u.avatar, u.is_admin, u.created_at
+      GROUP BY u.id, u.name, u.email, u.avatar, u.is_admin, u.created_at, u.deleted_at
       ORDER BY u.created_at DESC
     `);
     res.json(result.rows);

@@ -1320,6 +1320,19 @@ function LiveTab({ api, showToast }) {
 const fmt = (d) => d ? new Date(d).toLocaleDateString("tr-TR", { day:"numeric", month:"short", year:"numeric" }) : "—";
 const fmtFull = (d) => d ? new Date(d).toLocaleString("tr-TR") : "—";
 
+// Hesabını silmiş kullanıcı. Kayıt 30 gün durur (giriş yaparsa geri gelir),
+// sonra purge kalıcı siler ve listeden düşer.
+const LEFT_PURGE_DAYS = 30;
+const LeftBadge = ({ at, small = false }) => {
+  const kalan = Math.max(0, LEFT_PURGE_DAYS - Math.floor((Date.now() - new Date(at).getTime()) / 86400000));
+  return (
+    <span title={`${fmtFull(at)} tarihinde ayrıldı · ${kalan} gün sonra kalıcı silinecek`}
+      className={`${small ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-xs"} bg-red-50 text-red-600 border border-red-100 rounded-lg font-medium whitespace-nowrap`}>
+      Ayrıldı · {fmt(at)}
+    </span>
+  );
+};
+
 // ─── Toast bildirimi ────────────────────────────────────────
 function AdminToast({ toasts }) {
   return (
@@ -1371,6 +1384,7 @@ export default function AdminPanel() {
   const [chartPeriod, setChartPeriod] = useState("daily");
   const [loading, setLoading]   = useState(false);
   const [search, setSearch]     = useState("");
+  const [userFilter, setUserFilter] = useState("all"); // all | active | left
 
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
@@ -1955,7 +1969,10 @@ export default function AdminPanel() {
 
   // Arama filtresi
   const q = search.toLowerCase();
-  const filteredUsers     = users.filter(u => !q || u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q));
+  const leftCount         = users.filter(u => u.deleted_at).length;
+  const filteredUsers     = users
+    .filter(u => userFilter === "all" || (userFilter === "left" ? !!u.deleted_at : !u.deleted_at))
+    .filter(u => !q || u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q));
   const filteredTrainings = trainings.filter(t => !q || t.title?.toLowerCase().includes(q));
   const filteredTeams     = teams.filter(t => !q || t.name?.toLowerCase().includes(q));
   const filteredMessages  = messages.filter(m => !q || m.name?.toLowerCase().includes(q) || m.subject?.toLowerCase().includes(q));
@@ -2118,8 +2135,16 @@ export default function AdminPanel() {
           {/* ── USERS ────────────────────────────────────── */}
           {!loading && tab === "users" && (
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-              <div className="px-4 md:px-6 py-4 border-b border-slate-100">
+              <div className="px-4 md:px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
                 <h2 className="font-medium text-slate-900">Kullanıcılar <span className="text-slate-400 font-normal text-sm">({filteredUsers.length})</span></h2>
+                <div className="flex gap-1.5">
+                  {[["all", "Tümü"], ["active", "Aktif"], ["left", `Ayrılanlar (${leftCount})`]].map(([k, label]) => (
+                    <button key={k} onClick={() => setUserFilter(k)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${userFilter === k ? "bg-brand-600 text-white border-brand-600" : "bg-white text-slate-600 border-slate-200 hover:border-brand-300"}`}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Mobil kart listesi */}
@@ -2137,10 +2162,12 @@ export default function AdminPanel() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-slate-900 text-sm">{u.name}</span>
-                        {u.is_admin
-                          ? <span className="px-2 py-0.5 bg-brand-100 text-brand-700 rounded-lg text-[10px] font-medium">Admin</span>
-                          : <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded-lg text-[10px]">Üye</span>}
+                        <span className={`font-semibold text-sm ${u.deleted_at ? "text-slate-400 line-through" : "text-slate-900"}`}>{u.name}</span>
+                        {u.deleted_at
+                          ? <LeftBadge at={u.deleted_at} small />
+                          : u.is_admin
+                            ? <span className="px-2 py-0.5 bg-brand-100 text-brand-700 rounded-lg text-[10px] font-medium">Admin</span>
+                            : <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded-lg text-[10px]">Üye</span>}
                       </div>
                       <div className="text-slate-400 text-xs truncate">{u.email}</div>
                       <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-400">
@@ -2152,10 +2179,10 @@ export default function AdminPanel() {
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-                      <button onClick={() => toggleAdmin(u)}
+                      {!u.deleted_at && <button onClick={() => toggleAdmin(u)}
                         className={`px-2 py-1 rounded-lg text-[11px] font-medium border transition-colors ${u.is_admin ? "border-purple-200 text-purple-700 hover:bg-purple-50" : "border-brand-200 text-brand-700 hover:bg-brand-50"}`}>
                         {u.is_admin ? "Admin kaldır" : "Admin yap"}
-                      </button>
+                      </button>}
                       {!u.is_admin && (
                         <button onClick={() => del(`/admin/users/${u.id}`, u.name, "users")}
                           className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
@@ -2183,7 +2210,7 @@ export default function AdminPanel() {
                   </thead>
                   <tbody className="divide-y divide-slate-50">
                     {filteredUsers.map(u => (
-                      <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
+                      <tr key={u.id} className={`hover:bg-slate-50/50 transition-colors ${u.deleted_at ? "bg-red-50/30" : ""}`}>
                         <td className="px-6 py-3.5">
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center text-white font-bold text-xs flex-shrink-0"
@@ -2192,25 +2219,27 @@ export default function AdminPanel() {
                                 ? <img src={u.avatar.startsWith("http") ? u.avatar : `${BASE_URL}${u.avatar}`} alt="" className="w-full h-full object-cover" />
                                 : u.name[0].toUpperCase()}
                             </div>
-                            <span className="font-semibold text-slate-900">{u.name}</span>
+                            <span className={`font-semibold ${u.deleted_at ? "text-slate-400 line-through" : "text-slate-900"}`}>{u.name}</span>
                           </div>
                         </td>
                         <td className="px-4 py-3.5 text-slate-500">{u.email}</td>
                         <td className="px-4 py-3.5 text-center text-slate-700 font-semibold">{u.team_count ?? "—"}</td>
                         <td className="px-4 py-3.5 text-center text-slate-700 font-semibold">{u.training_count ?? "—"}</td>
                         <td className="px-4 py-3.5 text-center">
-                          {u.is_admin
-                            ? <span className="px-2.5 py-1 bg-brand-100 text-brand-700 rounded-lg text-xs font-medium">Admin</span>
-                            : <span className="px-2.5 py-1 bg-slate-100 text-slate-500 rounded-lg text-xs">Üye</span>
+                          {u.deleted_at
+                            ? <LeftBadge at={u.deleted_at} />
+                            : u.is_admin
+                              ? <span className="px-2.5 py-1 bg-brand-100 text-brand-700 rounded-lg text-xs font-medium">Admin</span>
+                              : <span className="px-2.5 py-1 bg-slate-100 text-slate-500 rounded-lg text-xs">Üye</span>
                           }
                         </td>
                         <td className="px-4 py-3.5 text-slate-400 text-xs">{fmt(u.created_at)}</td>
                         <td className="px-4 py-3.5">
                           <div className="flex items-center gap-1.5 justify-end">
-                            <button onClick={() => toggleAdmin(u)}
+                            {!u.deleted_at && <button onClick={() => toggleAdmin(u)}
                               className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${u.is_admin ? "border-purple-200 text-purple-700 hover:bg-purple-50" : "border-brand-200 text-brand-700 hover:bg-brand-50"}`}>
                               {u.is_admin ? "Admin kaldır" : "Admin yap"}
-                            </button>
+                            </button>}
                             {!u.is_admin && (
                               <button onClick={() => del(`/admin/users/${u.id}`, u.name, "users")}
                                 className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
