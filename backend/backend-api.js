@@ -2299,6 +2299,10 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     if (user.deleted_at) {
       await pool.query('UPDATE users SET deleted_at = NULL WHERE id = $1', [user.id]);
       restored = true;
+      pool.query(
+        `UPDATE account_departures SET restored_at = NOW(), user_id = NULL
+         WHERE user_id = $1 AND restored_at IS NULL AND purged_at IS NULL`, [user.id]
+      ).catch(() => {});
     }
 
     const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, {
@@ -4622,6 +4626,31 @@ app.get('/api/admin/users', isAdmin, async (req, res) => {
   }
 });
 
+// Admin: ayrılış istatistiği (kişisel veri yok). Geri gelenler ayrılış sayılmaz.
+app.get('/api/admin/departures', isAdmin, async (req, res) => {
+  try {
+    const ozet = await pool.query(`
+      SELECT
+        COUNT(*) FILTER (WHERE restored_at IS NULL)::int AS toplam,
+        COUNT(*) FILTER (WHERE restored_at IS NULL AND left_at > NOW() - INTERVAL '30 days')::int AS son30,
+        COUNT(*) FILTER (WHERE restored_at IS NULL AND source = 'self')::int AS kendisi,
+        COUNT(*) FILTER (WHERE restored_at IS NULL AND source = 'admin')::int AS admin,
+        COUNT(*) FILTER (WHERE restored_at IS NOT NULL)::int AS geri_donen,
+        COUNT(*) FILTER (WHERE restored_at IS NULL AND left_at - signed_up_at < INTERVAL '1 day')::int AS ayni_gun,
+        ROUND(AVG(EXTRACT(EPOCH FROM (left_at - signed_up_at)) / 86400)
+          FILTER (WHERE restored_at IS NULL AND signed_up_at IS NOT NULL))::int AS ort_gun,
+        MIN(left_at) AS ilk_kayit
+      FROM account_departures`);
+    const aylik = await pool.query(`
+      SELECT to_char(date_trunc('month', left_at AT TIME ZONE 'Europe/Istanbul'), 'YYYY-MM') AS ay, COUNT(*)::int AS n
+      FROM account_departures WHERE restored_at IS NULL
+      GROUP BY 1 ORDER BY 1 DESC LIMIT 12`);
+    res.json({ ...ozet.rows[0], aylik: aylik.rows });
+  } catch (error) {
+    res.status(500).json({ error: 'Ayrılış istatistiği alınamadı' });
+  }
+});
+
 // Kullanıcının kendi hesabını silmesi — App Store Guideline 5.1.1(v) için zorunlu
 app.delete('/api/users/me', authenticateToken, async (req, res) => {
   try {
@@ -4644,6 +4673,10 @@ app.delete('/api/users/me', authenticateToken, async (req, res) => {
     // Soft-delete: kalıcı silmek yerine "silinmeye zamanlanmış" işaretle.
     // 30 gün içinde giriş yapılırsa geri gelir; sonra purge kalıcı siler.
     await pool.query('UPDATE users SET deleted_at = NOW() WHERE id = $1', [req.user.id]);
+    pool.query(
+      `INSERT INTO account_departures (user_id, source, signed_up_at, left_at)
+       SELECT id, 'self', created_at, NOW() FROM users WHERE id = $1`, [req.user.id]
+    ).catch((e) => console.error('[DEPARTURES] Kayıt hatası:', e.message));
     res.json({ message: 'Hesabınız silinmek üzere kapatıldı.' });
   } catch (error) {
     console.error('Self-delete error:', error.message);
@@ -4707,7 +4740,21 @@ app.delete('/api/admin/users/:id', isAdmin, async (req, res) => {
         teams: soleAdminCheck.rows,
       });
     }
-    await pool.query('DELETE FROM users WHERE id = $1', [id]);
+    const removed = await pool.query('DELETE FROM users WHERE id = $1 RETURNING created_at, deleted_at', [id]);
+    const row = removed.rows[0];
+    if (row) {
+      // Zaten ayrılmış biriyse onun kaydını kapat; değilse admin silmesi olarak yeni kayıt aç.
+      const kapandi = await pool.query(
+        `UPDATE account_departures SET purged_at = NOW(), user_id = NULL
+         WHERE user_id = $1 AND purged_at IS NULL AND restored_at IS NULL`, [id]
+      ).catch(() => ({ rowCount: 0 }));
+      if (!kapandi.rowCount) {
+        pool.query(
+          `INSERT INTO account_departures (source, signed_up_at, left_at, purged_at)
+           VALUES ('admin', $1, NOW(), NOW())`, [row.created_at]
+        ).catch((err) => console.error('[DEPARTURES] Admin silme kaydı hatası:', err.message));
+      }
+    }
     res.json({ message: 'Kullanıcı silindi.' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to delete user' });
@@ -6518,6 +6565,26 @@ pool.query(`UPDATE teams SET sports = ARRAY[sport] WHERE (sports IS NULL OR arra
 // 30 gün içinde giriş yapılırsa geri gelir, sonra purge ile kalıcı silinir.
 pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ`).catch(() => {});
 
+// Ayrılış kaydı — kullanıcı satırı purge ile silindikten sonra da istatistik kalsın.
+// KİŞİSEL VERİ YOK: isim/e-posta tutulmaz. user_id yalnızca 30 günlük bekleme
+// sırasında durur (geri gelirse eşleştirmek için); geri gelince ya da purge'de NULL olur.
+pool.query(`
+  CREATE TABLE IF NOT EXISTS account_departures (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER,
+    source VARCHAR(10) NOT NULL DEFAULT 'self',
+    signed_up_at TIMESTAMPTZ,
+    left_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    restored_at TIMESTAMPTZ,
+    purged_at TIMESTAMPTZ
+  )
+`).then(() => pool.query(`
+  INSERT INTO account_departures (user_id, source, signed_up_at, left_at)
+  SELECT u.id, 'self', u.created_at, u.deleted_at FROM users u
+  WHERE u.deleted_at IS NOT NULL
+    AND NOT EXISTS (SELECT 1 FROM account_departures d WHERE d.user_id = u.id AND d.restored_at IS NULL)
+`)).catch((e) => console.error('[DEPARTURES] Tablo hazırlanamadı:', e.message));
+
 // Bildirim tercihleri: { key: { app: bool, email: bool } }. Varsayılan app AÇIK, e-posta KAPALI.
 pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS notif_prefs JSONB DEFAULT '{}'::jsonb`).catch(() => {});
 
@@ -6979,6 +7046,12 @@ async function purgeSoftDeletedAccounts() {
     const res = await pool.query(
       `DELETE FROM users WHERE deleted_at IS NOT NULL AND deleted_at < NOW() - INTERVAL '${ACCOUNT_PURGE_DAYS} days' RETURNING id`
     );
+    if (res.rowCount > 0) {
+      await pool.query(
+        `UPDATE account_departures SET purged_at = NOW(), user_id = NULL
+         WHERE user_id = ANY($1) AND purged_at IS NULL`, [res.rows.map((r) => r.id)]
+      ).catch((e) => console.error('[DEPARTURES] Purge işaretleme hatası:', e.message));
+    }
     if (res.rowCount > 0) console.log(`[PURGE] ${res.rowCount} hesap kalıcı silindi (${ACCOUNT_PURGE_DAYS} gün doldu).`);
   } catch (e) {
     console.error('[PURGE] Hata:', e.message);

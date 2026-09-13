@@ -1322,6 +1322,51 @@ const fmtFull = (d) => d ? new Date(d).toLocaleString("tr-TR") : "—";
 
 // Hesabını silmiş kullanıcı. Kayıt 30 gün durur (giriş yaparsa geri gelir),
 // sonra purge kalıcı siler ve listeden düşer.
+const AY_ADLARI = ["Oca","Şub","Mar","Nis","May","Haz","Tem","Ağu","Eyl","Eki","Kas","Ara"];
+// Ayrılış geçmişi — 30 gün sonra kullanıcı kaydı silinse de sayılar burada kalır.
+const DeparturesCard = ({ d }) => {
+  const kutular = [
+    ["Toplam ayrılan", d.toplam],
+    ["Son 30 gün", d.son30],
+    ["Kayıt günü ayrılan", d.ayni_gun],
+    ["Ort. üyelik süresi", d.ort_gun == null ? "—" : `${d.ort_gun} gün`],
+    ["Silip geri dönen", d.geri_donen],
+  ];
+  const enCok = Math.max(1, ...(d.aylik || []).map(a => a.n));
+  return (
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 md:p-6 mb-5">
+      <div className="flex flex-wrap items-baseline justify-between gap-2 mb-4">
+        <h2 className="font-medium text-slate-900">Ayrılış geçmişi</h2>
+        <span className="text-xs text-slate-400">İsim ve e-posta saklanmaz · kayıt başlangıcı {fmt(d.ilk_kayit)}</span>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        {kutular.map(([etiket, deger]) => (
+          <div key={etiket} className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-2.5">
+            <div className="text-[11px] text-slate-500">{etiket}</div>
+            <div className="text-lg font-semibold text-slate-900 mt-0.5">{deger ?? 0}</div>
+          </div>
+        ))}
+      </div>
+      {d.aylik?.length > 0 && (
+        <div className="mt-4 space-y-1.5">
+          {d.aylik.map(a => {
+            const [yil, ay] = a.ay.split("-");
+            return (
+              <div key={a.ay} className="flex items-center gap-3 text-xs">
+                <span className="w-16 text-slate-500">{AY_ADLARI[Number(ay) - 1]} {yil}</span>
+                <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-red-300 rounded-full" style={{ width: `${(a.n / enCok) * 100}%` }} />
+                </div>
+                <span className="w-6 text-right font-medium text-slate-700">{a.n}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const LEFT_PURGE_DAYS = 30;
 const LeftBadge = ({ at, small = false }) => {
   const kalan = Math.max(0, LEFT_PURGE_DAYS - Math.floor((Date.now() - new Date(at).getTime()) / 86400000));
@@ -1370,6 +1415,7 @@ export default function AdminPanel() {
   });
   const [stats, setStats]       = useState(null);
   const [users, setUsers]       = useState([]);
+  const [departures, setDepartures] = useState(null);
   const [trainings, setTrainings] = useState([]);
   const [teams, setTeams]       = useState([]);
   const [messages, setMessages] = useState([]);
@@ -1468,7 +1514,10 @@ export default function AdminPanel() {
     setSearch("");
     try {
       if (t === "dashboard") { const d = await api("/admin/stats"); if (reqId === loadReqRef.current) setStats(d); }
-      else if (t === "users") { const d = await api("/admin/users"); if (reqId === loadReqRef.current) setUsers(d || []); }
+      else if (t === "users") {
+        const [d, dep] = await Promise.all([api("/admin/users"), api("/admin/departures").catch(() => null)]);
+        if (reqId === loadReqRef.current) { setUsers(d || []); setDepartures(dep); }
+      }
       else if (t === "trainings") { const d = await api("/admin/trainings"); if (reqId === loadReqRef.current) setTrainings(d || []); }
       else if (t === "teams") { const d = await api("/admin/teams"); if (reqId === loadReqRef.current) setTeams(d || []); }
       else if (t === "messages") { const d = await api("/admin/contact"); if (reqId === loadReqRef.current) setMessages(d || []); }
@@ -2133,6 +2182,8 @@ export default function AdminPanel() {
           )}
 
           {/* ── USERS ────────────────────────────────────── */}
+          {!loading && tab === "users" && departures && <DeparturesCard d={departures} />}
+
           {!loading && tab === "users" && (
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
               <div className="px-4 md:px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
