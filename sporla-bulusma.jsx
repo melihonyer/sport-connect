@@ -86,6 +86,24 @@ const buildTeamEditForm = (team) => ({
 // koşullu return bulunmamalı (hook sırası bozulur) — koşul çağrı yerinde olur.
 const PageHost = ({ render }) => render();
 
+// Cihazın push jetonunu kullanıcıya bağlar (authToken varsa) ya da bağını
+// koparır (authToken null). Jeton yalnızca uygulama açılışında geliyordu; kişi
+// o an giriş yapmamışsa sonradan giriş yapsa bile cihaz kimseye bağlanmıyor ve
+// hiç bildirim almıyordu (Eylül 2026: 54 geçerli Android cihaz sahipsizdi).
+const PUSH_TOKEN_KEY = "pushToken";
+const syncPushToken = (authToken) => {
+  let pushToken = null;
+  try { pushToken = localStorage.getItem(PUSH_TOKEN_KEY); } catch { /* yok say */ }
+  if (!pushToken) return;
+  const platform = window?.Capacitor?.getPlatform?.() === "android" ? "android" : "ios";
+  fetch(`${API_URL}/push/register`, {
+    method: "POST",
+    keepalive: true,
+    headers: { "Content-Type": "application/json", ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}) },
+    body: JSON.stringify({ token: pushToken, platform }),
+  }).catch(() => {});
+};
+
 const CHUNK_RELOAD_KEY = "chunkReloadedAt";
 const lazyWithReload = (factory) => React.lazy(() => factory().catch((err) => {
   const gecmisDeneme = Number(sessionStorage.getItem(CHUNK_RELOAD_KEY) || 0);
@@ -2283,17 +2301,12 @@ export default function Muuvlink() {
     const initPush = async () => {
       try {
         const { PushNotifications } = await import("@capacitor/push-notifications");
-        const platform = window?.Capacitor?.getPlatform?.() === "android" ? "android" : "ios";
 
         // Listener'lar register()'dan ÖNCE eklenmeli — aksi halde token/hata olayı kaçırılabilir
-        PushNotifications.addListener("registration", async (token) => {
-          try {
-            await fetch(`${API_URL}/push/register`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json", ...(localStorage.getItem("token") ? { Authorization: `Bearer ${localStorage.getItem("token")}` } : {}) },
-              body: JSON.stringify({ token: token.value, platform }),
-            });
-          } catch (_) {}
+        PushNotifications.addListener("registration", (token) => {
+          // Jeton saklanır ki giriş/kayıt anında da kullanıcıya bağlanabilsin.
+          try { localStorage.setItem(PUSH_TOKEN_KEY, token.value); } catch { /* yok say */ }
+          syncPushToken(localStorage.getItem("token"));
         });
         PushNotifications.addListener("registrationError", (err) => {
           console.error("[Push] registration hatası:", err);
@@ -2975,6 +2988,7 @@ export default function Muuvlink() {
 
       if (response.ok) {
         localStorage.setItem("token", data.token);
+        if (isNative) syncPushToken(data.token); // cihazı bu kullanıcıya bağla
         setUser(data.user);
         setIsAuthModalOpen(false);
         // Silinmeye zamanlanmış hesap girişle geri geldiyse bildir.
@@ -3042,6 +3056,7 @@ export default function Muuvlink() {
       if (response.ok) {
         MetaEvents.completeRegistration(eventId);
         localStorage.setItem("token", data.token);
+        if (isNative) syncPushToken(data.token); // cihazı bu kullanıcıya bağla
         setUser(data.user);
         setIsAuthModalOpen(false);
         // Silinmeye zamanlanmış hesap girişle geri geldiyse bildir.
@@ -3067,6 +3082,7 @@ export default function Muuvlink() {
   };
 
   const handleLogout = () => {
+    if (isNative) syncPushToken(null); // çıkış yapılan cihaz artık bildirim almasın
     localStorage.removeItem("token");
     setUser(null);
     setMyTrainings([]);
