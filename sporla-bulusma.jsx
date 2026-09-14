@@ -4814,7 +4814,8 @@ export default function Muuvlink() {
                   <span className="text-xs font-semibold tracking-[0.3em] text-brand-800 uppercase block mb-3">{t("home.discover")}</span>
                   <h2 className="font-display font-bold text-slate-900 leading-snug"
                     style={{fontSize:"clamp(1.6rem,3vw,2rem)", letterSpacing:"-0.01em"}}>
-                    {t("home.upcoming")}
+                    {/* Öne çıkan varsa üst başlık onların; "Yaklaşan" aşağıda kendi başlığıyla gelir. */}
+                    {trainings.some((tr) => tr.is_featured) ? t("trainings.featuredTitle") : t("home.upcoming")}
                   </h2>
                 </div>
                 <button data-btn="solid"
@@ -4827,18 +4828,21 @@ export default function Muuvlink() {
                 </button>
               </div>
 
-              {/* Öne çıkanlar önce; "Yaklaşan" listesinde tekrar edilmez. */}
+              {/* Öne çıkanlar önce (başlığı yukarıdaki h2); "Yaklaşan" listesinde tekrar edilmez. */}
               {trainings.some((tr) => tr.is_featured) && (
-                <div className="mt-4 mb-6">
-                  <h3 className="flex items-center gap-2 text-base font-semibold text-brand-900 mb-1">
-                    <Sparkles className="w-4 h-4 text-logo-teal flex-shrink-0" /> {t("trainings.featuredTitle")}
-                  </h3>
+                <>
                   <div className="divide-y-0">
                     {trainings.filter((tr) => tr.is_featured).map((training) => (
                       <TrainingCard key={training.id} training={training} onClick={fetchTrainingDetails} />
                     ))}
                   </div>
-                </div>
+                  {trainings.some((tr) => !tr.is_featured) && (
+                    <h2 className="font-display font-bold text-slate-900 leading-snug mt-10 pt-8 border-t border-slate-100 mb-2"
+                      style={{fontSize:"clamp(1.6rem,3vw,2rem)", letterSpacing:"-0.01em"}}>
+                      {t("home.upcoming")}
+                    </h2>
+                  )}
+                </>
               )}
               {trainings.some((tr) => !tr.is_featured) ? (
                 <div className="divide-y-0">
