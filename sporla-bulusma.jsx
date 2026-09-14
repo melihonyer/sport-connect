@@ -5362,7 +5362,7 @@ export default function Muuvlink() {
     const featuredTrainings = trainings.filter((t) => t.is_featured);
     const featuredIds = new Set(featuredTrainings.map((t) => t.id));
     const baseTrainings = (nearbyMode ? nearbyTrainings : trainings).filter((t) => !featuredIds.has(t.id));
-    const displayedTrainings = baseTrainings.filter((t) => {
+    const matchesFilters = (t) => {
       const q = searchQuery.toLowerCase();
       const matchesSearch = !q || t.title?.toLowerCase().includes(q) || t.location_name?.toLowerCase().includes(q) || t.description?.toLowerCase().includes(q);
       // Etkinliğin KENDİ dalı önceliklidir; eski takım etkinliklerinde (dalı boş) takımın dalına düşülür.
@@ -5370,7 +5370,15 @@ export default function Muuvlink() {
       // "Her Seviye" etkinlikleri, belirli bir seviye (Kolay/Orta/Zor) seçilse de görünür.
       const matchesDifficulty = !levelFilter || t.difficulty === levelFilter || t.difficulty === "Her Seviye";
       return matchesSearch && matchesSport && matchesDifficulty;
-    });
+    };
+    const displayedTrainings = baseTrainings.filter(matchesFilters);
+    // Harita öne çıkanları DA gösterir. displayedTrainings öne çıkanları hariç tutuyor (listede
+    // ayrı bölümdeler); haritaya o liste verildiği için öne çıkarılan etkinlikler haritadan
+    // düşmüştü (14 Eylül 2026). "Yakınımda" modunda yalnız yakındaki öne çıkanlar — yoksa
+    // harita çerçevesi başka şehirdeki öne çıkan etkinliğe kadar açılırdı.
+    const mapTrainings = nearbyMode
+      ? nearbyTrainings.filter(matchesFilters)
+      : [...featuredTrainings, ...displayedTrainings];
 
     const handleDistanceChange = (km) => {
       // Sonuçlar yenilenirken sayfa yüksekliği değiştiği için tarayıcı kaydırma
@@ -5546,7 +5554,7 @@ export default function Muuvlink() {
             <ErrorBoundary key="map-boundary">
               <React.Suspense fallback={<div className="h-[600px] flex items-center justify-center bg-slate-50 rounded-2xl"><div className="w-8 h-8 border-2 border-brand-400 border-t-transparent rounded-full animate-spin"/></div>}>
               <TrainingsMapViewLazy
-                trainings={displayedTrainings}
+                trainings={mapTrainings}
                 onSelectTraining={fetchTrainingDetails}
                 t={t}
                 containerStyle={isNative ? {height:"calc(100vh - 320px)", marginBottom:"calc(env(safe-area-inset-bottom) + 64px)"} : undefined}
