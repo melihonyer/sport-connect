@@ -1322,6 +1322,14 @@ const fmtFull = (d) => d ? new Date(d).toLocaleString("tr-TR") : "—";
 
 // Hesabını silmiş kullanıcı. Kayıt 30 gün durur (giriş yaparsa geri gelir),
 // sonra purge kalıcı siler ve listeden düşer.
+// Koordinatı olmayan etkinlik: haritada ve "Yakınımda" aramasında görünmez.
+const NoMapBadge = ({ small = false }) => (
+  <span title="Konum haritada işaretlenmemiş — haritada ve Yakınımda aramasında görünmez"
+    className={`${small ? "px-1.5 py-0.5 text-[10px]" : "px-2 py-0.5 text-[11px]"} flex-shrink-0 inline-flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-md font-medium whitespace-nowrap`}>
+    <MapPin className={small ? "w-2.5 h-2.5" : "w-3 h-3"} /> Haritada yok
+  </span>
+);
+
 const AY_ADLARI = ["Oca","Şub","Mar","Nis","May","Haz","Tem","Ağu","Eyl","Eki","Kas","Ara"];
 // Ayrılış geçmişi — 30 gün sonra kullanıcı kaydı silinse de sayılar burada kalır.
 const DeparturesCard = ({ d }) => {
@@ -1417,6 +1425,7 @@ export default function AdminPanel() {
   const [users, setUsers]       = useState([]);
   const [departures, setDepartures] = useState(null);
   const [trainings, setTrainings] = useState([]);
+  const [trainingFilter, setTrainingFilter] = useState("all"); // all | nomap
   const [teams, setTeams]       = useState([]);
   const [messages, setMessages] = useState([]);
   const [banners, setBanners]   = useState([]);
@@ -2033,7 +2042,12 @@ export default function AdminPanel() {
   const filteredUsers     = users
     .filter(u => userFilter === "all" || (userFilter === "left" ? !!u.deleted_at : !u.deleted_at))
     .filter(u => !q || u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q));
-  const filteredTrainings = trainings.filter(t => !q || t.title?.toLowerCase().includes(q));
+  // Koordinatı olmayan etkinlik haritada ve "Yakınımda" aramasında çıkmaz.
+  const noMap = (t) => t.location_lat == null || t.location_lng == null || t.location_lat === "" || t.location_lng === "";
+  const noMapCount = trainings.filter(noMap).length;
+  const filteredTrainings = trainings
+    .filter(t => trainingFilter === "all" || noMap(t))
+    .filter(t => !q || t.title?.toLowerCase().includes(q));
   const filteredTeams     = teams.filter(t => !q || t.name?.toLowerCase().includes(q));
   const filteredMessages  = messages.filter(m => !q || m.name?.toLowerCase().includes(q) || m.subject?.toLowerCase().includes(q));
 
@@ -2324,9 +2338,23 @@ export default function AdminPanel() {
           {/* ── TRAININGS ────────────────────────────────── */}
           {!loading && tab === "trainings" && (
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-              <div className="px-4 md:px-6 py-4 border-b border-slate-100">
+              <div className="px-4 md:px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
                 <h2 className="font-medium text-slate-900">Etkinlikler <span className="text-slate-400 font-normal text-sm">({filteredTrainings.length})</span></h2>
+                <div className="flex gap-1.5">
+                  {[["all", "Tümü"], ["nomap", `Haritada yok (${noMapCount})`]].map(([k, label]) => (
+                    <button key={k} onClick={() => setTrainingFilter(k)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${trainingFilter === k ? "bg-brand-600 text-white border-brand-600" : "bg-white text-slate-600 border-slate-200 hover:border-brand-300"}`}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
+              {trainingFilter === "nomap" && (
+                <div className="px-4 md:px-6 py-3 bg-amber-50 border-b border-amber-100 text-xs text-amber-900 leading-relaxed">
+                  Bu etkinliklerde konum yalnız yazıyla girilmiş, haritada işaretlenmemiş. Haritada ve "Yakınımda"
+                  aramasında çıkmazlar. Düzeltmeyi etkinliği oluşturan yapabilir: etkinliği düzenleyip konumu seçmesi yeterli.
+                </div>
+              )}
 
               {/* Mobil kart listesi */}
               <div className="sm:hidden divide-y divide-slate-50">
@@ -2346,8 +2374,16 @@ export default function AdminPanel() {
                         <Activity className="w-5 h-5 text-white"/>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-slate-900 text-sm truncate">{t.title}</div>
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <div className="font-semibold text-slate-900 text-sm truncate">{t.title}</div>
+                          {noMap(t) && <NoMapBadge small />}
+                        </div>
                         <div className="text-slate-400 text-xs">{t.team_name || "—"}</div>
+                        {noMap(t) && (
+                          <div className="text-xs text-amber-800 mt-0.5 truncate">
+                            {t.location_name || "Konum adı yok"}{t.creator_name ? ` · ${t.creator_name}` : ""}{t.creator_email ? ` · ${t.creator_email}` : ""}
+                          </div>
+                        )}
                         <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-400 flex-wrap">
                           <span>{fmt(t.training_date)}</span>
                           <span>·</span>
@@ -2398,7 +2434,17 @@ export default function AdminPanel() {
                       const isPast = trainingDateTime < new Date();
                       return (
                         <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="px-6 py-3.5 font-semibold text-slate-900 max-w-[200px] truncate">{t.title}</td>
+                          <td className="px-6 py-3.5 max-w-[260px]">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span className="font-semibold text-slate-900 truncate">{t.title}</span>
+                              {noMap(t) && <NoMapBadge />}
+                            </div>
+                            {noMap(t) && (
+                              <div className="text-xs text-amber-800 mt-0.5 truncate" title={`${t.location_name || ""} · ${t.creator_name || ""} ${t.creator_email || ""}`}>
+                                {t.location_name || "Konum adı yok"}{t.creator_name ? ` · ${t.creator_name}` : ""}{t.creator_email ? ` · ${t.creator_email}` : ""}
+                              </div>
+                            )}
+                          </td>
                           <td className="px-4 py-3.5 text-slate-500">{t.team_name || "—"}</td>
                           <td className="px-4 py-3.5 text-slate-600">{fmt(t.training_date)}</td>
                           <td className="px-4 py-3.5 text-slate-600">{t.training_time?.slice(0,5) || "—"}</td>

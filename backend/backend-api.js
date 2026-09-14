@@ -4828,11 +4828,14 @@ app.get('/api/admin/trainings', isAdmin, async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT t.*, teams.name as team_name,
+        -- Oluşturan: konumu eksik (haritada görünmeyen) etkinlik için kime yazılacağı
+        creator.name as creator_name, creator.email as creator_email,
         COUNT(ta.user_id) as participant_count
       FROM trainings t
       LEFT JOIN teams ON t.team_id = teams.id
+      LEFT JOIN users creator ON creator.id = t.created_by
       LEFT JOIN training_attendees ta ON t.id = ta.training_id
-      GROUP BY t.id, teams.name
+      GROUP BY t.id, teams.name, creator.name, creator.email
       ORDER BY t.training_date DESC, t.training_time DESC
     `);
     res.json(result.rows);
