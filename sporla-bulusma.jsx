@@ -966,8 +966,11 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                         /* Buton 1: Statik "Hemen Başla" — sadece giriş yapılmamışken */
                         <button data-btn="solid"
                           onClick={() => { setAuthMode("register"); setIsAuthModalOpen(true); }}
-                          className="group relative flex items-center gap-2.5 px-7 py-3.5 font-medium text-white text-sm overflow-hidden transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl"
-                          style={{background:"#114956", borderRadius:"14px", boxShadow:"0 2px 8px rgba(17,73,86,0.18)"}}
+                          className="group relative flex items-center gap-2.5 px-7 py-3.5 font-medium text-sm overflow-hidden transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl"
+                          // Koyu banner'da deep teal düğme zemine gömülüyordu: orada beyaz zemin + deep teal metin.
+                          style={isLightBg
+                            ? {background:"#114956", color:"#fff", borderRadius:"14px", boxShadow:"0 2px 8px rgba(17,73,86,0.18)"}
+                            : {background:"#ffffff", color:"#114956", borderRadius:"14px", boxShadow:"0 2px 10px rgba(0,0,0,0.18)"}}
                         >
                           <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-[14px]"/>
                           {t ? t("home.startBtn") : "Get Started"}
@@ -979,12 +982,14 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                         onClick={() => handleCtaClick(banner?.cta_primary_url, () => setCurrentPage("trainings"))}
                         className={`flex items-center gap-2 px-7 py-3.5 font-semibold text-sm transition-all duration-300 rounded-[14px] ${user ? "group relative overflow-hidden hover:scale-[1.03] hover:shadow-2xl" : ""}`}
                         style={user
-                          ? {background:"#114956", color:"#fff", borderRadius:"14px", boxShadow:"0 2px 8px rgba(17,73,86,0.18)"}
+                          ? (isLightBg
+                              ? {background:"#114956", color:"#fff", borderRadius:"14px", boxShadow:"0 2px 8px rgba(17,73,86,0.18)"}
+                              : {background:"#ffffff", color:"#114956", borderRadius:"14px", boxShadow:"0 2px 10px rgba(0,0,0,0.18)"})
                           : {color:uiText, border:`1px solid ${uiBorder}`, background:"transparent"}}
                         onMouseEnter={e=>{ if(!user) e.currentTarget.style.background=uiSecHover; }}
                         onMouseLeave={e=>{ if(!user) e.currentTarget.style.background="transparent"; }}
                       >
-                        {user && <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-[14px]"/>}
+                        {user && <span className={`absolute inset-0 ${isLightBg ? "bg-white/10" : "bg-brand-600/10"} opacity-0 group-hover:opacity-100 transition-opacity rounded-[14px]`}/>}
                         {(lang === "tr" ? banner?.cta_primary_text : lang === "en" ? banner?.cta_primary_text_en : banner?.cta_primary_text_de) || t("home.heroCtaSecondary")}
                         {user && <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>}
                       </button>
@@ -1000,21 +1005,23 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                             )}
                             <div className="flex flex-col gap-1">
                               <div className="flex items-center gap-2.5">
+                                {/* Koyu zeminde (mor/lacivert banner) rakam ve ikon da koyu teal'di — okunmuyordu. */}
                                 <div style={{
                                   width:"30px", height:"30px", borderRadius:"9px", flexShrink:0,
-                                  background: isLightBg ? "rgba(17,73,86,0.14)" : "rgba(17,73,86,0.22)",
+                                  background: isLightBg ? "rgba(17,73,86,0.14)" : "rgba(255,255,255,0.14)",
                                   display:"flex", alignItems:"center", justifyContent:"center",
                                 }}>
-                                  <Icon style={{width:"14px", height:"14px", color:"#114956"}}/>
+                                  <Icon style={{width:"14px", height:"14px", color: isLightBg ? "#114956" : "rgba(255,255,255,0.92)"}}/>
                                 </div>
                                 <span style={{
                                   fontSize:"1.6rem", fontWeight:800, lineHeight:1,
-                                  color: isLightBg ? "#114956" : "#114956",
+                                  color: isLightBg ? "#114956" : "#ffffff",
                                 }}>{s.value}</span>
                               </div>
                               <div style={{
                                 fontSize:"0.68rem", fontWeight:600, letterSpacing:"0.06em",
-                                textTransform:"uppercase", color:uiMuted, paddingLeft:"40px",
+                                textTransform:"uppercase", paddingLeft:"40px",
+                                color: isLightBg ? "rgba(0,0,0,0.55)" : "rgba(255,255,255,0.72)",
                               }}>{s.label}</div>
                             </div>
                           </React.Fragment>
