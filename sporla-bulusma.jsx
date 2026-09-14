@@ -4636,7 +4636,22 @@ export default function Muuvlink() {
 
         <StarterChecklist />
 
-        {/* Yaklaşan etkinlikler */}
+        {/* Öne çıkan etkinlikler — uygulama bu ekranla açıldığı için burada da en üstte.
+            Kural Etkinlikler sayfasıyla aynı: admin panelinden işaretlenenler. */}
+        {trainings.some((tr) => tr.is_featured) && (
+          <div className="pt-8 bg-white px-4">
+            <h2 className="flex items-center gap-2 font-display font-bold text-slate-900 text-xl mb-2">
+              <Sparkles className="w-5 h-5 text-logo-teal flex-shrink-0" /> {t("trainings.featuredTitle")}
+            </h2>
+            <div>
+              {trainings.filter((tr) => tr.is_featured).map((training) => (
+                <TrainingCard key={training.id} training={training} onClick={fetchTrainingDetails} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Yaklaşan etkinlikler — öne çıkanlar yukarıda, burada tekrar edilmez */}
         <div className="py-8 bg-white px-4">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-display font-bold text-slate-900 text-xl">{t("home.upcoming")}</h2>
@@ -4647,13 +4662,13 @@ export default function Muuvlink() {
               {t("home.viewAll")} →
             </button>
           </div>
-          {trainings.length > 0 ? (
+          {trainings.some((tr) => !tr.is_featured) ? (
             <div>
-              {trainings.slice(0, 6).map((training) => (
+              {trainings.filter((tr) => !tr.is_featured).slice(0, 6).map((training) => (
                 <TrainingCard key={training.id} training={training} onClick={fetchTrainingDetails} />
               ))}
             </div>
-          ) : (
+          ) : trainings.length > 0 ? null : (
             <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
               <Activity className="w-8 h-8 text-slate-200 mx-auto mb-2" />
               <p className="text-slate-500 text-sm">{t("home.noTrainingsFound")}</p>
@@ -4812,13 +4827,26 @@ export default function Muuvlink() {
                 </button>
               </div>
 
-              {trainings.length > 0 ? (
+              {/* Öne çıkanlar önce; "Yaklaşan" listesinde tekrar edilmez. */}
+              {trainings.some((tr) => tr.is_featured) && (
+                <div className="mt-4 mb-6">
+                  <h3 className="flex items-center gap-2 text-base font-semibold text-brand-900 mb-1">
+                    <Sparkles className="w-4 h-4 text-logo-teal flex-shrink-0" /> {t("trainings.featuredTitle")}
+                  </h3>
+                  <div className="divide-y-0">
+                    {trainings.filter((tr) => tr.is_featured).map((training) => (
+                      <TrainingCard key={training.id} training={training} onClick={fetchTrainingDetails} />
+                    ))}
+                  </div>
+                </div>
+              )}
+              {trainings.some((tr) => !tr.is_featured) ? (
                 <div className="divide-y-0">
-                  {trainings.slice(0, 6).map((training) => (
+                  {trainings.filter((tr) => !tr.is_featured).slice(0, 6).map((training) => (
                     <TrainingCard key={training.id} training={training} onClick={fetchTrainingDetails} />
                   ))}
                 </div>
-              ) : (
+              ) : trainings.length > 0 ? null : (
                 <div className="text-center py-16 bg-slate-50 rounded-2xl border border-dashed border-slate-200 mt-6">
                   <Activity className="w-10 h-10 text-slate-200 mx-auto mb-3" />
                   <p className="text-slate-500 font-medium mb-1">{t("home.noTrainingsFound")}</p>
