@@ -1925,6 +1925,9 @@ export default function Muuvlink() {
   // doldurulup "Gizli" anahtarını sessizce "Açık"a çeviriyordu. 7 Eylül 2026'da
   // gerçek bir takım bu yüzden yeniden herkese açık oldu.
   const [teamEditForm, setTeamEditForm] = useState(null);
+  // Takım sayfasındaki "Etkinlik Oluştur" düğmesi formu bu takım seçili açar.
+  // Etkinlik formundan çıkılınca temizlenir ki menüden açılan form boş başlasın.
+  const [createPresetTeamId, setCreatePresetTeamId] = useState(null);
   // Çift gönderim kilidi REF'te tutulur, state'te değil: üst bileşende bir state
   // değişimi TeamDetailPage'i baştan kurduğu için düğme gözle görülür şekilde
   // yanıp sönüyordu. Ref hiç yeniden çizim tetiklemez.
@@ -2294,6 +2297,10 @@ export default function Muuvlink() {
   // tetikliyordu ve Play Console uyarı veriyordu. Android 15+ zaten uygulamayı
   // uçtan uca çiziyor, çağrı da yok sayılıyor. Artık boşluğu tamamen web tarafında
   // env(safe-area-inset-*) ile veriyoruz (kök kapsayıcı ve alt menüde).
+
+  useEffect(() => {
+    if (currentPage !== "create-training") setCreatePresetTeamId(null);
+  }, [currentPage]);
 
   // Push Notifications — sadece native'de
   useEffect(() => {
@@ -6552,6 +6559,10 @@ export default function Muuvlink() {
     const isPlatformAdmin = !!user?.is_admin;
     const canAdmin = isOwner || isEditor || myRole === "owner" || (isPlatformAdmin && isMember);
     const canManage = canAdmin || isCoach || myRole === "captain";
+    // Etkinlik açma yetkisi SUNUCUYLA aynı kural: takımda sahip/editör/antrenör/kaptan.
+    // Platform admini de destek hesabı olarak takımlara editör eklendiği için buradan geçer;
+    // editör olmayan bir admine düğme gösterilmez, çünkü sunucu 403 döner.
+    const canCreateTraining = ["owner", "editor", "coach", "captain"].includes(myRole);
     const canSeeMembers = !selectedTeam.is_private || isMember;
 
     const [message, setMessage] = useState("");
@@ -6687,11 +6698,18 @@ export default function Muuvlink() {
 
             {/* aksiyonlar — ince çizgiyle ayrılmış kendi şeridinde; mobilde iki sütun */}
             <div className="mt-5 pt-4 border-t border-white/10 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+              {canCreateTraining && (
+                <button data-btn="pop"
+                  onClick={() => { setCreatePresetTeamId(selectedTeam.id); setCurrentPage("create-training"); window.scrollTo(0, 0); }}
+                  className={`${canManage ? "col-span-1" : "col-span-2"} sm:col-span-1 w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2.5 bg-pop-400 text-ink-900 rounded-xl text-sm font-bold transition-colors whitespace-nowrap`}>
+                  <Plus className="w-4 h-4 flex-shrink-0" /> {t("nav.createTrainingFull")}
+                </button>
+              )}
               {canManage && (
-                <HoverTip text={t("tips.inviteTeam")} align="left" className="col-span-2 sm:col-span-1">
+                <HoverTip text={t("tips.inviteTeam")} align="left" className={`${canCreateTraining ? "col-span-1" : "col-span-2"} sm:col-span-1`}>
                   <button onClick={() => setShowInviteModal(true)}
-                    className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 bg-pop-400 text-ink-900 hover:bg-pop-300 rounded-xl text-sm font-bold transition-colors">
-                    <UserPlus className="w-4 h-4" /> {t("teamDetail.invite")}
+                    className={`w-full flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors whitespace-nowrap ${canCreateTraining ? "bg-white text-brand-700 hover:bg-brand-50" : "bg-pop-400 text-ink-900 hover:bg-pop-300"}`}>
+                    <UserPlus className="w-4 h-4 flex-shrink-0" /> {t("teamDetail.invite")}
                   </button>
                 </HoverTip>
               )}
@@ -7047,6 +7065,16 @@ export default function Muuvlink() {
           const filtered = (d.teams || []).filter(t => ALLOWED.includes(t.my_role));
           setEligibleTeams(filtered);
           setEligibleLoading(false);
+          // Takım sayfasından gelindiyse: takım yetkili listesindeyse gizlilik ve dal
+          // ondan türetilsin (elle seçimdeki handleTeamChange ile aynı kural);
+          // listede yoksa (yetki yok) bireysel başla.
+          if (createPresetTeamId) {
+            const team = filtered.find(x => x.id === createPresetTeamId);
+            const opts = team?.sports?.length ? team.sports : (team?.sport ? [team.sport] : []);
+            setFormData(f => team
+              ? { ...f, team_id: team.id, is_public: !team.is_private, sport: opts.includes(f.sport) ? f.sport : (opts[0] || "") }
+              : { ...f, team_id: null });
+          }
         })
         .catch(() => setEligibleLoading(false));
     }, []);
@@ -7063,7 +7091,7 @@ export default function Muuvlink() {
       location_lng: null,
       capacity: 20,
       difficulty: "Orta",
-      team_id: null,   // null = bireysel (takımsız) etkinlik
+      team_id: createPresetTeamId ?? null,   // null = bireysel (takımsız) etkinlik
       sport: taCurrent?.sport || "",  // yalnızca bireysel etkinlikte kullanılır
       is_public: true,
       // Kayıt linki alanları varsayılan KAPALI: çoğu etkinlikte gerekmiyor,
