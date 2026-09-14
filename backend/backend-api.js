@@ -4803,6 +4803,23 @@ app.get('/api/admin/trainings', isAdmin, async (req, res) => {
   }
 });
 
+app.put('/api/admin/trainings/:id/feature', isAdmin, async (req, res) => {
+  try {
+    const r = await pool.query(
+      `UPDATE trainings
+          SET is_featured = NOT is_featured,
+              featured_at = CASE WHEN is_featured THEN NULL ELSE NOW() END
+        WHERE id = $1
+        RETURNING id, is_featured, featured_at`,
+      [req.params.id]
+    );
+    if (!r.rows.length) return res.status(404).json({ error: 'Etkinlik bulunamadı.' });
+    res.json(r.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: 'Öne çıkarma değiştirilemedi.' });
+  }
+});
+
 app.delete('/api/admin/trainings/:id', isAdmin, async (req, res) => {
   try {
     await pool.query('DELETE FROM trainings WHERE id = $1', [req.params.id]);
@@ -6557,6 +6574,10 @@ pool.query(`ALTER TABLE trainings ADD COLUMN IF NOT EXISTS registration_url TEXT
 pool.query(`ALTER TABLE trainings ADD COLUMN IF NOT EXISTS image_url TEXT`).catch(() => {});
 pool.query(`ALTER TABLE trainings ADD COLUMN IF NOT EXISTS organizer TEXT`).catch(() => {});
 pool.query(`ALTER TABLE trainings ADD COLUMN IF NOT EXISTS registration_clicks INT DEFAULT 0`).catch(() => {});
+// Öne çıkarma: yalnız admin panelinden açılıp kapanır. Etkinlikler sayfasında
+// süzgeçlerden bağımsız olarak en üstte "Öne çıkan etkinlikler" başlığıyla gösterilir.
+pool.query(`ALTER TABLE trainings ADD COLUMN IF NOT EXISTS is_featured BOOLEAN NOT NULL DEFAULT false`).catch(() => {});
+pool.query(`ALTER TABLE trainings ADD COLUMN IF NOT EXISTS featured_at TIMESTAMPTZ`).catch(() => {});
 // Takımın spor dalları (çoklu). Eski takımlar için tekil sport'tan doldur.
 pool.query(`ALTER TABLE teams ADD COLUMN IF NOT EXISTS sports TEXT[]`).catch(() => {});
 pool.query(`UPDATE teams SET sports = ARRAY[sport] WHERE (sports IS NULL OR array_length(sports,1) IS NULL) AND sport IS NOT NULL`).catch(() => {});

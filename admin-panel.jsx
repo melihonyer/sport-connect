@@ -7,7 +7,7 @@ import {
   Upload, GripVertical, ChevronUp, ChevronDown, Newspaper, GalleryHorizontal, Menu,
   Trophy, User, ClipboardList, CheckCircle2, DoorOpen, Sparkles, Target, Flag,
   Ticket, MapPin, ExternalLink, MousePointerClick,
-  Radar, ScanSearch, RefreshCw, Loader2, XCircle, ListChecks,
+  Radar, ScanSearch, RefreshCw, Loader2, XCircle, ListChecks, Star,
 } from "lucide-react";
 import LocationPicker from "./LocationPicker";
 import { createT, detectLang } from "./i18n.js";
@@ -1473,6 +1473,17 @@ export default function AdminPanel() {
     }
   };
 
+  const toggleFeatured = async (tr) => {
+    try {
+      const r = await api(`/admin/trainings/${tr.id}/feature`, { method: "PUT" });
+      if (!r) return;
+      setTrainings(prev => prev.map(x => x.id === tr.id ? { ...x, is_featured: r.is_featured, featured_at: r.featured_at } : x));
+      showToast(r.is_featured ? "Etkinlik öne çıkarıldı." : "Öne çıkarma kaldırıldı.", "success");
+    } catch (err) {
+      showToast(err.message || "Değiştirilemedi.", "error");
+    }
+  };
+
   const handleLogout = () => {
     sessionStorage.removeItem("admin_token");
     setToken("");
@@ -2349,6 +2360,11 @@ export default function AdminPanel() {
                         <span className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold ${isPast ? "bg-slate-100 text-slate-500" : "bg-brand-100 text-brand-700"}`}>
                           {isPast ? "Bitti" : "Aktif"}
                         </span>
+                        <button onClick={() => toggleFeatured(t)} title={t.is_featured ? "Öne çıkarmayı kaldır" : "Öne çıkar"}
+                          aria-pressed={!!t.is_featured}
+                          className={`p-2 rounded-lg transition-colors ${t.is_featured ? "text-amber-500 bg-amber-50 hover:bg-amber-100" : "text-slate-300 hover:text-amber-500 hover:bg-amber-50"}`}>
+                          <Star className="w-4 h-4" fill={t.is_featured ? "currentColor" : "none"} />
+                        </button>
                         <button onClick={() => del(`/admin/trainings/${t.id}`, t.title, "trainings")}
                           className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
                           <Trash2 className="w-4 h-4" />
@@ -2396,10 +2412,18 @@ export default function AdminPanel() {
                             </span>
                           </td>
                           <td className="px-4 py-3.5">
-                            <button onClick={() => del(`/admin/trainings/${t.id}`, t.title, "trainings")}
-                              className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            <div className="flex items-center gap-1 justify-end">
+                              <button onClick={() => toggleFeatured(t)} title={t.is_featured ? "Öne çıkarmayı kaldır" : "Öne çıkar"}
+                                aria-pressed={!!t.is_featured}
+                                className={`inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${t.is_featured ? "text-amber-600 bg-amber-50 hover:bg-amber-100" : "text-slate-400 hover:text-amber-600 hover:bg-amber-50"}`}>
+                                <Star className="w-4 h-4" fill={t.is_featured ? "currentColor" : "none"} />
+                                {t.is_featured ? "Öne çıkan" : "Öne çıkar"}
+                              </button>
+                              <button onClick={() => del(`/admin/trainings/${t.id}`, t.title, "trainings")}
+                                className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );

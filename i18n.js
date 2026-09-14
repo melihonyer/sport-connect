@@ -290,6 +290,8 @@ export const translations = {
   // ── TRAININGS PAGE ───────────────────────────────────────
   trainings: {
     pageTitle:      { tr: "Etkinlikler",                en: "Events",               de: "Events"               },
+    featuredTitle:  { tr: "Öne çıkan etkinlikler",     en: "Featured events",      de: "Hervorgehobene Events" },
+    allTitle:       { tr: "Etkinlikler",                en: "Events",               de: "Events"               },
     pageSubtitle:   { tr: "Yakınındaki etkinlikleri keşfet veya kendi etkinliğini oluştur.",
                       en: "Discover nearby events or create your own.",
                       de: "Entdecke Events in deiner Nähe oder erstelle dein eigenes." },

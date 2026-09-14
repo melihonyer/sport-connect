@@ -5325,7 +5325,11 @@ export default function Muuvlink() {
       );
     };
 
-    const baseTrainings = nearbyMode ? nearbyTrainings : trainings;
+    // Öne çıkanlar süzgeçlerden (arama/dal/seviye/yakınımda) BAĞIMSIZ, her zaman en üstte.
+    // Tam listeden alınır; geçmiş etkinlikler sunucuda zaten listeden düşüyor.
+    const featuredTrainings = trainings.filter((t) => t.is_featured);
+    const featuredIds = new Set(featuredTrainings.map((t) => t.id));
+    const baseTrainings = (nearbyMode ? nearbyTrainings : trainings).filter((t) => !featuredIds.has(t.id));
     const displayedTrainings = baseTrainings.filter((t) => {
       const q = searchQuery.toLowerCase();
       const matchesSearch = !q || t.title?.toLowerCase().includes(q) || t.location_name?.toLowerCase().includes(q) || t.description?.toLowerCase().includes(q);
@@ -5517,6 +5521,23 @@ export default function Muuvlink() {
               />
               </React.Suspense>
             </ErrorBoundary>
+          )}
+
+          {/* ── Öne çıkan etkinlikler (yalnız liste görünümünde, süzgeçten bağımsız) ── */}
+          {viewMode === "list" && featuredTrainings.length > 0 && (
+            <section className="mb-10">
+              <h2 className="flex items-center gap-2 text-xl sm:text-2xl font-semibold text-brand-900 tracking-tight mb-4">
+                <Sparkles className="w-5 h-5 text-logo-teal flex-shrink-0" /> {t("trainings.featuredTitle")}
+              </h2>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {featuredTrainings.map((training) => (
+                  <TrainingCard key={training.id} training={training} onClick={fetchTrainingDetails} />
+                ))}
+              </div>
+            </section>
+          )}
+          {viewMode === "list" && featuredTrainings.length > 0 && (
+            <h2 className="text-xl sm:text-2xl font-semibold text-brand-900 tracking-tight mb-4">{t("trainings.allTitle")}</h2>
           )}
 
           {/* ── Liste görünümü ── */}
