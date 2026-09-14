@@ -13,7 +13,7 @@
 // her öneride ilçe/il görünür ve bias verilirse yakın olan öne gelir.
 import React, { useState, useRef, useEffect } from "react";
 import {
-  Loader2, Search, MapPin, Navigation2, ArrowLeft, X, CheckCircle, AlertTriangle,
+  Loader2, Search, MapPin, Navigation2, ArrowLeft, X, CheckCircle, AlertTriangle, History,
 } from "lucide-react";
 
 const LocationPickerMapLazy = React.lazy(() => import("./LocationPickerMap"));
@@ -103,6 +103,7 @@ export default function LocationPicker({
   bias = null,              // {lat,lng}: öneriler bu noktaya yakın olanları öne alır
   needsAttention = false,   // form koordinatsız gönderilmek istendi: öneriler açılır, uyarı vurgulanır
   onContinueWithout,        // verilirse uyarıda "Konumsuz kaydet" düğmesi çıkar
+  recentLocations = [],     // [{name,lat,lng,uses}] takımın/kişinin önceki konumları — ÖNERİ, otomatik doldurma değil
 }) {
   // Çevirisi olmayan ortamlarda (admin paneli) anahtar yerine Türkçe yedeği göster.
   const tt = (key, fallback) => { const v = t ? t(key) : key; return !v || v === key ? fallback : v; };
@@ -132,6 +133,21 @@ export default function LocationPicker({
 
   const hasCoords = hasNum(lat) && hasNum(lng);
   const text = locationName || "";
+  const [focused, setFocused] = useState(false);
+  // Önceki konumlar: kutu boşken hepsi, yazarken adı eşleşenler en üstte.
+  // En son kullanılan yer, dışarıdan bias verilmediyse yakınlık için kullanılır.
+  const recents = (Array.isArray(recentLocations) ? recentLocations : []).filter((r) => hasNum(r?.lat) && hasNum(r?.lng) && r?.name);
+  const effBias = bias || (recents[0] ? { lat: Number(recents[0].lat), lng: Number(recents[0].lng) } : null);
+  const needle = text.trim().toLocaleLowerCase("tr");
+  const recentMatches = (needle ? recents.filter((r) => r.name.toLocaleLowerCase("tr").includes(needle)) : recents)
+    .map((r) => ({
+      id: `recent-${r.lat}-${r.lng}`, lat: Number(r.lat), lng: Number(r.lng), name: r.name, recent: true,
+      subtitle: r.uses > 1 ? tt("location.usedTimes", "{n} kez kullanıldı").replace("{n}", r.uses) : tt("location.usedBefore", "Daha önce kullanıldı"),
+    }));
+  // Önceki konumlarla aynı noktadaki Photon önerileri tekrar gösterilmez.
+  const photonItems = sugg.filter((s) => !recentMatches.some((r) => Math.abs(r.lat - s.lat) < 0.001 && Math.abs(r.lng - s.lng) < 0.001));
+  const items = [...recentMatches, ...(needle ? photonItems : [])];
+  const dropdownOpen = !hasCoords && ((suggOpen && needle) || (focused && !needle && recentMatches.length > 0));
   const mapCenter = mapBounds ? (() => { const c = mapBounds.getCenter(); return { lat: c.lat, lng: c.lng }; })() : null;
 
   const showError = (msg) => {
@@ -147,7 +163,7 @@ export default function LocationPicker({
     abortRef.current = ctrl;
     setSuggLoading(true);
     try {
-      const list = await photonSearch(query, { bias, signal: ctrl.signal, lang });
+      const list = await photonSearch(query, { bias: effBias, signal: ctrl.signal, lang });
       if (ctrl.signal.aborted) return;
       setSugg(list);
       setSuggFor(query);
@@ -170,7 +186,7 @@ export default function LocationPicker({
   const selectSuggestion = (s) => {
     onLat(s.lat);
     onLng(s.lng);
-    onLocationName(suggestionLabel(s));
+    onLocationName(s.recent ? s.name : suggestionLabel(s));
     setSugg([]); setSuggOpen(false); setActiveIdx(-1);
     setLocationError(null);
   };
@@ -183,11 +199,11 @@ export default function LocationPicker({
   };
 
   const onTextKeyDown = (e) => {
-    if (!suggOpen || !sugg.length) return;
-    if (e.key === "ArrowDown") { e.preventDefault(); setActiveIdx((i) => (i + 1) % sugg.length); }
-    else if (e.key === "ArrowUp") { e.preventDefault(); setActiveIdx((i) => (i - 1 + sugg.length) % sugg.length); }
-    else if (e.key === "Enter" && activeIdx >= 0) { e.preventDefault(); selectSuggestion(sugg[activeIdx]); }
-    else if (e.key === "Escape") { setSuggOpen(false); }
+    if (!dropdownOpen || !items.length) return;
+    if (e.key === "ArrowDown") { e.preventDefault(); setActiveIdx((i) => (i + 1) % items.length); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setActiveIdx((i) => (i - 1 + items.length) % items.length); }
+    else if (e.key === "Enter" && activeIdx >= 0 && items[activeIdx]) { e.preventDefault(); selectSuggestion(items[activeIdx]); }
+    else if (e.key === "Escape") { setSuggOpen(false); setFocused(false); }
   };
 
   // Haritada arama da Photon'la (yazdıkça); görünür alanın merkezi yakınlık için kullanılır.
@@ -195,7 +211,7 @@ export default function LocationPicker({
     if (!q.trim()) { setMapResults([]); return; }
     setMapSearching(true);
     try {
-      const list = await photonSearch(q, { bias: mapCenter || bias, limit: 8, lang });
+      const list = await photonSearch(q, { bias: mapCenter || effBias, limit: 8, lang });
       setMapResults(list.map((r) => ({ ...r, dist: mapCenter ? _hav(mapCenter, { lat: r.lat, lng: r.lng }) : null })));
     } catch { /* sessiz */ } finally { setMapSearching(false); }
   };
@@ -221,7 +237,7 @@ export default function LocationPicker({
   const openMap = (prefill = "") => {
     setPickedPos(hasCoords ? { lat: Number(lat), lng: Number(lng) } : null);
     setPickedLabel("");
-    if (!hasCoords && bias) setFlyTarget({ lat: Number(bias.lat), lng: Number(bias.lng) });
+    if (!hasCoords && effBias) setFlyTarget({ lat: Number(effBias.lat), lng: Number(effBias.lng) });
     setSuggOpen(false);
     setShowMapPicker(true);
     if (prefill.trim()) { setMapQuery(prefill); searchPlaces(prefill); }
@@ -249,7 +265,7 @@ export default function LocationPicker({
     );
   };
 
-  const showUnresolved = !hasCoords && text.trim() && !suggOpen && (touched || needsAttention);
+  const showUnresolved = !hasCoords && text.trim() && !dropdownOpen && (touched || needsAttention);
 
   return (
     <div ref={rootRef} className="space-y-3">
@@ -293,8 +309,8 @@ export default function LocationPicker({
               value={text}
               onChange={(e) => onTextChange(e.target.value)}
               onKeyDown={onTextKeyDown}
-              onFocus={() => { if (sugg.length && suggFor === text.trim()) setSuggOpen(true); }}
-              onBlur={() => { setTouched(true); setTimeout(() => setSuggOpen(false), 150); }}
+              onFocus={() => { setFocused(true); setActiveIdx(0); if (sugg.length && suggFor === text.trim()) setSuggOpen(true); }}
+              onBlur={() => { setTouched(true); setTimeout(() => { setSuggOpen(false); setFocused(false); }, 150); }}
               placeholder={tt("location.typeToSearch", "Yer adı yaz, listeden seç (örn: Kuşçular, Urla)")}
               autoComplete="off"
               className={`w-full pl-9 pr-4 h-12 border rounded-xl text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 ${needsAttention && !hasCoords ? "border-amber-400" : "border-slate-200"}`}
@@ -302,40 +318,59 @@ export default function LocationPicker({
             />
           </div>
 
-          {suggOpen && (
+          {dropdownOpen && (
             <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden max-h-80 overflow-y-auto">
-              {sugg.length > 0 ? sugg.map((s, i) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => selectSuggestion(s)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 text-left border-b border-slate-100 last:border-0 transition-colors ${i === activeIdx ? "bg-brand-50" : "hover:bg-slate-50"}`}
-                >
-                  <div className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${s.type.color}18` }}>
-                    <MapPin className="w-4 h-4" style={{ color: s.type.color }} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-800 truncate">{s.name}</p>
-                    {s.subtitle && <p className="text-xs text-slate-500 truncate">{s.subtitle}</p>}
-                  </div>
-                  <span className="flex-shrink-0 text-[11px] font-medium px-2 py-0.5 rounded-full" style={{ background: `${s.type.color}18`, color: s.type.color }}>
-                    {s.type.label}
-                  </span>
-                </button>
-              )) : (
+              {recentMatches.length > 0 && (
+                <div className="px-4 pt-2.5 pb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400 flex items-center gap-1.5">
+                  <History className="w-3.5 h-3.5" /> {tt("location.recentTitle", "Önceki konumlar")}
+                </div>
+              )}
+              {items.map((s, i) => (
+                <React.Fragment key={s.id}>
+                  {!s.recent && i === recentMatches.length && recentMatches.length > 0 && (
+                    <div className="px-4 pt-2.5 pb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400 border-t border-slate-100">
+                      {tt("location.otherPlaces", "Diğer yerler")}
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => selectSuggestion(s)}
+                    className={`w-full flex items-center gap-3 px-4 py-3 text-left border-b border-slate-100 last:border-0 transition-colors ${i === activeIdx ? "bg-brand-50" : "hover:bg-slate-50"}`}
+                  >
+                    <div className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center"
+                      style={{ background: s.recent ? "#11495618" : `${s.type.color}18` }}>
+                      {s.recent
+                        ? <History className="w-4 h-4" style={{ color: "#114956" }} />
+                        : <MapPin className="w-4 h-4" style={{ color: s.type.color }} />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-800 truncate">{s.name}</p>
+                      {s.subtitle && <p className="text-xs text-slate-500 truncate">{s.subtitle}</p>}
+                    </div>
+                    {!s.recent && (
+                      <span className="flex-shrink-0 text-[11px] font-medium px-2 py-0.5 rounded-full" style={{ background: `${s.type.color}18`, color: s.type.color }}>
+                        {s.type.label}
+                      </span>
+                    )}
+                  </button>
+                </React.Fragment>
+              ))}
+              {needle && suggOpen && !suggLoading && items.length === 0 && (
                 <div className="px-4 py-3 text-sm text-slate-500">
                   {tt("location.noSuggestions", "Öneri bulunamadı. Yeri haritada işaretleyebilirsin.")}
                 </div>
               )}
-              <button
-                type="button"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => openMap(text)}
-                className="w-full flex items-center gap-2 px-4 py-3 text-sm font-medium text-brand-700 bg-slate-50 hover:bg-brand-50 border-t border-slate-100"
-              >
-                <MapPin className="w-4 h-4" /> {tt("location.markOnMap", "Haritada işaretle")}
-              </button>
+              {needle && (
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => openMap(text)}
+                  className="w-full flex items-center gap-2 px-4 py-3 text-sm font-medium text-brand-700 bg-slate-50 hover:bg-brand-50 border-t border-slate-100"
+                >
+                  <MapPin className="w-4 h-4" /> {tt("location.markOnMap", "Haritada işaretle")}
+                </button>
+              )}
             </div>
           )}
         </div>

@@ -297,6 +297,10 @@ export const translations = {
     continueWithout:   { tr: "Konumsuz kaydet",          en: "Save without location", de: "Ohne Ort speichern" },
     labelOnCards:      { tr: "Kartlarda görünecek ad",   en: "Name shown on cards", de: "Name auf den Karten" },
     change:            { tr: "Değiştir",                 en: "Change",             de: "Ändern" },
+    recentTitle:       { tr: "Önceki konumlar",          en: "Previously used",    de: "Zuvor verwendet" },
+    otherPlaces:       { tr: "Diğer yerler",             en: "Other places",       de: "Andere Orte" },
+    usedTimes:         { tr: "{n} kez kullanıldı",       en: "Used {n} times",     de: "{n}× verwendet" },
+    usedBefore:        { tr: "Daha önce kullanıldı",     en: "Used before",        de: "Schon verwendet" },
   },
 
   // ── TRAININGS PAGE ───────────────────────────────────────

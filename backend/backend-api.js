@@ -3378,6 +3378,44 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
 });
 
 
+// Konum seçicinin "önceki konumlar" önerileri. Aynı takım aynı yerleri tekrar yazıyor
+// (Kuscular Racing Team 3 kez "Kuscular"); bir kez haritadan seçilen yer sonra tek
+// dokunuşla gelsin. OTOMATİK DOLDURMA DEĞİL — kullanıcı seçer (takım/konum her
+// antrenmanda değişebilir kararı). Yakın koordinatlar (~100 m) tek öneride birleşir.
+// team_id verilirse: takımda etkinlik açma yetkisi olanlar; verilmezse kişinin kendi etkinlikleri.
+app.get('/api/trainings/recent-locations', authenticateToken, async (req, res) => {
+  try {
+    const teamId = req.query.team_id ? parseInt(req.query.team_id, 10) : null;
+    let scope, params;
+    if (teamId) {
+      const m = await pool.query('SELECT role FROM team_members WHERE team_id = $1 AND user_id = $2', [teamId, req.user.id]);
+      if (!m.rows.length || !TRAINING_MANAGER_ROLES.includes(m.rows[0].role)) {
+        return res.status(403).json({ error: 'Bu takımın konumlarına erişim yok.' });
+      }
+      scope = 'team_id = $1'; params = [teamId];
+    } else {
+      scope = 'created_by = $1 AND team_id IS NULL'; params = [req.user.id];
+    }
+    const r = await pool.query(`
+      SELECT (array_agg(location_name ORDER BY created_at DESC))[1] AS name,
+             (array_agg(location_lat  ORDER BY created_at DESC))[1] AS lat,
+             (array_agg(location_lng  ORDER BY created_at DESC))[1] AS lng,
+             COUNT(*)::int AS uses,
+             MAX(created_at) AS last_used
+        FROM trainings
+       WHERE ${scope}
+         AND location_lat IS NOT NULL AND location_lng IS NOT NULL
+         AND COALESCE(trim(location_name), '') <> ''
+       GROUP BY round(location_lat::numeric, 3), round(location_lng::numeric, 3)
+       ORDER BY MAX(created_at) DESC
+       LIMIT 8`, params);
+    res.json({ locations: r.rows.map((x) => ({ ...x, lat: Number(x.lat), lng: Number(x.lng) })) });
+  } catch (error) {
+    console.error('Recent locations error:', error.message);
+    res.status(500).json({ error: 'Önceki konumlar alınamadı.' });
+  }
+});
+
 app.get('/api/trainings', optionalAuth, async (req, res) => {
   try {
     const { team_id, date_from, date_to, is_public, sport } = req.query;

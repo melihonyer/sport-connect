@@ -5874,6 +5874,20 @@ export default function Muuvlink() {
     const [comment, setComment] = useState("");
     const [editMode, setEditMode] = useState(false);
     const [editLocAttention, setEditLocAttention] = useState(false);
+    const [editRecentLocs, setEditRecentLocs] = useState([]);
+    useEffect(() => {
+      if (!editMode) return;
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      let iptal = false;
+      const q = selectedTraining.team_id ? `?team_id=${selectedTraining.team_id}` : "";
+      fetch(`${API_URL}/trainings/recent-locations${q}`, { headers: { Authorization: `Bearer ${token}` } })
+        .then((r) => (r.ok ? r.json() : { locations: [] }))
+        .then((d) => { if (!iptal) setEditRecentLocs(d.locations || []); })
+        .catch(() => {});
+      return () => { iptal = true; };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [editMode]);
     const [editData, setEditData] = useState({
       title: selectedTraining.title,
       description: selectedTraining.description || "",
@@ -6116,6 +6130,7 @@ export default function Muuvlink() {
                     onLng={(v) => setEditData((d) => ({ ...d, location_lng: v }))}
                     needsAttention={editLocAttention && !editData.location_lat}
                     onContinueWithout={() => { setEditLocAttention(false); saveEdit(); }}
+                    recentLocations={editRecentLocs}
                   />
                 </div>
 
@@ -7202,6 +7217,19 @@ export default function Muuvlink() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     // Koordinatsız gönderim denendi: seçici önerileri açar ve "haritada görünmeyecek" uyarısını vurgular.
     const [locAttention, setLocAttention] = useState(false);
+    // Takımın (ya da takımsız etkinlikte kişinin) önceki konumları — öneri olarak, otomatik doldurma değil.
+    const [recentLocs, setRecentLocs] = useState([]);
+    useEffect(() => {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      let iptal = false;
+      const q = formData.team_id ? `?team_id=${formData.team_id}` : "";
+      fetch(`${API_URL}/trainings/recent-locations${q}`, { headers: { Authorization: `Bearer ${token}` } })
+        .then((r) => (r.ok ? r.json() : { locations: [] }))
+        .then((d) => { if (!iptal) setRecentLocs(d.locations || []); })
+        .catch(() => { if (!iptal) setRecentLocs([]); });
+      return () => { iptal = true; };
+    }, [formData.team_id]);
 
     const submitOnce = async () => {
       if (isSubmitting) return;
@@ -7434,6 +7462,7 @@ export default function Muuvlink() {
                 onLng={(v) => setFormData((f) => ({ ...f, location_lng: v }))}
                 needsAttention={locAttention && !formData.location_lat}
                 onContinueWithout={() => { setLocAttention(false); submitOnce(); }}
+                recentLocations={recentLocs}
               />
             </div>
 
