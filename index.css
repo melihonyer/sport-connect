@@ -111,7 +111,7 @@
   }
   /* Hover'da palet tersine döner: 02 sarı zemin + 01 deep teal metin.
      Aynı davranış, düz Deep Teal zeminli tüm buton/linklerde data-btn="solid" ile. */
-  [data-btn="solid"], [data-btn="pop"] { transition: background-color .18s ease, color .18s ease, box-shadow .18s ease; }
+  [data-btn="solid"], [data-btn="pop"], [data-btn="pop-on-dark"] { transition: background-color .18s ease, color .18s ease, box-shadow .18s ease; }
   /* Sadece gerçek imleçli cihazlarda. Dokunmatikte "yapışkan hover" olur,
      butona basınca renk yanıp sönmüş gibi görünürdü. */
   @media (hover: hover) and (pointer: fine) {
@@ -125,6 +125,10 @@
     /* Sarı zeminli buton: hover'da Deep Teal'e döner */
     [data-btn="pop"]:hover:not(:disabled) { background: #114956 !important; color: #fff !important; }
     [data-btn="pop"]:hover:not(:disabled) svg { color: #fff !important; }
+    /* Koyu (Deep Teal) zemin üstündeki sarı buton: "pop" hover'ı zeminle aynı renge
+       döndüğü için buton kayboluyordu. Burada hover beyaz zemin + deep teal metin. */
+    [data-btn="pop-on-dark"]:hover:not(:disabled) { background: #fff !important; color: #114956 !important; }
+    [data-btn="pop-on-dark"]:hover:not(:disabled) svg { color: #114956 !important; }
   }
 
   @media (hover: hover) and (pointer: fine) {

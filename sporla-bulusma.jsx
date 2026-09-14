@@ -6699,7 +6699,7 @@ export default function Muuvlink() {
             {/* aksiyonlar — ince çizgiyle ayrılmış kendi şeridinde; mobilde iki sütun */}
             <div className="mt-5 pt-4 border-t border-white/10 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
               {canCreateTraining && (
-                <button data-btn="pop"
+                <button data-btn="pop-on-dark"
                   onClick={() => { setCreatePresetTeamId(selectedTeam.id); setCurrentPage("create-training"); window.scrollTo(0, 0); }}
                   className={`${canManage ? "col-span-1" : "col-span-2"} sm:col-span-1 w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2.5 bg-pop-400 text-ink-900 rounded-xl text-sm font-bold transition-colors whitespace-nowrap`}>
                   <Plus className="w-4 h-4 flex-shrink-0" /> {t("nav.createTrainingFull")}
