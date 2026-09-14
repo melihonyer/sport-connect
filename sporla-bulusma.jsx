@@ -2184,9 +2184,9 @@ export default function Muuvlink() {
 
   // ---- LOCATION PICKER — ortak bileşen (admin panelindekiyle birebir aynı) ----
   // Gerçek bileşen ./LocationPicker.jsx içinde; t/lang/isNative buradan enjekte edilir.
-  const LocationPicker = (props) => (
-    <SharedLocationPicker {...props} t={t} lang={lang} isNative={isNative} />
-  );
+  // Not: burada eskiden içeride tanımlı bir <LocationPicker> sarmalayıcısı vardı. Kimliği her
+  // üst-render'da değiştiği için seçicinin durumu (öneri listesi, açık harita) sıfırlanıyordu.
+  // Artık çağrı yerlerinde doğrudan <SharedLocationPicker t lang isNative /> kullanılıyor.
   // ---- END LOCATION PICKER ----
 
   const fmtNum = (n) => n == null ? "—" : n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, "") + "K" : String(n);
@@ -5856,7 +5856,8 @@ export default function Muuvlink() {
     );
   };
   const TrainingDetailPage = () => {
-    if (!selectedTraining) return null;
+    // Not: buraya hook'lardan önce koşullu return KONULMAZ (PageHost). selectedTraining
+    // kontrolü çağrı yerinde; anahtar etkinlik id'si, başka etkinliğe geçince form tazelenir.
 
     const isOwner = user && selectedTraining.team_owner_id === user.id;
     // Düzenleme/silme yetkisi backend'den gelir (sahip + antrenör + kaptan).
@@ -5872,6 +5873,7 @@ export default function Muuvlink() {
     const isPast = !!selectedTraining.is_past;
     const [comment, setComment] = useState("");
     const [editMode, setEditMode] = useState(false);
+    const [editLocAttention, setEditLocAttention] = useState(false);
     const [editData, setEditData] = useState({
       title: selectedTraining.title,
       description: selectedTraining.description || "",
@@ -5889,15 +5891,25 @@ export default function Muuvlink() {
       registration_label: selectedTraining.registration_label || "",
     });
 
-    const handleSubmitEdit = (e) => {
-      e.preventDefault();
+    const saveEdit = () => {
       const u = (editData.registration_url || "").trim();
       if (u && !/^https?:\/\//i.test(u)) {
         showToast(t("createTraining.regUrlInvalid"), "error");
         return;
       }
       handleUpdateTraining(selectedTraining.id, { ...editData, registration_url: u });
+      setEditLocAttention(false);
       setEditMode(false);
+    };
+
+    const handleSubmitEdit = (e) => {
+      e.preventDefault();
+      // Oluşturmadaki kuralın aynısı: koordinat yoksa önce seçici uyarısı; "Konumsuz kaydet" ile geçilebilir.
+      if (!editData.location_lat || !editData.location_lng) {
+        setEditLocAttention(true);
+        return;
+      }
+      saveEdit();
     };
 
     const handleSubmitComment = (e) => {
@@ -6094,13 +6106,16 @@ export default function Muuvlink() {
                 {/* Konum */}
                 <div className="bg-white border border-slate-100 rounded-2xl p-5">
                   <label className={lCls}>{t("createTraining.locationLabel")}</label>
-                  <LocationPicker
+                  <SharedLocationPicker
+                    t={t} lang={lang} isNative={isNative}
                     locationName={editData.location_name}
                     lat={editData.location_lat}
                     lng={editData.location_lng}
                     onLocationName={(v) => setEditData((d) => ({ ...d, location_name: v }))}
                     onLat={(v) => setEditData((d) => ({ ...d, location_lat: v }))}
                     onLng={(v) => setEditData((d) => ({ ...d, location_lng: v }))}
+                    needsAttention={editLocAttention && !editData.location_lat}
+                    onContinueWithout={() => { setEditLocAttention(false); saveEdit(); }}
                   />
                 </div>
 
@@ -7185,6 +7200,8 @@ export default function Muuvlink() {
     // Çift gönderim koruması: yavaş bağlantıda istek uzun sürünce kullanıcı butona
     // tekrar basıp aynı etkinliği iki kez oluşturabiliyordu.
     const [isSubmitting, setIsSubmitting] = useState(false);
+    // Koordinatsız gönderim denendi: seçici önerileri açar ve "haritada görünmeyecek" uyarısını vurgular.
+    const [locAttention, setLocAttention] = useState(false);
 
     const submitOnce = async () => {
       if (isSubmitting) return;
@@ -7204,8 +7221,10 @@ export default function Muuvlink() {
     const handleSubmit = (e) => {
       e.preventDefault();
       if (isSubmitting) return;
+      // Eskiden "Konumunuz henüz alınamadı" onayıyla geçiliyordu; metin GPS sorunu gibi
+      // okunuyor, insanlar onaylayıp koordinatsız kaydediyordu. Artık seçici önerileri açar.
       if (!formData.location_lat || !formData.location_lng) {
-        showConfirm(t("createTraining.noGpsConfirm"), submitOnce);
+        setLocAttention(true);
         return;
       }
       submitOnce();
@@ -7405,13 +7424,16 @@ export default function Muuvlink() {
             {/* Konum */}
             <div className="p-5">
               <label className={labelCls}>{t("createTraining.locationLabel")}</label>
-              <LocationPicker
+              <SharedLocationPicker
+                t={t} lang={lang} isNative={isNative}
                 locationName={formData.location_name}
                 lat={formData.location_lat}
                 lng={formData.location_lng}
                 onLocationName={(v) => setFormData((f) => ({ ...f, location_name: v }))}
                 onLat={(v) => setFormData((f) => ({ ...f, location_lat: v }))}
                 onLng={(v) => setFormData((f) => ({ ...f, location_lng: v }))}
+                needsAttention={locAttention && !formData.location_lat}
+                onContinueWithout={() => { setLocAttention(false); submitOnce(); }}
               />
             </div>
 
@@ -9141,9 +9163,9 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
       {currentPage === "trainings" && <TrainingsPage />}
       {currentPage === "teams" && <TeamsPage />}
       {currentPage === "badges" && <BadgesPage />}
-      {currentPage === "training-detail" && <TrainingDetailPage />}
+      {currentPage === "training-detail" && selectedTraining && <PageHost key={`training-detail-${selectedTraining.id}`} render={TrainingDetailPage} />}
       {currentPage === "team-detail" && selectedTeam && <PageHost key="team-detail" render={TeamDetailPage} />}
-      {currentPage === "create-training" && <CreateTrainingPage />}
+      {currentPage === "create-training" && <PageHost key="create-training" render={CreateTrainingPage} />}
       {currentPage === "create-team" && <CreateTeamPage />}
       {currentPage === "contact" && <ContactPage />}
       {currentPage === "reset-password" && <ResetPasswordPage />}

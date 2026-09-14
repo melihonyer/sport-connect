@@ -285,6 +285,18 @@ export const translations = {
     gpsTimedOut:       { tr: "Konum alınamadı (zaman aşımı). Tekrar dene veya adres arama kutusunu kullan.", en: "Location timed out. Try again or use address search.", de: "Standortabfrage abgelaufen. Erneut versuchen oder Adresssuche verwenden." },
     locationName:      { tr: "Konum Adı",        en: "Location Name",    de: "Ortsname"           },
     visibleOnCards:    { tr: "kartlarda görünür", en: "visible on cards", de: "auf Karten sichtbar" },
+    typeToSearch:      { tr: "Yer adı yaz, listeden seç (örn: Kuşçular, Urla)", en: "Type a place and pick from the list", de: "Ort eingeben und aus der Liste wählen" },
+    noSuggestions:     { tr: "Öneri bulunamadı. Yeri haritada işaretleyebilirsin.", en: "No suggestions. You can mark the place on the map.", de: "Keine Vorschläge. Du kannst den Ort auf der Karte markieren." },
+    noSuggestionsMap:  { tr: "Bulunamadı. Haritada yere dokunarak pin bırakabilirsin.", en: "Not found. Tap the map to drop a pin.", de: "Nicht gefunden. Tippe auf die Karte, um einen Pin zu setzen." },
+    markOnMap:         { tr: "Haritada işaretle",        en: "Mark on map",        de: "Auf Karte markieren" },
+    showSuggestions:   { tr: "Önerileri göster",         en: "Show suggestions",   de: "Vorschläge anzeigen" },
+    unresolvedTitle:   { tr: "Bu konum haritada görünmeyecek", en: "This location won't appear on the map", de: "Dieser Ort erscheint nicht auf der Karte" },
+    unresolvedDesc:    { tr: "Listeden bir öneri seç ya da yeri haritada işaretle. Böylece etkinliğin haritada ve \"Yakınımda\" aramasında çıkar.",
+                         en: "Pick a suggestion or mark the place on the map so your event shows up on the map and in \"Nearby\".",
+                         de: "Wähle einen Vorschlag oder markiere den Ort auf der Karte, damit dein Event auf der Karte und unter \"In der Nähe\" erscheint." },
+    continueWithout:   { tr: "Konumsuz kaydet",          en: "Save without location", de: "Ohne Ort speichern" },
+    labelOnCards:      { tr: "Kartlarda görünecek ad",   en: "Name shown on cards", de: "Name auf den Karten" },
+    change:            { tr: "Değiştir",                 en: "Change",             de: "Ändern" },
   },
 
   // ── TRAININGS PAGE ───────────────────────────────────────
