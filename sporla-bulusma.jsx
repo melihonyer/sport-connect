@@ -2794,12 +2794,20 @@ export default function Muuvlink() {
       const performer = tr.team_name
         ? { "@type": "SportsTeam", name: tr.team_name }
         : { "@type": "Organization", name: "Muuvlink" };
+      // description: Google Etkinlik şeması bunu bekliyor. Organizatör boş bıraktıysa
+      // sayfada zaten görünen bilgileri (spor · yer · tarih) birleştiririz — yeni metin uydurmayız.
+      const eventDesc = (tr.description || "").trim() || [
+        tr.title,
+        tr.sport || tr.team_sport,
+        tr.location_name || tr.location_address,
+        startDate && new Date(startDate).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" }),
+      ].filter(Boolean).join(" · ");
       setJsonLd([
         {
           "@context": "https://schema.org",
           "@type": "SportsEvent",
           name: tr.title,
-          description: tr.description || undefined,
+          description: eventDesc,
           startDate: startDate || undefined,
           endDate,
           eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
