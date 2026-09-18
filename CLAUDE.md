@@ -142,6 +142,32 @@ Deploy sonrası: `curl -s https://muuvlink.app/api/health` → `{"status":"ok","
 
 Doğrulanmış bir değişiklikten sonra **deploy ve git push tekrar sorulmadan** yapılır.
 
+## UptimeRobot alarmı geldiğinde
+
+Alarm "sunucu kapandı" demek değildir; "bir izleme noktası ulaşamadı" demektir.
+Sağlayıcının DDoS filtresi IP bloğu saldırı altındayken bazı kaynaklardan gelen
+paketleri düşürüyor — sunucu hizmet vermeye devam ederken tek bir kontrol noktası
+zaman aşımı görebiliyor (bkz. MTU/MSS notu; 18 Eylül 2026'da yaşandı).
+
+Önce bu üçü, sırayla:
+
+1. **Alarmı veren IP nginx kaydında var mı?**
+   `grep "<IP>" /var/log/nginx/access.log` — hiç satır yoksa istek sunucuya
+   ULAŞMAMIŞ demektir, sorun bizim tarafımızda değil.
+2. **Aynı dakikalarda başka noktalar ne almış?**
+   UptimeRobot birden çok bölgeden bakar. Kesinti penceresinde başka IP'ler 200
+   alıyorsa site ayaktaydı, mesele o tek noktaya giden yoldu.
+3. **İç belirti var mı?** `pm2 list` (yeniden başlatma), `/api/health` durum
+   kodları, `nginx/error.log`, `muuvlink-api-error.log`. Hepsi temizse rapor
+   "kesinti yok, erişim sorunu" diye yazılır.
+
+Yanıltıcı olan: `/var/log/nginx/access.log`'da dakikadaki istek sayısının aniden
+düşmesi genelde kesinti değildir. Açık duran admin paneli 5 saniyede bir
+`/api/admin/live` çağırıyor; sekme kapanınca trafik 12/dk'dan 1/dk'ya iner.
+
+Bu alarmlar tekrar edecek: **sunucu taşıma yeniden önerilmez**, Melih VPS'te
+kalmaya karar verdi. Yapılacak iş sadece ne olduğunu doğru raporlamak.
+
 ## Sayfa bileşenleri ve PageHost
 
 Sayfa/modal bileşenlerinin çoğu ana bileşenin İÇİNDE tanımlı. Her üst-render'da
