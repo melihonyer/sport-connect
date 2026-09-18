@@ -1324,27 +1324,24 @@ const fmtFull = (d) => d ? new Date(d).toLocaleString("tr-TR") : "—";
 // sonra purge kalıcı siler ve listeden düşer.
 // Koordinatı olmayan etkinlik: haritada ve "Yakınımda" aramasında görünmez.
 // Silinen takım/etkinlik kaydı. Geri getirme yok — yalnızca "silindi" bilgisi.
-const DeletionsCard = ({ data, kind }) => {
+// Ayrı kart yerine, listenin kendi yerinde ve yalnız "Silinenler" filtresi seçilince görünür.
+const DeletedList = ({ data, kind }) => {
   const tur = kind === "team" ? "team_delete" : "training_delete";
   const liste = (data?.items || []).filter(i => i.event_type === tur);
   const kayitsiz = kind === "team" ? data?.kayitsiz?.teams : data?.kayitsiz?.trainings;
-  const baslik = kind === "team" ? "Silinen takımlar" : "Silinen etkinlikler";
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 md:p-6 mb-5">
-      <div className="flex flex-wrap items-baseline justify-between gap-2 mb-3">
-        <h2 className="font-medium text-slate-900">{baslik} <span className="text-slate-400 font-normal text-sm">({liste.length})</span></h2>
-        {kayitsiz > 0 && (
-          <span className="text-xs text-slate-400">
-            Kayıt tutulmadan önce silinen {kayitsiz} {kind === "team" ? "takım" : "etkinlik"} daha var; adı ve tarihi hiçbir yerde durmuyor.
-          </span>
-        )}
-      </div>
+    <div>
+      {kayitsiz > 0 && (
+        <div className="px-4 md:px-6 py-2.5 bg-slate-50 border-b border-slate-100 text-xs text-slate-500">
+          Kayıt tutulmadan önce silinen {kayitsiz} {kind === "team" ? "takım" : "etkinlik"} daha var; adı ve tarihi hiçbir yerde durmuyor.
+        </div>
+      )}
       {liste.length === 0 ? (
-        <p className="text-sm text-slate-400">Kayıt yok.</p>
+        <div className="text-center py-12 text-slate-400 text-sm">Silme kaydı yok.</div>
       ) : (
         <div className="divide-y divide-slate-50">
           {liste.map(i => (
-            <div key={i.id} className="py-2.5 flex items-start gap-3">
+            <div key={i.id} className="px-4 md:px-6 py-3 flex items-start gap-3">
               <span className="mt-0.5 px-2 py-0.5 rounded-md bg-red-50 text-red-600 border border-red-100 text-[10px] font-semibold flex-shrink-0">Silindi</span>
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-semibold text-slate-800 truncate">
@@ -1356,7 +1353,6 @@ const DeletionsCard = ({ data, kind }) => {
                   {i.meta?.source === "admin" ? " · panelden" : i.meta?.source === "self" ? " · kullanıcı" : ""}
                   {i.user_name ? ` · ${i.user_name}` : ""}
                   {i.meta?.members != null ? ` · ${i.meta.members} üye` : ""}
-                  {i.meta?.trainings != null ? ` · ${i.meta.trainings} etkinlik` : ""}
                   {i.meta?.kaynak === "geriye_donuk" ? " · geriye dönük kayıt, tarih yaklaşık" : ""}
                 </div>
               </div>
@@ -1472,6 +1468,7 @@ export default function AdminPanel() {
   const [trainings, setTrainings] = useState([]);
   const [trainingFilter, setTrainingFilter] = useState("all"); // all | nomap
   const [deletions, setDeletions] = useState(null);
+  const [teamFilter, setTeamFilter] = useState("all"); // all | deleted
   const [teams, setTeams]       = useState([]);
   const [messages, setMessages] = useState([]);
   const [banners, setBanners]   = useState([]);
@@ -2094,10 +2091,10 @@ export default function AdminPanel() {
   // Koordinatı olmayan etkinlik haritada ve "Yakınımda" aramasında çıkmaz.
   const noMap = (t) => t.location_lat == null || t.location_lng == null || t.location_lat === "" || t.location_lng === "";
   const noMapCount = trainings.filter(noMap).length;
-  const filteredTrainings = trainings
+  const filteredTrainings = (trainingFilter === "deleted" ? [] : trainings)
     .filter(t => trainingFilter === "all" || noMap(t))
     .filter(t => !q || t.title?.toLowerCase().includes(q));
-  const filteredTeams     = teams.filter(t => !q || t.name?.toLowerCase().includes(q));
+  const filteredTeams     = (teamFilter === "deleted" ? [] : teams).filter(t => !q || t.name?.toLowerCase().includes(q));
   const filteredMessages  = messages.filter(m => !q || m.name?.toLowerCase().includes(q) || m.subject?.toLowerCase().includes(q));
 
   return (
@@ -2385,14 +2382,12 @@ export default function AdminPanel() {
           )}
 
           {/* ── TRAININGS ────────────────────────────────── */}
-          {!loading && tab === "trainings" && deletions && <DeletionsCard data={deletions} kind="training" />}
-
           {!loading && tab === "trainings" && (
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
               <div className="px-4 md:px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
                 <h2 className="font-medium text-slate-900">Etkinlikler <span className="text-slate-400 font-normal text-sm">({filteredTrainings.length})</span></h2>
                 <div className="flex gap-1.5">
-                  {[["all", "Tümü"], ["nomap", `Haritada yok (${noMapCount})`]].map(([k, label]) => (
+                  {[["all", "Tümü"], ["nomap", `Haritada yok (${noMapCount})`], ["deleted", `Silinenler (${(deletions?.items || []).filter(i => i.event_type === "training_delete").length})`]].map(([k, label]) => (
                     <button key={k} onClick={() => setTrainingFilter(k)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${trainingFilter === k ? "bg-brand-600 text-white border-brand-600" : "bg-white text-slate-600 border-slate-200 hover:border-brand-300"}`}>
                       {label}
@@ -2400,6 +2395,7 @@ export default function AdminPanel() {
                   ))}
                 </div>
               </div>
+              {trainingFilter === "deleted" && <DeletedList data={deletions} kind="training" />}
               {trainingFilter === "nomap" && (
                 <div className="px-4 md:px-6 py-3 bg-amber-50 border-b border-amber-100 text-xs text-amber-900 leading-relaxed">
                   Bu etkinliklerde konum yalnız yazıyla girilmiş, haritada işaretlenmemiş. Haritada ve "Yakınımda"
@@ -2410,7 +2406,7 @@ export default function AdminPanel() {
               {/* Mobil kart listesi */}
               <div className="sm:hidden divide-y divide-slate-50">
                 {filteredTrainings.length === 0 && (
-                  <div className="text-center py-12 text-slate-400 text-sm">Etkinlik bulunamadı</div>
+                  <div hidden={trainingFilter === "deleted"} className="text-center py-12 text-slate-400 text-sm">Etkinlik bulunamadı</div>
                 )}
                 {filteredTrainings.map(t => {
                   const trainingDateObj = new Date(t.training_date);
@@ -2528,25 +2524,32 @@ export default function AdminPanel() {
                   </tbody>
                 </table>
                 {filteredTrainings.length === 0 && (
-                  <div className="text-center py-16 text-slate-400">Etkinlik bulunamadı</div>
+                  <div hidden={trainingFilter === "deleted"} className="text-center py-16 text-slate-400">Etkinlik bulunamadı</div>
                 )}
               </div>
             </div>
           )}
 
           {/* ── TEAMS ────────────────────────────────────── */}
-          {!loading && tab === "teams" && deletions && <DeletionsCard data={deletions} kind="team" />}
-
           {!loading && tab === "teams" && (
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-              <div className="px-4 md:px-6 py-4 border-b border-slate-100">
+              <div className="px-4 md:px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
                 <h2 className="font-medium text-slate-900">Takımlar <span className="text-slate-400 font-normal text-sm">({filteredTeams.length})</span></h2>
+                <div className="flex gap-1.5">
+                  {[["all", "Tümü"], ["deleted", `Silinenler (${(deletions?.items || []).filter(i => i.event_type === "team_delete").length})`]].map(([k, label]) => (
+                    <button key={k} onClick={() => setTeamFilter(k)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${teamFilter === k ? "bg-brand-600 text-white border-brand-600" : "bg-white text-slate-600 border-slate-200 hover:border-brand-300"}`}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
+              {teamFilter === "deleted" && <DeletedList data={deletions} kind="team" />}
 
               {/* Mobil kart listesi */}
               <div className="sm:hidden divide-y divide-slate-50">
                 {filteredTeams.length === 0 && (
-                  <div className="text-center py-12 text-slate-400 text-sm">Takım bulunamadı</div>
+                  <div hidden={teamFilter === "deleted"} className="text-center py-12 text-slate-400 text-sm">Takım bulunamadı</div>
                 )}
                 {filteredTeams.map(t => (
                   <div key={t.id} className="flex items-center gap-3 px-4 py-3.5">
@@ -2623,7 +2626,7 @@ export default function AdminPanel() {
                   </tbody>
                 </table>
                 {filteredTeams.length === 0 && (
-                  <div className="text-center py-16 text-slate-400">Takım bulunamadı</div>
+                  <div hidden={teamFilter === "deleted"} className="text-center py-16 text-slate-400">Takım bulunamadı</div>
                 )}
               </div>
             </div>
