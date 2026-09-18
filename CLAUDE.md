@@ -142,6 +142,73 @@ Deploy sonrası: `curl -s https://muuvlink.app/api/health` → `{"status":"ok","
 
 Doğrulanmış bir değişiklikten sonra **deploy ve git push tekrar sorulmadan** yapılır.
 
+## Sayfa bileşenleri ve PageHost
+
+Sayfa/modal bileşenlerinin çoğu ana bileşenin İÇİNDE tanımlı. Her üst-render'da
+yeni kimlik alıyorlar, React alt ağacı söküp yeniden kuruyor: yerel state
+sıfırlanıyor, imlecin altındaki düğme hover rengini kaybedip geri alıyor
+(yanıp sönme), `<img>` src'leri yeniden yükleniyor.
+
+`PageHost` kimliği SABİT bir kabuk: `<PageHost key="..." render={SayfaBileseni} />`.
+Hook'lar bu sabit fiber'a bağlanır, closure'lar her render tazelenir.
+
+- Yeni bir sayfayı PageHost'a alırken: içinde hook'lardan ÖNCE koşullu `return`
+  olmamalı — koşul çağrı yerine taşınır.
+- Detay sayfalarının key'i kaydın id'sini taşır (`training-detail-${id}`), yoksa
+  başka kayda geçince form eski veriyle kalır.
+- Uygulandı: team-detail, training-detail, create-training, Navigation, Footer,
+  BottomNav. Kalanlar tek tek geçirilebilir; her birinde `useState` başlangıç
+  değerinin "her render'da tazelensin" varsayımına dayanıp dayanmadığı kontrol edilir.
+
+## Konum seçici
+
+Konumu yazıp listeden SEÇMEYEN kullanıcı koordinatsız etkinlik yaratıyordu;
+bunlar haritada ve "Yakınımda" aramasında hiç çıkmıyor.
+
+- Tek kutu, yazdıkça öneri. Önerilerde ilçe/il ZORUNLU: aynı ad Türkiye'de
+  onlarca yerde (Kuşçular → Urla, Tarsus, Nazilli…).
+- Yazdıkça arama **Photon** ile (photon.komoot.io). Nominatim'in kullanım
+  politikası yazdıkça aramayı yasaklıyor; Nominatim yalnız pin onayındaki TEK
+  ters sorguda kalır.
+- **Otomatik coğrafi çözümleme yapılmaz.** Denendi: "Kuscular" Tarsus'a,
+  "Gelinkaya" Kütahya'ya düşüyor. Yanlış raptiye, raptiye olmamasından kötü.
+- Takımın önceki konumları ÖNERİ olarak gösterilir, otomatik doldurulmaz
+  (takım/konum her etkinlikte değişebilir kararı).
+- Haritada elle pin bırakılırsa kullanıcının yazdığı ad korunur.
+
+## Harita kümeleme
+
+`supercluster` ile: uzakta sayı yazan daire, yaklaştıkça bölünür.
+
+- `MAP_MAX_ZOOM` ile `CLUSTER_MAX_ZOOM` **aynı kalmalı** (18). Kümeleme daha
+  erken biterse, koordinatı birebir aynı olan etkinlikler son yakınlaştırmalarda
+  yine üst üste biner.
+- Ayrılamayan kümeler (açılım zoom'u sınırı aşanlar) zoom 15'ten sonra
+  kendiliğinden yelpazeye açılır; merkezde tam konum noktası kalır.
+- Haritaya verilen liste öne çıkanları DA içermeli. Öne çıkanlar listede ayrı
+  bölümde olduğu için `displayedTrainings`'ten çıkarılıyor; harita o listeyi
+  alırsa öne çıkan etkinlikler haritadan düşer (Eylül 2026'da yaşandı).
+
+## Silme ve kayıt
+
+- Kullanıcı hesabı **yumuşak** silinir (`users.deleted_at`, 30 gün, sonra purge).
+  Takım ve etkinlik **kalıcı** silinir; geri getirme yok.
+- Silinen takım/etkinlik `activity_logs`'a `team_delete` / `training_delete`
+  olarak yazılır (`logDeletion`), panelde "Silinenler" filtresinde görünür.
+  `source_ref` benzersiz: aynı silme iki kez yazılmaz.
+- Ayrılan hesaplar `account_departures`'ta; **kişisel veri tutulmaz** (isim/e-posta
+  yok), purge'den sonra da sayılar kalır.
+- Kayıt tutulmadan önce silinenler için uydurma satır üretilmez; numara
+  boşluklarından yalnız SAYI olarak gösterilir.
+
+## Push bildirimleri
+
+Cihaz jetonu yalnız uygulama açılışında geliyordu; o an giriş yapılmamışsa jeton
+sahipsiz kalıp kullanıcıya hiç bağlanmıyordu (Eylül 2026: 54 geçerli Android
+cihaz sahipsizdi). Jeton `localStorage`'da saklanır; **giriş ve kayıt başarılı
+olunca** kimlikle yeniden gönderilir, **çıkışta** kimliksiz gönderilip bağı
+koparılır.
+
 ## Training Agents entegrasyonu
 
 trainingagentsapp.com'da yapay zeka bir antrenman yazar; antrenör imzalı bir
