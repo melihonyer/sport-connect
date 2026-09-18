@@ -1325,13 +1325,22 @@ const fmtFull = (d) => d ? new Date(d).toLocaleString("tr-TR") : "—";
 // Koordinatı olmayan etkinlik: haritada ve "Yakınımda" aramasında görünmez.
 // Silinen takım/etkinlik kaydı. Geri getirme yok — yalnızca "silindi" bilgisi.
 // Ayrı kart yerine, listenin kendi yerinde ve yalnız "Silinenler" filtresi seçilince görünür.
-const DeletedList = ({ data, kind }) => {
+const DeletedList = ({ data, kind, q = "", heading = false }) => {
   const tur = kind === "team" ? "team_delete" : "training_delete";
-  const liste = (data?.items || []).filter(i => i.event_type === tur);
+  const liste = (data?.items || [])
+    .filter(i => i.event_type === tur)
+    .filter(i => !q || (i.meta?.name || "").toLowerCase().includes(q) || (i.meta?.team_name || "").toLowerCase().includes(q));
+  // "Tümü" görünümünün sonunda: hiç kayıt yoksa bölüm hiç çizilmesin.
+  if (heading && liste.length === 0) return null;
   const kayitsiz = kind === "team" ? data?.kayitsiz?.teams : data?.kayitsiz?.trainings;
   return (
     <div>
-      {kayitsiz > 0 && (
+      {heading && (
+        <div className="px-4 md:px-6 py-2.5 bg-slate-50/70 border-y border-slate-100 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+          Silinenler ({liste.length})
+        </div>
+      )}
+      {kayitsiz > 0 && !heading && (
         <div className="px-4 md:px-6 py-2.5 bg-slate-50 border-b border-slate-100 text-xs text-slate-500">
           Kayıt tutulmadan önce silinen {kayitsiz} {kind === "team" ? "takım" : "etkinlik"} daha var; adı ve tarihi hiçbir yerde durmuyor.
         </div>
@@ -2527,6 +2536,8 @@ export default function AdminPanel() {
                   <div hidden={trainingFilter === "deleted"} className="text-center py-16 text-slate-400">Etkinlik bulunamadı</div>
                 )}
               </div>
+              {/* "Tümü" görünümünde silinenler listenin sonunda, kendi ayracıyla. */}
+              {trainingFilter === "all" && <DeletedList data={deletions} kind="training" q={q} heading />}
             </div>
           )}
 
@@ -2629,6 +2640,7 @@ export default function AdminPanel() {
                   <div hidden={teamFilter === "deleted"} className="text-center py-16 text-slate-400">Takım bulunamadı</div>
                 )}
               </div>
+              {teamFilter === "all" && <DeletedList data={deletions} kind="team" q={q} heading />}
             </div>
           )}
 
