@@ -309,6 +309,32 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* ─────────────────────────────────────────────
+   BLUR REVEAL — harf harf beliren metin (BlurReveal.jsx)
+───────────────────────────────────────────── */
+@keyframes blurRevealIn {
+  from { opacity: 0; filter: blur(12px); transform: translateY(10px); }
+  to   { opacity: 1; filter: blur(0px);  transform: translateY(0); }
+}
+@keyframes blurRevealOut {
+  from { opacity: 1; filter: blur(0px);  transform: translateY(0); }
+  to   { opacity: 0; filter: blur(12px); transform: translateY(10px); }
+}
+.blur-reveal-char {
+  display: inline-block;
+  animation-fill-mode: both;
+  animation-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+/* Hareket azaltma tercihi: metin anında ve tam görünür. */
+@media (prefers-reduced-motion: reduce) {
+  .blur-reveal-char {
+    animation: none !important;
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+  }
+}
+
+/* ─────────────────────────────────────────────
    MOTTO / HERO TYPOGRAPHY
 ───────────────────────────────────────────── */
 .bn-motto {

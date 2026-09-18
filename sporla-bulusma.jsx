@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { detectLang, createT } from "./i18n.js";
 import Tour from "./Tour.jsx";
+import BlurReveal from "./BlurReveal.jsx";
 import { MetaEvents, newEventId, getMatchSignals, getAttribution, trackPageView } from "./analytics.js";
 import {
   MapPin,
@@ -335,16 +336,6 @@ const DEFAULT_MOTTOS = {
 };
 
 
-// Module-level component — Muuvlink içinde OLMAMALI.
-// Muuvlink her 55ms'de re-render ederdi (typewriter state),
-// bu da AuthModal gibi nested component'lerin unmount/remount olmasına
-// ve form alanlarının sıfırlanmasına yol açıyordu.
-// Hex → RGB yardımcısı
-const _hx = h => { const x = h.replace('#',''); return [parseInt(x.slice(0,2),16), parseInt(x.slice(2,4),16), parseInt(x.slice(4,6),16)]; };
-const _lerpColor = (c1, c2, t) => {
-  const [r1,g1,b1] = _hx(c1), [r2,g2,b2] = _hx(c2);
-  return `rgb(${Math.round(r1+(r2-r1)*t)},${Math.round(g1+(g2-g1)*t)},${Math.round(b1+(b2-b1)*t)})`;
-};
 // Hex rengin algısal parlaklığı (0-255)
 const _brightness = hex => {
   const h = (hex || "#000000").replace('#','');
@@ -352,73 +343,62 @@ const _brightness = hex => {
   return (r*299 + g*587 + b*114) / 1000;
 };
 
-const Typewriter = React.memo(({ mottos, color1 = "#114956", color2 = "#643e87" }) => {
-  const [idx,   setIdx]   = useState(0);
-  const [count, setCount] = useState(0);   // kaç karakter görünüyor
-  const [phase, setPhase] = useState("typing"); // typing | holding | fading
+// Banner sloganları: harf harf belirir, bir süre durur, harf harf silinir,
+// sıradakine geçer. Animasyonun kendisi BlurReveal.jsx'te; burada yalnız sıra
+// yönetiliyor. Module-level olmak ZORUNDA — Muuvlink içinde tanımlanırsa her
+// evre değişiminde tüm alt ağaç yeniden kuruluyor (bkz. CLAUDE.md, PageHost).
+const MottoReveal = React.memo(({ mottos, color1 = "#114956", color2 = "#643e87", holdMs = 2600 }) => {
+  const list = (mottos && mottos.length) ? mottos : [""];
+  const key  = list.join("|");
+  const [idx, setIdx]     = useState(0);
+  const [shown, setShown] = useState(true);
+  const [nonce, setNonce] = useState(0);
+  const holdRef = useRef(null);
 
-  const word = mottos[idx % mottos.length];
-  const len  = word.length;
-  // Layout shift önlemi: en uzun motto ghost olarak render edilir
-  const longestMotto = mottos.reduce((a, b) => a.length > b.length ? a : b, "");
+  // Layout shift önlemi: en uzun motto ghost olarak render edilir, yüksekliği o verir.
+  const longest = list.reduce((a, b) => (a.length > b.length ? a : b), "");
 
+  // Banner değişip motto listesi yenilenince baştan başla.
+  useEffect(() => { setIdx(0); setShown(true); }, [key]);
+  useEffect(() => () => clearTimeout(holdRef.current), []);
+
+  // Sekme/uygulama arka plandayken CSS animasyonu donar ama setTimeout işlemeye
+  // devam eder; geri dönüldüğünde slogan yarım kalmış bir karede kalabiliyordu.
+  // Görünür olunca içinde bulunulan mottoyu baştan oynat.
   useEffect(() => {
-    let t;
-    if (phase === "typing") {
-      if (count < len) {
-        t = setTimeout(() => setCount(c => c + 1), 62);
-      } else {
-        t = setTimeout(() => setPhase("holding"), 2600);
-      }
-    } else if (phase === "holding") {
-      t = setTimeout(() => setPhase("fading"), 80);
-    } else if (phase === "fading") {
-      // CSS transition süresi 480ms — sonra mottoyu değiştir
-      t = setTimeout(() => {
-        setIdx(i => (i + 1) % mottos.length);
-        setCount(0);
-        setPhase("typing");
-      }, 500);
-    }
-    return () => clearTimeout(t);
-  }, [phase, count, len, mottos.length]); // eslint-disable-line react-hooks/exhaustive-deps
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      clearTimeout(holdRef.current);
+      setShown(true);
+      setNonce(n => n + 1);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, []);
 
-  const fading  = phase === "fading";
-  const visible = word.slice(0, count);
-  // Android WebView'de background-clip:text + width:100% kombinasyonu metni
-  // gizleyip gradyanı düz bir dikdörtgen olarak render ediyor (Chromium bug'ı) —
-  // o yüzden Android'de düz renk fallback'e geçiyoruz.
-  const isAndroid = typeof window !== "undefined" && window?.Capacitor?.getPlatform?.() === "android";
+  const handlePhaseEnd = (phase) => {
+    clearTimeout(holdRef.current);
+    if (phase === "in") {
+      if (list.length > 1) holdRef.current = setTimeout(() => setShown(false), holdMs);
+    } else {
+      setIdx(i => (i + 1) % list.length);
+      setShown(true);
+    }
+  };
 
   return (
     <span style={{ display: "inline-block", position: "relative", width: "100%" }}>
-      {/* Ghost: en uzun mottoya göre yükseklik rezerve eder — layout shift yok */}
-      <span style={{ visibility: "hidden", display: "inline" }}>
-        {longestMotto}
-      </span>
-      {/* Gerçek typewriter metni — absolute, üst üste oturur */}
-      <span style={{
-        position: "absolute",
-        left: 0,
-        top: 0,
-        ...(isAndroid
-          ? { color: color1 }
-          : {
-              background: `linear-gradient(90deg,${color1},${color2})`,
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-              color: color1, // fallback: gradient desteklenmezse ilk renk
-            }),
-        display: "inline-block",
-        width: "100%",
-        opacity:    fading ? 0 : 1,
-        filter:     fading ? "blur(10px)" : "blur(0)",
-        transform:  fading ? "translateY(-6px)" : "translateY(0)",
-        transition: fading ? "opacity .45s ease, filter .45s ease, transform .45s ease" : "none",
-      }}>
-        {visible}
-      </span>
+      <span style={{ visibility: "hidden", display: "inline" }} aria-hidden="true">{longest}</span>
+      <BlurReveal
+        as="span"
+        key={`${key}-${idx}-${nonce}`}
+        trigger={shown}
+        gradient={[color1, color2]}
+        onAnimationComplete={handlePhaseEnd}
+        style={{ position: "absolute", left: 0, top: 0, width: "100%", display: "inline-block" }}
+      >
+        {list[idx % list.length]}
+      </BlurReveal>
     </span>
   );
 });
@@ -948,7 +928,7 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                       </h1>
                       <h1 className="bn-title bn-motto">
                         {isActive
-                          ? <Typewriter
+                          ? <MottoReveal
                               mottos={(banner?.mottos?.length > 0 && lang === "tr") ? banner.mottos : (DEFAULT_MOTTOS[lang] || DEFAULT_MOTTOS.en)}
                               color1={banner?.motto_color_1 || "#114956"}
                               color2={banner?.motto_color_2 || "#643e87"}
@@ -4612,7 +4592,7 @@ export default function Muuvlink() {
                 {(lang === "tr" ? activeBanner?.title : null) || t("home.heroTitleFallback")}
               </h1>
               <div style={{fontSize:"clamp(1.15rem,4.5vw,1.5rem)", fontWeight:800, lineHeight:1.15, minHeight:"2rem"}}>
-                <Typewriter mottos={bannerMottos}
+                <MottoReveal mottos={bannerMottos}
                   color1={activeBanner?.motto_color_1 || "#6d28d9"}
                   color2={activeBanner?.motto_color_2 || "#7c3aed"}/>
               </div>

@@ -2854,8 +2854,8 @@ export default function AdminPanel() {
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">
-                          Typewriter Mottoları
-                          <span className="ml-2 text-slate-400 font-normal normal-case">(sırayla yazılıp silinir)</span>
+                          Banner Sloganları
+                          <span className="ml-2 text-slate-400 font-normal normal-case">(sırayla belirip silinir)</span>
                         </label>
                         <button
                           type="button"
