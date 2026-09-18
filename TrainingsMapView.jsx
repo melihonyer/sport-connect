@@ -141,6 +141,20 @@ const CLUSTER_RADIUS_PX = 64;   // bu piksel yarıçapındakiler birleşir
 const MAP_MAX_ZOOM = 18;
 const CLUSTER_MAX_ZOOM = MAP_MAX_ZOOM;
 const SPIDER_RADIUS_PX = 52;    // yelpazede işaretçilerin merkeze uzaklığı
+// Aynı noktadakiler hiçbir yakınlaştırmada ayrılamaz. Bu yakınlaştırmadan sonra
+// tıklamayı beklemeden kendiliğinden açılırlar.
+const AUTO_SPIDER_ZOOM = 15;
+
+// Etkinlik numarasından türeyen sabit "rastgelelik": yelpaze simetrik bir çiçek
+// gibi durmasın, ama her yeniden çizimde işaretçiler yer değiştirmesin.
+const jitter = (seed, k) => { const x = Math.sin(seed * 12.9898 + k * 78.233) * 43758.5453; return x - Math.floor(x); };
+
+// Tam konum: yelpaze açıldığında merkeze konan küçük nokta.
+const exactSpotIcon = () => L.divIcon({
+  className: "",
+  html: `<div style="width:12px;height:12px;border-radius:50%;background:#114956;border:2.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35);"></div>`,
+  iconSize: [12, 12], iconAnchor: [6, 6],
+});
 
 // Daire büyüklüğü sayıyla birlikte gözle görülür şekilde artar (3 / 10 / 50 farkı).
 const clusterSize = (n) => (n < 5 ? 38 : n < 10 ? 46 : n < 25 ? 56 : n < 50 ? 66 : n < 100 ? 76 : 88);
@@ -174,13 +188,12 @@ const fmtDateShort = (d) => {
 const ClusteredMarkers = ({ points, renderMarker }) => {
   const map = useMap();
   const [view, setView] = useState(() => ({ zoom: map.getZoom(), bounds: map.getBounds() }));
-  // Yelpaze: { key, lat, lng, items } — aynı noktadaki kümeler için
-  const [spider, setSpider] = useState(null);
+  const [manualSpider, setManualSpider] = useState(null); // elle açılan kümenin kimliği
 
   useMapEvents({
     moveend: () => setView({ zoom: map.getZoom(), bounds: map.getBounds() }),
-    zoomend: () => { setView({ zoom: map.getZoom(), bounds: map.getBounds() }); setSpider(null); },
-    click: () => setSpider(null),
+    zoomend: () => { setView({ zoom: map.getZoom(), bounds: map.getBounds() }); setManualSpider(null); },
+    click: () => setManualSpider(null),
   });
 
   const index = useMemo(() => {
@@ -202,31 +215,46 @@ const ClusteredMarkers = ({ points, renderMarker }) => {
     return index.getClusters(bbox, Math.round(view.zoom));
   }, [index, view]);
 
-  // Yelpazedeki işaretçilerin ekrandaki dairesel konumu → coğrafi konuma çevrilir.
-  const spiderPositions = useMemo(() => {
-    if (!spider) return [];
-    const center = map.latLngToLayerPoint([spider.lat, spider.lng]);
-    const n = spider.items.length;
-    const r = SPIDER_RADIUS_PX + Math.max(0, n - 6) * 6;   // kalabalıkta halka büyür
-    return spider.items.map((tr, i) => {
-      const angle = (2 * Math.PI * i) / n - Math.PI / 2;
-      const p = L.point(center.x + r * Math.cos(angle), center.y + r * Math.sin(angle));
+  // Yelpazedeki işaretçilerin ekrandaki konumu → coğrafi konum. Açı ve uzaklık
+  // etkinlik numarasından türeyen sabit bir düzensizlik taşır (gerçek yelpaze hissi).
+  const fanOut = (items, lat, lng) => {
+    const center = map.latLngToLayerPoint([lat, lng]);
+    const n = items.length;
+    const taban = SPIDER_RADIUS_PX + Math.max(0, n - 6) * 6;
+    return items.map((tr, i) => {
+      const dilim = (2 * Math.PI) / n;
+      const aci = dilim * i - Math.PI / 2 + (jitter(tr.id, 1) - 0.5) * dilim * 0.7;
+      const r = taban * (0.82 + jitter(tr.id, 2) * 0.5);
+      const p = L.point(center.x + r * Math.cos(aci), center.y + r * Math.sin(aci));
       const ll = map.layerPointToLatLng(p);
       return { tr, lat: ll.lat, lng: ll.lng };
     });
-  }, [spider, view, map]);
+  };
 
-  const openCluster = (clusterId, lat, lng, count) => {
-    const hedef = index.getClusterExpansionZoom(clusterId);
-    const suAn = Math.round(map.getZoom());
-    // Yakınlaşmak kümeyi bölüyorsa yakınlaş; bölmüyorsa (aynı nokta) yelpazeyi aç.
-    if (hedef > suAn && hedef <= MAP_MAX_ZOOM) {
-      setSpider(null);
-      map.flyTo([lat, lng], hedef, { duration: 0.45 });
-      return;
+  // Hangi kümeler yelpaze olarak çizilecek: elle açılanlar + hiç ayrılamayanlar.
+  const fans = useMemo(() => {
+    const out = [];
+    for (const c of clusters) {
+      if (!c.properties.cluster) continue;
+      const id = c.properties.cluster_id;
+      const count = c.properties.point_count;
+      const [lng, lat] = c.geometry.coordinates;
+      const ayrilamaz = index.getClusterExpansionZoom(id) > MAP_MAX_ZOOM;
+      const otomatik = ayrilamaz && Math.round(view.zoom) >= AUTO_SPIDER_ZOOM;
+      if (!otomatik && manualSpider !== String(id)) continue;
+      const items = index.getLeaves(id, count).map((f) => byId.get(f.properties.trId)).filter(Boolean);
+      out.push({ id, lat, lng, items, positions: fanOut(items, lat, lng) });
     }
-    const items = index.getLeaves(clusterId, count).map((f) => byId.get(f.properties.trId)).filter(Boolean);
-    setSpider({ key: `${clusterId}`, lat, lng, items });
+    return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clusters, manualSpider, view, index, byId]);
+
+  const fanIds = useMemo(() => new Set(fans.map((f) => String(f.id))), [fans]);
+
+  const onClusterClick = (clusterId, lat, lng) => {
+    const hedef = index.getClusterExpansionZoom(clusterId);
+    if (hedef <= MAP_MAX_ZOOM) { setManualSpider(null); map.flyTo([lat, lng], hedef, { duration: 0.45 }); return; }
+    setManualSpider(String(clusterId));   // ayrılamayan küme: yelpazeyi aç
   };
 
   return (
@@ -234,15 +262,15 @@ const ClusteredMarkers = ({ points, renderMarker }) => {
       {clusters.map((c) => {
         const [lng, lat] = c.geometry.coordinates;
         if (c.properties.cluster) {
+          const id = c.properties.cluster_id;
+          if (fanIds.has(String(id))) return null;   // yelpaze açıksa daire çizilmez
           const count = c.properties.point_count;
-          const acik = spider && spider.key === String(c.properties.cluster_id);
-          if (acik) return null; // yelpaze açıkken küme dairesi gizlenir
           return (
             <Marker
-              key={`c-${c.properties.cluster_id}-${count}`}
+              key={`c-${id}-${count}`}
               position={[lat, lng]}
               icon={makeClusterIcon(count)}
-              eventHandlers={{ click: () => openCluster(c.properties.cluster_id, lat, lng, count) }}
+              eventHandlers={{ click: () => onClusterClick(id, lat, lng) }}
             />
           );
         }
@@ -250,15 +278,20 @@ const ClusteredMarkers = ({ points, renderMarker }) => {
         return tr ? renderMarker(tr, [lat, lng]) : null;
       })}
 
-      {/* Yelpaze: merkeze bağlayan çizgiler + açılmış işaretçiler */}
-      {spiderPositions.map(({ tr, lat, lng }) => (
-        <Polyline
-          key={`l-${tr.id}`}
-          positions={[[spider.lat, spider.lng], [lat, lng]]}
-          pathOptions={{ color: "#114956", weight: 1.5, opacity: 0.55 }}
-        />
+      {fans.map((f) => (
+        <React.Fragment key={`fan-${f.id}`}>
+          {f.positions.map(({ tr, lat, lng }) => (
+            <Polyline
+              key={`l-${tr.id}`}
+              positions={[[f.lat, f.lng], [lat, lng]]}
+              pathOptions={{ color: "#114956", weight: 1.4, opacity: 0.5 }}
+            />
+          ))}
+          {/* Tam konum — işaretçiler açıldığı için nokta görünür kalsın */}
+          <Marker position={[f.lat, f.lng]} icon={exactSpotIcon()} interactive={false} />
+          {f.positions.map(({ tr, lat, lng }) => renderMarker(tr, [lat, lng]))}
+        </React.Fragment>
       ))}
-      {spiderPositions.map(({ tr, lat, lng }) => renderMarker(tr, [lat, lng]))}
     </>
   );
 };
