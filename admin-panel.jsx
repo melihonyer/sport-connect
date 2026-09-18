@@ -1484,7 +1484,7 @@ export default function AdminPanel() {
   const [users, setUsers]       = useState([]);
   const [departures, setDepartures] = useState(null);
   const [trainings, setTrainings] = useState([]);
-  const [trainingFilter, setTrainingFilter] = useState("all"); // all | nomap
+  const [trainingFilter, setTrainingFilter] = useState("all"); // all | paid | deleted
   const [deletions, setDeletions] = useState(null);
   const [teamFilter, setTeamFilter] = useState("all"); // all | deleted
   const [teams, setTeams]       = useState([]);
