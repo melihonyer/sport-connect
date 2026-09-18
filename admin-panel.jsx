@@ -2108,15 +2108,11 @@ export default function AdminPanel() {
     .filter(u => !q || u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q));
   // Koordinatı olmayan etkinlik haritada ve "Yakınımda" aramasında çıkmaz.
   const noMap = (t) => t.location_lat == null || t.location_lng == null || t.location_lat === "" || t.location_lng === "";
-  const noMapCount = trainings.filter(noMap).length;
   // Ücretli etkinlikler (yarışlar) admin panelinden ya da yarış keşfinden gelir;
   // kullanıcı etkinliklerinden ayrı bakılabilsin.
   const paidCount = trainings.filter(t => t.is_paid).length;
   const filteredTrainings = (trainingFilter === "deleted" ? [] : trainings)
-    .filter(t => trainingFilter === "all" ? true
-              : trainingFilter === "nomap" ? noMap(t)
-              : trainingFilter === "paid" ? !!t.is_paid
-              : true)
+    .filter(t => trainingFilter === "paid" ? !!t.is_paid : true)
     .filter(t => !q || t.title?.toLowerCase().includes(q));
   const filteredTeams     = (teamFilter === "deleted" ? [] : teams).filter(t => !q || t.name?.toLowerCase().includes(q));
   const filteredMessages  = messages.filter(m => !q || m.name?.toLowerCase().includes(q) || m.subject?.toLowerCase().includes(q));
@@ -2411,7 +2407,7 @@ export default function AdminPanel() {
               <div className="px-4 md:px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
                 <h2 className="font-medium text-slate-900">Etkinlikler <span className="text-slate-400 font-normal text-sm">({filteredTrainings.length})</span></h2>
                 <div className="flex gap-1.5">
-                  {[["all", "Tümü"], ["nomap", `Haritada yok (${noMapCount})`], ["paid", `Ücretli (${paidCount})`], ["deleted", `Silinenler (${(deletions?.items || []).filter(i => i.event_type === "training_delete").length})`]].map(([k, label]) => (
+                  {[["all", "Tümü"], ["paid", `Ücretli (${paidCount})`], ["deleted", `Silinenler (${(deletions?.items || []).filter(i => i.event_type === "training_delete").length})`]].map(([k, label]) => (
                     <button key={k} onClick={() => setTrainingFilter(k)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${trainingFilter === k ? "bg-brand-600 text-white border-brand-600" : "bg-white text-slate-600 border-slate-200 hover:border-brand-300"}`}>
                       {label}
@@ -2420,12 +2416,6 @@ export default function AdminPanel() {
                 </div>
               </div>
               {trainingFilter === "deleted" && <DeletedList data={deletions} kind="training" />}
-              {trainingFilter === "nomap" && (
-                <div className="px-4 md:px-6 py-3 bg-amber-50 border-b border-amber-100 text-xs text-amber-900 leading-relaxed">
-                  Bu etkinliklerde konum yalnız yazıyla girilmiş, haritada işaretlenmemiş. Haritada ve "Yakınımda"
-                  aramasında çıkmazlar. Düzeltmeyi etkinliği oluşturan yapabilir: etkinliği düzenleyip konumu seçmesi yeterli.
-                </div>
-              )}
 
               {/* Mobil kart listesi */}
               <div className="sm:hidden divide-y divide-slate-50">
