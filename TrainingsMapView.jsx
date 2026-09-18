@@ -1,6 +1,7 @@
 // Lazy-loaded map component — react-leaflet ve leaflet sadece bu chunk'ta yüklenir
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { MapContainer, Marker, Popup, useMap, useMapEvents } from "react-leaflet";
+import { MapContainer, Marker, Popup, Polyline, useMap, useMapEvents } from "react-leaflet";
+import Supercluster from "supercluster";
 import VectorBasemap from "./VectorBasemap.jsx";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -128,6 +129,34 @@ const FitBoundsToTrainings = ({ trainings }) => {
   return null;
 };
 
+// ── Kümeleme ───────────────────────────────────────────────────────────────
+// Aynı ya da yakın konumdaki etkinlikler üst üste binip görünmez oluyordu.
+// Uzakta tek daire + sayı; yaklaştıkça küme bölünür. Aynı NOKTADA duranlar hiçbir
+// yakınlaştırmada ayrılmaz — onlar için küme tıklanınca "yelpaze" açılır:
+// işaretçiler merkezin çevresine dizilir, her biri merkeze ince bir çizgiyle bağlanır.
+const CLUSTER_RADIUS_PX = 64;   // bu piksel yarıçapındakiler birleşir
+// Haritanın üst sınırı ile kümeleme sınırı AYNI olmalı: kümeleme daha erken
+// biterse, koordinatı birebir aynı olan etkinlikler (ör. aynı parktaki "Bike" ve
+// "Run") son yakınlaştırmalarda yine üst üste biner ve biri görünmez olur.
+const MAP_MAX_ZOOM = 18;
+const CLUSTER_MAX_ZOOM = MAP_MAX_ZOOM;
+const SPIDER_RADIUS_PX = 52;    // yelpazede işaretçilerin merkeze uzaklığı
+
+// Daire büyüklüğü sayıyla birlikte gözle görülür şekilde artar (3 / 10 / 50 farkı).
+const clusterSize = (n) => (n < 5 ? 38 : n < 10 ? 46 : n < 25 ? 56 : n < 50 ? 66 : n < 100 ? 76 : 88);
+
+const makeClusterIcon = (count) => {
+  const size = clusterSize(count);
+  const fs = count < 10 ? 15 : count < 100 ? 16 : 15;
+  return L.divIcon({
+    className: "",
+    html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:#114956;border:3px solid #ffffff;box-shadow:0 4px 14px rgba(17,73,86,.45);display:flex;align-items:center;justify-content:center;">
+      <span style="color:#fff;font-weight:900;font-size:${fs}px;font-family:'Montserrat',system-ui,sans-serif;letter-spacing:-0.4px;">${count}</span>
+    </div>`,
+    iconSize: [size, size], iconAnchor: [size / 2, size / 2],
+  });
+};
+
 const extractDominantColor = async (url) => {
   try {
     const res = await fetch(`/api/color-extract?url=${encodeURIComponent(url)}`);
@@ -140,6 +169,98 @@ const extractDominantColor = async (url) => {
 const fmtDateShort = (d) => {
   if (!d) return "";
   return new Date(d).toLocaleDateString("tr-TR", { timeZone: "UTC", day: "numeric", month: "long", year: "numeric" });
+};
+
+const ClusteredMarkers = ({ points, renderMarker }) => {
+  const map = useMap();
+  const [view, setView] = useState(() => ({ zoom: map.getZoom(), bounds: map.getBounds() }));
+  // Yelpaze: { key, lat, lng, items } — aynı noktadaki kümeler için
+  const [spider, setSpider] = useState(null);
+
+  useMapEvents({
+    moveend: () => setView({ zoom: map.getZoom(), bounds: map.getBounds() }),
+    zoomend: () => { setView({ zoom: map.getZoom(), bounds: map.getBounds() }); setSpider(null); },
+    click: () => setSpider(null),
+  });
+
+  const index = useMemo(() => {
+    const sc = new Supercluster({ radius: CLUSTER_RADIUS_PX, maxZoom: CLUSTER_MAX_ZOOM, minPoints: 2 });
+    sc.load(points.map((tr) => ({
+      type: "Feature",
+      properties: { trId: tr.id },
+      geometry: { type: "Point", coordinates: [parseFloat(tr.location_lng), parseFloat(tr.location_lat)] },
+    })));
+    return sc;
+  }, [points]);
+
+  const byId = useMemo(() => new Map(points.map((tr) => [tr.id, tr])), [points]);
+
+  const clusters = useMemo(() => {
+    const b = view.bounds;
+    if (!b) return [];
+    const bbox = [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()];
+    return index.getClusters(bbox, Math.round(view.zoom));
+  }, [index, view]);
+
+  // Yelpazedeki işaretçilerin ekrandaki dairesel konumu → coğrafi konuma çevrilir.
+  const spiderPositions = useMemo(() => {
+    if (!spider) return [];
+    const center = map.latLngToLayerPoint([spider.lat, spider.lng]);
+    const n = spider.items.length;
+    const r = SPIDER_RADIUS_PX + Math.max(0, n - 6) * 6;   // kalabalıkta halka büyür
+    return spider.items.map((tr, i) => {
+      const angle = (2 * Math.PI * i) / n - Math.PI / 2;
+      const p = L.point(center.x + r * Math.cos(angle), center.y + r * Math.sin(angle));
+      const ll = map.layerPointToLatLng(p);
+      return { tr, lat: ll.lat, lng: ll.lng };
+    });
+  }, [spider, view, map]);
+
+  const openCluster = (clusterId, lat, lng, count) => {
+    const hedef = index.getClusterExpansionZoom(clusterId);
+    const suAn = Math.round(map.getZoom());
+    // Yakınlaşmak kümeyi bölüyorsa yakınlaş; bölmüyorsa (aynı nokta) yelpazeyi aç.
+    if (hedef > suAn && hedef <= MAP_MAX_ZOOM) {
+      setSpider(null);
+      map.flyTo([lat, lng], hedef, { duration: 0.45 });
+      return;
+    }
+    const items = index.getLeaves(clusterId, count).map((f) => byId.get(f.properties.trId)).filter(Boolean);
+    setSpider({ key: `${clusterId}`, lat, lng, items });
+  };
+
+  return (
+    <>
+      {clusters.map((c) => {
+        const [lng, lat] = c.geometry.coordinates;
+        if (c.properties.cluster) {
+          const count = c.properties.point_count;
+          const acik = spider && spider.key === String(c.properties.cluster_id);
+          if (acik) return null; // yelpaze açıkken küme dairesi gizlenir
+          return (
+            <Marker
+              key={`c-${c.properties.cluster_id}-${count}`}
+              position={[lat, lng]}
+              icon={makeClusterIcon(count)}
+              eventHandlers={{ click: () => openCluster(c.properties.cluster_id, lat, lng, count) }}
+            />
+          );
+        }
+        const tr = byId.get(c.properties.trId);
+        return tr ? renderMarker(tr, [lat, lng]) : null;
+      })}
+
+      {/* Yelpaze: merkeze bağlayan çizgiler + açılmış işaretçiler */}
+      {spiderPositions.map(({ tr, lat, lng }) => (
+        <Polyline
+          key={`l-${tr.id}`}
+          positions={[[spider.lat, spider.lng], [lat, lng]]}
+          pathOptions={{ color: "#114956", weight: 1.5, opacity: 0.55 }}
+        />
+      ))}
+      {spiderPositions.map(({ tr, lat, lng }) => renderMarker(tr, [lat, lng]))}
+    </>
+  );
 };
 
 const TrainingsMapView = ({ trainings, onSelectTraining, t, containerStyle }) => {
@@ -187,11 +308,11 @@ const TrainingsMapView = ({ trainings, onSelectTraining, t, containerStyle }) =>
           <p className="text-slate-400 text-xs">{t ? t("map.noLocationHint") : "Add a location when creating a training"}</p>
         </div>
       ) : (
-        <MapContainer center={[39.0, 35.0]} zoom={6} style={{ height:"100%", width:"100%" }} zoomControl={true} className="muuv-map">
+        <MapContainer center={[39.0, 35.0]} zoom={6} maxZoom={MAP_MAX_ZOOM} style={{ height:"100%", width:"100%" }} zoomControl={true} className="muuv-map">
           <VectorBasemap/>
           <MapSizeFixer/>
           <FitBoundsToTrainings trainings={mapped}/>
-          {mapped.map(tr => {
+          <ClusteredMarkers points={mapped} renderMarker={(tr, position) => {
             const teamLetter = (tr.team_name || tr.team_sport || "T").charAt(0).toLocaleUpperCase("en-US");
             const teamColor  = tr.is_paid ? PAID_COLOR : (teamColors[tr.team_id] || SPORT_COLORS[tr.sport || tr.team_sport] || "#114956");
             const icon = tr.is_paid
@@ -200,7 +321,7 @@ const TrainingsMapView = ({ trainings, onSelectTraining, t, containerStyle }) =>
             return (
               <Marker
                 key={`${tr.id}-${teamColor}`}
-                position={[parseFloat(tr.location_lat), parseFloat(tr.location_lng)]}
+                position={position}
                 icon={icon}
                 eventHandlers={{ click: () => setActive(tr.id), popupclose: () => setActive(null) }}
               >
@@ -245,7 +366,7 @@ const TrainingsMapView = ({ trainings, onSelectTraining, t, containerStyle }) =>
                 </Popup>
               </Marker>
             );
-          })}
+          }} />
         </MapContainer>
       )}
     </div>
