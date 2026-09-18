@@ -1323,6 +1323,51 @@ const fmtFull = (d) => d ? new Date(d).toLocaleString("tr-TR") : "—";
 // Hesabını silmiş kullanıcı. Kayıt 30 gün durur (giriş yaparsa geri gelir),
 // sonra purge kalıcı siler ve listeden düşer.
 // Koordinatı olmayan etkinlik: haritada ve "Yakınımda" aramasında görünmez.
+// Silinen takım/etkinlik kaydı. Geri getirme yok — yalnızca "silindi" bilgisi.
+const DeletionsCard = ({ data, kind }) => {
+  const tur = kind === "team" ? "team_delete" : "training_delete";
+  const liste = (data?.items || []).filter(i => i.event_type === tur);
+  const kayitsiz = kind === "team" ? data?.kayitsiz?.teams : data?.kayitsiz?.trainings;
+  const baslik = kind === "team" ? "Silinen takımlar" : "Silinen etkinlikler";
+  return (
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 md:p-6 mb-5">
+      <div className="flex flex-wrap items-baseline justify-between gap-2 mb-3">
+        <h2 className="font-medium text-slate-900">{baslik} <span className="text-slate-400 font-normal text-sm">({liste.length})</span></h2>
+        {kayitsiz > 0 && (
+          <span className="text-xs text-slate-400">
+            Kayıt tutulmadan önce silinen {kayitsiz} {kind === "team" ? "takım" : "etkinlik"} daha var; adı ve tarihi hiçbir yerde durmuyor.
+          </span>
+        )}
+      </div>
+      {liste.length === 0 ? (
+        <p className="text-sm text-slate-400">Kayıt yok.</p>
+      ) : (
+        <div className="divide-y divide-slate-50">
+          {liste.map(i => (
+            <div key={i.id} className="py-2.5 flex items-start gap-3">
+              <span className="mt-0.5 px-2 py-0.5 rounded-md bg-red-50 text-red-600 border border-red-100 text-[10px] font-semibold flex-shrink-0">Silindi</span>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-semibold text-slate-800 truncate">
+                  {i.meta?.name || `#${i.meta?.id ?? "?"}`}
+                  {i.meta?.team_name ? <span className="font-normal text-slate-400"> · {i.meta.team_name}</span> : null}
+                </div>
+                <div className="text-xs text-slate-400">
+                  {fmtFull(i.created_at)}
+                  {i.meta?.source === "admin" ? " · panelden" : i.meta?.source === "self" ? " · kullanıcı" : ""}
+                  {i.user_name ? ` · ${i.user_name}` : ""}
+                  {i.meta?.members != null ? ` · ${i.meta.members} üye` : ""}
+                  {i.meta?.trainings != null ? ` · ${i.meta.trainings} etkinlik` : ""}
+                  {i.meta?.kaynak === "geriye_donuk" ? " · geriye dönük kayıt, tarih yaklaşık" : ""}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const NoMapBadge = ({ small = false }) => (
   <span title="Konum haritada işaretlenmemiş — haritada ve Yakınımda aramasında görünmez"
     className={`${small ? "px-1.5 py-0.5 text-[10px]" : "px-2 py-0.5 text-[11px]"} flex-shrink-0 inline-flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-md font-medium whitespace-nowrap`}>
@@ -1426,6 +1471,7 @@ export default function AdminPanel() {
   const [departures, setDepartures] = useState(null);
   const [trainings, setTrainings] = useState([]);
   const [trainingFilter, setTrainingFilter] = useState("all"); // all | nomap
+  const [deletions, setDeletions] = useState(null);
   const [teams, setTeams]       = useState([]);
   const [messages, setMessages] = useState([]);
   const [banners, setBanners]   = useState([]);
@@ -1538,7 +1584,10 @@ export default function AdminPanel() {
         const [d, dep] = await Promise.all([api("/admin/users"), api("/admin/departures").catch(() => null)]);
         if (reqId === loadReqRef.current) { setUsers(d || []); setDepartures(dep); }
       }
-      else if (t === "trainings") { const d = await api("/admin/trainings"); if (reqId === loadReqRef.current) setTrainings(d || []); }
+      else if (t === "trainings" || t === "teams") {
+        api("/admin/deletions").then(d => { if (reqId === loadReqRef.current && d) setDeletions(d); }).catch(() => {});
+      }
+      if (t === "trainings") { const d = await api("/admin/trainings"); if (reqId === loadReqRef.current) setTrainings(d || []); }
       else if (t === "teams") { const d = await api("/admin/teams"); if (reqId === loadReqRef.current) setTeams(d || []); }
       else if (t === "messages") { const d = await api("/admin/contact"); if (reqId === loadReqRef.current) setMessages(d || []); }
       else if (t === "banners") { const d = await api("/admin/banners"); if (reqId === loadReqRef.current) setBanners(d || []); }
@@ -2336,6 +2385,8 @@ export default function AdminPanel() {
           )}
 
           {/* ── TRAININGS ────────────────────────────────── */}
+          {!loading && tab === "trainings" && deletions && <DeletionsCard data={deletions} kind="training" />}
+
           {!loading && tab === "trainings" && (
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
               <div className="px-4 md:px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
@@ -2484,6 +2535,8 @@ export default function AdminPanel() {
           )}
 
           {/* ── TEAMS ────────────────────────────────────── */}
+          {!loading && tab === "teams" && deletions && <DeletionsCard data={deletions} kind="team" />}
+
           {!loading && tab === "teams" && (
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
               <div className="px-4 md:px-6 py-4 border-b border-slate-100">

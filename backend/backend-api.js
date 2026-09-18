@@ -2963,7 +2963,10 @@ app.delete('/api/teams/:id', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Only team owner can delete the team' });
     }
 
+    const teamMeta = await pool.query(
+      'SELECT (SELECT COUNT(*)::int FROM team_members WHERE team_id = $1) AS members, (SELECT COUNT(*)::int FROM trainings WHERE team_id = $1) AS trainings', [teamId]);
     await pool.query('DELETE FROM teams WHERE id = $1', [teamId]);
+    logDeletion('team', { id: teamId, name: ownerCheck.rows[0].name, meta: teamMeta.rows[0] }, req.user.id, 'self');
     res.json({ message: 'Team deleted' });
     indexNowPing(indexNowTeamUrl({ ...ownerCheck.rows[0], id: teamId }));
   } catch (error) {
@@ -4272,7 +4275,10 @@ app.delete('/api/trainings/:id', authenticateToken, async (req, res) => {
     const trainingId = req.params.id;
 
     const trainingResult = await pool.query(
-      'SELECT team_id, created_by, title, is_public FROM trainings WHERE id = $1',
+      `SELECT t.team_id, t.created_by, t.title, t.is_public, t.training_date,
+              teams.name AS team_name
+         FROM trainings t LEFT JOIN teams ON teams.id = t.team_id
+        WHERE t.id = $1`,
       [trainingId]
     );
 
@@ -4297,6 +4303,7 @@ app.delete('/api/trainings/:id', authenticateToken, async (req, res) => {
     }
 
     await pool.query('DELETE FROM trainings WHERE id = $1', [trainingId]);
+    logDeletion('training', { id: trainingId, name: trg.title, meta: { team_name: trg.team_name, training_date: trg.training_date } }, req.user.id, 'self');
 
     res.json({ message: 'Training deleted' });
     indexNowPing(indexNowTrainingUrl({ ...trg, id: trainingId }));
@@ -4664,6 +4671,35 @@ app.get('/api/admin/users', isAdmin, async (req, res) => {
   }
 });
 
+// Admin: silinen takım/etkinlik kayıtları. Geri getirme yok; yalnız "silindi" kaydı.
+// Kayıt tutulmadan önce silinenlerin adı/tarihi hiçbir yerde olmadığı için yalnızca
+// numara boşluklarından SAYI olarak bildirilir — uydurma satır üretilmez.
+app.get('/api/admin/deletions', isAdmin, async (req, res) => {
+  try {
+    const items = await pool.query(`
+      SELECT id, event_type, user_id, user_name, meta, created_at
+        FROM activity_logs
+       WHERE event_type IN ('team_delete', 'training_delete')
+       ORDER BY created_at DESC
+       LIMIT 300`);
+    const bilinen = new Set(items.rows.map((r) => `${r.event_type}:${r.meta?.id}`));
+    const gap = async (table, prefix) => {
+      const r = await pool.query(`SELECT COALESCE(MAX(id), 0) AS mx FROM ${table}`);
+      const varOlan = new Set((await pool.query(`SELECT id FROM ${table}`)).rows.map((x) => x.id));
+      let n = 0;
+      for (let i = 1; i <= r.rows[0].mx; i++) if (!varOlan.has(i) && !bilinen.has(`${prefix}:${i}`)) n++;
+      return n;
+    };
+    res.json({
+      items: items.rows,
+      kayitsiz: { teams: await gap('teams', 'team_delete'), trainings: await gap('trainings', 'training_delete') },
+    });
+  } catch (error) {
+    console.error('Deletions error:', error.message);
+    res.status(500).json({ error: 'Silinenler alınamadı.' });
+  }
+});
+
 // Admin: ayrılış istatistiği (kişisel veri yok). Geri gelenler ayrılış sayılmaz.
 app.get('/api/admin/departures', isAdmin, async (req, res) => {
   try {
@@ -4863,7 +4899,15 @@ app.put('/api/admin/trainings/:id/feature', isAdmin, async (req, res) => {
 
 app.delete('/api/admin/trainings/:id', isAdmin, async (req, res) => {
   try {
-    await pool.query('DELETE FROM trainings WHERE id = $1', [req.params.id]);
+    const gone = await pool.query(
+      `DELETE FROM trainings WHERE id = $1
+       RETURNING title, training_date, team_id,
+                 (SELECT name FROM teams WHERE teams.id = trainings.team_id) AS team_name`,
+      [req.params.id]);
+    if (gone.rows[0]) {
+      const g = gone.rows[0];
+      logDeletion('training', { id: req.params.id, name: g.title, meta: { team_name: g.team_name, training_date: g.training_date } }, req.user.id, 'admin');
+    }
     res.json({ message: 'Etkinlik silindi.' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to delete training' });
@@ -4890,7 +4934,10 @@ app.get('/api/admin/teams', isAdmin, async (req, res) => {
 
 app.delete('/api/admin/teams/:id', isAdmin, async (req, res) => {
   try {
-    await pool.query('DELETE FROM teams WHERE id = $1', [req.params.id]);
+    const meta = await pool.query(
+      'SELECT (SELECT COUNT(*)::int FROM team_members WHERE team_id = $1) AS members, (SELECT COUNT(*)::int FROM trainings WHERE team_id = $1) AS trainings', [req.params.id]);
+    const gone = await pool.query('DELETE FROM teams WHERE id = $1 RETURNING name', [req.params.id]);
+    if (gone.rows[0]) logDeletion('team', { id: req.params.id, name: gone.rows[0].name, meta: meta.rows[0] }, req.user.id, 'admin');
     res.json({ message: 'Takım silindi.' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to delete team' });
@@ -5248,7 +5295,10 @@ app.post('/api/admin/paid-events/:id/image', isAdmin, uploadBanner.single('image
 app.delete('/api/admin/paid-events/:id', isAdmin, async (req, res) => {
   try {
     const gone = await pool.query(
-      'DELETE FROM trainings WHERE id=$1 AND is_paid = true RETURNING id, title, is_public', [req.params.id]);
+      'DELETE FROM trainings WHERE id=$1 AND is_paid = true RETURNING id, title, is_public, training_date', [req.params.id]);
+    if (gone.rows[0]) {
+      logDeletion('training', { id: gone.rows[0].id, name: gone.rows[0].title, meta: { training_date: gone.rows[0].training_date, ucretli: true } }, req.user.id, 'admin');
+    }
     res.json({ message: 'Ücretli etkinlik silindi.' });
     indexNowPing(indexNowTrainingUrl(gone.rows[0]));
   } catch (e) {
@@ -6819,6 +6869,23 @@ async function logActivity(event_type, user_id, user_name, meta = {}, source_ref
       [event_type, user_id || null, user_name || null, JSON.stringify(meta), source_ref]
     );
   } catch (e) { /* sessiz */ }
+}
+
+// Silinen takım/etkinlik kaydı. Takım ve etkinlik KALICI siliniyor (kullanıcıdaki gibi
+// 30 günlük bekleme yok); satır gidince adı da gidiyordu. Panelde "silindi" olarak
+// görünebilmesi için olay activity_logs'a yazılır. Geri getirme YOK — yalnızca kayıt.
+// source_ref benzersiz: aynı silme iki kez yazılmaz (geriye dönük doldurma da güvenli).
+async function logDeletion(kind, { id, name, meta = {} }, userId, source) {
+  try {
+    let userName = null;
+    if (userId) {
+      const u = await pool.query('SELECT name FROM users WHERE id = $1', [userId]);
+      userName = u.rows[0]?.name || null;
+    }
+    await logActivity(`${kind}_delete`, userId || null, userName,
+      { ...meta, id: Number(id), name: name || null, source },
+      `${kind}_delete_${id}`);
+  } catch { /* silme akışı asla bozulmasın */ }
 }
 
 // ── Geçmiş verilerini activity_logs'a yükle (idempotent) ──────────────────
