@@ -1373,6 +1373,15 @@ const DeletedList = ({ data, kind, q = "", heading = false }) => {
   );
 };
 
+// Ücretli etkinlik (yarış): takım etkinliklerinden ayırt edilsin.
+const PaidBadge = ({ small = false }) => (
+  <span title="Ücretli etkinlik (yarış)"
+    className={`${small ? "px-1.5 py-0.5 text-[10px]" : "px-2 py-0.5 text-[11px]"} flex-shrink-0 inline-flex items-center gap-1 bg-pop-50 text-amber-700 border border-amber-200 rounded-md font-medium whitespace-nowrap`}
+    style={{ background: "#fdf6d8" }}>
+    <Ticket className={small ? "w-2.5 h-2.5" : "w-3 h-3"} /> Ücretli
+  </span>
+);
+
 const NoMapBadge = ({ small = false }) => (
   <span title="Konum haritada işaretlenmemiş — haritada ve Yakınımda aramasında görünmez"
     className={`${small ? "px-1.5 py-0.5 text-[10px]" : "px-2 py-0.5 text-[11px]"} flex-shrink-0 inline-flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-md font-medium whitespace-nowrap`}>
@@ -2100,8 +2109,14 @@ export default function AdminPanel() {
   // Koordinatı olmayan etkinlik haritada ve "Yakınımda" aramasında çıkmaz.
   const noMap = (t) => t.location_lat == null || t.location_lng == null || t.location_lat === "" || t.location_lng === "";
   const noMapCount = trainings.filter(noMap).length;
+  // Ücretli etkinlikler (yarışlar) admin panelinden ya da yarış keşfinden gelir;
+  // kullanıcı etkinliklerinden ayrı bakılabilsin.
+  const paidCount = trainings.filter(t => t.is_paid).length;
   const filteredTrainings = (trainingFilter === "deleted" ? [] : trainings)
-    .filter(t => trainingFilter === "all" || noMap(t))
+    .filter(t => trainingFilter === "all" ? true
+              : trainingFilter === "nomap" ? noMap(t)
+              : trainingFilter === "paid" ? !!t.is_paid
+              : true)
     .filter(t => !q || t.title?.toLowerCase().includes(q));
   const filteredTeams     = (teamFilter === "deleted" ? [] : teams).filter(t => !q || t.name?.toLowerCase().includes(q));
   const filteredMessages  = messages.filter(m => !q || m.name?.toLowerCase().includes(q) || m.subject?.toLowerCase().includes(q));
@@ -2396,7 +2411,7 @@ export default function AdminPanel() {
               <div className="px-4 md:px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
                 <h2 className="font-medium text-slate-900">Etkinlikler <span className="text-slate-400 font-normal text-sm">({filteredTrainings.length})</span></h2>
                 <div className="flex gap-1.5">
-                  {[["all", "Tümü"], ["nomap", `Haritada yok (${noMapCount})`], ["deleted", `Silinenler (${(deletions?.items || []).filter(i => i.event_type === "training_delete").length})`]].map(([k, label]) => (
+                  {[["all", "Tümü"], ["nomap", `Haritada yok (${noMapCount})`], ["paid", `Ücretli (${paidCount})`], ["deleted", `Silinenler (${(deletions?.items || []).filter(i => i.event_type === "training_delete").length})`]].map(([k, label]) => (
                     <button key={k} onClick={() => setTrainingFilter(k)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${trainingFilter === k ? "bg-brand-600 text-white border-brand-600" : "bg-white text-slate-600 border-slate-200 hover:border-brand-300"}`}>
                       {label}
@@ -2432,9 +2447,10 @@ export default function AdminPanel() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 min-w-0">
                           <div className="font-semibold text-slate-900 text-sm truncate">{t.title}</div>
+                          {t.is_paid && <PaidBadge small />}
                           {noMap(t) && <NoMapBadge small />}
                         </div>
-                        <div className="text-slate-400 text-xs">{t.team_name || "—"}</div>
+                        <div className="text-slate-400 text-xs">{t.is_paid ? (t.organizer || "Ücretli etkinlik") : (t.team_name || "—")}</div>
                         {noMap(t) && (
                           <div className="text-xs text-amber-800 mt-0.5 truncate">
                             {t.location_name || "Konum adı yok"}{t.creator_name ? ` · ${t.creator_name}` : ""}{t.creator_email ? ` · ${t.creator_email}` : ""}
@@ -2493,6 +2509,7 @@ export default function AdminPanel() {
                           <td className="px-6 py-3.5 max-w-[260px]">
                             <div className="flex items-center gap-1.5 min-w-0">
                               <span className="font-semibold text-slate-900 truncate">{t.title}</span>
+                              {t.is_paid && <PaidBadge />}
                               {noMap(t) && <NoMapBadge />}
                             </div>
                             {noMap(t) && (
@@ -2501,7 +2518,7 @@ export default function AdminPanel() {
                               </div>
                             )}
                           </td>
-                          <td className="px-4 py-3.5 text-slate-500">{t.team_name || "—"}</td>
+                          <td className="px-4 py-3.5 text-slate-500">{t.is_paid ? (t.organizer || "—") : (t.team_name || "—")}</td>
                           <td className="px-4 py-3.5 text-slate-600">{fmt(t.training_date)}</td>
                           <td className="px-4 py-3.5 text-slate-600">{t.training_time?.slice(0,5) || "—"}</td>
                           <td className="px-4 py-3.5 text-center">
