@@ -247,6 +247,22 @@ Ekranda gizlemek yetmez — tam isim API cevabında durursa tarayıcıdan görü
   beğenme üçü de ona bakar. Takım üyeleri (katılmasa da), katılanlar (takım
   dışından olsa da), takımsız etkinlikte oluşturan, admin. Diğerlerine
   `comments: []` + `comments_hidden: true`.
+- **Bireysel (takımsız) etkinlik** aynı kuralla çalışır; "takımın" yerini
+  oluşturan tutar: oluşturan, katılanlar ve admin tam görür, diğerleri maskeli.
+- **Profil fotoğrafı ismin kuralına bağlıdır:** tam ismi göremeyen kişiye
+  fotoğraf da gitmez (`avatar` / `user_avatar` = `null`, arayüz baş harfe düşer).
+  Takım logoları (`team_avatar`) kişiye ait değil, herkese açık kalır.
+- Kişi fotoğrafı döndüren uçlar (Eylül 2026 taraması, hepsi kurala bağlı):
+  | Uç | Takım dışındakine |
+  |---|---|
+  | `GET /api/teams/:id` üyeler | isim maskeli, fotoğraf yok |
+  | `GET /api/teams/:id` duvar | hiç gönderilmez |
+  | `POST /api/teams/:id/posts` | yalnız üye yazabilir |
+  | `GET /api/trainings/:id` katılımcılar | isim maskeli, fotoğraf yok |
+  | `GET /api/trainings/:id` yorumlar | hiç gönderilmez |
+  | `GET /api/admin/users` | yalnız admin |
+
+  Yeni bir sorguya `u.avatar` eklenirse bu tabloya da eklenir.
 - Kontrol her istekte yeniden yapılır: takımdan/etkinlikten çıkan kişi bir
   sonraki yüklemede yine maskeli görür.
 - Yeni bir uç isim, fotoğraf ya da beğenen listesi döndürüyorsa aynı kurala
