@@ -589,6 +589,7 @@ export const translations = {
   teamDetail: {
     wall:           { tr: "Duvar",                        en: "Wall",                    de: "Pinnwand"                },
     membersTab:     { tr: "Üyeler",                       en: "Members",                 de: "Mitglieder"              },
+    namesMasked:    { tr: "Üyelerin tam isimlerini takıma katılınca görürsün.", en: "Join the team to see members' full names.", de: "Tritt dem Team bei, um die vollständigen Namen der Mitglieder zu sehen." },
     showAllMembers: { tr: "Tümünü gör",                   en: "Show all",                de: "Alle anzeigen"           },
     showLess:       { tr: "Daha az göster",               en: "Show less",               de: "Weniger anzeigen"        },
     trainingsTab:   { tr: "Etkinlikler",                 en: "Events",               de: "Events"               },

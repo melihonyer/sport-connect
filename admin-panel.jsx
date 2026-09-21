@@ -1435,6 +1435,35 @@ const DeparturesCard = ({ d }) => {
 };
 
 const LEFT_PURGE_DAYS = 30;
+// Takım sayısı: üzerine gelince (dokunmatikte dokununca) takım adları.
+// Kutu position:fixed — tablo kabının overflow'u alt satırlarda kırpmasın.
+const TeamCountHover = ({ count, names, children }) => {
+  const [box, setBox] = useState(null);
+  const list = Array.isArray(names) ? names : [];
+  if (!list.length) return children;
+  const open = (e) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    setBox({ x: Math.min(r.left, window.innerWidth - 240), y: r.bottom + 6 });
+  };
+  return (
+    <span className="relative cursor-help underline decoration-dotted decoration-slate-300 underline-offset-4"
+      tabIndex={0}
+      onMouseEnter={open} onMouseLeave={() => setBox(null)}
+      onFocus={open} onBlur={() => setBox(null)}>
+      {children}
+      {box && (
+        <span className="fixed z-50 w-56 max-h-64 overflow-auto rounded-xl border border-slate-200 bg-white p-2.5 text-left shadow-lg"
+          style={{ left: box.x, top: box.y }}>
+          <span className="block text-[10px] font-semibold uppercase tracking-wide text-slate-400 mb-1">{count} takım</span>
+          {list.map((n, i) => (
+            <span key={i} className="block truncate py-0.5 text-xs font-normal text-slate-700">{n}</span>
+          ))}
+        </span>
+      )}
+    </span>
+  );
+};
+
 const LeftBadge = ({ at, small = false }) => {
   const kalan = Math.max(0, LEFT_PURGE_DAYS - Math.floor((Date.now() - new Date(at).getTime()) / 86400000));
   return (
@@ -2313,7 +2342,7 @@ export default function AdminPanel() {
                       </div>
                       <div className="text-slate-400 text-xs truncate">{u.email}</div>
                       <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-400">
-                        <span>{u.team_count ?? 0} takım</span>
+                        <TeamCountHover count={u.team_count} names={u.team_names}><span>{u.team_count ?? 0} takım</span></TeamCountHover>
                         <span>·</span>
                         <span>{u.training_count ?? 0} etkinlik</span>
                         <span>·</span>
@@ -2365,7 +2394,7 @@ export default function AdminPanel() {
                           </div>
                         </td>
                         <td className="px-4 py-3.5 text-slate-500">{u.email}</td>
-                        <td className="px-4 py-3.5 text-center text-slate-700 font-semibold">{u.team_count ?? "—"}</td>
+                        <td className="px-4 py-3.5 text-center text-slate-700 font-semibold"><TeamCountHover count={u.team_count} names={u.team_names}>{u.team_count ?? "—"}</TeamCountHover></td>
                         <td className="px-4 py-3.5 text-center text-slate-700 font-semibold">{u.training_count ?? "—"}</td>
                         <td className="px-4 py-3.5 text-center">
                           {u.deleted_at

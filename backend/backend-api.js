@@ -1339,6 +1339,14 @@ const isAdmin = async (req, res, next) => {
 // HELPER FUNCTIONS
 // =====================================================
 
+// Takım dışındakilere üye isimleri baş harf + nokta olarak gider:
+// "Melih Önyer" → "M........ Ö........". Nokta sayısı SABİT; gerçek uzunluk sızmasın.
+const maskPersonName = (name) =>
+  String(name || '').trim().split(/\s+/).filter(Boolean)
+    .map((w) => w[0].toLocaleUpperCase('tr-TR') + '........')
+    .join(' ');
+
+
 const checkAndAwardBadges = async (userId) => {
   try {
     // Get user stats
@@ -2556,7 +2564,10 @@ app.get('/api/teams', optionalAuth, async (req, res) => {
 
     const result = await pool.query(query, params);
 
-    res.json({ teams: result.rows });
+    // Üyesi olmadığı takımda sahibin adı da maskeli (bkz. GET /api/teams/:id).
+    const teams = result.rows.map((t) => (t.my_role ? t : { ...t, owner_name: maskPersonName(t.owner_name) }));
+
+    res.json({ teams });
   } catch (error) {
     console.error('Get teams error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -2585,19 +2596,25 @@ app.get('/api/teams/:id', optionalAuth, async (req, res) => {
 
     const team = teamResult.rows[0];
 
-    if (team.is_private) {
-      if (!req.user) {
-        return res.status(403).json({ error: 'Access denied to private team' });
-      }
-      const memberCheck = await pool.query(
-        'SELECT id FROM team_members WHERE team_id = $1 AND user_id = $2',
+    // Görüntüleyen bu takımın üyesi mi / platform admini mi? İsimlerin açık
+    // gidip gitmeyeceğine bu karar verir; her istekte yeniden bakılır, yani
+    // takımdan çıkan kişi bir sonraki yüklemede yine baş harfleri görür.
+    let viewerIsMember = false;
+    let viewerIsAdmin = false;
+    if (req.user) {
+      const v = await pool.query(
+        `SELECT EXISTS (SELECT 1 FROM team_members WHERE team_id = $1 AND user_id = $2) AS member,
+                COALESCE((SELECT is_admin FROM users WHERE id = $2), false) AS admin`,
         [teamId, req.user.id]
       );
-
-      if (memberCheck.rows.length === 0) {
-        return res.status(403).json({ error: 'Access denied to private team' });
-      }
+      viewerIsMember = v.rows[0].member;
+      viewerIsAdmin = v.rows[0].admin;
     }
+
+    if (team.is_private && !viewerIsMember) {
+      return res.status(403).json({ error: 'Access denied to private team' });
+    }
+    const showNames = viewerIsMember || viewerIsAdmin;
 
     const membersResult = await pool.query(
       `SELECT u.id, u.name, u.avatar, u.is_admin, tm.role, tm.joined_at
@@ -2631,6 +2648,19 @@ app.get('/api/teams/:id', optionalAuth, async (req, res) => {
     );
 
     team.posts = postsResult.rows;
+
+    // Takım dışındakiler: üye listesi, duvar ve beğenenlerde isimler maskeli.
+    // id'ler kalıyor — arayüz "üye miyim / sahibi kim" kararını id ile veriyor.
+    if (!showNames) {
+      team.owner_name = maskPersonName(team.owner_name);
+      team.members = team.members.map((m) => ({ ...m, name: maskPersonName(m.name) }));
+      team.posts = team.posts.map((p) => ({
+        ...p,
+        user_name: maskPersonName(p.user_name),
+        likers: (p.likers || []).map((l) => ({ ...l, name: maskPersonName(l.name) })),
+      }));
+    }
+    team.names_masked = !showNames;
 
     res.json({ team });
   } catch (error) {
@@ -4083,6 +4113,11 @@ app.post('/api/team-posts/:id/like', authenticateToken, async (req, res) => {
     if (pRes.rows.length === 0) return res.status(404).json({ error: 'Gönderi bulunamadı.' });
     const postRow = pRes.rows[0];
 
+    // Duvar yalnız üyelere açık; cevaptaki beğenen listesi tam isim taşıyor.
+    const mem = await pool.query(
+      'SELECT 1 FROM team_members WHERE team_id = $1 AND user_id = $2', [postRow.team_id, userId]);
+    if (mem.rows.length === 0) return res.status(403).json({ error: 'Only team members can like posts' });
+
     const existing = await pool.query(
       'SELECT id FROM team_post_likes WHERE post_id = $1 AND user_id = $2',
       [postId, userId]
@@ -4658,7 +4693,11 @@ app.get('/api/admin/users', isAdmin, async (req, res) => {
         -- deleted_at doluysa kullanıcı hesabını silmiş (30 gün geri gelebilir, sonra purge siler)
         u.deleted_at,
         COUNT(DISTINCT tm.team_id) as team_count,
-        COUNT(DISTINCT ta.training_id) as training_count
+        COUNT(DISTINCT ta.training_id) as training_count,
+        -- Sayının üzerine gelince gösterilen takım adları (alt sorgu: JOIN'ler satırı çoğaltmasın)
+        (SELECT COALESCE(json_agg(t2.name ORDER BY t2.name), '[]'::json)
+           FROM team_members tm2 JOIN teams t2 ON t2.id = tm2.team_id
+          WHERE tm2.user_id = u.id) as team_names
       FROM users u
       LEFT JOIN team_members tm ON u.id = tm.user_id
       LEFT JOIN training_attendees ta ON u.id = ta.user_id

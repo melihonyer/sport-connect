@@ -6946,7 +6946,12 @@ export default function Muuvlink() {
           {activeTab === "members" && canSeeMembers && (
             <div>
               <div className="flex items-center justify-between mb-5">
-                <h3 className="font-bold text-slate-800 text-lg">{t("teamDetail.membersTab")} <span className="text-slate-400 font-normal text-base">({selectedTeam.members?.length || 0})</span></h3>
+                <div>
+                  <h3 className="font-bold text-slate-800 text-lg">{t("teamDetail.membersTab")} <span className="text-slate-400 font-normal text-base">({selectedTeam.members?.length || 0})</span></h3>
+                  {selectedTeam.names_masked && (
+                    <p className="text-xs text-slate-400 mt-1 flex items-center gap-1"><Lock className="w-3 h-3 flex-shrink-0" /> {t("teamDetail.namesMasked")}</p>
+                  )}
+                </div>
                 {canManage && (
                   <HoverTip text={t("tips.inviteTeam")} align="right">
                   <button onClick={() => setShowInviteModal(true)}
