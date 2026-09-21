@@ -227,6 +227,28 @@ bunlar haritada ve "Yakınımda" aramasında hiç çıkmıyor.
 - Kayıt tutulmadan önce silinenler için uydurma satır üretilmez; numara
   boşluklarından yalnız SAYI olarak gösterilir.
 
+## İsim ve yorum gizliliği
+
+Kural **sunucuda** uygulanır; arayüz yalnız sunucunun söylediğini gösterir.
+Ekranda gizlemek yetmez — tam isim API cevabında durursa tarayıcıdan görülür.
+
+- **Takım sayfası** (`GET /api/teams/:id`): üye olmayana üye isimleri
+  `maskPersonName` ile "M........ Ö........" (nokta sayısı sabit, uzunluk
+  sızmasın), profil fotoğrafı `null`, takım duvarı hiç gönderilmez. Üye ve
+  platform admini tam görür. id'ler kalır: arayüz "üye miyim" kararını id ile verir.
+- **Etkinlik katılımcıları** (`GET /api/trainings/:id`): tam isim + fotoğraf
+  takım üyesine, katılana, oluşturana ve admine; diğerleri maskeli.
+- **Etkinlik yorumları**: `canSeeTrainingComments` tek kaynak — görme, yazma ve
+  beğenme üçü de ona bakar. Takım üyeleri (katılmasa da), katılanlar (takım
+  dışından olsa da), takımsız etkinlikte oluşturan, admin. Diğerlerine
+  `comments: []` + `comments_hidden: true`.
+- Kontrol her istekte yeniden yapılır: takımdan/etkinlikten çıkan kişi bir
+  sonraki yüklemede yine maskeli görür.
+- Yeni bir uç isim, fotoğraf ya da beğenen listesi döndürüyorsa aynı kurala
+  bağlanır. Beğeni uçları cevapta tam isimli `likers` taşır — yetki kontrolü şart.
+- Yorum yazma testi alıcılara bildirim + e-posta tetikler: izinli yolu denerken
+  **geçmiş bir etkinlik** kullan (yetkiyi geçer, 409 döner, hiçbir şey yazılmaz).
+
 ## Push bildirimleri
 
 Cihaz jetonu yalnız uygulama açılışında geliyordu; o an giriş yapılmamışsa jeton

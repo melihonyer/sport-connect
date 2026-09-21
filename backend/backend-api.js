@@ -1339,9 +1339,10 @@ const isAdmin = async (req, res, next) => {
 // HELPER FUNCTIONS
 // =====================================================
 
-// Etkinlik yorumlarını kim görür/yazar/beğenir: takım etkinliğinde yalnız o
-// takımın üyeleri (etkinliğe katılmasalar da); takımsız etkinlikte oluşturan ve
-// katılanlar; her durumda platform admini. Takım dışındaki katılımcı yorumları görmez.
+// Etkinlik yorumlarını kim görür/yazar/beğenir: takımın üyeleri (etkinliğe
+// katılmasalar da), etkinliğe katılanlar (takım dışından olsalar da), takımsız
+// etkinlikte oluşturan; her durumda platform admini. Takım dışındaki kişi ancak
+// etkinliğe katılınca görür, ayrılınca yine göremez.
 const canSeeTrainingComments = async (trainingId, userId) => {
   if (!userId) return false;
   const r = await pool.query(
@@ -1354,9 +1355,9 @@ const canSeeTrainingComments = async (trainingId, userId) => {
   );
   const v = r.rows[0];
   if (!v) return false;
-  if (v.admin) return true;
+  if (v.admin || v.attendee) return true;
   if (v.team_id) return v.member;
-  return v.created_by === userId || v.attendee;
+  return v.created_by === userId;
 };
 
 // Takım dışındakilere üye isimleri baş harf + nokta olarak gider:
