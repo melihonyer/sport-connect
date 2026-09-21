@@ -6361,9 +6361,12 @@ export default function Muuvlink() {
 
           {!isPaid && (
           <div className="mb-6">
-            <h3 className="text-xl font-medium mb-4">
+            <h3 className={`text-xl font-medium ${selectedTraining.names_masked ? "mb-1" : "mb-4"}`}>
               {t("trainingDetail.joinedList")} ({selectedTraining.attendees?.length || 0})
             </h3>
+            {selectedTraining.names_masked && selectedTraining.attendees?.length > 0 && (
+              <p className="text-xs text-slate-400 mb-4 flex items-center gap-1"><Lock className="w-3 h-3 flex-shrink-0" /> {t("trainingDetail.namesMasked")}</p>
+            )}
             {selectedTraining.attendees && selectedTraining.attendees.length > 0 ? (
               <div className="space-y-2">
                 {selectedTraining.attendees.filter(a => !blockedUsers.some(b => b.id === a.id)).map((attendee) => (

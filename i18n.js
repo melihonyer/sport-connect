@@ -391,6 +391,7 @@ export const translations = {
   trainingDetail: {
     title:          { tr: "Etkinlik Detayı",             en: "Event Detail",         de: "Event-Details"        },
     joinedList:     { tr: "Katılanlar",                   en: "Participants",            de: "Teilnehmer"              },
+    namesMasked:    { tr: "Katılımcıların tam isimlerini etkinliğe ya da takıma katılınca görürsün.", en: "Join the event or the team to see participants' full names.", de: "Nimm an der Veranstaltung teil oder tritt dem Team bei, um die vollständigen Namen zu sehen." },
     comments:       { tr: "Mesajlar",                     en: "Messages",               de: "Nachrichten"             },
     addComment:     { tr: "Mesaj yaz…",                   en: "Write a message…",        de: "Nachricht schreiben…"    },
     editTraining:   { tr: "Etkinliği Düzenle",           en: "Edit Event",           de: "Event bearbeiten"     },

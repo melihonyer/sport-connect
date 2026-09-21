@@ -2649,14 +2649,16 @@ app.get('/api/teams/:id', optionalAuth, async (req, res) => {
 
     team.posts = postsResult.rows;
 
-    // Takım dışındakiler: üye listesi, duvar ve beğenenlerde isimler maskeli.
+    // Takım dışındakiler: üye listesi, duvar ve beğenenlerde isimler maskeli,
+    // profil fotoğrafları gönderilmez (arayüz baş harfli daireye düşer).
     // id'ler kalıyor — arayüz "üye miyim / sahibi kim" kararını id ile veriyor.
     if (!showNames) {
       team.owner_name = maskPersonName(team.owner_name);
-      team.members = team.members.map((m) => ({ ...m, name: maskPersonName(m.name) }));
+      team.members = team.members.map((m) => ({ ...m, name: maskPersonName(m.name), avatar: null }));
       team.posts = team.posts.map((p) => ({
         ...p,
         user_name: maskPersonName(p.user_name),
+        user_avatar: null,
         likers: (p.likers || []).map((l) => ({ ...l, name: maskPersonName(l.name) })),
       }));
     }
@@ -3707,6 +3709,25 @@ app.get('/api/trainings/:id', optionalAuth, async (req, res) => {
     );
 
     training.attendees = attendeesResult.rows;
+
+    // Katılımcı isimleri/fotoğrafları takım sayfasıyla aynı kuralla: tam hali
+    // yalnız etkinliğin takımının üyesine, bu etkinliğe katılana, oluşturana ve
+    // platform adminine gider. Diğerleri "M........ Ö........" ve fotoğrafsız görür.
+    let showAttendees = false;
+    if (req.user) {
+      const v = await pool.query(
+        `SELECT (($2::int IS NOT NULL) AND EXISTS (SELECT 1 FROM team_members WHERE team_id = $2 AND user_id = $1)) AS member,
+                EXISTS (SELECT 1 FROM training_attendees WHERE training_id = $3 AND user_id = $1) AS attendee,
+                COALESCE((SELECT is_admin FROM users WHERE id = $1), false) AS admin`,
+        [req.user.id, training.team_id, trainingId]
+      );
+      const r = v.rows[0];
+      showAttendees = r.member || r.attendee || r.admin || training.created_by === req.user.id;
+    }
+    if (!showAttendees) {
+      training.attendees = training.attendees.map((a) => ({ ...a, name: maskPersonName(a.name), avatar: null }));
+    }
+    training.names_masked = !showAttendees;
 
     // Get comments (+ beğeni sayısı, kullanıcı beğenmiş mi, beğenenler)
     const commentsResult = await pool.query(
