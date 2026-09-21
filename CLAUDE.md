@@ -78,6 +78,11 @@ JavaScript ÇALIŞTIRMAZ. Bu yüzden metin sunucudan basılır.
   tek adrestedir: içeriği kullanıcı Türkçe yazıyor.
 - **Adres dili, kayıtlı tercihi ezer.** `/en/events` açıldığında `muuvlang`
   ne olursa olsun İngilizce gösterilir; yoksa hreflang yalan söyler.
+- **Zafiyet tarayıcılarına 404** (nginx, `sites-enabled/muuvlink`, Cache-Control
+  bloğunun ÜSTÜNDE): nokta ile başlayan yollar, `*.php`, `wp-*`, `xmlrpc`,
+  `phpmyadmin`, `cgi-bin`. **`/.well-known/` hariç tutulmalı** — iOS/Android
+  uygulama bağlantı dosyaları orada; kural değişirse iki dosyanın 200 döndüğü
+  kontrol edilir. Önceki hali yedekte: `/root/nginx-muuvlink.bak-20260921-143454`.
 - **IndexNow anahtar dosyası `public/<key>.txt` silinmemeli** — her bildirimde
   okunuyor. Bing doğrulama etiketi `msvalidate.01` de silinmemeli.
 
