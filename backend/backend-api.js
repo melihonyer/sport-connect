@@ -1339,6 +1339,26 @@ const isAdmin = async (req, res, next) => {
 // HELPER FUNCTIONS
 // =====================================================
 
+// Etkinlik yorumlarını kim görür/yazar/beğenir: takım etkinliğinde yalnız o
+// takımın üyeleri (etkinliğe katılmasalar da); takımsız etkinlikte oluşturan ve
+// katılanlar; her durumda platform admini. Takım dışındaki katılımcı yorumları görmez.
+const canSeeTrainingComments = async (trainingId, userId) => {
+  if (!userId) return false;
+  const r = await pool.query(
+    `SELECT COALESCE((SELECT is_admin FROM users WHERE id = $2), false) AS admin,
+            t.team_id, t.created_by,
+            EXISTS (SELECT 1 FROM team_members WHERE team_id = t.team_id AND user_id = $2) AS member,
+            EXISTS (SELECT 1 FROM training_attendees WHERE training_id = t.id AND user_id = $2) AS attendee
+       FROM trainings t WHERE t.id = $1`,
+    [trainingId, userId]
+  );
+  const v = r.rows[0];
+  if (!v) return false;
+  if (v.admin) return true;
+  if (v.team_id) return v.member;
+  return v.created_by === userId || v.attendee;
+};
+
 // Takım dışındakilere üye isimleri baş harf + nokta olarak gider:
 // "Melih Önyer" → "M........ Ö........". Nokta sayısı SABİT; gerçek uzunluk sızmasın.
 const maskPersonName = (name) =>
@@ -2649,18 +2669,13 @@ app.get('/api/teams/:id', optionalAuth, async (req, res) => {
 
     team.posts = postsResult.rows;
 
-    // Takım dışındakiler: üye listesi, duvar ve beğenenlerde isimler maskeli,
-    // profil fotoğrafları gönderilmez (arayüz baş harfli daireye düşer).
+    // Takım dışındakiler: üye listesinde isimler maskeli, profil fotoğrafları
+    // gönderilmez (arayüz baş harfli daireye düşer); takım duvarı hiç gönderilmez.
     // id'ler kalıyor — arayüz "üye miyim / sahibi kim" kararını id ile veriyor.
     if (!showNames) {
       team.owner_name = maskPersonName(team.owner_name);
       team.members = team.members.map((m) => ({ ...m, name: maskPersonName(m.name), avatar: null }));
-      team.posts = team.posts.map((p) => ({
-        ...p,
-        user_name: maskPersonName(p.user_name),
-        user_avatar: null,
-        likers: (p.likers || []).map((l) => ({ ...l, name: maskPersonName(l.name) })),
-      }));
+      team.posts = [];
     }
     team.names_masked = !showNames;
 
@@ -3748,7 +3763,9 @@ app.get('/api/trainings/:id', optionalAuth, async (req, res) => {
       [trainingId, req.user?.id ?? null]
     );
 
-    training.comments = commentsResult.rows;
+    const commentsVisible = await canSeeTrainingComments(trainingId, req.user?.id);
+    training.comments = commentsVisible ? commentsResult.rows : [];
+    training.comments_hidden = !commentsVisible;
 
     res.json({ training });
   } catch (error) {
@@ -3935,6 +3952,10 @@ app.post('/api/trainings/:id/comments', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Yorum boş olamaz.' });
     }
 
+    if (!(await canSeeTrainingComments(trainingId, req.user.id))) {
+      return res.status(403).json({ error: 'Yorumlar yalnız takım üyelerine açık.' });
+    }
+
     if (await isTrainingPast(trainingId)) {
       return res.status(409).json({ error: PAST_TRAINING_MSG, code: 'training_past' });
     }
@@ -4039,6 +4060,10 @@ app.post('/api/comments/:id/like', authenticateToken, async (req, res) => {
     );
     if (cRes.rows.length === 0) return res.status(404).json({ error: 'Mesaj bulunamadı.' });
     const commentRow = cRes.rows[0];
+
+    if (!(await canSeeTrainingComments(commentRow.training_id, userId))) {
+      return res.status(403).json({ error: 'Yorumlar yalnız takım üyelerine açık.' });
+    }
 
     // Zaten beğenmiş mi?
     const existing = await pool.query(
