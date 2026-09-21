@@ -20,6 +20,11 @@ e-postayı geri getirmez.
 - Gerçek kayıtlarda **sadece okuma**: GET istekleri, DB SELECT, sayfayı tarayıcıda görüntüleme.
 - Yazma gerektiren doğrulama için: geçici kullanıcı aç → **o kullanıcının kendi**
   takımını/etkinliğini yarat → akışı orada dene → hepsini sil.
+- Test takımları **gizli** kurulur (`is_private = true`), test etkinlikleri de
+  herkese açık listede görünmeyecek şekilde. Açık takım listesinde birkaç
+  saniyeliğine bile `sandbox-…` görünmesin. Testin konusu herkese açık takım
+  davranışıysa (ör. anonim ziyaretçi), takım yalnız o istek için açılır ve
+  hemen gizliye döner.
 - Kendi verinde üretilemeyen bir akış varsa dur ve Melih'e sor.
 
 ## Dosya haritası
