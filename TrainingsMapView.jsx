@@ -346,9 +346,15 @@ const TrainingsMapView = ({ trainings, onSelectTraining, t, containerStyle }) =>
           <MapSizeFixer/>
           <FitBoundsToTrainings trainings={mapped}/>
           <ClusteredMarkers points={mapped} renderMarker={(tr, position) => {
-            const teamLetter = (tr.team_name || tr.team_sport || "T").charAt(0).toLocaleUpperCase("en-US");
-            const teamColor  = tr.is_paid ? PAID_COLOR : (teamColors[tr.team_id] || SPORT_COLORS[tr.sport || tr.team_sport] || "#114956");
-            const icon = tr.is_paid
+            // Organizatör etkinliği (ücretli ya da ücretsiz): adı yazan özel pin.
+            // Ücret bilgisi pini değiştirmez, yalnız popup'taki rozeti belirler.
+            const isOrg = !!tr.is_organizer_event || !!tr.is_paid;
+            // Takımsız etkinlikte harf spor dalından, o da yoksa başlıktan gelir.
+            // Eskiden sabit "T" yazıyordu (takımsız ücretsiz etkinlikte görünür oldu).
+            const teamLetter = (tr.team_name || tr.sport || tr.team_sport || tr.title || "?")
+              .charAt(0).toLocaleUpperCase("tr-TR");
+            const teamColor  = isOrg ? PAID_COLOR : (teamColors[tr.team_id] || SPORT_COLORS[tr.sport || tr.team_sport] || "#114956");
+            const icon = isOrg
               ? makePaidIcon(tr.title, active === tr.id)
               : makeTrainingIcon(teamColor, teamLetter, active === tr.id);
             return (
@@ -363,14 +369,14 @@ const TrainingsMapView = ({ trainings, onSelectTraining, t, containerStyle }) =>
                     <div style={{ display:"flex", gap:"8px", alignItems:"flex-start" }}>
                       <div style={{ flex:"1 1 auto", minWidth:0 }}>
                         <div style={{ display:"flex", alignItems:"center", gap:"6px", marginBottom:"8px", flexWrap:"wrap" }}>
-                          {tr.is_paid && <span style={{ display:"inline-block", padding:"2px 8px", background:"#114956", color:"#fff", borderRadius:"6px", fontSize:"11px", fontWeight:800 }}>Ücretli</span>}
+                          {isOrg && <span style={{ display:"inline-block", padding:"2px 8px", background: tr.is_paid ? "#114956" : "#e6f7f5", color: tr.is_paid ? "#fff" : "#114956", borderRadius:"6px", fontSize:"11px", fontWeight:800 }}>{tr.is_paid ? "Ücretli" : "Ücretsiz"}</span>}
                           <span style={{ display:"inline-block", padding:"2px 8px", background:`${teamColor}18`, color:teamColor, borderRadius:"6px", fontSize:"11px", fontWeight:700 }}>{tr.sport || tr.team_sport || "Spor"}</span>
-                          {!tr.is_paid && tr.difficulty && <span style={{ fontSize:"11px", color:"#94a3b8" }}>{tr.difficulty}</span>}
+                          {!isOrg && tr.difficulty && <span style={{ fontSize:"11px", color:"#94a3b8" }}>{tr.difficulty}</span>}
                         </div>
                         <div style={{ fontWeight:700, fontSize:"14px", color:"#0f172a", marginBottom:"4px", lineHeight:1.3 }}>{tr.title}</div>
-                        <div style={{ fontSize:"12px", color:"#64748b", marginBottom:"8px" }}>{tr.is_paid ? (tr.organizer || "") : tr.team_name}</div>
+                        <div style={{ fontSize:"12px", color:"#64748b", marginBottom:"8px" }}>{isOrg ? (tr.organizer || "") : tr.team_name}</div>
                       </div>
-                      {tr.is_paid && tr.image_url && (
+                      {isOrg && tr.image_url && (
                         <img src={tr.image_url} alt="" style={{ flex:"0 0 auto", width:"52px", height:"52px", borderRadius:"8px", objectFit:"cover", border:"1px solid #e2e8f0" }}/>
                       )}
                     </div>
@@ -385,7 +391,8 @@ const TrainingsMapView = ({ trainings, onSelectTraining, t, containerStyle }) =>
                           <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", maxWidth:"190px" }}>{tr.location_name}</span>
                         </div>
                       )}
-                      {!tr.is_paid && (
+                      {/* Organizatör etkinliğinde katılım dış siteden — kontenjan satırı "0 / 0" oluyordu. */}
+                      {!isOrg && (
                       <div style={{ display:"flex", alignItems:"center", gap:"6px", fontSize:"12px", color:"#475569" }}>
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
                         {tr.attendee_count || 0} / {tr.capacity} katılımcı
