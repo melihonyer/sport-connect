@@ -381,6 +381,7 @@ export const translations = {
     gpsNotWorking:  { tr: "GPS Çalışmıyor",                en: "GPS Not Working",         de: "GPS funktioniert nicht"  },
     away:           { tr: "uzakta",                       en: "away",                    de: "entfernt"                },
     paidBadge:      { tr: "Ücretli",                      en: "Paid",                    de: "Kostenpflichtig"         },
+    freeBadge:      { tr: "Ücretsiz",                     en: "Free",                    de: "Kostenlos"               },
     gpsNotWorkingHint: { tr: "Cihazınızda konum servisleri açık mı? Ayarlar > Gizlilik > Konum Servisleri'ni kontrol edin.",
                          en: "Is location enabled on your device? Check Settings > Privacy > Location Services.",
                          de: "Ist der Standort auf deinem Gerät aktiviert? Prüfe Einstellungen > Datenschutz > Standortdienste." },

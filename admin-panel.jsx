@@ -298,7 +298,7 @@ function HomeGalleryTab({ items, setItems, api, token, showToast }) {
 const emptyPaidEvent = {
   title:"", description:"", sport:"", organizer:"", registration_url:"",
   training_date:"", training_time:"", location_name:"",
-  location_lat:"", location_lng:"", location_address:"",
+  location_lat:"", location_lng:"", location_address:"", is_paid:true,
 };
 function PaidEventsTab({ items, setItems, api, token, showToast }) {
   const [showForm, setShowForm] = React.useState(false);
@@ -318,6 +318,7 @@ function PaidEventsTab({ items, setItems, api, token, showToast }) {
       location_name: it.location_name || "",
       location_lat: it.location_lat ?? "", location_lng: it.location_lng ?? "",
       location_address: it.location_address || "",
+      is_paid: it.is_paid !== false,
     });
     setEditId(it.id); setShowForm(true);
   };
@@ -325,6 +326,7 @@ function PaidEventsTab({ items, setItems, api, token, showToast }) {
   const handleSave = async () => {
     if (!form.title.trim()) { showToast("Başlık zorunlu.", "error"); return; }
     if (!form.training_date) { showToast("Tarih zorunlu.", "error"); return; }
+    if (!form.training_time) { showToast("Saat zorunlu.", "error"); return; }
     setSaving(true);
     try {
       const body = {
@@ -358,13 +360,13 @@ function PaidEventsTab({ items, setItems, api, token, showToast }) {
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h2 className="font-display font-bold text-slate-900 text-xl" style={{letterSpacing:"-0.01em"}}>Ücretli Etkinlikler</h2>
-          <p className="text-slate-400 text-sm mt-0.5">Yarış vb. ücretli etkinlikler. Normal etkinlik akışında ve haritada görünür; "Kayıt Ol" butonu dış kayıt linkini açar.</p>
+          <h2 className="font-display font-bold text-slate-900 text-xl" style={{letterSpacing:"-0.01em"}}>Ücretli / Ücretsiz Etkinlikler</h2>
+          <p className="text-slate-400 text-sm mt-0.5">Yarış vb. organizatör etkinlikleri; ücretli de ücretsiz de olabilir. Normal etkinlik akışında ve haritada görünür; "Kayıt Ol" butonu dış kayıt linkini açar.</p>
         </div>
         <button onClick={startNew}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white transition hover:opacity-90 shadow-lg"
           style={{background:"linear-gradient(135deg,#114956,#0e3c47)"}}>
-          <Plus className="w-4 h-4"/> Yeni Ücretli Etkinlik
+          <Plus className="w-4 h-4"/> Yeni Etkinlik
         </button>
       </div>
 
@@ -373,6 +375,20 @@ function PaidEventsTab({ items, setItems, api, token, showToast }) {
           <div>
             <label className={lbl}>Başlık *</label>
             <input className={inp} value={form.title} onChange={e=>set("title", e.target.value)} placeholder="Örn. İstanbul Bisiklet Yarışı 2026"/>
+          </div>
+          <div>
+            <label className={lbl}>Katılım *</label>
+            <div className="flex gap-2">
+              {[[true, "Ücretli"], [false, "Ücretsiz"]].map(([v, label]) => (
+                <button key={String(v)} type="button" onClick={()=>set("is_paid", v)}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium border transition ${form.is_paid === v
+                    ? "bg-brand-600 text-white border-brand-600"
+                    : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"}`}>
+                  {label}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-slate-400 mt-1.5">Etkinlik kartındaki rozeti belirler. Kayıt her iki durumda da dış linkten yapılır.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -401,7 +417,7 @@ function PaidEventsTab({ items, setItems, api, token, showToast }) {
               <input type="date" className={inp} value={form.training_date} onChange={e=>set("training_date", e.target.value)}/>
             </div>
             <div>
-              <label className={lbl}>Saat</label>
+              <label className={lbl}>Saat *</label>
               <input type="time" className={inp} value={form.training_time} onChange={e=>set("training_time", e.target.value)}/>
             </div>
           </div>
@@ -432,7 +448,7 @@ function PaidEventsTab({ items, setItems, api, token, showToast }) {
         {items.length === 0 && !showForm && (
           <div className="md:col-span-2 text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200 text-slate-400">
             <Ticket className="w-10 h-10 mx-auto mb-3 opacity-30"/>
-            <p>Henüz ücretli etkinlik eklenmedi</p>
+            <p>Henüz etkinlik eklenmedi</p>
           </div>
         )}
         {items.map(it => (
@@ -441,8 +457,8 @@ function PaidEventsTab({ items, setItems, api, token, showToast }) {
               {it.image_url
                 ? <img src={it.image_url} alt="" className="w-full h-full object-cover"/>
                 : <div className="w-full h-full flex items-center justify-center text-slate-300"><Upload className="w-6 h-6"/></div>}
-              <span className="absolute top-2 left-2 text-xs px-2 py-0.5 rounded-full font-semibold bg-brand-600 text-white flex items-center gap-1">
-                <Ticket className="w-3 h-3"/> Ücretli
+              <span className={`absolute top-2 left-2 text-xs px-2 py-0.5 rounded-full font-semibold flex items-center gap-1 ${it.is_paid === false ? "bg-white text-brand-700 border border-brand-200" : "bg-brand-600 text-white"}`}>
+                <Ticket className="w-3 h-3"/> {it.is_paid === false ? "Ücretsiz" : "Ücretli"}
               </span>
               {it.sport && <span className="absolute top-2 right-2 text-xs px-2 py-0.5 rounded-full font-medium bg-brand-100 text-brand-700">{it.sport}</span>}
             </div>
@@ -588,7 +604,7 @@ function DiscoveryTab({ api, showToast }) {
       if (r) {
         setItems(prev => prev.filter(i => i.id !== c.id));
         setCounts(p => ({ ...p, pending: Math.max(0, (p.pending || 1) - 1), approved: (p.approved || 0) + 1 }));
-        showToast("Yayınlandı — Ücretli Etkinlikler sekmesinde.", "success");
+        showToast("Yayınlandı — Ücretli / Ücretsiz Etkinlikler sekmesinde.", "success");
       }
     } catch (e) { showToast(e.message || "Yayınlanamadı.", "error"); }
     finally { setBusyId(null); }
@@ -1770,7 +1786,7 @@ export default function AdminPanel() {
     { id: "live",      label: "Canlı",       icon: Activity },
     { id: "users",     label: "Kullanıcılar", icon: Users },
     { id: "trainings", label: "Etkinlikler", icon: Activity },
-    { id: "paid-events", label: "Ücretli Etkinlikler", icon: Ticket },
+    { id: "paid-events", label: "Ücretli / Ücretsiz Etkinlikler", icon: Ticket },
     { id: "discovery",   label: "Yarış Keşfi",       icon: Radar },
     { id: "teams",     label: "Takımlar",     icon: Shield },
     { id: "logs",      label: "Loglar",       icon: Activity },

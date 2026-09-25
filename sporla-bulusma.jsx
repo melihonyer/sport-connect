@@ -4292,8 +4292,11 @@ export default function Muuvlink() {
   const localeMap = { tr: "tr-TR", en: "en-US", de: "de-DE" };
   const month = dateObj.toLocaleDateString(localeMap[lang] || "en-US", { month: "short", timeZone: "UTC" }).toLocaleUpperCase("en-US");
 
+  // isOrg: admin panelinden eklenen organizatör etkinliği (dış kayıt linkiyle çalışır).
+  // isPaid: yalnız ÜCRET bilgisi — organizatör etkinliği ücretsiz de olabilir.
+  const isOrg  = !!training.is_organizer_event || !!training.is_paid;
   const isPaid = !!training.is_paid;
-  const subtitleName = isPaid ? training.organizer : (training.team_name || training.creator_display);
+  const subtitleName = isOrg ? training.organizer : (training.team_name || training.creator_display);
 
   return (
     <div
@@ -4326,15 +4329,15 @@ export default function Muuvlink() {
       {/* Sağ: İçerik */}
       <div className="flex-1 pl-5 flex flex-col justify-center gap-1 min-w-0">
         <div className="flex items-center gap-2 min-w-0">
-          {isPaid && (
-            <span className="flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-pop-400 text-ink-900">
-              <Ticket className="w-3 h-3"/> {t("trainings.paidBadge")}
+          {isOrg && (
+            <span className={`flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold ${isPaid ? "bg-pop-400 text-ink-900" : "bg-brand-100 text-brand-700"}`}>
+              <Ticket className="w-3 h-3"/> {t(isPaid ? "trainings.paidBadge" : "trainings.freeBadge")}
             </span>
           )}
           {/* Dış kayıt linki var — burada doğrudan dışarı ÇIKARMIYORUZ,
               yalnız işaret. Tıklama etkinlik sayfasına götürür, Katıl orada
               birincil kalır. */}
-          {!isPaid && training.registration_url && (
+          {!isOrg && training.registration_url && (
             <span className="flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold"
               style={{background:"#e6f7f5", color:"#114956"}}>
               <ExternalLink className="w-3 h-3"/> {t("trainingDetail.extRegBadge")}
@@ -4360,8 +4363,8 @@ export default function Muuvlink() {
         )}
       </div>
 
-      {/* Ücretli etkinlik görseli (varsa) */}
-      {isPaid && training.image_url && (
+      {/* Organizatör etkinliğinin görseli (varsa) */}
+      {isOrg && training.image_url && (
         <div className="hidden sm:block flex-shrink-0 self-center ml-3">
           <img src={training.image_url} alt="" className="w-16 h-16 rounded-xl object-cover border border-slate-100"/>
         </div>
@@ -5869,7 +5872,10 @@ export default function Muuvlink() {
     const isParticipant = user && selectedTraining.attendees?.some(a => a.id === user.id);
     const isFull = (selectedTraining.attendees?.length || 0) >= selectedTraining.capacity;
     const isMyTraining = false; // herkes join/leave yapabilir
-    const isPaid = !!selectedTraining.is_paid; // ücretli etkinlik (yarış vb.)
+    // isOrg: organizatör etkinliği (yarış vb., dış kayıt linkiyle) — sayfanın
+    // düzenini bu belirler. isPaid yalnız rozetin ücretli mi ücretsiz mi olduğu.
+    const isOrg  = !!selectedTraining.is_organizer_event || !!selectedTraining.is_paid;
+    const isPaid = !!selectedTraining.is_paid;
     // Tarihi geçmiş etkinlik: sayfa açılır (eski bildirim/paylaşılan link/arama
     // üzerinden gelinebiliyor) ama katıl, ayrıl, yorum ve kayıt linki kapanır.
     // Bayrak backend'den gelir; saat dilimi hesabı orada tek noktada yapılıyor.
@@ -5952,22 +5958,22 @@ export default function Muuvlink() {
           {/* Geçmiş etkinlikte şerit kurumsal teal yerine nötr griye düşer: sayfa
               ilk bakışta "artık geçerli değil" desin. Görsel de soluklaştırılır. */}
           <div className={`-mx-6 sm:-mx-8 -mt-6 sm:-mt-8 mb-6 rounded-t-3xl overflow-hidden text-white ${isPast ? "bg-slate-500" : "bg-brand-600"}`}>
-            {isPaid && selectedTraining.image_url && (
+            {isOrg && selectedTraining.image_url && (
               <img src={selectedTraining.image_url} alt={selectedTraining.title}
                 className={`w-full max-h-72 object-cover ${isPast ? "grayscale opacity-60" : ""}`}/>
             )}
             <div className="px-6 sm:px-8 pt-6 sm:pt-7 pb-6 sm:pb-7">
             {/* 1) Kimlik etiketleri — başlığın üstünde, sadece "bu ne" bilgisi */}
             <div className="flex flex-wrap items-center gap-2">
-              {isPaid && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-pop-400 text-ink-900">
-                  <Ticket className="w-3.5 h-3.5"/> {t("trainings.paidBadge")}
+              {isOrg && (
+                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${isPaid ? "bg-pop-400 text-ink-900" : "bg-white/15 ring-1 ring-white/20 text-white"}`}>
+                  <Ticket className="w-3.5 h-3.5"/> {t(isPaid ? "trainings.paidBadge" : "trainings.freeBadge")}
                 </span>
               )}
               <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-white/10 ring-1 ring-white/15 text-white">
                 {selectedTraining.sport || selectedTraining.team_sport || "Genel"}
               </span>
-              {!isPaid && (
+              {!isOrg && (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/10 ring-1 ring-white/15 text-slate-200">
                   <span className="text-slate-400"><LevelIcon lv={TRAINING_LEVELS.find((l) => l.val === selectedTraining.difficulty) || { bars: 0 }} size={13} /></span>
                   {{ "Kolay": t("trainings.levelEasy"), "Orta": t("trainings.levelMid"), "Zor": t("trainings.levelHard"), "Her Seviye": t("trainings.levelAll") }[selectedTraining.difficulty] || selectedTraining.difficulty}
@@ -6276,7 +6282,7 @@ export default function Muuvlink() {
           })()}
 
           {/* Ücretli etkinlik: organizatör */}
-          {isPaid && selectedTraining.organizer && (
+          {isOrg && selectedTraining.organizer && (
             <div className="flex items-center gap-3 p-4 rounded-2xl border border-brand-100 bg-brand-50 mb-6">
               <div className="w-11 h-11 rounded-full bg-brand-600 flex items-center justify-center flex-shrink-0 border-2 border-white shadow-sm">
                 <Ticket className="w-5 h-5 text-white" />
@@ -6289,7 +6295,7 @@ export default function Muuvlink() {
           )}
 
           {/* Bireysel etkinlik: takım yerine maskeli oluşturan */}
-          {!isPaid && !selectedTraining.team_id && selectedTraining.creator_display && (
+          {!isOrg && !selectedTraining.team_id && selectedTraining.creator_display && (
             <div className="flex items-center gap-3 p-4 rounded-2xl border border-slate-100 bg-slate-50 mb-6">
               <div className="w-11 h-11 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0 border-2 border-white shadow-sm">
                 <User className="w-5 h-5 text-brand-600" />
@@ -6346,7 +6352,7 @@ export default function Muuvlink() {
               {/* Postgres TIME alanı "HH:MM:SS" döner; saniye kullanıcıya gösterilmez */}
               <p>{String(selectedTraining.training_time || "").slice(0, 5)}</p>
             </div>
-            {!isPaid && (
+            {!isOrg && (
             <div className="p-4 bg-gray-50 rounded-xl">
               <div className="flex items-center text-gray-600 mb-2">
                 <Users className="w-5 h-5 mr-2" />
@@ -6359,7 +6365,7 @@ export default function Muuvlink() {
             )}
           </div>
 
-          {!isPaid && (
+          {!isOrg && (
           <div className="mb-6">
             <h3 className={`text-xl font-medium ${selectedTraining.names_masked ? "mb-1" : "mb-4"}`}>
               {t("trainingDetail.joinedList")} ({selectedTraining.attendees?.length || 0})
@@ -6396,7 +6402,7 @@ export default function Muuvlink() {
           )}
 
           {/* Yorumlar yalnız etkinliğin takımının üyelerine açık (sunucu comments_hidden ile söyler). */}
-          {!isPaid && !selectedTraining.comments_hidden && (
+          {!isOrg && !selectedTraining.comments_hidden && (
           <div className="mb-6">
             <h3 className="text-xl font-medium mb-4 flex items-center">
               <MessageCircle className="w-5 h-5 mr-2" />
@@ -6501,7 +6507,7 @@ export default function Muuvlink() {
                 <Calendar className="w-4 h-4" /> {t("trainingDetail.pastCta")}
               </button>
             </div>
-          ) : isPaid ? (
+          ) : isOrg ? (
             <>
             {/* Bilgiler organizatörün yayınından derleniyor; tarih/saat/yer sonradan
                 değişebilir. Kullanıcı kayıt sayfasından teyit etsin diye uyarı. */}
@@ -6603,7 +6609,7 @@ export default function Muuvlink() {
               nereye gittiğini görsün diye hedef alan adı yazılır; bağlantı
               yeni sekmede ve rel="noopener noreferrer nofollow" ile açılır.
               Ücretli etkinliklerin kendi "Kayıt Ol" akışı ayrı (yukarıda). */}
-          {!isPaid && !isPast && selectedTraining.registration_url && (() => {
+          {!isOrg && !isPast && selectedTraining.registration_url && (() => {
             let host = "";
             try { host = new URL(selectedTraining.registration_url).hostname.replace(/^www\./, ""); } catch { return null; }
             return (

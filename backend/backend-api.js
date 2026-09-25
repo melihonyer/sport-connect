@@ -5283,8 +5283,8 @@ app.get('/api/admin/paid-events', isAdmin, async (req, res) => {
     const r = await pool.query(
       `SELECT id, title, description, sport, organizer, registration_url, image_url,
               registration_clicks, training_date, training_time,
-              location_name, location_lat, location_lng, location_address, is_public
-       FROM trainings WHERE is_paid = true
+              location_name, location_lat, location_lng, location_address, is_public, is_paid
+       FROM trainings WHERE is_organizer_event = true
        ORDER BY training_date DESC, training_time DESC`
     );
     res.json(r.rows);
@@ -5299,21 +5299,25 @@ app.post('/api/admin/paid-events', isAdmin, async (req, res) => {
   try {
     const { title, description, sport, organizer, registration_url,
             training_date, training_time, location_name, location_lat,
-            location_lng, location_address } = req.body;
+            location_lng, location_address, is_paid } = req.body;
     if (!title || !training_date) {
       return res.status(400).json({ error: 'Başlık ve tarih zorunludur.' });
+    }
+    // trainings.training_time NOT NULL — saatsiz gönderim eskiden 500'e düşüyordu.
+    if (!training_time) {
+      return res.status(400).json({ error: 'Saat zorunludur.' });
     }
     const r = await pool.query(
       `INSERT INTO trainings
         (team_id, sport, created_by, title, description, training_date, training_time,
          duration_minutes, location_name, location_lat, location_lng, location_address,
-         capacity, is_public, difficulty, is_paid, organizer, registration_url)
-       VALUES (NULL,$1,$2,$3,$4,$5,$6,60,$7,$8,$9,$10,0,true,NULL,true,$11,$12)
+         capacity, is_public, difficulty, is_paid, is_organizer_event, organizer, registration_url)
+       VALUES (NULL,$1,$2,$3,$4,$5,$6,60,$7,$8,$9,$10,0,true,NULL,$13,true,$11,$12)
        RETURNING *`,
       [sport || null, req.user.id, title, description || '', training_date,
-       training_time || null, location_name || null,
+       training_time, location_name || null,
        location_lat || null, location_lng || null, location_address || null,
-       organizer || null, registration_url || null]
+       organizer || null, registration_url || null, is_paid !== false]
     );
     res.json(r.rows[0]);
     indexNowPing(indexNowTrainingUrl(r.rows[0]));
@@ -5337,19 +5341,21 @@ app.put('/api/admin/paid-events/:id', isAdmin, async (req, res) => {
          organizer = $4,
          registration_url = $5,
          training_date = COALESCE($6, training_date),
-         training_time = $7,
+         training_time = COALESCE($7, training_time),   -- NOT NULL: boşaltılamaz
          location_name = $8,
          location_lat = $9,
          location_lng = $10,
-         location_address = $11
-       WHERE id = $12 AND is_paid = true
+         location_address = $11,
+         is_paid = COALESCE($13, is_paid)
+       WHERE id = $12 AND is_organizer_event = true
        RETURNING *`,
       [title || null, description ?? null, sport || null, organizer || null,
        registration_url || null, training_date || null, training_time || null,
        location_name || null, location_lat || null, location_lng || null,
-       location_address || null, req.params.id]
+       location_address || null, req.params.id,
+       typeof req.body.is_paid === 'boolean' ? req.body.is_paid : null]
     );
-    if (r.rows.length === 0) return res.status(404).json({ error: 'Ücretli etkinlik bulunamadı.' });
+    if (r.rows.length === 0) return res.status(404).json({ error: 'Etkinlik bulunamadı.' });
     res.json(r.rows[0]);
     indexNowPing(indexNowTrainingUrl(r.rows[0]));
   } catch (e) {
@@ -5366,7 +5372,7 @@ app.post('/api/admin/paid-events/:id/image', isAdmin, uploadBanner.single('image
     const webpBuffer = await toWebP(req.file.buffer, 1600);
     const imageUrl = await uploadToSupabase('banners', fileName, webpBuffer, 'image/webp');
     const r = await pool.query(
-      'UPDATE trainings SET image_url=$1 WHERE id=$2 AND is_paid = true RETURNING *',
+      'UPDATE trainings SET image_url=$1 WHERE id=$2 AND is_organizer_event = true RETURNING *',
       [imageUrl, req.params.id]
     );
     if (r.rows.length === 0) return res.status(404).json({ error: 'Ücretli etkinlik bulunamadı.' });
@@ -5381,7 +5387,7 @@ app.post('/api/admin/paid-events/:id/image', isAdmin, uploadBanner.single('image
 app.delete('/api/admin/paid-events/:id', isAdmin, async (req, res) => {
   try {
     const gone = await pool.query(
-      'DELETE FROM trainings WHERE id=$1 AND is_paid = true RETURNING id, title, is_public, training_date', [req.params.id]);
+      'DELETE FROM trainings WHERE id=$1 AND is_organizer_event = true RETURNING id, title, is_public, training_date', [req.params.id]);
     if (gone.rows[0]) {
       logDeletion('training', { id: gone.rows[0].id, name: gone.rows[0].title, meta: { training_date: gone.rows[0].training_date, ucretli: true } }, req.user.id, 'admin');
     }
@@ -5801,7 +5807,7 @@ async function loadExistingIndex() {
     arr.push(titleTokens(title));
     byDate.set(dt, arr);
   };
-  const a = await pool.query('SELECT title, training_date FROM trainings WHERE is_paid = true');
+  const a = await pool.query('SELECT title, training_date FROM trainings WHERE is_organizer_event = true');
   for (const row of a.rows) add(row.title, row.training_date);
   const b = await pool.query('SELECT title, training_date, dedupe_key FROM event_candidates');
   for (const row of b.rows) {
@@ -6004,8 +6010,8 @@ app.post('/api/admin/discovery/candidates/:id/approve', isAdmin, async (req, res
       `INSERT INTO trainings
         (team_id, sport, created_by, title, description, training_date, training_time,
          duration_minutes, location_name, location_lat, location_lng, location_address,
-         capacity, is_public, difficulty, is_paid, organizer, registration_url)
-       VALUES (NULL,$1,$2,$3,$4,$5,$6,60,$7,$8,$9,$10,0,true,NULL,true,$11,$12)
+         capacity, is_public, difficulty, is_paid, is_organizer_event, organizer, registration_url)
+       VALUES (NULL,$1,$2,$3,$4,$5,$6,60,$7,$8,$9,$10,0,true,NULL,true,true,$11,$12)
        RETURNING *`,
       [c.sport || null, req.user.id, c.title, c.description || '', c.training_date,
        c.training_time || null, c.location_name || null, c.location_lat, c.location_lng,
@@ -6747,6 +6753,13 @@ pool.query(`ALTER TABLE trainings ADD COLUMN IF NOT EXISTS sport TEXT`).catch(()
 // Ücretli etkinlik (panelden eklenen yarış vb.). Normal etkinlik akışında ve haritada
 // görünür ama uygulama içi katılım yerine dış "Kayıt Ol" linkine yönlendirir.
 pool.query(`ALTER TABLE trainings ADD COLUMN IF NOT EXISTS is_paid BOOLEAN DEFAULT false`).catch(() => {});
+// Organizatör etkinliği (admin panelinden ya da yarış keşfinden eklenen, dış
+// kayıt linkiyle çalışan etkinlik). ÜCRET AYRI BİR ŞEY: is_paid yalnız ücretli
+// olup olmadığını söyler, bu bayrak da etkinliğin türünü. Eski satırların hepsi
+// ücretliydi, onlar işaretlenir.
+pool.query(`ALTER TABLE trainings ADD COLUMN IF NOT EXISTS is_organizer_event BOOLEAN DEFAULT false`)
+  .then(() => pool.query(`UPDATE trainings SET is_organizer_event = true WHERE is_paid = true AND is_organizer_event IS NOT TRUE`))
+  .catch(() => {});
 pool.query(`ALTER TABLE trainings ADD COLUMN IF NOT EXISTS registration_url TEXT`).catch(() => {});
 pool.query(`ALTER TABLE trainings ADD COLUMN IF NOT EXISTS image_url TEXT`).catch(() => {});
 pool.query(`ALTER TABLE trainings ADD COLUMN IF NOT EXISTS organizer TEXT`).catch(() => {});
