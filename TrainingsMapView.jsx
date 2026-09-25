@@ -349,10 +349,10 @@ const TrainingsMapView = ({ trainings, onSelectTraining, t, containerStyle }) =>
             // Organizatör etkinliği (ücretli ya da ücretsiz): adı yazan özel pin.
             // Ücret bilgisi pini değiştirmez, yalnız popup'taki rozeti belirler.
             const isOrg = !!tr.is_organizer_event || !!tr.is_paid;
-            // Takımsız etkinlikte harf spor dalından, o da yoksa başlıktan gelir.
-            // Eskiden sabit "T" yazıyordu (takımsız ücretsiz etkinlikte görünür oldu).
-            const teamLetter = (tr.team_name || tr.sport || tr.team_sport || tr.title || "?")
-              .charAt(0).toLocaleUpperCase("tr-TR");
+            // Harf yalnız TAKIM adından gelir. Takımsız etkinlikte pin boş kalır —
+            // uydurma bir harf (eskiden sabit "T") neyi gösterdiği belli olmayan
+            // bir işaret oluyordu.
+            const teamLetter = tr.team_name ? tr.team_name.charAt(0).toLocaleUpperCase("tr-TR") : "";
             const teamColor  = isOrg ? PAID_COLOR : (teamColors[tr.team_id] || SPORT_COLORS[tr.sport || tr.team_sport] || "#114956");
             const icon = isOrg
               ? makePaidIcon(tr.title, active === tr.id)
