@@ -23,7 +23,7 @@
       },
       {
         "q": "Muuvlink hangi şehirlerde ve hangi sporlarda kullanılıyor?",
-        "a": "Muuvlink konum tabanlı çalışır: sabit bir şehir listesi yoktur, etkinlikler kullanıcıların bulunduğu her şehirde açılabilir. Desteklenen dallar basketbol, bisiklet, crossfit, futbol, kano, koşu, kürek, padel, pilates, tenis, trekking, triatlon, voleybol, yoga ve yüzmedir. Arayüz Türkçe, İngilizce ve Almanca sunulur."
+        "a": "Muuvlink konum tabanlı çalışır: sabit bir şehir listesi yoktur, etkinlikler kullanıcıların bulunduğu her şehirde açılabilir. Desteklenen dallar basketbol, bisiklet, crossfit, futbol, kano, koşu, kürek, padel, pilates, tenis, trekking, triatlon, voleybol, yoga ve yüzmedir. Arayüz Türkçe, İngilizce, Almanca ve Yunanca sunulur."
       }
     ],
     "en": [
@@ -49,7 +49,7 @@
       },
       {
         "q": "Which cities and sports does Muuvlink cover?",
-        "a": "Muuvlink works by location rather than from a fixed list of cities: events can be created wherever its users are. The supported sports are basketball, cycling, CrossFit, football, kayaking, running, rowing, padel, pilates, tennis, trekking, triathlon, volleyball, yoga and swimming. The interface is available in Turkish, English and German."
+        "a": "Muuvlink works by location rather than from a fixed list of cities: events can be created wherever its users are. The supported sports are basketball, cycling, CrossFit, football, kayaking, running, rowing, padel, pilates, tennis, trekking, triathlon, volleyball, yoga and swimming. The interface is available in Turkish, English, German and Greek."
       }
     ],
     "de": [
@@ -75,7 +75,33 @@
       },
       {
         "q": "Welche Städte und Sportarten deckt Muuvlink ab?",
-        "a": "Muuvlink arbeitet standortbasiert statt mit einer festen Städteliste: Events können überall dort entstehen, wo Nutzerinnen und Nutzer sind. Unterstützt werden Basketball, Radfahren, CrossFit, Fußball, Kanu, Laufen, Rudern, Padel, Pilates, Tennis, Trekking, Triathlon, Volleyball, Yoga und Schwimmen. Die Oberfläche gibt es auf Türkisch, Englisch und Deutsch."
+        "a": "Muuvlink arbeitet standortbasiert statt mit einer festen Städteliste: Events können überall dort entstehen, wo Nutzerinnen und Nutzer sind. Unterstützt werden Basketball, Radfahren, CrossFit, Fußball, Kanu, Laufen, Rudern, Padel, Pilates, Tennis, Trekking, Triathlon, Volleyball, Yoga und Schwimmen. Die Oberfläche gibt es auf Türkisch, Englisch, Deutsch und Griechisch."
+      }
+    ],
+    "el": [
+      {
+        "q": "Τι είναι το Muuvlink;",
+        "a": "Το Muuvlink είναι μια δωρεάν εφαρμογή αθλητικής κοινότητας για να βρίσκεις αθλητικές εκδηλώσεις κοντά σου και να συμμετέχεις, να φτιάχνεις τη δική σου ομάδα και να οργανώνεις τακτικές προπονήσεις. Μπορείς να δημιουργήσεις εκδηλώσεις σε περισσότερα από δεκαπέντε αθλήματα, όπως ποδόσφαιρο, μπάσκετ, τένις, τρέξιμο, ποδηλασία, κολύμβηση, γιόγκα και πάντελ. Λειτουργεί στο web στη διεύθυνση muuvlink.app και ως εφαρμογή για iOS και Android."
+      },
+      {
+        "q": "Είναι δωρεάν το Muuvlink;",
+        "a": "Ναι, είναι δωρεάν. Η δημιουργία λογαριασμού, η δημιουργία εκδήλωσης, η ίδρυση ομάδας και η συμμετοχή σε εκδηλώσεις δεν κοστίζουν τίποτα, και δεν υπάρχει συνδρομή ή πακέτο επί πληρωμή. Οι οργανωμένοι αγώνες και τα τουρνουά με το σήμα «Με πληρωμή» ανήκουν σε εξωτερικούς διοργανωτές· η εγγραφή γίνεται στη δική τους ιστοσελίδα και το Muuvlink δεν παίρνει κανένα μερίδιο από αυτά τα τέλη."
+      },
+      {
+        "q": "Πώς βρίσκω αθλητικές εκδηλώσεις κοντά μου;",
+        "a": "Μόλις επιτρέψεις την πρόσβαση στην τοποθεσία, το Muuvlink δείχνει τις δημόσιες εκδηλώσεις σε ακτίνα 5, 10, 25 ή 50 χιλιομέτρων, σε χάρτη και σε λίστα. Μπορείς να φιλτράρεις ανά άθλημα, ημερομηνία και επίπεδο δυσκολίας. Πριν δηλώσεις συμμετοχή, μπορείς να ρωτήσεις τον διοργανωτή για την ώρα ή το επίπεδο στα σχόλια της σελίδας της εκδήλωσης."
+      },
+      {
+        "q": "Πώς φτιάχνω ομάδα;",
+        "a": "Αφού συνδεθείς, πάτησε «Φτιάξε ομάδα» στη σελίδα Ομάδες: διάλεξε όνομα, άθλημα, τοποθεσία και ορατότητα. Οι δημόσιες ομάδες εμφανίζονται στην αναζήτηση και στις μηχανές αναζήτησης· στις ιδιωτικές ομάδες μπαίνει κανείς μόνο με πρόσκληση. Μπορείς να προσθέσεις δεύτερο διαχειριστή στην ομάδα σου και να ανακοινώσεις μια εκδήλωση σε όλα τα μέλη με μία κίνηση."
+      },
+      {
+        "q": "Πώς συμμετέχω σε μια εκδήλωση;",
+        "a": "Αρκεί να πατήσεις το κουμπί «Συμμετοχή» στη σελίδα της εκδήλωσης· δεν χρειάζεται έγκριση. Κάθε εκδήλωση έχει χωρητικότητα και η συμμετοχή κλείνει όταν γεμίσει. Οι εκδηλώσεις στις οποίες συμμετέχεις εμφανίζονται στο ημερολόγιο του προφίλ σου και λαμβάνεις υπενθύμιση πριν από την έναρξη. Αν αλλάξεις γνώμη, αποχωρείς από την ίδια σελίδα και η θέση σου ανοίγει ξανά για άλλους αθλητές."
+      },
+      {
+        "q": "Σε ποιες πόλεις και ποια αθλήματα λειτουργεί το Muuvlink;",
+        "a": "Το Muuvlink λειτουργεί με βάση την τοποθεσία και όχι με σταθερή λίστα πόλεων: οι εκδηλώσεις μπορούν να δημιουργηθούν όπου βρίσκονται οι χρήστες του. Τα αθλήματα που υποστηρίζονται είναι μπάσκετ, ποδηλασία, CrossFit, ποδόσφαιρο, καγιάκ, τρέξιμο, κωπηλασία, πάντελ, πιλάτες, τένις, πεζοπορία, τρίαθλο, βόλεϊ, γιόγκα και κολύμβηση. Η εφαρμογή είναι διαθέσιμη στα τουρκικά, στα αγγλικά, στα γερμανικά και στα ελληνικά."
       }
     ]
   },
@@ -160,6 +186,123 @@
       "contactTitle": "Kontakt — Muuvlink",
       "contactDesc": "Kontaktiere Muuvlink: Mitgliedschaft, Teamgründung, Eventfragen, technische Probleme, Zusammenarbeit und Feedback.",
       "faqTitle": "Häufige Fragen"
+    },
+    "el": {
+      "homeH1": "Muuvlink — βρες παρέα για άθληση, φτιάξε ομάδα, πάρε μέρος σε εκδηλώσεις",
+      "navEvents": "Εκδηλώσεις",
+      "navTeams": "Ομάδες",
+      "navContact": "Επικοινωνία",
+      "navHome": "Τι είναι το Muuvlink;",
+      "eventsH1": "Προσεχείς αθλητικές εκδηλώσεις",
+      "eventsLead": "Το Muuvlink παρουσιάζει {n} προσεχείς δημόσιες αθλητικές εκδηλώσεις. Η σελίδα κάθε εκδήλωσης δείχνει ημερομηνία, τοποθεσία και χωρητικότητα· για να συμμετάσχεις πατάς «Συμμετοχή», χωρίς να περιμένεις έγκριση.",
+      "eventsSub": "Με πρόσβαση στην τοποθεσία, η εφαρμογή δείχνει και σε χάρτη τις εκδηλώσεις σε ακτίνα 5, 10, 25 ή 50 χιλιομέτρων. Η λίστα είναι ταξινομημένη κατά ημερομηνία και δεν περιλαμβάνει παλαιότερες εκδηλώσεις.",
+      "eventsEmpty": "Αυτή τη στιγμή δεν υπάρχουν προσεχείς δημόσιες εκδηλώσεις. Οι νέες εκδηλώσεις εμφανίζονται σε αυτή τη σελίδα μόλις δημιουργηθούν.",
+      "eventsTitle": "Προσεχείς αθλητικές εκδηλώσεις — Muuvlink",
+      "eventsDesc": "{n} προσεχείς δημόσιες αθλητικές εκδηλώσεις στο Muuvlink: ποδόσφαιρο, μπάσκετ, τρέξιμο, τένις, κολύμβηση και άλλα, με ημερομηνία, τοποθεσία και χωρητικότητα.",
+      "teamsH1": "Αθλητικές ομάδες",
+      "teamsLead": "Στο Muuvlink υπάρχουν {n} δημόσιες αθλητικές ομάδες. Σε μια δημόσια ομάδα μπορείς να στείλεις αίτημα συμμετοχής· στις ιδιωτικές ομάδες μπαίνει κανείς μόνο με πρόσκληση και δεν εμφανίζονται σε αυτή τη λίστα.",
+      "teamsSub": "Η δημιουργία δικής σου ομάδας είναι δωρεάν: διαλέγεις όνομα, άθλημα, τοποθεσία και ορατότητα. Μπορείς να προσθέσεις δεύτερο διαχειριστή και να ανακοινώσεις μια εκδήλωση σε όλα τα μέλη με μία κίνηση.",
+      "teamsEmpty": "Αυτή τη στιγμή δεν υπάρχουν δημόσιες ομάδες. Οι νέες ομάδες εμφανίζονται σε αυτή τη σελίδα μόλις δημιουργηθούν.",
+      "teamsTitle": "Αθλητικές ομάδες — Muuvlink",
+      "teamsDesc": "{n} δημόσιες αθλητικές ομάδες στο Muuvlink. Γίνε μέλος σε μια ομάδα ή φτιάξε δωρεάν τη δική σου.",
+      "memberSuffix": "μέλη",
+      "contactH1": "Επικοινωνία",
+      "contactLead": "Είμαστε εδώ για τις ερωτήσεις σου. Θα σου απαντήσουμε σύντομα.",
+      "contactSub": "Μπορείς να επικοινωνήσεις μαζί μας με τη φόρμα αυτής της σελίδας ή με μήνυμα στο Instagram. Η φόρμα ζητά όνομα, email, θέμα και μήνυμα.",
+      "contactTopics": "Για ποια θέματα μπορείς να μας γράψεις",
+      "contactTitle": "Επικοινωνία — Muuvlink",
+      "contactDesc": "Επικοινώνησε με το Muuvlink: λογαριασμός, δημιουργία ομάδας, ερωτήσεις για εκδηλώσεις, τεχνικά προβλήματα, συνεργασίες και σχόλια.",
+      "faqTitle": "Συχνές ερωτήσεις"
+    }
+  },
+  "sports": {
+    "tr": {
+      "Basketbol": "Basketbol",
+      "Bikejoring": "Bikejoring",
+      "Bisiklet": "Bisiklet",
+      "Canicross": "Canicross",
+      "Crossfit": "Crossfit",
+      "Dog Triatlon": "Dog Triatlon",
+      "Futbol": "Futbol",
+      "Kano": "Kano",
+      "Koşu": "Koşu",
+      "Kürek": "Kürek",
+      "Padel": "Padel",
+      "Pilates": "Pilates",
+      "Tenis": "Tenis",
+      "Trekking": "Trekking",
+      "Triatlon": "Triatlon",
+      "Voleybol": "Voleybol",
+      "Yoga": "Yoga",
+      "Yürüyüş": "Yürüyüş",
+      "Yüzme": "Yüzme",
+      "Diğer": "Diğer"
+    },
+    "en": {
+      "Basketbol": "Basketball",
+      "Bikejoring": "Bikejoring",
+      "Bisiklet": "Cycling",
+      "Canicross": "Canicross",
+      "Crossfit": "CrossFit",
+      "Dog Triatlon": "Dog Triathlon",
+      "Futbol": "Football",
+      "Kano": "Kayaking",
+      "Koşu": "Running",
+      "Kürek": "Rowing",
+      "Padel": "Padel",
+      "Pilates": "Pilates",
+      "Tenis": "Tennis",
+      "Trekking": "Trekking",
+      "Triatlon": "Triathlon",
+      "Voleybol": "Volleyball",
+      "Yoga": "Yoga",
+      "Yürüyüş": "Walking",
+      "Yüzme": "Swimming",
+      "Diğer": "Other"
+    },
+    "de": {
+      "Basketbol": "Basketball",
+      "Bikejoring": "Bikejöring",
+      "Bisiklet": "Radfahren",
+      "Canicross": "Canicross",
+      "Crossfit": "CrossFit",
+      "Dog Triatlon": "Dog-Triathlon",
+      "Futbol": "Fußball",
+      "Kano": "Kanu",
+      "Koşu": "Laufen",
+      "Kürek": "Rudern",
+      "Padel": "Padel",
+      "Pilates": "Pilates",
+      "Tenis": "Tennis",
+      "Trekking": "Trekking",
+      "Triatlon": "Triathlon",
+      "Voleybol": "Volleyball",
+      "Yoga": "Yoga",
+      "Yürüyüş": "Walking",
+      "Yüzme": "Schwimmen",
+      "Diğer": "Sonstiges"
+    },
+    "el": {
+      "Basketbol": "Μπάσκετ",
+      "Bikejoring": "Bikejoring",
+      "Bisiklet": "Ποδηλασία",
+      "Canicross": "Canicross",
+      "Crossfit": "CrossFit",
+      "Dog Triatlon": "Τρίαθλο με σκύλο",
+      "Futbol": "Ποδόσφαιρο",
+      "Kano": "Καγιάκ",
+      "Koşu": "Τρέξιμο",
+      "Kürek": "Κωπηλασία",
+      "Padel": "Πάντελ",
+      "Pilates": "Πιλάτες",
+      "Tenis": "Τένις",
+      "Trekking": "Πεζοπορία",
+      "Triatlon": "Τρίαθλο",
+      "Voleybol": "Βόλεϊ",
+      "Yoga": "Γιόγκα",
+      "Yürüyüş": "Περπάτημα",
+      "Yüzme": "Κολύμβηση",
+      "Diğer": "Άλλο"
     }
   }
 }

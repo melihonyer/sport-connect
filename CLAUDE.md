@@ -71,11 +71,13 @@ JavaScript ÇALIŞTIRMAZ. Bu yüzden metin sunucudan basılır.
 - **Şema görünür metni işaretler, yerine geçmez.** Bir sayfada FAQPage şeması
   varsa aynı metin sayfada da olmalı; olmayan sayfalarda şema kaldırılır.
 - **Çok dillilik yalnız dört sabit sayfada**: ana sayfa, etkinlikler, takımlar,
-  iletişim. Türkçe kökte (`/takimlar`), İngilizce/Almanca önekli
-  (`/en/teams`, `/de/teams`). Yol tablosu İKİ yerde: `sporla-bulusma.jsx`
-  `LOCALIZED_PAGE_PATHS` ve `backend-api.js` `SEO_LOCALIZED_PATHS` —
-  **birebir aynı kalmalı.** Detay sayfaları (`/takim/`, `/etkinlik/`) bilerek
-  tek adrestedir: içeriği kullanıcı Türkçe yazıyor.
+  iletişim. Türkçe kökte (`/takimlar`), diğer diller önekli (`/en/teams`,
+  `/de/teams`, `/el/teams`; önekler Latin harfli). Yol tablosu İKİ yerde:
+  `sporla-bulusma.jsx` `LOCALIZED_PAGE_PATHS` ve `backend-api.js`
+  `SEO_LOCALIZED_PATHS` — **birebir aynı kalmalı** — ve nginx'teki liste
+  sayfaları `location`'ı bu yolları içermeli (yoksa botlar SPA iskeletini
+  alır). Detay sayfaları (`/takim/`, `/etkinlik/`) bilerek tek adrestedir:
+  içeriği kullanıcı kendi dilinde yazıyor.
 - **Adres dili, kayıtlı tercihi ezer.** `/en/events` açıldığında `muuvlang`
   ne olursa olsun İngilizce gösterilir; yoksa hreflang yalan söyler.
 - **Zafiyet tarayıcılarına 404** (nginx, `sites-enabled/muuvlink`, Cache-Control
@@ -85,6 +87,34 @@ JavaScript ÇALIŞTIRMAZ. Bu yüzden metin sunucudan basılır.
   kontrol edilir. Önceki hali yedekte: `/root/nginx-muuvlink.bak-20260921-143454`.
 - **IndexNow anahtar dosyası `public/<key>.txt` silinmemeli** — her bildirimde
   okunuyor. Bing doğrulama etiketi `msvalidate.01` de silinmemeli.
+
+## Diller
+
+Diller: tr, en, de, el (Eylül 2026'da Yunanca eklendi; sıradakiler es, fr, nl,
+sonra ar — Arapça sağdan sola düzen ister, ayrı proje).
+
+- **Tek kaynak `i18n.js` → `LANGUAGES`** (kod, görünen ad, tarih yerel ayarı).
+  Dil seçiciler, tarih biçimi ve `seo-static.mjs` buradan okur; JSX'e dil
+  listesi elle yazılmaz.
+- tr/en/de metinleri `i18n.js`'te satır içinde. **Yeni diller
+  `locales/<kod>.js`** dosyasında aynı anahtar ağacıyla yazılır, açılışta
+  birleştirilir; eksik anahtar İngilizceye düşer. Yeni anahtar eklerken
+  `locales/el.js`'e de yazılır. Yer tutucular (`{n}`, `{name}`) her dilde aynı.
+- Satır içi küçük sözlükler (`{ tr, en, de, el }`) `pickLang(map, lang)` ile
+  okunur; `map[lang] || map.en` yazılmaz.
+- **Sayıyla birleşen metin parça parça kurulmaz**: `{n}` yer tutucusu
+  kullanılır. "10 km km içinde" hatası buradan çıkmıştı.
+- Yeni dil eklemek: `LANGUAGES` + `locales/<kod>.js` + iki yol tablosu + nginx
+  liste sayfaları + backend `seoFormatDate` / iletişim konuları. Ardından
+  IndexNow'a yeni adresler bildirilir.
+- **Yazı tipi:** Montserrat'ta Yunan/Arap harfi yok. `index.css`'te Manrope'un
+  Yunan alt kümesi `'Montserrat'` adı + unicode-range ile tanımlı
+  (`public/fonts/manrope-greek.woff2`); her Montserrat kullanımı Yunan
+  harfini kendiliğinden onunla çizer. Arapça gelirse aynı yöntem.
+- Konum önerileri arayüz diline göre ev ülkesini öne alır (el → GR, diğerleri
+  → TR). Yeni dilde bu eşleme de eklenir (`LocationPicker.jsx`).
+- Yasal metinler (KVKK, gizlilik, koşullar) yalnız Türkçe; çevirisi hukuki
+  kontrol ister, kod işi değil.
 
 ## Renk sistemi (kurumsal palet)
 

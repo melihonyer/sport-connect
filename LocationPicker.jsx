@@ -12,6 +12,7 @@
 // Aynı ad Türkiye'de onlarca yerde var (Kuşçular: Urla, Tarsus, Nazilli…), bu yüzden
 // her öneride ilçe/il görünür ve bias verilirse yakın olan öne gelir.
 import React, { useState, useRef, useEffect } from "react";
+import { pickLang } from "./i18n.js";
 import {
   Loader2, Search, MapPin, Navigation2, ArrowLeft, X, CheckCircle, AlertTriangle, History,
 } from "lucide-react";
@@ -22,30 +23,30 @@ const _hav = (a, b) => { const R=6371,dL=(b.lat-a.lat)*Math.PI/180,dN=(b.lng-a.l
 const _fmtDist = (km) => km < 1 ? `${Math.round(km*1000)} m` : `${km.toFixed(1)} km`;
 
 const _PLACE_LABELS = {
-  village:       { tr:"Köy/Mahalle", en:"Village",     de:"Dorf"        },
-  hamlet:        { tr:"Köy/Mahalle", en:"Village",     de:"Dorf"        },
-  suburb:        { tr:"Mahalle",     en:"Suburb",      de:"Vorort"      },
-  neighbourhood: { tr:"Mahalle",     en:"Neighborhood",de:"Viertel"     },
-  quarter:       { tr:"Mahalle",     en:"Quarter",     de:"Viertel"     },
-  city:          { tr:"Şehir",       en:"City",        de:"Stadt"       },
-  town:          { tr:"Şehir",       en:"Town",        de:"Ort"         },
-  cafe:          { tr:"Kafe",        en:"Café",        de:"Café"        },
-  restaurant:    { tr:"Restoran",    en:"Restaurant",  de:"Restaurant"  },
-  fast_food:     { tr:"Restoran",    en:"Restaurant",  de:"Restaurant"  },
-  gym:           { tr:"Spor",        en:"Gym",         de:"Fitnessstudio"},
-  sports_centre: { tr:"Spor",        en:"Sports",      de:"Sport"       },
-  swimming_pool: { tr:"Havuz",       en:"Pool",        de:"Schwimmbad"  },
-  park:          { tr:"Park",        en:"Park",        de:"Park"        },
-  garden:        { tr:"Park",        en:"Garden",      de:"Garten"      },
-  school:        { tr:"Okul",        en:"School",      de:"Schule"      },
-  university:    { tr:"Okul",        en:"University",  de:"Universität" },
-  hospital:      { tr:"Sağlık",      en:"Hospital",    de:"Krankenhaus" },
-  clinic:        { tr:"Sağlık",      en:"Clinic",      de:"Klinik"      },
-  stadium:       { tr:"Spor",        en:"Stadium",     de:"Stadion"     },
-  beach:         { tr:"Sahil",       en:"Beach",       de:"Strand"      },
+  village:       { tr:"Köy/Mahalle", en:"Village",     de:"Dorf", el:"Χωριό" },
+  hamlet:        { tr:"Köy/Mahalle", en:"Village",     de:"Dorf", el:"Χωριό" },
+  suburb:        { tr:"Mahalle",     en:"Suburb",      de:"Vorort", el:"Προάστιο" },
+  neighbourhood: { tr:"Mahalle",     en:"Neighborhood",de:"Viertel", el:"Γειτονιά" },
+  quarter:       { tr:"Mahalle",     en:"Quarter",     de:"Viertel", el:"Συνοικία" },
+  city:          { tr:"Şehir",       en:"City",        de:"Stadt", el:"Πόλη" },
+  town:          { tr:"Şehir",       en:"Town",        de:"Ort", el:"Κωμόπολη" },
+  cafe:          { tr:"Kafe",        en:"Café",        de:"Café", el:"Καφέ" },
+  restaurant:    { tr:"Restoran",    en:"Restaurant",  de:"Restaurant", el:"Εστιατόριο" },
+  fast_food:     { tr:"Restoran",    en:"Restaurant",  de:"Restaurant", el:"Εστιατόριο" },
+  gym:           { tr:"Spor",        en:"Gym",         de:"Fitnessstudio", el:"Γυμναστήριο" },
+  sports_centre: { tr:"Spor",        en:"Sports",      de:"Sport", el:"Αθλητικό κέντρο" },
+  swimming_pool: { tr:"Havuz",       en:"Pool",        de:"Schwimmbad", el:"Πισίνα" },
+  park:          { tr:"Park",        en:"Park",        de:"Park", el:"Πάρκο" },
+  garden:        { tr:"Park",        en:"Garden",      de:"Garten", el:"Κήπος" },
+  school:        { tr:"Okul",        en:"School",      de:"Schule", el:"Σχολείο" },
+  university:    { tr:"Okul",        en:"University",  de:"Universität", el:"Πανεπιστήμιο" },
+  hospital:      { tr:"Sağlık",      en:"Hospital",    de:"Krankenhaus", el:"Νοσοκομείο" },
+  clinic:        { tr:"Sağlık",      en:"Clinic",      de:"Klinik", el:"Κλινική" },
+  stadium:       { tr:"Spor",        en:"Stadium",     de:"Stadion", el:"Στάδιο" },
+  beach:         { tr:"Sahil",       en:"Beach",       de:"Strand", el:"Παραλία" },
 };
 const _placeType = (cls, typ, lang="tr") => {
-  const l = lang === "en" ? "en" : lang === "de" ? "de" : "tr";
+  const l = lang;
   const entry = _PLACE_LABELS[typ];
   if (entry) {
     const color = {
@@ -55,12 +56,12 @@ const _placeType = (cls, typ, lang="tr") => {
       school:"#64748b",university:"#64748b",hospital:"#dc2626",clinic:"#dc2626",
       stadium:"#0891b2",beach:"#f59e0b",
     }[typ] || "#114956";
-    return { label: entry[l] || entry.en, color };
+    return { label: pickLang(entry, l), color };
   }
-  if (cls==="natural")  return { label: {tr:"Doğa", en:"Nature",  de:"Natur" }[l],   color:"#15803d" };
-  if (cls==="highway")  return { label: {tr:"Sokak", en:"Street",  de:"Straße"}[l],   color:"#94a3b8" };
-  if (cls==="shop")     return { label: {tr:"Mağaza", en:"Shop",   de:"Geschäft"}[l], color:"#9333ea" };
-  return { label: {tr:"Yer", en:"Place", de:"Ort"}[l], color:"#114956" };
+  if (cls==="natural")  return { label: pickLang({tr:"Doğa", en:"Nature",  de:"Natur",    el:"Φύση"}, l),     color:"#15803d" };
+  if (cls==="highway")  return { label: pickLang({tr:"Sokak", en:"Street",  de:"Straße",  el:"Δρόμος"}, l),   color:"#94a3b8" };
+  if (cls==="shop")     return { label: pickLang({tr:"Mağaza", en:"Shop",   de:"Geschäft", el:"Κατάστημα"}, l), color:"#9333ea" };
+  return { label: pickLang({tr:"Yer", en:"Place", de:"Ort", el:"Τοποθεσία"}, l), color:"#114956" };
 };
 
 
@@ -76,8 +77,11 @@ const photonSearch = async (q, { bias, limit = 6, signal, lang = "tr" } = {}) =>
   if (!res.ok) return [];
   const data = await res.json();
   const feats = (data.features || []).filter((f) => Array.isArray(f?.geometry?.coordinates));
-  const tr = feats.filter((f) => f.properties?.countrycode === "TR");
-  return (tr.length ? tr : feats).slice(0, limit).map((f) => {
+  // Aynı ad birden çok ülkede olabilir: arayüz diline göre ev ülkesi öne alınır
+  // (Yunanca arayüzde Yunanistan, diğerlerinde Türkiye). Yoksa hepsi.
+  const home = lang === "el" ? "GR" : "TR";
+  const local = feats.filter((f) => f.properties?.countrycode === home);
+  return (local.length ? local : feats).slice(0, limit).map((f) => {
     const p = f.properties || {};
     const [lng, lat] = f.geometry.coordinates;
     const name = p.name || p.street || p.city || q;

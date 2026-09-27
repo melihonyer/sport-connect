@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { MapContainer, Marker, Popup, Polyline, useMap, useMapEvents } from "react-leaflet";
 import Supercluster from "supercluster";
 import VectorBasemap from "./VectorBasemap.jsx";
+import { localeOf } from "./i18n.js";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { MapPin, Activity } from "lucide-react";
@@ -82,7 +83,9 @@ const makePaidIcon = (title, highlight = false) => {
   const labelW = highlight ? 132 : 120;           // ad etiketi kutusu
   const gap = 6;
   const fs = highlight ? 14 : 12.5;
-  const label = escapeXml((title || "").toLocaleUpperCase("tr-TR"));
+  // Yunanca adda büyük harfte vurgu düşsün (ΚΟΎΡΣΑ değil ΚΟΥΡΣΑ): harfe göre yerel ayar.
+  const upLocale = /[\u0370-\u03FF\u1F00-\u1FFF]/.test(title || "") ? "el" : "tr-TR";
+  const label = escapeXml((title || "").toLocaleUpperCase(upLocale));
   const halo = "0 0 3px #fff,0 0 3px #fff,0 1px 2px #fff,0 -1px 2px #fff,1px 0 2px #fff,-1px 0 2px #fff";
   const html = `<div style="display:flex;align-items:center;gap:${gap}px;width:${labelW + gap + pw}px;height:${ph}px;">
     <span style="flex:0 0 ${labelW}px;text-align:right;font-family:'Montserrat',system-ui,sans-serif;font-weight:800;font-size:${fs}px;line-height:1.07;color:#171717;text-transform:uppercase;letter-spacing:-0.3px;text-shadow:${halo};word-break:break-word;">${label}</span>
@@ -180,9 +183,13 @@ const extractDominantColor = async (url) => {
   } catch { return null; }
 };
 
+// Seviye DB'de Türkçe duruyor; popup'ta arayüz dilinde yazılsın.
+const LEVEL_KEYS = { "Kolay": "trainings.levelEasy", "Orta": "trainings.levelMid", "Zor": "trainings.levelHard", "Her Seviye": "trainings.levelAll" };
 const fmtDateShort = (d) => {
   if (!d) return "";
-  return new Date(d).toLocaleDateString("tr-TR", { timeZone: "UTC", day: "numeric", month: "long", year: "numeric" });
+  // Seçili arayüz dilinde (eskiden her dilde Türkçe yazıyordu).
+  const l = (typeof localStorage !== "undefined" && localStorage.getItem("muuvlang")) || "tr";
+  return new Date(d).toLocaleDateString(localeOf(l), { timeZone: "UTC", day: "numeric", month: "long", year: "numeric" });
 };
 
 const ClusteredMarkers = ({ points, renderMarker }) => {
@@ -369,9 +376,9 @@ const TrainingsMapView = ({ trainings, onSelectTraining, t, containerStyle }) =>
                     <div style={{ display:"flex", gap:"8px", alignItems:"flex-start" }}>
                       <div style={{ flex:"1 1 auto", minWidth:0 }}>
                         <div style={{ display:"flex", alignItems:"center", gap:"6px", marginBottom:"8px", flexWrap:"wrap" }}>
-                          {isOrg && <span style={{ display:"inline-block", padding:"2px 8px", background: tr.is_paid ? "#114956" : "#e6f7f5", color: tr.is_paid ? "#fff" : "#114956", borderRadius:"6px", fontSize:"11px", fontWeight:800 }}>{tr.is_paid ? "Ücretli" : "Ücretsiz"}</span>}
-                          <span style={{ display:"inline-block", padding:"2px 8px", background:`${teamColor}18`, color:teamColor, borderRadius:"6px", fontSize:"11px", fontWeight:700 }}>{tr.sport || tr.team_sport || "Spor"}</span>
-                          {!isOrg && tr.difficulty && <span style={{ fontSize:"11px", color:"#94a3b8" }}>{tr.difficulty}</span>}
+                          {isOrg && <span style={{ display:"inline-block", padding:"2px 8px", background: tr.is_paid ? "#114956" : "#e6f7f5", color: tr.is_paid ? "#fff" : "#114956", borderRadius:"6px", fontSize:"11px", fontWeight:800 }}>{t ? t(tr.is_paid ? "trainings.paidBadge" : "trainings.freeBadge") : (tr.is_paid ? "Ücretli" : "Ücretsiz")}</span>}
+                          <span style={{ display:"inline-block", padding:"2px 8px", background:`${teamColor}18`, color:teamColor, borderRadius:"6px", fontSize:"11px", fontWeight:700 }}>{(tr.sport || tr.team_sport) ? (t ? t(`sports.${tr.sport || tr.team_sport}`) : (tr.sport || tr.team_sport)) : (t ? t("map.sportFallback") : "Spor")}</span>
+                          {!isOrg && tr.difficulty && <span style={{ fontSize:"11px", color:"#94a3b8" }}>{(t && LEVEL_KEYS[tr.difficulty]) ? t(LEVEL_KEYS[tr.difficulty]) : tr.difficulty}</span>}
                         </div>
                         <div style={{ fontWeight:700, fontSize:"14px", color:"#0f172a", marginBottom:"4px", lineHeight:1.3 }}>{tr.title}</div>
                         <div style={{ fontSize:"12px", color:"#64748b", marginBottom:"8px" }}>{isOrg ? (tr.organizer || "") : tr.team_name}</div>
@@ -395,12 +402,12 @@ const TrainingsMapView = ({ trainings, onSelectTraining, t, containerStyle }) =>
                       {!isOrg && (
                       <div style={{ display:"flex", alignItems:"center", gap:"6px", fontSize:"12px", color:"#475569" }}>
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-                        {tr.attendee_count || 0} / {tr.capacity} katılımcı
+                        {tr.attendee_count || 0} / {tr.capacity} {t ? t("map.participants") : "katılımcı"}
                       </div>
                       )}
                     </div>
                     <button onClick={() => onSelectTraining(tr.id)} style={{ width:"100%", padding:"8px 0", borderRadius:"8px", border:"none", cursor:"pointer", background: teamColor, color:"white", fontSize:"12px", fontWeight:700 }}>
-                      Detayı Gör →
+                      {t ? t("map.detailBtn") : "Detayı Gör →"}
                     </button>
                   </div>
                 </Popup>

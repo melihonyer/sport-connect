@@ -1,7 +1,11 @@
 // ─────────────────────────────────────────────────────────
 //  Muuvlink — i18n Çeviri Sözlüğü
-//  Diller: tr (Türkçe) · en (English) · de (Deutsch)
+//  Diller: LANGUAGES listesi (aşağıda). tr/en/de metinleri bu dosyada satır
+//  içinde; yeni diller locales/<kod>.js dosyasında AYNI anahtar ağacıyla
+//  yazılır ve açılışta buraya birleştirilir (locales/el.js gibi).
+//  Bir anahtarın çevirisi yoksa İngilizceye, o da yoksa Türkçeye düşer.
 // ─────────────────────────────────────────────────────────
+import el from "./locales/el.js";
 
 export const translations = {
 
@@ -353,11 +357,11 @@ export const translations = {
     clearFilters:   { tr: "Filtreleri Temizle",            en: "Clear Filters",           de: "Filter zurücksetzen"     },
     currentLocation:{ tr: "Mevcut Konum",                  en: "Current Location",        de: "Aktueller Standort"      },
     changeLocation: { tr: "Değiştir",                      en: "Change",                  de: "Ändern"                  },
-    noNearby:       { tr: "km içinde etkinlik yok",       en: "km — no events found", de: "km — keine Events"    },
+    noNearby:       { tr: "{n} km içinde etkinlik yok",   en: "No events within {n} km", de: "Keine Events im Umkreis von {n} km" },
     nearbyGpsNote:  { tr: "Arama mesafesini genişletebilir veya filtrelerinizi değiştirebilirsiniz.",
                       en: "Try expanding the search radius or adjusting your filters.",
                       de: "Versuche den Suchradius zu vergrößern oder die Filter anzupassen." },
-    expandTo:       { tr: "km'ye Genişlet",                en: "km radius",               de: "km Radius"               },
+    expandTo:       { tr: "{n} km'ye genişlet",            en: "Expand to {n} km",        de: "Auf {n} km erweitern"    },
     noTrainingsHint:{ tr: "Etkinlik oluşturmak için yukarıdaki butona tıklayın.",
                       en: "Click the button above to create a event.",
                       de: "Klicke oben auf die Schaltfläche, um ein Event zu erstellen." },
@@ -643,6 +647,7 @@ export const translations = {
 
   // ── CREATE TEAM ─────────────────────────────────────────
   createTeam: {
+    uploadPhoto:    { tr: "Fotoğraf yükle", en: "Upload photo", de: "Foto hochladen" },
     pageTitle:      { tr: "Takım Kur",                    en: "Create Team",             de: "Team gründen"            },
     pageSubtitle:   { tr: "Kendi spor takımını oluştur ve üyelerini davet et.",
                       en: "Create your own sports team and invite members.",
@@ -667,6 +672,7 @@ export const translations = {
 
   // ── PROFILE PAGE ────────────────────────────────────────
   profile: {
+    editTitle:      { tr: "Profili düzenle", en: "Edit profile", de: "Profil bearbeiten" },
     pageTitle:      { tr: "Profilim",                     en: "My Profile",              de: "Mein Profil"             },
     myTrainings:    { tr: "Etkinliklerim",               en: "My Events",            de: "Meine Events"         },
     joinedTrainings:{ tr: "Katıldığım",                   en: "Joined",                  de: "Beigetreten"             },
@@ -917,6 +923,8 @@ export const translations = {
 
   // ── TOAST MESSAGES ──────────────────────────────────────
   toast: {
+    privateTeam:    { tr: "Bu gizli bir takım. Erişmek için davet edilmeniz gerekiyor.", en: "This is a private team. You need an invitation to access it.", de: "Dies ist ein privates Team. Du brauchst eine Einladung." },
+    teamNoAccess:   { tr: "Takım detaylarına erişim yok!", en: "You don't have access to this team.", de: "Kein Zugriff auf dieses Team." },
     joinTraining:   { tr: "Etkinliğe katıldın!",         en: "Joined the event!",    de: "Event beigetreten!"   },
     leaveTraining:  { tr: "Etkinlik kaydın silindi.",     en: "Left the event.",      de: "Event verlassen."     },
     joinFail:       { tr: "Katılım başarısız!",           en: "Failed to join!",         de: "Beitreten fehlgeschlagen!" },
@@ -1041,6 +1049,9 @@ export const translations = {
 
   // ── MAP VIEW ─────────────────────────────────────────────
   map: {
+    detailBtn:      { tr: "Detayı Gör →", en: "View details →", de: "Details ansehen →" },
+    participants:   { tr: "katılımcı",    en: "participants",   de: "Teilnehmer"        },
+    sportFallback:  { tr: "Spor",         en: "Sport",          de: "Sport"             },
     noLocationData: { tr: "Haritada gösterilecek konum verisi bulunamadı",   en: "No location data to display on map",                      de: "Keine Standortdaten für die Karte"                              },
     noLocationHint: { tr: "Etkinlik oluştururken konum seçilmesi gerekiyor", en: "A location must be selected when creating a event",     de: "Beim Erstellen eines Events muss ein Standort gewählt werden" },
     trainingsOnMap: { tr: "etkinlik haritada",                               en: "events on map",                                        de: "Events auf der Karte"                                        },
@@ -1266,14 +1277,52 @@ export const translations = {
     q6: { tr: "Muuvlink hangi şehirlerde ve hangi sporlarda kullanılıyor?",
           en: "Which cities and sports does Muuvlink cover?",
           de: "Welche Städte und Sportarten deckt Muuvlink ab?" },
-    a6: { tr: "Muuvlink konum tabanlı çalışır: sabit bir şehir listesi yoktur, etkinlikler kullanıcıların bulunduğu her şehirde açılabilir. Desteklenen dallar basketbol, bisiklet, crossfit, futbol, kano, koşu, kürek, padel, pilates, tenis, trekking, triatlon, voleybol, yoga ve yüzmedir. Arayüz Türkçe, İngilizce ve Almanca sunulur.",
-          en: "Muuvlink works by location rather than from a fixed list of cities: events can be created wherever its users are. The supported sports are basketball, cycling, CrossFit, football, kayaking, running, rowing, padel, pilates, tennis, trekking, triathlon, volleyball, yoga and swimming. The interface is available in Turkish, English and German.",
-          de: "Muuvlink arbeitet standortbasiert statt mit einer festen Städteliste: Events können überall dort entstehen, wo Nutzerinnen und Nutzer sind. Unterstützt werden Basketball, Radfahren, CrossFit, Fußball, Kanu, Laufen, Rudern, Padel, Pilates, Tennis, Trekking, Triathlon, Volleyball, Yoga und Schwimmen. Die Oberfläche gibt es auf Türkisch, Englisch und Deutsch." },
+    a6: { tr: "Muuvlink konum tabanlı çalışır: sabit bir şehir listesi yoktur, etkinlikler kullanıcıların bulunduğu her şehirde açılabilir. Desteklenen dallar basketbol, bisiklet, crossfit, futbol, kano, koşu, kürek, padel, pilates, tenis, trekking, triatlon, voleybol, yoga ve yüzmedir. Arayüz Türkçe, İngilizce, Almanca ve Yunanca sunulur.",
+          en: "Muuvlink works by location rather than from a fixed list of cities: events can be created wherever its users are. The supported sports are basketball, cycling, CrossFit, football, kayaking, running, rowing, padel, pilates, tennis, trekking, triathlon, volleyball, yoga and swimming. The interface is available in Turkish, English, German and Greek.",
+          de: "Muuvlink arbeitet standortbasiert statt mit einer festen Städteliste: Events können überall dort entstehen, wo Nutzerinnen und Nutzer sind. Unterstützt werden Basketball, Radfahren, CrossFit, Fußball, Kanu, Laufen, Rudern, Padel, Pilates, Tennis, Trekking, Triathlon, Volleyball, Yoga und Schwimmen. Die Oberfläche gibt es auf Türkisch, Englisch, Deutsch und Griechisch." },
   },
 };
 
+// ─── Dil listesi — TEK KAYNAK ──────────────────────────────
+// Dil seçiciler, tarih biçimleri, SEO adresleri ve hreflang buradan okur.
+// Yeni dil: buraya bir satır + locales/<kod>.js + LOCALIZED_PAGE_PATHS
+// (sporla-bulusma.jsx) + SEO_LOCALIZED_PATHS (backend) + nginx dil yolları.
+export const LANGUAGES = [
+  { code: "tr", label: "Türkçe",   locale: "tr-TR" },
+  { code: "en", label: "English",  locale: "en-US" }, // arayüz hep en-US kullandı; değişmesin
+  { code: "de", label: "Deutsch",  locale: "de-DE" },
+  { code: "el", label: "Ελληνικά", locale: "el-GR" },
+];
+export const SUPPORTED = LANGUAGES.map((l) => l.code);
+export const localeOf = (lang) => (LANGUAGES.find((l) => l.code === lang) || LANGUAGES[0]).locale;
+
+// Satır içi küçük sözlükler için ({ tr, en, de, el }): dil yoksa en, o da yoksa tr.
+export const pickLang = (map, lang) => (map ? (map[lang] ?? map.en ?? map.tr) : "");
+
+// locales/<kod>.js katmanını ana ağaca işle. Ağaçta olmayan anahtar yazılmaz
+// (yazım hatası sessizce yeni dal açmasın); kaçan anahtarlar konsola düşer.
+const mergeLocale = (code, overlay) => {
+  const missing = [];
+  const walk = (src, dst, path) => {
+    for (const [k, v] of Object.entries(src)) {
+      const node = dst?.[k];
+      if (typeof v === "string") {
+        if (node && typeof node === "object" && ("tr" in node)) node[code] = v;
+        else missing.push([...path, k].join("."));
+      } else if (v && typeof v === "object") {
+        if (node && typeof node === "object") walk(v, node, [...path, k]);
+        else missing.push([...path, k].join("."));
+      }
+    }
+  };
+  walk(overlay, translations, []);
+  if (missing.length && typeof console !== "undefined") {
+    console.warn(`[i18n] ${code}: ağaçta olmayan ${missing.length} anahtar`, missing.slice(0, 10));
+  }
+};
+mergeLocale("el", el);
+
 // ─── Dil algılama ───────────────────────────────────────────
-const SUPPORTED = ["tr", "en", "de"];
 
 export function detectLang() {
   // 1) Kullanıcının kayıtlı tercihi

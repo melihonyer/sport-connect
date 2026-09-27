@@ -3,6 +3,30 @@
 @tailwind utilities;
 
 /* ─────────────────────────────────────────────
+   YUNAN HARFLERİ — Montserrat'ta Yunan alfabesi yok.
+   Manrope'un yalnız Yunan alt kümesi "Montserrat" adıyla ve Yunan
+   unicode aralığıyla tanımlanır: sitedeki HER Montserrat kullanımı (satır içi
+   stiller, harita pinleri dahil) Yunan harflerini kendiliğinden bununla çizer.
+   Dosya yalnız sayfada Yunan harfi varken indirilir (~9 kB).
+───────────────────────────────────────────── */
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 300 800;
+  font-display: swap;
+  src: url('/fonts/manrope-greek.woff2') format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+@font-face {
+  font-family: 'Montserrat';
+  font-style: italic;
+  font-weight: 300 800;
+  font-display: swap;
+  src: url('/fonts/manrope-greek.woff2') format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+
+/* ─────────────────────────────────────────────
    BASE RESETS & GLOBAL ENHANCEMENTS
 ───────────────────────────────────────────── */
 @layer base {

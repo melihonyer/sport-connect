@@ -17,7 +17,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { translations } from '../i18n.js';
+import { translations, LANGUAGES } from '../i18n.js';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FILE = path.join(ROOT, 'index.html');
@@ -37,14 +37,16 @@ const faq = [1, 2, 3, 4, 5, 6].map((n) => ({ q: tr(`faq.q${n}`), a: tr(`faq.a${n
 // ── Backend'in okuyacağı içerik dosyası ────────────────────────────────────
 // backend-api.js bunu dist/seo-content.json olarak okur (index.html ile aynı
 // klasör), böylece frontend deploy'u içeriği de taşır — ayrı adım yok.
-const LANGS = ['tr', 'en', 'de'];
+const LANGS = LANGUAGES.map((l) => l.code); // tek kaynak: i18n.js LANGUAGES
 const pick = (key, lang) => {
   const node = key.split('.').reduce((o, k) => (o ? o[k] : undefined), translations);
   if (!node || !node[lang]) throw new Error(`i18n anahtarı yok: ${key}.${lang}`);
   return node[lang];
 };
-const content = { faq: {}, seo: {} };
+const content = { faq: {}, seo: {}, sports: {} };
 for (const l of LANGS) {
+  // Spor dalı adları DB'de Türkçe duruyor; bot sayfalarında dilin karşılığı yazılsın.
+  content.sports[l] = Object.fromEntries(Object.entries(translations.sports).map(([k, v]) => [k, v[l] || v.en || k]));
   content.faq[l] = [1, 2, 3, 4, 5, 6].map((n) => ({ q: pick(`faq.q${n}`, l), a: pick(`faq.a${n}`, l) }));
   content.faq[l].title = pick('faq.title', l);
   content.seo[l] = Object.fromEntries(Object.keys(translations.seo).map((k) => [k, pick(`seo.${k}`, l)]));
@@ -120,9 +122,7 @@ const replaceRegion = (html, name, body) => {
 
 // Ana sayfa için hreflang. Alt sayfalarda backend kendi karşılıklarını basar.
 const hreflangBlock = `
-  <link rel="alternate" hreflang="tr" href="${ORIGIN}/">
-  <link rel="alternate" hreflang="en" href="${ORIGIN}/en">
-  <link rel="alternate" hreflang="de" href="${ORIGIN}/de">
+${LANGS.map((l) => `  <link rel="alternate" hreflang="${l}" href="${ORIGIN}${l === 'tr' ? '/' : `/${l}`}">`).join('\n')}
   <link rel="alternate" hreflang="x-default" href="${ORIGIN}/">
 `;
 

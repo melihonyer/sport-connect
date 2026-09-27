@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { detectLang, createT } from "./i18n.js";
+import { detectLang, createT, LANGUAGES, localeOf, pickLang } from "./i18n.js";
 import Tour from "./Tour.jsx";
 import BlurReveal from "./BlurReveal.jsx";
 import { MetaEvents, newEventId, getMatchSignals, getAttribution, trackPageView } from "./analytics.js";
@@ -135,11 +135,11 @@ class ErrorBoundary extends React.Component {
     const reset = () => this.setState({ error: null });
     const lng = (typeof localStorage !== "undefined" && localStorage.getItem("muuvlang")) || "tr";
     const _eb = {
-      title: { tr: "Bir şeyler ters gitti", en: "Something went wrong", de: "Etwas ist schiefgelaufen" },
-      retry: { tr: "Tekrar Dene", en: "Try Again", de: "Erneut versuchen" },
-      unexpected: { tr: "Beklenmedik bir hata oluştu.", en: "An unexpected error occurred.", de: "Ein unerwarteter Fehler ist aufgetreten." },
+      title: { tr: "Bir şeyler ters gitti", en: "Something went wrong", de: "Etwas ist schiefgelaufen", el: "Κάτι πήγε στραβά" },
+      retry: { tr: "Tekrar Dene", en: "Try Again", de: "Erneut versuchen", el: "Δοκίμασε ξανά" },
+      unexpected: { tr: "Beklenmedik bir hata oluştu.", en: "An unexpected error occurred.", de: "Ein unerwarteter Fehler ist aufgetreten.", el: "Παρουσιάστηκε ένα απρόσμενο σφάλμα." },
     };
-    const _t = (k) => _eb[k][lng] || _eb[k].en;
+    const _t = (k) => pickLang(_eb[k], lng);
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 px-6 text-center gap-5">
         <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-red-50">
@@ -166,7 +166,7 @@ const BASE_URL = import.meta.env.VITE_BASE_URL ?? (import.meta.env.DEV ? "http:/
 // Aktif dile göre BCP-47 locale — seçili dil değişince tarihler de o dilde gelir.
 const _dateLocale = () => {
   const l = (typeof localStorage !== "undefined" && localStorage.getItem("muuvlang")) || "tr";
-  return l === "en" ? "en-US" : l === "de" ? "de-DE" : "tr-TR";
+  return localeOf(l);
 };
 // "1 Haziran 2026 Pazartesi" — etkinlik detay gibi önemli yerlerde
 const fmtDateFull = (d) => d
@@ -265,30 +265,30 @@ const _hav = (a, b) => { const R=6371,dL=(b.lat-a.lat)*Math.PI/180,dN=(b.lng-a.l
 const _fmtDist = (km) => km < 1 ? `${Math.round(km*1000)} m` : `${km.toFixed(1)} km`;
 
 const _PLACE_LABELS = {
-  village:       { tr:"Köy/Mahalle", en:"Village",     de:"Dorf"        },
-  hamlet:        { tr:"Köy/Mahalle", en:"Village",     de:"Dorf"        },
-  suburb:        { tr:"Mahalle",     en:"Suburb",      de:"Vorort"      },
-  neighbourhood: { tr:"Mahalle",     en:"Neighborhood",de:"Viertel"     },
-  quarter:       { tr:"Mahalle",     en:"Quarter",     de:"Viertel"     },
-  city:          { tr:"Şehir",       en:"City",        de:"Stadt"       },
-  town:          { tr:"Şehir",       en:"Town",        de:"Ort"         },
-  cafe:          { tr:"Kafe",        en:"Café",        de:"Café"        },
-  restaurant:    { tr:"Restoran",    en:"Restaurant",  de:"Restaurant"  },
-  fast_food:     { tr:"Restoran",    en:"Restaurant",  de:"Restaurant"  },
-  gym:           { tr:"Spor",        en:"Gym",         de:"Fitnessstudio"},
-  sports_centre: { tr:"Spor",        en:"Sports",      de:"Sport"       },
-  swimming_pool: { tr:"Havuz",       en:"Pool",        de:"Schwimmbad"  },
-  park:          { tr:"Park",        en:"Park",        de:"Park"        },
-  garden:        { tr:"Park",        en:"Garden",      de:"Garten"      },
-  school:        { tr:"Okul",        en:"School",      de:"Schule"      },
-  university:    { tr:"Okul",        en:"University",  de:"Universität" },
-  hospital:      { tr:"Sağlık",      en:"Hospital",    de:"Krankenhaus" },
-  clinic:        { tr:"Sağlık",      en:"Clinic",      de:"Klinik"      },
-  stadium:       { tr:"Spor",        en:"Stadium",     de:"Stadion"     },
-  beach:         { tr:"Sahil",       en:"Beach",       de:"Strand"      },
+  village:       { tr:"Köy/Mahalle", en:"Village",     de:"Dorf", el:"Χωριό" },
+  hamlet:        { tr:"Köy/Mahalle", en:"Village",     de:"Dorf", el:"Χωριό" },
+  suburb:        { tr:"Mahalle",     en:"Suburb",      de:"Vorort", el:"Προάστιο" },
+  neighbourhood: { tr:"Mahalle",     en:"Neighborhood",de:"Viertel", el:"Γειτονιά" },
+  quarter:       { tr:"Mahalle",     en:"Quarter",     de:"Viertel", el:"Συνοικία" },
+  city:          { tr:"Şehir",       en:"City",        de:"Stadt", el:"Πόλη" },
+  town:          { tr:"Şehir",       en:"Town",        de:"Ort", el:"Κωμόπολη" },
+  cafe:          { tr:"Kafe",        en:"Café",        de:"Café", el:"Καφέ" },
+  restaurant:    { tr:"Restoran",    en:"Restaurant",  de:"Restaurant", el:"Εστιατόριο" },
+  fast_food:     { tr:"Restoran",    en:"Restaurant",  de:"Restaurant", el:"Εστιατόριο" },
+  gym:           { tr:"Spor",        en:"Gym",         de:"Fitnessstudio", el:"Γυμναστήριο" },
+  sports_centre: { tr:"Spor",        en:"Sports",      de:"Sport", el:"Αθλητικό κέντρο" },
+  swimming_pool: { tr:"Havuz",       en:"Pool",        de:"Schwimmbad", el:"Πισίνα" },
+  park:          { tr:"Park",        en:"Park",        de:"Park", el:"Πάρκο" },
+  garden:        { tr:"Park",        en:"Garden",      de:"Garten", el:"Κήπος" },
+  school:        { tr:"Okul",        en:"School",      de:"Schule", el:"Σχολείο" },
+  university:    { tr:"Okul",        en:"University",  de:"Universität", el:"Πανεπιστήμιο" },
+  hospital:      { tr:"Sağlık",      en:"Hospital",    de:"Krankenhaus", el:"Νοσοκομείο" },
+  clinic:        { tr:"Sağlık",      en:"Clinic",      de:"Klinik", el:"Κλινική" },
+  stadium:       { tr:"Spor",        en:"Stadium",     de:"Stadion", el:"Στάδιο" },
+  beach:         { tr:"Sahil",       en:"Beach",       de:"Strand", el:"Παραλία" },
 };
 const _placeType = (cls, typ, lang="tr") => {
-  const l = lang === "en" ? "en" : lang === "de" ? "de" : "tr";
+  const l = lang;
   const entry = _PLACE_LABELS[typ];
   if (entry) {
     const color = {
@@ -298,12 +298,12 @@ const _placeType = (cls, typ, lang="tr") => {
       school:"#64748b",university:"#64748b",hospital:"#dc2626",clinic:"#dc2626",
       stadium:"#0e3c47",beach:"#f59e0b",
     }[typ] || "#114956";
-    return { label: entry[l] || entry.en, color };
+    return { label: pickLang(entry, l), color };
   }
-  if (cls==="natural")  return { label: {tr:"Doğa", en:"Nature",  de:"Natur" }[l],   color:"#15803d" };
-  if (cls==="highway")  return { label: {tr:"Sokak", en:"Street",  de:"Straße"}[l],   color:"#94a3b8" };
-  if (cls==="shop")     return { label: {tr:"Mağaza", en:"Shop",   de:"Geschäft"}[l], color:"#9333ea" };
-  return { label: {tr:"Yer", en:"Place", de:"Ort"}[l], color:"#114956" };
+  if (cls==="natural")  return { label: pickLang({tr:"Doğa", en:"Nature",  de:"Natur",    el:"Φύση"}, l),     color:"#15803d" };
+  if (cls==="highway")  return { label: pickLang({tr:"Sokak", en:"Street",  de:"Straße",  el:"Δρόμος"}, l),   color:"#94a3b8" };
+  if (cls==="shop")     return { label: pickLang({tr:"Mağaza", en:"Shop",   de:"Geschäft", el:"Κατάστημα"}, l), color:"#9333ea" };
+  return { label: pickLang({tr:"Yer", en:"Place", de:"Ort", el:"Τοποθεσία"}, l), color:"#114956" };
 };
 
 // Hafta bazlı marka renk rotasyonu — aynı hafta içindeki etkinlikler aynı rengi paylaşır,
@@ -333,6 +333,7 @@ const DEFAULT_MOTTOS = {
   tr: ["Birlikte Hareket Et!", "Yeni Dostlar Edin!", "Limitlerini Aş!", "En İyini Keşfet!"],
   en: ["Move Together!", "Make New Friends!", "Push Your Limits!", "Discover Your Best!"],
   de: ["Gemeinsam bewegen!", "Neue Freunde finden!", "Grenzen überwinden!", "Entdecke dein Bestes!"],
+  el: ["Κινήσου μαζί μας!", "Κάνε νέους φίλους!", "Ξεπέρασε τα όριά σου!", "Βρες τον ρυθμό σου!"],
 };
 
 
@@ -970,7 +971,7 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                         onMouseLeave={e=>{ if(!user) e.currentTarget.style.background="transparent"; }}
                       >
                         {user && <span className={`absolute inset-0 ${isLightBg ? "bg-white/10" : "bg-brand-600/10"} opacity-0 group-hover:opacity-100 transition-opacity rounded-[14px]`}/>}
-                        {(lang === "tr" ? banner?.cta_primary_text : lang === "en" ? banner?.cta_primary_text_en : banner?.cta_primary_text_de) || t("home.heroCtaSecondary")}
+                        {(lang === "tr" ? banner?.cta_primary_text : lang === "de" ? banner?.cta_primary_text_de : lang === "en" ? banner?.cta_primary_text_en : null) || t("home.heroCtaSecondary")}
                         {user && <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>}
                       </button>
                     </div>
@@ -1777,6 +1778,7 @@ const LOCALIZED_PAGE_PATHS = {
   tr: { home: "/",    trainings: "/etkinlikler", teams: "/takimlar",  contact: "/iletisim" },
   en: { home: "/en",  trainings: "/en/events",   teams: "/en/teams",  contact: "/en/contact" },
   de: { home: "/de",  trainings: "/de/events",   teams: "/de/teams",  contact: "/de/kontakt" },
+  el: { home: "/el",  trainings: "/el/events",   teams: "/el/teams",  contact: "/el/contact" },
 };
 // Ters tablo: yol → { lang, page }
 const LOCALIZED_PATH_LOOKUP = Object.fromEntries(
@@ -1790,7 +1792,8 @@ const normalizePath = (p) => (p || "/").replace(/\/+$/, "") || "/";
 // aksi halde /en/events sayfası Türkçe metin gösterir, hreflang tutarsız olur).
 const langFromPath = (p) => LOCALIZED_PATH_LOOKUP[normalizePath(p)]?.lang ?? null;
 // Dil önekini at: native deep-link'ler ve eski kontroller için.
-const stripLocale = (p) => normalizePath(p).replace(/^\/(en|de)(?=\/|$)/, "") || "/";
+const LOCALE_PREFIX_RE = new RegExp(`^/(${LANGUAGES.map((l) => l.code).filter((c) => c !== "tr").join("|")})(?=/|$)`);
+const stripLocale = (p) => normalizePath(p).replace(LOCALE_PREFIX_RE, "") || "/";
 
 export default function Muuvlink() {
   // ── URL ↔ sayfa eşlemesi ─────────────────────────────
@@ -3792,9 +3795,9 @@ export default function Muuvlink() {
           setPendingInvitations([]);
         }
       } else if (response.status === 403) {
-        showToast("Bu gizli bir takım. Erişmek için davet edilmeniz gerekiyor.", "info");
+        showToast(t("toast.privateTeam"), "info");
       } else {
-        showToast("Takım detaylarına erişim yok!", "error");
+        showToast(t("toast.teamNoAccess"), "error");
       }
     } catch (error) {
       console.error("Fetch team details error:", error);
@@ -3823,7 +3826,7 @@ export default function Muuvlink() {
           showToast(t("toast.inviteCancelled"), "info");
         }
       } catch (e) {
-        showToast("Bir hata oluştu.", "error");
+        showToast(t("common.error"), "error");
       }
     });
   };
@@ -4289,8 +4292,9 @@ export default function Muuvlink() {
 
   const dateObj = new Date(training.training_date);
   const day = String(dateObj.getUTCDate()).padStart(2, "0");
-  const localeMap = { tr: "tr-TR", en: "en-US", de: "de-DE" };
-  const month = dateObj.toLocaleDateString(localeMap[lang] || "en-US", { month: "short", timeZone: "UTC" }).toLocaleUpperCase("en-US");
+  const localeMap = Object.fromEntries(LANGUAGES.map((l) => [l.code, l.locale]));
+  // Yunancada büyük harfte vurgu işareti düşer (Νοέ → ΝΟΕ); bunu yalnız "el" yerel ayarı yapar.
+  const month = dateObj.toLocaleDateString(localeMap[lang] || "en-US", { month: "short", timeZone: "UTC" }).toLocaleUpperCase(lang === "el" ? "el" : "en-US");
 
   // isOrg: admin panelinden eklenen organizatör etkinliği (dış kayıt linkiyle çalışır).
   // isPaid: yalnız ÜCRET bilgisi — organizatör etkinliği ücretsiz de olabilir.
@@ -4963,7 +4967,7 @@ export default function Muuvlink() {
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
             {/* Avatar + name */}
             <div className="flex items-center gap-5">
-              <div className="relative cursor-pointer group" onClick={() => setShowProfileEdit(true)} title="Profili düzenle">
+              <div className="relative cursor-pointer group" onClick={() => setShowProfileEdit(true)} title={t("profile.editTitle")}>
                 <div className="w-20 h-20 rounded-2xl overflow-hidden flex items-center justify-center text-white text-2xl font-bold flex-shrink-0"
                   style={{background:"#114956", boxShadow:"0 2px 8px rgba(17,73,86,0.18)"}}>
                   {(user?.avatar?.startsWith("/uploads/") || user?.avatar?.startsWith("http")) ? (
@@ -5013,7 +5017,7 @@ export default function Muuvlink() {
               <Globe className="w-4 h-4 text-brand-400"/> {t("profile.language")}
             </div>
             <div className="flex items-center gap-1 bg-white/70 rounded-xl p-1">
-              {[{ code:"tr", label:"TR" }, { code:"en", label:"EN" }, { code:"de", label:"DE" }].map(({ code, label }) => (
+              {LANGUAGES.map(({ code }) => ({ code, label: code.toLocaleUpperCase("en-US") })).map(({ code, label }) => (
                 <button key={code} onClick={() => changeLang(code)}
                   className="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all"
                   style={lang === code ? {background:"#114956", color:"#fff"} : {color:"#64748b"}}>
@@ -5600,13 +5604,13 @@ export default function Muuvlink() {
                     style={{background:"rgba(17,73,86,0.08)", border:"1px solid rgba(17,73,86,0.15)"}}>
                     <MapPin className="w-9 h-9" style={{color:"rgba(17,73,86,0.4)"}}/>
                   </div>
-                  <p className="text-slate-800 font-semibold text-xl mb-2">{nearbyDistance} km {t("trainings.noNearby")}</p>
+                  <p className="text-slate-800 font-semibold text-xl mb-2">{t("trainings.noNearby").replace("{n}", nearbyDistance)}</p>
                   <p className="text-slate-400 text-sm mb-7 max-w-sm mx-auto">{t("trainings.nearbyGpsNote")}</p>
                   <div className="flex flex-wrap justify-center gap-3">
                     {[10,25,50].filter(k => k > nearbyDistance).map(k => (
                       <button key={k} onClick={() => handleDistanceChange(k)}
                         className="px-5 py-2.5 rounded-xl text-sm font-medium border border-slate-200 text-slate-600 hover:border-brand-300 hover:text-brand-700 transition">
-                        {k} km {t("trainings.expandTo")}
+                        {t("trainings.expandTo").replace("{n}", k)}
                       </button>
                     ))}
                   </div>
@@ -6727,7 +6731,7 @@ export default function Muuvlink() {
                       : (selectedTeam.name?.[0]?.toLocaleUpperCase("en-US") || "T")}
                   </div>
                   {canAdmin && (
-                    <label className="absolute -bottom-1 -right-1 w-6 h-6 bg-white ring-1 ring-slate-200 rounded-full flex items-center justify-center cursor-pointer shadow-sm hover:bg-brand-50 transition-colors" title="Fotoğraf yükle">
+                    <label className="absolute -bottom-1 -right-1 w-6 h-6 bg-white ring-1 ring-slate-200 rounded-full flex items-center justify-center cursor-pointer shadow-sm hover:bg-brand-50 transition-colors" title={t("createTeam.uploadPhoto")}>
                       <Image className="w-3 h-3 text-brand-600" />
                       <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
                         const file = e.target.files?.[0];
@@ -8234,11 +8238,7 @@ export default function Muuvlink() {
                 </button>
                 {langDropOpen && (
                   <div className="absolute right-0 top-[calc(100%+6px)] bg-white rounded-2xl border border-slate-200/80 shadow-xl overflow-hidden z-[200] w-40">
-                    {[
-                      { code:"tr", label:"Türkçe" },
-                      { code:"en", label:"English" },
-                      { code:"de", label:"Deutsch" },
-                    ].map(({ code, label }) => (
+                    {LANGUAGES.map(({ code, label }) => (
                       <button key={code}
                         onClick={() => { changeLang(code); setLangDropOpen(false); }}
                         className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-left transition-colors hover:bg-slate-50"
@@ -8401,11 +8401,7 @@ export default function Muuvlink() {
                       <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">Language</span>
                     </div>
                     <div className="flex flex-col gap-0.5">
-                      {[
-                        { code:"tr", label:"Türkçe" },
-                        { code:"en", label:"English" },
-                        { code:"de", label:"Deutsch" },
-                      ].map(({ code, label }) => (
+                      {LANGUAGES.map(({ code, label }) => (
                         <button key={code}
                           onClick={() => { changeLang(code); setMobileOpen(false); }}
                           className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl text-sm text-left transition-colors"
@@ -8801,11 +8797,11 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
   };
 
   const REPORT_REASONS = [
-    { key: "inappropriate", label: { tr: "Uygunsuz içerik", en: "Inappropriate content", de: "Unangemessener Inhalt" } },
-    { key: "spam",          label: { tr: "Spam / reklam",    en: "Spam / advertising",    de: "Spam / Werbung"       } },
-    { key: "harassment",    label: { tr: "Taciz / zorbalık", en: "Harassment / bullying", de: "Belästigung"          } },
-    { key: "fake",          label: { tr: "Sahte profil",     en: "Fake profile",          de: "Falsches Profil"      } },
-    { key: "other",         label: { tr: "Diğer",            en: "Other",                 de: "Sonstiges"            } },
+    { key: "inappropriate", label: { tr: "Uygunsuz içerik", en: "Inappropriate content", de: "Unangemessener Inhalt", el: "Ακατάλληλο περιεχόμενο" } },
+    { key: "spam",          label: { tr: "Spam / reklam",    en: "Spam / advertising",    de: "Spam / Werbung",      el: "Spam / διαφήμιση" } },
+    { key: "harassment",    label: { tr: "Taciz / zorbalık", en: "Harassment / bullying", de: "Belästigung",         el: "Παρενόχληση / εκφοβισμός" } },
+    { key: "fake",          label: { tr: "Sahte profil",     en: "Fake profile",          de: "Falsches Profil",     el: "Ψεύτικο προφίλ" } },
+    { key: "other",         label: { tr: "Diğer",            en: "Other",                 de: "Sonstiges",           el: "Άλλο" } },
   ];
 
   const ReportModal = () => {
@@ -8825,7 +8821,7 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
               <button key={r.key}
                 onClick={() => handleReport(reportModal.type, reportModal.id, r.key)}
                 className="w-full text-left px-4 py-3 rounded-xl border border-slate-200 hover:border-red-300 hover:bg-red-50 text-sm text-slate-700 transition-colors">
-                {r.label[lang] || r.label.en}
+                {pickLang(r.label, lang)}
               </button>
             ))}
           </div>

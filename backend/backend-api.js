@@ -1687,7 +1687,7 @@ const SEO_WRAP_STYLE = 'max-width:820px;margin:0 auto;padding:56px 24px 80px;' +
 // uydurma yerel saat üretmeyiz, kaydedilen değeri olduğu gibi gösteririz.
 const seoFormatDate = (d, lang = 'tr') => {
   try {
-    return new Intl.DateTimeFormat({ tr: 'tr-TR', en: 'en-GB', de: 'de-DE' }[lang] || 'tr-TR', {
+    return new Intl.DateTimeFormat({ tr: 'tr-TR', en: 'en-GB', de: 'de-DE', el: 'el-GR' }[lang] || 'tr-TR', {
       day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
     }).format(new Date(d));
   } catch { return ''; }
@@ -1713,12 +1713,14 @@ const getSeoContent = () => {
   return seoContentCache;
 };
 
-// Türkçe kökte; İngilizce ve Almanca yalnız bu dört sayfada önek alır.
-// sporla-bulusma.jsx içindeki LOCALIZED_PAGE_PATHS ile BİREBİR aynı olmalı.
+// Türkçe kökte; diğer diller yalnız bu dört sayfada önek alır.
+// sporla-bulusma.jsx içindeki LOCALIZED_PAGE_PATHS ile BİREBİR aynı olmalı
+// (ve nginx'teki liste sayfaları konumu da bu yolları içermeli).
 const SEO_LOCALIZED_PATHS = {
   tr: { home: '/',   trainings: '/etkinlikler', teams: '/takimlar', contact: '/iletisim' },
   en: { home: '/en', trainings: '/en/events',   teams: '/en/teams', contact: '/en/contact' },
   de: { home: '/de', trainings: '/de/events',   teams: '/de/teams', contact: '/de/kontakt' },
+  el: { home: '/el', trainings: '/el/events',   teams: '/el/teams', contact: '/el/contact' },
 };
 const SEO_PATH_LOOKUP = Object.fromEntries(
   Object.entries(SEO_LOCALIZED_PATHS).flatMap(([lang, pages]) =>
@@ -1893,6 +1895,8 @@ app.get(['/takim/*', '/etkinlik/*'], async (req, res, next) => {
 // ============================================
 
 const seoFill = (str, n) => String(str).replace(/\{n\}/g, n);
+// Spor dalı DB'de Türkçe; sayfa dilindeki adı seo-content.json'dan (i18n.js sports).
+const seoSport = (name, lang) => getSeoContent()?.sports?.[lang]?.[name] || name;
 
 // Sayfa gövdesi + şema + başlık. Dil, adresten gelir (SEO_PATH_LOOKUP).
 const seoTrainingsText = async (lang) => {
@@ -1910,7 +1914,7 @@ const seoTrainingsText = async (lang) => {
   const items = rows.map((e) => {
     const url = `${SITE_ORIGIN}/etkinlik/${slugify(e.title)}-${e.id}`;
     const bits = [];
-    if (e.sport) bits.push(htmlAttrEscape(e.sport));
+    if (e.sport) bits.push(htmlAttrEscape(seoSport(e.sport, lang)));
     const d = seoFormatDate(e.training_date, lang);
     if (d) bits.push(d + (e.training_time ? ` ${String(e.training_time).slice(0, 5)}` : ''));
     const yer = e.location_name || e.location_address;
@@ -1948,7 +1952,7 @@ const seoTeamsText = async (lang) => {
   const items = rows.map((t) => {
     const url = `${SITE_ORIGIN}/takim/${slugify(t.name)}-${t.id}`;
     const bits = [];
-    if (t.sport) bits.push(htmlAttrEscape(t.sport));
+    if (t.sport) bits.push(htmlAttrEscape(seoSport(t.sport, lang)));
     if (t.location) bits.push(htmlAttrEscape(t.location));
     bits.push(`${t.member_count} ${L.memberSuffix}`);
     return seoListItem(url, t.name, bits);
@@ -1976,7 +1980,8 @@ const seoContactText = async (lang) => {
     tr: ['Üyelik ve hesap', 'Takım kurma', 'Etkinlik soruları', 'Teknik sorun', 'İş birliği ve sponsorluk', 'Öneri ve geri bildirim'],
     en: ['Account and membership', 'Starting a team', 'Event questions', 'Technical issues', 'Collaboration and sponsorship', 'Suggestions and feedback'],
     de: ['Konto und Mitgliedschaft', 'Team gründen', 'Eventfragen', 'Technische Probleme', 'Zusammenarbeit und Sponsoring', 'Vorschläge und Feedback'],
-  }[lang];
+    el: ['Λογαριασμός και συνδρομή', 'Δημιουργία ομάδας', 'Ερωτήσεις για εκδηλώσεις', 'Τεχνικά προβλήματα', 'Συνεργασία και χορηγία', 'Προτάσεις και σχόλια'],
+  }[lang] || [];
   const text = `
     <div style="${SEO_WRAP_STYLE}">
       <h1 style="${SEO_H1_STYLE}">${htmlAttrEscape(L.contactH1)}</h1>
