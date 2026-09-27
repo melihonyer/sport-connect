@@ -86,6 +86,10 @@ app.use(cors({
   credentials: true,
 }));
 
+// Kullanıcıya dönen hata/bilgi mesajlarını isteğin diline çevir (X-Muuv-Lang).
+// Sözlük ve fonksiyon aşağıda (SERVER_MSG); kapanış istek anında çözülür.
+app.use((req, res, next) => translateServerMessages(req, res, next));
+
 // Helmet — güvenlik HTTP header'ları
 app.use(helmet({
   contentSecurityPolicy: false, // SPA için devre dışı, nginx seviyesinde yönetilecek
@@ -819,10 +823,14 @@ const DEFAULT_NOTIF_PREFS = {
   role:         { email: true },
 };
 async function getNotifPrefs(userId) {
+  return (await getUserNotifInfo(userId)).prefs;
+}
+// Bildirim tercihleri + dil tek sorguda.
+async function getUserNotifInfo(userId) {
   try {
-    const r = await pool.query('SELECT notif_prefs FROM users WHERE id = $1', [userId]);
-    return r.rows[0]?.notif_prefs || {};
-  } catch { return {}; }
+    const r = await pool.query('SELECT notif_prefs, lang FROM users WHERE id = $1', [userId]);
+    return { prefs: r.rows[0]?.notif_prefs || {}, lang: mailLang(r.rows[0]?.lang) };
+  } catch { return { prefs: {}, lang: 'tr' }; }
 }
 // channel: 'app' (varsayılan açık) | 'email' (varsayılan kapalı)
 function prefAllows(prefs, key, channel) {
@@ -832,13 +840,14 @@ function prefAllows(prefs, key, channel) {
 }
 
 // Bildirim oluştur ve anlık ilet — kullanıcı bu türü kapatmışsa hiç oluşturulmaz.
-async function createNotif(userId, { title, message, type, refId = null, url = null }) {
+// build(lang) verilirse başlık/mesaj ALICININ dilinde üretilir (users.lang; boşsa tr).
+// Bildirim satırı alıcıya özel olduğu için metin o dilde saklanır, push da öyle gider.
+async function createNotif(userId, { title, message, build = null, type, refId = null, url = null }) {
   try {
     const key = NOTIF_TYPE_TO_KEY[type];
-    if (key) {
-      const prefs = await getNotifPrefs(userId);
-      if (!prefAllows(prefs, key, 'app')) return null; // uygulama bildirimi kapalı
-    }
+    const u = await getUserNotifInfo(userId);
+    if (key && !prefAllows(u.prefs, key, 'app')) return null; // uygulama bildirimi kapalı
+    if (build) ({ title, message } = build(u.lang));
     const r = await pool.query(
       `INSERT INTO notifications (user_id, title, message, notification_type, reference_id, action_url)
        VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
@@ -874,16 +883,26 @@ const mailTransporter = nodemailer.createTransport({
 // Mail gönder — Resend HTTP API (Render SMTP portlarını engelliyor)
 // prefKey verilirse bu bir "bildirim" mailidir → alıcının e-posta tercihi kapalıysa
 // (varsayılan kapalı) gönderilmez. prefKey yoksa transactional maildir, her zaman gider.
-async function sendEmail({ to, subject, html, prefKey = null, userId = null }) {
-  if (prefKey) {
+// build(lang) verilirse konu + gövde ALICININ dilinde üretilir. Alıcı kayıtlı değilse
+// (davet, iletişim) fallbackLang kullanılır — isteği yapanın dili.
+async function sendEmail({ to, subject, html, build = null, fallbackLang = 'tr', prefKey = null, userId = null }) {
+  let recipient = null;
+  if (prefKey || build) {
     try {
       const r = userId
-        ? await pool.query('SELECT notif_prefs FROM users WHERE id = $1', [userId])
-        : await pool.query('SELECT notif_prefs FROM users WHERE lower(email) = lower($1)', [to]);
-      const prefs = r.rows[0]?.notif_prefs || {};
-      if (!prefAllows(prefs, prefKey, 'email')) return { skipped: true };
-    } catch (e) { console.error('sendEmail pref check error:', e.message); return { skipped: true }; }
+        ? await pool.query('SELECT notif_prefs, lang FROM users WHERE id = $1', [userId])
+        : await pool.query('SELECT notif_prefs, lang FROM users WHERE lower(email) = lower($1)', [to]);
+      recipient = r.rows[0] || null;
+    } catch (e) {
+      console.error('sendEmail pref check error:', e.message);
+      if (prefKey) return { skipped: true };
+    }
   }
+  if (prefKey) {
+    const prefs = recipient?.notif_prefs || {};
+    if (!prefAllows(prefs, prefKey, 'email')) return { skipped: true };
+  }
+  if (build) ({ subject, html } = build(recipient ? mailLang(recipient.lang) : mailLang(fallbackLang)));
   if (!process.env.RESEND_API_KEY) {
     console.log(`[EMAIL - MOCK] To: ${to} | Subject: ${subject}`);
     return { mocked: true };
@@ -917,19 +936,420 @@ async function sendEmail({ to, subject, html, prefKey = null, userId = null }) {
 
 // ─── HTML Şablonları ──────────────────────────────────
 
-// Tarihi Türkçe uzun formata çevirir: "1 Haziran 2026 Pazartesi"
-function formatTrDate(d) {
+// ─── E-posta ve bildirim metinleri (dile göre) ─────────────────────────
+// Alıcının dili users.lang'ten gelir; boşsa 'tr' (hesabında dil seçmemiş herkes
+// bugüne kadar olduğu gibi Türkçe alır). Arayüz metinleri i18n.js'te; burada
+// yalnız sunucunun ürettiği e-posta / bildirim / push metinleri durur.
+// Türkçe metinler eski sabit metinlerin BİREBİR aynısıdır.
+const MAIL_LANGS = ['tr', 'en', 'de', 'el'];
+const mailLang = (l) => (MAIL_LANGS.includes(l) ? l : 'tr');
+const MAIL_LOCALE = { tr: 'tr-TR', en: 'en-GB', de: 'de-DE', el: 'el-GR' };
+const mB = (s) => `<strong>${s}</strong>`;
+
+const MAIL = {
+  tr: {
+    wrapTagline: 'Spor topluluğun seni bekliyor',
+    wrapFollow: 'Bizi takip et',
+    wrapFooter1: 'Bu maili Muuvlink üzerinden aldınız.',
+    wrapFooter2: '© 2026 Muuvlink. Tüm hakları saklıdır.',
+    lblDate: 'Tarih', lblTime: 'Saat', lblLocation: 'Konum',
+    btnViewEvent: 'Etkinliği Gör →', btnViewEventLong: 'Etkinliği Görüntüle →',
+    btnViewTeam: 'Takımı Görüntüle →', btnJoinTeam: 'Takıma Katıl →',
+    btnCreateAccount: 'Hesap Oluştur →', btnGoWall: 'Duvara Git →', btnResetPw: 'Şifremi Sıfırla',
+    roles: { owner: 'Takım Lideri', editor: 'Editör', coach: 'Antrenör', captain: 'Kaptan', member: 'Üye', admin: 'Yönetici' },
+    someone: 'Biri', teamFallback: 'Takımınız', changerFallback: 'Takım yöneticisi', updaterFallback: 'Antrenör',
+
+    inviteNotifTitle: 'Takım Daveti!',
+    inviteNotifMsg: (inv, team) => `${inv} sizi "${team}" takımına davet etti.`,
+    inviteSubject: (inv, team) => `${inv} sizi "${team}" takımına davet etti!`,
+    inviteExTitle: 'Takıma Davet Edildiniz!',
+    inviteExBody: (inv, team) => `${mB(inv)} sizi ${mB(team)} takımına davet etti.`,
+    inviteExNote: 'Uygulamaya giriş yaparak daveti kabul edebilirsiniz.',
+    inviteNewTitle: "Muuvlink'e Davet Edildiniz!",
+    inviteNewBody: (inv, team) => `${mB(inv)} sizi ${mB(team)} takımına davet etti.\n      Katılmak için ücretsiz hesap oluşturun.`,
+    inviteNewNote: 'Kayıt olduktan sonra takıma katılma daveti sizi bekliyor olacak.',
+
+    roleNotifTitle: 'Takım rolün güncellendi',
+    roleNotifMsg: (ch, team, role) => `${ch}, "${team}" takımındaki rolünü "${role}" olarak güncelledi.`,
+    roleSubject: (team) => `${team} takımındaki rolün güncellendi`,
+    roleTitle: 'Takım Rolün Güncellendi',
+    roleBody: (ch, team, role) => `${mB(ch)}, ${mB(team)} takımındaki rolünü\n      ${mB(role)} olarak güncelledi.`,
+    roleNew: (role) => `Yeni rolün: ${role}`,
+
+    wallNotifTitle: (team) => `${team} Duvarı`,
+    wallSubject: (team) => `${team} takımında yeni gönderi var`,
+    wallTitle: (team) => `${team} Duvarında Yeni Gönderi`,
+    wallBody: (p) => `${mB(p)} takım duvarına bir şey yazdı.`,
+
+    commentNotifTitle: (tr) => `${tr} — Yeni Yorum`,
+    commentSubject: (tr) => `${tr} etkinliğine yorum yapıldı`,
+    commentTitle: 'Etkinliğe Yorum Yapıldı',
+    commentBody: (c, tr) => `${mB(c)}, ${mB(tr)} etkinliğine yorum yaptı.`,
+
+    updateNotifTitle: (tr) => `${tr} güncellendi`,
+    updateNotifMsg: (u) => `${u} etkinlik bilgilerini güncelledi.`,
+    updateSubject: (tr) => `${tr} etkinliğinde değişiklik var`,
+    updateTitle: 'Etkinlik Güncellendi',
+    updateBody: (team, tr) => `${mB(team)} takımının ${mB(tr)} etkinliğinde değişiklik yapıldı.`,
+    updateCurrent: 'Güncel Bilgiler',
+    updateBy: 'Güncelleyen:',
+
+    newNotifTitle: 'Yeni Etkinlik!',
+    newNotifMsg: (team, tr) => `${team}: ${tr} etkinliği eklendi.`,
+    newSubject: (team, tr) => `${team} — Yeni Etkinlik: ${tr}`,
+    newTitle: 'Yeni Etkinlik Eklendi!',
+    newBody: (team) => `${mB(team)} takımına yeni bir etkinlik eklendi.`,
+    newUpcoming: 'Yaklaşan Diğer Etkinlikler',
+
+    remNotifTitle: (d) => (d === 1 ? 'Yarın Etkinlik Var!' : '3 Gün Sonra Etkinlik!'),
+    remSubject: (team, d, tr) => `${team} — ${d === 1 ? 'Yarın' : '3 Gün Sonra'}: ${tr}`,
+    remTitle: 'Etkinliğiniz Yaklaşıyor',
+    remBody: (team) => `${mB(team)} takımınızın etkinliğine az kaldı.`,
+    remUrgency: (d) => (d === 1 ? 'Yarın!' : `${d} gün kaldı`),
+
+    joinTeamNotifTitle: 'Yeni Üye Katıldı!',
+    joinTeamNotifMsg: (j, team) => `${j}, ${team} takımına katıldı.`,
+    joinTeamSubject: (team, j) => `${team} — Yeni Üye: ${j}`,
+    joinTeamTitle: 'Takımınıza Yeni Üye Katıldı!',
+    joinTeamBody: (j, team) => `${mB(j)}, ${mB(team)} takımına yeni üye olarak katıldı.`,
+
+    joinEvNotifTitle: 'Etkinliğe Yeni Katılımcı!',
+    joinEvNotifMsg: (j, tr) => `${j}, ${tr} etkinliğine katıldı.`,
+    joinEvSubject: (tr, j) => `${tr} — Yeni Katılımcı: ${j}`,
+    joinEvTitle: 'Etkinliğinize Yeni Katılımcı Var!',
+    joinEvBody: (j, team, tr) => `${mB(j)}, ${mB(team)} takımının ${mB(tr)} etkinliğine katıldı.`,
+
+    likeCommentTitle: 'Mesajın beğenildi',
+    likeCommentMsg: (n, txt) => `${n} mesajını beğendi: "${txt}"`,
+    likePostTitle: 'Gönderin beğenildi',
+    likePostMsg: (n, txt) => `${n} takım duvarındaki gönderini beğendi: "${txt}"`,
+
+    badgeTitle: 'Yeni Rozet!',
+    badgeMsg: (b) => `"${b}" rozetini kazandın!`,
+
+    nudgeTitle: 'Seni Özledik! 👋',
+    nudgeMsg: 'Hadi kalk, bir etkinlik planla ya da var olan birine katıl, arkadaşlarınla buluş 💪',
+
+    resetSubject: 'Muuvlink — Şifre Sıfırlama',
+    resetTitle: 'Şifre Sıfırlama',
+    resetHello: (n) => `Merhaba ${mB(n)},`,
+    resetBody: `Şifrenizi sıfırlamak için aşağıdaki butona tıklayın. Link ${mB('1 saat')} geçerlidir.`,
+    resetIgnore: 'Bu isteği siz yapmadıysanız bu e-postayı görmezden gelebilirsiniz.',
+
+    contactSubject: 'Mesajınız alındı — Muuvlink',
+    contactThanks: (n) => `Mesajınız için teşekkürler, ${n}!`,
+    contactBody: 'Mesajınız başarıyla alındı. En kısa sürede size dönüş yapacağız.',
+    contactTopic: 'Konu:',
+  },
+
+  en: {
+    wrapTagline: 'Your sports community is waiting',
+    wrapFollow: 'Follow us',
+    wrapFooter1: 'You received this email through Muuvlink.',
+    wrapFooter2: '© 2026 Muuvlink. All rights reserved.',
+    lblDate: 'Date', lblTime: 'Time', lblLocation: 'Location',
+    btnViewEvent: 'View event →', btnViewEventLong: 'View event →',
+    btnViewTeam: 'View team →', btnJoinTeam: 'Join the team →',
+    btnCreateAccount: 'Create account →', btnGoWall: 'Go to the wall →', btnResetPw: 'Reset my password',
+    roles: { owner: 'Team Leader', editor: 'Editor', coach: 'Coach', captain: 'Captain', member: 'Member', admin: 'Admin' },
+    someone: 'Someone', teamFallback: 'Your team', changerFallback: 'A team manager', updaterFallback: 'The coach',
+
+    inviteNotifTitle: 'Team invitation!',
+    inviteNotifMsg: (inv, team) => `${inv} invited you to the team "${team}".`,
+    inviteSubject: (inv, team) => `${inv} invited you to the team "${team}"!`,
+    inviteExTitle: "You've been invited to a team!",
+    inviteExBody: (inv, team) => `${mB(inv)} invited you to the team ${mB(team)}.`,
+    inviteExNote: 'Log in to the app to accept the invitation.',
+    inviteNewTitle: "You've been invited to Muuvlink!",
+    inviteNewBody: (inv, team) => `${mB(inv)} invited you to the team ${mB(team)}.\n      Create a free account to join.`,
+    inviteNewNote: 'Once you sign up, the team invitation will be waiting for you.',
+
+    roleNotifTitle: 'Your team role was updated',
+    roleNotifMsg: (ch, team, role) => `${ch} changed your role in "${team}" to "${role}".`,
+    roleSubject: (team) => `Your role in ${team} was updated`,
+    roleTitle: 'Your team role was updated',
+    roleBody: (ch, team, role) => `${mB(ch)} changed your role in ${mB(team)}\n      to ${mB(role)}.`,
+    roleNew: (role) => `Your new role: ${role}`,
+
+    wallNotifTitle: (team) => `${team} wall`,
+    wallSubject: (team) => `New post in ${team}`,
+    wallTitle: (team) => `New post on the ${team} wall`,
+    wallBody: (p) => `${mB(p)} wrote something on the team wall.`,
+
+    commentNotifTitle: (tr) => `${tr} — New comment`,
+    commentSubject: (tr) => `New comment on ${tr}`,
+    commentTitle: 'New comment on an event',
+    commentBody: (c, tr) => `${mB(c)} commented on ${mB(tr)}.`,
+
+    updateNotifTitle: (tr) => `${tr} was updated`,
+    updateNotifMsg: (u) => `${u} updated the event details.`,
+    updateSubject: (tr) => `${tr} has changed`,
+    updateTitle: 'Event updated',
+    updateBody: (team, tr) => `The event ${mB(tr)} of ${mB(team)} has been changed.`,
+    updateCurrent: 'Current details',
+    updateBy: 'Updated by:',
+
+    newNotifTitle: 'New event!',
+    newNotifMsg: (team, tr) => `${team}: the event ${tr} was added.`,
+    newSubject: (team, tr) => `${team} — New event: ${tr}`,
+    newTitle: 'A new event was added!',
+    newBody: (team) => `A new event was added to ${mB(team)}.`,
+    newUpcoming: 'Other upcoming events',
+
+    remNotifTitle: (d) => (d === 1 ? 'Event tomorrow!' : 'Event in 3 days!'),
+    remSubject: (team, d, tr) => `${team} — ${d === 1 ? 'Tomorrow' : 'In 3 days'}: ${tr}`,
+    remTitle: 'Your event is coming up',
+    remBody: (team) => `The ${mB(team)} event is almost here.`,
+    remUrgency: (d) => (d === 1 ? 'Tomorrow!' : `${d} days to go`),
+
+    joinTeamNotifTitle: 'New member joined!',
+    joinTeamNotifMsg: (j, team) => `${j} joined ${team}.`,
+    joinTeamSubject: (team, j) => `${team} — New member: ${j}`,
+    joinTeamTitle: 'A new member joined your team!',
+    joinTeamBody: (j, team) => `${mB(j)} joined ${mB(team)} as a new member.`,
+
+    joinEvNotifTitle: 'New participant!',
+    joinEvNotifMsg: (j, tr) => `${j} joined ${tr}.`,
+    joinEvSubject: (tr, j) => `${tr} — New participant: ${j}`,
+    joinEvTitle: 'Your event has a new participant!',
+    joinEvBody: (j, team, tr) => `${mB(j)} joined the ${mB(team)} event ${mB(tr)}.`,
+
+    likeCommentTitle: 'Your message was liked',
+    likeCommentMsg: (n, txt) => `${n} liked your message: "${txt}"`,
+    likePostTitle: 'Your post was liked',
+    likePostMsg: (n, txt) => `${n} liked your post on the team wall: "${txt}"`,
+
+    badgeTitle: 'New badge!',
+    badgeMsg: (b) => `You earned the "${b}" badge!`,
+
+    nudgeTitle: 'We miss you! 👋',
+    nudgeMsg: 'Come on — plan an event or join one, and meet up with your friends 💪',
+
+    resetSubject: 'Muuvlink — Password reset',
+    resetTitle: 'Password reset',
+    resetHello: (n) => `Hi ${mB(n)},`,
+    resetBody: `Click the button below to reset your password. The link is valid for ${mB('1 hour')}.`,
+    resetIgnore: "If you didn't request this, you can ignore this email.",
+
+    contactSubject: 'We received your message — Muuvlink',
+    contactThanks: (n) => `Thanks for your message, ${n}!`,
+    contactBody: "We've received your message and will get back to you soon.",
+    contactTopic: 'Subject:',
+  },
+
+  de: {
+    wrapTagline: 'Deine Sport-Community wartet auf dich',
+    wrapFollow: 'Folge uns',
+    wrapFooter1: 'Du hast diese E-Mail über Muuvlink erhalten.',
+    wrapFooter2: '© 2026 Muuvlink. Alle Rechte vorbehalten.',
+    lblDate: 'Datum', lblTime: 'Uhrzeit', lblLocation: 'Ort',
+    btnViewEvent: 'Event ansehen →', btnViewEventLong: 'Event ansehen →',
+    btnViewTeam: 'Team ansehen →', btnJoinTeam: 'Team beitreten →',
+    btnCreateAccount: 'Konto erstellen →', btnGoWall: 'Zur Pinnwand →', btnResetPw: 'Passwort zurücksetzen',
+    roles: { owner: 'Teamleitung', editor: 'Redakteur', coach: 'Trainer', captain: 'Kapitän', member: 'Mitglied', admin: 'Admin' },
+    someone: 'Jemand', teamFallback: 'Dein Team', changerFallback: 'Eine Teamleitung', updaterFallback: 'Der Trainer',
+
+    inviteNotifTitle: 'Team-Einladung!',
+    inviteNotifMsg: (inv, team) => `${inv} hat dich in das Team „${team}“ eingeladen.`,
+    inviteSubject: (inv, team) => `${inv} hat dich in das Team „${team}“ eingeladen!`,
+    inviteExTitle: 'Du wurdest in ein Team eingeladen!',
+    inviteExBody: (inv, team) => `${mB(inv)} hat dich in das Team ${mB(team)} eingeladen.`,
+    inviteExNote: 'Melde dich in der App an, um die Einladung anzunehmen.',
+    inviteNewTitle: 'Du wurdest zu Muuvlink eingeladen!',
+    inviteNewBody: (inv, team) => `${mB(inv)} hat dich in das Team ${mB(team)} eingeladen.\n      Erstelle ein kostenloses Konto, um beizutreten.`,
+    inviteNewNote: 'Nach der Registrierung wartet die Team-Einladung auf dich.',
+
+    roleNotifTitle: 'Deine Teamrolle wurde geändert',
+    roleNotifMsg: (ch, team, role) => `${ch} hat deine Rolle im Team „${team}“ auf „${role}“ geändert.`,
+    roleSubject: (team) => `Deine Rolle im Team ${team} wurde geändert`,
+    roleTitle: 'Deine Teamrolle wurde geändert',
+    roleBody: (ch, team, role) => `${mB(ch)} hat deine Rolle im Team ${mB(team)}\n      auf ${mB(role)} geändert.`,
+    roleNew: (role) => `Deine neue Rolle: ${role}`,
+
+    wallNotifTitle: (team) => `Pinnwand ${team}`,
+    wallSubject: (team) => `Neuer Beitrag im Team ${team}`,
+    wallTitle: (team) => `Neuer Beitrag auf der Pinnwand von ${team}`,
+    wallBody: (p) => `${mB(p)} hat etwas auf die Team-Pinnwand geschrieben.`,
+
+    commentNotifTitle: (tr) => `${tr} — Neuer Kommentar`,
+    commentSubject: (tr) => `Neuer Kommentar zu ${tr}`,
+    commentTitle: 'Neuer Kommentar zu einem Event',
+    commentBody: (c, tr) => `${mB(c)} hat ${mB(tr)} kommentiert.`,
+
+    updateNotifTitle: (tr) => `${tr} wurde aktualisiert`,
+    updateNotifMsg: (u) => `${u} hat die Eventdetails aktualisiert.`,
+    updateSubject: (tr) => `Änderung bei ${tr}`,
+    updateTitle: 'Event aktualisiert',
+    updateBody: (team, tr) => `Beim Event ${mB(tr)} des Teams ${mB(team)} gab es Änderungen.`,
+    updateCurrent: 'Aktuelle Angaben',
+    updateBy: 'Geändert von:',
+
+    newNotifTitle: 'Neues Event!',
+    newNotifMsg: (team, tr) => `${team}: Das Event ${tr} wurde hinzugefügt.`,
+    newSubject: (team, tr) => `${team} — Neues Event: ${tr}`,
+    newTitle: 'Ein neues Event wurde hinzugefügt!',
+    newBody: (team) => `Im Team ${mB(team)} wurde ein neues Event hinzugefügt.`,
+    newUpcoming: 'Weitere kommende Events',
+
+    remNotifTitle: (d) => (d === 1 ? 'Morgen ist ein Event!' : 'Event in 3 Tagen!'),
+    remSubject: (team, d, tr) => `${team} — ${d === 1 ? 'Morgen' : 'In 3 Tagen'}: ${tr}`,
+    remTitle: 'Dein Event steht bevor',
+    remBody: (team) => `Das Event deines Teams ${mB(team)} ist bald.`,
+    remUrgency: (d) => (d === 1 ? 'Morgen!' : `Noch ${d} Tage`),
+
+    joinTeamNotifTitle: 'Neues Mitglied!',
+    joinTeamNotifMsg: (j, team) => `${j} ist dem Team ${team} beigetreten.`,
+    joinTeamSubject: (team, j) => `${team} — Neues Mitglied: ${j}`,
+    joinTeamTitle: 'Ein neues Mitglied ist deinem Team beigetreten!',
+    joinTeamBody: (j, team) => `${mB(j)} ist dem Team ${mB(team)} als neues Mitglied beigetreten.`,
+
+    joinEvNotifTitle: 'Neue Teilnahme!',
+    joinEvNotifMsg: (j, tr) => `${j} nimmt an ${tr} teil.`,
+    joinEvSubject: (tr, j) => `${tr} — Neue Teilnahme: ${j}`,
+    joinEvTitle: 'Dein Event hat eine neue Teilnahme!',
+    joinEvBody: (j, team, tr) => `${mB(j)} nimmt am Event ${mB(tr)} des Teams ${mB(team)} teil.`,
+
+    likeCommentTitle: 'Deine Nachricht gefällt jemandem',
+    likeCommentMsg: (n, txt) => `${n} gefällt deine Nachricht: „${txt}“`,
+    likePostTitle: 'Dein Beitrag gefällt jemandem',
+    likePostMsg: (n, txt) => `${n} gefällt dein Beitrag auf der Team-Pinnwand: „${txt}“`,
+
+    badgeTitle: 'Neues Abzeichen!',
+    badgeMsg: (b) => `Du hast das Abzeichen „${b}“ erhalten!`,
+
+    nudgeTitle: 'Wir vermissen dich! 👋',
+    nudgeMsg: 'Los geht’s — plane ein Event oder mach bei einem mit und triff deine Freunde 💪',
+
+    resetSubject: 'Muuvlink — Passwort zurücksetzen',
+    resetTitle: 'Passwort zurücksetzen',
+    resetHello: (n) => `Hallo ${mB(n)},`,
+    resetBody: `Klicke auf die Schaltfläche unten, um dein Passwort zurückzusetzen. Der Link ist ${mB('1 Stunde')} gültig.`,
+    resetIgnore: 'Falls du das nicht angefordert hast, kannst du diese E-Mail ignorieren.',
+
+    contactSubject: 'Deine Nachricht ist angekommen — Muuvlink',
+    contactThanks: (n) => `Danke für deine Nachricht, ${n}!`,
+    contactBody: 'Deine Nachricht ist bei uns angekommen. Wir melden uns so bald wie möglich.',
+    contactTopic: 'Betreff:',
+  },
+
+  el: {
+    wrapTagline: 'Η αθλητική σου κοινότητα σε περιμένει',
+    wrapFollow: 'Ακολούθησέ μας',
+    wrapFooter1: 'Έλαβες αυτό το email μέσω του Muuvlink.',
+    wrapFooter2: '© 2026 Muuvlink. Με την επιφύλαξη παντός δικαιώματος.',
+    lblDate: 'Ημερομηνία', lblTime: 'Ώρα', lblLocation: 'Τοποθεσία',
+    btnViewEvent: 'Δες την εκδήλωση →', btnViewEventLong: 'Δες την εκδήλωση →',
+    btnViewTeam: 'Δες την ομάδα →', btnJoinTeam: 'Γίνε μέλος →',
+    btnCreateAccount: 'Δημιουργία λογαριασμού →', btnGoWall: 'Μετάβαση στον τοίχο →', btnResetPw: 'Επαναφορά κωδικού',
+    roles: { owner: 'Αρχηγός ομάδας', editor: 'Συντάκτης', coach: 'Προπονητής', captain: 'Αρχηγός', member: 'Μέλος', admin: 'Διαχειριστής' },
+    someone: 'Κάποιος', teamFallback: 'Η ομάδα σου', changerFallback: 'Ένας διαχειριστής της ομάδας', updaterFallback: 'Ο προπονητής',
+
+    inviteNotifTitle: 'Πρόσκληση σε ομάδα!',
+    inviteNotifMsg: (inv, team) => `Ο/Η ${inv} σε προσκάλεσε στην ομάδα «${team}».`,
+    inviteSubject: (inv, team) => `Ο/Η ${inv} σε προσκάλεσε στην ομάδα «${team}»!`,
+    inviteExTitle: 'Έχεις πρόσκληση σε ομάδα!',
+    inviteExBody: (inv, team) => `Ο/Η ${mB(inv)} σε προσκάλεσε στην ομάδα ${mB(team)}.`,
+    inviteExNote: 'Συνδέσου στην εφαρμογή για να αποδεχτείς την πρόσκληση.',
+    inviteNewTitle: 'Έχεις πρόσκληση στο Muuvlink!',
+    inviteNewBody: (inv, team) => `Ο/Η ${mB(inv)} σε προσκάλεσε στην ομάδα ${mB(team)}.\n      Φτιάξε δωρεάν λογαριασμό για να γίνεις μέλος.`,
+    inviteNewNote: 'Μόλις εγγραφείς, η πρόσκληση της ομάδας θα σε περιμένει.',
+
+    roleNotifTitle: 'Ο ρόλος σου στην ομάδα άλλαξε',
+    roleNotifMsg: (ch, team, role) => `Ο/Η ${ch} άλλαξε τον ρόλο σου στην ομάδα «${team}» σε «${role}».`,
+    roleSubject: (team) => `Ο ρόλος σου στην ομάδα ${team} άλλαξε`,
+    roleTitle: 'Ο ρόλος σου στην ομάδα άλλαξε',
+    roleBody: (ch, team, role) => `Ο/Η ${mB(ch)} άλλαξε τον ρόλο σου στην ομάδα ${mB(team)}\n      σε ${mB(role)}.`,
+    roleNew: (role) => `Νέος ρόλος: ${role}`,
+
+    wallNotifTitle: (team) => `Τοίχος: ${team}`,
+    wallSubject: (team) => `Νέα ανάρτηση στην ομάδα ${team}`,
+    wallTitle: (team) => `Νέα ανάρτηση στον τοίχο της ομάδας ${team}`,
+    wallBody: (p) => `Ο/Η ${mB(p)} έγραψε κάτι στον τοίχο της ομάδας.`,
+
+    commentNotifTitle: (tr) => `${tr} — Νέο σχόλιο`,
+    commentSubject: (tr) => `Νέο σχόλιο στην εκδήλωση ${tr}`,
+    commentTitle: 'Νέο σχόλιο σε εκδήλωση',
+    commentBody: (c, tr) => `Ο/Η ${mB(c)} σχολίασε την εκδήλωση ${mB(tr)}.`,
+
+    updateNotifTitle: (tr) => `Η εκδήλωση ${tr} ενημερώθηκε`,
+    updateNotifMsg: (u) => `Ο/Η ${u} ενημέρωσε τα στοιχεία της εκδήλωσης.`,
+    updateSubject: (tr) => `Αλλαγές στην εκδήλωση ${tr}`,
+    updateTitle: 'Η εκδήλωση ενημερώθηκε',
+    updateBody: (team, tr) => `Έγιναν αλλαγές στην εκδήλωση ${mB(tr)} της ομάδας ${mB(team)}.`,
+    updateCurrent: 'Τρέχοντα στοιχεία',
+    updateBy: 'Ενημέρωση από:',
+
+    newNotifTitle: 'Νέα εκδήλωση!',
+    newNotifMsg: (team, tr) => `${team}: προστέθηκε η εκδήλωση ${tr}.`,
+    newSubject: (team, tr) => `${team} — Νέα εκδήλωση: ${tr}`,
+    newTitle: 'Προστέθηκε νέα εκδήλωση!',
+    newBody: (team) => `Προστέθηκε νέα εκδήλωση στην ομάδα ${mB(team)}.`,
+    newUpcoming: 'Άλλες προσεχείς εκδηλώσεις',
+
+    remNotifTitle: (d) => (d === 1 ? 'Αύριο έχεις εκδήλωση!' : 'Εκδήλωση σε 3 ημέρες!'),
+    remSubject: (team, d, tr) => `${team} — ${d === 1 ? 'Αύριο' : 'Σε 3 ημέρες'}: ${tr}`,
+    remTitle: 'Η εκδήλωσή σου πλησιάζει',
+    remBody: (team) => `Λίγο ακόμα για την εκδήλωση της ομάδας ${mB(team)}.`,
+    remUrgency: (d) => (d === 1 ? 'Αύριο!' : `Απομένουν ${d} ημέρες`),
+
+    joinTeamNotifTitle: 'Νέο μέλος!',
+    joinTeamNotifMsg: (j, team) => `Ο/Η ${j} έγινε μέλος της ομάδας ${team}.`,
+    joinTeamSubject: (team, j) => `${team} — Νέο μέλος: ${j}`,
+    joinTeamTitle: 'Νέο μέλος στην ομάδα σου!',
+    joinTeamBody: (j, team) => `Ο/Η ${mB(j)} έγινε νέο μέλος της ομάδας ${mB(team)}.`,
+
+    joinEvNotifTitle: 'Νέος συμμετέχων!',
+    joinEvNotifMsg: (j, tr) => `Ο/Η ${j} δήλωσε συμμετοχή στην εκδήλωση ${tr}.`,
+    joinEvSubject: (tr, j) => `${tr} — Νέος συμμετέχων: ${j}`,
+    joinEvTitle: 'Νέος συμμετέχων στην εκδήλωσή σου!',
+    joinEvBody: (j, team, tr) => `Ο/Η ${mB(j)} δήλωσε συμμετοχή στην εκδήλωση ${mB(tr)} της ομάδας ${mB(team)}.`,
+
+    likeCommentTitle: 'Το μήνυμά σου άρεσε',
+    likeCommentMsg: (n, txt) => `Ο/Η ${n} έκανε «μου αρέσει» στο μήνυμά σου: «${txt}»`,
+    likePostTitle: 'Η ανάρτησή σου άρεσε',
+    likePostMsg: (n, txt) => `Ο/Η ${n} έκανε «μου αρέσει» στην ανάρτησή σου στον τοίχο της ομάδας: «${txt}»`,
+
+    badgeTitle: 'Νέο σήμα!',
+    badgeMsg: (b) => `Κέρδισες το σήμα «${b}»!`,
+
+    nudgeTitle: 'Μας έλειψες! 👋',
+    nudgeMsg: 'Έλα — οργάνωσε μια εκδήλωση ή δήλωσε συμμετοχή σε μία και βρες τους φίλους σου 💪',
+
+    resetSubject: 'Muuvlink — Επαναφορά κωδικού',
+    resetTitle: 'Επαναφορά κωδικού',
+    resetHello: (n) => `Γεια σου ${mB(n)},`,
+    resetBody: `Πάτησε το παρακάτω κουμπί για να επαναφέρεις τον κωδικό σου. Ο σύνδεσμος ισχύει για ${mB('1 ώρα')}.`,
+    resetIgnore: 'Αν δεν το ζήτησες εσύ, αγνόησε αυτό το email.',
+
+    contactSubject: 'Λάβαμε το μήνυμά σου — Muuvlink',
+    contactThanks: (n) => `Ευχαριστούμε για το μήνυμά σου, ${n}!`,
+    contactBody: 'Λάβαμε το μήνυμά σου και θα σου απαντήσουμε σύντομα.',
+    contactTopic: 'Θέμα:',
+  },
+};
+
+// Metin getir: tm('el', 'newSubject', team, title). Anahtar o dilde yoksa Türkçeye düşer.
+const tm = (lang, key, ...args) => {
+  const L = MAIL[mailLang(lang)];
+  const v = L[key] ?? MAIL.tr[key];
+  return typeof v === 'function' ? v(...args) : v;
+};
+const roleLabel = (lang, role) => MAIL[mailLang(lang)].roles[role] || MAIL.tr.roles[role] || role;
+
+// Tarihi uzun formata çevirir: "1 Haziran 2026 Pazartesi" (alıcının dilinde)
+function formatTrDate(d, lang = 'tr') {
   if (!d) return '';
   const date = d instanceof Date ? d : new Date(d);
-  return date.toLocaleDateString('tr-TR', {
+  return date.toLocaleDateString(MAIL_LOCALE[mailLang(lang)], {
     timeZone: 'UTC',
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   });
 }
 
-function emailWrapper(content) {
+function emailWrapper(content, lang = 'tr') {
+  const L = mailLang(lang);
   return `<!DOCTYPE html>
-<html lang="tr">
+<html lang="${L}">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -944,7 +1364,7 @@ function emailWrapper(content) {
           <td style="background:linear-gradient(135deg,#114956,#0e3c47);padding:32px 40px;text-align:center;">
             <img src="https://muuvlink.app/icons/favicon.png" width="56" height="56" alt="Muuvlink" style="border-radius:14px;margin-bottom:14px;display:inline-block;box-shadow:0 4px 16px rgba(0,0,0,0.15);" />
             <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;letter-spacing:-0.5px;">Muuvlink</h1>
-            <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">Spor topluluğun seni bekliyor</p>
+            <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">${tm(L, 'wrapTagline')}</p>
           </td>
         </tr>
         <!-- Content -->
@@ -959,7 +1379,7 @@ function emailWrapper(content) {
             <!-- Sosyal medya. PNG kullanılıyor: e-posta istemcileri SVG çizmez.
                  Görseller engellenirse alt metni ("Instagram"/"YouTube") okunur
                  kalsın diye img'ye renk ve kalınlık verildi. -->
-            <p style="margin:0 0 14px;color:#64748b;font-size:13px;font-weight:600;">Bizi takip et</p>
+            <p style="margin:0 0 14px;color:#64748b;font-size:13px;font-weight:600;">${tm(L, 'wrapFollow')}</p>
             <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 18px;">
               <tr>
                 <td style="padding:0 7px;">
@@ -976,8 +1396,8 @@ function emailWrapper(content) {
                 </td>
               </tr>
             </table>
-            <p style="margin:0;color:#94a3b8;font-size:13px;">Bu maili Muuvlink üzerinden aldınız.</p>
-            <p style="margin:4px 0 0;color:#94a3b8;font-size:13px;">© 2026 Muuvlink. Tüm hakları saklıdır.</p>
+            <p style="margin:0;color:#94a3b8;font-size:13px;">${tm(L, 'wrapFooter1')}</p>
+            <p style="margin:4px 0 0;color:#94a3b8;font-size:13px;">${tm(L, 'wrapFooter2')}</p>
           </td>
         </tr>
       </table>
@@ -988,11 +1408,11 @@ function emailWrapper(content) {
 }
 
 // Şablon 1: Takım daveti (kayıtlı kullanıcı)
-function inviteEmailExisting({ teamName, teamSport, inviterName, teamId, avatar }) {
+function inviteEmailExisting({ teamName, teamSport, inviterName, teamId, avatar }, lang = 'tr') {
   return emailWrapper(`
-    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Takıma Davet Edildiniz!</h2>
+    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">${tm(lang, 'inviteExTitle')}</h2>
     <p style="margin:0 0 28px;color:#64748b;font-size:15px;line-height:1.6;">
-      <strong>${inviterName}</strong> sizi <strong>${teamName}</strong> takımına davet etti.
+      ${tm(lang, 'inviteExBody', inviterName, teamName)}
     </p>
 
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:24px;margin-bottom:28px;">
@@ -1009,22 +1429,21 @@ function inviteEmailExisting({ teamName, teamSport, inviterName, teamId, avatar 
       <a href="${APP_URL}?accept_invite=${teamId}"
          style="display:inline-block;background:linear-gradient(135deg,#114956,#0e3c47);color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;letter-spacing:0.2px;">
-        Takıma Katıl →
+        ${tm(lang, 'btnJoinTeam')}
       </a>
     </div>
     <p style="text-align:center;margin:16px 0 0;color:#94a3b8;font-size:13px;">
-      Uygulamaya giriş yaparak daveti kabul edebilirsiniz.
+      ${tm(lang, 'inviteExNote')}
     </p>
-  `);
+  `, lang);
 }
 
 // Şablon 2: Takım daveti (yeni kullanıcı)
-function inviteEmailNew({ teamName, teamSport, inviterName, avatar }) {
+function inviteEmailNew({ teamName, teamSport, inviterName, avatar }, lang = 'tr') {
   return emailWrapper(`
-    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Muuvlink'e Davet Edildiniz!</h2>
+    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">${tm(lang, 'inviteNewTitle')}</h2>
     <p style="margin:0 0 28px;color:#64748b;font-size:15px;line-height:1.6;">
-      <strong>${inviterName}</strong> sizi <strong>${teamName}</strong> takımına davet etti.
-      Katılmak için ücretsiz hesap oluşturun.
+      ${tm(lang, 'inviteNewBody', inviterName, teamName)}
     </p>
 
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:24px;margin-bottom:28px;">
@@ -1039,13 +1458,13 @@ function inviteEmailNew({ teamName, teamSport, inviterName, avatar }) {
       <a href="${APP_URL}?auth=register"
          style="display:inline-block;background:linear-gradient(135deg,#114956,#0e3c47);color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
-        Hesap Oluştur →
+        ${tm(lang, 'btnCreateAccount')}
       </a>
     </div>
     <p style="text-align:center;margin:16px 0 0;color:#94a3b8;font-size:13px;">
-      Kayıt olduktan sonra takıma katılma daveti sizi bekliyor olacak.
+      ${tm(lang, 'inviteNewNote')}
     </p>
-  `);
+  `, lang);
 }
 
 // Rol etiketleri (TR)
@@ -1059,12 +1478,11 @@ const ROLE_LABELS_TR = {
 };
 
 // Şablon: Takımdaki rol değişikliği
-function roleChangeEmail({ teamName, teamId, newRoleLabel, changerName, avatar }) {
+function roleChangeEmail({ teamName, teamId, newRoleLabel, changerName, avatar }, lang = 'tr') {
   return emailWrapper(`
-    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Takım Rolün Güncellendi</h2>
+    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">${tm(lang, 'roleTitle')}</h2>
     <p style="margin:0 0 28px;color:#64748b;font-size:15px;line-height:1.6;">
-      <strong>${changerName}</strong>, <strong>${teamName}</strong> takımındaki rolünü
-      <strong>${newRoleLabel}</strong> olarak güncelledi.
+      ${tm(lang, 'roleBody', changerName, teamName, newRoleLabel)}
     </p>
 
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:24px;margin-bottom:28px;">
@@ -1073,7 +1491,7 @@ function roleChangeEmail({ teamName, teamId, newRoleLabel, changerName, avatar }
           <td style="vertical-align:middle;padding-right:16px;">${avatarHtml(avatar, teamName, 56)}</td>
           <td style="vertical-align:middle;">
             <div style="font-size:18px;font-weight:700;color:#1e293b;">${teamName}</div>
-            <div style="font-size:14px;color:#114956;margin-top:2px;">Yeni rolün: ${newRoleLabel}</div>
+            <div style="font-size:14px;color:#114956;margin-top:2px;">${tm(lang, 'roleNew', newRoleLabel)}</div>
           </td>
         </tr>
       </table>
@@ -1083,10 +1501,10 @@ function roleChangeEmail({ teamName, teamId, newRoleLabel, changerName, avatar }
       <a href="${APP_URL}?takim=${teamId}"
          style="display:inline-block;background:linear-gradient(135deg,#114956,#0e3c47);color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;letter-spacing:0.2px;">
-        Takımı Görüntüle →
+        ${tm(lang, 'btnViewTeam')}
       </a>
     </div>
-  `);
+  `, lang);
 }
 
 // Şablon 3: Duvar gönderisi bildirimi
@@ -1105,12 +1523,12 @@ function avatarHtml(avatarValue, name, size = 40, gradient = 'linear-gradient(13
           </div>`;
 }
 
-function wallPostEmail({ teamName, teamId, posterName, posterAvatar, message, postDate }) {
+function wallPostEmail({ teamName, teamId, posterName, posterAvatar, message, postDate }, lang = 'tr') {
   const truncated = message.length > 300 ? message.slice(0, 300) + '...' : message;
   return emailWrapper(`
-    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">${teamName} Duvarında Yeni Gönderi</h2>
+    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">${tm(lang, 'wallTitle', teamName)}</h2>
     <p style="margin:0 0 28px;color:#64748b;font-size:15px;">
-      <strong>${posterName}</strong> takım duvarına bir şey yazdı.
+      ${tm(lang, 'wallBody', posterName)}
     </p>
 
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:24px;margin-bottom:28px;">
@@ -1130,25 +1548,25 @@ function wallPostEmail({ teamName, teamId, posterName, posterAvatar, message, po
       <a href="${APP_URL}/takimlar?takim=${teamId}&tab=duvar"
          style="display:inline-block;background:linear-gradient(135deg,#114956,#0e3c47);color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
-        Duvara Git →
+        ${tm(lang, 'btnGoWall')}
       </a>
     </div>
-  `);
+  `, lang);
 }
 
 // Şablon: Etkinlik yorumu bildirimi
-function trainingCommentEmail({ commenterName, commenterAvatar, trainingTitle, trainingDate, comment, trainingId }) {
+function trainingCommentEmail({ commenterName, commenterAvatar, trainingTitle, trainingDate, comment, trainingId }, lang = 'tr') {
   const trainingLink = trainingId ? `${APP_URL}/etkinlikler?etkinlik=${trainingId}` : `${APP_URL}/etkinlikler`;
   const truncated = comment.length > 300 ? comment.slice(0, 300) + '...' : comment;
-  const postDate = new Date().toLocaleString('tr-TR', {
+  const postDate = new Date().toLocaleString(MAIL_LOCALE[mailLang(lang)], {
     timeZone: 'Europe/Istanbul',
     day: 'numeric', month: 'long', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   });
   return emailWrapper(`
-    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Etkinliğe Yorum Yapıldı</h2>
+    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">${tm(lang, 'commentTitle')}</h2>
     <p style="margin:0 0 20px;color:#64748b;font-size:15px;">
-      <strong>${commenterName}</strong>, <strong>${trainingTitle}</strong> etkinliğine yorum yaptı.
+      ${tm(lang, 'commentBody', commenterName, trainingTitle)}
     </p>
 
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px 20px;margin-bottom:20px;">
@@ -1173,74 +1591,74 @@ function trainingCommentEmail({ commenterName, commenterAvatar, trainingTitle, t
       <a href="${trainingLink}"
          style="display:inline-block;background:linear-gradient(135deg,#114956,#0e3c47);color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
-        Etkinliği Gör →
+        ${tm(lang, 'btnViewEvent')}
       </a>
     </div>
-  `);
+  `, lang);
 }
 
 // Şablon: Etkinlik güncelleme bildirimi
-function trainingUpdateEmail({ teamName, trainingTitle, trainingDate, trainingTime, location, description, updaterName, trainingId }) {
+function trainingUpdateEmail({ teamName, trainingTitle, trainingDate, trainingTime, location, description, updaterName, trainingId }, lang = 'tr') {
   const trainingLink = trainingId ? `${APP_URL}/etkinlikler?etkinlik=${trainingId}` : `${APP_URL}/etkinlikler`;
   return emailWrapper(`
-    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Etkinlik Güncellendi</h2>
+    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">${tm(lang, 'updateTitle')}</h2>
     <p style="margin:0 0 28px;color:#64748b;font-size:15px;line-height:1.6;">
-      <strong>${teamName}</strong> takımının <strong>${trainingTitle}</strong> etkinliğinde değişiklik yapıldı.
+      ${tm(lang, 'updateBody', teamName, trainingTitle)}
     </p>
 
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:24px;margin-bottom:28px;">
-      <div style="font-size:18px;font-weight:700;color:#0e3c47;margin-bottom:16px;">Güncel Bilgiler</div>
+      <div style="font-size:18px;font-weight:700;color:#0e3c47;margin-bottom:16px;">${tm(lang, 'updateCurrent')}</div>
       <table style="width:100%;border-collapse:collapse;">
-        <tr><td style="padding:6px 0;color:#64748b;font-size:14px;width:80px;">Tarih</td><td style="padding:6px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingDate}</td></tr>
-        ${trainingTime ? `<tr><td style="padding:6px 0;color:#64748b;font-size:14px;">Saat</td><td style="padding:6px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingTime.slice(0,5)}</td></tr>` : ''}
-        ${location ? `<tr><td style="padding:6px 0;color:#64748b;font-size:14px;">Konum</td><td style="padding:6px 0;color:#1e293b;font-size:14px;font-weight:600;">${location}</td></tr>` : ''}
+        <tr><td style="padding:6px 0;color:#64748b;font-size:14px;width:80px;">${tm(lang, 'lblDate')}</td><td style="padding:6px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingDate}</td></tr>
+        ${trainingTime ? `<tr><td style="padding:6px 0;color:#64748b;font-size:14px;">${tm(lang, 'lblTime')}</td><td style="padding:6px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingTime.slice(0,5)}</td></tr>` : ''}
+        ${location ? `<tr><td style="padding:6px 0;color:#64748b;font-size:14px;">${tm(lang, 'lblLocation')}</td><td style="padding:6px 0;color:#1e293b;font-size:14px;font-weight:600;">${location}</td></tr>` : ''}
         ${description ? `<tr><td colspan="2" style="padding:12px 0 4px;color:#334155;font-size:14px;line-height:1.6;border-top:1px solid #e6f7f5;margin-top:8px;">${description}</td></tr>` : ''}
       </table>
     </div>
 
-    ${updaterName ? `<p style="color:#94a3b8;font-size:13px;margin:0 0 24px;">Güncelleyen: <strong style="color:#64748b;">${updaterName}</strong></p>` : ''}
+    ${updaterName ? `<p style="color:#94a3b8;font-size:13px;margin:0 0 24px;">${tm(lang, 'updateBy')} <strong style="color:#64748b;">${updaterName}</strong></p>` : ''}
 
     <div style="text-align:center;">
       <a href="${trainingLink}"
          style="display:inline-block;background:linear-gradient(135deg,#114956,#0e3c47);color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
-        Etkinliği Gör →
+        ${tm(lang, 'btnViewEvent')}
       </a>
     </div>
-  `);
+  `, lang);
 }
 
 // Şablon 4: Yeni etkinlik bildirimi
-function newTrainingEmail({ teamName, trainingTitle, trainingDate, trainingTime, location, description, upcomingTrainings, trainingId }) {
+function newTrainingEmail({ teamName, trainingTitle, trainingDate, trainingTime, location, description, upcomingTrainings, trainingId }, lang = 'tr') {
   const trainingLink = trainingId ? `${APP_URL}/etkinlikler?etkinlik=${trainingId}` : `${APP_URL}/etkinlikler`;
   const upcoming = (upcomingTrainings || []).slice(0, 3).map(t => `
     <tr>
       <td style="padding:10px 0;border-bottom:1px solid #f1f5f9;">
         <div style="font-weight:600;color:#1e293b;font-size:14px;">${t.title}</div>
-        <div style="color:#64748b;font-size:13px;margin-top:2px;">${formatTrDate(t.training_date)} ${t.training_time ? '• ' + t.training_time.slice(0,5) : ''} ${t.location_name ? '• ' + t.location_name : ''}</div>
+        <div style="color:#64748b;font-size:13px;margin-top:2px;">${formatTrDate(t.training_date, lang)} ${t.training_time ? '• ' + t.training_time.slice(0,5) : ''} ${t.location_name ? '• ' + t.location_name : ''}</div>
       </td>
     </tr>
   `).join('');
 
   return emailWrapper(`
-    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Yeni Etkinlik Eklendi!</h2>
+    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">${tm(lang, 'newTitle')}</h2>
     <p style="margin:0 0 28px;color:#64748b;font-size:15px;line-height:1.6;">
-      <strong>${teamName}</strong> takımına yeni bir etkinlik eklendi.
+      ${tm(lang, 'newBody', teamName)}
     </p>
 
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:24px;margin-bottom:28px;">
       <div style="font-size:20px;font-weight:700;color:#0e3c47;margin-bottom:12px;">${trainingTitle}</div>
       <table style="width:100%;border-collapse:collapse;">
-        <tr><td style="padding:4px 0;color:#64748b;font-size:14px;">Tarih</td><td style="padding:4px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingDate}</td></tr>
-        ${trainingTime ? `<tr><td style="padding:4px 0;color:#64748b;font-size:14px;">Saat</td><td style="padding:4px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingTime.slice(0,5)}</td></tr>` : ''}
-        ${location ? `<tr><td style="padding:4px 0;color:#64748b;font-size:14px;">Konum</td><td style="padding:4px 0;color:#1e293b;font-size:14px;font-weight:600;">${location}</td></tr>` : ''}
+        <tr><td style="padding:4px 0;color:#64748b;font-size:14px;">${tm(lang, 'lblDate')}</td><td style="padding:4px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingDate}</td></tr>
+        ${trainingTime ? `<tr><td style="padding:4px 0;color:#64748b;font-size:14px;">${tm(lang, 'lblTime')}</td><td style="padding:4px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingTime.slice(0,5)}</td></tr>` : ''}
+        ${location ? `<tr><td style="padding:4px 0;color:#64748b;font-size:14px;">${tm(lang, 'lblLocation')}</td><td style="padding:4px 0;color:#1e293b;font-size:14px;font-weight:600;">${location}</td></tr>` : ''}
         ${description ? `<tr><td colspan="2" style="padding:12px 0 4px;color:#334155;font-size:14px;line-height:1.6;">${description}</td></tr>` : ''}
       </table>
     </div>
 
     ${upcoming ? `
     <div style="margin-bottom:28px;">
-      <div style="font-weight:700;color:#1e293b;font-size:15px;margin-bottom:12px;">Yaklaşan Diğer Etkinlikler</div>
+      <div style="font-weight:700;color:#1e293b;font-size:15px;margin-bottom:12px;">${tm(lang, 'newUpcoming')}</div>
       <table style="width:100%;border-collapse:collapse;">${upcoming}</table>
     </div>` : ''}
 
@@ -1248,30 +1666,30 @@ function newTrainingEmail({ teamName, trainingTitle, trainingDate, trainingTime,
       <a href="${trainingLink}"
          style="display:inline-block;background:linear-gradient(135deg,#114956,#0e3c47);color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
-        Etkinliği Gör →
+        ${tm(lang, 'btnViewEvent')}
       </a>
     </div>
-  `);
+  `, lang);
 }
 
 // Şablon 5: Etkinlik hatırlatma
-function trainingReminderEmail({ teamName, trainingTitle, trainingDate, trainingTime, location, daysLeft, trainingId }) {
+function trainingReminderEmail({ teamName, trainingTitle, trainingDate, trainingTime, location, daysLeft, trainingId }, lang = 'tr') {
   const trainingLink = trainingId ? `${APP_URL}/etkinlikler?etkinlik=${trainingId}` : `${APP_URL}/etkinlikler`;
-  const urgency = daysLeft === 1 ? 'Yarın!' : `${daysLeft} gün kaldı`;
+  const urgency = tm(lang, 'remUrgency', daysLeft);
   const accent  = '#0e3c47'; // kurumsal teal (sarı/amber yerine)
   return emailWrapper(`
-    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Etkinliğiniz Yaklaşıyor</h2>
+    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">${tm(lang, 'remTitle')}</h2>
     <p style="margin:0 0 28px;color:#64748b;font-size:15px;line-height:1.6;">
-      <strong>${teamName}</strong> takımınızın etkinliğine az kaldı.
+      ${tm(lang, 'remBody', teamName)}
     </p>
 
     <div style="background:#f0fdf4;border:2px solid ${accent};border-radius:12px;padding:24px;margin-bottom:28px;">
       <div style="font-size:13px;font-weight:700;color:${accent};text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">${urgency}</div>
       <div style="font-size:20px;font-weight:700;color:#1e293b;margin-bottom:12px;">${trainingTitle}</div>
       <table style="width:100%;border-collapse:collapse;">
-        <tr><td style="padding:4px 0;color:#64748b;font-size:14px;">Tarih</td><td style="padding:4px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingDate}</td></tr>
-        ${trainingTime ? `<tr><td style="padding:4px 0;color:#64748b;font-size:14px;">Saat</td><td style="padding:4px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingTime.slice(0,5)}</td></tr>` : ''}
-        ${location ? `<tr><td style="padding:4px 0;color:#64748b;font-size:14px;">Konum</td><td style="padding:4px 0;color:#1e293b;font-size:14px;font-weight:600;">${location}</td></tr>` : ''}
+        <tr><td style="padding:4px 0;color:#64748b;font-size:14px;">${tm(lang, 'lblDate')}</td><td style="padding:4px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingDate}</td></tr>
+        ${trainingTime ? `<tr><td style="padding:4px 0;color:#64748b;font-size:14px;">${tm(lang, 'lblTime')}</td><td style="padding:4px 0;color:#1e293b;font-size:14px;font-weight:600;">${trainingTime.slice(0,5)}</td></tr>` : ''}
+        ${location ? `<tr><td style="padding:4px 0;color:#64748b;font-size:14px;">${tm(lang, 'lblLocation')}</td><td style="padding:4px 0;color:#1e293b;font-size:14px;font-weight:600;">${location}</td></tr>` : ''}
       </table>
     </div>
 
@@ -1279,10 +1697,10 @@ function trainingReminderEmail({ teamName, trainingTitle, trainingDate, training
       <a href="${trainingLink}"
          style="display:inline-block;background:linear-gradient(135deg,#114956,#0e3c47);color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
-        Etkinliği Görüntüle →
+        ${tm(lang, 'btnViewEventLong')}
       </a>
     </div>
-  `);
+  `, lang);
 }
 
 // =====================================================
@@ -1338,6 +1756,100 @@ const isAdmin = async (req, res, next) => {
 // =====================================================
 // HELPER FUNCTIONS
 // =====================================================
+
+// İsteği yapanın arayüz dili (X-Muuv-Lang başlığı). Yalnız alıcının kendi dili
+// bilinmediğinde (kayıtlı olmayan davetli, iletişim formu) kullanılır.
+const reqLang = (req) => mailLang(String(req.headers['x-muuv-lang'] || '').slice(0, 5).toLowerCase());
+
+// ─── Kullanıcıya dönen sunucu mesajları (dile göre) ─────────────────────
+// Uçlar Türkçe mesaj üretmeye devam eder; yanıt çıkmadan önce isteği yapanın
+// diline (X-Muuv-Lang) çevrilir. Anahtar = Türkçe metnin kendisi. Burada olmayan
+// mesaj olduğu gibi gider. Yeni kullanıcıya dönük mesaj eklerken buraya da yaz.
+const SERVER_MSG = {
+  'Çok fazla istek. Lütfen 15 dakika sonra tekrar deneyin.': { en: 'Too many requests. Please try again in 15 minutes.', de: 'Zu viele Anfragen. Bitte versuche es in 15 Minuten erneut.', el: 'Πάρα πολλά αιτήματα. Δοκίμασε ξανά σε 15 λεπτά.' },
+  'Çok fazla istek. Lütfen bir süre bekleyin.': { en: 'Too many requests. Please wait a moment.', de: 'Zu viele Anfragen. Bitte warte einen Moment.', el: 'Πάρα πολλά αιτήματα. Περίμενε λίγο.' },
+  'Geçerli bir e-posta adresi girin.': { en: 'Please enter a valid email address.', de: 'Bitte gib eine gültige E-Mail-Adresse ein.', el: 'Συμπλήρωσε μια έγκυρη διεύθυνση email.' },
+  'Şifre en az 6 karakter olmalıdır.': { en: 'The password must be at least 6 characters.', de: 'Das Passwort muss mindestens 6 Zeichen haben.', el: 'Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες.' },
+  'Şifre en az 6 karakter olmalı.': { en: 'The password must be at least 6 characters.', de: 'Das Passwort muss mindestens 6 Zeichen haben.', el: 'Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες.' },
+  'İsim en az 2 karakter olmalıdır.': { en: 'The name must be at least 2 characters.', de: 'Der Name muss mindestens 2 Zeichen haben.', el: 'Το όνομα πρέπει να έχει τουλάχιστον 2 χαρακτήρες.' },
+  'Dosya yüklenmedi.': { en: 'No file was uploaded.', de: 'Es wurde keine Datei hochgeladen.', el: 'Δεν ανέβηκε αρχείο.' },
+  'Avatar güncellendi': { en: 'Photo updated', de: 'Foto aktualisiert', el: 'Η φωτογραφία ενημερώθηκε' },
+  'Takım bulunamadı.': { en: 'Team not found.', de: 'Team nicht gefunden.', el: 'Η ομάδα δεν βρέθηκε.' },
+  'Bu işlem için yetkiniz yok.': { en: "You don't have permission to do this.", de: 'Dazu hast du keine Berechtigung.', el: 'Δεν έχεις δικαίωμα για αυτή την ενέργεια.' },
+  'Takım fotoğrafı güncellendi': { en: 'Team photo updated', de: 'Teamfoto aktualisiert', el: 'Η φωτογραφία της ομάδας ενημερώθηκε' },
+  'Bu kullanıcı zaten takım üyesi.': { en: 'This user is already a team member.', de: 'Diese Person ist bereits Teammitglied.', el: 'Αυτός ο χρήστης είναι ήδη μέλος της ομάδας.' },
+  'Bekleyen davet bulunamadı.': { en: 'No pending invitation found.', de: 'Keine offene Einladung gefunden.', el: 'Δεν βρέθηκε εκκρεμής πρόσκληση.' },
+  'Takıma başarıyla katıldınız!': { en: 'You joined the team!', de: 'Du bist dem Team beigetreten!', el: 'Έγινες μέλος της ομάδας!' },
+  'Geçersiz rol. İzin verilenler: member, coach, captain, editor, owner': { en: 'Invalid role. Allowed: member, coach, captain, editor, owner', de: 'Ungültige Rolle. Erlaubt: member, coach, captain, editor, owner', el: 'Μη έγκυρος ρόλος. Επιτρέπονται: member, coach, captain, editor, owner' },
+  'Takım sahibinin rolü değiştirilemez.': { en: "The team owner's role can't be changed.", de: 'Die Rolle der Teamleitung kann nicht geändert werden.', el: 'Ο ρόλος του ιδιοκτήτη της ομάδας δεν μπορεί να αλλάξει.' },
+  'Üye bulunamadı.': { en: 'Member not found.', de: 'Mitglied nicht gefunden.', el: 'Το μέλος δεν βρέθηκε.' },
+  'Sahip rolünü yalnızca takımın asıl sahibi yönetebilir.': { en: 'Only the original team owner can manage the owner role.', de: 'Nur die ursprüngliche Teamleitung kann die Leitungsrolle vergeben.', el: 'Μόνο ο αρχικός ιδιοκτήτης της ομάδας μπορεί να διαχειριστεί τον ρόλο ιδιοκτήτη.' },
+  'Takım sahibi çıkarılamaz.': { en: "The team owner can't be removed.", de: 'Die Teamleitung kann nicht entfernt werden.', el: 'Ο ιδιοκτήτης της ομάδας δεν μπορεί να αφαιρεθεί.' },
+  'Mesaj boş olamaz.': { en: "The message can't be empty.", de: 'Die Nachricht darf nicht leer sein.', el: 'Το μήνυμα δεν μπορεί να είναι κενό.' },
+  'Kayıt adresi geçersiz. http:// veya https:// ile başlamalı.': { en: 'Invalid registration link. It must start with http:// or https://.', de: 'Ungültiger Anmeldelink. Er muss mit http:// oder https:// beginnen.', el: 'Μη έγκυρος σύνδεσμος εγγραφής. Πρέπει να ξεκινά με http:// ή https://.' },
+  'Etkinlik oluşturmak için takımın sahibi, antrenörü veya kaptanı olmanız gerekiyor.': { en: 'You need to be the team owner, coach or captain to create an event.', de: 'Um ein Event zu erstellen, musst du Teamleitung, Trainer oder Kapitän sein.', el: 'Για να δημιουργήσεις εκδήλωση πρέπει να είσαι ιδιοκτήτης, προπονητής ή αρχηγός της ομάδας.' },
+  'Bu takımın konumlarına erişim yok.': { en: "You don't have access to this team's locations.", de: 'Kein Zugriff auf die Orte dieses Teams.', el: 'Δεν έχεις πρόσβαση στις τοποθεσίες αυτής της ομάδας.' },
+  'Önceki konumlar alınamadı.': { en: 'Could not load previous locations.', de: 'Frühere Orte konnten nicht geladen werden.', el: 'Δεν ήταν δυνατή η φόρτωση των προηγούμενων τοποθεσιών.' },
+  'Bu etkinliği görmek için giriş yapmanız gerekiyor.': { en: 'You need to log in to see this event.', de: 'Melde dich an, um dieses Event zu sehen.', el: 'Πρέπει να συνδεθείς για να δεις αυτή την εκδήλωση.' },
+  'Bu etkinlik gizli bir takıma ait. Erişim yetkiniz yok.': { en: "This event belongs to a private team. You don't have access.", de: 'Dieses Event gehört zu einem privaten Team. Du hast keinen Zugriff.', el: 'Αυτή η εκδήλωση ανήκει σε ιδιωτική ομάδα. Δεν έχεις πρόσβαση.' },
+  'Kayıt linki olan etkinlik bulunamadı.': { en: 'No event with a registration link was found.', de: 'Kein Event mit Anmeldelink gefunden.', el: 'Δεν βρέθηκε εκδήλωση με σύνδεσμο εγγραφής.' },
+  'Bu etkinlik gizli bir takıma ait. Sadece takım üyeleri katılabilir.': { en: 'This event belongs to a private team. Only team members can join.', de: 'Dieses Event gehört zu einem privaten Team. Nur Teammitglieder können teilnehmen.', el: 'Αυτή η εκδήλωση ανήκει σε ιδιωτική ομάδα. Μόνο τα μέλη της μπορούν να συμμετάσχουν.' },
+  'Bu etkinliğe zaten kayıtlı değilsiniz.': { en: "You're not signed up for this event.", de: 'Du bist für dieses Event nicht angemeldet.', el: 'Δεν έχεις δηλώσει συμμετοχή σε αυτή την εκδήλωση.' },
+  'Etkinlik kaydınız silindi.': { en: 'You left the event.', de: 'Deine Teilnahme wurde entfernt.', el: 'Αποχώρησες από την εκδήλωση.' },
+  'Yorum boş olamaz.': { en: "The comment can't be empty.", de: 'Der Kommentar darf nicht leer sein.', el: 'Το σχόλιο δεν μπορεί να είναι κενό.' },
+  'Yorumlar yalnız takım üyelerine ve katılımcılara açık.': { en: 'Comments are open to team members and participants only.', de: 'Kommentare sind nur für Teammitglieder und Teilnehmende sichtbar.', el: 'Τα σχόλια είναι ανοιχτά μόνο σε μέλη της ομάδας και συμμετέχοντες.' },
+  'Mesaj bulunamadı.': { en: 'Message not found.', de: 'Nachricht nicht gefunden.', el: 'Το μήνυμα δεν βρέθηκε.' },
+  'Bu mesajı silme yetkiniz yok.': { en: "You can't delete this message.", de: 'Du darfst diese Nachricht nicht löschen.', el: 'Δεν μπορείς να διαγράψεις αυτό το μήνυμα.' },
+  'Gönderi bulunamadı.': { en: 'Post not found.', de: 'Beitrag nicht gefunden.', el: 'Η ανάρτηση δεν βρέθηκε.' },
+  'Bu gönderiyi silme yetkiniz yok.': { en: "You can't delete this post.", de: 'Du darfst diesen Beitrag nicht löschen.', el: 'Δεν μπορείς να διαγράψεις αυτή την ανάρτηση.' },
+  'Gönderi silindi.': { en: 'Post deleted.', de: 'Beitrag gelöscht.', el: 'Η ανάρτηση διαγράφηκε.' },
+  'Bu etkinliği yalnızca oluşturan kişi düzenleyebilir.': { en: 'Only the person who created this event can edit it.', de: 'Nur die Person, die das Event erstellt hat, kann es bearbeiten.', el: 'Μόνο όποιος δημιούργησε την εκδήλωση μπορεί να την επεξεργαστεί.' },
+  'Etkinliği düzenlemek için takımın sahibi, antrenörü veya kaptanı olmanız gerekiyor.': { en: 'You need to be the team owner, coach or captain to edit the event.', de: 'Um das Event zu bearbeiten, musst du Teamleitung, Trainer oder Kapitän sein.', el: 'Για να επεξεργαστείς την εκδήλωση πρέπει να είσαι ιδιοκτήτης, προπονητής ή αρχηγός της ομάδας.' },
+  'Bu etkinliği yalnızca oluşturan kişi silebilir.': { en: 'Only the person who created this event can delete it.', de: 'Nur die Person, die das Event erstellt hat, kann es löschen.', el: 'Μόνο όποιος δημιούργησε την εκδήλωση μπορεί να τη διαγράψει.' },
+  'Etkinliği silmek için takımın sahibi, antrenörü veya kaptanı olmanız gerekiyor.': { en: 'You need to be the team owner, coach or captain to delete the event.', de: 'Um das Event zu löschen, musst du Teamleitung, Trainer oder Kapitän sein.', el: 'Για να διαγράψεις την εκδήλωση πρέπει να είσαι ιδιοκτήτης, προπονητής ή αρχηγός της ομάδας.' },
+  'Hesabınız silinmek üzere kapatıldı.': { en: 'Your account has been closed for deletion.', de: 'Dein Konto wurde zur Löschung geschlossen.', el: 'Ο λογαριασμός σου έκλεισε και θα διαγραφεί.' },
+  'Geçersiz tercih verisi.': { en: 'Invalid preference data.', de: 'Ungültige Einstellungen.', el: 'Μη έγκυρα δεδομένα προτιμήσεων.' },
+  'Tüm alanlar zorunludur.': { en: 'All fields are required.', de: 'Alle Felder sind Pflichtfelder.', el: 'Όλα τα πεδία είναι υποχρεωτικά.' },
+  'Mesajınız başarıyla gönderildi.': { en: 'Your message has been sent.', de: 'Deine Nachricht wurde gesendet.', el: 'Το μήνυμά σου στάλθηκε.' },
+  'Mesaj gönderilemedi.': { en: 'The message could not be sent.', de: 'Die Nachricht konnte nicht gesendet werden.', el: 'Δεν ήταν δυνατή η αποστολή του μηνύματος.' },
+  'İstatistikler alınamadı.': { en: 'Could not load statistics.', de: 'Statistiken konnten nicht geladen werden.', el: 'Δεν ήταν δυνατή η φόρτωση των στατιστικών.' },
+  'Bannerlar alınamadı.': { en: 'Could not load banners.', de: 'Banner konnten nicht geladen werden.', el: 'Δεν ήταν δυνατή η φόρτωση των banner.' },
+  'Bu entegrasyon şu anda kapalı.': { en: 'This integration is currently disabled.', de: 'Diese Integration ist derzeit deaktiviert.', el: 'Αυτή η σύνδεση είναι προσωρινά απενεργοποιημένη.' },
+  'Bağlantı eksik.': { en: 'The link is incomplete.', de: 'Der Link ist unvollständig.', el: 'Ο σύνδεσμος είναι ελλιπής.' },
+  'Bu bağlantı geçersiz.': { en: 'This link is invalid.', de: 'Dieser Link ist ungültig.', el: 'Αυτός ο σύνδεσμος δεν είναι έγκυρος.' },
+  'Bağlantıda geçerli bir antrenman yok.': { en: 'The link contains no valid training.', de: 'Der Link enthält kein gültiges Training.', el: 'Ο σύνδεσμος δεν περιέχει έγκυρη προπόνηση.' },
+  'Geçersiz URL': { en: 'Invalid URL', de: 'Ungültige URL', el: 'Μη έγκυρη διεύθυνση URL' },
+  'E-posta gönderildi.': { en: 'Email sent.', de: 'E-Mail gesendet.', el: 'Το email στάλθηκε.' },
+  'Sunucu hatası.': { en: 'Server error.', de: 'Serverfehler.', el: 'Σφάλμα διακομιστή.' },
+  'Token ve şifre gerekli.': { en: 'Token and password are required.', de: 'Token und Passwort sind erforderlich.', el: 'Απαιτούνται token και κωδικός.' },
+  'Geçersiz link.': { en: 'Invalid link.', de: 'Ungültiger Link.', el: 'Μη έγκυρος σύνδεσμος.' },
+  'Bu link daha önce kullanıldı.': { en: 'This link has already been used.', de: 'Dieser Link wurde bereits verwendet.', el: 'Αυτός ο σύνδεσμος έχει ήδη χρησιμοποιηθεί.' },
+  'Linkin süresi doldu.': { en: 'This link has expired.', de: 'Dieser Link ist abgelaufen.', el: 'Ο σύνδεσμος έχει λήξει.' },
+  'Şifre başarıyla güncellendi.': { en: 'Password updated.', de: 'Passwort aktualisiert.', el: 'Ο κωδικός ενημερώθηκε.' },
+  'Şikayet kaydedilemedi.': { en: 'The report could not be saved.', de: 'Die Meldung konnte nicht gespeichert werden.', el: 'Δεν ήταν δυνατή η καταχώριση της αναφοράς.' },
+  'Engelleme başarısız.': { en: 'Blocking failed.', de: 'Blockieren fehlgeschlagen.', el: 'Ο αποκλεισμός απέτυχε.' },
+  'Engel kaldırılamadı.': { en: 'Could not unblock.', de: 'Blockierung konnte nicht aufgehoben werden.', el: 'Δεν ήταν δυνατή η άρση του αποκλεισμού.' },
+  'Bu etkinliğin tarihi geçti.': { en: 'This event has already taken place.', de: 'Dieses Event hat bereits stattgefunden.', el: 'Αυτή η εκδήλωση έχει ήδη πραγματοποιηθεί.' },
+  'E-posta gerekli.': { en: 'Email is required.', de: 'E-Mail ist erforderlich.', el: 'Απαιτείται email.' },
+};
+
+// Yanıt çıkmadan önce error/message alanını isteğin diline çevir.
+// Türkçe istekte hiçbir şey yapılmaz (eski davranış birebir).
+const translateServerMessages = (req, res, next) => {
+  const L = reqLang(req);
+  if (L === 'tr') return next();
+  const origJson = res.json.bind(res);
+  res.json = (body) => {
+    if (body && typeof body === 'object' && !Array.isArray(body)) {
+      for (const k of ['error', 'message']) {
+        const tr = body[k];
+        if (typeof tr === 'string' && SERVER_MSG[tr]) body[k] = SERVER_MSG[tr][L] || SERVER_MSG[tr].en || tr;
+      }
+    }
+    return origJson(body);
+  };
+  next();
+};
 
 // Etkinlik yorumlarını kim görür/yazar/beğenir: takımın üyeleri (etkinliğe
 // katılmasalar da), etkinliğe katılanlar (takım dışından olsalar da), takımsız
@@ -1435,8 +1947,7 @@ const checkAndAwardBadges = async (userId) => {
         ).then(async (result) => {
           if (result.rows.length > 0) {
             await createNotif(userId, {
-              title: 'Yeni Rozet!',
-              message: `"${badge.name}" rozetini kazandın!`,
+              build: (L) => ({ title: tm(L, 'badgeTitle'), message: tm(L, 'badgeMsg', badge.name) }),
               type: 'badge',
               refId: badge.id,
               url: '/rozetlerim',
@@ -2215,6 +2726,7 @@ app.get('/api/trainings/public', async (req, res) => {
 app.post('/api/auth/register', authLimiter, async (req, res) => {
   try {
     const { name, email, password, phone } = req.body;
+    const regLang = MAIL_LANGS.includes(req.body.lang) ? req.body.lang : null;
 
     if (!name || !email || !password) {
       return res.status(400).json({ error: 'Name, email and password are required' });
@@ -2245,13 +2757,13 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
     const result = await pool.query(
       `INSERT INTO users (name, email, password_hash, phone, notif_prefs,
                           utm_source, utm_medium, utm_campaign, utm_content, utm_term,
-                          fbclid, acquisition_platform, landing_page, referrer)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-       RETURNING id, name, email, avatar, created_at, notif_prefs`,
+                          fbclid, acquisition_platform, landing_page, referrer, lang)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+       RETURNING id, name, email, avatar, created_at, notif_prefs, lang`,
       [name, email, passwordHash, phone, JSON.stringify(DEFAULT_NOTIF_PREFS),
        trim255(attr.utm_source), trim255(attr.utm_medium), trim255(attr.utm_campaign),
        trim255(attr.utm_content), trim255(attr.utm_term), trim255(attr.fbclid),
-       trim255(platform), trim255(attr.landing_page), trim255(attr.referrer)]
+       trim255(platform), trim255(attr.landing_page), trim255(attr.referrer), regLang]
     );
 
     const user = result.rows[0];
@@ -2313,7 +2825,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     }
 
     const result = await pool.query(
-      'SELECT id, name, email, password_hash, avatar, deleted_at FROM users WHERE email = $1',
+      'SELECT id, name, email, password_hash, avatar, deleted_at, lang FROM users WHERE email = $1',
       [email]
     );
 
@@ -2358,7 +2870,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
 app.get('/api/auth/me', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, name, email, phone, avatar, is_admin, created_at, notif_prefs, onboarding_done FROM users WHERE id = $1',
+      'SELECT id, name, email, phone, avatar, is_admin, created_at, notif_prefs, onboarding_done, lang FROM users WHERE id = $1',
       [req.user.id]
     );
 
@@ -2733,8 +3245,7 @@ app.post('/api/teams/:id/join', authenticateToken, async (req, res) => {
 
     for (const leader of leadersRes.rows) {
       await createNotif(leader.user_id, {
-        title: 'Yeni Üye Katıldı!',
-        message: `${joinerName}, ${team.name} takımına katıldı.`,
+        build: (L) => ({ title: tm(L, 'joinTeamNotifTitle'), message: tm(L, 'joinTeamNotifMsg', joinerName, team.name) }),
         type: 'team',
         refId: teamId,
         url: `/takimlar?takim=${teamId}`,
@@ -2742,12 +3253,11 @@ app.post('/api/teams/:id/join', authenticateToken, async (req, res) => {
 
       sendEmail({
         to: leader.email,
-        subject: `${team.name} — Yeni Üye: ${joinerName}`,
         prefKey: 'team_member',
-        html: emailWrapper(`
-          <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Takımınıza Yeni Üye Katıldı!</h2>
+        build: (L) => ({ subject: tm(L, 'joinTeamSubject', team.name, joinerName), html: emailWrapper(`
+          <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">${tm(L, 'joinTeamTitle')}</h2>
           <p style="margin:0 0 28px;color:#64748b;font-size:15px;line-height:1.6;">
-            <strong>${joinerName}</strong>, <strong>${team.name}</strong> takımına yeni üye olarak katıldı.
+            ${tm(L, 'joinTeamBody', joinerName, team.name)}
           </p>
           <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:24px;margin-bottom:28px;text-align:center;">
             <div style="width:56px;height:56px;background:linear-gradient(135deg,#114956,#0e3c47);border-radius:50%;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;line-height:56px;text-align:center;">U</div>
@@ -2757,10 +3267,10 @@ app.post('/api/teams/:id/join', authenticateToken, async (req, res) => {
             <a href="${process.env.APP_URL || 'https://muuvlink.app'}/takimlar?takim=${teamId}"
                style="display:inline-block;background:linear-gradient(135deg,#114956,#0e3c47);color:#ffffff;text-decoration:none;
                       padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
-              Takımı Görüntüle →
+              ${tm(L, 'btnViewTeam')}
             </a>
           </div>
-        `),
+        `, L) }),
       }).catch(e => console.error('Join email error:', e.message));
     }
 
@@ -2846,35 +3356,24 @@ app.post('/api/teams/:id/invite', authenticateToken, async (req, res) => {
     // Kayıtlı kullanıcıya in-app bildirim
     if (isRegistered) {
       await createNotif(userResult.rows[0].id, {
-        title: 'Takım Daveti!',
-        message: `${team.inviter_name} sizi "${team.name}" takımına davet etti.`,
+        build: (L) => ({ title: tm(L, 'inviteNotifTitle'), message: tm(L, 'inviteNotifMsg', team.inviter_name, team.name) }),
         type: 'invitation',
         refId: teamId,
         url: `/takimlar?takim=${teamId}`,
       });
     }
 
-    // Her iki durumda da mail gönder
-    const emailHtml = isRegistered
-      ? inviteEmailExisting({
-          teamName: team.name,
-          teamSport: team.sport,
-          inviterName: team.inviter_name,
-          teamId,
-          avatar: team.avatar,
-        })
-      : inviteEmailNew({
-          teamName: team.name,
-          teamSport: team.sport,
-          inviterName: team.inviter_name,
-          avatar: team.avatar,
-        });
-
+    // Her iki durumda da mail gönder. Kayıtlı alıcı kendi dilinde; kayıtlı değilse
+    // daveti gönderenin arayüz dilinde (alıcının dilini bilemiyoruz).
+    const inviteData = { teamName: team.name, teamSport: team.sport, inviterName: team.inviter_name, teamId, avatar: team.avatar };
     await sendEmail({
       to: email,
-      subject: `${team.inviter_name} sizi "${team.name}" takımına davet etti!`,
       prefKey: 'invite',
-      html: emailHtml,
+      fallbackLang: reqLang(req),
+      build: (L) => ({
+        subject: tm(L, 'inviteSubject', team.inviter_name, team.name),
+        html: isRegistered ? inviteEmailExisting(inviteData, L) : inviteEmailNew(inviteData, L),
+      }),
     });
 
     res.json({
@@ -3080,17 +3579,16 @@ app.put('/api/teams/:teamId/members/:userId/role', authenticateToken, async (req
       (async () => {
         try {
           const team = ownerCheck.rows[0];
-          const newRoleLabel = ROLE_LABELS_TR[role] || role;
+          const newRoleLabel = ROLE_LABELS_TR[role] || role; // (Türkçe; alıcı dili için roleLabel)
           const [target, changer] = await Promise.all([
             pool.query('SELECT id, name, email FROM users WHERE id = $1', [userId]),
             pool.query('SELECT name FROM users WHERE id = $1', [req.user.id]),
           ]);
           if (!target.rows.length) return;
-          const changerName = changer.rows[0]?.name || 'Takım yöneticisi';
+          const changerOf = (L) => changer.rows[0]?.name || tm(L, 'changerFallback');
 
           await createNotif(target.rows[0].id, {
-            title: 'Takım rolün güncellendi',
-            message: `${changerName}, "${team.name}" takımındaki rolünü "${newRoleLabel}" olarak güncelledi.`,
+            build: (L) => ({ title: tm(L, 'roleNotifTitle'), message: tm(L, 'roleNotifMsg', changerOf(L), team.name, roleLabel(L, role)) }),
             type: 'role_change',
             refId: parseInt(teamId),
             url: `/takimlar?takim=${teamId}`,
@@ -3099,14 +3597,17 @@ app.put('/api/teams/:teamId/members/:userId/role', authenticateToken, async (req
           if (target.rows[0].email) {
             await sendEmail({
               to: target.rows[0].email,
-              subject: `${team.name} takımındaki rolün güncellendi`,
+              userId: target.rows[0].id,
               prefKey: 'role',
-              html: roleChangeEmail({
-                teamName: team.name,
-                teamId,
-                newRoleLabel,
-                changerName,
-                avatar: team.avatar,
+              build: (L) => ({
+                subject: tm(L, 'roleSubject', team.name),
+                html: roleChangeEmail({
+                  teamName: team.name,
+                  teamId,
+                  newRoleLabel: roleLabel(L, role),
+                  changerName: changerOf(L),
+                  avatar: team.avatar,
+                }, L),
               }),
             });
           }
@@ -3213,7 +3714,8 @@ app.post('/api/teams/:id/posts', authenticateToken, async (req, res) => {
       [teamId, req.user.id]
     );
 
-    const postDate = new Date().toLocaleString('tr-TR', {
+    const postNow = new Date();
+    const postDateIn = (L) => postNow.toLocaleString(MAIL_LOCALE[mailLang(L)], {
       timeZone: 'Europe/Istanbul',
       day: 'numeric', month: 'long', year: 'numeric',
       hour: '2-digit', minute: '2-digit',
@@ -3223,8 +3725,7 @@ app.post('/api/teams/:id/posts', authenticateToken, async (req, res) => {
     const notifAndMailPromises = otherMembers.rows.map(async (member) => {
       // In-app bildirim
       await createNotif(member.id, {
-        title: `${team.name} Duvarı`,
-        message: `${poster.user_name}: ${message.trim().slice(0, 80)}${message.length > 80 ? '...' : ''}`,
+        build: (L) => ({ title: tm(L, 'wallNotifTitle', team.name), message: `${poster.user_name}: ${message.trim().slice(0, 80)}${message.length > 80 ? '...' : ''}` }),
         type: 'team_post',
         refId: teamId,
         url: `/takimlar?takim=${teamId}&tab=duvar`,
@@ -3233,15 +3734,18 @@ app.post('/api/teams/:id/posts', authenticateToken, async (req, res) => {
       // Mail
       sendEmail({
         to: member.email,
-        subject: `${team.name} takımında yeni gönderi var`,
+        userId: member.id,
         prefKey: 'wall_post',
-        html: wallPostEmail({
-          teamName: team.name,
-          teamId,
-          posterName: poster.user_name,
-          posterAvatar: poster.user_avatar,
-          message: message.trim(),
-          postDate,
+        build: (L) => ({
+          subject: tm(L, 'wallSubject', team.name),
+          html: wallPostEmail({
+            teamName: team.name,
+            teamId,
+            posterName: poster.user_name,
+            posterAvatar: poster.user_avatar,
+            message: message.trim(),
+            postDate: postDateIn(L),
+          }, L),
         }),
       });
     });
@@ -3383,8 +3887,7 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
       for (const member of members.rows) {
         // In-app bildirim
         await createNotif(member.user_id, {
-          title: 'Yeni Etkinlik!',
-          message: `${teamName}: ${title} etkinliği eklendi.`,
+          build: (L) => ({ title: tm(L, 'newNotifTitle'), message: tm(L, 'newNotifMsg', teamName, title) }),
           type: 'training',
           refId: training.id,
           url: `/etkinlikler?etkinlik=${training.id}`,
@@ -3392,17 +3895,20 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
         // E-posta
         sendEmail({
           to: member.email,
-          subject: `${teamName} — Yeni Etkinlik: ${title}`,
+          userId: member.user_id,
           prefKey: 'event_new',
-          html: newTrainingEmail({
-            teamName,
-            trainingTitle: title,
-            trainingDate: formatTrDate(training.training_date),
-            trainingTime: training.training_time,
-            location: location_name,
-            description,
-            upcomingTrainings: upcomingRes.rows,
-            trainingId: training.id,
+          build: (L) => ({
+            subject: tm(L, 'newSubject', teamName, title),
+            html: newTrainingEmail({
+              teamName,
+              trainingTitle: title,
+              trainingDate: formatTrDate(training.training_date, L),
+              trainingTime: training.training_time,
+              location: location_name,
+              description,
+              upcomingTrainings: upcomingRes.rows,
+              trainingId: training.id,
+            }, L),
           }),
         }).catch(e => console.error('Training email error:', e.message));
       }
@@ -3872,8 +4378,7 @@ app.post('/api/trainings/:id/join', authenticateToken, async (req, res) => {
 
     for (const leader of leadersRes.rows) {
       await createNotif(leader.user_id, {
-        title: 'Etkinliğe Yeni Katılımcı!',
-        message: `${joinerName}, ${training.title} etkinliğine katıldı.`,
+        build: (L) => ({ title: tm(L, 'joinEvNotifTitle'), message: tm(L, 'joinEvNotifMsg', joinerName, training.title) }),
         type: 'training_join',
         refId: trainingId,
         url: `/etkinlikler?etkinlik=${trainingId}`,
@@ -3881,28 +4386,27 @@ app.post('/api/trainings/:id/join', authenticateToken, async (req, res) => {
 
       sendEmail({
         to: leader.email,
-        subject: `${training.title} — Yeni Katılımcı: ${joinerName}`,
+        userId: leader.user_id,
         prefKey: 'event_join',
-        html: emailWrapper(`
-          <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">Etkinliğinize Yeni Katılımcı Var!</h2>
+        build: (L) => ({ subject: tm(L, 'joinEvSubject', training.title, joinerName), html: emailWrapper(`
+          <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">${tm(L, 'joinEvTitle')}</h2>
           <p style="margin:0 0 28px;color:#64748b;font-size:15px;line-height:1.6;">
-            <strong>${joinerName}</strong>, <strong>${teamName}</strong> takımının <strong>${training.title}</strong> etkinliğine katıldı.
+            ${tm(L, 'joinEvBody', joinerName, teamName, training.title)}
           </p>
           <div style="text-align:center;">
             <a href="${APP_URL}/etkinlikler?etkinlik=${trainingId}"
                style="display:inline-block;background:linear-gradient(135deg,#114956,#0e3c47);color:#ffffff;text-decoration:none;
                       padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
-              Etkinliği Görüntüle →
+              ${tm(L, 'btnViewEventLong')}
             </a>
           </div>
-        `),
+        `, L) }),
       }).catch(e => console.error('Training join email error:', e.message));
     }
     } else if (training.created_by && training.created_by !== req.user.id) {
       // Bireysel etkinlik: oluşturana katılım bildirimi
       await createNotif(training.created_by, {
-        title: 'Etkinliğe Yeni Katılımcı!',
-        message: `${joinerName}, ${training.title} etkinliğine katıldı.`,
+        build: (L) => ({ title: tm(L, 'joinEvNotifTitle'), message: tm(L, 'joinEvNotifMsg', joinerName, training.title) }),
         type: 'training_join',
         refId: trainingId,
         url: `/etkinlikler?etkinlik=${trainingId}`,
@@ -3959,7 +4463,7 @@ app.post('/api/trainings/:id/comments', authenticateToken, async (req, res) => {
     }
 
     if (!(await canSeeTrainingComments(trainingId, req.user.id))) {
-      return res.status(403).json({ error: 'Yorumlar yalnız takım üyelerine açık.' });
+      return res.status(403).json({ error: 'Yorumlar yalnız takım üyelerine ve katılımcılara açık.' });
     }
 
     if (await isTrainingPast(trainingId)) {
@@ -4018,8 +4522,7 @@ app.post('/api/trainings/:id/comments', authenticateToken, async (req, res) => {
       recipientsResult.rows.forEach(async (recipient) => {
         try {
           await createNotif(recipient.id, {
-            title: `${training.title} — Yeni Yorum`,
-            message: `${commenter.name}: ${comment.trim().slice(0, 80)}${comment.length > 80 ? '...' : ''}`,
+            build: (L) => ({ title: tm(L, 'commentNotifTitle', training.title), message: `${commenter.name}: ${comment.trim().slice(0, 80)}${comment.length > 80 ? '...' : ''}` }),
             type: 'training_comment',
             refId: trainingId,
             url: `/etkinlikler?etkinlik=${trainingId}`,
@@ -4027,15 +4530,18 @@ app.post('/api/trainings/:id/comments', authenticateToken, async (req, res) => {
 
           sendEmail({
             to: recipient.email,
-            subject: `${training.title} etkinliğine yorum yapıldı`,
+            userId: recipient.id,
             prefKey: 'comment',
-            html: trainingCommentEmail({
-              commenterName: commenter.name,
-              commenterAvatar: commenter.avatar,
-              trainingTitle: training.title,
-              trainingDate,
-              comment: comment.trim(),
-              trainingId,
+            build: (L) => ({
+              subject: tm(L, 'commentSubject', training.title),
+              html: trainingCommentEmail({
+                commenterName: commenter.name,
+                commenterAvatar: commenter.avatar,
+                trainingTitle: training.title,
+                trainingDate: formatTrDate(training.training_date, L),
+                comment: comment.trim(),
+                trainingId,
+              }, L),
             }),
           });
         } catch (notifErr) {
@@ -4068,7 +4574,7 @@ app.post('/api/comments/:id/like', authenticateToken, async (req, res) => {
     const commentRow = cRes.rows[0];
 
     if (!(await canSeeTrainingComments(commentRow.training_id, userId))) {
-      return res.status(403).json({ error: 'Yorumlar yalnız takım üyelerine açık.' });
+      return res.status(403).json({ error: 'Yorumlar yalnız takım üyelerine ve katılımcılara açık.' });
     }
 
     // Zaten beğenmiş mi?
@@ -4091,8 +4597,7 @@ app.post('/api/comments/:id/like', authenticateToken, async (req, res) => {
       if (commentRow.user_id !== userId) {
         const liker = await pool.query('SELECT name FROM users WHERE id = $1', [userId]);
         createNotif(commentRow.user_id, {
-          title: 'Mesajın beğenildi',
-          message: `${liker.rows[0]?.name || 'Biri'} mesajını beğendi: "${commentRow.comment.slice(0, 60)}"`,
+          build: (L) => ({ title: tm(L, 'likeCommentTitle'), message: tm(L, 'likeCommentMsg', liker.rows[0]?.name || tm(L, 'someone'), commentRow.comment.slice(0, 60)) }),
           type: 'comment_like',
           refId: commentRow.training_id,
           url: `/etkinlikler?etkinlik=${commentRow.training_id}`,
@@ -4189,8 +4694,7 @@ app.post('/api/team-posts/:id/like', authenticateToken, async (req, res) => {
       if (postRow.user_id !== userId) {
         const liker = await pool.query('SELECT name FROM users WHERE id = $1', [userId]);
         createNotif(postRow.user_id, {
-          title: 'Gönderin beğenildi',
-          message: `${liker.rows[0]?.name || 'Biri'} takım duvarındaki gönderini beğendi: "${(postRow.message || '').slice(0, 60)}"`,
+          build: (L) => ({ title: tm(L, 'likePostTitle'), message: tm(L, 'likePostMsg', liker.rows[0]?.name || tm(L, 'someone'), (postRow.message || '').slice(0, 60)) }),
           type: 'wall_post_like',
           refId: postRow.team_id,
           url: `/takimlar?takim=${postRow.team_id}&tab=duvar`,
@@ -4324,25 +4828,27 @@ app.put('/api/trainings/:id', authenticateToken, async (req, res) => {
     attendeesResult.rows.forEach(async (attendee) => {
       try {
         await createNotif(attendee.id, {
-          title: `${updated.title} güncellendi`,
-          message: `${updaterName || 'Antrenör'} etkinlik bilgilerini güncelledi.`,
+          build: (L) => ({ title: tm(L, 'updateNotifTitle', updated.title), message: tm(L, 'updateNotifMsg', updaterName || tm(L, 'updaterFallback')) }),
           type: 'training_update',
           refId: trainingId,
           url: `/etkinlikler?etkinlik=${trainingId}`,
         });
         sendEmail({
           to: attendee.email,
-          subject: `${updated.title} etkinliğinde değişiklik var`,
+          userId: attendee.id,
           prefKey: 'event_update',
-          html: trainingUpdateEmail({
-            teamName: teamName || '',
-            trainingTitle: updated.title,
-            trainingDate,
-            trainingTime: training_time,
-            location: location_name,
-            description,
-            updaterName,
-            trainingId,
+          build: (L) => ({
+            subject: tm(L, 'updateSubject', updated.title),
+            html: trainingUpdateEmail({
+              teamName: teamName || '',
+              trainingTitle: updated.title,
+              trainingDate: formatTrDate(training_date, L),
+              trainingTime: training_time,
+              location: location_name,
+              description,
+              updaterName,
+              trainingId,
+            }, L),
           }),
         });
       } catch (notifErr) {
@@ -4861,6 +5367,20 @@ app.get('/api/users/me/notif-prefs', authenticateToken, async (req, res) => {
 });
 
 // Bildirim tercihlerini kaydet — { prefs: { key: { app, email } } }
+// Arayüz dili: kullanıcı dili elle değiştirince yazılır. E-posta ve bildirimler
+// bu dilde üretilir; başka cihazdan girişte de bu dil açılır.
+app.put('/api/users/me/lang', authenticateToken, async (req, res) => {
+  const lang = req.body?.lang;
+  if (!MAIL_LANGS.includes(lang)) return res.status(400).json({ error: 'Unsupported language' });
+  try {
+    await pool.query('UPDATE users SET lang = $1 WHERE id = $2', [lang, req.user.id]);
+    res.json({ lang });
+  } catch (e) {
+    console.error('Save lang error:', e.message);
+    res.status(500).json({ error: 'Could not save language' });
+  }
+});
+
 app.put('/api/users/me/notif-prefs', authenticateToken, async (req, res) => {
   try {
     const incoming = req.body?.prefs;
@@ -5108,17 +5628,20 @@ app.post('/api/contact', async (req, res) => {
     // Gönderene teşekkür maili
     sendEmail({
       to: email,
-      subject: 'Mesajınız alındı — Muuvlink',
-      html: emailWrapper(`
-        <h2 style="margin:0 0 12px;color:#1e293b;">Mesajınız için teşekkürler, ${name}!</h2>
+      fallbackLang: reqLang(req),
+      build: (L) => ({
+        subject: tm(L, 'contactSubject'),
+        html: emailWrapper(`
+        <h2 style="margin:0 0 12px;color:#1e293b;">${tm(L, 'contactThanks', name)}</h2>
         <p style="color:#64748b;line-height:1.7;margin:0 0 20px;">
-          Mesajınız başarıyla alındı. En kısa sürede size dönüş yapacağız.
+          ${tm(L, 'contactBody')}
         </p>
         <div style="background:#f8fafc;border-left:3px solid #114956;border-radius:8px;padding:20px;">
-          <p style="margin:0 0 8px;font-weight:600;color:#1e293b;">Konu: ${subject}</p>
+          <p style="margin:0 0 8px;font-weight:600;color:#1e293b;">${tm(L, 'contactTopic')} ${subject}</p>
           <p style="margin:0;color:#64748b;font-size:14px;white-space:pre-wrap;">${message.slice(0, 200)}${message.length > 200 ? '...' : ''}</p>
         </div>
-      `),
+      `, L),
+      }),
     });
 
     res.json({ message: 'Mesajınız başarıyla gönderildi.', id: result.rows[0].id });
@@ -6758,6 +7281,9 @@ pool.query(`ALTER TABLE trainings ADD COLUMN IF NOT EXISTS sport TEXT`).catch(()
 // Ücretli etkinlik (panelden eklenen yarış vb.). Normal etkinlik akışında ve haritada
 // görünür ama uygulama içi katılım yerine dış "Kayıt Ol" linkine yönlendirir.
 pool.query(`ALTER TABLE trainings ADD COLUMN IF NOT EXISTS is_paid BOOLEAN DEFAULT false`).catch(() => {});
+// Kullanıcının arayüz dili. BOŞ = hiç seçmedi → e-posta/bildirim Türkçe (eski davranış).
+// Yalnız kayıt olurken ya da dili elle değiştirince yazılır; mevcut hesaplar boş kalır.
+pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS lang VARCHAR(5)`).catch(() => {});
 // Organizatör etkinliği (admin panelinden ya da yarış keşfinden eklenen, dış
 // kayıt linkiyle çalışan etkinlik). ÜCRET AYRI BİR ŞEY: is_paid yalnız ücretli
 // olup olmadığını söyler, bu bayrak da etkinliğin türünü. Eski satırların hepsi
@@ -7143,17 +7669,20 @@ app.post('/api/auth/forgot-password', authLimiter, async (req, res) => {
     const resetLink = `${APP_URL}?reset_token=${token}`;
     await sendEmail({
       to: email,
-      subject: 'Muuvlink — Şifre Sıfırlama',
-      html: emailWrapper(`
-        <h2 style="color:#114956;margin:0 0 16px">Şifre Sıfırlama</h2>
-        <p style="color:#334155;margin:0 0 12px">Merhaba <strong>${user.name}</strong>,</p>
-        <p style="color:#334155;margin:0 0 24px">Şifrenizi sıfırlamak için aşağıdaki butona tıklayın. Link <strong>1 saat</strong> geçerlidir.</p>
+      userId: user.id,
+      build: (L) => ({
+        subject: tm(L, 'resetSubject'),
+        html: emailWrapper(`
+        <h2 style="color:#114956;margin:0 0 16px">${tm(L, 'resetTitle')}</h2>
+        <p style="color:#334155;margin:0 0 12px">${tm(L, 'resetHello', user.name)}</p>
+        <p style="color:#334155;margin:0 0 24px">${tm(L, 'resetBody')}</p>
         <a href="${resetLink}"
            style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#114956,#0e3c47);color:#fff;border-radius:12px;text-decoration:none;font-weight:700;font-size:15px;">
-          Şifremi Sıfırla
+          ${tm(L, 'btnResetPw')}
         </a>
-        <p style="color:#94a3b8;font-size:13px;margin:24px 0 0;">Bu isteği siz yapmadıysanız bu e-postayı görmezden gelebilirsiniz.</p>
-      `),
+        <p style="color:#94a3b8;font-size:13px;margin:24px 0 0;">${tm(L, 'resetIgnore')}</p>
+      `, L),
+      }),
     });
     res.json({ message: 'E-posta gönderildi.' });
   } catch (err) {
@@ -7216,19 +7745,23 @@ async function sendTrainingReminders() {
         );
 
         for (const member of members.rows) {
-          const notifTitle = daysLeft === 1 ? 'Yarın Etkinlik Var!' : '3 Gün Sonra Etkinlik!';
-          const notifMsg = `${training.team_name}: ${training.title} — ${formatTrDate(training.training_date)}`;
-
-          // Aynı bildirim daha önce gönderildi mi kontrol et
+          // Aynı hatırlatma daha önce gönderildi mi? Eskiden BAŞLIĞA bakılıyordu;
+          // başlık artık alıcının dilinde olduğundan türe + zamana bakılır.
+          // 3 gün ve 1 gün hatırlatmaları 48 saat arayla gider, 36 saat pencere
+          // ikisini ayırır, aynı günkü ikinci çalışmayı engeller.
           const exists = await pool.query(
-            `SELECT id FROM notifications WHERE user_id = $1 AND reference_id = $2 AND title = $3`,
-            [member.user_id, training.id, notifTitle]
+            `SELECT id FROM notifications
+              WHERE user_id = $1 AND reference_id = $2 AND notification_type = 'training_reminder'
+                AND created_at > NOW() - INTERVAL '36 hours'`,
+            [member.user_id, training.id]
           );
           if (exists.rows.length > 0) continue;
 
           await createNotif(member.user_id, {
-            title: notifTitle,
-            message: notifMsg,
+            build: (L) => ({
+              title: tm(L, 'remNotifTitle', daysLeft),
+              message: `${training.team_name}: ${training.title} — ${formatTrDate(training.training_date, L)}`,
+            }),
             type: 'training_reminder',
             refId: training.id,
             url: `/etkinlikler?etkinlik=${training.id}`,
@@ -7236,16 +7769,19 @@ async function sendTrainingReminders() {
 
           sendEmail({
             to: member.email,
-            subject: `${training.team_name} — ${daysLeft === 1 ? 'Yarın' : '3 Gün Sonra'}: ${training.title}`,
+            userId: member.user_id,
             prefKey: 'event_reminder',
-            html: trainingReminderEmail({
-              teamName: training.team_name,
-              trainingTitle: training.title,
-              trainingDate: formatTrDate(training.training_date),
-              trainingTime: training.training_time,
-              location: training.location_name,
-              daysLeft,
-              trainingId: training.id,
+            build: (L) => ({
+              subject: tm(L, 'remSubject', training.team_name, daysLeft, training.title),
+              html: trainingReminderEmail({
+                teamName: training.team_name,
+                trainingTitle: training.title,
+                trainingDate: formatTrDate(training.training_date, L),
+                trainingTime: training.training_time,
+                location: training.location_name,
+                daysLeft,
+                trainingId: training.id,
+              }, L),
             }),
           }).catch(e => console.error('Reminder email error:', e.message));
         }
@@ -7323,8 +7859,7 @@ async function sendEngagementReminders() {
 
     for (const user of inactiveUsers.rows) {
       await createNotif(user.id, {
-        title: 'Seni Özledik! 👋',
-        message: 'Hadi kalk, bir etkinlik planla ya da var olan birine katıl, arkadaşlarınla buluş 💪',
+        build: (L) => ({ title: tm(L, 'nudgeTitle'), message: tm(L, 'nudgeMsg') }),
         type: 'engagement_nudge',
         url: '/etkinlikler',
       });

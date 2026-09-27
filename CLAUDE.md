@@ -115,6 +115,22 @@ sonra ar — Arapça sağdan sola düzen ister, ayrı proje).
   → TR). Yeni dilde bu eşleme de eklenir (`LocationPicker.jsx`).
 - Yasal metinler (KVKK, gizlilik, koşullar) yalnız Türkçe; çevirisi hukuki
   kontrol ister, kod işi değil.
+- **Hesap dili `users.lang`.** Yalnız kayıtta ve kullanıcı dili ELLE
+  değiştirince (`PUT /api/users/me/lang`) yazılır. **Boş = Türkçe**: bu işten
+  önceki hesapların hepsi boş, onlara giden hiçbir şey değişmedi. Girişte
+  hesaptaki dil açılır; adres bir dil sayfasıysa (`/el/events`) adres kazanır.
+- **E-posta ve bildirim metinleri `backend-api.js` → `MAIL`** (tr/en/de/el).
+  `createNotif` ve `sendEmail` bir `build: (L) => ({...})` alır ve dili ALICININ
+  hesabından kendileri bulur; gönderim noktasında dil sorgusu yazılmaz. Kayıtlı
+  olmayan alıcıda (davet, iletişim) `fallbackLang: reqLang(req)`. Türkçe
+  çıktının eskisiyle birebir aynı olduğu doğrulandı — Türkçe metinler
+  `MAIL.tr`'de değiştirilmeden durmalı.
+- **Sunucu hata/bilgi mesajları `SERVER_MSG`**: uç Türkçe yazar, yanıt çıkarken
+  `X-Muuv-Lang` başlığına göre çevrilir. Site her API isteğine bu başlığı
+  ekler (`sporla-bulusma.jsx` başındaki `window.fetch` sarmalı). Yeni
+  kullanıcıya dönük mesaj → `SERVER_MSG`'e de ekle; yoksa Türkçe gider.
+- Bildirim tekrar kontrolü BAŞLIĞA bakmaz (başlık alıcı diline göre değişir);
+  tür + zaman penceresine bakar.
 
 ## Renk sistemi (kurumsal palet)
 

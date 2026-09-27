@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { detectLang, createT, LANGUAGES, localeOf, pickLang } from "./i18n.js";
+import { detectLang, createT, LANGUAGES, SUPPORTED, localeOf, pickLang } from "./i18n.js";
 import Tour from "./Tour.jsx";
 import BlurReveal from "./BlurReveal.jsx";
 import { MetaEvents, newEventId, getMatchSignals, getAttribution, trackPageView } from "./analytics.js";
@@ -161,6 +161,24 @@ class ErrorBoundary extends React.Component {
   }
 }
 const BASE_URL = import.meta.env.VITE_BASE_URL ?? (import.meta.env.DEV ? "http://localhost:3000" : "");
+
+// Her API isteği arayüz dilini sunucuya bildirir (X-Muuv-Lang): sunucu hata/bilgi
+// mesajlarını bu dilde döndürür, kayıtlı olmayan alıcıya (davet, iletişim) giden
+// e-postayı da bu dilde yazar. Türkçede sunucu hiçbir şey değiştirmez.
+if (typeof window !== "undefined" && !window.__muuvLangFetch) {
+  window.__muuvLangFetch = true;
+  const _origFetch = window.fetch.bind(window);
+  window.fetch = (input, init = {}) => {
+    const url = typeof input === "string" ? input : (input?.url || "");
+    if (url.startsWith(API_URL) || url.startsWith("/api/")) {
+      const l = document.documentElement.lang || localStorage.getItem("muuvlang") || "tr";
+      const headers = new Headers(init.headers || (typeof input === "string" ? undefined : input.headers));
+      if (!headers.has("X-Muuv-Lang")) headers.set("X-Muuv-Lang", l);
+      return _origFetch(input, { ...init, headers });
+    }
+    return _origFetch(input, init);
+  };
+}
 
 // ── Tarih formatlama yardımcıları ──────────────────────────────────────────
 // Aktif dile göre BCP-47 locale — seçili dil değişince tarihler de o dilde gelir.
@@ -1828,7 +1846,20 @@ export default function Muuvlink() {
     return l;
   });
   const t = createT(lang);
+  // Kullanıcı dili ELLE değiştirdi: arayüz + bu cihaz + (girişliyse) hesap.
+  // Hesaptaki dil e-posta/bildirim dilini ve başka cihazdaki açılışı belirler.
   const changeLang = (l) => {
+    applyLang(l);
+    const token = localStorage.getItem("token");
+    if (token) {
+      fetch(`${API_URL}/users/me/lang`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ lang: l }),
+      }).catch(() => {});
+    }
+  };
+  const applyLang = (l) => {
     setLang(l);
     localStorage.setItem("muuvlang", l);
     document.documentElement.lang = l;
@@ -2969,6 +3000,13 @@ export default function Muuvlink() {
       if (response.ok) {
         const data = await response.json();
         setUser(data.user);
+        // Hesapta dil kayıtlıysa o açılır (başka cihazda seçilmiş olabilir).
+        // İstisna: adres bir dil sayfasıysa (/el/events gibi) adres kazanır — SEO.
+        const acc = data.user?.lang;
+        if (acc && SUPPORTED.includes(acc) && acc !== document.documentElement.lang
+            && !(!isNative && langFromPath(window.location.pathname))) {
+          applyLang(acc);
+        }
         fetchMyTrainings(token);
         fetchMyTeams(token);
         fetchNotifications(token);
@@ -3050,6 +3088,7 @@ export default function Muuvlink() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name, email, password,
+          lang: document.documentElement.lang || lang,
           _eid: eventId,
           _attr: getAttribution(),
           ...getMatchSignals(),
