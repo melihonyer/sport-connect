@@ -4518,8 +4518,14 @@ app.post('/api/trainings/:id/comments', authenticateToken, async (req, res) => {
         [trainingId, training.team_id, req.user.id]
       );
 
+      // Yalnız yorumları GÖREBİLEN alıcılar (canSeeTrainingComments — görme kuralıyla
+      // aynı kaynak). Eskiden yorum yazıp etkinlikten ayrılan kişi, göremediği
+      // yorumların metnini bildirim/e-postayla almaya devam ediyordu.
+      const visible = await Promise.all(recipientsResult.rows.map((r) => canSeeTrainingComments(trainingId, r.id)));
+      const recipients = recipientsResult.rows.filter((_, i) => visible[i]);
+
       // Bildirim + mail (paralel, hata durumunda ana akışı kesmez)
-      recipientsResult.rows.forEach(async (recipient) => {
+      recipients.forEach(async (recipient) => {
         try {
           await createNotif(recipient.id, {
             build: (L) => ({ title: tm(L, 'commentNotifTitle', training.title), message: `${commenter.name}: ${comment.trim().slice(0, 80)}${comment.length > 80 ? '...' : ''}` }),

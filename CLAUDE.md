@@ -294,8 +294,8 @@ Ekranda gizlemek yetmez — tam isim API cevabında durursa tarayıcıdan görü
   platform admini tam görür. id'ler kalır: arayüz "üye miyim" kararını id ile verir.
 - **Etkinlik katılımcıları** (`GET /api/trainings/:id`): tam isim + fotoğraf
   takım üyesine, katılana, oluşturana ve admine; diğerleri maskeli.
-- **Etkinlik yorumları**: `canSeeTrainingComments` tek kaynak — görme, yazma ve
-  beğenme üçü de ona bakar. Takım üyeleri (katılmasa da), katılanlar (takım
+- **Etkinlik yorumları**: `canSeeTrainingComments` tek kaynak — görme, yazma,
+  beğenme ve yeni yorum BİLDİRİMİNİN alıcı listesi dördü de ona bakar. Takım üyeleri (katılmasa da), katılanlar (takım
   dışından olsa da), takımsız etkinlikte oluşturan, admin. Diğerlerine
   `comments: []` + `comments_hidden: true`.
 - **Bireysel (takımsız) etkinlik** aynı kuralla çalışır; "takımın" yerini
