@@ -754,6 +754,7 @@ export const translations = {
     k_like:           { tr: "Beğeniler",                en: "Likes",                 de: "Likes" },
     k_badge:          { tr: "Yeni rozet",               en: "New badge",             de: "Neues Abzeichen" },
     k_nudge:          { tr: "Hatırlatmalar",            en: "Reminders",             de: "Erinnerungen" },
+    k_tips:            { tr: "Muuvlink'ten ipuçları (takımını büyütme, etkinlik duyurma)", en: "Tips from Muuvlink (growing your team, promoting events)", de: "Tipps von Muuvlink (Team vergrößern, Events bewerben)" },
   },
 
   // ── BADGES PAGE ─────────────────────────────────────────

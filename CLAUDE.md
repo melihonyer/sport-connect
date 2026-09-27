@@ -328,6 +328,32 @@ Ekranda gizlemek yetmez — tam isim API cevabında durursa tarayıcıdan görü
 - Yorum yazma testi alıcılara bildirim + e-posta tetikler: izinli yolu denerken
   **geçmiş bir etkinlik** kullan (yetkiyi geçer, 409 döner, hiçbir şey yazılmaz).
 
+## Harekete geçiren e-postalar
+
+`backend-api.js` → `ACT` (7 dil) + `activationEmail(kind, d, lang)`. Her birinde
+seçilebilir link kutusu, WhatsApp/Telegram/e-posta butonları, hazır davet mesajı.
+
+- Kalıplar: `tc` takım kuruldu · `ec` etkinlik yayında · `lc` son çağrı (24 saat
+  kala boş yer) · `te` ilk etkinlik (takım 3 gün etkinliksiz) · `gt`/`ge` mevcut
+  takım/etkinliği büyüt (admin butonu).
+- **`tc`/`ec`/`lc`/`te` henüz hiçbir akışa bağlı DEĞİL**; Melih içerikleri
+  onaylayınca otomatik gönderim açılacak. Yalnız `gt`/`ge` admin butonuyla gidiyor.
+- Paylaşım butonlarındaki link `utm_source=share&utm_medium=whatsapp|telegram|email
+  &utm_campaign=team_invite|event_invite` taşır; kayıt olanın kaynağı users.utm_*'da.
+- Gizli takım/etkinlikte paylaşım bölümü çıkmaz (link üye olmayana açılmıyor),
+  yerine e-postayla davet yönlendirmesi.
+- **Admin "Mail" butonu** (Takımlar ve Etkinlikler listesi): yalnız takımın
+  owner/captain/coach'ına (takımsız etkinlikte oluşturana). Geçmiş ve organizatör
+  etkinliğine gitmez. Kayıt `grow_email_log`; son gönderim satırda görünür;
+  24 saat içinde ikinci gönderim ayrıca onay ister.
+- **Tercih `tips` ("Muuvlink'ten ipuçları")**: yalnız e-posta, **varsayılan AÇIK**
+  (`EMAIL_DEFAULT_ON`). Kapatan atlanır; her mailin altında nasıl kapatılacağı yazar.
+  Varsayılan açık olması bir karar — İYS/onay açısından Melih'le konuşuldu.
+- E-posta çerçevesi dar ekrana uyar (`mv-*` sınıfları + media query). Sabit
+  600px'e geri dönülmez; telefonda sağ taraf kesiliyordu.
+- Örnek göndermek için gerçek alıcı yerine `delivered+etiket@resend.dev` kullan
+  (Resend test adresi: kimseye gitmez, itibar bozmaz).
+
 ## Push bildirimleri
 
 Cihaz jetonu yalnız uygulama açılışında geliyordu; o an giriş yapılmamışsa jeton

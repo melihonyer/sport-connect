@@ -833,9 +833,12 @@ async function getUserNotifInfo(userId) {
   } catch { return { prefs: {}, lang: 'tr' }; }
 }
 // channel: 'app' (varsayılan açık) | 'email' (varsayılan kapalı)
+// E-postası varsayılan AÇIK olan türler (kullanıcı kapatana kadar). Sitedeki
+// NOTIF_PREF_ROWS'ta emailDefault:true ile işaretli olmalı.
+const EMAIL_DEFAULT_ON = new Set(['tips']);
 function prefAllows(prefs, key, channel) {
   const p = (prefs && prefs[key]) || {};
-  if (channel === 'email') return p.email === true;
+  if (channel === 'email') return EMAIL_DEFAULT_ON.has(key) ? p.email !== false : p.email === true;
   return p.app !== false;
 }
 
@@ -1631,6 +1634,8 @@ function formatTrDate(d, lang = 'tr') {
   });
 }
 
+// Dar ekran (<620px): çerçeve ekrana oturur, iç boşluk küçülür — <style> içindeki
+// media query'yi Gmail ve Apple Mail uygular; desteklemeyen istemci 600px'i görür.
 function emailWrapper(content, lang = 'tr') {
   const L = mailLang(lang);
   return `<!DOCTYPE html>
@@ -1639,14 +1644,22 @@ function emailWrapper(content, lang = 'tr') {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Muuvlink</title>
+  <style>
+    @media only screen and (max-width: 620px) {
+      .mv-card { width: 100% !important; border-radius: 0 !important; }
+      .mv-pad { padding: 26px 18px !important; }
+      .mv-head { padding: 26px 18px !important; }
+      .mv-outer { padding: 0 !important; }
+    }
+  </style>
 </head>
 <body style="margin:0;padding:0;background:#f4f6f9;font-family:'Segoe UI',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:40px 0;">
+  <table width="100%" cellpadding="0" cellspacing="0" class="mv-outer" style="background:#f4f6f9;padding:40px 0;">
     <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+      <table width="600" cellpadding="0" cellspacing="0" class="mv-card" style="width:100%;max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
         <!-- Header -->
         <tr>
-          <td style="background:linear-gradient(135deg,#114956,#0e3c47);padding:32px 40px;text-align:center;">
+          <td class="mv-head" style="background:linear-gradient(135deg,#114956,#0e3c47);padding:32px 40px;text-align:center;">
             <img src="https://muuvlink.app/icons/favicon.png" width="56" height="56" alt="Muuvlink" style="border-radius:14px;margin-bottom:14px;display:inline-block;box-shadow:0 4px 16px rgba(0,0,0,0.15);" />
             <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;letter-spacing:-0.5px;">Muuvlink</h1>
             <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">${tm(L, 'wrapTagline')}</p>
@@ -1654,7 +1667,7 @@ function emailWrapper(content, lang = 'tr') {
         </tr>
         <!-- Content -->
         <tr>
-          <td style="padding:40px;">
+          <td class="mv-pad" style="padding:40px;">
             ${content}
           </td>
         </tr>
@@ -1986,6 +1999,583 @@ function trainingReminderEmail({ teamName, trainingTitle, trainingDate, training
       </a>
     </div>
   `, lang);
+}
+
+
+// ─── Harekete geçiren e-postalar (takım kuruldu, etkinlik yayında, son çağrı,
+// ilk etkinlik) — 7 dil. Metin + paylaşım mesajı burada; HTML activationEmail'de.
+// {link} içeren davet mesajları olduğu gibi WhatsApp/Telegram'a gider.
+const ACT = {
+  tr: {
+    yourLink: 'Paylaşım linkin',
+    copyHint: 'Linke uzun bas ya da seçip kopyala.',
+    readyMsg: 'Arkadaşlarına gönderebileceğin hazır mesaj',
+    shareWa: 'WhatsApp', shareTg: 'Telegram', shareMail: 'E-posta',
+    shareTitle: 'Tek dokunuşla paylaş',
+    optOut: 'Bu tür e-postaları Profil › Bildirim tercihleri › Muuvlink\'ten ipuçları\'ndan kapatabilirsin.',
+    tc: {
+      subject: (n) => `Takımın hazır: ${n} — şimdi arkadaşlarını çağır`,
+      title: 'Takımın kuruldu! 🎉',
+      lead: (n) => `${mB(n)} artık Muuvlink'te. Takımı büyütmenin en hızlı yolu linki bugün paylaşmak.`,
+      steps: ['Linki WhatsApp grubuna gönder', 'İlk etkinliğini oluştur — üyelerine anında bildirim gider', 'Katılanlar takımına üye olsun, her etkinlikten haberdar olsun'],
+      msg: (n, link) => `Selam! Muuvlink'te ${n} takımını kurdum. Birlikte spor yapalım, buradan katıl: ${link}`,
+      mailSubject: (n) => `${n} takımına katıl`,
+      cta: 'Takımını aç →',
+      privateNote: "Takımın gizli: link yalnız üyelere açılır. Arkadaşlarını takım sayfasındaki \"Davet Et\" ile e-postayla çağır.",
+      privateCta: 'Üye davet et →',
+    },
+    ec: {
+      subject: (n) => `Etkinliğin yayında: ${n} — kontenjanı doldur`,
+      title: 'Etkinliğin yayında! 🚀',
+      lead: (n) => `${mB(n)} artık görünüyor. Şimdi paylaş, kontenjan dolmadan arkadaşların yerini alsın.`,
+      steps: ['Linki grubuna ya da arkadaşlarına gönder', 'Soruları etkinlik sayfasındaki mesajlardan yanıtla', 'Etkinlikten önce katılımcılara hatırlatma kendiliğinden gider'],
+      msg: (n, when, link) => `${when} ${n} var, gel beraber gidelim! Katılmak için: ${link}`,
+      mailSubject: (n) => `${n} — gel beraber gidelim`,
+      cta: 'Etkinliğini görüntüle →',
+      privateNote: 'Bu etkinlik gizli bir takıma ait: link yalnız takım üyelerine açılır. Üyelerine zaten bildirim gitti.',
+      privateCta: 'Etkinliğini görüntüle →',
+    },
+    lc: {
+      subject: (n, k) => `Yarın ${n} — ${k} kişilik yer boş`,
+      title: (k) => `Yarına ${k} yer kaldı`,
+      lead: (n) => `${mB(n)} yarın. Son bir paylaşım kontenjanı doldurabilir.`,
+      steps: ['Linki bir kez daha grubuna at', 'Gelmek isteyip unutanları etiketle', 'Buluşma noktasını mesajlarda netleştir'],
+      msg: (n, when, link) => `Yarın ${n} var, hâlâ yer var! Gelmek istersen: ${link}`,
+      mailSubject: (n) => `Yarın ${n} — hâlâ yer var`,
+      cta: 'Etkinliğini görüntüle →',
+    },
+    te: {
+      subject: (n) => `${n} ilk etkinliğini bekliyor`,
+      title: 'Takımın ilk etkinliğini bekliyor',
+      lead: (n) => `${mB(n)} hazır ama henüz bir buluşma yok. Etkinlik oluşturduğunda takımındaki herkese bildirim gider; ilk buluşmayı planlamak iki dakika sürer.`,
+      ideasTitle: 'Birkaç fikir',
+      ideas: ['Haftalık sabah koşusu', 'Hafta sonu bisiklet turu', 'Yeni üyelerle tanışma antrenmanı'],
+      cta: 'Etkinlik oluştur →',
+    },
+    gt: {
+      subject: (n) => `${n} daha da kalabalık olabilir`,
+      title: 'Takımını daha da kalabalıklaştırmak ister misin?',
+      lead: (n, d) => `${mB(n)} şu an ${d.members} üyeli. Linki birkaç gruba daha göndermen, yeni sporcuların seni bulması için yeterli.`,
+      steps: ['Linki spor gruplarına ve arkadaşlarına gönder', 'Takım sayfasındaki "Davet Et" ile e-postayla çağır', 'Düzenli bir etkinlik aç — gelenler takıma katılsın'],
+      msg: (n, link) => `Selam! Muuvlink'te ${n} takımındayız, sen de gel. Buradan katılabilirsin: ${link}`,
+      mailSubject: (n) => `${n} takımına katıl`,
+      cta: 'Takımını aç →',
+      privateNote: "Takımın gizli: link yalnız üyelere açılır. Yeni üyeleri takım sayfasındaki \"Davet Et\" ile e-postayla çağırabilirsin.",
+      privateCta: 'Üye davet et →',
+    },
+    ge: {
+      subject: (n) => `${n} için daha fazla katılımcı`,
+      title: 'Etkinliğini daha çok kişiye ulaştırmak ister misin?',
+      lead: (n, d) => `${mB(n)} için şu an ${d.attendees} katılımcı var. Bir paylaşım daha, yeni sporcuların da gelmesini sağlayabilir.`,
+      steps: ['Linki spor gruplarına ve arkadaşlarına gönder', 'Gelmek isteyenleri mesajla hatırlat', 'Soruları etkinlik sayfasındaki mesajlardan yanıtla'],
+      msg: (n, when, link) => `${when} ${n} var, gel beraber gidelim! Katılmak için: ${link}`,
+      mailSubject: (n) => `${n} — gel beraber gidelim`,
+      cta: 'Etkinliğini görüntüle →',
+      privateNote: 'Bu etkinlik gizli bir takıma ait: link yalnız takım üyelerine açılır.',
+      privateCta: 'Etkinliğini görüntüle →',
+    },
+  },
+
+  en: {
+    yourLink: 'Your share link',
+    copyHint: 'Press and hold the link, or select it to copy.',
+    readyMsg: 'A ready-made message for your friends',
+    shareWa: 'WhatsApp', shareTg: 'Telegram', shareMail: 'Email',
+    shareTitle: 'Share in one tap',
+    optOut: 'You can turn these emails off in Profile › Notification preferences › Tips from Muuvlink.',
+    tc: {
+      subject: (n) => `Your team is ready: ${n} — now bring your friends`,
+      title: 'Your team is live! 🎉',
+      lead: (n) => `${mB(n)} is now on Muuvlink. The fastest way to grow it is to share the link today.`,
+      steps: ['Send the link to your WhatsApp group', 'Create your first event — members are notified instantly', 'Let people join the team so they hear about every event'],
+      msg: (n, link) => `Hi! I started the team ${n} on Muuvlink. Let's train together — join here: ${link}`,
+      mailSubject: (n) => `Join the team ${n}`,
+      cta: 'Open your team →',
+      privateNote: 'Your team is private: the link only opens for members. Invite friends by email with "Invite" on the team page.',
+      privateCta: 'Invite members →',
+    },
+    ec: {
+      subject: (n) => `Your event is live: ${n} — fill the spots`,
+      title: 'Your event is live! 🚀',
+      lead: (n) => `${mB(n)} is now visible. Share it now so your friends grab a spot before it fills up.`,
+      steps: ['Send the link to your group or friends', 'Answer questions in the event messages', 'Participants get a reminder automatically before the start'],
+      msg: (n, when, link) => `${n} is on ${when} — come along! Join here: ${link}`,
+      mailSubject: (n) => `${n} — come along`,
+      cta: 'View your event →',
+      privateNote: 'This event belongs to a private team: the link only opens for team members. Your members have already been notified.',
+      privateCta: 'View your event →',
+    },
+    lc: {
+      subject: (n, k) => `${n} is tomorrow — ${k} spots left`,
+      title: (k) => `${k} spots left for tomorrow`,
+      lead: (n) => `${mB(n)} is tomorrow. One more share could fill it up.`,
+      steps: ['Post the link to your group once more', 'Tag the friends who wanted to come', 'Confirm the meeting point in the messages'],
+      msg: (n, when, link) => `${n} is tomorrow and there are still spots! Join here: ${link}`,
+      mailSubject: (n) => `${n} tomorrow — spots still open`,
+      cta: 'View your event →',
+    },
+    te: {
+      subject: (n) => `${n} is waiting for its first event`,
+      title: 'Your team is waiting for its first event',
+      lead: (n) => `${mB(n)} is ready, but there's no meetup yet. When you create an event, everyone on your team is notified — planning the first one takes two minutes.`,
+      ideasTitle: 'A few ideas',
+      ideas: ['A weekly morning run', 'A weekend bike ride', 'A get-to-know-you session for new members'],
+      cta: 'Create an event →',
+    },
+    gt: {
+      subject: (n) => `${n} could be even bigger`,
+      title: 'Want to grow your team even more?',
+      lead: (n, d) => `${mB(n)} has ${d.members} members right now. Sharing the link in a few more groups is all it takes for new athletes to find you.`,
+      steps: ['Send the link to sports groups and friends', 'Invite people by email with "Invite" on the team page', 'Run a regular event — newcomers will join the team'],
+      msg: (n, link) => `Hi! We're on the team ${n} on Muuvlink — come join us: ${link}`,
+      mailSubject: (n) => `Join the team ${n}`,
+      cta: 'Open your team →',
+      privateNote: 'Your team is private: the link only opens for members. Invite new members by email with "Invite" on the team page.',
+      privateCta: 'Invite members →',
+    },
+    ge: {
+      subject: (n) => `More participants for ${n}`,
+      title: 'Want your event to reach more people?',
+      lead: (n, d) => `${mB(n)} has ${d.attendees} participants right now. One more share can bring in new athletes too.`,
+      steps: ['Send the link to sports groups and friends', 'Remind the people who wanted to come', 'Answer questions in the event messages'],
+      msg: (n, when, link) => `${n} is on ${when} — come along! Join here: ${link}`,
+      mailSubject: (n) => `${n} — come along`,
+      cta: 'View your event →',
+      privateNote: 'This event belongs to a private team: the link only opens for team members.',
+      privateCta: 'View your event →',
+    },
+  },
+
+  de: {
+    yourLink: 'Dein Link zum Teilen',
+    copyHint: 'Link gedrückt halten oder markieren und kopieren.',
+    readyMsg: 'Eine fertige Nachricht für deine Freunde',
+    shareWa: 'WhatsApp', shareTg: 'Telegram', shareMail: 'E-Mail',
+    shareTitle: 'Mit einem Tipp teilen',
+    optOut: 'Du kannst diese E-Mails unter Profil › Benachrichtigungen › Tipps von Muuvlink abschalten.',
+    tc: {
+      subject: (n) => `Dein Team ist bereit: ${n} — jetzt Freunde einladen`,
+      title: 'Dein Team ist online! 🎉',
+      lead: (n) => `${mB(n)} ist jetzt auf Muuvlink. Am schnellsten wächst es, wenn du den Link noch heute teilst.`,
+      steps: ['Schick den Link in deine WhatsApp-Gruppe', 'Erstelle dein erstes Event — alle Mitglieder werden sofort benachrichtigt', 'Lass die Leute dem Team beitreten, damit sie jedes Event mitbekommen'],
+      msg: (n, link) => `Hi! Ich habe das Team ${n} auf Muuvlink gegründet. Lass uns zusammen trainieren — hier beitreten: ${link}`,
+      mailSubject: (n) => `Tritt dem Team ${n} bei`,
+      cta: 'Team öffnen →',
+      privateNote: 'Dein Team ist privat: Der Link öffnet sich nur für Mitglieder. Lade Freunde über „Einladen“ auf der Teamseite per E-Mail ein.',
+      privateCta: 'Mitglieder einladen →',
+    },
+    ec: {
+      subject: (n) => `Dein Event ist online: ${n} — fülle die Plätze`,
+      title: 'Dein Event ist online! 🚀',
+      lead: (n) => `${mB(n)} ist jetzt sichtbar. Teile es jetzt, damit sich deine Freunde einen Platz sichern.`,
+      steps: ['Schick den Link an deine Gruppe oder Freunde', 'Beantworte Fragen in den Event-Nachrichten', 'Vor dem Start bekommen alle automatisch eine Erinnerung'],
+      msg: (n, when, link) => `${when} ist ${n} — komm mit! Hier anmelden: ${link}`,
+      mailSubject: (n) => `${n} — komm mit`,
+      cta: 'Event ansehen →',
+      privateNote: 'Dieses Event gehört zu einem privaten Team: Der Link öffnet sich nur für Teammitglieder. Deine Mitglieder wurden bereits benachrichtigt.',
+      privateCta: 'Event ansehen →',
+    },
+    lc: {
+      subject: (n, k) => `Morgen ${n} — noch ${k} Plätze frei`,
+      title: (k) => `Noch ${k} Plätze für morgen`,
+      lead: (n) => `${mB(n)} ist morgen. Ein letztes Teilen kann die Plätze füllen.`,
+      steps: ['Poste den Link noch einmal in deine Gruppe', 'Markiere die Freunde, die mitkommen wollten', 'Kläre den Treffpunkt in den Nachrichten'],
+      msg: (n, when, link) => `Morgen ist ${n} und es gibt noch Plätze! Hier anmelden: ${link}`,
+      mailSubject: (n) => `Morgen ${n} — noch Plätze frei`,
+      cta: 'Event ansehen →',
+    },
+    te: {
+      subject: (n) => `${n} wartet auf sein erstes Event`,
+      title: 'Dein Team wartet auf sein erstes Event',
+      lead: (n) => `${mB(n)} ist bereit, aber es gibt noch kein Treffen. Wenn du ein Event erstellst, wird dein ganzes Team benachrichtigt — das erste zu planen dauert zwei Minuten.`,
+      ideasTitle: 'Ein paar Ideen',
+      ideas: ['Ein wöchentlicher Morgenlauf', 'Eine Radtour am Wochenende', 'Ein Kennenlern-Training für neue Mitglieder'],
+      cta: 'Event erstellen →',
+    },
+    gt: {
+      subject: (n) => `${n} kann noch größer werden`,
+      title: 'Möchtest du dein Team noch größer machen?',
+      lead: (n, d) => `${mB(n)} hat gerade ${d.members} Mitglieder. Den Link in ein paar weiteren Gruppen zu teilen reicht, damit neue Sportler dich finden.`,
+      steps: ['Schick den Link an Sportgruppen und Freunde', 'Lade Leute über „Einladen“ auf der Teamseite per E-Mail ein', 'Biete ein regelmäßiges Event an — Neue treten dem Team bei'],
+      msg: (n, link) => `Hi! Wir sind im Team ${n} auf Muuvlink — komm dazu: ${link}`,
+      mailSubject: (n) => `Tritt dem Team ${n} bei`,
+      cta: 'Team öffnen →',
+      privateNote: 'Dein Team ist privat: Der Link öffnet sich nur für Mitglieder. Lade neue Mitglieder über „Einladen“ auf der Teamseite per E-Mail ein.',
+      privateCta: 'Mitglieder einladen →',
+    },
+    ge: {
+      subject: (n) => `Mehr Teilnehmende für ${n}`,
+      title: 'Soll dein Event mehr Leute erreichen?',
+      lead: (n, d) => `${mB(n)} hat gerade ${d.attendees} Teilnehmende. Noch einmal teilen kann auch neue Sportler bringen.`,
+      steps: ['Schick den Link an Sportgruppen und Freunde', 'Erinnere die, die mitkommen wollten', 'Beantworte Fragen in den Event-Nachrichten'],
+      msg: (n, when, link) => `${when} ist ${n} — komm mit! Hier anmelden: ${link}`,
+      mailSubject: (n) => `${n} — komm mit`,
+      cta: 'Event ansehen →',
+      privateNote: 'Dieses Event gehört zu einem privaten Team: Der Link öffnet sich nur für Teammitglieder.',
+      privateCta: 'Event ansehen →',
+    },
+  },
+
+  el: {
+    yourLink: 'Ο σύνδεσμός σου για κοινοποίηση',
+    copyHint: 'Κράτησε πατημένο τον σύνδεσμο ή επίλεξέ τον για αντιγραφή.',
+    readyMsg: 'Ένα έτοιμο μήνυμα για τους φίλους σου',
+    shareWa: 'WhatsApp', shareTg: 'Telegram', shareMail: 'Email',
+    shareTitle: 'Κοινοποίηση με ένα πάτημα',
+    optOut: 'Μπορείς να απενεργοποιήσεις αυτά τα email από Προφίλ › Προτιμήσεις ειδοποιήσεων › Συμβουλές από το Muuvlink.',
+    tc: {
+      subject: (n) => `Η ομάδα σου είναι έτοιμη: ${n} — κάλεσε τώρα τους φίλους σου`,
+      title: 'Η ομάδα σου δημιουργήθηκε! 🎉',
+      lead: (n) => `Η ομάδα ${mB(n)} είναι πλέον στο Muuvlink. Ο πιο γρήγορος τρόπος να μεγαλώσει είναι να μοιραστείς τον σύνδεσμο σήμερα.`,
+      steps: ['Στείλε τον σύνδεσμο στην ομάδα σου στο WhatsApp', 'Δημιούργησε την πρώτη σου εκδήλωση — τα μέλη ειδοποιούνται αμέσως', 'Όσοι έρχονται, ας γίνουν μέλη για να μαθαίνουν κάθε εκδήλωση'],
+      msg: (n, link) => `Γεια! Έφτιαξα την ομάδα ${n} στο Muuvlink. Ας αθληθούμε μαζί — μπες από εδώ: ${link}`,
+      mailSubject: (n) => `Γίνε μέλος της ομάδας ${n}`,
+      cta: 'Άνοιξε την ομάδα σου →',
+      privateNote: 'Η ομάδα σου είναι ιδιωτική: ο σύνδεσμος ανοίγει μόνο για μέλη. Κάλεσε φίλους με email από το «Πρόσκληση» στη σελίδα της ομάδας.',
+      privateCta: 'Κάλεσε μέλη →',
+    },
+    ec: {
+      subject: (n) => `Η εκδήλωσή σου δημοσιεύτηκε: ${n} — γέμισε τις θέσεις`,
+      title: 'Η εκδήλωσή σου δημοσιεύτηκε! 🚀',
+      lead: (n) => `Η εκδήλωση ${mB(n)} είναι πλέον ορατή. Μοιράσου την τώρα, για να κλείσουν θέση οι φίλοι σου πριν γεμίσει.`,
+      steps: ['Στείλε τον σύνδεσμο στην παρέα ή στους φίλους σου', 'Απάντησε στις ερωτήσεις στα μηνύματα της εκδήλωσης', 'Πριν την έναρξη οι συμμετέχοντες παίρνουν αυτόματα υπενθύμιση'],
+      msg: (n, when, link) => `${when} έχει ${n} — έλα κι εσύ! Δήλωσε συμμετοχή εδώ: ${link}`,
+      mailSubject: (n) => `${n} — έλα κι εσύ`,
+      cta: 'Δες την εκδήλωσή σου →',
+      privateNote: 'Αυτή η εκδήλωση ανήκει σε ιδιωτική ομάδα: ο σύνδεσμος ανοίγει μόνο για τα μέλη της. Τα μέλη σου έχουν ήδη ειδοποιηθεί.',
+      privateCta: 'Δες την εκδήλωσή σου →',
+    },
+    lc: {
+      subject: (n, k) => `Αύριο ${n} — ${k} ελεύθερες θέσεις`,
+      title: (k) => `${k} ελεύθερες θέσεις για αύριο`,
+      lead: (n) => `Η εκδήλωση ${mB(n)} είναι αύριο. Μία ακόμα κοινοποίηση μπορεί να γεμίσει τις θέσεις.`,
+      steps: ['Ξαναστείλε τον σύνδεσμο στην ομάδα σου', 'Κάνε tag τους φίλους που ήθελαν να έρθουν', 'Επιβεβαίωσε το σημείο συνάντησης στα μηνύματα'],
+      msg: (n, when, link) => `Αύριο έχει ${n} και υπάρχουν ακόμα θέσεις! Δήλωσε συμμετοχή εδώ: ${link}`,
+      mailSubject: (n) => `Αύριο ${n} — υπάρχουν ακόμα θέσεις`,
+      cta: 'Δες την εκδήλωσή σου →',
+    },
+    te: {
+      subject: (n) => `Η ομάδα ${n} περιμένει την πρώτη της εκδήλωση`,
+      title: 'Η ομάδα σου περιμένει την πρώτη της εκδήλωση',
+      lead: (n) => `Η ομάδα ${mB(n)} είναι έτοιμη, αλλά δεν υπάρχει ακόμα συνάντηση. Όταν δημιουργείς εκδήλωση, ειδοποιείται όλη η ομάδα — η πρώτη οργανώνεται σε δύο λεπτά.`,
+      ideasTitle: 'Μερικές ιδέες',
+      ideas: ['Εβδομαδιαίο πρωινό τρέξιμο', 'Βόλτα με ποδήλατο το Σαββατοκύριακο', 'Προπόνηση γνωριμίας για τα νέα μέλη'],
+      cta: 'Δημιούργησε εκδήλωση →',
+    },
+    gt: {
+      subject: (n) => `Η ομάδα ${n} μπορεί να μεγαλώσει κι άλλο`,
+      title: 'Θέλεις να μεγαλώσεις κι άλλο την ομάδα σου;',
+      lead: (n, d) => `Η ομάδα ${mB(n)} έχει τώρα ${d.members} μέλη. Αρκεί να μοιραστείς τον σύνδεσμο σε μερικές ακόμα ομάδες για να σε βρουν νέοι αθλητές.`,
+      steps: ['Στείλε τον σύνδεσμο σε αθλητικές ομάδες και φίλους', 'Κάλεσε με email από το «Πρόσκληση» στη σελίδα της ομάδας', 'Οργάνωσε μια τακτική εκδήλωση — όσοι έρχονται θα γίνουν μέλη'],
+      msg: (n, link) => `Γεια! Είμαστε στην ομάδα ${n} στο Muuvlink — έλα κι εσύ: ${link}`,
+      mailSubject: (n) => `Γίνε μέλος της ομάδας ${n}`,
+      cta: 'Άνοιξε την ομάδα σου →',
+      privateNote: 'Η ομάδα σου είναι ιδιωτική: ο σύνδεσμος ανοίγει μόνο για μέλη. Κάλεσε νέα μέλη με email από το «Πρόσκληση» στη σελίδα της ομάδας.',
+      privateCta: 'Κάλεσε μέλη →',
+    },
+    ge: {
+      subject: (n) => `Περισσότεροι συμμετέχοντες για ${n}`,
+      title: 'Θέλεις η εκδήλωσή σου να φτάσει σε περισσότερους;',
+      lead: (n, d) => `Η εκδήλωση ${mB(n)} έχει τώρα ${d.attendees} συμμετέχοντες. Μία ακόμα κοινοποίηση μπορεί να φέρει και νέους αθλητές.`,
+      steps: ['Στείλε τον σύνδεσμο σε αθλητικές ομάδες και φίλους', 'Θύμισε σε όσους ήθελαν να έρθουν', 'Απάντησε στις ερωτήσεις στα μηνύματα της εκδήλωσης'],
+      msg: (n, when, link) => `${when} έχει ${n} — έλα κι εσύ! Δήλωσε συμμετοχή εδώ: ${link}`,
+      mailSubject: (n) => `${n} — έλα κι εσύ`,
+      cta: 'Δες την εκδήλωσή σου →',
+      privateNote: 'Αυτή η εκδήλωση ανήκει σε ιδιωτική ομάδα: ο σύνδεσμος ανοίγει μόνο για τα μέλη της.',
+      privateCta: 'Δες την εκδήλωσή σου →',
+    },
+  },
+
+  es: {
+    yourLink: 'Tu enlace para compartir',
+    copyHint: 'Mantén pulsado el enlace o selecciónalo para copiarlo.',
+    readyMsg: 'Un mensaje listo para tus amigos',
+    shareWa: 'WhatsApp', shareTg: 'Telegram', shareMail: 'Correo',
+    shareTitle: 'Comparte con un toque',
+    optOut: 'Puedes desactivar estos correos en Perfil › Preferencias de notificaciones › Consejos de Muuvlink.',
+    tc: {
+      subject: (n) => `Tu equipo está listo: ${n} — ahora invita a tus amigos`,
+      title: '¡Tu equipo ya está en marcha! 🎉',
+      lead: (n) => `${mB(n)} ya está en Muuvlink. La forma más rápida de hacerlo crecer es compartir el enlace hoy.`,
+      steps: ['Envía el enlace a tu grupo de WhatsApp', 'Crea tu primer evento: los miembros reciben un aviso al instante', 'Que quien se apunte se una al equipo y se entere de cada evento'],
+      msg: (n, link) => `¡Hola! He creado el equipo ${n} en Muuvlink. Hagamos deporte juntos, únete aquí: ${link}`,
+      mailSubject: (n) => `Únete al equipo ${n}`,
+      cta: 'Abrir tu equipo →',
+      privateNote: 'Tu equipo es privado: el enlace solo se abre para miembros. Invita a tus amigos por correo con «Invitar» en la página del equipo.',
+      privateCta: 'Invitar miembros →',
+    },
+    ec: {
+      subject: (n) => `Tu evento ya está publicado: ${n} — llena las plazas`,
+      title: '¡Tu evento ya está publicado! 🚀',
+      lead: (n) => `${mB(n)} ya se puede ver. Compártelo ahora para que tus amigos se apunten antes de que se llene.`,
+      steps: ['Envía el enlace a tu grupo o a tus amigos', 'Responde a las dudas en los mensajes del evento', 'Antes del inicio, los participantes reciben un recordatorio automático'],
+      msg: (n, when, link) => `¡${when} hay ${n}, vente! Apúntate aquí: ${link}`,
+      mailSubject: (n) => `${n}: ¿te vienes?`,
+      cta: 'Ver tu evento →',
+      privateNote: 'Este evento es de un equipo privado: el enlace solo se abre para sus miembros. Ya hemos avisado a tus miembros.',
+      privateCta: 'Ver tu evento →',
+    },
+    lc: {
+      subject: (n, k) => `Mañana ${n}: quedan ${k} plazas`,
+      title: (k) => `Quedan ${k} plazas para mañana`,
+      lead: (n) => `${mB(n)} es mañana. Compartirlo una vez más puede llenar las plazas.`,
+      steps: ['Vuelve a poner el enlace en tu grupo', 'Menciona a los amigos que querían venir', 'Confirma el punto de encuentro en los mensajes'],
+      msg: (n, when, link) => `¡Mañana hay ${n} y aún quedan plazas! Apúntate aquí: ${link}`,
+      mailSubject: (n) => `Mañana ${n}: aún quedan plazas`,
+      cta: 'Ver tu evento →',
+    },
+    te: {
+      subject: (n) => `${n} espera su primer evento`,
+      title: 'Tu equipo espera su primer evento',
+      lead: (n) => `${mB(n)} está listo, pero aún no hay ninguna quedada. Cuando creas un evento, todo tu equipo recibe un aviso: organizar el primero te lleva dos minutos.`,
+      ideasTitle: 'Algunas ideas',
+      ideas: ['Una carrera semanal por la mañana', 'Una salida en bici el fin de semana', 'Un entrenamiento de bienvenida para los nuevos'],
+      cta: 'Crear un evento →',
+    },
+    gt: {
+      subject: (n) => `${n} puede crecer todavía más`,
+      title: '¿Quieres que tu equipo sea aún más grande?',
+      lead: (n, d) => `${mB(n)} tiene ahora ${d.members} miembros. Compartir el enlace en unos cuantos grupos más basta para que te encuentren nuevos deportistas.`,
+      steps: ['Envía el enlace a grupos deportivos y amigos', 'Invita por correo con «Invitar» en la página del equipo', 'Organiza un evento habitual: quien venga se unirá al equipo'],
+      msg: (n, link) => `¡Hola! Estamos en el equipo ${n} en Muuvlink, vente: ${link}`,
+      mailSubject: (n) => `Únete al equipo ${n}`,
+      cta: 'Abrir tu equipo →',
+      privateNote: 'Tu equipo es privado: el enlace solo se abre para miembros. Invita a nuevos miembros por correo con «Invitar» en la página del equipo.',
+      privateCta: 'Invitar miembros →',
+    },
+    ge: {
+      subject: (n) => `Más participantes para ${n}`,
+      title: '¿Quieres que tu evento llegue a más gente?',
+      lead: (n, d) => `${mB(n)} tiene ahora ${d.attendees} participantes. Compartirlo otra vez puede atraer también a nuevos deportistas.`,
+      steps: ['Envía el enlace a grupos deportivos y amigos', 'Recuérdaselo a quienes querían venir', 'Responde a las dudas en los mensajes del evento'],
+      msg: (n, when, link) => `¡${when} hay ${n}, vente! Apúntate aquí: ${link}`,
+      mailSubject: (n) => `${n}: ¿te vienes?`,
+      cta: 'Ver tu evento →',
+      privateNote: 'Este evento es de un equipo privado: el enlace solo se abre para sus miembros.',
+      privateCta: 'Ver tu evento →',
+    },
+  },
+
+  fr: {
+    yourLink: 'Ton lien à partager',
+    copyHint: 'Appuie longuement sur le lien ou sélectionne-le pour le copier.',
+    readyMsg: 'Un message tout prêt pour tes amis',
+    shareWa: 'WhatsApp', shareTg: 'Telegram', shareMail: 'E-mail',
+    shareTitle: 'Partage en un clic',
+    optOut: 'Tu peux désactiver ces e-mails dans Profil › Préférences de notification › Conseils de Muuvlink.',
+    tc: {
+      subject: (n) => `Ton équipe est prête : ${n} — invite tes amis`,
+      title: 'Ton équipe est en ligne ! 🎉',
+      lead: (n) => `${mB(n)} est maintenant sur Muuvlink. Le meilleur moyen de la faire grandir : partager le lien dès aujourd'hui.`,
+      steps: ['Envoie le lien dans ton groupe WhatsApp', 'Crée ton premier événement : les membres sont prévenus tout de suite', 'Invite ceux qui viennent à rejoindre l\'équipe pour ne rien rater'],
+      msg: (n, link) => `Salut ! J'ai créé l'équipe ${n} sur Muuvlink. On se fait du sport ensemble ? Rejoins-nous ici : ${link}`,
+      mailSubject: (n) => `Rejoins l'équipe ${n}`,
+      cta: 'Ouvrir ton équipe →',
+      privateNote: 'Ton équipe est privée : le lien ne s\'ouvre que pour les membres. Invite tes amis par e-mail avec « Inviter » sur la page de l\'équipe.',
+      privateCta: 'Inviter des membres →',
+    },
+    ec: {
+      subject: (n) => `Ton événement est en ligne : ${n} — remplis les places`,
+      title: 'Ton événement est en ligne ! 🚀',
+      lead: (n) => `${mB(n)} est maintenant visible. Partage-le maintenant pour que tes amis réservent leur place avant que ce soit complet.`,
+      steps: ['Envoie le lien à ton groupe ou à tes amis', 'Réponds aux questions dans les messages de l\'événement', 'Avant le début, les participants reçoivent un rappel automatique'],
+      msg: (n, when, link) => `${when}, il y a ${n} — viens avec nous ! Inscris-toi ici : ${link}`,
+      mailSubject: (n) => `${n} — tu viens ?`,
+      cta: 'Voir ton événement →',
+      privateNote: 'Cet événement appartient à une équipe privée : le lien ne s\'ouvre que pour ses membres. Tes membres ont déjà été prévenus.',
+      privateCta: 'Voir ton événement →',
+    },
+    lc: {
+      subject: (n, k) => `Demain ${n} — encore ${k} places`,
+      title: (k) => `Encore ${k} places pour demain`,
+      lead: (n) => `${mB(n)}, c'est demain. Un dernier partage peut suffire à remplir les places.`,
+      steps: ['Repartage le lien dans ton groupe', 'Identifie les amis qui voulaient venir', 'Confirme le point de rendez-vous dans les messages'],
+      msg: (n, when, link) => `Demain, il y a ${n} et il reste des places ! Inscris-toi ici : ${link}`,
+      mailSubject: (n) => `Demain ${n} — il reste des places`,
+      cta: 'Voir ton événement →',
+    },
+    te: {
+      subject: (n) => `${n} attend son premier événement`,
+      title: 'Ton équipe attend son premier événement',
+      lead: (n) => `${mB(n)} est prête, mais il n'y a pas encore de sortie. Quand tu crées un événement, toute ton équipe est prévenue — organiser le premier prend deux minutes.`,
+      ideasTitle: 'Quelques idées',
+      ideas: ['Un footing hebdomadaire le matin', 'Une sortie vélo le week-end', 'Un entraînement pour accueillir les nouveaux'],
+      cta: 'Créer un événement →',
+    },
+    gt: {
+      subject: (n) => `${n} peut encore grandir`,
+      title: 'Envie de faire grandir encore ton équipe ?',
+      lead: (n, d) => `${mB(n)} compte aujourd'hui ${d.members} membres. Partager le lien dans quelques groupes de plus suffit pour que de nouveaux sportifs te trouvent.`,
+      steps: ['Envoie le lien à des groupes de sport et à tes amis', 'Invite par e-mail avec « Inviter » sur la page de l\'équipe', 'Propose un événement régulier : les nouveaux rejoindront l\'équipe'],
+      msg: (n, link) => `Salut ! On est dans l'équipe ${n} sur Muuvlink — rejoins-nous : ${link}`,
+      mailSubject: (n) => `Rejoins l'équipe ${n}`,
+      cta: 'Ouvrir ton équipe →',
+      privateNote: 'Ton équipe est privée : le lien ne s\'ouvre que pour les membres. Invite de nouveaux membres par e-mail avec « Inviter » sur la page de l\'équipe.',
+      privateCta: 'Inviter des membres →',
+    },
+    ge: {
+      subject: (n) => `Plus de participants pour ${n}`,
+      title: 'Envie que ton événement touche plus de monde ?',
+      lead: (n, d) => `${mB(n)} compte aujourd'hui ${d.attendees} participants. Un partage de plus peut attirer de nouveaux sportifs.`,
+      steps: ['Envoie le lien à des groupes de sport et à tes amis', 'Relance ceux qui voulaient venir', 'Réponds aux questions dans les messages de l\'événement'],
+      msg: (n, when, link) => `${when}, il y a ${n} — viens avec nous ! Inscris-toi ici : ${link}`,
+      mailSubject: (n) => `${n} — tu viens ?`,
+      cta: 'Voir ton événement →',
+      privateNote: 'Cet événement appartient à une équipe privée : le lien ne s\'ouvre que pour ses membres.',
+      privateCta: 'Voir ton événement →',
+    },
+  },
+
+  it: {
+    yourLink: 'Il tuo link da condividere',
+    copyHint: 'Tieni premuto sul link o selezionalo per copiarlo.',
+    readyMsg: 'Un messaggio pronto per i tuoi amici',
+    shareWa: 'WhatsApp', shareTg: 'Telegram', shareMail: 'Email',
+    shareTitle: 'Condividi con un tocco',
+    optOut: 'Puoi disattivare queste email da Profilo › Preferenze notifiche › Consigli da Muuvlink.',
+    tc: {
+      subject: (n) => `La tua squadra è pronta: ${n} — ora invita i tuoi amici`,
+      title: 'La tua squadra è online! 🎉',
+      lead: (n) => `${mB(n)} ora è su Muuvlink. Il modo più veloce per farla crescere è condividere il link oggi stesso.`,
+      steps: ['Manda il link al tuo gruppo WhatsApp', 'Crea il tuo primo evento: i membri ricevono subito una notifica', 'Chi partecipa entri nella squadra, così saprà di ogni evento'],
+      msg: (n, link) => `Ciao! Ho creato la squadra ${n} su Muuvlink. Facciamo sport insieme, entra da qui: ${link}`,
+      mailSubject: (n) => `Entra nella squadra ${n}`,
+      cta: 'Apri la tua squadra →',
+      privateNote: 'La tua squadra è privata: il link si apre solo per i membri. Invita gli amici via email con «Invita» nella pagina della squadra.',
+      privateCta: 'Invita membri →',
+    },
+    ec: {
+      subject: (n) => `Il tuo evento è online: ${n} — riempi i posti`,
+      title: 'Il tuo evento è online! 🚀',
+      lead: (n) => `${mB(n)} ora è visibile. Condividilo subito, così i tuoi amici prendono il posto prima che si riempia.`,
+      steps: ['Manda il link al tuo gruppo o ai tuoi amici', 'Rispondi alle domande nei messaggi dell\'evento', 'Prima dell\'inizio i partecipanti ricevono un promemoria automatico'],
+      msg: (n, when, link) => `${when} c'è ${n}, vieni con noi! Iscriviti qui: ${link}`,
+      mailSubject: (n) => `${n}: vieni anche tu?`,
+      cta: 'Vedi il tuo evento →',
+      privateNote: 'Questo evento appartiene a una squadra privata: il link si apre solo per i suoi membri. I tuoi membri sono già stati avvisati.',
+      privateCta: 'Vedi il tuo evento →',
+    },
+    lc: {
+      subject: (n, k) => `Domani ${n}: restano ${k} posti`,
+      title: (k) => `Restano ${k} posti per domani`,
+      lead: (n) => `${mB(n)} è domani. Un'ultima condivisione può riempire i posti.`,
+      steps: ['Rimetti il link nel tuo gruppo', 'Tagga gli amici che volevano venire', 'Conferma il punto di ritrovo nei messaggi'],
+      msg: (n, when, link) => `Domani c'è ${n} e ci sono ancora posti! Iscriviti qui: ${link}`,
+      mailSubject: (n) => `Domani ${n}: ci sono ancora posti`,
+      cta: 'Vedi il tuo evento →',
+    },
+    te: {
+      subject: (n) => `${n} aspetta il suo primo evento`,
+      title: 'La tua squadra aspetta il suo primo evento',
+      lead: (n) => `${mB(n)} è pronta, ma non c'è ancora nessun ritrovo. Quando crei un evento tutta la squadra riceve una notifica: organizzare il primo richiede due minuti.`,
+      ideasTitle: 'Qualche idea',
+      ideas: ['Una corsa settimanale al mattino', 'Un giro in bici nel weekend', 'Un allenamento di benvenuto per i nuovi'],
+      cta: 'Crea un evento →',
+    },
+    gt: {
+      subject: (n) => `${n} può crescere ancora`,
+      title: 'Vuoi far crescere ancora la tua squadra?',
+      lead: (n, d) => `${mB(n)} ha ora ${d.members} membri. Condividere il link in qualche gruppo in più basta perché nuovi sportivi ti trovino.`,
+      steps: ['Manda il link a gruppi sportivi e amici', 'Invita via email con «Invita» nella pagina della squadra', 'Organizza un evento fisso: chi viene entrerà nella squadra'],
+      msg: (n, link) => `Ciao! Siamo nella squadra ${n} su Muuvlink, vieni anche tu: ${link}`,
+      mailSubject: (n) => `Entra nella squadra ${n}`,
+      cta: 'Apri la tua squadra →',
+      privateNote: 'La tua squadra è privata: il link si apre solo per i membri. Invita nuovi membri via email con «Invita» nella pagina della squadra.',
+      privateCta: 'Invita membri →',
+    },
+    ge: {
+      subject: (n) => `Più partecipanti per ${n}`,
+      title: 'Vuoi che il tuo evento arrivi a più persone?',
+      lead: (n, d) => `${mB(n)} ha ora ${d.attendees} partecipanti. Un'altra condivisione può portare anche nuovi sportivi.`,
+      steps: ['Manda il link a gruppi sportivi e amici', 'Ricordalo a chi voleva venire', 'Rispondi alle domande nei messaggi dell\'evento'],
+      msg: (n, when, link) => `${when} c'è ${n}, vieni con noi! Iscriviti qui: ${link}`,
+      mailSubject: (n) => `${n}: vieni anche tu?`,
+      cta: 'Vedi il tuo evento →',
+      privateNote: 'Questo evento appartiene a una squadra privata: il link si apre solo per i suoi membri.',
+      privateCta: 'Vedi il tuo evento →',
+    },
+  },
+};
+
+// kind: 'tc' takım kuruldu · 'ec' etkinlik yayında · 'lc' son çağrı · 'te' ilk etkinlik
+//       'gt' mevcut takımı büyüt · 'ge' mevcut etkinliği duyur (admin butonu)
+// d: { name, url, when, time, location, spotsLeft, members, attendees, isPrivate, ctaUrl }
+// Paylaşım butonları utm_source=share + utm_medium ile gider: kayıt olan
+// arkadaşın paylaşımdan geldiği users.utm_* alanlarında görünür.
+const actEsc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function activationEmail(kind, d, lang = 'tr') {
+  const L = mailLang(lang);
+  const A = ACT[L] || ACT.tr;
+  const K = A[kind];
+  const name = actEsc(d.name);
+  const isTeamKind = kind === 'tc' || kind === 'te' || kind === 'gt';
+  const campaign = isTeamKind ? 'team_invite' : 'event_invite';
+  const withUtm = (medium) => `${d.url}${d.url.includes('?') ? '&' : '?'}utm_source=share&utm_medium=${medium}&utm_campaign=${campaign}`;
+  const when = [d.when, d.time].filter(Boolean).join(' ');
+
+  const btn = (href, label, bg) => `
+          <td style="padding:0 4px 8px;">
+            <a href="${href}" style="display:inline-block;background:${bg};color:#ffffff;text-decoration:none;padding:11px 16px;border-radius:10px;font-size:14px;font-weight:700;">${label}</a>
+          </td>`;
+
+  let shareBlock = '';
+  if (kind !== 'te' && !d.isPrivate) {
+    const msgWith = (link) => (isTeamKind ? K.msg(d.name, link) : K.msg(d.name, when, link));
+    const bare = msgWith('').replace(/[\s:：]+$/, '');
+    const wa = `https://wa.me/?text=${encodeURIComponent(msgWith(withUtm('whatsapp')))}`;
+    const tg = `https://t.me/share/url?url=${encodeURIComponent(withUtm('telegram'))}&text=${encodeURIComponent(bare)}`;
+    const ml = `mailto:?subject=${encodeURIComponent(K.mailSubject(d.name))}&body=${encodeURIComponent(msgWith(withUtm('email')))}`;
+    shareBlock = `
+    <div style="margin:0 0 8px;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#64748b;">${actEsc(A.yourLink)}</div>
+    <div style="border:2px dashed #00a499;background:#e6f7f5;border-radius:12px;padding:14px 16px;margin:0 0 6px;font-family:'SFMono-Regular',Menlo,Consolas,monospace;font-size:15px;line-height:1.5;color:#114956;word-break:break-all;-webkit-user-select:all;user-select:all;">${actEsc(d.url)}</div>
+    <p style="margin:0 0 22px;color:#94a3b8;font-size:12px;">${actEsc(A.copyHint)}</p>
+
+    <div style="margin:0 0 10px;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#64748b;">${actEsc(A.shareTitle)}</div>
+    <table cellpadding="0" cellspacing="0" border="0" style="margin:0 -4px 18px;"><tr>${btn(wa, A.shareWa, '#1FAF54')}${btn(tg, A.shareTg, '#229ED9')}${btn(ml, A.shareMail, '#114956')}
+    </tr></table>
+
+    <div style="margin:0 0 8px;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#64748b;">${actEsc(A.readyMsg)}</div>
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid #F4F818;border-radius:10px;padding:14px 16px;margin:0 0 26px;color:#1F2121;font-size:15px;line-height:1.6;-webkit-user-select:all;user-select:all;">${actEsc(msgWith(d.url))}</div>`;
+  } else if (kind !== 'te' && d.isPrivate && K.privateNote) {
+    shareBlock = `
+    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:14px 16px;margin:0 0 26px;color:#92400e;font-size:14px;line-height:1.6;">${actEsc(K.privateNote)}</div>`;
+  }
+
+  const eventCard = (kind === 'ec' || kind === 'lc' || kind === 'ge') ? `
+    <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;margin:0 0 24px;">
+      <tr><td style="padding:16px 20px 4px;font-size:17px;font-weight:700;color:#0e3c47;">${name}</td></tr>
+      ${d.when ? `<tr><td style="padding:2px 20px;color:#334155;font-size:14px;">${actEsc(tm(L, 'lblDate'))}: <strong>${actEsc(when)}</strong></td></tr>` : ''}
+      ${d.location ? `<tr><td style="padding:2px 20px;color:#334155;font-size:14px;">${actEsc(tm(L, 'lblLocation'))}: <strong>${actEsc(d.location)}</strong></td></tr>` : ''}
+      <tr><td style="padding:0 0 14px;"></td></tr>
+    </table>` : '';
+
+  const list = kind === 'te'
+    ? `<div style="font-weight:700;color:#1e293b;font-size:15px;margin:0 0 10px;">${actEsc(K.ideasTitle)}</div>
+       <ul style="margin:0 0 26px;padding-left:20px;color:#334155;font-size:15px;line-height:1.8;">${K.ideas.map((x) => `<li>${actEsc(x)}</li>`).join('')}</ul>`
+    : `<table cellpadding="0" cellspacing="0" style="margin:0 0 26px;">${K.steps.map((x, i) => `
+        <tr><td style="vertical-align:top;padding:0 12px 10px 0;"><div style="width:26px;height:26px;border-radius:50%;background:#114956;color:#fff;font-size:13px;font-weight:700;text-align:center;line-height:26px;">${i + 1}</div></td>
+            <td style="vertical-align:top;padding:3px 0 10px;color:#334155;font-size:15px;line-height:1.5;">${actEsc(x)}</td></tr>`).join('')}
+       </table>`;
+
+  const ctaLabel = d.isPrivate && K.privateCta ? K.privateCta : K.cta;
+  const title = typeof K.title === 'function' ? K.title(d.spotsLeft) : K.title;
+  const subject = kind === 'lc' ? K.subject(d.name, d.spotsLeft) : K.subject(d.name);
+
+  const html = emailWrapper(`
+    <h2 style="margin:0 0 10px;color:#1e293b;font-size:24px;line-height:1.3;">${actEsc(title)}</h2>
+    <p style="margin:0 0 24px;color:#475569;font-size:16px;line-height:1.6;">${K.lead(name, d)}</p>
+    ${eventCard}
+    ${shareBlock}
+    ${list}
+    <div style="text-align:center;">
+      <a href="${d.ctaUrl || d.url}"
+         style="display:inline-block;background:#114956;color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:10px;font-size:16px;font-weight:700;">
+        ${actEsc(ctaLabel)}
+      </a>
+    </div>
+    <p style="margin:26px 0 0;color:#94a3b8;font-size:12px;line-height:1.5;text-align:center;">${actEsc(A.optOut)}</p>
+  `, L);
+  return { subject, html };
 }
 
 // =====================================================
@@ -5685,7 +6275,7 @@ app.put('/api/users/me/notif-prefs', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Geçersiz tercih verisi.' });
     }
     // Sadece bilinen anahtarları ve boolean değerleri kabul et (sanitize).
-    const allowedKeys = new Set(Object.values(NOTIF_TYPE_TO_KEY));
+    const allowedKeys = new Set([...Object.values(NOTIF_TYPE_TO_KEY), 'tips']); // tips: yalnız e-posta
     const clean = {};
     for (const [k, v] of Object.entries(incoming)) {
       if (!allowedKeys.has(k) || !v || typeof v !== 'object') continue;
@@ -5774,7 +6364,10 @@ app.get('/api/admin/trainings', isAdmin, async (req, res) => {
       SELECT t.*, teams.name as team_name,
         -- Oluşturan: konumu eksik (haritada görünmeyen) etkinlik için kime yazılacağı
         creator.name as creator_name, creator.email as creator_email,
-        COUNT(ta.user_id) as participant_count
+        COUNT(ta.user_id) as participant_count,
+        (SELECT json_build_object('sent_at', g.sent_at, 'recipients', g.recipients, 'skipped', g.skipped)
+           FROM grow_email_log g WHERE g.kind = 'training' AND g.ref_id = t.id
+          ORDER BY g.sent_at DESC LIMIT 1) AS last_grow_email
       FROM trainings t
       LEFT JOIN teams ON t.team_id = teams.id
       LEFT JOIN users creator ON creator.id = t.created_by
@@ -5785,6 +6378,96 @@ app.get('/api/admin/trainings', isAdmin, async (req, res) => {
     res.json(result.rows);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch trainings' });
+  }
+});
+
+// ── Büyüme maili (admin butonu) ─────────────────────────────────────────
+// Mevcut takım/etkinlik için "daha kalabalık olsun" e-postası. Yalnız takımın
+// lideri, kaptanı ve antrenörü alır (takımsız etkinlikte oluşturan). Alıcının
+// dilinde gider; "Muuvlink'ten ipuçları" tercihini kapatan atlanır.
+// 24 saat içinde aynı yere ikinci gönderim force olmadan reddedilir.
+const GROW_ROLES = ['owner', 'captain', 'coach'];
+async function growEmailGuard(kind, id, force) {
+  if (force) return null;
+  const r = await pool.query(
+    `SELECT sent_at, recipients, skipped FROM grow_email_log
+      WHERE kind = $1 AND ref_id = $2 AND sent_at > NOW() - INTERVAL '24 hours'
+      ORDER BY sent_at DESC LIMIT 1`, [kind, id]);
+  return r.rows[0] || null;
+}
+async function sendGrowEmails(recipients, build) {
+  let sent = 0, skipped = 0, failed = 0;
+  for (const u of recipients) {
+    const r = await sendEmail({ to: u.email, userId: u.id, prefKey: 'tips', build });
+    if (r?.skipped) skipped++; else if (r) sent++; else failed++;
+  }
+  return { sent, skipped, failed };
+}
+
+app.post('/api/admin/teams/:id/grow-email', isAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const t = (await pool.query(
+      `SELECT t.id, t.name, t.is_private, (SELECT COUNT(*)::int FROM team_members WHERE team_id = t.id) AS members
+         FROM teams t WHERE t.id = $1`, [id])).rows[0];
+    if (!t) return res.status(404).json({ error: 'Takım bulunamadı.' });
+    const recent = await growEmailGuard('team', id, req.body?.force === true);
+    if (recent) return res.status(409).json({ error: 'Bu takıma son 24 saatte zaten gönderildi.', code: 'recent', last: recent });
+    const recipients = (await pool.query(
+      `SELECT DISTINCT u.id, u.email FROM team_members tm JOIN users u ON u.id = tm.user_id
+        WHERE tm.team_id = $1 AND tm.role = ANY($2) AND u.deleted_at IS NULL AND u.email IS NOT NULL`,
+      [id, GROW_ROLES])).rows;
+    if (!recipients.length) return res.status(400).json({ error: 'Bu takımda lider, kaptan ya da antrenör yok.' });
+    const url = `${APP_URL}/takim/${slugify(t.name)}-${t.id}`;
+    const d = { name: t.name, url, ctaUrl: url, members: t.members, isPrivate: t.is_private };
+    const r = await sendGrowEmails(recipients, (L) => activationEmail('gt', d, L));
+    const log = (await pool.query(
+      `INSERT INTO grow_email_log (kind, ref_id, sent_by, recipients, skipped) VALUES ('team', $1, $2, $3, $4)
+       RETURNING sent_at, recipients, skipped`, [id, req.user.id, r.sent, r.skipped])).rows[0];
+    res.json({ ...r, total: recipients.length, last: log });
+  } catch (e) {
+    console.error('Grow email (team) error:', e);
+    res.status(500).json({ error: 'Gönderilemedi.' });
+  }
+});
+
+app.post('/api/admin/trainings/:id/grow-email', isAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const t = (await pool.query(
+      `SELECT t.id, t.title, t.team_id, t.created_by, t.training_date, t.training_time, t.location_name,
+              t.is_public, t.is_organizer_event, teams.is_private AS team_private,
+              (${trainingUtcExpr('t')} < NOW()) AS is_past,
+              (SELECT COUNT(*)::int FROM training_attendees WHERE training_id = t.id) AS attendees
+         FROM trainings t LEFT JOIN teams ON teams.id = t.team_id WHERE t.id = $1`, [id])).rows[0];
+    if (!t) return res.status(404).json({ error: 'Etkinlik bulunamadı.' });
+    if (t.is_organizer_event) return res.status(400).json({ error: 'Organizatör etkinliğine gönderilmez.' });
+    if (t.is_past) return res.status(400).json({ error: 'Geçmiş etkinliğe gönderilmez.' });
+    const recent = await growEmailGuard('training', id, req.body?.force === true);
+    if (recent) return res.status(409).json({ error: 'Bu etkinliğe son 24 saatte zaten gönderildi.', code: 'recent', last: recent });
+    const recipients = (t.team_id
+      ? await pool.query(
+          `SELECT DISTINCT u.id, u.email FROM team_members tm JOIN users u ON u.id = tm.user_id
+            WHERE tm.team_id = $1 AND tm.role = ANY($2) AND u.deleted_at IS NULL AND u.email IS NOT NULL`,
+          [t.team_id, GROW_ROLES])
+      : await pool.query(
+          'SELECT id, email FROM users WHERE id = $1 AND deleted_at IS NULL AND email IS NOT NULL', [t.created_by])).rows;
+    if (!recipients.length) return res.status(400).json({ error: 'Gönderilecek yönetici yok.' });
+    const url = `${APP_URL}/etkinlik/${slugify(t.title)}-${t.id}`;
+    const r = await sendGrowEmails(recipients, (L) => activationEmail('ge', {
+      name: t.title, url, ctaUrl: url, attendees: t.attendees,
+      when: new Date(t.training_date).toLocaleDateString(MAIL_LOCALE[mailLang(L)], { timeZone: 'UTC', day: 'numeric', month: 'long' }),
+      time: t.training_time ? String(t.training_time).slice(0, 5) : '',
+      location: t.location_name || '',
+      isPrivate: !!(t.team_id && t.team_private && !t.is_public),
+    }, L));
+    const log = (await pool.query(
+      `INSERT INTO grow_email_log (kind, ref_id, sent_by, recipients, skipped) VALUES ('training', $1, $2, $3, $4)
+       RETURNING sent_at, recipients, skipped`, [id, req.user.id, r.sent, r.skipped])).rows[0];
+    res.json({ ...r, total: recipients.length, last: log });
+  } catch (e) {
+    console.error('Grow email (training) error:', e);
+    res.status(500).json({ error: 'Gönderilemedi.' });
   }
 });
 
@@ -5827,7 +6510,10 @@ app.get('/api/admin/teams', isAdmin, async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT t.*, u.name as owner_name,
-        COUNT(tm.user_id) as member_count
+        COUNT(tm.user_id) as member_count,
+        (SELECT json_build_object('sent_at', g.sent_at, 'recipients', g.recipients, 'skipped', g.skipped)
+           FROM grow_email_log g WHERE g.kind = 'team' AND g.ref_id = t.id
+          ORDER BY g.sent_at DESC LIMIT 1) AS last_grow_email
       FROM teams t
       LEFT JOIN users u ON t.owner_id = u.id
       LEFT JOIN team_members tm ON t.id = tm.team_id
@@ -7581,6 +8267,18 @@ pool.query(`ALTER TABLE trainings ADD COLUMN IF NOT EXISTS is_paid BOOLEAN DEFAU
 // Kullanıcının arayüz dili. BOŞ = hiç seçmedi → e-posta/bildirim Türkçe (eski davranış).
 // Yalnız kayıt olurken ya da dili elle değiştirince yazılır; mevcut hesaplar boş kalır.
 pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS lang VARCHAR(5)`).catch(() => {});
+// Admin'in "büyüme maili" gönderimleri: hangi takım/etkinlik, ne zaman, kaç kişiye.
+pool.query(`CREATE TABLE IF NOT EXISTS grow_email_log (
+    id SERIAL PRIMARY KEY,
+    kind VARCHAR(10) NOT NULL,          -- 'team' | 'training'
+    ref_id INTEGER NOT NULL,
+    sent_by INTEGER,
+    sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    recipients INTEGER NOT NULL DEFAULT 0,  -- gönderilen
+    skipped INTEGER NOT NULL DEFAULT 0      -- tercihinden kapatmış
+  )`)
+  .then(() => pool.query('CREATE INDEX IF NOT EXISTS grow_email_log_ref ON grow_email_log (kind, ref_id, sent_at DESC)'))
+  .catch((e) => console.error('grow_email_log:', e.message));
 // Organizatör etkinliği (admin panelinden ya da yarış keşfinden eklenen, dış
 // kayıt linkiyle çalışan etkinlik). ÜCRET AYRI BİR ŞEY: is_paid yalnız ücretli
 // olup olmadığını söyler, bu bayrak da etkinliğin türünü. Eski satırların hepsi

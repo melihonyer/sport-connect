@@ -1480,6 +1480,61 @@ const TeamCountHover = ({ count, names, children }) => {
   );
 };
 
+// "Büyüme maili": mevcut takım/etkinliğin lider, kaptan ve antrenörlerine
+// (takımsız etkinlikte oluşturana) "daha kalabalık olsun" e-postası. Her alıcı
+// kendi dilinde alır; "Muuvlink'ten ipuçları"nı kapatan atlanır. Son gönderim
+// butonun yanında görünür; 24 saat içinde ikinci gönderim ayrıca onay ister.
+const fmtSent = (d) => new Date(d).toLocaleString("tr-TR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+const GrowEmailButton = ({ kind, item, api, showToast, onSent, compact = false }) => {
+  const [busy, setBusy] = useState(false);
+  const last = item.last_grow_email;
+  const path = `/admin/${kind === "team" ? "teams" : "trainings"}/${item.id}/grow-email`;
+  const post = (force) => api(path, { method: "POST", body: JSON.stringify({ force }) });
+  const send = async () => {
+    if (busy) return;
+    const label = kind === "team" ? item.name : item.title;
+    const who = kind === "team" ? "lider, kaptan ve antrenörlerine" : "yöneticilerine";
+    if (!window.confirm(`"${label}" ${who} "daha kalabalık olsun" e-postası gönderilsin mi?`)) return;
+    setBusy(true);
+    try {
+      let r;
+      try { r = await post(false); }
+      catch (e) {
+        if (e.status === 409 && e.data?.code === "recent") {
+          if (!window.confirm(`Son 24 saatte zaten gönderildi (${fmtSent(e.data.last.sent_at)}). Yine de gönderilsin mi?`)) return;
+          r = await post(true);
+        } else throw e;
+      }
+      if (!r) return;
+      onSent(item.id, r.last);
+      const parts = [`${r.sent} kişiye gönderildi`];
+      if (r.skipped) parts.push(`${r.skipped} kişi bu e-postaları kapatmış`);
+      if (r.failed) parts.push(`${r.failed} gönderim hatası`);
+      showToast(parts.join(" · ") + ".", r.sent ? "success" : "error");
+    } catch (e) {
+      showToast(e.message || "Gönderilemedi.", "error");
+    } finally { setBusy(false); }
+  };
+  const lastText = last ? `Son gönderim: ${fmtSent(last.sent_at)} · ${last.recipients} kişi` : "Hiç gönderilmedi";
+  // Buton üstte, son gönderim altında: tablo sütunu dar kalsın.
+  return (
+    <div className="flex flex-col items-center" title={`Büyüme maili gönder — ${lastText}`}>
+      <button onClick={send} disabled={busy}
+        className={`inline-flex items-center gap-1 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 text-brand-700 hover:bg-brand-50 ${compact ? "p-2" : "px-2 py-1"}`}>
+        {busy ? <span className="w-4 h-4 border-2 border-brand-200 border-t-brand-600 rounded-full animate-spin" /> : <Mail className="w-4 h-4" />}
+        {!compact && "Mail"}
+      </button>
+      {/* Mobilde (compact) tarih satırın bilgi alanında yazar; burada yalnız simge. */}
+      {!compact && (
+        <span className={`text-[10px] leading-tight whitespace-nowrap ${last ? "text-slate-500" : "text-slate-300"}`}>
+          {last ? fmtSent(last.sent_at) : "—"}
+        </span>
+      )}
+      {!compact && last && <span className="text-[10px] leading-tight text-slate-400 whitespace-nowrap">{last.recipients} kişi</span>}
+    </div>
+  );
+};
+
 const LeftBadge = ({ at, small = false }) => {
   const kalan = Math.max(0, LEFT_PURGE_DAYS - Math.floor((Date.now() - new Date(at).getTime()) / 86400000));
   return (
@@ -1588,6 +1643,8 @@ export default function AdminPanel() {
     }
   };
 
+  const growSent = (setter) => (id, last) => setter(prev => prev.map(x => x.id === id ? { ...x, last_grow_email: last } : x));
+
   const toggleFeatured = async (tr) => {
     try {
       const r = await api(`/admin/trainings/${tr.id}/feature`, { method: "PUT" });
@@ -1624,7 +1681,11 @@ export default function AdminPanel() {
       });
       if (res.status === 401 || res.status === 403) { handleLogout(); return null; }
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || `Sunucu hatası (${res.status})`);
+      if (!res.ok) {
+        const err = new Error(data?.error || `Sunucu hatası (${res.status})`);
+        err.status = res.status; err.data = data;   // ör. büyüme maili 409 "son 24 saatte gönderildi"
+        throw err;
+      }
       return data;
     } finally {
       clearTimeout(timer);
@@ -2480,8 +2541,9 @@ export default function AdminPanel() {
                         <Activity className="w-5 h-5 text-white"/>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <div className="font-semibold text-slate-900 text-sm truncate">{t.title}</div>
+                        {/* Başlık kendi satırında; rozetler sığmazsa alta kayar (başlık ezilmesin). */}
+                        <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                          <div className="font-semibold text-slate-900 text-sm truncate max-w-full">{t.title}</div>
                           {t.is_paid && <PaidBadge small />}
                           {noMap(t) && <NoMapBadge small />}
                         </div>
@@ -2497,12 +2559,17 @@ export default function AdminPanel() {
                           <span>{t.training_time?.slice(0,5) || "—"}</span>
                           <span>·</span>
                           <span>{t.participant_count}/{t.capacity} kişi</span>
+                          {t.last_grow_email && <><span>·</span><span className="flex items-center gap-0.5"><Mail className="w-3 h-3"/> {fmtSent(t.last_grow_email.sent_at)}</span></>}
+                          {/* Durum rozeti mobilde bilgi satırında: sağdaki simge grubu dar kalsın. */}
+                          <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-semibold ${isPast ? "bg-slate-100 text-slate-500" : "bg-brand-100 text-brand-700"}`}>
+                            {isPast ? "Bitti" : "Aktif"}
+                          </span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold ${isPast ? "bg-slate-100 text-slate-500" : "bg-brand-100 text-brand-700"}`}>
-                          {isPast ? "Bitti" : "Aktif"}
-                        </span>
+                      <div className="flex items-center gap-0.5 flex-shrink-0">
+                        {!isPast && !t.is_organizer_event && !t.is_paid && (
+                          <GrowEmailButton kind="training" item={t} api={api} showToast={showToast} onSent={growSent(setTrainings)} compact />
+                        )}
                         <button onClick={() => toggleFeatured(t)} title={t.is_featured ? "Öne çıkarmayı kaldır" : "Öne çıkar"}
                           aria-pressed={!!t.is_featured}
                           className={`p-2 rounded-lg transition-colors ${t.is_featured ? "text-amber-500 bg-amber-50 hover:bg-amber-100" : "text-slate-300 hover:text-amber-500 hover:bg-amber-50"}`}>
@@ -2567,6 +2634,9 @@ export default function AdminPanel() {
                           </td>
                           <td className="px-4 py-3.5">
                             <div className="flex items-center gap-1 justify-end">
+                              {!isPast && !t.is_organizer_event && !t.is_paid && (
+                                <GrowEmailButton kind="training" item={t} api={api} showToast={showToast} onSent={growSent(setTrainings)} />
+                              )}
                               <button onClick={() => toggleFeatured(t)} title={t.is_featured ? "Öne çıkarmayı kaldır" : "Öne çıkar"}
                                 aria-pressed={!!t.is_featured}
                                 className={`inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${t.is_featured ? "text-amber-600 bg-amber-50 hover:bg-amber-100" : "text-slate-400 hover:text-amber-600 hover:bg-amber-50"}`}>
@@ -2631,8 +2701,10 @@ export default function AdminPanel() {
                         <span className={`flex items-center gap-0.5 ${t.is_private ? "text-slate-500" : "text-brand-600"}`}>
                           {t.is_private ? <><Lock className="w-3 h-3"/> Gizli</> : <><Globe className="w-3 h-3"/> Açık</>}
                         </span>
+                        {t.last_grow_email && <><span>·</span><span className="flex items-center gap-0.5"><Mail className="w-3 h-3"/> {fmtSent(t.last_grow_email.sent_at)}</span></>}
                       </div>
                     </div>
+                    <GrowEmailButton kind="team" item={t} api={api} showToast={showToast} onSent={growSent(setTeams)} compact />
                     <button onClick={() => del(`/admin/teams/${t.id}`, t.name, "teams")}
                       className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0">
                       <Trash2 className="w-4 h-4" />
@@ -2679,10 +2751,13 @@ export default function AdminPanel() {
                         </td>
                         <td className="px-4 py-3.5 text-slate-400 text-xs">{fmt(t.created_at)}</td>
                         <td className="px-4 py-3.5">
-                          <button onClick={() => del(`/admin/teams/${t.id}`, t.name, "teams")}
-                            className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          <div className="flex items-center gap-1 justify-end">
+                            <GrowEmailButton kind="team" item={t} api={api} showToast={showToast} onSent={growSent(setTeams)} />
+                            <button onClick={() => del(`/admin/teams/${t.id}`, t.name, "teams")}
+                              className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}

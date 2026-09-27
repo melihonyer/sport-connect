@@ -581,6 +581,7 @@ export default {
     k_like: "Me gusta",
     k_badge: "Nueva insignia",
     k_nudge: "Recordatorios",
+    k_tips: "Consejos de Muuvlink (hacer crecer tu equipo, difundir eventos)",
   },
 
   badges: {

@@ -582,6 +582,7 @@ export default {
     k_like: "«Μου αρέσει»",
     k_badge: "Νέο σήμα",
     k_nudge: "Υπενθυμίσεις",
+    k_tips: "Συμβουλές από το Muuvlink (ομάδα, εκδηλώσεις)",
   },
 
   badges: {

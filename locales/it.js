@@ -581,6 +581,7 @@ export default {
     k_like: "Mi piace",
     k_badge: "Nuovo badge",
     k_nudge: "Promemoria",
+    k_tips: "Consigli da Muuvlink (far crescere la squadra, promuovere gli eventi)",
   },
 
   badges: {

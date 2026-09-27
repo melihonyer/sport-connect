@@ -258,8 +258,10 @@ const NOTIF_PREF_ROWS = [
   { sec: "secTeam",   items: [ { k: "invite", email: true }, { k: "team_member", email: true }, { k: "role", email: true } ] },
   { sec: "secEvents", items: [ { k: "event_new", email: true }, { k: "event_update", email: true }, { k: "event_reminder", email: true }, { k: "event_join", email: true } ] },
   { sec: "secSocial", items: [ { k: "comment", email: true }, { k: "wall_post", email: true }, { k: "like", email: false } ] },
-  { sec: "secOther",  items: [ { k: "badge", email: false }, { k: "nudge", email: false } ] },
+  { sec: "secOther",  items: [ { k: "badge", email: false }, { k: "nudge", email: false }, { k: "tips", email: true, app: false, emailDefault: true } ] },
 ];
+// app:false → yalnız e-posta kanalı olan tür. emailDefault:true → e-posta varsayılan AÇIK
+// (kullanıcı kapatana kadar). Sunucudaki karşılığı: EMAIL_DEFAULT_ON.
 // Çoklu spor dalı seçici (chip'ler) — takım oluşturma/düzenlemede kullanılır.
 const SportsMultiSelect = ({ value = [], onChange, t }) => (
   <div className="flex flex-wrap gap-2">
@@ -2107,12 +2109,14 @@ export default function Muuvlink() {
     const [prefs, setPrefs] = useState(() => (user?.notif_prefs && typeof user.notif_prefs === "object") ? { ...user.notif_prefs } : {});
     const [busy, setBusy] = useState(false);
 
+    const ROW_BY_KEY = Object.fromEntries(NOTIF_PREF_ROWS.flatMap((s) => s.items).map((i) => [i.k, i]));
     const isApp = (k) => prefs[k]?.app !== false;      // varsayılan açık
-    const isEmail = (k) => prefs[k]?.email === true;   // varsayılan kapalı
+    // e-posta varsayılan kapalı; emailDefault:true olan türde (ipuçları) varsayılan açık
+    const isEmail = (k) => (ROW_BY_KEY[k]?.emailDefault ? prefs[k]?.email !== false : prefs[k]?.email === true);
     const setCh = (k, ch, val) => setPrefs((p) => ({ ...p, [k]: { ...p[k], [ch]: val } }));
 
     const emailKeys = NOTIF_PREF_ROWS.flatMap((s) => s.items).filter((i) => i.email).map((i) => i.k);
-    const allKeys = NOTIF_PREF_ROWS.flatMap((s) => s.items).map((i) => i.k);
+    const allKeys = NOTIF_PREF_ROWS.flatMap((s) => s.items).filter((i) => i.app !== false).map((i) => i.k);
     const allApp = allKeys.every((k) => isApp(k));
     const allEmail = emailKeys.every((k) => isEmail(k));
     const setAll = (ch, val) => setPrefs((p) => {
@@ -2148,10 +2152,14 @@ export default function Muuvlink() {
       </button>
     );
 
-    const Row = ({ label, k, email, header }) => (
+    const Row = ({ label, k, email, app = true, header }) => (
       <div className="flex items-center gap-3 px-4 py-3 border-t border-slate-100 first:border-t-0">
         <span className={`flex-1 text-sm ${header ? "font-bold text-slate-800" : "text-slate-700"}`}>{label}</span>
-        <div className="w-12 flex justify-center"><Toggle on={header ? allApp : isApp(k)} onChange={(v) => header ? setAll("app", v) : setCh(k, "app", v)} /></div>
+        <div className="w-12 flex justify-center">
+          {(header || app)
+            ? <Toggle on={header ? allApp : isApp(k)} onChange={(v) => header ? setAll("app", v) : setCh(k, "app", v)} />
+            : <span className="text-slate-300 text-sm">—</span>}
+        </div>
         <div className="w-12 flex justify-center">
           {(header || email)
             ? <Toggle on={header ? allEmail : isEmail(k)} onChange={(v) => header ? setAll("email", v) : setCh(k, "email", v)} />
@@ -2190,7 +2198,7 @@ export default function Muuvlink() {
             {NOTIF_PREF_ROWS.map((sec) => (
               <div key={sec.sec}>
                 <div className="px-4 pt-4 pb-1 text-[11px] font-bold uppercase tracking-wide text-brand-600">{t(`notifPrefs.${sec.sec}`)}</div>
-                {sec.items.map((it) => <Row key={it.k} k={it.k} email={it.email} label={t(`notifPrefs.k_${it.k}`)} />)}
+                {sec.items.map((it) => <Row key={it.k} k={it.k} email={it.email} app={it.app !== false} label={t(`notifPrefs.k_${it.k}`)} />)}
               </div>
             ))}
             <div className="h-3" />
