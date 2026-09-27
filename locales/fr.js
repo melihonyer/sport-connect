@@ -653,7 +653,7 @@ export default {
     q5: "Comment participer à un événement ?",
     a5: "Il suffit de cliquer sur « Participer » sur la page de l'événement, sans attendre de validation. Chaque événement a un nombre de places et les inscriptions se ferment quand il est complet. Les événements auxquels tu participes apparaissent dans le calendrier de ton profil, et tu reçois un rappel avant le début. Si tu changes d'avis, tu te retires depuis la même page et ta place se libère pour d'autres sportifs.",
     q6: "Dans quelles villes et quels sports Muuvlink est-il disponible ?",
-    a6: "Muuvlink fonctionne selon la position et non avec une liste fixe de villes : on peut créer des événements partout où se trouvent ses utilisateurs. Les sports proposés sont le basket, le vélo, le CrossFit, le football, le kayak, la course à pied, l'aviron, le padel, le Pilates, le tennis, la randonnée, le triathlon, le volley, le yoga et la natation. L'application est disponible en turc, anglais, allemand, grec, espagnol et français.",
+    a6: "Muuvlink fonctionne selon la position et non avec une liste fixe de villes : on peut créer des événements partout où se trouvent ses utilisateurs. Les sports proposés sont le basket, le vélo, le CrossFit, le football, le kayak, la course à pied, l'aviron, le padel, le Pilates, le tennis, la randonnée, le triathlon, le volley, le yoga et la natation. L'application est disponible en turc, anglais, allemand, grec, espagnol, français et italien.",
   },
 
   notifications: {

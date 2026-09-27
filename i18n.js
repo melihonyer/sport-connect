@@ -8,6 +8,7 @@
 import el from "./locales/el.js";
 import es from "./locales/es.js";
 import fr from "./locales/fr.js";
+import it from "./locales/it.js";
 
 export const translations = {
 
@@ -1279,9 +1280,9 @@ export const translations = {
     q6: { tr: "Muuvlink hangi şehirlerde ve hangi sporlarda kullanılıyor?",
           en: "Which cities and sports does Muuvlink cover?",
           de: "Welche Städte und Sportarten deckt Muuvlink ab?" },
-    a6: { tr: "Muuvlink konum tabanlı çalışır: sabit bir şehir listesi yoktur, etkinlikler kullanıcıların bulunduğu her şehirde açılabilir. Desteklenen dallar basketbol, bisiklet, crossfit, futbol, kano, koşu, kürek, padel, pilates, tenis, trekking, triatlon, voleybol, yoga ve yüzmedir. Arayüz Türkçe, İngilizce, Almanca, Yunanca, İspanyolca ve Fransızca sunulur.",
-          en: "Muuvlink works by location rather than from a fixed list of cities: events can be created wherever its users are. The supported sports are basketball, cycling, CrossFit, football, kayaking, running, rowing, padel, pilates, tennis, trekking, triathlon, volleyball, yoga and swimming. The interface is available in Turkish, English, German, Greek, Spanish and French.",
-          de: "Muuvlink arbeitet standortbasiert statt mit einer festen Städteliste: Events können überall dort entstehen, wo Nutzerinnen und Nutzer sind. Unterstützt werden Basketball, Radfahren, CrossFit, Fußball, Kanu, Laufen, Rudern, Padel, Pilates, Tennis, Trekking, Triathlon, Volleyball, Yoga und Schwimmen. Die Oberfläche gibt es auf Türkisch, Englisch, Deutsch, Griechisch, Spanisch und Französisch." },
+    a6: { tr: "Muuvlink konum tabanlı çalışır: sabit bir şehir listesi yoktur, etkinlikler kullanıcıların bulunduğu her şehirde açılabilir. Desteklenen dallar basketbol, bisiklet, crossfit, futbol, kano, koşu, kürek, padel, pilates, tenis, trekking, triatlon, voleybol, yoga ve yüzmedir. Arayüz Türkçe, İngilizce, Almanca, Yunanca, İspanyolca, Fransızca ve İtalyanca sunulur.",
+          en: "Muuvlink works by location rather than from a fixed list of cities: events can be created wherever its users are. The supported sports are basketball, cycling, CrossFit, football, kayaking, running, rowing, padel, pilates, tennis, trekking, triathlon, volleyball, yoga and swimming. The interface is available in Turkish, English, German, Greek, Spanish, French and Italian.",
+          de: "Muuvlink arbeitet standortbasiert statt mit einer festen Städteliste: Events können überall dort entstehen, wo Nutzerinnen und Nutzer sind. Unterstützt werden Basketball, Radfahren, CrossFit, Fußball, Kanu, Laufen, Rudern, Padel, Pilates, Tennis, Trekking, Triathlon, Volleyball, Yoga und Schwimmen. Die Oberfläche gibt es auf Türkisch, Englisch, Deutsch, Griechisch, Spanisch, Französisch und Italienisch." },
   },
 };
 
@@ -1296,6 +1297,7 @@ export const LANGUAGES = [
   { code: "el", label: "Ελληνικά", locale: "el-GR" },
   { code: "es", label: "Español",  locale: "es-ES" },
   { code: "fr", label: "Français", locale: "fr-FR" },
+  { code: "it", label: "Italiano", locale: "it-IT" },
 ];
 export const SUPPORTED = LANGUAGES.map((l) => l.code);
 export const localeOf = (lang) => (LANGUAGES.find((l) => l.code === lang) || LANGUAGES[0]).locale;
@@ -1327,6 +1329,7 @@ const mergeLocale = (code, overlay) => {
 mergeLocale("el", el);
 mergeLocale("es", es);
 mergeLocale("fr", fr);
+mergeLocale("it", it);
 
 // ─── Dil algılama ───────────────────────────────────────────
 

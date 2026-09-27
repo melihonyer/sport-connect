@@ -90,9 +90,11 @@ JavaScript ÇALIŞTIRMAZ. Bu yüzden metin sunucudan basılır.
 
 ## Diller
 
-Diller: tr, en, de, el, es, fr (Eylül 2026'da Yunanca, İspanyolca ve Fransızca
-eklendi; sırada nl, sonra ar — Arapça sağdan sola düzen ister, ayrı proje).
-Adres önekleri o dilin kelimeleriyle: `/es/eventos`, `/fr/evenements`; el için
+Diller: tr, en, de, el, es, fr, it (Eylül 2026'da Yunanca, İspanyolca, Fransızca
+ve İtalyanca eklendi; Flemenkçe getirisi düşük görüldü, Arapça sağdan sola
+düzen ister — ayrı proje).
+Adres önekleri o dilin kelimeleriyle: `/es/eventos`, `/fr/evenements`,
+`/it/eventi`; el için
 Latin harfli `/el/events`. Dil seçicide dil KODU gösterilir (EL, GR değil —
 GR ülke kodu; hreflang da `el` ister).
 
@@ -114,7 +116,7 @@ GR ülke kodu; hreflang da `el` ister).
   Yunan alt kümesi `'Montserrat'` adı + unicode-range ile tanımlı
   (`public/fonts/manrope-greek.woff2`); her Montserrat kullanımı Yunan
   harfini kendiliğinden onunla çizer. Arapça gelirse aynı yöntem.
-- Konum önerileri bazı dillerde ev ülkesini öne alır: el → GR, tr/en/de → TR.
+- Konum önerileri bazı dillerde ev ülkesini öne alır: el → GR, it → IT, tr/en/de → TR.
   **es ve fr'de ülke süzülmez** (birçok ülkede konuşuluyor); sıralamayı
   kullanıcının konumu belirler. Yeni dilde `HOME_COUNTRY` kararı verilir
   (`LocationPicker.jsx`).

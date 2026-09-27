@@ -653,7 +653,7 @@ export default {
     q5: "¿Cómo me apunto a un evento?",
     a5: "Basta con pulsar «Apuntarme» en la página del evento; no hace falta esperar aprobación. Cada evento tiene un número de plazas y la inscripción se cierra cuando se llena. Los eventos a los que te apuntas aparecen en el calendario de tu perfil y recibes un recordatorio antes del inicio. Si cambias de idea, puedes salir desde la misma página y tu plaza queda libre para otros.",
     q6: "¿En qué ciudades y deportes funciona Muuvlink?",
-    a6: "Muuvlink funciona por ubicación, no con una lista fija de ciudades: se pueden crear eventos allí donde estén sus usuarios. Los deportes disponibles son baloncesto, ciclismo, CrossFit, fútbol, kayak, running, remo, pádel, pilates, tenis, senderismo, triatlón, voleibol, yoga y natación. La app está disponible en turco, inglés, alemán, griego, español y francés.",
+    a6: "Muuvlink funciona por ubicación, no con una lista fija de ciudades: se pueden crear eventos allí donde estén sus usuarios. Los deportes disponibles son baloncesto, ciclismo, CrossFit, fútbol, kayak, running, remo, pádel, pilates, tenis, senderismo, triatlón, voleibol, yoga y natación. La app está disponible en turco, inglés, alemán, griego, español, francés e italiano.",
   },
 
   notifications: {

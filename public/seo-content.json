@@ -23,7 +23,7 @@
       },
       {
         "q": "Muuvlink hangi şehirlerde ve hangi sporlarda kullanılıyor?",
-        "a": "Muuvlink konum tabanlı çalışır: sabit bir şehir listesi yoktur, etkinlikler kullanıcıların bulunduğu her şehirde açılabilir. Desteklenen dallar basketbol, bisiklet, crossfit, futbol, kano, koşu, kürek, padel, pilates, tenis, trekking, triatlon, voleybol, yoga ve yüzmedir. Arayüz Türkçe, İngilizce, Almanca, Yunanca, İspanyolca ve Fransızca sunulur."
+        "a": "Muuvlink konum tabanlı çalışır: sabit bir şehir listesi yoktur, etkinlikler kullanıcıların bulunduğu her şehirde açılabilir. Desteklenen dallar basketbol, bisiklet, crossfit, futbol, kano, koşu, kürek, padel, pilates, tenis, trekking, triatlon, voleybol, yoga ve yüzmedir. Arayüz Türkçe, İngilizce, Almanca, Yunanca, İspanyolca, Fransızca ve İtalyanca sunulur."
       }
     ],
     "en": [
@@ -49,7 +49,7 @@
       },
       {
         "q": "Which cities and sports does Muuvlink cover?",
-        "a": "Muuvlink works by location rather than from a fixed list of cities: events can be created wherever its users are. The supported sports are basketball, cycling, CrossFit, football, kayaking, running, rowing, padel, pilates, tennis, trekking, triathlon, volleyball, yoga and swimming. The interface is available in Turkish, English, German, Greek, Spanish and French."
+        "a": "Muuvlink works by location rather than from a fixed list of cities: events can be created wherever its users are. The supported sports are basketball, cycling, CrossFit, football, kayaking, running, rowing, padel, pilates, tennis, trekking, triathlon, volleyball, yoga and swimming. The interface is available in Turkish, English, German, Greek, Spanish, French and Italian."
       }
     ],
     "de": [
@@ -75,7 +75,7 @@
       },
       {
         "q": "Welche Städte und Sportarten deckt Muuvlink ab?",
-        "a": "Muuvlink arbeitet standortbasiert statt mit einer festen Städteliste: Events können überall dort entstehen, wo Nutzerinnen und Nutzer sind. Unterstützt werden Basketball, Radfahren, CrossFit, Fußball, Kanu, Laufen, Rudern, Padel, Pilates, Tennis, Trekking, Triathlon, Volleyball, Yoga und Schwimmen. Die Oberfläche gibt es auf Türkisch, Englisch, Deutsch, Griechisch, Spanisch und Französisch."
+        "a": "Muuvlink arbeitet standortbasiert statt mit einer festen Städteliste: Events können überall dort entstehen, wo Nutzerinnen und Nutzer sind. Unterstützt werden Basketball, Radfahren, CrossFit, Fußball, Kanu, Laufen, Rudern, Padel, Pilates, Tennis, Trekking, Triathlon, Volleyball, Yoga und Schwimmen. Die Oberfläche gibt es auf Türkisch, Englisch, Deutsch, Griechisch, Spanisch, Französisch und Italienisch."
       }
     ],
     "el": [
@@ -101,7 +101,7 @@
       },
       {
         "q": "Σε ποιες πόλεις και ποια αθλήματα λειτουργεί το Muuvlink;",
-        "a": "Το Muuvlink λειτουργεί με βάση την τοποθεσία και όχι με σταθερή λίστα πόλεων: οι εκδηλώσεις μπορούν να δημιουργηθούν όπου βρίσκονται οι χρήστες του. Τα αθλήματα που υποστηρίζονται είναι μπάσκετ, ποδηλασία, CrossFit, ποδόσφαιρο, καγιάκ, τρέξιμο, κωπηλασία, πάντελ, πιλάτες, τένις, πεζοπορία, τρίαθλο, βόλεϊ, γιόγκα και κολύμβηση. Η εφαρμογή είναι διαθέσιμη στα τουρκικά, στα αγγλικά, στα γερμανικά, στα ελληνικά, στα ισπανικά και στα γαλλικά."
+        "a": "Το Muuvlink λειτουργεί με βάση την τοποθεσία και όχι με σταθερή λίστα πόλεων: οι εκδηλώσεις μπορούν να δημιουργηθούν όπου βρίσκονται οι χρήστες του. Τα αθλήματα που υποστηρίζονται είναι μπάσκετ, ποδηλασία, CrossFit, ποδόσφαιρο, καγιάκ, τρέξιμο, κωπηλασία, πάντελ, πιλάτες, τένις, πεζοπορία, τρίαθλο, βόλεϊ, γιόγκα και κολύμβηση. Η εφαρμογή είναι διαθέσιμη στα τουρκικά, στα αγγλικά, στα γερμανικά, στα ελληνικά, στα ισπανικά, στα γαλλικά και στα ιταλικά."
       }
     ],
     "es": [
@@ -127,7 +127,7 @@
       },
       {
         "q": "¿En qué ciudades y deportes funciona Muuvlink?",
-        "a": "Muuvlink funciona por ubicación, no con una lista fija de ciudades: se pueden crear eventos allí donde estén sus usuarios. Los deportes disponibles son baloncesto, ciclismo, CrossFit, fútbol, kayak, running, remo, pádel, pilates, tenis, senderismo, triatlón, voleibol, yoga y natación. La app está disponible en turco, inglés, alemán, griego, español y francés."
+        "a": "Muuvlink funciona por ubicación, no con una lista fija de ciudades: se pueden crear eventos allí donde estén sus usuarios. Los deportes disponibles son baloncesto, ciclismo, CrossFit, fútbol, kayak, running, remo, pádel, pilates, tenis, senderismo, triatlón, voleibol, yoga y natación. La app está disponible en turco, inglés, alemán, griego, español, francés e italiano."
       }
     ],
     "fr": [
@@ -153,7 +153,33 @@
       },
       {
         "q": "Dans quelles villes et quels sports Muuvlink est-il disponible ?",
-        "a": "Muuvlink fonctionne selon la position et non avec une liste fixe de villes : on peut créer des événements partout où se trouvent ses utilisateurs. Les sports proposés sont le basket, le vélo, le CrossFit, le football, le kayak, la course à pied, l'aviron, le padel, le Pilates, le tennis, la randonnée, le triathlon, le volley, le yoga et la natation. L'application est disponible en turc, anglais, allemand, grec, espagnol et français."
+        "a": "Muuvlink fonctionne selon la position et non avec une liste fixe de villes : on peut créer des événements partout où se trouvent ses utilisateurs. Les sports proposés sont le basket, le vélo, le CrossFit, le football, le kayak, la course à pied, l'aviron, le padel, le Pilates, le tennis, la randonnée, le triathlon, le volley, le yoga et la natation. L'application est disponible en turc, anglais, allemand, grec, espagnol, français et italien."
+      }
+    ],
+    "it": [
+      {
+        "q": "Che cos'è Muuvlink?",
+        "a": "Muuvlink è un'app gratuita di community sportiva per trovare eventi sportivi vicino a te e parteciparvi, creare la tua squadra e organizzare allenamenti regolari. Si possono creare eventi in più di quindici sport, tra cui calcio, basket, tennis, corsa, ciclismo, nuoto, yoga e padel. Funziona sul web all'indirizzo muuvlink.app e come app per iOS e Android."
+      },
+      {
+        "q": "Muuvlink è gratuito?",
+        "a": "Sì, è gratuito. Creare un account, creare un evento, fondare una squadra e partecipare agli eventi non costa nulla, e non ci sono abbonamenti né piani a pagamento. Le gare e i tornei organizzati con l'etichetta «A pagamento» appartengono a organizzatori esterni: l'iscrizione si fa sul loro sito e Muuvlink non trattiene nessuna parte di quelle quote."
+      },
+      {
+        "q": "Come trovo eventi sportivi vicino a me?",
+        "a": "Quando consenti l'accesso alla posizione, Muuvlink mostra su una mappa e in un elenco gli eventi pubblici entro 5, 10, 25 o 50 chilometri. Puoi filtrare per sport, data e livello di difficoltà. Prima di iscriverti puoi chiedere all'organizzatore dell'orario o del livello nei commenti della pagina dell'evento."
+      },
+      {
+        "q": "Come creo una squadra?",
+        "a": "Dopo aver effettuato l'accesso, clicca «Crea squadra» nella pagina Squadre: scegli un nome, uno sport, un luogo e la visibilità. Le squadre pubbliche compaiono nella ricerca e sui motori di ricerca; nelle squadre private si entra solo su invito. Puoi aggiungere un secondo amministratore e annunciare un evento a tutti i membri in un colpo solo."
+      },
+      {
+        "q": "Come partecipo a un evento?",
+        "a": "Basta premere «Partecipa» nella pagina dell'evento, senza attendere approvazioni. Ogni evento ha un numero di posti e le iscrizioni si chiudono quando è completo. Gli eventi a cui partecipi compaiono nel calendario del tuo profilo e ricevi un promemoria prima dell'inizio. Se cambi idea, esci dalla stessa pagina e il tuo posto torna libero per altri sportivi."
+      },
+      {
+        "q": "In quali città e per quali sport funziona Muuvlink?",
+        "a": "Muuvlink funziona in base alla posizione, non con un elenco fisso di città: gli eventi si possono creare ovunque si trovino i suoi utenti. Gli sport disponibili sono basket, ciclismo, CrossFit, calcio, kayak, corsa, canottaggio, padel, pilates, tennis, trekking, triathlon, pallavolo, yoga e nuoto. L'app è disponibile in turco, inglese, tedesco, greco, spagnolo, francese e italiano."
       }
     ]
   },
@@ -319,6 +345,33 @@
       "contactTitle": "Contact — Muuvlink",
       "contactDesc": "Contacte Muuvlink : compte, création d'équipe, questions sur les événements, problèmes techniques, partenariats et suggestions.",
       "faqTitle": "Questions fréquentes"
+    },
+    "it": {
+      "homeH1": "Muuvlink — trova compagni per fare sport, crea una squadra, partecipa agli eventi",
+      "navEvents": "Eventi",
+      "navTeams": "Squadre",
+      "navContact": "Contatti",
+      "navHome": "Che cos'è Muuvlink?",
+      "eventsH1": "Prossimi eventi sportivi",
+      "eventsLead": "Muuvlink raccoglie {n} prossimi eventi sportivi pubblici. La pagina di ogni evento indica data, luogo e posti disponibili; per partecipare basta premere «Partecipa», senza attendere approvazioni.",
+      "eventsSub": "Se consenti l'accesso alla posizione, l'app mostra anche su una mappa gli eventi entro 5, 10, 25 o 50 chilometri. L'elenco è ordinato per data e non include gli eventi passati.",
+      "eventsEmpty": "Al momento non ci sono prossimi eventi pubblici. I nuovi eventi compaiono in questa pagina appena vengono creati.",
+      "eventsTitle": "Prossimi eventi sportivi — Muuvlink",
+      "eventsDesc": "{n} prossimi eventi sportivi pubblici su Muuvlink: calcio, basket, corsa, tennis, nuoto e altro, con data, luogo e posti.",
+      "teamsH1": "Squadre sportive",
+      "teamsLead": "Su Muuvlink ci sono {n} squadre sportive pubbliche. Puoi chiedere di entrare in una squadra pubblica; nelle squadre private si entra solo su invito e non compaiono in questo elenco.",
+      "teamsSub": "Creare la tua squadra è gratis: scegli un nome, uno sport, un luogo e la visibilità. Puoi aggiungere un secondo amministratore e annunciare un evento a tutti i membri in un colpo solo.",
+      "teamsEmpty": "Al momento non ci sono squadre pubbliche. Le nuove squadre compaiono in questa pagina appena vengono create.",
+      "teamsTitle": "Squadre sportive — Muuvlink",
+      "teamsDesc": "{n} squadre sportive pubbliche su Muuvlink. Entra in una squadra o crea la tua gratis.",
+      "memberSuffix": "membri",
+      "contactH1": "Contatti",
+      "contactLead": "Siamo qui per le tue domande. Ti risponderemo presto.",
+      "contactSub": "Puoi scriverci con il modulo di questa pagina o con un messaggio su Instagram. Il modulo chiede nome, email, oggetto e messaggio.",
+      "contactTopics": "Per cosa puoi scriverci",
+      "contactTitle": "Contatti — Muuvlink",
+      "contactDesc": "Contatta Muuvlink: account, creazione di una squadra, domande sugli eventi, problemi tecnici, collaborazioni e suggerimenti.",
+      "faqTitle": "Domande frequenti"
     }
   },
   "sports": {
@@ -453,6 +506,28 @@
       "Yürüyüş": "Marche",
       "Yüzme": "Natation",
       "Diğer": "Autre"
+    },
+    "it": {
+      "Basketbol": "Basket",
+      "Bikejoring": "Bikejoring",
+      "Bisiklet": "Ciclismo",
+      "Canicross": "Canicross",
+      "Crossfit": "CrossFit",
+      "Dog Triatlon": "Triathlon con il cane",
+      "Futbol": "Calcio",
+      "Kano": "Kayak",
+      "Koşu": "Corsa",
+      "Kürek": "Canottaggio",
+      "Padel": "Padel",
+      "Pilates": "Pilates",
+      "Tenis": "Tennis",
+      "Trekking": "Trekking",
+      "Triatlon": "Triathlon",
+      "Voleybol": "Pallavolo",
+      "Yoga": "Yoga",
+      "Yürüyüş": "Camminata",
+      "Yüzme": "Nuoto",
+      "Diğer": "Altro"
     }
   }
 }

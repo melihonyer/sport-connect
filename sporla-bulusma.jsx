@@ -135,9 +135,9 @@ class ErrorBoundary extends React.Component {
     const reset = () => this.setState({ error: null });
     const lng = (typeof localStorage !== "undefined" && localStorage.getItem("muuvlang")) || "tr";
     const _eb = {
-      title: { tr: "Bir şeyler ters gitti", en: "Something went wrong", de: "Etwas ist schiefgelaufen", el: "Κάτι πήγε στραβά", es: "Algo ha salido mal", fr: "Un problème est survenu" },
-      retry: { tr: "Tekrar Dene", en: "Try Again", de: "Erneut versuchen", el: "Δοκίμασε ξανά", es: "Reintentar", fr: "Réessayer" },
-      unexpected: { tr: "Beklenmedik bir hata oluştu.", en: "An unexpected error occurred.", de: "Ein unerwarteter Fehler ist aufgetreten.", el: "Παρουσιάστηκε ένα απρόσμενο σφάλμα.", es: "Se ha producido un error inesperado.", fr: "Une erreur inattendue s'est produite." },
+      title: { tr: "Bir şeyler ters gitti", en: "Something went wrong", de: "Etwas ist schiefgelaufen", el: "Κάτι πήγε στραβά", es: "Algo ha salido mal", fr: "Un problème est survenu", it: "Qualcosa è andato storto" },
+      retry: { tr: "Tekrar Dene", en: "Try Again", de: "Erneut versuchen", el: "Δοκίμασε ξανά", es: "Reintentar", fr: "Réessayer", it: "Riprova" },
+      unexpected: { tr: "Beklenmedik bir hata oluştu.", en: "An unexpected error occurred.", de: "Ein unerwarteter Fehler ist aufgetreten.", el: "Παρουσιάστηκε ένα απρόσμενο σφάλμα.", es: "Se ha producido un error inesperado.", fr: "Une erreur inattendue s'est produite.", it: "Si è verificato un errore imprevisto." },
     };
     const _t = (k) => pickLang(_eb[k], lng);
     return (
@@ -283,27 +283,27 @@ const _hav = (a, b) => { const R=6371,dL=(b.lat-a.lat)*Math.PI/180,dN=(b.lng-a.l
 const _fmtDist = (km) => km < 1 ? `${Math.round(km*1000)} m` : `${km.toFixed(1)} km`;
 
 const _PLACE_LABELS = {
-  village:       { tr:"Köy/Mahalle", en:"Village",     de:"Dorf", el:"Χωριό", es:"Pueblo", fr:"Village" },
-  hamlet:        { tr:"Köy/Mahalle", en:"Village",     de:"Dorf", el:"Χωριό", es:"Aldea", fr:"Hameau" },
-  suburb:        { tr:"Mahalle",     en:"Suburb",      de:"Vorort", el:"Προάστιο", es:"Barrio", fr:"Quartier" },
-  neighbourhood: { tr:"Mahalle",     en:"Neighborhood",de:"Viertel", el:"Γειτονιά", es:"Barrio", fr:"Quartier" },
-  quarter:       { tr:"Mahalle",     en:"Quarter",     de:"Viertel", el:"Συνοικία", es:"Barrio", fr:"Quartier" },
-  city:          { tr:"Şehir",       en:"City",        de:"Stadt", el:"Πόλη", es:"Ciudad", fr:"Ville" },
-  town:          { tr:"Şehir",       en:"Town",        de:"Ort", el:"Κωμόπολη", es:"Localidad", fr:"Ville" },
-  cafe:          { tr:"Kafe",        en:"Café",        de:"Café", el:"Καφέ", es:"Cafetería", fr:"Café" },
-  restaurant:    { tr:"Restoran",    en:"Restaurant",  de:"Restaurant", el:"Εστιατόριο", es:"Restaurante", fr:"Restaurant" },
-  fast_food:     { tr:"Restoran",    en:"Restaurant",  de:"Restaurant", el:"Εστιατόριο", es:"Restaurante", fr:"Restaurant" },
-  gym:           { tr:"Spor",        en:"Gym",         de:"Fitnessstudio", el:"Γυμναστήριο", es:"Gimnasio", fr:"Salle de sport" },
-  sports_centre: { tr:"Spor",        en:"Sports",      de:"Sport", el:"Αθλητικό κέντρο", es:"Polideportivo", fr:"Centre sportif" },
-  swimming_pool: { tr:"Havuz",       en:"Pool",        de:"Schwimmbad", el:"Πισίνα", es:"Piscina", fr:"Piscine" },
-  park:          { tr:"Park",        en:"Park",        de:"Park", el:"Πάρκο", es:"Parque", fr:"Parc" },
-  garden:        { tr:"Park",        en:"Garden",      de:"Garten", el:"Κήπος", es:"Jardín", fr:"Jardin" },
-  school:        { tr:"Okul",        en:"School",      de:"Schule", el:"Σχολείο", es:"Colegio", fr:"École" },
-  university:    { tr:"Okul",        en:"University",  de:"Universität", el:"Πανεπιστήμιο", es:"Universidad", fr:"Université" },
-  hospital:      { tr:"Sağlık",      en:"Hospital",    de:"Krankenhaus", el:"Νοσοκομείο", es:"Hospital", fr:"Hôpital" },
-  clinic:        { tr:"Sağlık",      en:"Clinic",      de:"Klinik", el:"Κλινική", es:"Clínica", fr:"Clinique" },
-  stadium:       { tr:"Spor",        en:"Stadium",     de:"Stadion", el:"Στάδιο", es:"Estadio", fr:"Stade" },
-  beach:         { tr:"Sahil",       en:"Beach",       de:"Strand", el:"Παραλία", es:"Playa", fr:"Plage" },
+  village:       { tr:"Köy/Mahalle", en:"Village",     de:"Dorf", el:"Χωριό", es:"Pueblo", fr:"Village", it:"Paese" },
+  hamlet:        { tr:"Köy/Mahalle", en:"Village",     de:"Dorf", el:"Χωριό", es:"Aldea", fr:"Hameau", it:"Frazione" },
+  suburb:        { tr:"Mahalle",     en:"Suburb",      de:"Vorort", el:"Προάστιο", es:"Barrio", fr:"Quartier", it:"Quartiere" },
+  neighbourhood: { tr:"Mahalle",     en:"Neighborhood",de:"Viertel", el:"Γειτονιά", es:"Barrio", fr:"Quartier", it:"Quartiere" },
+  quarter:       { tr:"Mahalle",     en:"Quarter",     de:"Viertel", el:"Συνοικία", es:"Barrio", fr:"Quartier", it:"Quartiere" },
+  city:          { tr:"Şehir",       en:"City",        de:"Stadt", el:"Πόλη", es:"Ciudad", fr:"Ville", it:"Città" },
+  town:          { tr:"Şehir",       en:"Town",        de:"Ort", el:"Κωμόπολη", es:"Localidad", fr:"Ville", it:"Paese" },
+  cafe:          { tr:"Kafe",        en:"Café",        de:"Café", el:"Καφέ", es:"Cafetería", fr:"Café", it:"Bar" },
+  restaurant:    { tr:"Restoran",    en:"Restaurant",  de:"Restaurant", el:"Εστιατόριο", es:"Restaurante", fr:"Restaurant", it:"Ristorante" },
+  fast_food:     { tr:"Restoran",    en:"Restaurant",  de:"Restaurant", el:"Εστιατόριο", es:"Restaurante", fr:"Restaurant", it:"Ristorante" },
+  gym:           { tr:"Spor",        en:"Gym",         de:"Fitnessstudio", el:"Γυμναστήριο", es:"Gimnasio", fr:"Salle de sport", it:"Palestra" },
+  sports_centre: { tr:"Spor",        en:"Sports",      de:"Sport", el:"Αθλητικό κέντρο", es:"Polideportivo", fr:"Centre sportif", it:"Centro sportivo" },
+  swimming_pool: { tr:"Havuz",       en:"Pool",        de:"Schwimmbad", el:"Πισίνα", es:"Piscina", fr:"Piscine", it:"Piscina" },
+  park:          { tr:"Park",        en:"Park",        de:"Park", el:"Πάρκο", es:"Parque", fr:"Parc", it:"Parco" },
+  garden:        { tr:"Park",        en:"Garden",      de:"Garten", el:"Κήπος", es:"Jardín", fr:"Jardin", it:"Giardino" },
+  school:        { tr:"Okul",        en:"School",      de:"Schule", el:"Σχολείο", es:"Colegio", fr:"École", it:"Scuola" },
+  university:    { tr:"Okul",        en:"University",  de:"Universität", el:"Πανεπιστήμιο", es:"Universidad", fr:"Université", it:"Università" },
+  hospital:      { tr:"Sağlık",      en:"Hospital",    de:"Krankenhaus", el:"Νοσοκομείο", es:"Hospital", fr:"Hôpital", it:"Ospedale" },
+  clinic:        { tr:"Sağlık",      en:"Clinic",      de:"Klinik", el:"Κλινική", es:"Clínica", fr:"Clinique", it:"Clinica" },
+  stadium:       { tr:"Spor",        en:"Stadium",     de:"Stadion", el:"Στάδιο", es:"Estadio", fr:"Stade", it:"Stadio" },
+  beach:         { tr:"Sahil",       en:"Beach",       de:"Strand", el:"Παραλία", es:"Playa", fr:"Plage", it:"Spiaggia" },
 };
 const _placeType = (cls, typ, lang="tr") => {
   const l = lang;
@@ -318,10 +318,10 @@ const _placeType = (cls, typ, lang="tr") => {
     }[typ] || "#114956";
     return { label: pickLang(entry, l), color };
   }
-  if (cls==="natural")  return { label: pickLang({tr:"Doğa", en:"Nature",  de:"Natur",    el:"Φύση", es:"Naturaleza", fr:"Nature"}, l),     color:"#15803d" };
-  if (cls==="highway")  return { label: pickLang({tr:"Sokak", en:"Street",  de:"Straße",  el:"Δρόμος", es:"Calle", fr:"Rue"}, l),   color:"#94a3b8" };
-  if (cls==="shop")     return { label: pickLang({tr:"Mağaza", en:"Shop",   de:"Geschäft", el:"Κατάστημα", es:"Tienda", fr:"Boutique"}, l), color:"#9333ea" };
-  return { label: pickLang({tr:"Yer", en:"Place", de:"Ort", el:"Τοποθεσία", es:"Lugar", fr:"Lieu"}, l), color:"#114956" };
+  if (cls==="natural")  return { label: pickLang({tr:"Doğa", en:"Nature",  de:"Natur",    el:"Φύση", es:"Naturaleza", fr:"Nature", it:"Natura"}, l),     color:"#15803d" };
+  if (cls==="highway")  return { label: pickLang({tr:"Sokak", en:"Street",  de:"Straße",  el:"Δρόμος", es:"Calle", fr:"Rue", it:"Strada"}, l),   color:"#94a3b8" };
+  if (cls==="shop")     return { label: pickLang({tr:"Mağaza", en:"Shop",   de:"Geschäft", el:"Κατάστημα", es:"Tienda", fr:"Boutique", it:"Negozio"}, l), color:"#9333ea" };
+  return { label: pickLang({tr:"Yer", en:"Place", de:"Ort", el:"Τοποθεσία", es:"Lugar", fr:"Lieu", it:"Luogo"}, l), color:"#114956" };
 };
 
 // Hafta bazlı marka renk rotasyonu — aynı hafta içindeki etkinlikler aynı rengi paylaşır,
@@ -354,6 +354,7 @@ const DEFAULT_MOTTOS = {
   el: ["Κινήσου μαζί μας!", "Κάνε νέους φίλους!", "Ξεπέρασε τα όριά σου!", "Βρες τον ρυθμό σου!"],
   es: ["¡Muévete en grupo!", "¡Haz nuevos amigos!", "¡Supera tus límites!", "¡Encuentra tu ritmo!"],
   fr: ["Bouge en groupe !", "Fais-toi des amis !", "Dépasse tes limites !", "Trouve ton rythme !"],
+  it: ["Muoviti in gruppo!", "Fatti nuovi amici!", "Supera i tuoi limiti!", "Trova il tuo ritmo!"],
 };
 
 
@@ -1801,6 +1802,7 @@ const LOCALIZED_PAGE_PATHS = {
   el: { home: "/el",  trainings: "/el/events",   teams: "/el/teams",  contact: "/el/contact" },
   es: { home: "/es",  trainings: "/es/eventos",  teams: "/es/equipos", contact: "/es/contacto" },
   fr: { home: "/fr",  trainings: "/fr/evenements", teams: "/fr/equipes", contact: "/fr/contact" },
+  it: { home: "/it",  trainings: "/it/eventi",   teams: "/it/squadre", contact: "/it/contatti" },
 };
 // Ters tablo: yol → { lang, page }
 const LOCALIZED_PATH_LOOKUP = Object.fromEntries(
@@ -8840,11 +8842,11 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
   };
 
   const REPORT_REASONS = [
-    { key: "inappropriate", label: { tr: "Uygunsuz içerik", en: "Inappropriate content", de: "Unangemessener Inhalt", el: "Ακατάλληλο περιεχόμενο", es: "Contenido inapropiado", fr: "Contenu inapproprié" } },
-    { key: "spam",          label: { tr: "Spam / reklam",    en: "Spam / advertising",    de: "Spam / Werbung",      el: "Spam / διαφήμιση", es: "Spam / publicidad", fr: "Spam / publicité" } },
-    { key: "harassment",    label: { tr: "Taciz / zorbalık", en: "Harassment / bullying", de: "Belästigung",         el: "Παρενόχληση / εκφοβισμός", es: "Acoso / intimidación", fr: "Harcèlement" } },
-    { key: "fake",          label: { tr: "Sahte profil",     en: "Fake profile",          de: "Falsches Profil",     el: "Ψεύτικο προφίλ", es: "Perfil falso", fr: "Faux profil" } },
-    { key: "other",         label: { tr: "Diğer",            en: "Other",                 de: "Sonstiges",           el: "Άλλο", es: "Otro", fr: "Autre" } },
+    { key: "inappropriate", label: { tr: "Uygunsuz içerik", en: "Inappropriate content", de: "Unangemessener Inhalt", el: "Ακατάλληλο περιεχόμενο", es: "Contenido inapropiado", fr: "Contenu inapproprié", it: "Contenuto inappropriato" } },
+    { key: "spam",          label: { tr: "Spam / reklam",    en: "Spam / advertising",    de: "Spam / Werbung",      el: "Spam / διαφήμιση", es: "Spam / publicidad", fr: "Spam / publicité", it: "Spam / pubblicità" } },
+    { key: "harassment",    label: { tr: "Taciz / zorbalık", en: "Harassment / bullying", de: "Belästigung",         el: "Παρενόχληση / εκφοβισμός", es: "Acoso / intimidación", fr: "Harcèlement", it: "Molestie / bullismo" } },
+    { key: "fake",          label: { tr: "Sahte profil",     en: "Fake profile",          de: "Falsches Profil",     el: "Ψεύτικο προφίλ", es: "Perfil falso", fr: "Faux profil", it: "Profilo falso" } },
+    { key: "other",         label: { tr: "Diğer",            en: "Other",                 de: "Sonstiges",           el: "Άλλο", es: "Otro", fr: "Autre", it: "Altro" } },
   ];
 
   const ReportModal = () => {
