@@ -90,8 +90,11 @@ JavaScript ÇALIŞTIRMAZ. Bu yüzden metin sunucudan basılır.
 
 ## Diller
 
-Diller: tr, en, de, el (Eylül 2026'da Yunanca eklendi; sıradakiler es, fr, nl,
-sonra ar — Arapça sağdan sola düzen ister, ayrı proje).
+Diller: tr, en, de, el, es, fr (Eylül 2026'da Yunanca, İspanyolca ve Fransızca
+eklendi; sırada nl, sonra ar — Arapça sağdan sola düzen ister, ayrı proje).
+Adres önekleri o dilin kelimeleriyle: `/es/eventos`, `/fr/evenements`; el için
+Latin harfli `/el/events`. Dil seçicide dil KODU gösterilir (EL, GR değil —
+GR ülke kodu; hreflang da `el` ister).
 
 - **Tek kaynak `i18n.js` → `LANGUAGES`** (kod, görünen ad, tarih yerel ayarı).
   Dil seçiciler, tarih biçimi ve `seo-static.mjs` buradan okur; JSX'e dil
@@ -111,8 +114,10 @@ sonra ar — Arapça sağdan sola düzen ister, ayrı proje).
   Yunan alt kümesi `'Montserrat'` adı + unicode-range ile tanımlı
   (`public/fonts/manrope-greek.woff2`); her Montserrat kullanımı Yunan
   harfini kendiliğinden onunla çizer. Arapça gelirse aynı yöntem.
-- Konum önerileri arayüz diline göre ev ülkesini öne alır (el → GR, diğerleri
-  → TR). Yeni dilde bu eşleme de eklenir (`LocationPicker.jsx`).
+- Konum önerileri bazı dillerde ev ülkesini öne alır: el → GR, tr/en/de → TR.
+  **es ve fr'de ülke süzülmez** (birçok ülkede konuşuluyor); sıralamayı
+  kullanıcının konumu belirler. Yeni dilde `HOME_COUNTRY` kararı verilir
+  (`LocationPicker.jsx`).
 - Yasal metinler (KVKK, gizlilik, koşullar) yalnız Türkçe; çevirisi hukuki
   kontrol ister, kod işi değil.
 - **Hesap dili `users.lang`.** Yalnız kayıtta ve kullanıcı dili ELLE
