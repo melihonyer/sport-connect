@@ -2091,6 +2091,15 @@ export default function Muuvlink() {
     if (detail) return detail.kind === "team" ? "teams" : "trainings";
     return pageFromPath(p);
   });
+  // Detay adresiyle açılış (/takim/..-id): detay yüklenene kadar arkada liste
+  // görünür. O arada adres çubuğu listeye (/en/teams) ÇEKİLMEMELİ — Google
+  // sayfayı çalıştırırken bu geçişi JavaScript yönlendirmesi sayıyor, detay
+  // sayfaları Search Console'da "Yönlendirmeli sayfa" olarak dizin dışı kalıyordu.
+  const detailBootRef = useRef((() => {
+    if (isNative) return null;
+    const d = parseDetailPath(window.location.pathname);
+    return d ? (d.kind === "team" ? "teams" : "trainings") : null;
+  })());
   const [user, setUser] = useState(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState("login");
@@ -2916,6 +2925,12 @@ export default function Muuvlink() {
 
     let title, desc, url, ogImage = null;
 
+    // Açılıştaki detay beklemesi: arka plan listesinde adres detayda kalır;
+    // detay açılınca ya da kullanıcı başka sayfaya geçince bekleme biter.
+    const bootWait = detailBootRef.current && currentPage === detailBootRef.current
+      && parseDetailPath(window.location.pathname);
+    if (!bootWait) detailBootRef.current = null;
+
     if (currentPage === "team-detail" && selectedTeam) {
       // Detay sayfası: takıma özel meta (SEO — her takım ayrı indekslenebilir sayfa)
       title   = `${selectedTeam.name} — Muuvlink`;
@@ -2933,7 +2948,7 @@ export default function Muuvlink() {
       title = meta?.title || "Muuvlink";
       desc  = meta?.desc  || t("home.heroSubtitleFallback");
       url   = `https://muuvlink.app${path || "/"}`;
-      if (path && window.location.pathname !== path) {
+      if (path && window.location.pathname !== path && !bootWait) {
         window.history.pushState({ page: currentPage }, title, path);
       }
     }
