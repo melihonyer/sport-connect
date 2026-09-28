@@ -106,6 +106,15 @@ JavaScript ÇALIŞTIRMAZ. Bu yüzden metin sunucudan basılır.
     (sporla-bulusma.jsx): detay yüklenene kadar adres detayda kalır. Açılışta
     adres değiştiren yeni kod YAZILMAZ; kontrol: iframe'de
     `contentWindow.location.pathname`'i 50 ms'de bir izle, tek adres görmelisin.
+    Melih'e anlatılan hali: "Takım/etkinlik linki açılınca adres satırı bir
+    anlığına listeye dönüp geri geliyordu; Google bunu 'başka yere giden sayfa'
+    sanıp o sayfaları aramaya eklemiyordu. Artık adres hiç değişmiyor."
+  - **Takip (5–12 Ekim 2026):** Search Console › Sayfa dizine ekleme ›
+    "Yönlendirmeli sayfa" satırını aç. Beklenen: `/takim/..`, `/etkinlik/..`
+    adresleri listeden çıkmış, "Dizine eklenen" sayısı 66'dan artmış; satırda
+    yalnız www/http ve `?takim=` adresleri kalmış. Detay adresi hâlâ varsa URL
+    denetimiyle tek tek bak. Aynı gün `/it/squadre` ve `/it/contatti` için de
+    dizine eklenme durumuna bak (28 Eylül'de kota yüzünden istenemedi).
 - **IndexNow anahtar dosyası `public/<key>.txt` silinmemeli** — her bildirimde
   okunuyor. Bing doğrulama etiketi `msvalidate.01` de silinmemeli.
 
