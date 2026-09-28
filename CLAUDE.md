@@ -348,7 +348,10 @@ seçilebilir link kutusu, WhatsApp/Telegram/e-posta butonları, hazır davet mes
   24 saat içinde ikinci gönderim ayrıca onay ister.
 - **Tercih `tips` ("Muuvlink'ten ipuçları")**: yalnız e-posta, **varsayılan AÇIK**
   (`EMAIL_DEFAULT_ON`). Kapatan atlanır; her mailin altında nasıl kapatılacağı yazar.
-  Varsayılan açık olması bir karar — İYS/onay açısından Melih'le konuşuldu.
+  **Melih'in kararı (28 Eylül 2026): yeni bildirim türleri varsayılan AÇIK gelir,
+  isteyen kapatır.** İYS/onay riski konuşuldu, bilerek seçildi; tekrar sorulmaz.
+  Yeni bir e-posta türü eklenirse `EMAIL_DEFAULT_ON`'a ve arayüzde
+  `emailDefault: true` ile eklenir.
 - E-posta çerçevesi dar ekrana uyar (`mv-*` sınıfları + media query). Sabit
   600px'e geri dönülmez; telefonda sağ taraf kesiliyordu.
 - Örnek göndermek için gerçek alıcı yerine `delivered+etiket@resend.dev` kullan
