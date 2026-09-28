@@ -1913,13 +1913,15 @@ function StoryShareModal({ spec, onClose, t, showToast }) {
     if (!r) showToast(t("story.fail"), "error");
   };
   return (
-    <div className="fixed inset-0 z-[80] bg-black/60 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl w-full max-w-sm p-5 max-h-[92vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+    // Alt menü zIndex 999999 → pencere onun üstünde (bildirim tercihleri gibi).
+    // Önizleme yüksekliği ekrana göre: telefonda başlık + adımlar + buton sığsın.
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4" style={{ zIndex: 1000000 }} onClick={onClose}>
+      <div className="bg-white rounded-2xl w-full max-w-sm p-5 overflow-y-auto" style={{ maxHeight: "calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom))" }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-ink-900 flex items-center gap-2"><InstagramGlyph className="w-5 h-5 text-brand-600" /> {t("story.title")}</h3>
           <button onClick={onClose} aria-label={t("common.close")} className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100"><X className="w-4 h-4" /></button>
         </div>
-        <div className="mx-auto rounded-xl overflow-hidden bg-smoke flex items-center justify-center" style={{ width: "min(100%, 34vh)", aspectRatio: "9 / 16" }}>
+        <div className="mx-auto rounded-xl overflow-hidden bg-smoke flex items-center justify-center" style={{ height: "min(46dvh, 520px)", aspectRatio: "9 / 16" }}>
           {preview ? <img src={preview} alt="" className="w-full h-full object-cover" />
             : <span className="text-sm text-slate-500 px-4 text-center">{failed ? t("story.fail") : t("story.rendering")}</span>}
         </div>
