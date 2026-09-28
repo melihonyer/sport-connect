@@ -385,6 +385,21 @@ seçilebilir link kutusu, WhatsApp/Telegram/e-posta butonları, hazır davet mes
   600px'e geri dönülmez; telefonda sağ taraf kesiliyordu.
 - Örnek göndermek için gerçek alıcı yerine `delivered+etiket@resend.dev` kullan
   (Resend test adresi: kimseye gitmez, itibar bozmaz).
+- **Metin kuralları (Melih'le tek tek revize edildi, Eylül 2026):**
+  - Ton X ve Z kuşağına göre, "cringe" olmayacak: "Selam!" açılışı, ünlem,
+    zorlama argo ("kanka", "efsane") yok. Hazır mesaj "sen de gel" diye biter.
+  - **Sayı yazılmaz**: boş yer, üye, katılımcı adedi yok ("hâlâ boş yer var").
+    Paylaşılan mesaj sonradan yanlış kalır; küçük takıma "2 üyeli" demek cesaret kırar.
+  - Takım/etkinlik adına Türkçe ek getirilmez ("OpenWaterTurkey'i" değil
+    "OpenWaterTurkey takımını"; "{ad} etkinliğini" değil "bir etkinlik açtım: {ad}").
+    Ek adın sesine göre değişir; adında "etkinlik" geçen başlıkta tekrar da oluyordu.
+  - Fikir/örnek listeleri branştan bağımsız (padel takımına "sabah koşusu" önerilmez).
+  - Türkçe önce onaylanır, diğer 6 dil ona göre çevrilir (her dilde samimi "sen").
+- Tasarım: kesik çizgili link kutusu + sarı "Linki kopyala" + alt alta ikonlu
+  paylaş butonları (WhatsApp, Instagram hikâyesi, Telegram, e-posta). Başlığın
+  üstünde türe göre ikon (`icons/mail/k-<tür>.png`), emoji yok.
+- Admin listesinde (takım/etkinlik) otomatik giden son mail görünür
+  (`last_auto_email`; gönderilen, atlanandan önce gösterilir). Atlananlar turuncu.
 
 ## Instagram hikâye kartı
 
@@ -406,6 +421,16 @@ sayfa kartı kendisi açar (uygulamada `appUrlOpen` de bu parametreyi okur).
   Türkçe harfleri (Ş, İ, Ğ) yedek yazı tipine düşürüyor.
 - Instagram'a dışarıdan içerik verilemez (WhatsApp'taki gibi paylaşım adresi yok);
   bu yüzden akış "görseli kaydet/paylaş + link kopyalandı".
+- Kart metni GÖRENİN dilinde (`story.*` anahtarları, 7 dil): üst satır
+  ("TAKIMIMIZA KATIL" / "ETKİNLİĞE KATIL"), tarih biçimi. Başlık kullanıcının
+  yazdığı ad, `toLocaleUpperCase(dil)` ile büyük harf; uzunsa küçülür, sonra en
+  çok 3 satıra bölünür. Alttaki "muuvlink.app" yarı saydam beyaz etikette
+  (fotoğrafın altındaki sporcuların üstüne binince okunmuyordu).
+- Pencere mobilde alt menünün (zIndex 999999) ÜSTÜNDE: `zIndex: 1000000`;
+  önizleme yüksekliği ekrana göre (`46dvh`). Yoksa uygulamada buton kesiliyor.
+- Kartı kontrol etmek: `dist`'i yerelde sunup (API canlıya salt GET ile), sayfayı
+  `?hikaye=1` ile açıp önizleme görselini kaydetmek. Kod içine test kancası
+  bırakılmaz.
 
 ## Push bildirimleri
 
