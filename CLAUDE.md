@@ -139,6 +139,14 @@ GR ülke kodu; hreflang da `el` ister).
 - Bildirim tekrar kontrolü BAŞLIĞA bakmaz (başlık alıcı diline göre değişir);
   tür + zaman penceresine bakar.
 
+## Emoji kullanılmaz
+
+Arayüzde, e-postada, bildirimde, hazır paylaşım mesajında **standart emoji
+yok** (Melih'in kararı, Eylül 2026). Görsel gerekiyorsa modern SVG ikon
+(lucide). E-postada Gmail SVG göstermediği için ikon deep teal PNG olarak
+`public/icons/mail/`'e üretilir. Düz metinde (push, WhatsApp mesajı) ikon
+konamaz; emoji sadece çıkarılır.
+
 ## Renk sistemi (kurumsal palet)
 
 Token'lar `tailwind.config.js` içinde. Renk **tek noktadan** değişir, JSX'e
@@ -347,6 +355,8 @@ seçilebilir link kutusu, WhatsApp/Telegram/e-posta butonları, hazır davet mes
   silinirse buton uygulamada ana sayfaya düşer.
 - Buton ikonları `public/icons/mail/*.png` (Gmail SVG göstermiyor). Renkler
   kurumsal: kopyala sarı, paylaş butonları beyaz + deep teal çerçeve, alt alta.
+  Link kutusu kesik çizgili (Melih beğendi, kalsın). Başlığın üstünde türüne
+  göre ikon: `icons/mail/k-<tür>.png`.
 - Gizli takım/etkinlikte paylaşım bölümü çıkmaz (link üye olmayana açılmıyor),
   yerine e-postayla davet yönlendirmesi.
 - **Admin "Mail" butonu** (Takımlar ve Etkinlikler listesi): yalnız takımın

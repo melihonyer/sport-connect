@@ -2015,10 +2015,10 @@ const ACT = {
     optOut: 'Bu tür e-postaları Profil › Bildirim tercihleri › Muuvlink\'ten ipuçları\'ndan kapatabilirsin.',
     tc: {
       subject: (n) => `Takımın hazır: ${n} — şimdi arkadaşlarını çağır`,
-      title: 'Takımın kuruldu! 🎉',
+      title: 'Takımın kuruldu!',
       lead: (n) => `${mB(n)} artık Muuvlink'te. Takımı büyütmenin en hızlı yolu linki bugün paylaşmak.`,
       steps: ['Linki WhatsApp grubuna gönder', 'İlk etkinliğini oluştur — üyelerine anında bildirim gider', 'Katılanlar takımına üye olsun, her etkinlikten haberdar olsun'],
-      msg: (n, link) => `${n} takımını Muuvlink'te kurdum. Buluşmaları artık buradan ayarlıyoruz, sen de gel 👇 ${link}`,
+      msg: (n, link) => `${n} takımını Muuvlink'te kurdum. Buluşmaları artık buradan ayarlıyoruz, sen de gel: ${link}`,
       mailSubject: (n) => `${n} takımına katıl`,
       cta: 'Takımını aç →',
       privateNote: "Takımın gizli: link yalnız üyelere açılır. Arkadaşlarını takım sayfasındaki \"Davet Et\" ile e-postayla çağır.",
@@ -2026,7 +2026,7 @@ const ACT = {
     },
     ec: {
       subject: (n) => `Etkinliğin yayında: ${n} — kontenjanı doldur`,
-      title: 'Etkinliğin yayında! 🚀',
+      title: 'Etkinliğin yayında!',
       lead: (n) => `${mB(n)} artık görünüyor. Şimdi paylaş, kontenjan dolmadan arkadaşların yerini alsın.`,
       steps: ['Linki grubuna ya da arkadaşlarına gönder', 'Soruları etkinlik sayfasındaki mesajlardan yanıtla', 'Etkinlikten önce katılımcılara hatırlatma kendiliğinden gider'],
       msg: (n, when, link) => `${when} ${n} var, gel beraber gidelim! Katılmak için: ${link}`,
@@ -2085,7 +2085,7 @@ const ACT = {
     optOut: 'You can turn these emails off in Profile › Notification preferences › Tips from Muuvlink.',
     tc: {
       subject: (n) => `Your team is ready: ${n} — now bring your friends`,
-      title: 'Your team is live! 🎉',
+      title: 'Your team is live!',
       lead: (n) => `${mB(n)} is now on Muuvlink. The fastest way to grow it is to share the link today.`,
       steps: ['Send the link to your WhatsApp group', 'Create your first event — members are notified instantly', 'Let people join the team so they hear about every event'],
       msg: (n, link) => `Hi! I started the team ${n} on Muuvlink. Let's train together — join here: ${link}`,
@@ -2096,7 +2096,7 @@ const ACT = {
     },
     ec: {
       subject: (n) => `Your event is live: ${n} — fill the spots`,
-      title: 'Your event is live! 🚀',
+      title: 'Your event is live!',
       lead: (n) => `${mB(n)} is now visible. Share it now so your friends grab a spot before it fills up.`,
       steps: ['Send the link to your group or friends', 'Answer questions in the event messages', 'Participants get a reminder automatically before the start'],
       msg: (n, when, link) => `${n} is on ${when} — come along! Join here: ${link}`,
@@ -2155,7 +2155,7 @@ const ACT = {
     optOut: 'Du kannst diese E-Mails unter Profil › Benachrichtigungen › Tipps von Muuvlink abschalten.',
     tc: {
       subject: (n) => `Dein Team ist bereit: ${n} — jetzt Freunde einladen`,
-      title: 'Dein Team ist online! 🎉',
+      title: 'Dein Team ist online!',
       lead: (n) => `${mB(n)} ist jetzt auf Muuvlink. Am schnellsten wächst es, wenn du den Link noch heute teilst.`,
       steps: ['Schick den Link in deine WhatsApp-Gruppe', 'Erstelle dein erstes Event — alle Mitglieder werden sofort benachrichtigt', 'Lass die Leute dem Team beitreten, damit sie jedes Event mitbekommen'],
       msg: (n, link) => `Hi! Ich habe das Team ${n} auf Muuvlink gegründet. Lass uns zusammen trainieren — hier beitreten: ${link}`,
@@ -2166,7 +2166,7 @@ const ACT = {
     },
     ec: {
       subject: (n) => `Dein Event ist online: ${n} — fülle die Plätze`,
-      title: 'Dein Event ist online! 🚀',
+      title: 'Dein Event ist online!',
       lead: (n) => `${mB(n)} ist jetzt sichtbar. Teile es jetzt, damit sich deine Freunde einen Platz sichern.`,
       steps: ['Schick den Link an deine Gruppe oder Freunde', 'Beantworte Fragen in den Event-Nachrichten', 'Vor dem Start bekommen alle automatisch eine Erinnerung'],
       msg: (n, when, link) => `${when} ist ${n} — komm mit! Hier anmelden: ${link}`,
@@ -2225,7 +2225,7 @@ const ACT = {
     optOut: 'Μπορείς να απενεργοποιήσεις αυτά τα email από Προφίλ › Προτιμήσεις ειδοποιήσεων › Συμβουλές από το Muuvlink.',
     tc: {
       subject: (n) => `Η ομάδα σου είναι έτοιμη: ${n} — κάλεσε τώρα τους φίλους σου`,
-      title: 'Η ομάδα σου δημιουργήθηκε! 🎉',
+      title: 'Η ομάδα σου δημιουργήθηκε!',
       lead: (n) => `Η ομάδα ${mB(n)} είναι πλέον στο Muuvlink. Ο πιο γρήγορος τρόπος να μεγαλώσει είναι να μοιραστείς τον σύνδεσμο σήμερα.`,
       steps: ['Στείλε τον σύνδεσμο στην ομάδα σου στο WhatsApp', 'Δημιούργησε την πρώτη σου εκδήλωση — τα μέλη ειδοποιούνται αμέσως', 'Όσοι έρχονται, ας γίνουν μέλη για να μαθαίνουν κάθε εκδήλωση'],
       msg: (n, link) => `Γεια! Έφτιαξα την ομάδα ${n} στο Muuvlink. Ας αθληθούμε μαζί — μπες από εδώ: ${link}`,
@@ -2236,7 +2236,7 @@ const ACT = {
     },
     ec: {
       subject: (n) => `Η εκδήλωσή σου δημοσιεύτηκε: ${n} — γέμισε τις θέσεις`,
-      title: 'Η εκδήλωσή σου δημοσιεύτηκε! 🚀',
+      title: 'Η εκδήλωσή σου δημοσιεύτηκε!',
       lead: (n) => `Η εκδήλωση ${mB(n)} είναι πλέον ορατή. Μοιράσου την τώρα, για να κλείσουν θέση οι φίλοι σου πριν γεμίσει.`,
       steps: ['Στείλε τον σύνδεσμο στην παρέα ή στους φίλους σου', 'Απάντησε στις ερωτήσεις στα μηνύματα της εκδήλωσης', 'Πριν την έναρξη οι συμμετέχοντες παίρνουν αυτόματα υπενθύμιση'],
       msg: (n, when, link) => `${when} έχει ${n} — έλα κι εσύ! Δήλωσε συμμετοχή εδώ: ${link}`,
@@ -2295,7 +2295,7 @@ const ACT = {
     optOut: 'Puedes desactivar estos correos en Perfil › Preferencias de notificaciones › Consejos de Muuvlink.',
     tc: {
       subject: (n) => `Tu equipo está listo: ${n} — ahora invita a tus amigos`,
-      title: '¡Tu equipo ya está en marcha! 🎉',
+      title: '¡Tu equipo ya está en marcha!',
       lead: (n) => `${mB(n)} ya está en Muuvlink. La forma más rápida de hacerlo crecer es compartir el enlace hoy.`,
       steps: ['Envía el enlace a tu grupo de WhatsApp', 'Crea tu primer evento: los miembros reciben un aviso al instante', 'Que quien se apunte se una al equipo y se entere de cada evento'],
       msg: (n, link) => `¡Hola! He creado el equipo ${n} en Muuvlink. Hagamos deporte juntos, únete aquí: ${link}`,
@@ -2306,7 +2306,7 @@ const ACT = {
     },
     ec: {
       subject: (n) => `Tu evento ya está publicado: ${n} — llena las plazas`,
-      title: '¡Tu evento ya está publicado! 🚀',
+      title: '¡Tu evento ya está publicado!',
       lead: (n) => `${mB(n)} ya se puede ver. Compártelo ahora para que tus amigos se apunten antes de que se llene.`,
       steps: ['Envía el enlace a tu grupo o a tus amigos', 'Responde a las dudas en los mensajes del evento', 'Antes del inicio, los participantes reciben un recordatorio automático'],
       msg: (n, when, link) => `¡${when} hay ${n}, vente! Apúntate aquí: ${link}`,
@@ -2365,7 +2365,7 @@ const ACT = {
     optOut: 'Tu peux désactiver ces e-mails dans Profil › Préférences de notification › Conseils de Muuvlink.',
     tc: {
       subject: (n) => `Ton équipe est prête : ${n} — invite tes amis`,
-      title: 'Ton équipe est en ligne ! 🎉',
+      title: 'Ton équipe est en ligne !',
       lead: (n) => `${mB(n)} est maintenant sur Muuvlink. Le meilleur moyen de la faire grandir : partager le lien dès aujourd'hui.`,
       steps: ['Envoie le lien dans ton groupe WhatsApp', 'Crée ton premier événement : les membres sont prévenus tout de suite', 'Invite ceux qui viennent à rejoindre l\'équipe pour ne rien rater'],
       msg: (n, link) => `Salut ! J'ai créé l'équipe ${n} sur Muuvlink. On se fait du sport ensemble ? Rejoins-nous ici : ${link}`,
@@ -2376,7 +2376,7 @@ const ACT = {
     },
     ec: {
       subject: (n) => `Ton événement est en ligne : ${n} — remplis les places`,
-      title: 'Ton événement est en ligne ! 🚀',
+      title: 'Ton événement est en ligne !',
       lead: (n) => `${mB(n)} est maintenant visible. Partage-le maintenant pour que tes amis réservent leur place avant que ce soit complet.`,
       steps: ['Envoie le lien à ton groupe ou à tes amis', 'Réponds aux questions dans les messages de l\'événement', 'Avant le début, les participants reçoivent un rappel automatique'],
       msg: (n, when, link) => `${when}, il y a ${n} — viens avec nous ! Inscris-toi ici : ${link}`,
@@ -2435,7 +2435,7 @@ const ACT = {
     optOut: 'Puoi disattivare queste email da Profilo › Preferenze notifiche › Consigli da Muuvlink.',
     tc: {
       subject: (n) => `La tua squadra è pronta: ${n} — ora invita i tuoi amici`,
-      title: 'La tua squadra è online! 🎉',
+      title: 'La tua squadra è online!',
       lead: (n) => `${mB(n)} ora è su Muuvlink. Il modo più veloce per farla crescere è condividere il link oggi stesso.`,
       steps: ['Manda il link al tuo gruppo WhatsApp', 'Crea il tuo primo evento: i membri ricevono subito una notifica', 'Chi partecipa entri nella squadra, così saprà di ogni evento'],
       msg: (n, link) => `Ciao! Ho creato la squadra ${n} su Muuvlink. Facciamo sport insieme, entra da qui: ${link}`,
@@ -2446,7 +2446,7 @@ const ACT = {
     },
     ec: {
       subject: (n) => `Il tuo evento è online: ${n} — riempi i posti`,
-      title: 'Il tuo evento è online! 🚀',
+      title: 'Il tuo evento è online!',
       lead: (n) => `${mB(n)} ora è visibile. Condividilo subito, così i tuoi amici prendono il posto prima che si riempia.`,
       steps: ['Manda il link al tuo gruppo o ai tuoi amici', 'Rispondi alle domande nei messaggi dell\'evento', 'Prima dell\'inizio i partecipanti ricevono un promemoria automatico'],
       msg: (n, when, link) => `${when} c'è ${n}, vieni con noi! Iscriviti qui: ${link}`,
@@ -2534,7 +2534,7 @@ function activationEmail(kind, d, lang = 'tr') {
     const label = (t) => `<div style="margin:0 0 8px;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#64748b;">${actEsc(t)}</div>`;
     shareBlock = `
     ${label(A.yourLink)}
-    <div style="background:#F4F4F4;border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;margin:0 0 10px;font-size:15px;line-height:1.5;color:#114956;word-break:break-all;-webkit-user-select:all;user-select:all;">${actEsc(d.url)}</div>
+    <div style="border:2px dashed #00a499;background:#e6f7f5;border-radius:12px;padding:14px 16px;margin:0 0 10px;font-family:'SFMono-Regular',Menlo,Consolas,monospace;font-size:15px;line-height:1.5;color:#114956;word-break:break-all;-webkit-user-select:all;user-select:all;">${actEsc(d.url)}</div>
     <table cellpadding="0" cellspacing="0" border="0" style="width:100%;margin:0 0 16px;">${btn(cp, 'copy', A.copyBtn, true)}
     </table>
 
@@ -2570,6 +2570,9 @@ function activationEmail(kind, d, lang = 'tr') {
   const subject = kind === 'lc' ? K.subject(d.name, d.spotsLeft) : K.subject(d.name);
 
   const html = emailWrapper(`
+    <table cellpadding="0" cellspacing="0" border="0" style="margin:0 0 16px;"><tr><td style="width:52px;height:52px;background:#e6f7f5;border-radius:14px;text-align:center;vertical-align:middle;">
+      <img src="${ICON}/k-${kind}.png" width="28" height="28" alt="" style="display:block;margin:0 auto;border:0;">
+    </td></tr></table>
     <h2 style="margin:0 0 10px;color:#1e293b;font-size:24px;line-height:1.3;">${actEsc(title)}</h2>
     <p style="margin:0 0 24px;color:#475569;font-size:16px;line-height:1.6;">${K.lead(name, d)}</p>
     ${eventCard}
