@@ -398,6 +398,18 @@ seçilebilir link kutusu, WhatsApp/Telegram/e-posta butonları, hazır davet mes
 - Tasarım: kesik çizgili link kutusu + sarı "Linki kopyala" + alt alta ikonlu
   paylaş butonları (WhatsApp, Instagram hikâyesi, Telegram, e-posta). Başlığın
   üstünde türe göre ikon (`icons/mail/k-<tür>.png`), emoji yok.
+- **"Bu mail kimlere gitti?"** `grow_email_log` yalnız SAYI tutar (kaç kişi,
+  kaç atlandı), isim tutmaz. Kime gittiği Resend'den okunur:
+  `GET https://api.resend.com/emails?limit=100` (to, subject, last_event;
+  `delivered` = teslim). Otomatik maillerde kişi `activation_email_log.user_id`.
+  Hepsi salt okuma; sonucu Melih'e isim + rol olarak raporla.
+- **Elle tek gönderim** (ör. pencereyi kaçıran takım): sunucuda kısa bir betikle,
+  `backend-api.js`'ten `activationEmail` alınır, alıcının `lang`'ı ve `tips`
+  tercihi kontrol edilir, **önce** `activation_email_log`'a `(kind, ref_id)`
+  yazılır (çakışırsa gönderme), sonra Resend'e gider, durum `sent`/`failed`
+  güncellenir. Böylece otomatik iş aynı yere tekrar göndermez.
+  28 Eylül 2026: "Sabah sporu sevenler" (id 55) açılıştan önce kurulduğu için
+  6 saatlik pencereyi kaçırdı, hoş geldin maili Melih'in isteğiyle elle gitti.
 - Admin listesinde (takım/etkinlik) otomatik giden son mail görünür
   (`last_auto_email`; gönderilen, atlanandan önce gösterilir). Atlananlar turuncu.
 
