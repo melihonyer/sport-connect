@@ -7,7 +7,7 @@ import {
   Upload, GripVertical, ChevronUp, ChevronDown, Newspaper, GalleryHorizontal, Menu,
   Trophy, User, ClipboardList, CheckCircle2, DoorOpen, Sparkles, Target, Flag,
   Ticket, MapPin, ExternalLink, MousePointerClick,
-  Radar, ScanSearch, RefreshCw, Loader2, XCircle, ListChecks, Star,
+  Radar, ScanSearch, RefreshCw, Loader2, XCircle, ListChecks, Star, Zap,
 } from "lucide-react";
 import LocationPicker from "./LocationPicker";
 import { createT, detectLang } from "./i18n.js";
@@ -1485,6 +1485,29 @@ const TeamCountHover = ({ count, names, children }) => {
 // kendi dilinde alır; "Muuvlink'ten ipuçları"nı kapatan atlanır. Son gönderim
 // butonun yanında görünür; 24 saat içinde ikinci gönderim ayrıca onay ister.
 const fmtSent = (d) => new Date(d).toLocaleString("tr-TR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+// Otomatik giden son "harekete geçiren" e-posta (backend runActivationEmails).
+// Takımda: takım kuruldu / ilk buluşma. Etkinlikte: etkinlik yayında / son çağrı.
+const AUTO_KIND = { tc: "Takım kuruldu", te: "İlk buluşma", ec: "Etkinlik yayında", lc: "Son çağrı" };
+const AUTO_STATUS = { sent: "gönderildi", skipped_pref: "atlandı: ipuçları kapalı", skipped_rate: "atlandı: 7 gün sınırı",
+  skipped_recent: "atlandı: az önce başka mail gitti", failed: "gönderim hatası" };
+const autoTitle = (a) => `Otomatik: ${AUTO_KIND[a.kind] || a.kind} · ${fmtSent(a.sent_at)} · ${AUTO_STATUS[a.status] || a.status}`;
+const AutoEmailInfo = ({ auto, compact = false }) => {
+  if (!auto) return null;
+  const ok = auto.status === "sent";
+  if (compact) {
+    return (
+      <span title={autoTitle(auto)} className={`flex items-center gap-0.5 ${ok ? "" : "text-amber-600"}`}>
+        <Zap className="w-3 h-3" /> {AUTO_KIND[auto.kind]} {fmtSent(auto.sent_at)}
+      </span>
+    );
+  }
+  return (
+    <span title={autoTitle(auto)} className={`mt-0.5 flex items-center gap-0.5 text-[10px] leading-tight whitespace-nowrap ${ok ? "text-slate-500" : "text-amber-600"}`}>
+      <Zap className="w-2.5 h-2.5" /> {AUTO_KIND[auto.kind]}
+    </span>
+  );
+};
+
 const GrowEmailButton = ({ kind, item, api, showToast, onSent, compact = false }) => {
   const [busy, setBusy] = useState(false);
   const last = item.last_grow_email;
@@ -1531,6 +1554,7 @@ const GrowEmailButton = ({ kind, item, api, showToast, onSent, compact = false }
         </span>
       )}
       {!compact && last && <span className="text-[10px] leading-tight text-slate-400 whitespace-nowrap">{last.recipients} kişi</span>}
+      {!compact && <AutoEmailInfo auto={item.last_auto_email} />}
     </div>
   );
 };
@@ -2560,6 +2584,7 @@ export default function AdminPanel() {
                           <span>·</span>
                           <span>{t.participant_count}/{t.capacity} kişi</span>
                           {t.last_grow_email && <><span>·</span><span className="flex items-center gap-0.5"><Mail className="w-3 h-3"/> {fmtSent(t.last_grow_email.sent_at)}</span></>}
+                          {t.last_auto_email && <><span>·</span><AutoEmailInfo auto={t.last_auto_email} compact /></>}
                           {/* Durum rozeti mobilde bilgi satırında: sağdaki simge grubu dar kalsın. */}
                           <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-semibold ${isPast ? "bg-slate-100 text-slate-500" : "bg-brand-100 text-brand-700"}`}>
                             {isPast ? "Bitti" : "Aktif"}
@@ -2702,6 +2727,7 @@ export default function AdminPanel() {
                           {t.is_private ? <><Lock className="w-3 h-3"/> Gizli</> : <><Globe className="w-3 h-3"/> Açık</>}
                         </span>
                         {t.last_grow_email && <><span>·</span><span className="flex items-center gap-0.5"><Mail className="w-3 h-3"/> {fmtSent(t.last_grow_email.sent_at)}</span></>}
+                          {t.last_auto_email && <><span>·</span><AutoEmailInfo auto={t.last_auto_email} compact /></>}
                       </div>
                     </div>
                     <GrowEmailButton kind="team" item={t} api={api} showToast={showToast} onSent={growSent(setTeams)} compact />

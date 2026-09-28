@@ -6381,7 +6381,10 @@ app.get('/api/admin/trainings', isAdmin, async (req, res) => {
         COUNT(ta.user_id) as participant_count,
         (SELECT json_build_object('sent_at', g.sent_at, 'recipients', g.recipients, 'skipped', g.skipped)
            FROM grow_email_log g WHERE g.kind = 'training' AND g.ref_id = t.id
-          ORDER BY g.sent_at DESC LIMIT 1) AS last_grow_email
+          ORDER BY g.sent_at DESC LIMIT 1) AS last_grow_email,
+        (SELECT json_build_object('kind', a.kind, 'status', a.status, 'sent_at', a.sent_at)
+           FROM activation_email_log a WHERE a.kind IN ('ec', 'lc') AND a.ref_id = t.id AND a.status <> 'pending'
+          ORDER BY (a.status = 'sent') DESC, a.sent_at DESC LIMIT 1) AS last_auto_email  -- gönderilen, atlanandan önce
       FROM trainings t
       LEFT JOIN teams ON t.team_id = teams.id
       LEFT JOIN users creator ON creator.id = t.created_by
@@ -6527,7 +6530,10 @@ app.get('/api/admin/teams', isAdmin, async (req, res) => {
         COUNT(tm.user_id) as member_count,
         (SELECT json_build_object('sent_at', g.sent_at, 'recipients', g.recipients, 'skipped', g.skipped)
            FROM grow_email_log g WHERE g.kind = 'team' AND g.ref_id = t.id
-          ORDER BY g.sent_at DESC LIMIT 1) AS last_grow_email
+          ORDER BY g.sent_at DESC LIMIT 1) AS last_grow_email,
+        (SELECT json_build_object('kind', a.kind, 'status', a.status, 'sent_at', a.sent_at)
+           FROM activation_email_log a WHERE a.kind IN ('tc', 'te') AND a.ref_id = t.id AND a.status <> 'pending'
+          ORDER BY (a.status = 'sent') DESC, a.sent_at DESC LIMIT 1) AS last_auto_email  -- gönderilen, atlanandan önce
       FROM teams t
       LEFT JOIN users u ON t.owner_id = u.id
       LEFT JOIN team_members tm ON t.id = tm.team_id
