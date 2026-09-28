@@ -94,9 +94,18 @@ JavaScript ÇALIŞTIRMAZ. Bu yüzden metin sunucudan basılır.
   - Site haritaları: `/sitemap.xml` (dizin) + `/api/sitemap.xml` (asıl liste).
   - Google IndexNow kullanmaz: yeni sayfa/dil eklenince Search Console'da
     URL denetimi → "Dizine eklenmesini iste" (günlük sınırlı; önce ana sayfalar).
-  - 28 Eylül 2026: `/sitemap.xml` yeniden gönderildi; `/el`, `/es`, `/fr`, `/it`
-    için dizine eklenme istendi (es ve it'i Google hiç tanımıyordu). Etkinlikler,
-    takımlar, iletişim sayfaları istenmedi; gerekirse sonra.
+  - 28 Eylül 2026: `/sitemap.xml` yeniden gönderildi; 4 dil ana sayfası ve
+    dizinde olmayan alt sayfalar için dizine eklenme istendi. Kota dolduğu için
+    `/it/squadre` ve `/it/contatti` kaldı (sonraki gün). Zaten dizinde olanlar:
+    `/el/events`, `/es/equipos`, `/fr/evenements`.
+  - **"Yönlendirmeli sayfa" raporu:** www/http ve eski `?takim=`/`?etkinlik=`
+    adresleri kasıtlı yönlenir, zararsız. Ama detay adresi (`/takim/..-id`)
+    görünürse gerçek hata: açılışta adres çubuğu değişiyor demektir. 28 Eylül
+    2026'da bulundu — SPA arka plan listesine geçerken adresi `/en/teams`'e çekip
+    geri alıyordu; Google bunu JS yönlendirmesi saydı. Düzeltme `detailBootRef`
+    (sporla-bulusma.jsx): detay yüklenene kadar adres detayda kalır. Açılışta
+    adres değiştiren yeni kod YAZILMAZ; kontrol: iframe'de
+    `contentWindow.location.pathname`'i 50 ms'de bir izle, tek adres görmelisin.
 - **IndexNow anahtar dosyası `public/<key>.txt` silinmemeli** — her bildirimde
   okunuyor. Bing doğrulama etiketi `msvalidate.01` de silinmemeli.
 
