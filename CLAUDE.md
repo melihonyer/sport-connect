@@ -115,6 +115,8 @@ JavaScript ÇALIŞTIRMAZ. Bu yüzden metin sunucudan basılır.
     yalnız www/http ve `?takim=` adresleri kalmış. Detay adresi hâlâ varsa URL
     denetimiyle tek tek bak. Aynı gün `/it/squadre` ve `/it/contatti` için de
     dizine eklenme durumuna bak (28 Eylül'de kota yüzünden istenemedi).
+    **Otomatik hatırlatma/zamanlanmış görev KURULMAZ** — Melih kendisi
+    "Search Console takibini yapalım" diye soracak.
 - **IndexNow anahtar dosyası `public/<key>.txt` silinmemeli** — her bildirimde
   okunuyor. Bing doğrulama etiketi `msvalidate.01` de silinmemeli.
 
