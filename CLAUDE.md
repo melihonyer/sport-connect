@@ -85,6 +85,18 @@ JavaScript ÇALIŞTIRMAZ. Bu yüzden metin sunucudan basılır.
   `phpmyadmin`, `cgi-bin`. **`/.well-known/` hariç tutulmalı** — iOS/Android
   uygulama bağlantı dosyaları orada; kural değişirse iki dosyanın 200 döndüğü
   kontrol edilir. Önceki hali yedekte: `/root/nginx-muuvlink.bak-20260921-143454`.
+- **Google Search Console** `muuvlinkapp@gmail.com` hesabında, alan adı mülkü
+  (`sc-domain:muuvlink.app`). melih@saltajans.com'un erişimi YOK. Claude in
+  Chrome ile: hesap "MUUVLINK Browser" adlı Chrome'da açık; bağlantı isteği
+  gönderilir, Melih o tarayıcıda Connect'e basar. Bağlantı başka Chrome'a
+  kayabiliyor: her adımdan önce sekmede Search Console'un açık olduğunu kontrol
+  et. Şifre girilmez; giriş gerekirse Melih yapar.
+  - Site haritaları: `/sitemap.xml` (dizin) + `/api/sitemap.xml` (asıl liste).
+  - Google IndexNow kullanmaz: yeni sayfa/dil eklenince Search Console'da
+    URL denetimi → "Dizine eklenmesini iste" (günlük sınırlı; önce ana sayfalar).
+  - 28 Eylül 2026: `/sitemap.xml` yeniden gönderildi; `/el`, `/es`, `/fr`, `/it`
+    için dizine eklenme istendi (es ve it'i Google hiç tanımıyordu). Etkinlikler,
+    takımlar, iletişim sayfaları istenmedi; gerekirse sonra.
 - **IndexNow anahtar dosyası `public/<key>.txt` silinmemeli** — her bildirimde
   okunuyor. Bing doğrulama etiketi `msvalidate.01` de silinmemeli.
 
