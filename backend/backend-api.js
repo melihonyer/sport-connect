@@ -2045,11 +2045,11 @@ const ACT = {
       cta: 'Etkinliğini görüntüle →',
     },
     te: {
-      subject: (n) => `${n} ilk etkinliğini bekliyor`,
-      title: 'Takımın ilk etkinliğini bekliyor',
-      lead: (n) => `${mB(n)} hazır ama henüz bir buluşma yok. Etkinlik oluşturduğunda takımındaki herkese bildirim gider; ilk buluşmayı planlamak iki dakika sürer.`,
-      ideasTitle: 'Birkaç fikir',
-      ideas: ['Haftalık sabah koşusu', 'Hafta sonu bisiklet turu', 'Yeni üyelerle tanışma antrenmanı'],
+      subject: (n) => `${n} ilk buluşmasını bekliyor`,
+      title: 'İlk buluşmayı planlama zamanı',
+      lead: (n) => `${mB(n)} hazır, sıra ilk buluşmada. Etkinliği oluşturduğun an takımındaki herkese bildirim gider; iki dakikanı alır.`,
+      ideasTitle: 'İlk buluşma için birkaç fikir',
+      ideas: ['Haftalık sabah antrenmanı', 'Hafta sonu grup buluşması', 'Yeni üyelerle tanışma antrenmanı'],
       cta: 'Etkinlik oluştur →',
     },
     gt: {
