@@ -2064,10 +2064,10 @@ const ACT = {
       privateCta: 'Üye davet et →',
     },
     ge: {
-      subject: (n) => `${n} için daha fazla katılımcı`,
+      subject: (n) => `${n} daha çok kişiye ulaşabilir`,
       title: 'Etkinliğini daha çok kişiye ulaştırmak ister misin?',
-      lead: (n, d) => `${mB(n)} için şu an ${d.attendees} katılımcı var. Bir paylaşım daha, yeni sporcuların da gelmesini sağlayabilir.`,
-      steps: ['Linki spor gruplarına ve arkadaşlarına gönder', 'Gelmek isteyenleri mesajla hatırlat', 'Soruları etkinlik sayfasındaki mesajlardan yanıtla'],
+      lead: (n) => `${mB(n)} ne kadar çok kişiye ulaşırsa buluşma o kadar keyifli olur. Linki birkaç spor grubuna daha göndermen, yeni sporcuların da gelmesi için yeterli.`,
+      steps: ['Linki spor gruplarına ve arkadaşlarına gönder', 'Instagram hikâyende paylaş', 'Soruları etkinlik sayfasındaki mesajlardan yanıtla'],
       msg: (n, when, link) => `Muuvlink'te bir etkinlik açtım: ${n}${when ? `, ${when}` : ''}. Detaylar burada, sen de gel: ${link}`,
       mailSubject: (n) => `${n} — sen de gel`,
       cta: 'Etkinliğini görüntüle →',
