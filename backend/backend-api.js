@@ -2055,9 +2055,9 @@ const ACT = {
     gt: {
       subject: (n) => `${n} daha da kalabalık olabilir`,
       title: 'Takımını daha da kalabalıklaştırmak ister misin?',
-      lead: (n, d) => `${mB(n)} şu an ${d.members} üyeli. Linki birkaç gruba daha göndermen, yeni sporcuların seni bulması için yeterli.`,
-      steps: ['Linki spor gruplarına ve arkadaşlarına gönder', 'Takım sayfasındaki "Davet Et" ile e-postayla çağır', 'Düzenli bir etkinlik aç — gelenler takıma katılsın'],
-      msg: (n, link) => `Selam! Muuvlink'te ${n} takımındayız, sen de gel. Buradan katılabilirsin: ${link}`,
+      lead: (n) => `${mB(n)} büyüdükçe etkinliklerin de kalabalıklaşır. Linki birkaç spor grubuna daha göndermen, yeni sporcuların takımını bulması için yeterli.`,
+      steps: ['Linki spor gruplarına ve arkadaşlarına gönder', 'Instagram hikâyende paylaş', 'Düzenli bir etkinlik aç, gelenler takıma katılsın'],
+      msg: (n, link) => `${n} takımı Muuvlink'te. Buluşmaları buradan ayarlıyoruz, sen de gel: ${link}`,
       mailSubject: (n) => `${n} takımına katıl`,
       cta: 'Takımını aç →',
       privateNote: "Takımın gizli: link yalnız üyelere açılır. Yeni üyeleri takım sayfasındaki \"Davet Et\" ile e-postayla çağırabilirsin.",
