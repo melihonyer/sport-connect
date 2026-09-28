@@ -2036,12 +2036,12 @@ const ACT = {
       privateCta: 'Etkinliğini görüntüle →',
     },
     lc: {
-      subject: (n, k) => `Yarın ${n} — ${k} kişilik yer boş`,
-      title: (k) => `Yarına ${k} yer kaldı`,
-      lead: (n) => `${mB(n)} yarın. Son bir paylaşım kontenjanı doldurabilir.`,
+      subject: (n, k) => `${n} yarın — hâlâ ${k} kişilik boş yer var`,
+      title: (k) => `Yarınki etkinliğinde hâlâ ${k} kişilik boş yer var`,
+      lead: (n) => `${mB(n)} yarın ve kontenjan henüz dolmadı. Linki bir kez daha paylaşırsan son yerler de dolabilir.`,
       steps: ['Linki bir kez daha grubuna at', 'Gelmek isteyip unutanları etiketle', 'Buluşma noktasını mesajlarda netleştir'],
-      msg: (n, when, link) => `Yarın ${n} var, hâlâ yer var! Gelmek istersen: ${link}`,
-      mailSubject: (n) => `Yarın ${n} — hâlâ yer var`,
+      msg: (n, when, link) => `Yarın ${n} var ve birkaç kişilik yer daha boş. Detaylar burada, sen de gel: ${link}`,
+      mailSubject: (n) => `${n} yarın — sen de gel`,
       cta: 'Etkinliğini görüntüle →',
     },
     te: {
