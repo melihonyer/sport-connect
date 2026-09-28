@@ -2018,7 +2018,7 @@ const ACT = {
       title: 'Takımın kuruldu! 🎉',
       lead: (n) => `${mB(n)} artık Muuvlink'te. Takımı büyütmenin en hızlı yolu linki bugün paylaşmak.`,
       steps: ['Linki WhatsApp grubuna gönder', 'İlk etkinliğini oluştur — üyelerine anında bildirim gider', 'Katılanlar takımına üye olsun, her etkinlikten haberdar olsun'],
-      msg: (n, link) => `Selam! Muuvlink'te ${n} takımını kurdum. Birlikte spor yapalım, buradan katıl: ${link}`,
+      msg: (n, link) => `${n} takımını Muuvlink'te kurdum. Buluşmaları artık buradan ayarlıyoruz, sen de gel 👇 ${link}`,
       mailSubject: (n) => `${n} takımına katıl`,
       cta: 'Takımını aç →',
       privateNote: "Takımın gizli: link yalnız üyelere açılır. Arkadaşlarını takım sayfasındaki \"Davet Et\" ile e-postayla çağır.",
