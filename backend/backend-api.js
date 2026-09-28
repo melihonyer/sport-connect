@@ -8817,6 +8817,129 @@ function scheduleDailyReminders() {
 }
 scheduleDailyReminders();
 
+// ── Harekete geçiren e-postalar (otomatik) ─────────────────────────────────
+// tc: takım kurulunca · ec: etkinlik oluşturulunca · lc: etkinliğe ~24 saat
+// kala boş yer varsa · te: takım 3 gün etkinliksiz kalırsa. Metinler ACT'te.
+// Uçların içine konmadı: takım/etkinlik oluşturma Meta'ya dönüşüm olayı
+// gönderiyor, gönderimi ayrı bir işte tutmak test etmeyi de mümkün kılıyor.
+// 15 dakikada bir çalışır, pencereler dar: eski kayıtlara toplu gönderim olmaz.
+// Her (tür, kayıt) activation_email_log'a ÖNCE yazılır (benzersiz) → iki kez
+// gitmez. "Muuvlink'ten ipuçları" (tips) kapalıysa atlanır.
+pool.query(`CREATE TABLE IF NOT EXISTS activation_email_log (
+    id SERIAL PRIMARY KEY,
+    kind VARCHAR(4) NOT NULL,           -- tc | ec | lc | te
+    ref_id INTEGER NOT NULL,            -- takım ya da etkinlik id
+    user_id INTEGER,
+    status VARCHAR(16) NOT NULL,        -- sent | skipped_pref | skipped_rate | skipped_recent | failed
+    sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (kind, ref_id)
+  )`).catch((e) => console.error('activation_email_log:', e.message));
+
+async function claimActivation(kind, refId, userId) {
+  const r = await pool.query(
+    `INSERT INTO activation_email_log (kind, ref_id, user_id, status) VALUES ($1, $2, $3, 'pending')
+     ON CONFLICT (kind, ref_id) DO NOTHING RETURNING id`, [kind, refId, userId]);
+  return r.rows[0]?.id || null;
+}
+const setActivationStatus = (id, status) =>
+  pool.query('UPDATE activation_email_log SET status = $2 WHERE id = $1', [id, status]).catch(() => {});
+
+function activationEventData(t, L) {
+  const url = `${APP_URL}/etkinlik/${slugify(t.title)}-${t.id}`;
+  return {
+    name: t.title, url, ctaUrl: url,
+    when: new Date(t.training_date).toLocaleDateString(MAIL_LOCALE[mailLang(L)], { timeZone: 'UTC', day: 'numeric', month: 'long' }),
+    time: t.training_time ? String(t.training_time).slice(0, 5) : '',
+    location: t.location_name || '',
+    isPrivate: !!(t.team_id && t.team_private && !t.is_public),
+  };
+}
+async function deliverActivation(logId, user, kind, buildData) {
+  const r = await sendEmail({ to: user.email, userId: user.id, prefKey: 'tips',
+    build: (L) => activationEmail(kind, buildData(L), L) });
+  await setActivationStatus(logId, r?.skipped ? 'skipped_pref' : r ? 'sent' : 'failed');
+  return r;
+}
+
+let activationRunning = false;
+async function runActivationEmails() {
+  if (activationRunning) return { busy: true };
+  activationRunning = true;
+  const stats = { tc: 0, ec: 0, lc: 0, te: 0 };
+  try {
+    const USER_OK = 'u.deleted_at IS NULL AND u.email IS NOT NULL';
+    // tc — son 6 saatte kurulan takımlar (en az 10 dk önce: kurucu ilk ayarları yapsın)
+    const teams = (await pool.query(
+      `SELECT t.id, t.name, t.is_private, u.id AS uid, u.email FROM teams t JOIN users u ON u.id = t.owner_id
+        WHERE t.created_at BETWEEN NOW() - INTERVAL '6 hours' AND NOW() - INTERVAL '10 minutes' AND ${USER_OK}
+          AND NOT EXISTS (SELECT 1 FROM activation_email_log a WHERE a.kind = 'tc' AND a.ref_id = t.id)`)).rows;
+    for (const t of teams) {
+      const id = await claimActivation('tc', t.id, t.uid); if (!id) continue;
+      const url = `${APP_URL}/takim/${slugify(t.name)}-${t.id}`;
+      await deliverActivation(id, { id: t.uid, email: t.email }, 'tc', () => ({ name: t.name, url, ctaUrl: url, isPrivate: t.is_private }));
+      stats.tc++;
+    }
+
+    const EV = `SELECT t.id, t.title, t.team_id, t.training_date, t.training_time, t.location_name, t.is_public,
+                       t.capacity, teams.is_private AS team_private, u.id AS uid, u.email,
+                       (SELECT COUNT(*)::int FROM training_attendees ta WHERE ta.training_id = t.id) AS attendees
+                  FROM trainings t JOIN users u ON u.id = t.created_by LEFT JOIN teams ON teams.id = t.team_id
+                 WHERE ${USER_OK} AND COALESCE(t.is_organizer_event, false) = false AND COALESCE(t.is_paid, false) = false`;
+    // ec — son 6 saatte oluşturulan, henüz başlamamış etkinlikler. Aynı kişiye
+    // 7 günde en fazla bir kez (her hafta etkinlik açan antrenör her seferinde almasın).
+    const evs = (await pool.query(`${EV}
+        AND t.created_at BETWEEN NOW() - INTERVAL '6 hours' AND NOW() - INTERVAL '10 minutes'
+        AND ${trainingUtcExpr('t')} > NOW()
+        AND NOT EXISTS (SELECT 1 FROM activation_email_log a WHERE a.kind = 'ec' AND a.ref_id = t.id)`)).rows;
+    for (const t of evs) {
+      const id = await claimActivation('ec', t.id, t.uid); if (!id) continue;
+      const recent = (await pool.query(
+        `SELECT 1 FROM activation_email_log WHERE kind = 'ec' AND user_id = $1 AND id <> $2 AND status = 'sent'
+            AND sent_at > NOW() - INTERVAL '7 days' LIMIT 1`, [t.uid, id])).rows.length;
+      if (recent) { await setActivationStatus(id, 'skipped_rate'); continue; }
+      await deliverActivation(id, { id: t.uid, email: t.email }, 'ec', (L) => activationEventData(t, L));
+      stats.ec++;
+    }
+
+    // lc — 20–28 saat sonra başlayan, kontenjanı dolmamış etkinlikler. Aynı
+    // etkinlik için son 24 saatte "etkinliğin yayında" gittiyse bu gönderilmez.
+    const lcs = (await pool.query(`${EV}
+        AND ${trainingUtcExpr('t')} BETWEEN NOW() + INTERVAL '20 hours' AND NOW() + INTERVAL '28 hours'
+        AND NOT EXISTS (SELECT 1 FROM activation_email_log a WHERE a.kind = 'lc' AND a.ref_id = t.id)`)).rows
+      .filter((t) => t.capacity && t.attendees < t.capacity);
+    for (const t of lcs) {
+      const id = await claimActivation('lc', t.id, t.uid); if (!id) continue;
+      const justSent = (await pool.query(
+        `SELECT 1 FROM activation_email_log WHERE kind = 'ec' AND ref_id = $1 AND status = 'sent'
+            AND sent_at > NOW() - INTERVAL '24 hours' LIMIT 1`, [t.id])).rows.length;
+      if (justSent) { await setActivationStatus(id, 'skipped_recent'); continue; }
+      await deliverActivation(id, { id: t.uid, email: t.email }, 'lc', (L) => ({ ...activationEventData(t, L), spotsLeft: t.capacity - t.attendees }));
+      stats.lc++;
+    }
+
+    // te — 3–7 gün önce kurulmuş, hiç etkinliği olmayan takımlar (7 gün sınırı:
+    // açılışta eski, terk edilmiş takımlara toplu gönderim olmasın).
+    const tes = (await pool.query(
+      `SELECT t.id, t.name, t.is_private, u.id AS uid, u.email FROM teams t JOIN users u ON u.id = t.owner_id
+        WHERE t.created_at BETWEEN NOW() - INTERVAL '7 days' AND NOW() - INTERVAL '3 days' AND ${USER_OK}
+          AND NOT EXISTS (SELECT 1 FROM trainings tr WHERE tr.team_id = t.id)
+          AND NOT EXISTS (SELECT 1 FROM activation_email_log a WHERE a.kind = 'te' AND a.ref_id = t.id)`)).rows;
+    for (const t of tes) {
+      const id = await claimActivation('te', t.id, t.uid); if (!id) continue;
+      const url = `${APP_URL}/takim/${slugify(t.name)}-${t.id}`;
+      await deliverActivation(id, { id: t.uid, email: t.email }, 'te', () => ({ name: t.name, url, ctaUrl: url, isPrivate: t.is_private }));
+      stats.te++;
+    }
+    if (stats.tc + stats.ec + stats.lc + stats.te) console.log('[ACTIVATION]', JSON.stringify(stats));
+  } catch (e) {
+    console.error('[ACTIVATION] Hata:', e.message);
+  } finally {
+    activationRunning = false;
+  }
+  return stats;
+}
+setTimeout(() => { runActivationEmails(); setInterval(runActivationEmails, 15 * 60 * 1000); }, 2 * 60 * 1000);
+
 // ── Soft-delete purge — 30 günü dolan hesapları kalıcı sil ──────────────────
 const ACCOUNT_PURGE_DAYS = 30;
 async function purgeSoftDeletedAccounts() {

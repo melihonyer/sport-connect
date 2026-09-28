@@ -344,8 +344,20 @@ seçilebilir link kutusu, WhatsApp/Telegram/e-posta butonları, hazır davet mes
 - Kalıplar: `tc` takım kuruldu · `ec` etkinlik yayında · `lc` son çağrı (24 saat
   kala boş yer) · `te` ilk etkinlik (takım 3 gün etkinliksiz) · `gt`/`ge` mevcut
   takım/etkinliği büyüt (admin butonu).
-- **`tc`/`ec`/`lc`/`te` henüz hiçbir akışa bağlı DEĞİL**; Melih içerikleri
-  onaylayınca otomatik gönderim açılacak. Yalnız `gt`/`ge` admin butonuyla gidiyor.
+- **`tc`/`ec`/`lc`/`te` otomatik** (Eylül 2026, Melih onayladı): `runActivationEmails`,
+  15 dakikada bir. Uçların içinde DEĞİL — takım/etkinlik oluşturma Meta'ya dönüşüm
+  gönderiyor; ayrı iş hem bunu ayırıyor hem test edilebiliyor (sandbox satırı DB'ye
+  yazılır, iş onu da alır).
+  | Tür | Ne zaman | Kime | Sınır |
+  |---|---|---|---|
+  | tc | takım kurulduktan 10 dk–6 saat sonra | sahibi | takım başına 1 |
+  | ec | etkinlik açıldıktan 10 dk–6 saat sonra, başlamamışsa | oluşturan | kişi başına 7 günde 1 |
+  | lc | başlamasına 20–28 saat kala, kontenjan dolmamışsa | oluşturan | etkinlik başına 1; aynı etkinliğe son 24 saatte ec gittiyse atlanır |
+  | te | takım 3–7 gün önce kurulmuş, hiç etkinliği yok | sahibi | takım başına 1 |
+  Organizatör/ücretli etkinliğe gitmez. Pencereler bilerek dar: açılışta eski
+  kayıtlara toplu gönderim olmadı, olmamalı. Kayıt `activation_email_log`
+  (`UNIQUE(kind, ref_id)`, gönderimden ÖNCE yazılır → iki kez gitmez).
+  `gt`/`ge` admin butonuyla gider.
 - Paylaşım butonlarındaki link `utm_source=share&utm_medium=whatsapp|telegram|email
   &utm_campaign=team_invite|event_invite` taşır; kayıt olanın kaynağı users.utm_*'da.
 - **"Linki kopyala" butonu `public/kopyala/?l=<dil>&u=<link>` sayfasını açar**:
