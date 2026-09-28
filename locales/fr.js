@@ -102,6 +102,19 @@ export default {
     navigate: "Itinéraire",
   },
 
+  story: {
+    btn: "Story",
+    tip: "Une image prête pour ta story Instagram. Ajoute un sticker lien et on arrive directement ici.",
+    title: "Story Instagram",
+    kickerTeam: "REJOINS L'ÉQUIPE",
+    kickerEvent: "VIENS AVEC NOUS",
+    share: "Partager l'image",
+    download: "Télécharger l'image",
+    rendering: "Préparation de l'image…",
+    step1: "Ajoute l'image à ta story",
+    step2: "Ajoute un sticker lien et colle — le lien est déjà copié",
+    fail: "Impossible de créer l'image.",
+  },
   tips: {
     shareTeam: "Partage ton équipe et invite tout le monde. Plus ton équipe est grande, plus tes événements touchent de monde.",
     copyLinkTeam: "Copie le lien et colle-le dans WhatsApp ou Instagram. Un clic et on arrive directement sur la page de ton équipe.",

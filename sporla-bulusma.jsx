@@ -1700,6 +1700,44 @@ async function badgeCardBlob(badge, dateStr, texts) {
     canvas.toBlob((b) => b ? resolve(b) : reject(new Error("toBlob null")), "image/png"));
 }
 
+// Mobil/dokunmatik mi? Masaüstü Chrome→macOS paylaşım köprüsü dosyayı taşımıyor
+// (Mail/AirDrop yalnız metni alıyor); masaüstünde paylaşım yerine indiriyoruz.
+function isMobileLikeDevice() {
+  try {
+    if (window?.Capacitor?.isNativePlatform?.()) return true;
+    if (navigator.userAgentData && typeof navigator.userAgentData.mobile === "boolean") return navigator.userAgentData.mobile;
+    return /Android|iPhone|iPad|iPod|Mobile|Silk/i.test(navigator.userAgent || "");
+  } catch (_) { return false; }
+}
+
+// PNG'yi mobilde native paylaşımla gönder, masaüstünde indir.
+// "shared" | "cancelled" | "downloaded" | null (ikisi de olmadı)
+async function sharePngFile(blob, filename) {
+  if (isMobileLikeDevice()) {
+    try {
+      const file = new File([blob], filename, { type: "image/png" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: "Muuvlink" });
+        return "shared";
+      }
+    } catch (e) {
+      if (e?.name === "AbortError") return "cancelled";
+      // paylaşım reddedildi → indirmeye düş
+    }
+  }
+  try {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    return "downloaded";
+  } catch (e) {
+    console.error("PNG download error:", e);
+    return null;
+  }
+}
+
 // Rozet paylaşımı — çok katmanlı, ASLA "hata" ile çıkmaz:
 //  1) Görsel üretilebiliyorsa: mobilde native dosya paylaşımı, masaüstünde PNG indir.
 //  2) Görsel üretilemezse (ör. bazı Safari sürümleri SVG'de canvas'ı taint ediyor):
@@ -1716,42 +1754,8 @@ async function shareBadgeCard(badge, earned, dateStr, texts) {
   }
 
   if (blob) {
-    // 1) Native dosya paylaşımı — YALNIZCA mobil/dokunmatik cihazlarda.
-    // Masaüstü Chrome→macOS köprüsü dosyayı taşımıyor (Mail/AirDrop sadece metni
-    // alıyor), o yüzden masaüstünde paylaşım penceresi yerine doğrudan indiriyoruz.
-    let isMobileLike = false;
-    try {
-      if (window?.Capacitor?.isNativePlatform?.()) {
-        isMobileLike = true;
-      } else if (navigator.userAgentData && typeof navigator.userAgentData.mobile === "boolean") {
-        isMobileLike = navigator.userAgentData.mobile;              // Chrome/Edge: masaüstü kesin false
-      } else if (/Android|iPhone|iPad|iPod|Mobile|Silk/i.test(navigator.userAgent || "")) {
-        isMobileLike = true;                                         // Safari/Firefox mobil
-      }
-    } catch (_) { isMobileLike = false; }
-    if (isMobileLike) {
-      try {
-        const file = new File([blob], filename, { type: "image/png" });
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({ files: [file], title: "Muuvlink" });
-          return "shared";
-        }
-      } catch (e) {
-        if (e?.name === "AbortError") return "cancelled";
-        // paylaşım reddedildi → indirmeye düş
-      }
-    }
-    // 2) Masaüstü (veya native paylaşım yok): PNG indir
-    try {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url; a.download = filename;
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 5000);
-      return "downloaded";
-    } catch (e) {
-      console.error("Badge download error:", e);   // indirme de olmadı → link fallback
-    }
+    const r = await sharePngFile(blob, filename);
+    if (r) return r;   // null → indirme de olmadı, link fallback
   }
 
   // 3) Fallback: görsel yoksa metin + link paylaş / kopyala (masaüstünde hata yerine link)
@@ -1760,6 +1764,180 @@ async function shareBadgeCard(badge, earned, dateStr, texts) {
   if (r === "cancelled") return "cancelled";
   if (r === "copied") return "copied";
   return "failed";
+}
+
+// ── Instagram hikâye kartı (takım / etkinlik) ────────────
+// Fotoğraf + logo + başlık, Canvas 2D ile (rozet kartıyla aynı gerekçe: taint yok).
+// Kurumsal renkler: başlık deep teal, vurgu çizgisi sarı. Üstte ~250px ve altta
+// ~250px Instagram'ın profil satırı / yanıt kutusu altında kalır; içerik ondan içeride.
+// Başlık önce tek satırda küçülür (en az 88px), sığmazsa en çok 3 satıra bölünür.
+// Kartın yazı tipi kendi sunucumuzdan, ayrı bir adla. Sitenin Google Fonts
+// Montserrat'ı canvas'ta görünmüyordu (Chrome Times'a düşüyordu). Yunanca harfler
+// sitedeki gibi Manrope'tan.
+const STORY_FONT_FACES = [
+  ["montserrat-latin-800", "800", "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"],
+  ["montserrat-latin-ext-800", "800", "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"],
+  ["montserrat-latin-700", "700", "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"],
+  ["montserrat-latin-ext-700", "700", "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"],
+  // Yunanca ayrı ailede: aynı adda "300 800" ağırlık aralıklı bir yüz, Chrome
+  // canvas'ında 800'lük Türkçe harfleri (Ş, İ, Ğ) yedek yazı tipine düşürüyordu.
+  ["manrope-greek", "300 800", "U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF", "MuuvStoryGr"],
+];
+let storyFontsPromise = null;
+function loadStoryFonts() {
+  if (!storyFontsPromise) {
+    storyFontsPromise = Promise.all(STORY_FONT_FACES.map(([file, weight, unicodeRange, family = "MuuvStory"]) => {
+      const f = new FontFace(family, `url(/fonts/${file}.woff2) format("woff2")`, { weight, unicodeRange });
+      document.fonts.add(f);
+      return f.load().catch(() => null);
+    })).catch(() => null);
+  }
+  return storyFontsPromise;
+}
+
+// Branşa göre fotoğraf (public/story/<dosya>.jpg). Anahtarlar sports.* ile aynı;
+// listede olmayan branş (Diğer dahil) "diger" fotoğrafına düşer. Fotoğraflarda
+// sporcular alt yarıda: üstteki logo ve başlık onların üstüne binmesin.
+// dark: zemin koyu/doygun → yazılar beyaz (deep teal okunmuyor).
+const STORY_BG_BY_SPORT = {
+  "Koşu": "kosu", "Yüzme": "yuzme", "Triatlon": "triatlon", "Bisiklet": "bisiklet",
+  "Yürüyüş": "yuruyus", "Trekking": "trekking", "Padel": "padel", "Crossfit": "crossfit",
+  "Pilates": "pilates", "Yoga": "yoga", "Voleybol": "voleybol", "Tenis": "tenis",
+  "Basketbol": "basketbol", "Futbol": "futbol", "Kano": "kano", "Kürek": "kurek",
+  "Canicross": "canicross", "Bikejoring": "bikejoring", "Dog Triatlon": "canicross",
+};
+const STORY_DARK_BG = new Set(["tenis", "futbol", "kurek"]);
+const storyBgFor = (sport) => STORY_BG_BY_SPORT[sport] || "diger";
+async function storyCardBlob({ kicker, title, lines = [], lang = "tr", sport }) {
+  const W = 1080, H = 1920, MAXW = 920, FONT = "MuuvStory, MuuvStoryGr, sans-serif";
+  await loadStoryFonts();
+  const canvas = document.createElement("canvas");
+  canvas.width = W; canvas.height = H;
+  const x = canvas.getContext("2d");
+  x.fillStyle = "#e7e5e0"; x.fillRect(0, 0, W, H);
+  const bg = storyBgFor(sport);
+  const dark = STORY_DARK_BG.has(bg);
+  const INK = dark ? "#ffffff" : "#1F2121", BRAND = dark ? "#ffffff" : "#114956";
+  try { x.drawImage(await loadImageRobust(`/story/${bg}.jpg`), 0, 0, W, H); }
+  catch (_) {
+    try { x.drawImage(await loadImageRobust("/story/diger.jpg"), 0, 0, W, H); } catch (_) { /* düz zemin kalır */ }
+  }
+
+  // Dikey logo: üstte M amblemi (favicon, şeffaf), altında yazı logosu.
+  const top = 250, MARK = 92, LW = 210, sc = LW / 353.5, LH = 43.6 * sc;
+  try { x.drawImage(await loadImageRobust("/icons/favicon.png"), (W - MARK) / 2, top, MARK, MARK * 491 / 500); } catch (_) {}
+  const wordTop = top + MARK + 18;
+  x.save(); x.translate((W - LW) / 2, wordTop); x.scale(sc, sc); x.fillStyle = BRAND;
+  for (const d of MUUVLINK_LOGO_PATHS) x.fill(new Path2D(d));
+  x.restore();
+
+  x.textAlign = "center"; x.textBaseline = "alphabetic";
+  const spaced = (px) => { try { x.letterSpacing = px; } catch (_) {} };
+
+  // Üst satır, harf aralıklı (letterSpacing son harfe de boşluk ekler → yarısı kadar kaydır)
+  let y = wordTop + LH + 50 + 30;
+  x.fillStyle = INK; x.font = `800 38px ${FONT}`; spaced("10px");
+  x.fillText(kicker, W / 2 + 5, y, MAXW);
+  spaced("0px");
+
+  // Başlık
+  const T = String(title || "").trim().toLocaleUpperCase(lang);
+  const words = T.split(/\s+/);
+  const setSize = (sz) => { x.font = `800 ${sz}px ${FONT}`; };
+  const wrap = () => {
+    const out = []; let cur = "";
+    for (const w of words) {
+      const next = cur ? `${cur} ${w}` : w;
+      if (!cur || x.measureText(next).width <= MAXW) cur = next; else { out.push(cur); cur = w; }
+    }
+    if (cur) out.push(cur);
+    return out;
+  };
+  let size = 120, rows = [T];
+  for (; size >= 88; size -= 2) { setSize(size); if (x.measureText(T).width <= MAXW) break; }
+  if (size < 88) {
+    for (size = 84; size > 56; size -= 2) {
+      setSize(size); rows = wrap();
+      if (rows.length <= 3 && rows.every((r) => x.measureText(r).width <= MAXW)) break;
+    }
+    setSize(size); rows = wrap().slice(0, 3);
+  }
+  spaced("-2px"); x.fillStyle = BRAND;
+  y += 14 + size * 0.84;
+  rows.forEach((r, i) => x.fillText(r, W / 2, y + i * size * 1.02, MAXW));
+  spaced("0px");
+  y += (rows.length - 1) * size * 1.02 + size * 0.2 + 40;
+
+  x.fillStyle = "#F4F818"; roundRectPath(x, W / 2 - 60, y, 120, 10, 5); x.fill();
+  y += 10 + 44 + 30;
+
+  x.fillStyle = INK; x.font = `700 38px ${FONT}`;
+  lines.filter(Boolean).forEach((l, i) => x.fillText(l, W / 2, y + i * 52, MAXW));
+
+  // Adres: fotoğrafın altında sporcular olabiliyor → her zeminde okunsun diye
+  // yarı saydam beyaz etiket içinde.
+  x.font = `700 32px ${FONT}`; spaced("1px");
+  const uw = x.measureText("muuvlink.app").width + 56, uy = H - 350;
+  x.fillStyle = "rgba(255,255,255,0.88)"; roundRectPath(x, (W - uw) / 2, uy, uw, 64, 32); x.fill();
+  x.fillStyle = "#114956"; x.fillText("muuvlink.app", W / 2 + 0.5, uy + 43);
+  spaced("0px");
+
+  return await new Promise((resolve, reject) =>
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("toBlob null"))), "image/png"));
+}
+
+// Instagram glifi (lucide'de marka ikonları yok). simple-icons, CC0.
+const InstagramGlyph = ({ className = "w-4 h-4" }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true"><path d="M7.0301.084c-1.2768.0602-2.1487.264-2.911.5634-.7888.3075-1.4575.72-2.1228 1.3877-.6652.6677-1.075 1.3368-1.3802 2.127-.2954.7638-.4956 1.6365-.552 2.914-.0564 1.2775-.0689 1.6882-.0626 4.947.0062 3.2586.0206 3.6671.0825 4.9473.061 1.2765.264 2.1482.5635 2.9107.308.7889.72 1.4573 1.388 2.1228.6679.6655 1.3365 1.0743 2.1285 1.38.7632.295 1.6361.4961 2.9134.552 1.2773.056 1.6884.069 4.9462.0627 3.2578-.0062 3.668-.0207 4.9478-.0814 1.28-.0607 2.147-.2652 2.9098-.5633.7889-.3086 1.4578-.72 2.1228-1.3881.665-.6682 1.0745-1.3378 1.3795-2.1284.2957-.7632.4966-1.636.552-2.9124.056-1.2809.0692-1.6898.063-4.948-.0063-3.2583-.021-3.6668-.0817-4.9465-.0607-1.2797-.264-2.1487-.5633-2.9117-.3084-.7889-.72-1.4568-1.3876-2.1228C21.2982 1.33 20.628.9208 19.8378.6165 19.074.321 18.2017.1197 16.9244.0645 15.6471.0093 15.236-.005 11.977.0014 8.718.0076 8.31.0215 7.0301.0839m.1402 21.6932c-1.17-.0509-1.8053-.2453-2.2287-.408-.5606-.216-.96-.4771-1.3819-.895-.422-.4178-.6811-.8186-.9-1.378-.1644-.4234-.3624-1.058-.4171-2.228-.0595-1.2645-.072-1.6442-.079-4.848-.007-3.2037.0053-3.583.0607-4.848.05-1.169.2456-1.805.408-2.2282.216-.5613.4762-.96.895-1.3816.4188-.4217.8184-.6814 1.3783-.9003.423-.1651 1.0575-.3614 2.227-.4171 1.2655-.06 1.6447-.072 4.848-.079 3.2033-.007 3.5835.005 4.8495.0608 1.169.0508 1.8053.2445 2.228.408.5608.216.96.4754 1.3816.895.4217.4194.6816.8176.9005 1.3787.1653.4217.3617 1.056.4169 2.2263.0602 1.2655.0739 1.645.0796 4.848.0058 3.203-.0055 3.5834-.061 4.848-.051 1.17-.245 1.8055-.408 2.2294-.216.5604-.4763.96-.8954 1.3814-.419.4215-.8181.6811-1.3783.9-.4224.1649-1.0577.3617-2.2262.4174-1.2656.0595-1.6448.072-4.8493.079-3.2045.007-3.5825-.006-4.848-.0608M16.953 5.5864A1.44 1.44 0 1 0 18.39 4.144a1.44 1.44 0 0 0-1.437 1.4424M5.8385 12.012c.0067 3.4032 2.7706 6.1557 6.173 6.1493 3.4026-.0065 6.157-2.7701 6.1506-6.1733-.0065-3.4032-2.771-6.1565-6.174-6.1498-3.403.0067-6.156 2.771-6.1496 6.1738M8 12.0077a4 4 0 1 1 4.008 3.9921A3.9996 3.9996 0 0 1 8 12.0077"/></svg>
+);
+
+// Hikâye penceresi: önizleme + paylaş/indir. Açılırken link panoya kopyalanır
+// (Instagram'da link çıkartmasına yapıştırılacak). Sayfa bileşenlerinin dışında
+// tanımlı: her üst-render'da yeniden kurulup görseli tekrar çizmesin.
+function StoryShareModal({ spec, onClose, t, showToast }) {
+  const [blob, setBlob] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const [failed, setFailed] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const mobile = isMobileLikeDevice();
+  useEffect(() => {
+    let alive = true, obj = null;
+    storyCardBlob(spec)
+      .then((b) => { if (!alive) return; obj = URL.createObjectURL(b); setBlob(b); setPreview(obj); })
+      .catch((e) => { console.error("Story card error:", e); if (alive) setFailed(true); });
+    return () => { alive = false; if (obj) URL.revokeObjectURL(obj); };
+  }, [spec.url, spec.title]);
+  const go = async () => {
+    copyPlainLink(spec.url).then((r) => setCopied(r === "copied"));
+    const r = await sharePngFile(blob, spec.filename);
+    if (!r) showToast(t("story.fail"), "error");
+  };
+  return (
+    <div className="fixed inset-0 z-[80] bg-black/60 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl w-full max-w-sm p-5 max-h-[92vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-bold text-ink-900 flex items-center gap-2"><InstagramGlyph className="w-5 h-5 text-brand-600" /> {t("story.title")}</h3>
+          <button onClick={onClose} aria-label={t("common.close")} className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100"><X className="w-4 h-4" /></button>
+        </div>
+        <div className="mx-auto rounded-xl overflow-hidden bg-smoke flex items-center justify-center" style={{ width: "min(100%, 34vh)", aspectRatio: "9 / 16" }}>
+          {preview ? <img src={preview} alt="" className="w-full h-full object-cover" />
+            : <span className="text-sm text-slate-500 px-4 text-center">{failed ? t("story.fail") : t("story.rendering")}</span>}
+        </div>
+        <ol className="mt-4 space-y-2 text-sm text-slate-700">
+          {[t("story.step1"), t("story.step2")].map((s, i) => (
+            <li key={i} className="flex gap-2.5">
+              <span className="w-5 h-5 flex-shrink-0 rounded-full bg-brand-600 text-white text-[11px] font-bold flex items-center justify-center">{i + 1}</span>
+              <span className={i === 1 && copied ? "text-brand-700 font-semibold" : ""}>{s}</span>
+            </li>
+          ))}
+        </ol>
+        <button data-btn="solid" disabled={!blob} onClick={go}
+          className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 bg-brand-600 text-white rounded-xl font-bold disabled:opacity-50 transition-colors">
+          <InstagramGlyph className="w-4 h-4" /> {mobile ? t("story.share") : t("story.download")}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 // ── SEO dostu URL yardımcıları ───────────────────────────
@@ -1990,6 +2168,26 @@ export default function Muuvlink() {
   const [platformStats, setPlatformStats] = useState(null);
   const [blockedUsers, setBlockedUsers] = useState([]);
   const [reportModal, setReportModal] = useState(null); // { type, id } veya null
+  // Instagram hikâye kartı. E-postadaki "Instagram hikâyesi" butonu detay adresine
+  // ?hikaye=1 ekler; detay yüklenince pencere bir kez açılır. Parametre açılışta
+  // okunur: detay sayfası adresi arama kısmı olmadan yeniden yazıyor.
+  const [storySpec, setStorySpec] = useState(null);
+  const storyParamRef = useRef(typeof window !== "undefined" && new URLSearchParams(window.location.search).get("hikaye") === "1");
+  const openTeamStory = (team) => setStorySpec({
+    kicker: t("story.kickerTeam"), title: team.name, lines: [], lang,
+    sport: team.sport || (Array.isArray(team.sports) ? team.sports[0] : undefined),
+    url: `${window.location.origin}${teamPath(team)}`, filename: `muuvlink-${urlSlug(team.name)}.png`,
+  });
+  const openTrainingStory = (tr) => {
+    const d = tr.training_date ? new Date(`${String(tr.training_date).slice(0, 10)}T12:00:00`) : null;
+    const when = [d && !isNaN(d) ? d.toLocaleDateString(localeOf(lang), { day: "numeric", month: "long", year: "numeric" }) : "",
+      tr.training_time ? String(tr.training_time).slice(0, 5) : ""].filter(Boolean).join(" · ");
+    setStorySpec({
+      kicker: t("story.kickerEvent"), title: tr.title, lang, sport: tr.sport || tr.team_sport,
+      lines: [when, String(tr.location_name || "").replace(/\s+/g, " ").replace(/\s*,\s*/g, ", ").trim()],
+      url: `${window.location.origin}${trainingPath(tr)}`, filename: `muuvlink-${urlSlug(tr.title)}.png`,
+    });
+  };
   const [tourActive, setTourActive] = useState(false);  // tanıtım turu açık mı
   const [nearbyUsed, setNearbyUsed] = useState(() => localStorage.getItem("nearbyUsed") === "true");
 
@@ -2400,6 +2598,7 @@ export default function Muuvlink() {
           // kullanıcı ana sayfada kalıyordu.
           const taTok = params.get("ta");
           if (taTok) { handleTaToken(taTok); return; }
+          if (params.get("hikaye") === "1") storyParamRef.current = true;
 
           // E-postadaki "Linki kopyala" statik bir sayfa (public/kopyala/); SPA'da
           // karşılığı yok, uygulama o sayfayı kendisi yükler.
@@ -2655,6 +2854,15 @@ export default function Muuvlink() {
   // Yorum/katılımcı gibi başkalarının eklediği içerik görünmüyordu.
   // Tetikleyiciler: uygulama öne gelince, sekme tekrar görünür olunca,
   // ağ geri gelince ve sayfa açıkken 60 saniyede bir.
+  useEffect(() => {
+    if (!storyParamRef.current) return;
+    if (currentPage === "team-detail" && selectedTeam?.id && selectedTeam?.name) {
+      storyParamRef.current = false; openTeamStory(selectedTeam);
+    } else if (currentPage === "training-detail" && selectedTraining?.id && selectedTraining?.title) {
+      storyParamRef.current = false; openTrainingStory(selectedTraining);
+    }
+  }, [currentPage, selectedTeam?.id, selectedTraining?.id]);
+
   const refreshOpenPageRef = useRef(() => {});
   refreshOpenPageRef.current = () => {
     if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
@@ -6051,7 +6259,7 @@ export default function Muuvlink() {
                    yayıldıkça insanlar olmayan bir etkinliğe yönleniyor. Şikayet
                    ikonu kalır. Şerit tamamen boş kalacaksa hiç çizilmez. */}
             {(!isPast || (user && !canManage)) && (
-            <div className="mt-5 pt-4 border-t border-white/10 flex items-center gap-2">
+            <div className="mt-5 pt-4 border-t border-white/10 flex flex-wrap items-center gap-2">
               {!isPast && (<>
               <HoverTip text={t("tips.shareTraining")} align="left">
                 <button
@@ -6077,6 +6285,14 @@ export default function Muuvlink() {
                   className="flex items-center gap-1.5 px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-semibold transition-colors"
                 >
                   <Link className="w-4 h-4" /> {t("common.copyLink")}
+                </button>
+              </HoverTip>
+              <HoverTip text={t("story.tip")} align="left">
+                <button
+                  onClick={() => openTrainingStory(selectedTraining)}
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-semibold transition-colors"
+                >
+                  <InstagramGlyph className="w-4 h-4" /> {t("story.btn")}
                 </button>
               </HoverTip>
               </>)}
@@ -6895,6 +7111,14 @@ export default function Muuvlink() {
                   className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-semibold transition-colors"
                 >
                   <Link className="w-4 h-4" /> {t("common.copyLink")}
+                </button>
+              </HoverTip>
+              <HoverTip text={t("story.tip")} align="right" className="col-span-2 w-full sm:w-auto">
+                <button
+                  onClick={() => openTeamStory(selectedTeam)}
+                  className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-semibold transition-colors"
+                >
+                  <InstagramGlyph className="w-4 h-4" /> {t("story.btn")}
                 </button>
               </HoverTip>
             </div>
@@ -9287,6 +9511,7 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
       {showNotifPrefs && <NotifPrefsModal />}
       <LegalModal />
       <ReportModal />
+      {storySpec && <StoryShareModal spec={storySpec} onClose={() => setStorySpec(null)} t={t} showToast={showToast} />}
       <CookieBanner />
       {tourActive && <Tour steps={tourSteps} onFinish={finishTour} t={t} />}
       <Toast />

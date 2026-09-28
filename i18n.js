@@ -114,6 +114,26 @@ export const translations = {
     navigate:     { tr: "Yol Tarifi",          en: "Navigate",              de: "Navigation"                     },
   },
 
+  // ── INSTAGRAM HİKÂYE KARTI ───────────────────────────────
+  // kicker'lar kartta BÜYÜK HARFLE basılıyor; burada da büyük yazılır.
+  story: {
+    btn:         { tr: "Hikâye",                  en: "Story",                   de: "Story" },
+    tip:         { tr: "Instagram hikâyen için hazır görsel. Link çıkartması ekleyince tıklayan doğrudan buraya gelir.",
+                   en: "A ready-made image for your Instagram story. Add a link sticker and viewers land right here.",
+                   de: "Ein fertiges Bild für deine Instagram-Story. Mit Link-Sticker landen Zuschauer direkt hier." },
+    title:       { tr: "Instagram hikâyesi",      en: "Instagram story",         de: "Instagram-Story" },
+    kickerTeam:  { tr: "TAKIMIMIZA KATIL",        en: "JOIN OUR TEAM",           de: "WERDE TEIL DES TEAMS" },
+    kickerEvent: { tr: "ETKİNLİĞE KATIL",         en: "JOIN THE EVENT",          de: "SEI DABEI" },
+    share:       { tr: "Görseli paylaş",          en: "Share image",             de: "Bild teilen" },
+    download:    { tr: "Görseli indir",           en: "Download image",          de: "Bild herunterladen" },
+    rendering:   { tr: "Görsel hazırlanıyor…",    en: "Preparing image…",        de: "Bild wird erstellt…" },
+    step1:       { tr: "Görseli hikâyene ekle",   en: "Add the image to your story", de: "Füge das Bild deiner Story hinzu" },
+    step2:       { tr: "Link çıkartması ekle, linki yapıştır — link panoya kopyalandı",
+                   en: "Add a link sticker and paste — the link is already copied",
+                   de: "Link-Sticker hinzufügen und einfügen — der Link ist schon kopiert" },
+    fail:        { tr: "Görsel oluşturulamadı.",  en: "Couldn't create the image.", de: "Bild konnte nicht erstellt werden." },
+  },
+
   // ── PAYLAŞ / DAVET İPUÇLARI (hover) ──────────────────────
   tips: {
     shareTeam: {

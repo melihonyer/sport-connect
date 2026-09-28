@@ -2010,7 +2010,7 @@ const ACT = {
     yourLink: 'Paylaşım linkin',
     copyHint: 'Linke uzun bas ya da seçip kopyala.',
     readyMsg: 'Arkadaşlarına gönderebileceğin hazır mesaj',
-    shareWa: "WhatsApp'ta paylaş", shareTg: "Telegram'da paylaş", shareMail: 'E-postayla gönder', copyBtn: 'Linki kopyala',
+    shareWa: "WhatsApp'ta paylaş", shareTg: "Telegram'da paylaş", shareMail: 'E-postayla gönder', copyBtn: 'Linki kopyala', shareIg: 'Instagram hikâyesi hazırla',
     shareTitle: 'Tek dokunuşla paylaş',
     optOut: 'Bu tür e-postaları Profil › Bildirim tercihleri › Muuvlink\'ten ipuçları\'ndan kapatabilirsin.',
     tc: {
@@ -2080,7 +2080,7 @@ const ACT = {
     yourLink: 'Your share link',
     copyHint: 'Press and hold the link, or select it to copy.',
     readyMsg: 'A ready-made message for your friends',
-    shareWa: 'Share on WhatsApp', shareTg: 'Share on Telegram', shareMail: 'Send by email', copyBtn: 'Copy link',
+    shareWa: 'Share on WhatsApp', shareTg: 'Share on Telegram', shareMail: 'Send by email', copyBtn: 'Copy link', shareIg: 'Make an Instagram story',
     shareTitle: 'Share in one tap',
     optOut: 'You can turn these emails off in Profile › Notification preferences › Tips from Muuvlink.',
     tc: {
@@ -2150,7 +2150,7 @@ const ACT = {
     yourLink: 'Dein Link zum Teilen',
     copyHint: 'Link gedrückt halten oder markieren und kopieren.',
     readyMsg: 'Eine fertige Nachricht für deine Freunde',
-    shareWa: 'Auf WhatsApp teilen', shareTg: 'Auf Telegram teilen', shareMail: 'Per E-Mail senden', copyBtn: 'Link kopieren',
+    shareWa: 'Auf WhatsApp teilen', shareTg: 'Auf Telegram teilen', shareMail: 'Per E-Mail senden', copyBtn: 'Link kopieren', shareIg: 'Instagram-Story erstellen',
     shareTitle: 'Mit einem Tipp teilen',
     optOut: 'Du kannst diese E-Mails unter Profil › Benachrichtigungen › Tipps von Muuvlink abschalten.',
     tc: {
@@ -2220,7 +2220,7 @@ const ACT = {
     yourLink: 'Ο σύνδεσμός σου για κοινοποίηση',
     copyHint: 'Κράτησε πατημένο τον σύνδεσμο ή επίλεξέ τον για αντιγραφή.',
     readyMsg: 'Ένα έτοιμο μήνυμα για τους φίλους σου',
-    shareWa: 'Κοινοποίηση στο WhatsApp', shareTg: 'Κοινοποίηση στο Telegram', shareMail: 'Αποστολή με email', copyBtn: 'Αντιγραφή συνδέσμου',
+    shareWa: 'Κοινοποίηση στο WhatsApp', shareTg: 'Κοινοποίηση στο Telegram', shareMail: 'Αποστολή με email', copyBtn: 'Αντιγραφή συνδέσμου', shareIg: 'Φτιάξε Instagram story',
     shareTitle: 'Κοινοποίηση με ένα πάτημα',
     optOut: 'Μπορείς να απενεργοποιήσεις αυτά τα email από Προφίλ › Προτιμήσεις ειδοποιήσεων › Συμβουλές από το Muuvlink.',
     tc: {
@@ -2290,7 +2290,7 @@ const ACT = {
     yourLink: 'Tu enlace para compartir',
     copyHint: 'Mantén pulsado el enlace o selecciónalo para copiarlo.',
     readyMsg: 'Un mensaje listo para tus amigos',
-    shareWa: 'Compartir en WhatsApp', shareTg: 'Compartir en Telegram', shareMail: 'Enviar por correo', copyBtn: 'Copiar enlace',
+    shareWa: 'Compartir en WhatsApp', shareTg: 'Compartir en Telegram', shareMail: 'Enviar por correo', copyBtn: 'Copiar enlace', shareIg: 'Crear historia de Instagram',
     shareTitle: 'Comparte con un toque',
     optOut: 'Puedes desactivar estos correos en Perfil › Preferencias de notificaciones › Consejos de Muuvlink.',
     tc: {
@@ -2360,7 +2360,7 @@ const ACT = {
     yourLink: 'Ton lien à partager',
     copyHint: 'Appuie longuement sur le lien ou sélectionne-le pour le copier.',
     readyMsg: 'Un message tout prêt pour tes amis',
-    shareWa: 'Partager sur WhatsApp', shareTg: 'Partager sur Telegram', shareMail: 'Envoyer par e-mail', copyBtn: 'Copier le lien',
+    shareWa: 'Partager sur WhatsApp', shareTg: 'Partager sur Telegram', shareMail: 'Envoyer par e-mail', copyBtn: 'Copier le lien', shareIg: 'Créer une story Instagram',
     shareTitle: 'Partage en un clic',
     optOut: 'Tu peux désactiver ces e-mails dans Profil › Préférences de notification › Conseils de Muuvlink.',
     tc: {
@@ -2430,7 +2430,7 @@ const ACT = {
     yourLink: 'Il tuo link da condividere',
     copyHint: 'Tieni premuto sul link o selezionalo per copiarlo.',
     readyMsg: 'Un messaggio pronto per i tuoi amici',
-    shareWa: 'Condividi su WhatsApp', shareTg: 'Condividi su Telegram', shareMail: 'Invia per email', copyBtn: 'Copia link',
+    shareWa: 'Condividi su WhatsApp', shareTg: 'Condividi su Telegram', shareMail: 'Invia per email', copyBtn: 'Copia link', shareIg: 'Crea una storia Instagram',
     shareTitle: 'Condividi con un tocco',
     optOut: 'Puoi disattivare queste email da Profilo › Preferenze notifiche › Consigli da Muuvlink.',
     tc: {
@@ -2529,6 +2529,9 @@ function activationEmail(kind, d, lang = 'tr') {
     const wa = `https://wa.me/?text=${encodeURIComponent(msgWith(withUtm('whatsapp')))}`;
     const tg = `https://t.me/share/url?url=${encodeURIComponent(withUtm('telegram'))}&text=${encodeURIComponent(bare)}`;
     const ml = `mailto:?subject=${encodeURIComponent(K.mailSubject(d.name))}&body=${encodeURIComponent(msgWith(withUtm('email')))}`;
+    // Instagram'a dışarıdan içerik verilemiyor: buton hikâye kartını hazırlayan
+    // sayfayı açar (?hikaye=1 → sporla-bulusma.jsx StoryShareModal).
+    const ig = `${d.url}${d.url.includes('?') ? '&' : '?'}hikaye=1`;
     // E-posta programları panoya yazdırmıyor: buton public/kopyala/ sayfasını açar.
     const cp = `https://muuvlink.app/kopyala/?l=${L}&u=${encodeURIComponent(d.url)}`;
     const label = (t) => `<div style="margin:0 0 8px;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#64748b;">${actEsc(t)}</div>`;
@@ -2539,7 +2542,7 @@ function activationEmail(kind, d, lang = 'tr') {
     </table>
 
     ${label(A.shareTitle)}
-    <table cellpadding="0" cellspacing="0" border="0" style="width:100%;margin:0 0 16px;">${btn(wa, 'whatsapp', A.shareWa)}${btn(tg, 'telegram', A.shareTg)}${btn(ml, 'mail', A.shareMail)}
+    <table cellpadding="0" cellspacing="0" border="0" style="width:100%;margin:0 0 16px;">${btn(wa, 'whatsapp', A.shareWa)}${btn(ig, 'instagram', A.shareIg)}${btn(tg, 'telegram', A.shareTg)}${btn(ml, 'mail', A.shareMail)}
     </table>
 
     ${label(A.readyMsg)}

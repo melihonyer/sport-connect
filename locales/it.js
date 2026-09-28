@@ -102,6 +102,19 @@ export default {
     navigate: "Indicazioni",
   },
 
+  story: {
+    btn: "Storia",
+    tip: "Un'immagine pronta per la tua storia Instagram. Aggiungi lo sticker link e chi tocca arriva dritto qui.",
+    title: "Storia Instagram",
+    kickerTeam: "UNISCITI ALLA SQUADRA",
+    kickerEvent: "VIENI ANCHE TU",
+    share: "Condividi immagine",
+    download: "Scarica immagine",
+    rendering: "Preparo l'immagine…",
+    step1: "Aggiungi l'immagine alla tua storia",
+    step2: "Aggiungi lo sticker link e incolla — il link è già copiato",
+    fail: "Impossibile creare l'immagine.",
+  },
   tips: {
     shareTeam: "Condividi la tua squadra e invita tutti. Più la squadra è grande, più persone vengono a sapere dei tuoi eventi.",
     copyLinkTeam: "Copia il link e incollalo su WhatsApp o Instagram. Chi lo apre arriva direttamente alla pagina della tua squadra.",

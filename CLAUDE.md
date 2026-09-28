@@ -374,6 +374,27 @@ seçilebilir link kutusu, WhatsApp/Telegram/e-posta butonları, hazır davet mes
 - Örnek göndermek için gerçek alıcı yerine `delivered+etiket@resend.dev` kullan
   (Resend test adresi: kimseye gitmez, itibar bozmaz).
 
+## Instagram hikâye kartı
+
+Takım ve etkinlik sayfasında "Hikâye" butonu (sporla-bulusma.jsx `StoryShareModal`,
+`storyCardBlob`). Kart 1080×1920, Canvas 2D ile tarayıcıda çizilir; mobilde paylaş,
+masaüstünde indir. Açılırken link panoya kopyalanır (Instagram link çıkartması için).
+E-postadaki "Instagram hikâyesi hazırla" butonu detay adresine `?hikaye=1` ekler,
+sayfa kartı kendisi açar (uygulamada `appUrlOpen` de bu parametreyi okur).
+
+- **Fotoğraf branşa göre**: `public/story/<dosya>.jpg`, eşleme `STORY_BG_BY_SPORT`
+  (anahtar `sports.*` ile aynı). Listede olmayan branş → `diger.jpg`. Fotoğraflar
+  Canva ile üretildi (telifsiz, markasız kıyafet). **Sporcular alt yarıda olmalı**:
+  logo ve başlık üst yarıda duruyor. Yeni branş fotoğrafı da bu kuralla üretilir.
+- Koyu zeminde yazılar beyaz: `STORY_DARK_BG` (tenis, futbol, kürek).
+- Logo dikey: üstte M amblemi (`icons/favicon.png`), altında yazı logosu.
+- **Yazı tipi `MuuvStory`** (`public/fonts/montserrat-*.woff2`, `FontFace` ile).
+  Sitenin Google Fonts Montserrat'ı canvas'ta görünmüyor (Times'a düşüyordu).
+  Yunanca ayrı ailede (`MuuvStoryGr`): aynı adda tanımlanınca Chrome 800'lük
+  Türkçe harfleri (Ş, İ, Ğ) yedek yazı tipine düşürüyor.
+- Instagram'a dışarıdan içerik verilemez (WhatsApp'taki gibi paylaşım adresi yok);
+  bu yüzden akış "görseli kaydet/paylaş + link kopyalandı".
+
 ## Push bildirimleri
 
 Cihaz jetonu yalnız uygulama açılışında geliyordu; o an giriş yapılmamışsa jeton

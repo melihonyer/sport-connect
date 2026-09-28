@@ -102,6 +102,19 @@ export default {
     navigate: "Cómo llegar",
   },
 
+  story: {
+    btn: "Historia",
+    tip: "Una imagen lista para tu historia de Instagram. Añade un sticker de enlace y quien lo toque llega directo aquí.",
+    title: "Historia de Instagram",
+    kickerTeam: "ÚNETE AL EQUIPO",
+    kickerEvent: "APÚNTATE",
+    share: "Compartir imagen",
+    download: "Descargar imagen",
+    rendering: "Preparando la imagen…",
+    step1: "Añade la imagen a tu historia",
+    step2: "Añade un sticker de enlace y pega — el enlace ya está copiado",
+    fail: "No se pudo crear la imagen.",
+  },
   tips: {
     shareTeam: "Comparte tu equipo e invita a todo el mundo. Cuanto más grande sea el equipo, más gente se enterará de los eventos que crees.",
     copyLinkTeam: "Copia el enlace y pégalo en WhatsApp o Instagram. Quien lo abra llegará directamente a la página de tu equipo.",
