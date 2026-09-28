@@ -2401,6 +2401,10 @@ export default function Muuvlink() {
           const taTok = params.get("ta");
           if (taTok) { handleTaToken(taTok); return; }
 
+          // E-postadaki "Linki kopyala" statik bir sayfa (public/kopyala/); SPA'da
+          // karşılığı yok, uygulama o sayfayı kendisi yükler.
+          if (pathname.startsWith("/kopyala")) { window.location.href = event.url; return; }
+
           const acceptInvite = params.get("accept_invite");
           const resetToken   = params.get("reset_token");
           const takimId      = params.get("takim");
@@ -2434,6 +2438,7 @@ export default function Muuvlink() {
       // önce ateşlenmiş olabilir; başlangıç adresini ayrıca soruyoruz.
       App.getLaunchUrl?.().then((res) => {
         if (!res?.url) return;
+        if (new URL(res.url).pathname.startsWith("/kopyala")) { window.location.href = res.url; return; }
         const tok = new URL(res.url).searchParams.get("ta");
         if (tok) handleTaToken(tok);
       }).catch(() => {});

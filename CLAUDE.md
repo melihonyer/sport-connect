@@ -340,6 +340,13 @@ seçilebilir link kutusu, WhatsApp/Telegram/e-posta butonları, hazır davet mes
   onaylayınca otomatik gönderim açılacak. Yalnız `gt`/`ge` admin butonuyla gidiyor.
 - Paylaşım butonlarındaki link `utm_source=share&utm_medium=whatsapp|telegram|email
   &utm_campaign=team_invite|event_invite` taşır; kayıt olanın kaynağı users.utm_*'da.
+- **"Linki kopyala" butonu `public/kopyala/?l=<dil>&u=<link>` sayfasını açar**:
+  e-posta programları panoya yazdırmıyor. `u` yalnız `https://muuvlink.app/`
+  ile başlayabilir. Uygulaması kurulu telefonda link uygulamada açılır;
+  `appUrlOpen`/`getLaunchUrl` `/kopyala` görünce bu sayfayı yükler — o satırlar
+  silinirse buton uygulamada ana sayfaya düşer.
+- Buton ikonları `public/icons/mail/*.png` (Gmail SVG göstermiyor). Renkler
+  kurumsal: kopyala sarı, paylaş butonları beyaz + deep teal çerçeve, alt alta.
 - Gizli takım/etkinlikte paylaşım bölümü çıkmaz (link üye olmayana açılmıyor),
   yerine e-postayla davet yönlendirmesi.
 - **Admin "Mail" butonu** (Takımlar ve Etkinlikler listesi): yalnız takımın

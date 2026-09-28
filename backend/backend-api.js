@@ -2010,7 +2010,7 @@ const ACT = {
     yourLink: 'Paylaşım linkin',
     copyHint: 'Linke uzun bas ya da seçip kopyala.',
     readyMsg: 'Arkadaşlarına gönderebileceğin hazır mesaj',
-    shareWa: 'WhatsApp', shareTg: 'Telegram', shareMail: 'E-posta',
+    shareWa: "WhatsApp'ta paylaş", shareTg: "Telegram'da paylaş", shareMail: 'E-postayla gönder', copyBtn: 'Linki kopyala',
     shareTitle: 'Tek dokunuşla paylaş',
     optOut: 'Bu tür e-postaları Profil › Bildirim tercihleri › Muuvlink\'ten ipuçları\'ndan kapatabilirsin.',
     tc: {
@@ -2080,7 +2080,7 @@ const ACT = {
     yourLink: 'Your share link',
     copyHint: 'Press and hold the link, or select it to copy.',
     readyMsg: 'A ready-made message for your friends',
-    shareWa: 'WhatsApp', shareTg: 'Telegram', shareMail: 'Email',
+    shareWa: 'Share on WhatsApp', shareTg: 'Share on Telegram', shareMail: 'Send by email', copyBtn: 'Copy link',
     shareTitle: 'Share in one tap',
     optOut: 'You can turn these emails off in Profile › Notification preferences › Tips from Muuvlink.',
     tc: {
@@ -2150,7 +2150,7 @@ const ACT = {
     yourLink: 'Dein Link zum Teilen',
     copyHint: 'Link gedrückt halten oder markieren und kopieren.',
     readyMsg: 'Eine fertige Nachricht für deine Freunde',
-    shareWa: 'WhatsApp', shareTg: 'Telegram', shareMail: 'E-Mail',
+    shareWa: 'Auf WhatsApp teilen', shareTg: 'Auf Telegram teilen', shareMail: 'Per E-Mail senden', copyBtn: 'Link kopieren',
     shareTitle: 'Mit einem Tipp teilen',
     optOut: 'Du kannst diese E-Mails unter Profil › Benachrichtigungen › Tipps von Muuvlink abschalten.',
     tc: {
@@ -2220,7 +2220,7 @@ const ACT = {
     yourLink: 'Ο σύνδεσμός σου για κοινοποίηση',
     copyHint: 'Κράτησε πατημένο τον σύνδεσμο ή επίλεξέ τον για αντιγραφή.',
     readyMsg: 'Ένα έτοιμο μήνυμα για τους φίλους σου',
-    shareWa: 'WhatsApp', shareTg: 'Telegram', shareMail: 'Email',
+    shareWa: 'Κοινοποίηση στο WhatsApp', shareTg: 'Κοινοποίηση στο Telegram', shareMail: 'Αποστολή με email', copyBtn: 'Αντιγραφή συνδέσμου',
     shareTitle: 'Κοινοποίηση με ένα πάτημα',
     optOut: 'Μπορείς να απενεργοποιήσεις αυτά τα email από Προφίλ › Προτιμήσεις ειδοποιήσεων › Συμβουλές από το Muuvlink.',
     tc: {
@@ -2290,7 +2290,7 @@ const ACT = {
     yourLink: 'Tu enlace para compartir',
     copyHint: 'Mantén pulsado el enlace o selecciónalo para copiarlo.',
     readyMsg: 'Un mensaje listo para tus amigos',
-    shareWa: 'WhatsApp', shareTg: 'Telegram', shareMail: 'Correo',
+    shareWa: 'Compartir en WhatsApp', shareTg: 'Compartir en Telegram', shareMail: 'Enviar por correo', copyBtn: 'Copiar enlace',
     shareTitle: 'Comparte con un toque',
     optOut: 'Puedes desactivar estos correos en Perfil › Preferencias de notificaciones › Consejos de Muuvlink.',
     tc: {
@@ -2360,7 +2360,7 @@ const ACT = {
     yourLink: 'Ton lien à partager',
     copyHint: 'Appuie longuement sur le lien ou sélectionne-le pour le copier.',
     readyMsg: 'Un message tout prêt pour tes amis',
-    shareWa: 'WhatsApp', shareTg: 'Telegram', shareMail: 'E-mail',
+    shareWa: 'Partager sur WhatsApp', shareTg: 'Partager sur Telegram', shareMail: 'Envoyer par e-mail', copyBtn: 'Copier le lien',
     shareTitle: 'Partage en un clic',
     optOut: 'Tu peux désactiver ces e-mails dans Profil › Préférences de notification › Conseils de Muuvlink.',
     tc: {
@@ -2430,7 +2430,7 @@ const ACT = {
     yourLink: 'Il tuo link da condividere',
     copyHint: 'Tieni premuto sul link o selezionalo per copiarlo.',
     readyMsg: 'Un messaggio pronto per i tuoi amici',
-    shareWa: 'WhatsApp', shareTg: 'Telegram', shareMail: 'Email',
+    shareWa: 'Condividi su WhatsApp', shareTg: 'Condividi su Telegram', shareMail: 'Invia per email', copyBtn: 'Copia link',
     shareTitle: 'Condividi con un tocco',
     optOut: 'Puoi disattivare queste email da Profilo › Preferenze notifiche › Consigli da Muuvlink.',
     tc: {
@@ -2513,10 +2513,14 @@ function activationEmail(kind, d, lang = 'tr') {
   const withUtm = (medium) => `${d.url}${d.url.includes('?') ? '&' : '?'}utm_source=share&utm_medium=${medium}&utm_campaign=${campaign}`;
   const when = [d.when, d.time].filter(Boolean).join(' ');
 
-  const btn = (href, label, bg) => `
-          <td style="padding:0 4px 8px;">
-            <a href="${href}" style="display:inline-block;background:${bg};color:#ffffff;text-decoration:none;padding:11px 16px;border-radius:10px;font-size:14px;font-weight:700;">${label}</a>
-          </td>`;
+  const ICON = 'https://muuvlink.app/icons/mail';
+  // Alt alta, tam genişlik. Görsel ikon PNG: Gmail SVG göstermiyor.
+  const btn = (href, icon, label, primary) => `
+      <tr><td style="padding:0 0 10px;">
+        <a href="${href}" style="display:block;background:${primary ? '#F4F818' : '#ffffff'};border:1.5px solid ${primary ? '#F4F818' : '#114956'};border-radius:12px;padding:13px 16px;color:#114956;text-decoration:none;font-size:15px;font-weight:700;text-align:center;">
+          <img src="${ICON}/${icon}.png" width="20" height="20" alt="" style="vertical-align:middle;border:0;margin:0 8px 2px 0;">${actEsc(label)}
+        </a>
+      </td></tr>`;
 
   let shareBlock = '';
   if (kind !== 'te' && !d.isPrivate) {
@@ -2525,17 +2529,21 @@ function activationEmail(kind, d, lang = 'tr') {
     const wa = `https://wa.me/?text=${encodeURIComponent(msgWith(withUtm('whatsapp')))}`;
     const tg = `https://t.me/share/url?url=${encodeURIComponent(withUtm('telegram'))}&text=${encodeURIComponent(bare)}`;
     const ml = `mailto:?subject=${encodeURIComponent(K.mailSubject(d.name))}&body=${encodeURIComponent(msgWith(withUtm('email')))}`;
+    // E-posta programları panoya yazdırmıyor: buton public/kopyala/ sayfasını açar.
+    const cp = `https://muuvlink.app/kopyala/?l=${L}&u=${encodeURIComponent(d.url)}`;
+    const label = (t) => `<div style="margin:0 0 8px;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#64748b;">${actEsc(t)}</div>`;
     shareBlock = `
-    <div style="margin:0 0 8px;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#64748b;">${actEsc(A.yourLink)}</div>
-    <div style="border:2px dashed #00a499;background:#e6f7f5;border-radius:12px;padding:14px 16px;margin:0 0 6px;font-family:'SFMono-Regular',Menlo,Consolas,monospace;font-size:15px;line-height:1.5;color:#114956;word-break:break-all;-webkit-user-select:all;user-select:all;">${actEsc(d.url)}</div>
-    <p style="margin:0 0 22px;color:#94a3b8;font-size:12px;">${actEsc(A.copyHint)}</p>
+    ${label(A.yourLink)}
+    <div style="background:#F4F4F4;border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;margin:0 0 10px;font-size:15px;line-height:1.5;color:#114956;word-break:break-all;-webkit-user-select:all;user-select:all;">${actEsc(d.url)}</div>
+    <table cellpadding="0" cellspacing="0" border="0" style="width:100%;margin:0 0 16px;">${btn(cp, 'copy', A.copyBtn, true)}
+    </table>
 
-    <div style="margin:0 0 10px;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#64748b;">${actEsc(A.shareTitle)}</div>
-    <table cellpadding="0" cellspacing="0" border="0" style="margin:0 -4px 18px;"><tr>${btn(wa, A.shareWa, '#1FAF54')}${btn(tg, A.shareTg, '#229ED9')}${btn(ml, A.shareMail, '#114956')}
-    </tr></table>
+    ${label(A.shareTitle)}
+    <table cellpadding="0" cellspacing="0" border="0" style="width:100%;margin:0 0 16px;">${btn(wa, 'whatsapp', A.shareWa)}${btn(tg, 'telegram', A.shareTg)}${btn(ml, 'mail', A.shareMail)}
+    </table>
 
-    <div style="margin:0 0 8px;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#64748b;">${actEsc(A.readyMsg)}</div>
-    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid #F4F818;border-radius:10px;padding:14px 16px;margin:0 0 26px;color:#1F2121;font-size:15px;line-height:1.6;-webkit-user-select:all;user-select:all;">${actEsc(msgWith(d.url))}</div>`;
+    ${label(A.readyMsg)}
+    <div style="background:#F4F4F4;border-left:4px solid #114956;border-radius:10px;padding:14px 16px;margin:0 0 26px;color:#1F2121;font-size:15px;line-height:1.6;-webkit-user-select:all;user-select:all;">${actEsc(msgWith(d.url))}</div>`;
   } else if (kind !== 'te' && d.isPrivate && K.privateNote) {
     shareBlock = `
     <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:14px 16px;margin:0 0 26px;color:#92400e;font-size:14px;line-height:1.6;">${actEsc(K.privateNote)}</div>`;
