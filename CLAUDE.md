@@ -373,6 +373,11 @@ Ekranda gizlemek yetmez — tam isim API cevabında durursa tarayıcıdan görü
 `backend-api.js` → `ACT` (7 dil) + `activationEmail(kind, d, lang)`. Her birinde
 seçilebilir link kutusu, WhatsApp/Telegram/e-posta butonları, hazır davet mesajı.
 
+- **Yeni bir kullanıcı e-postası/metni → ÖNCE Melih'e örnek, onaydan SONRA
+  canlı gönderim.** Şablonu yaz, `melihonyer@gmail.com`'a Türkçe örnek gönder
+  (`[Örnek · …]` konulu), onay gelene kadar otomatik gönderimi AÇMA. 29 Eylül
+  2026'da hoş geldin maili onaysız açıldı ve ilk turda iki gerçek kullanıcıya
+  (Sinan Şahin, Ramazan Uzun) gitti; Melih "önce bana gösterseydin" dedi.
 - **Hoş geldin (`wu`)**: `welcomeEmail` + `WELCOME` (7 dil). İki seçenek kartı:
   "Kendi takımını kur" (`/takim-kur`) ve "Sana uygun bir takıma katıl" (dilin
   takımlar sayfası). Kayıt ucuna konmadı (kayıt Meta'ya dönüşüm gönderiyor);
