@@ -2138,6 +2138,8 @@ export default function Muuvlink() {
   const [legalModal, setLegalModal] = useState(() => LEGAL_PATH_TO_KEY[window.location.pathname] ?? null); // 'kvkk' | 'gizlilik' | 'kullanim' | 'cerez'
   const [cookieConsent, setCookieConsent] = useState(() => localStorage.getItem("cookieConsent") === "true");
   const [searchQuery, setSearchQuery] = useState("");
+  // 404 aramasından takımlar sayfasına giden sorgu (TeamsPage aramasını kendi tutuyor).
+  const teamSearchSeedRef = useRef("");
   const [sportFilter, setSportFilter] = useState("");
   const [levelFilter, setLevelFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
@@ -3108,6 +3110,7 @@ export default function Muuvlink() {
 
   // 404 sayfasından çıkınca "hangi detay bulunamadı" bilgisi sıfırlanır.
   useEffect(() => { if (currentPage !== "not-found") setMissingDetail(null); }, [currentPage]);
+  useEffect(() => { if (currentPage !== "teams") teamSearchSeedRef.current = ""; }, [currentPage]);
 
   // Tarayıcı geri/ileri tuşu
   useEffect(() => {
@@ -5952,7 +5955,7 @@ export default function Muuvlink() {
 
   const TeamsPage = () => {
     const sports = SPORT_TYPES; // tek kaynak: yukarıdaki SPORT_TYPES
-    const [teamSearch, setTeamSearch] = useState("");
+    const [teamSearch, setTeamSearch] = useState(() => teamSearchSeedRef.current);
     const [teamSport, setTeamSport] = useState("");
 
     const filteredTeams = teams.filter((t) => {
@@ -9367,65 +9370,69 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
   // 404 NOT FOUND PAGE
   // =====================================================
 
-  // 404 — kurumsal kimlikle: Deep Teal yüzey, tek vurgu sarı, arkada koşu pisti
-  // şeritleri (Ana1 teal, ince çizgi). "0" yerine sarı halka; içinde duruma göre ikon.
+  // 404 — arkada çok silik dev "404", ortada başlık, arama ve iki buton.
+  // Kurumsal: Deep Teal metin/birincil buton, tek vurgu sarı çizgi. PageHost
+  // içinde çizilir: arama kutusu üst-render'da sökülüp yazılanı kaybetmesin.
   const NotFoundPage = () => {
-    const Icon = missingDetail === "training" ? CalendarX2 : missingDetail === "team" ? SearchX : Compass;
-    const key = missingDetail === "training" ? "event" : missingDetail === "team" ? "team" : "";
-    const title = t(key ? `notFound.${key}Title` : "notFound.title");
-    const subtitle = t(key ? `notFound.${key}Subtitle` : "notFound.subtitle");
-    const primary = missingDetail === "team"
-      ? { page: "teams", icon: Users, label: t("notFound.teamBtn") }
+    const isTeam = missingDetail === "team";
+    const key = missingDetail === "training" ? "event" : isTeam ? "team" : "";
+    const primary = isTeam
+      ? { page: "teams", label: t("notFound.teamBtn") }
       : missingDetail === "training"
-      ? { page: "trainings", icon: Dumbbell, label: t("trainingDetail.pastCta") }
-      : { page: "home", icon: null, label: t("notFound.btn") };
-    const secondary = missingDetail
-      ? { page: "home", label: t("notFound.btn") }
-      : { page: "trainings", label: t("home.heroCta") };
-    const PrimaryIcon = primary.icon;
+      ? { page: "trainings", label: t("trainingDetail.pastCta") }
+      : { page: "home", label: t("notFound.btn") };
+    const onSearch = (e) => {
+      e.preventDefault();
+      const q = (e.currentTarget.elements.q.value || "").trim();
+      if (isTeam) { teamSearchSeedRef.current = q; setCurrentPage("teams"); }
+      else { setSearchQuery(q); setCurrentPage("trainings"); }
+    };
+    const goBack = () => {
+      if (window.history.length > 1) window.history.back();
+      else setCurrentPage("home");
+    };
     return (
-      <div className="min-h-[80vh] flex items-center justify-center px-4 py-10 sm:py-16">
-        <section className="relative w-full max-w-4xl overflow-hidden rounded-[2rem] bg-brand-600 text-white px-6 py-12 sm:px-14 sm:py-16">
-          {/* Pist şeritleri */}
-          <svg aria-hidden="true" className="pointer-events-none absolute -right-40 -bottom-44 sm:-right-24 sm:-bottom-40 w-[560px] h-[420px] text-logo-teal"
-            viewBox="0 0 560 420" fill="none">
-            {[0, 1, 2, 3, 4].map((i) => (
-              <rect key={i} x={20 + i * 26} y={20 + i * 26} width={520 - i * 52} height={380 - i * 52}
-                rx={190 - i * 26} stroke="currentColor" strokeOpacity={0.45 - i * 0.06} strokeWidth="2" />
-            ))}
+      <div className="relative flex flex-col justify-center min-h-[70vh] sm:min-h-[80vh] px-4 py-10 sm:py-16 overflow-hidden">
+        <div className="relative max-w-5xl mx-auto w-full">
+          <svg aria-hidden="true" viewBox="0 0 362 145" className="absolute inset-x-0 top-0 w-full h-[26vh] sm:h-[46vh] text-brand-600 opacity-[0.06] select-none pointer-events-none">
+            <path fill="currentColor" d="M62.6 142c-2.133 0-3.2-1.067-3.2-3.2V118h-56c-2 0-3-1-3-3V92.8c0-1.333.4-2.733 1.2-4.2L58.2 4c.8-1.333 2.067-2 3.8-2h28c2 0 3 1 3 3v85.4h11.2c.933 0 1.733.333 2.4 1 .667.533 1 1.267 1 2.2v21.2c0 .933-.333 1.733-1 2.4-.667.533-1.467.8-2.4.8H93v20.8c0 2.133-1.067 3.2-3.2 3.2H62.6zM33 90.4h26.4V51.2L33 90.4zM181.67 144.6c-7.333 0-14.333-1.333-21-4-6.666-2.667-12.866-6.733-18.6-12.2-5.733-5.467-10.266-13-13.6-22.6-3.333-9.6-5-20.667-5-33.2 0-12.533 1.667-23.6 5-33.2 3.334-9.6 7.867-17.133 13.6-22.6 5.734-5.467 11.934-9.533 18.6-12.2 6.667-2.8 13.667-4.2 21-4.2 7.467 0 14.534 1.4 21.2 4.2 6.667 2.667 12.8 6.733 18.4 12.2 5.734 5.467 10.267 13 13.6 22.6 3.334 9.6 5 20.667 5 33.2 0 12.533-1.666 23.6-5 33.2-3.333 9.6-7.866 17.133-13.6 22.6-5.6 5.467-11.733 9.533-18.4 12.2-6.666 2.667-13.733 4-21.2 4zm0-31c9.067 0 15.6-3.733 19.6-11.2 4.134-7.6 6.2-17.533 6.2-29.8s-2.066-22.2-6.2-29.8c-4.133-7.6-10.666-11.4-19.6-11.4-8.933 0-15.466 3.8-19.6 11.4-4 7.6-6 17.533-6 29.8s2 22.2 6 29.8c4.134 7.467 10.667 11.2 19.6 11.2zM316.116 142c-2.134 0-3.2-1.067-3.2-3.2V118h-56c-2 0-3-1-3-3V92.8c0-1.333.4-2.733 1.2-4.2l56.6-84.6c.8-1.333 2.066-2 3.8-2h28c2 0 3 1 3 3v85.4h11.2c.933 0 1.733.333 2.4 1 .666.533 1 1.267 1 2.2v21.2c0 .933-.334 1.733-1 2.4-.667.533-1.467.8-2.4.8h-11.2v20.8c0 2.133-1.067 3.2-3.2 3.2h-27.2zm-29.6-51.6h26.4V51.2l-26.4 39.2z"/>
           </svg>
 
-          <div className="relative">
-            {/* 4 ◯ 4 */}
-            <div className="flex items-center gap-2 sm:gap-3 select-none" aria-label="404">
-              <span className="text-[6.5rem] sm:text-[9rem] font-black leading-none tracking-tight">4</span>
-              <span className="relative inline-flex items-center justify-center w-[5.2rem] h-[5.2rem] sm:w-[7.2rem] sm:h-[7.2rem] rounded-full border-[12px] sm:border-[16px] border-pop-400">
-                <Icon className="w-7 h-7 sm:w-9 sm:h-9 text-pop-400" strokeWidth={2} />
-              </span>
-              <span className="text-[6.5rem] sm:text-[9rem] font-black leading-none tracking-tight">4</span>
-            </div>
+          <div className="relative text-center pt-20 sm:pt-44">
+            <div className="mx-auto w-12 h-1.5 rounded-full bg-pop-400 mb-6" />
+            <h1 className="text-balance text-4xl sm:text-6xl font-extrabold tracking-tight text-brand-600">
+              {t(key ? `notFound.${key}Title` : "notFound.title")}
+            </h1>
+            <p className="mt-5 text-pretty text-lg sm:text-xl text-slate-500 max-w-xl mx-auto leading-relaxed">
+              {t(key ? `notFound.${key}Subtitle` : "notFound.subtitle")}
+            </p>
 
-            <div className="w-14 h-1.5 rounded-full bg-pop-400 mt-8 mb-6" />
-
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-3">{title}</h1>
-            <p className="text-white/75 text-base sm:text-lg leading-relaxed max-w-md mb-9">{subtitle}</p>
-
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button data-btn="pop-on-dark"
-                onClick={() => setCurrentPage(primary.page)}
-                className="whitespace-nowrap inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-2xl bg-pop-400 text-ink-900 font-semibold"
-              >
-                {PrimaryIcon && <PrimaryIcon className="w-4 h-4" />}{primary.label}
+            <form onSubmit={onSearch} className="mt-10 flex flex-col sm:flex-row gap-3 sm:gap-2 mx-auto sm:max-w-md">
+              <div className="relative w-full">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input name="q" type="search" enterKeyHint="search"
+                  placeholder={t(isTeam ? "teams.searchPlaceholder" : "trainings.searchPlaceholder")}
+                  className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition-colors placeholder:text-slate-400" />
+              </div>
+              <button type="submit"
+                className="px-5 py-3 rounded-xl border border-slate-200 bg-white text-slate-700 text-sm font-semibold shadow-sm transition-colors hover:border-brand-300 hover:text-brand-600">
+                {t("common.search")}
               </button>
-              <button
-                onClick={() => setCurrentPage(secondary.page)}
-                className="whitespace-nowrap inline-flex items-center justify-center px-7 py-3.5 rounded-2xl border border-white/25 text-white font-semibold transition-colors hover:bg-white/10"
-              >
-                {secondary.label}
+            </form>
+
+            <div className="mt-10 flex flex-col sm:flex-row sm:items-center sm:justify-center gap-3 sm:gap-4">
+              <button onClick={goBack}
+                className="group inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-slate-100 text-slate-700 font-semibold transition-colors hover:bg-slate-200">
+                <ArrowLeft className="w-4 h-4 opacity-60 transition-transform group-hover:-translate-x-0.5" />
+                {t("common.back")}
+              </button>
+              <button data-btn="solid" onClick={() => setCurrentPage(primary.page)}
+                className="-order-1 sm:order-none inline-flex items-center justify-center px-6 py-3 rounded-xl bg-brand-600 text-white font-semibold shadow-sm">
+                {primary.label}
               </button>
             </div>
           </div>
-        </section>
+        </div>
       </div>
     );
   };
@@ -9561,7 +9568,7 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
       {currentPage === "create-team" && <CreateTeamPage />}
       {currentPage === "contact" && <ContactPage />}
       {currentPage === "reset-password" && <ResetPasswordPage />}
-      {currentPage === "not-found" && <NotFoundPage />}
+      {currentPage === "not-found" && <PageHost key="not-found" render={NotFoundPage} />}
 
       {isAuthModalOpen && <AuthModal
         authMode={authMode} setAuthMode={setAuthMode}
