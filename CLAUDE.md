@@ -378,6 +378,9 @@ seçilebilir link kutusu, WhatsApp/Telegram/e-posta butonları, hazır davet mes
   (`[Örnek · …]` konulu), onay gelene kadar otomatik gönderimi AÇMA. 29 Eylül
   2026'da hoş geldin maili onaysız açıldı ve ilk turda iki gerçek kullanıcıya
   (Sinan Şahin, Ramazan Uzun) gitti; Melih "önce bana gösterseydin" dedi.
+  Durdurmayı önerince "açık kalsın" dedi: hoş geldin maili Melih'in kararıyla
+  AÇIK; içerik onayı sonradan örnek üzerinden (`[Örnek · Hoş geldin · TR]`),
+  değişiklik gelirse Türkçe düzeltilip 6 dile yansıtılır.
 - **Hoş geldin (`wu`)**: `welcomeEmail` + `WELCOME` (7 dil). İki seçenek kartı:
   "Kendi takımını kur" (`/takim-kur`) ve "Sana uygun bir takıma katıl" (dilin
   takımlar sayfası). Kayıt ucuna konmadı (kayıt Meta'ya dönüşüm gönderiyor);
