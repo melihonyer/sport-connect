@@ -2930,6 +2930,9 @@ export default function Muuvlink() {
     const bootWait = detailBootRef.current && currentPage === detailBootRef.current
       && parseDetailPath(window.location.pathname);
     if (!bootWait) detailBootRef.current = null;
+    // Beklerken başlık/canonical da listeye çekilmez: sunucunun bastığı detay
+    // etiketleri kalır. Yoksa Google detay sayfasının canonical'ını /en/teams okuyor.
+    if (bootWait) return;
 
     if (currentPage === "team-detail" && selectedTeam) {
       // Detay sayfası: takıma özel meta (SEO — her takım ayrı indekslenebilir sayfa)

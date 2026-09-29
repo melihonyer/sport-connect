@@ -109,12 +109,23 @@ JavaScript ÇALIŞTIRMAZ. Bu yüzden metin sunucudan basılır.
     Melih'e anlatılan hali: "Takım/etkinlik linki açılınca adres satırı bir
     anlığına listeye dönüp geri geliyordu; Google bunu 'başka yere giden sayfa'
     sanıp o sayfaları aramaya eklemiyordu. Artık adres hiç değişmiyor."
+    **29 Eylül 2026 ek düzeltme:** adres kalıyordu ama başlık ve canonical
+    ~350 ms `/en/teams` / "Teams" oluyordu; URL denetimi detay sayfasının
+    "kullanıcı tarafından beyan edilen standart URL"sini `/en/teams` gösterdi.
+    Artık `bootWait` sürerken meta efekti hiç çalışmaz (erken `return`), sunucunun
+    bastığı detay etiketleri kalır. Kontrolde iframe izine canonical ve
+    `document.title`'ı da ekle: detayda canonical hiç liste adresi olmamalı.
   - **Takip (5–12 Ekim 2026):** Search Console › Sayfa dizine ekleme ›
     "Yönlendirmeli sayfa" satırını aç. Beklenen: `/takim/..`, `/etkinlik/..`
     adresleri listeden çıkmış, "Dizine eklenen" sayısı 66'dan artmış; satırda
     yalnız www/http ve `?takim=` adresleri kalmış. Detay adresi hâlâ varsa URL
     denetimiyle tek tek bak. Aynı gün `/it/squadre` ve `/it/contatti` için de
     dizine eklenme durumuna bak (28 Eylül'de kota yüzünden istenemedi).
+    29 Eylül ara kontrol: rapor 21 Eylül verisinde (düzeltmeden önce), 15
+    adresten 5'i detay (`etkinlik/..-164`, `-108`, `-110`, `takim/..-39`, `-20`);
+    `/it/squadre` 29 Eylül'de tarandı, "Tarandı - dizinde değil"; kota yine
+    doluydu. `takim/spor-severler-39` silinmiş takım: 200 + ana sayfa canonical
+    dönüyor, listeden kendiliğinden düşmesi beklenir.
     **Otomatik hatırlatma/zamanlanmış görev KURULMAZ** — Melih kendisi
     "Search Console takibini yapalım" diye soracak.
 - **IndexNow anahtar dosyası `public/<key>.txt` silinmemeli** — her bildirimde
