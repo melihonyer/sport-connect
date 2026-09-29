@@ -829,6 +829,9 @@ export default {
     btn: "Volver al inicio",
     eventTitle: "Evento no encontrado",
     eventSubtitle: "Este evento se ha eliminado. Echa un vistazo a los próximos eventos y encuentra uno que encaje contigo.",
+    teamTitle: "Equipo no encontrado",
+    teamSubtitle: "Este equipo se ha eliminado. Echa un vistazo a los equipos y encuentra uno que encaje contigo.",
+    teamBtn: "Descubre equipos",
   },
 
   reset: {

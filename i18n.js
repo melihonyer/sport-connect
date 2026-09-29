@@ -1153,6 +1153,12 @@ export const translations = {
     eventSubtitle:  { tr: "Bu etkinlik kaldırılmış. Yaklaşan etkinliklere göz atıp sana uygun birini bulabilirsin.",
                       en: "This event has been removed. Browse upcoming events to find one that suits you.",
                       de: "Dieses Event wurde entfernt. Schau dir die bevorstehenden Events an und finde eins, das zu dir passt." },
+    // Silinmiş takım adresi
+    teamTitle:      { tr: "Takım bulunamadı",             en: "Team not found",          de: "Team nicht gefunden"     },
+    teamSubtitle:   { tr: "Bu takım kaldırılmış. Takımlara göz atıp sana uygun birini bulabilirsin.",
+                      en: "This team has been removed. Browse teams to find one that suits you.",
+                      de: "Dieses Team wurde entfernt. Schau dir die Teams an und finde eins, das zu dir passt." },
+    teamBtn:        { tr: "Takımları keşfet",             en: "Discover teams",          de: "Teams entdecken"         },
   },
 
   // ── RESET PASSWORD PAGE ──────────────────────────────────

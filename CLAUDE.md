@@ -132,8 +132,11 @@ JavaScript ÇALIŞTIRMAZ. Bu yüzden metin sunucudan basılır.
 - **Silinmiş takım/etkinlik adresi → botlara 404 + `noindex`** (29 Eylül 2026,
   Melih istedi). `backend-api.js` detay prerender'ında `notFound()`. Yalnız
   kayıt YOKSA; gizli takım / herkese açık olmayan etkinlik var olduğu için 200
-  kalır. İnsanlar nginx'ten statik `index.html` alır (200, SPA listeyi
-  gösterir) — Node insan yoluna sokulmaz. Kontrol:
+  kalır. İnsanlar nginx'ten statik `index.html` alır (200) — Node insan
+  yoluna sokulmaz. SPA'da API 404 dönünce "Etkinlik/Takım bulunamadı" sayfası
+  açılır (`missingDetail` + `NotFoundPage`, `notFound.event*`/`team*`, 7 dil;
+  Melih onayladı 29 Eylül 2026). Adres değişmez. Gizli takım (403) bu sayfayı
+  GÖRMEZ: var olan kayda "bulunamadı" denmez, eski uyarı kalır. Kontrol:
   `curl -A 'Googlebot/2.1' -o /dev/null -w '%{http_code}' https://muuvlink.app/takim/x-<silinmiş id>`.
   Search Console'da bu adresler "Yönlendirmeli sayfa"dan "Bulunamadı (404)"
   satırına geçer — silinmiş sayfa için doğru yer, düzeltilecek hata değil;

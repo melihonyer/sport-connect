@@ -2070,7 +2070,7 @@ export default function Muuvlink() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Bulunamayan detay türü ("training"): 404 sayfası ona göre metin gösterir.
+  // Bulunamayan detay türü ("training" | "team"): 404 sayfası ona göre metin gösterir.
   const [missingDetail, setMissingDetail] = useState(null);
   const PAGE_META = {
     home:              { title:`Muuvlink — ${t("home.heroTagline")}`,             desc: t("home.heroSubtitleFallback")  },
@@ -2083,6 +2083,8 @@ export default function Muuvlink() {
     badges:            { title:`${t("badges.pageTitle")} — Muuvlink`,             desc: t("badges.pageSubtitle")        },
     "not-found":       missingDetail === "training"
                          ? { title:`${t("notFound.eventTitle")} — Muuvlink`,          desc: t("notFound.eventSubtitle")     }
+                         : missingDetail === "team"
+                         ? { title:`${t("notFound.teamTitle")} — Muuvlink`,           desc: t("notFound.teamSubtitle")      }
                          : { title:`${t("notFound.title")} — Muuvlink`,               desc: t("notFound.subtitle")          },
   };
 
@@ -4096,6 +4098,12 @@ export default function Muuvlink() {
         }
       } else if (response.status === 403) {
         showToast(t("toast.privateTeam"), "info");
+      } else if (response.status === 404 && !silent) {
+        // Silinmiş takım: listeye düşürmek yerine "bulunamadı" göster; adres değişmez.
+        if (localStorage.getItem("pendingTeam") === String(teamId)) localStorage.removeItem("pendingTeam");
+        setSelectedTeam(null);
+        setMissingDetail("team");
+        setCurrentPage("not-found");
       } else {
         showToast(t("toast.teamNoAccess"), "error");
       }
@@ -9372,20 +9380,22 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
 
         {/* Mesaj */}
         <h1 className="text-2xl font-bold text-slate-800 mb-3">
-          {t(missingDetail === "training" ? "notFound.eventTitle" : "notFound.title")}
+          {t(missingDetail === "training" ? "notFound.eventTitle" : missingDetail === "team" ? "notFound.teamTitle" : "notFound.title")}
         </h1>
         <p className="text-slate-500 mb-8 leading-relaxed">
-          {t(missingDetail === "training" ? "notFound.eventSubtitle" : "notFound.subtitle")}
+          {t(missingDetail === "training" ? "notFound.eventSubtitle" : missingDetail === "team" ? "notFound.teamSubtitle" : "notFound.subtitle")}
         </p>
 
-        {/* Butonlar — silinmiş etkinlikte önce etkinlik listesi */}
-        {missingDetail === "training" ? (
+        {/* Butonlar — silinmiş etkinlik/takımda önce ilgili liste */}
+        {missingDetail ? (
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <button data-btn="solid"
-            onClick={() => setCurrentPage("trainings")}
+            onClick={() => setCurrentPage(missingDetail === "team" ? "teams" : "trainings")}
             className="whitespace-nowrap px-6 py-3 rounded-xl bg-brand-600 text-white font-semibold transition-all shadow-lg shadow-brand-200 hover:shadow-brand-300 hover:-translate-y-0.5 active:translate-y-0"
           >
-            <Dumbbell className="w-4 h-4 mr-2 inline -mt-0.5"/>{t("trainingDetail.pastCta")}
+            {missingDetail === "team"
+              ? <><Users className="w-4 h-4 mr-2 inline -mt-0.5"/>{t("notFound.teamBtn")}</>
+              : <><Dumbbell className="w-4 h-4 mr-2 inline -mt-0.5"/>{t("trainingDetail.pastCta")}</>}
           </button>
           <button
             onClick={() => setCurrentPage("home")}

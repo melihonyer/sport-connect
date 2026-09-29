@@ -829,6 +829,9 @@ export default {
     btn: "Retour à l'accueil",
     eventTitle: "Événement introuvable",
     eventSubtitle: "Cet événement a été supprimé. Jette un œil aux événements à venir pour en trouver un qui te convient.",
+    teamTitle: "Équipe introuvable",
+    teamSubtitle: "Cette équipe a été supprimée. Jette un œil aux équipes pour en trouver une qui te convient.",
+    teamBtn: "Découvrir les équipes",
   },
 
   reset: {
