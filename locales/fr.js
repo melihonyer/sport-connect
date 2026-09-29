@@ -827,6 +827,8 @@ export default {
     title: "Page introuvable",
     subtitle: "La page que tu cherches n'existe pas ou a été déplacée.",
     btn: "Retour à l'accueil",
+    eventTitle: "Événement introuvable",
+    eventSubtitle: "Cet événement a été supprimé. Jette un œil aux événements à venir pour en trouver un qui te convient.",
   },
 
   reset: {

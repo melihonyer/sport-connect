@@ -827,6 +827,8 @@ export default {
     title: "Página no encontrada",
     subtitle: "La página que buscas no existe o se ha movido.",
     btn: "Volver al inicio",
+    eventTitle: "Evento no encontrado",
+    eventSubtitle: "Este evento se ha eliminado. Echa un vistazo a los próximos eventos y encuentra uno que encaje contigo.",
   },
 
   reset: {

@@ -1148,6 +1148,11 @@ export const translations = {
                       en: "The page you're looking for doesn't exist or may have moved.",
                       de: "Die gesuchte Seite existiert nicht oder wurde verschoben." },
     btn:            { tr: "Ana Sayfaya Dön",              en: "Back to Home",            de: "Zur Startseite"          },
+    // Silinmiş etkinlik adresi (ziyaretçi eski bir linkten geldi)
+    eventTitle:     { tr: "Etkinlik bulunamadı",          en: "Event not found",         de: "Event nicht gefunden"    },
+    eventSubtitle:  { tr: "Bu etkinlik kaldırılmış. Yaklaşan etkinliklere göz atıp sana uygun birini bulabilirsin.",
+                      en: "This event has been removed. Browse upcoming events to find one that suits you.",
+                      de: "Dieses Event wurde entfernt. Schau dir die bevorstehenden Events an und finde eins, das zu dir passt." },
   },
 
   // ── RESET PASSWORD PAGE ──────────────────────────────────

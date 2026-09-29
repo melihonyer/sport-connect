@@ -2070,6 +2070,8 @@ export default function Muuvlink() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  // Bulunamayan detay türü ("training"): 404 sayfası ona göre metin gösterir.
+  const [missingDetail, setMissingDetail] = useState(null);
   const PAGE_META = {
     home:              { title:`Muuvlink — ${t("home.heroTagline")}`,             desc: t("home.heroSubtitleFallback")  },
     trainings:         { title:`${t("trainings.pageTitle")} — Muuvlink`,          desc: t("trainings.pageSubtitle")     },
@@ -2079,7 +2081,9 @@ export default function Muuvlink() {
     "create-training": { title:`${t("createTraining.pageTitle")} — Muuvlink`,     desc: t("createTraining.pageSubtitle")},
     "create-team":     { title:`${t("createTeam.pageTitle")} — Muuvlink`,         desc: t("createTeam.pageSubtitle")    },
     badges:            { title:`${t("badges.pageTitle")} — Muuvlink`,             desc: t("badges.pageSubtitle")        },
-    "not-found":       { title:`${t("notFound.title")} — Muuvlink`,               desc: t("notFound.subtitle")          },
+    "not-found":       missingDetail === "training"
+                         ? { title:`${t("notFound.eventTitle")} — Muuvlink`,          desc: t("notFound.eventSubtitle")     }
+                         : { title:`${t("notFound.title")} — Muuvlink`,               desc: t("notFound.subtitle")          },
   };
 
   const [currentPage, setCurrentPage] = useState(() => {
@@ -3097,6 +3101,9 @@ export default function Muuvlink() {
     // yeniden hesaplanmalı — yoksa /en/teams sayfası Türkçe canonical basar.
   }, [currentPage, selectedTeam, selectedTraining, lang]);
 
+  // 404 sayfasından çıkınca "hangi detay bulunamadı" bilgisi sıfırlanır.
+  useEffect(() => { if (currentPage !== "not-found") setMissingDetail(null); }, [currentPage]);
+
   // Tarayıcı geri/ileri tuşu
   useEffect(() => {
     const onPop = () => {
@@ -3602,6 +3609,13 @@ export default function Muuvlink() {
         if (response.status === 401 || data.requiresAuth) {
           setAuthMode("login");
           setIsAuthModalOpen(true);
+        } else if (response.status === 404 && !silent) {
+          // Silinmiş etkinlik: listeye düşürmek yerine "bulunamadı" göster.
+          // Adres değişmez (botlara sunucu zaten 404 veriyor).
+          if (localStorage.getItem("pendingTraining") === String(trainingId)) localStorage.removeItem("pendingTraining");
+          setSelectedTraining(null);
+          setMissingDetail("training");
+          setCurrentPage("not-found");
         }
       }
     } catch (error) {
@@ -9358,13 +9372,29 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
 
         {/* Mesaj */}
         <h1 className="text-2xl font-bold text-slate-800 mb-3">
-          {t("notFound.title")}
+          {t(missingDetail === "training" ? "notFound.eventTitle" : "notFound.title")}
         </h1>
         <p className="text-slate-500 mb-8 leading-relaxed">
-          {t("notFound.subtitle")}
+          {t(missingDetail === "training" ? "notFound.eventSubtitle" : "notFound.subtitle")}
         </p>
 
-        {/* Butonlar */}
+        {/* Butonlar — silinmiş etkinlikte önce etkinlik listesi */}
+        {missingDetail === "training" ? (
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <button data-btn="solid"
+            onClick={() => setCurrentPage("trainings")}
+            className="whitespace-nowrap px-6 py-3 rounded-xl bg-brand-600 text-white font-semibold transition-all shadow-lg shadow-brand-200 hover:shadow-brand-300 hover:-translate-y-0.5 active:translate-y-0"
+          >
+            <Dumbbell className="w-4 h-4 mr-2 inline -mt-0.5"/>{t("trainingDetail.pastCta")}
+          </button>
+          <button
+            onClick={() => setCurrentPage("home")}
+            className="whitespace-nowrap px-6 py-3 rounded-xl bg-white border border-slate-200 hover:border-brand-300 text-slate-700 font-semibold transition-all hover:-translate-y-0.5 active:translate-y-0 shadow-sm"
+          >
+            {t("notFound.btn")}
+          </button>
+        </div>
+        ) : (
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <button data-btn="solid"
             onClick={() => setCurrentPage("home")}
@@ -9379,6 +9409,7 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
             <Dumbbell className="w-4 h-4 mr-2 inline -mt-0.5"/>{t("home.heroCta")}
           </button>
         </div>
+        )}
       </div>
     </div>
   );
