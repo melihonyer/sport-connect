@@ -124,7 +124,8 @@ JavaScript ÇALIŞTIRMAZ. Bu yüzden metin sunucudan basılır.
     29 Eylül ara kontrol: rapor 21 Eylül verisinde (düzeltmeden önce), 15
     adresten 5'i detay (`etkinlik/..-164`, `-108`, `-110`, `takim/..-39`, `-20`);
     `/it/squadre` 29 Eylül'de tarandı, "Tarandı - dizinde değil"; kota yine
-    doluydu. `takim/spor-severler-39` silinmiş takım: 200 + ana sayfa canonical
+    doluydu — `/it/squadre` ve `/it/contatti` için istek 30 Eylül'den sonra
+    tekrar denenir (kota son istekten 24 saat sonra açılıyor). `takim/spor-severler-39` silinmiş takım: 200 + ana sayfa canonical
     dönüyor, listeden kendiliğinden düşmesi beklenir.
     **Otomatik hatırlatma/zamanlanmış görev KURULMAZ** — Melih kendisi
     "Search Console takibini yapalım" diye soracak.
