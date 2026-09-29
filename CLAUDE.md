@@ -373,6 +373,12 @@ Ekranda gizlemek yetmez — tam isim API cevabında durursa tarayıcıdan görü
 `backend-api.js` → `ACT` (7 dil) + `activationEmail(kind, d, lang)`. Her birinde
 seçilebilir link kutusu, WhatsApp/Telegram/e-posta butonları, hazır davet mesajı.
 
+- **Hoş geldin (`wu`)**: `welcomeEmail` + `WELCOME` (7 dil). İki seçenek kartı:
+  "Kendi takımını kur" (`/takim-kur`) ve "Sana uygun bir takıma katıl" (dilin
+  takımlar sayfası). Kayıt ucuna konmadı (kayıt Meta'ya dönüşüm gönderiyor);
+  `activation_email_log`'da `ref_id` = kullanıcı id. es/it/fr metinleri
+  cinsiyetsiz kurulu ("Te damos la bienvenida", "Ti diamo il benvenuto") —
+  "Bienvenido/Benvenuto" yazılmaz.
 - Kalıplar: `tc` takım kuruldu · `ec` etkinlik yayında · `lc` son çağrı (24 saat
   kala boş yer) · `te` ilk etkinlik (takım 3 gün etkinliksiz) · `gt`/`ge` mevcut
   takım/etkinliği büyüt (admin butonu).
@@ -382,6 +388,7 @@ seçilebilir link kutusu, WhatsApp/Telegram/e-posta butonları, hazır davet mes
   yazılır, iş onu da alır).
   | Tür | Ne zaman | Kime | Sınır |
   |---|---|---|---|
+  | wu | kayıttan 2 dk–6 saat sonra (hoş geldin) | yeni kullanıcı | kişi başına 1 |
   | tc | takım kurulduktan 10 dk–6 saat sonra | sahibi | takım başına 1 |
   | ec | etkinlik açıldıktan 10 dk–6 saat sonra, başlamamışsa | oluşturan | kişi başına 7 günde 1 |
   | lc | başlamasına 20–28 saat kala, kontenjan dolmamışsa | oluşturan | etkinlik başına 1; aynı etkinliğe son 24 saatte ec gittiyse atlanır |

@@ -2592,6 +2592,123 @@ function activationEmail(kind, d, lang = 'tr') {
   return { subject, html };
 }
 
+// ── Hoş geldin e-postası (yeni kayıt) ─────────────────────────────────────
+// runActivationEmails 'wu' türüyle gönderir (kayıttan 2 dk–6 saat sonra, kişi
+// başına 1). Kayıt ucuna konmadı: kayıt Meta'ya dönüşüm gönderiyor.
+// İki yol: takım kur / takıma katıl. Metinler Türkçe onaylanıp çevrildi.
+const WELCOME = {
+  tr: {
+    subject: (n) => `Muuvlink'e hoş geldin${n ? `, ${n}` : ''}`,
+    title: "Hoş geldin!",
+    lead: (n) => `Muuvlink'e katıldığın için teşekkürler${n ? `, ${n}` : ''}. Spor arkadaşlarınla buluşmanın iki kolay yolu var:`,
+    createTitle: "Kendi takımını kur",
+    createText: "Arkadaş grubunu ya da kulübünü Muuvlink'e taşı. Etkinlik açtığında takımındaki herkese bildirim gider.",
+    createCta: "Takımını kur →",
+    joinTitle: "Sana uygun bir takıma katıl",
+    joinText: "Yakınındaki takımları keşfet; katıldığın takımın etkinliklerinden anında haberdar ol.",
+    joinCta: "Takımları keşfet →",
+  },
+  en: {
+    subject: (n) => `Welcome to Muuvlink${n ? `, ${n}` : ''}`,
+    title: "Welcome!",
+    lead: (n) => `Thanks for joining Muuvlink${n ? `, ${n}` : ''}. There are two easy ways to meet up with people to train with:`,
+    createTitle: "Start your own team",
+    createText: "Bring your group of friends or your club to Muuvlink. When you create an event, everyone on your team is notified.",
+    createCta: "Start your team →",
+    joinTitle: "Join a team that suits you",
+    joinText: "Discover teams near you and hear about their events as soon as they are posted.",
+    joinCta: "Explore teams →",
+  },
+  de: {
+    subject: (n) => `Willkommen bei Muuvlink${n ? `, ${n}` : ''}`,
+    title: "Willkommen!",
+    lead: (n) => `Schön, dass du bei Muuvlink bist${n ? `, ${n}` : ''}. Es gibt zwei einfache Wege, Leute zum Sport zu treffen:`,
+    createTitle: "Gründe dein eigenes Team",
+    createText: "Bring deine Freundesgruppe oder deinen Verein zu Muuvlink. Sobald du ein Event erstellst, wird dein ganzes Team benachrichtigt.",
+    createCta: "Team gründen →",
+    joinTitle: "Tritt einem passenden Team bei",
+    joinText: "Entdecke Teams in deiner Nähe und erfahre sofort von ihren Events.",
+    joinCta: "Teams entdecken →",
+  },
+  el: {
+    subject: (n) => `Καλώς ήρθες στο Muuvlink${n ? `, ${n}` : ''}`,
+    title: "Καλώς ήρθες!",
+    lead: (n) => `Ευχαριστούμε που μπήκες στο Muuvlink${n ? `, ${n}` : ''}. Υπάρχουν δύο εύκολοι τρόποι να βρεθείς με άλλους για άθληση:`,
+    createTitle: "Φτιάξε τη δική σου ομάδα",
+    createText: "Φέρε την παρέα ή τον σύλλογό σου στο Muuvlink. Μόλις δημιουργήσεις μια εκδήλωση, όλη η ομάδα σου ειδοποιείται.",
+    createCta: "Φτιάξε ομάδα →",
+    joinTitle: "Μπες σε μια ομάδα που σου ταιριάζει",
+    joinText: "Ανακάλυψε ομάδες κοντά σου και μάθε αμέσως για τις εκδηλώσεις τους.",
+    joinCta: "Δες τις ομάδες →",
+  },
+  es: {
+    subject: (n) => `Te damos la bienvenida a Muuvlink${n ? `, ${n}` : ''}`,
+    title: "¡Te damos la bienvenida!",
+    lead: (n) => `Gracias por unirte a Muuvlink${n ? `, ${n}` : ''}. Hay dos formas sencillas de quedar con gente para entrenar:`,
+    createTitle: "Crea tu propio equipo",
+    createText: "Trae a tu grupo de amigos o a tu club a Muuvlink. Cuando crees un evento, todo tu equipo recibe una notificación.",
+    createCta: "Crear equipo →",
+    joinTitle: "Únete a un equipo a tu medida",
+    joinText: "Descubre equipos cerca de ti y entérate al momento de sus eventos.",
+    joinCta: "Ver equipos →",
+  },
+  fr: {
+    subject: (n) => `Bienvenue sur Muuvlink${n ? `, ${n}` : ''}`,
+    title: "Bienvenue !",
+    lead: (n) => `Merci d’avoir rejoint Muuvlink${n ? `, ${n}` : ''}. Il y a deux façons simples de retrouver des gens pour faire du sport :`,
+    createTitle: "Crée ta propre équipe",
+    createText: "Amène ton groupe d’amis ou ton club sur Muuvlink. Dès que tu crées un événement, toute ton équipe est prévenue.",
+    createCta: "Créer mon équipe →",
+    joinTitle: "Rejoins une équipe qui te correspond",
+    joinText: "Découvre les équipes près de chez toi et reçois une alerte dès qu’elles publient un événement.",
+    joinCta: "Voir les équipes →",
+  },
+  it: {
+    subject: (n) => `Ti diamo il benvenuto su Muuvlink${n ? `, ${n}` : ''}`,
+    title: "Ti diamo il benvenuto!",
+    lead: (n) => `Grazie di far parte di Muuvlink${n ? `, ${n}` : ''}. Ci sono due modi semplici per trovarti con altri a fare sport:`,
+    createTitle: "Crea la tua squadra",
+    createText: "Porta su Muuvlink il tuo gruppo di amici o il tuo club. Quando crei un evento, tutta la squadra riceve una notifica.",
+    createCta: "Crea la squadra →",
+    joinTitle: "Entra in una squadra adatta a te",
+    joinText: "Scopri le squadre vicino a te e ricevi subito i loro eventi.",
+    joinCta: "Scopri le squadre →",
+  },
+};
+function welcomeEmail(d, lang = 'tr') {
+  const L = mailLang(lang);
+  const K = WELCOME[L] || WELCOME.tr;
+  const A = ACT[L] || ACT.tr;
+  const ICON = 'https://muuvlink.app/icons/mail';
+  const first = String(d.name || '').trim().split(/\s+/)[0] || '';
+  const teamsUrl = `https://muuvlink.app${(SEO_LOCALIZED_PATHS[L] || SEO_LOCALIZED_PATHS.tr).teams}`;
+  const createUrl = 'https://muuvlink.app/takim-kur';
+  const option = (icon, title, text, url, cta, primary) => `
+    <table cellpadding="0" cellspacing="0" border="0" style="width:100%;border:1px solid #e2e8f0;border-radius:14px;margin:0 0 14px;">
+      <tr><td style="padding:18px 18px 16px;">
+        <table cellpadding="0" cellspacing="0" border="0"><tr>
+          <td style="width:44px;height:44px;background:#e6f7f5;border-radius:12px;text-align:center;vertical-align:middle;">
+            <img src="${ICON}/${icon}.png" width="24" height="24" alt="" style="display:block;margin:0 auto;border:0;">
+          </td>
+          <td style="padding-left:14px;font-size:17px;font-weight:700;color:#1e293b;">${actEsc(title)}</td>
+        </tr></table>
+        <p style="margin:12px 0 16px;color:#475569;font-size:15px;line-height:1.6;">${actEsc(text)}</p>
+        <a href="${url}" style="display:block;text-align:center;background:${primary ? '#114956' : '#ffffff'};border:1.5px solid #114956;border-radius:12px;padding:12px 16px;color:${primary ? '#ffffff' : '#114956'};text-decoration:none;font-size:15px;font-weight:700;">${actEsc(cta)}</a>
+      </td></tr>
+    </table>`;
+  const html = emailWrapper(`
+    <table cellpadding="0" cellspacing="0" border="0" style="margin:0 0 16px;"><tr><td style="width:52px;height:52px;background:#e6f7f5;border-radius:14px;text-align:center;vertical-align:middle;">
+      <img src="${ICON}/k-wu.png" width="28" height="28" alt="" style="display:block;margin:0 auto;border:0;">
+    </td></tr></table>
+    <h2 style="margin:0 0 10px;color:#1e293b;font-size:24px;line-height:1.3;">${actEsc(K.title)}</h2>
+    <p style="margin:0 0 24px;color:#475569;font-size:16px;line-height:1.6;">${actEsc(K.lead(first))}</p>
+    ${option('w-create', K.createTitle, K.createText, createUrl, K.createCta, true)}
+    ${option('w-join', K.joinTitle, K.joinText, teamsUrl, K.joinCta, false)}
+    <p style="margin:26px 0 0;color:#94a3b8;font-size:12px;line-height:1.5;text-align:center;">${actEsc(A.optOut)}</p>
+  `, L);
+  return { subject: K.subject(first), html };
+}
+
 // =====================================================
 // MIDDLEWARE
 // =====================================================
@@ -8833,7 +8950,7 @@ scheduleDailyReminders();
 // gitmez. "Muuvlink'ten ipuçları" (tips) kapalıysa atlanır.
 pool.query(`CREATE TABLE IF NOT EXISTS activation_email_log (
     id SERIAL PRIMARY KEY,
-    kind VARCHAR(4) NOT NULL,           -- tc | ec | lc | te
+    kind VARCHAR(4) NOT NULL,           -- wu | tc | ec | lc | te
     ref_id INTEGER NOT NULL,            -- takım ya da etkinlik id
     user_id INTEGER,
     status VARCHAR(16) NOT NULL,        -- sent | skipped_pref | skipped_rate | skipped_recent | failed
@@ -8871,9 +8988,21 @@ let activationRunning = false;
 async function runActivationEmails() {
   if (activationRunning) return { busy: true };
   activationRunning = true;
-  const stats = { tc: 0, ec: 0, lc: 0, te: 0 };
+  const stats = { wu: 0, tc: 0, ec: 0, lc: 0, te: 0 };
   try {
     const USER_OK = 'u.deleted_at IS NULL AND u.email IS NOT NULL';
+    // wu — hoş geldin: son 6 saatte kayıt olanlar (en az 2 dk önce)
+    const newUsers = (await pool.query(
+      `SELECT u.id, u.name, u.email FROM users u
+        WHERE u.created_at BETWEEN NOW() - INTERVAL '6 hours' AND NOW() - INTERVAL '2 minutes' AND ${USER_OK}
+          AND NOT EXISTS (SELECT 1 FROM activation_email_log a WHERE a.kind = 'wu' AND a.ref_id = u.id)`)).rows;
+    for (const u of newUsers) {
+      const id = await claimActivation('wu', u.id, u.id); if (!id) continue;
+      const r = await sendEmail({ to: u.email, userId: u.id, prefKey: 'tips', build: (L) => welcomeEmail({ name: u.name }, L) });
+      await setActivationStatus(id, r?.skipped ? 'skipped_pref' : r ? 'sent' : 'failed');
+      stats.wu++;
+    }
+
     // tc — son 6 saatte kurulan takımlar (en az 10 dk önce: kurucu ilk ayarları yapsın)
     const teams = (await pool.query(
       `SELECT t.id, t.name, t.is_private, u.id AS uid, u.email FROM teams t JOIN users u ON u.id = t.owner_id
@@ -8936,7 +9065,7 @@ async function runActivationEmails() {
       await deliverActivation(id, { id: t.uid, email: t.email }, 'te', () => ({ name: t.name, url, ctaUrl: url, isPrivate: t.is_private }));
       stats.te++;
     }
-    if (stats.tc + stats.ec + stats.lc + stats.te) console.log('[ACTIVATION]', JSON.stringify(stats));
+    if (stats.wu + stats.tc + stats.ec + stats.lc + stats.te) console.log('[ACTIVATION]', JSON.stringify(stats));
   } catch (e) {
     console.error('[ACTIVATION] Hata:', e.message);
   } finally {
