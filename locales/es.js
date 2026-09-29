@@ -832,6 +832,7 @@ export default {
     teamTitle: "Equipo no encontrado",
     teamSubtitle: "Este equipo se ha eliminado. Echa un vistazo a los equipos y encuentra uno que encaje contigo.",
     teamBtn: "Descubre equipos",
+    eventSearch: "Buscar eventos…",
   },
 
   reset: {

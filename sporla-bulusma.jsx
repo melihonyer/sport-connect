@@ -9411,7 +9411,7 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
               <div className="relative w-full">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input name="q" type="search" enterKeyHint="search"
-                  placeholder={t(isTeam ? "teams.searchPlaceholder" : "trainings.searchPlaceholder")}
+                  placeholder={t(isTeam ? "teams.searchPlaceholder" : "notFound.eventSearch")}
                   className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition-colors placeholder:text-slate-400" />
               </div>
               <button type="submit"

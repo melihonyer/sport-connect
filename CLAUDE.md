@@ -149,7 +149,7 @@ JavaScript ÇALIŞTIRMAZ. Bu yüzden metin sunucudan basılır.
   takımlar sayfasına geçer (TeamsPage aramasını kendi state'inde tutuyor).
   "Geri" geçmiş yoksa ana sayfaya gider. `PageHost` içinde çizilir — yoksa
   üst-render arama kutusunu söküp yazılanı siler. Metinler mevcut anahtarlar
-  (`common.search`, `common.back`, `*.searchPlaceholder`); yeni metin Melih
+  (`common.search`, `common.back`, `teams.searchPlaceholder`) + etkinlikte `notFound.eventSearch` ("Etkinlik ara…", Melih'in metni); yeni metin Melih
   onayı ister. Denenip bırakılanlar: zıplayan monitör ikonu ("çok kötü
   basit"), Deep Teal kartlı sarı halkalı sürüm.
 - **IndexNow anahtar dosyası `public/<key>.txt` silinmemeli** — her bildirimde

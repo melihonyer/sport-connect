@@ -1159,6 +1159,7 @@ export const translations = {
                       en: "This team has been removed. Browse teams to find one that suits you.",
                       de: "Dieses Team wurde entfernt. Schau dir die Teams an und finde eins, das zu dir passt." },
     teamBtn:        { tr: "Takımları keşfet",             en: "Discover teams",          de: "Teams entdecken"         },
+    eventSearch:    { tr: "Etkinlik ara…",                en: "Search events…",          de: "Events suchen…"          },
   },
 
   // ── RESET PASSWORD PAGE ──────────────────────────────────

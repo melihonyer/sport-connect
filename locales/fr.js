@@ -832,6 +832,7 @@ export default {
     teamTitle: "Équipe introuvable",
     teamSubtitle: "Cette équipe a été supprimée. Jette un œil aux équipes pour en trouver une qui te convient.",
     teamBtn: "Découvrir les équipes",
+    eventSearch: "Rechercher des événements…",
   },
 
   reset: {

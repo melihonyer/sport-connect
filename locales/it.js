@@ -832,6 +832,7 @@ export default {
     teamTitle: "Squadra non trovata",
     teamSubtitle: "Questa squadra è stata rimossa. Dai un'occhiata alle squadre e trovane una adatta a te.",
     teamBtn: "Scopri le squadre",
+    eventSearch: "Cerca eventi…",
   },
 
   reset: {
