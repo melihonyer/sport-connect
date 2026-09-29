@@ -9367,67 +9367,68 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
   // 404 NOT FOUND PAGE
   // =====================================================
 
-  const NotFoundPage = () => (
-    <div className="min-h-[80vh] flex items-center justify-center px-4 py-16">
-      <div className="text-center max-w-md mx-auto">
-        {/* Duruma göre ikon + büyük 404 */}
-        {(() => {
-          const Icon = missingDetail === "training" ? CalendarX2 : missingDetail === "team" ? SearchX : Compass;
-          return (
-            <div className="mx-auto mb-6 w-20 h-20 rounded-3xl bg-white border border-slate-200 shadow-sm flex items-center justify-center">
-              <Icon className="w-9 h-9 text-brand-600" strokeWidth={1.75} />
+  // 404 — kurumsal kimlikle: Deep Teal yüzey, tek vurgu sarı, arkada koşu pisti
+  // şeritleri (Ana1 teal, ince çizgi). "0" yerine sarı halka; içinde duruma göre ikon.
+  const NotFoundPage = () => {
+    const Icon = missingDetail === "training" ? CalendarX2 : missingDetail === "team" ? SearchX : Compass;
+    const key = missingDetail === "training" ? "event" : missingDetail === "team" ? "team" : "";
+    const title = t(key ? `notFound.${key}Title` : "notFound.title");
+    const subtitle = t(key ? `notFound.${key}Subtitle` : "notFound.subtitle");
+    const primary = missingDetail === "team"
+      ? { page: "teams", icon: Users, label: t("notFound.teamBtn") }
+      : missingDetail === "training"
+      ? { page: "trainings", icon: Dumbbell, label: t("trainingDetail.pastCta") }
+      : { page: "home", icon: null, label: t("notFound.btn") };
+    const secondary = missingDetail
+      ? { page: "home", label: t("notFound.btn") }
+      : { page: "trainings", label: t("home.heroCta") };
+    const PrimaryIcon = primary.icon;
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center px-4 py-10 sm:py-16">
+        <section className="relative w-full max-w-4xl overflow-hidden rounded-[2rem] bg-brand-600 text-white px-6 py-12 sm:px-14 sm:py-16">
+          {/* Pist şeritleri */}
+          <svg aria-hidden="true" className="pointer-events-none absolute -right-40 -bottom-44 sm:-right-24 sm:-bottom-40 w-[560px] h-[420px] text-logo-teal"
+            viewBox="0 0 560 420" fill="none">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <rect key={i} x={20 + i * 26} y={20 + i * 26} width={520 - i * 52} height={380 - i * 52}
+                rx={190 - i * 26} stroke="currentColor" strokeOpacity={0.45 - i * 0.06} strokeWidth="2" />
+            ))}
+          </svg>
+
+          <div className="relative">
+            {/* 4 ◯ 4 */}
+            <div className="flex items-center gap-2 sm:gap-3 select-none" aria-label="404">
+              <span className="text-[6.5rem] sm:text-[9rem] font-black leading-none tracking-tight">4</span>
+              <span className="relative inline-flex items-center justify-center w-[5.2rem] h-[5.2rem] sm:w-[7.2rem] sm:h-[7.2rem] rounded-full border-[12px] sm:border-[16px] border-pop-400">
+                <Icon className="w-7 h-7 sm:w-9 sm:h-9 text-pop-400" strokeWidth={2} />
+              </span>
+              <span className="text-[6.5rem] sm:text-[9rem] font-black leading-none tracking-tight">4</span>
             </div>
-          );
-        })()}
-        <div className="text-[7rem] sm:text-[8rem] font-black leading-none select-none text-logo-purple mb-6 tracking-tight">
-          404
-        </div>
 
-        {/* Mesaj */}
-        <h1 className="text-2xl font-bold text-slate-800 mb-3">
-          {t(missingDetail === "training" ? "notFound.eventTitle" : missingDetail === "team" ? "notFound.teamTitle" : "notFound.title")}
-        </h1>
-        <p className="text-slate-500 mb-8 leading-relaxed">
-          {t(missingDetail === "training" ? "notFound.eventSubtitle" : missingDetail === "team" ? "notFound.teamSubtitle" : "notFound.subtitle")}
-        </p>
+            <div className="w-14 h-1.5 rounded-full bg-pop-400 mt-8 mb-6" />
 
-        {/* Butonlar — silinmiş etkinlik/takımda önce ilgili liste */}
-        {missingDetail ? (
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <button data-btn="solid"
-            onClick={() => setCurrentPage(missingDetail === "team" ? "teams" : "trainings")}
-            className="whitespace-nowrap px-6 py-3 rounded-xl bg-brand-600 text-white font-semibold transition-all shadow-lg shadow-brand-200 hover:shadow-brand-300 hover:-translate-y-0.5 active:translate-y-0"
-          >
-            {missingDetail === "team"
-              ? <><Users className="w-4 h-4 mr-2 inline -mt-0.5"/>{t("notFound.teamBtn")}</>
-              : <><Dumbbell className="w-4 h-4 mr-2 inline -mt-0.5"/>{t("trainingDetail.pastCta")}</>}
-          </button>
-          <button
-            onClick={() => setCurrentPage("home")}
-            className="whitespace-nowrap px-6 py-3 rounded-xl bg-white border border-slate-200 hover:border-brand-300 text-slate-700 font-semibold transition-all hover:-translate-y-0.5 active:translate-y-0 shadow-sm"
-          >
-            {t("notFound.btn")}
-          </button>
-        </div>
-        ) : (
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <button data-btn="solid"
-            onClick={() => setCurrentPage("home")}
-            className="px-6 py-3 rounded-xl bg-brand-600 text-white font-semibold transition-all shadow-lg shadow-brand-200 hover:shadow-brand-300 hover:-translate-y-0.5 active:translate-y-0"
-          >
-            {t("notFound.btn")}
-          </button>
-          <button
-            onClick={() => setCurrentPage("trainings")}
-            className="px-6 py-3 rounded-xl bg-white border border-slate-200 hover:border-brand-300 text-slate-700 font-semibold transition-all hover:-translate-y-0.5 active:translate-y-0 shadow-sm"
-          >
-            <Dumbbell className="w-4 h-4 mr-2 inline -mt-0.5"/>{t("home.heroCta")}
-          </button>
-        </div>
-        )}
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-3">{title}</h1>
+            <p className="text-white/75 text-base sm:text-lg leading-relaxed max-w-md mb-9">{subtitle}</p>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button data-btn="pop-on-dark"
+                onClick={() => setCurrentPage(primary.page)}
+                className="whitespace-nowrap inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-2xl bg-pop-400 text-ink-900 font-semibold"
+              >
+                {PrimaryIcon && <PrimaryIcon className="w-4 h-4" />}{primary.label}
+              </button>
+              <button
+                onClick={() => setCurrentPage(secondary.page)}
+                className="whitespace-nowrap inline-flex items-center justify-center px-7 py-3.5 rounded-2xl border border-white/25 text-white font-semibold transition-colors hover:bg-white/10"
+              >
+                {secondary.label}
+              </button>
+            </div>
+          </div>
+        </section>
       </div>
-    </div>
-  );
+    );
+  };
 
   // =====================================================
   // MAIN RENDER
