@@ -1539,22 +1539,42 @@ const GrowEmailButton = ({ kind, item, api, showToast, onSent, compact = false }
     } finally { setBusy(false); }
   };
   const lastText = last ? `Son gönderim: ${fmtSent(last.sent_at)} · ${last.recipients} kişi` : "Hiç gönderilmedi";
-  // Buton üstte, son gönderim altında: tablo sütunu dar kalsın.
+  // Yalnız buton; ne zaman/kime gittiği masaüstünde "E-postalar" sütununda (EmailLog),
+  // mobilde satırın bilgi alanında yazar.
   return (
-    <div className="flex flex-col items-center" title={`Büyüme maili gönder — ${lastText}`}>
-      <button onClick={send} disabled={busy}
-        className={`inline-flex items-center gap-1 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 text-brand-700 hover:bg-brand-50 ${compact ? "p-2" : "px-2 py-1"}`}>
-        {busy ? <span className="w-4 h-4 border-2 border-brand-200 border-t-brand-600 rounded-full animate-spin" /> : <Mail className="w-4 h-4" />}
-        {!compact && "Mail"}
-      </button>
-      {/* Mobilde (compact) tarih satırın bilgi alanında yazar; burada yalnız simge. */}
-      {!compact && (
-        <span className={`text-[10px] leading-tight whitespace-nowrap ${last ? "text-slate-500" : "text-slate-300"}`}>
-          {last ? fmtSent(last.sent_at) : "—"}
-        </span>
+    <button onClick={send} disabled={busy} title={`Büyüme maili gönder — ${lastText}`}
+      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg text-xs font-semibold transition-colors disabled:opacity-50 text-brand-700 hover:bg-brand-50 ${compact ? "p-2" : "px-2.5 py-1.5 border border-slate-200 hover:border-brand-300"}`}>
+      {busy ? <span className="w-4 h-4 border-2 border-brand-200 border-t-brand-600 rounded-full animate-spin" /> : <Mail className="w-4 h-4" />}
+      {!compact && "Mail gönder"}
+    </button>
+  );
+};
+
+// Masaüstü tablolarda "E-postalar" sütunu: elle gönderilen büyüme maili ve
+// otomatik giden son mail, her biri kendi satırında, etiketiyle.
+const EmailLog = ({ item }) => {
+  const grow = item.last_grow_email;
+  const auto = item.last_auto_email;
+  if (!grow && !auto) return <span className="text-slate-300">—</span>;
+  const autoOk = auto?.status === "sent";
+  return (
+    <div className="space-y-1 text-xs leading-snug">
+      {grow && (
+        <div className="flex items-center gap-1.5 text-slate-600 whitespace-nowrap" title={`Büyüme maili · ${fmtSent(grow.sent_at)} · ${grow.recipients} kişi`}>
+          <Mail className="w-3.5 h-3.5 text-brand-600 flex-shrink-0" />
+          <span className="font-medium text-slate-700">Büyüme</span>
+          <span className="text-slate-500">{fmtSent(grow.sent_at)} · {grow.recipients} kişi</span>
+        </div>
       )}
-      {!compact && last && <span className="text-[10px] leading-tight text-slate-400 whitespace-nowrap">{last.recipients} kişi</span>}
-      {!compact && <AutoEmailInfo auto={item.last_auto_email} />}
+      {auto && (
+        <div className="flex items-center gap-1.5 whitespace-nowrap" title={autoTitle(auto)}>
+          <Zap className={`w-3.5 h-3.5 flex-shrink-0 ${autoOk ? "text-brand-600" : "text-amber-600"}`} />
+          <span className={`font-medium ${autoOk ? "text-slate-700" : "text-amber-700"}`}>{AUTO_KIND[auto.kind] || auto.kind}</span>
+          <span className={autoOk ? "text-slate-500" : "text-amber-600"}>
+            {fmtSent(auto.sent_at)}{autoOk ? "" : auto.status === "failed" ? " · hata" : " · atlandı"}
+          </span>
+        </div>
+      )}
     </div>
   );
 };
@@ -2616,12 +2636,13 @@ export default function AdminPanel() {
                   <thead className="bg-slate-50 text-xs text-slate-500 uppercase tracking-wide">
                     <tr>
                       <th className="text-left px-6 py-3">Başlık</th>
-                      <th className="text-left px-4 py-3">Takım</th>
-                      <th className="text-left px-4 py-3">Tarih</th>
-                      <th className="text-left px-4 py-3">Saat</th>
-                      <th className="text-center px-4 py-3">Katılımcı</th>
-                      <th className="text-center px-4 py-3">Durum</th>
-                      <th className="px-4 py-3"></th>
+                      <th className="text-left px-3 py-3">Takım</th>
+                      <th className="text-left px-3 py-3">Tarih</th>
+                      <th className="text-left px-3 py-3">Saat</th>
+                      <th className="text-center px-3 py-3">Katılımcı</th>
+                      <th className="text-center px-3 py-3">Durum</th>
+                      <th className="text-left px-3 py-3">E-postalar</th>
+                      <th className="px-3 py-3"></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
@@ -2645,28 +2666,29 @@ export default function AdminPanel() {
                               </div>
                             )}
                           </td>
-                          <td className="px-4 py-3.5 text-slate-500">{t.is_paid ? (t.organizer || "—") : (t.team_name || "—")}</td>
-                          <td className="px-4 py-3.5 text-slate-600">{fmt(t.training_date)}</td>
-                          <td className="px-4 py-3.5 text-slate-600">{t.training_time?.slice(0,5) || "—"}</td>
-                          <td className="px-4 py-3.5 text-center">
+                          <td className="px-3 py-3.5 text-slate-500">{t.is_paid ? (t.organizer || "—") : (t.team_name || "—")}</td>
+                          <td className="px-3 py-3.5 text-slate-600 whitespace-nowrap">{fmt(t.training_date)}</td>
+                          <td className="px-3 py-3.5 text-slate-600">{t.training_time?.slice(0,5) || "—"}</td>
+                          <td className="px-3 py-3.5 text-center">
                             <span className="font-semibold text-slate-700">{t.participant_count}</span>
                             <span className="text-slate-400">/{t.capacity}</span>
                           </td>
-                          <td className="px-4 py-3.5 text-center">
+                          <td className="px-3 py-3.5 text-center">
                             <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${isPast ? "bg-slate-100 text-slate-500" : "bg-brand-100 text-brand-700"}`}>
                               {isPast ? "Tamamlandı" : "Aktif"}
                             </span>
                           </td>
-                          <td className="px-4 py-3.5">
+                          <td className="px-3 py-3.5"><EmailLog item={t} /></td>
+                          <td className="px-3 py-3.5">
                             <div className="flex items-center gap-1 justify-end">
                               {!isPast && !t.is_organizer_event && !t.is_paid && (
                                 <GrowEmailButton kind="training" item={t} api={api} showToast={showToast} onSent={growSent(setTrainings)} />
                               )}
                               <button onClick={() => toggleFeatured(t)} title={t.is_featured ? "Öne çıkarmayı kaldır" : "Öne çıkar"}
                                 aria-pressed={!!t.is_featured}
-                                className={`inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${t.is_featured ? "text-amber-600 bg-amber-50 hover:bg-amber-100" : "text-slate-400 hover:text-amber-600 hover:bg-amber-50"}`}>
+                                aria-label={t.is_featured ? "Öne çıkarmayı kaldır" : "Öne çıkar"}
+                                className={`p-1.5 rounded-lg transition-colors ${t.is_featured ? "text-amber-500 bg-amber-50 hover:bg-amber-100" : "text-slate-300 hover:text-amber-500 hover:bg-amber-50"}`}>
                                 <Star className="w-4 h-4" fill={t.is_featured ? "currentColor" : "none"} />
-                                {t.is_featured ? "Öne çıkan" : "Öne çıkar"}
                               </button>
                               <button onClick={() => del(`/admin/trainings/${t.id}`, t.title, "trainings")}
                                 className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
@@ -2750,6 +2772,7 @@ export default function AdminPanel() {
                       <th className="text-center px-4 py-3">Üye</th>
                       <th className="text-center px-4 py-3">Gizlilik</th>
                       <th className="text-left px-4 py-3">Oluşturma</th>
+                      <th className="text-left px-4 py-3">E-postalar</th>
                       <th className="px-4 py-3"></th>
                     </tr>
                   </thead>
@@ -2767,15 +2790,16 @@ export default function AdminPanel() {
                             <span className="font-semibold text-slate-900">{t.name}</span>
                           </div>
                         </td>
-                        <td className="px-4 py-3.5 text-slate-500">{t.sport}</td>
-                        <td className="px-4 py-3.5 text-slate-600">{t.owner_name}</td>
-                        <td className="px-4 py-3.5 text-center font-semibold text-slate-700">{t.member_count}</td>
+                        <td className="px-4 py-3.5 text-slate-600">{t.sport}</td>
+                        <td className="px-4 py-3.5 text-slate-700">{t.owner_name}</td>
+                        <td className="px-4 py-3.5 text-center font-semibold text-slate-800">{t.member_count}</td>
                         <td className="px-4 py-3.5 text-center">
-                          <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${t.is_private ? "bg-slate-100 text-slate-600" : "bg-brand-100 text-brand-700"}`}>
-                            <span className="flex items-center gap-1">{t.is_private ? <><Lock className="w-3 h-3" /> Gizli</> : <><Globe className="w-3 h-3" /> Açık</>}</span>
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap ${t.is_private ? "bg-slate-100 text-slate-600" : "bg-brand-50 text-brand-700"}`}>
+                            {t.is_private ? <><Lock className="w-3 h-3" /> Gizli</> : <><Globe className="w-3 h-3" /> Açık</>}
                           </span>
                         </td>
-                        <td className="px-4 py-3.5 text-slate-400 text-xs">{fmt(t.created_at)}</td>
+                        <td className="px-4 py-3.5 text-slate-600 whitespace-nowrap">{fmt(t.created_at)}</td>
+                        <td className="px-4 py-3.5"><EmailLog item={t} /></td>
                         <td className="px-4 py-3.5">
                           <div className="flex items-center gap-1 justify-end">
                             <GrowEmailButton kind="team" item={t} api={api} showToast={showToast} onSent={growSent(setTeams)} />
