@@ -135,6 +135,9 @@ JavaScript ÇALIŞTIRMAZ. Bu yüzden metin sunucudan basılır.
   kalır. İnsanlar nginx'ten statik `index.html` alır (200, SPA listeyi
   gösterir) — Node insan yoluna sokulmaz. Kontrol:
   `curl -A 'Googlebot/2.1' -o /dev/null -w '%{http_code}' https://muuvlink.app/takim/x-<silinmiş id>`.
+  Search Console'da bu adresler "Yönlendirmeli sayfa"dan "Bulunamadı (404)"
+  satırına geçer — silinmiş sayfa için doğru yer, düzeltilecek hata değil;
+  "Doğrula"ya basılmaz. Ekim takibinde `takim/spor-severler-39` orada beklenir.
 - **IndexNow anahtar dosyası `public/<key>.txt` silinmemeli** — her bildirimde
   okunuyor. Bing doğrulama etiketi `msvalidate.01` de silinmemeli.
 
