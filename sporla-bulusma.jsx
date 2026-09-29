@@ -55,6 +55,9 @@ import {
   Ticket,
   Flag,
   Sparkles,
+  CalendarX2,
+  SearchX,
+  Compass,
 } from "lucide-react";
 import SharedLocationPicker from "./LocationPicker";
 // Ağır kütüphaneler lazy yüklenir — ilk bundle'ı küçültür
@@ -9367,15 +9370,17 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
   const NotFoundPage = () => (
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-16">
       <div className="text-center max-w-md mx-auto">
-        {/* Büyük 404 */}
-        <div className="relative mb-8">
-          <div className="text-[10rem] font-black leading-none select-none"
-            style={{ background: "#643e87", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-            404
-          </div>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="animate-bounce mt-4 flex justify-center"><Activity className="w-12 h-12 text-brand-400"/></div>
-          </div>
+        {/* Duruma göre ikon + büyük 404 */}
+        {(() => {
+          const Icon = missingDetail === "training" ? CalendarX2 : missingDetail === "team" ? SearchX : Compass;
+          return (
+            <div className="mx-auto mb-6 w-20 h-20 rounded-3xl bg-white border border-slate-200 shadow-sm flex items-center justify-center">
+              <Icon className="w-9 h-9 text-brand-600" strokeWidth={1.75} />
+            </div>
+          );
+        })()}
+        <div className="text-[7rem] sm:text-[8rem] font-black leading-none select-none text-logo-purple mb-6 tracking-tight">
+          404
         </div>
 
         {/* Mesaj */}
