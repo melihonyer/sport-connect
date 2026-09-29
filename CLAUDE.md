@@ -126,9 +126,15 @@ JavaScript ÇALIŞTIRMAZ. Bu yüzden metin sunucudan basılır.
     `/it/squadre` 29 Eylül'de tarandı, "Tarandı - dizinde değil"; kota yine
     doluydu — `/it/squadre` ve `/it/contatti` için istek 30 Eylül'den sonra
     tekrar denenir (kota son istekten 24 saat sonra açılıyor). `takim/spor-severler-39` silinmiş takım: 200 + ana sayfa canonical
-    dönüyor, listeden kendiliğinden düşmesi beklenir.
+    dönüyordu → aynı gün 404'e çevrildi (aşağıda).
     **Otomatik hatırlatma/zamanlanmış görev KURULMAZ** — Melih kendisi
     "Search Console takibini yapalım" diye soracak.
+- **Silinmiş takım/etkinlik adresi → botlara 404 + `noindex`** (29 Eylül 2026,
+  Melih istedi). `backend-api.js` detay prerender'ında `notFound()`. Yalnız
+  kayıt YOKSA; gizli takım / herkese açık olmayan etkinlik var olduğu için 200
+  kalır. İnsanlar nginx'ten statik `index.html` alır (200, SPA listeyi
+  gösterir) — Node insan yoluna sokulmaz. Kontrol:
+  `curl -A 'Googlebot/2.1' -o /dev/null -w '%{http_code}' https://muuvlink.app/takim/x-<silinmiş id>`.
 - **IndexNow anahtar dosyası `public/<key>.txt` silinmemeli** — her bildirimde
   okunuyor. Bing doğrulama etiketi `msvalidate.01` de silinmemeli.
 

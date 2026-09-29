@@ -3315,6 +3315,10 @@ app.get(['/takim/*', '/etkinlik/*'], async (req, res, next) => {
   if (!parsed || !html) return next();
   const DEFAULT_IMG = `${SITE_ORIGIN}/og-image.jpg`;
   res.set('Content-Type', 'text/html; charset=utf-8');
+  // Silinmiş kayıt: 404 + noindex. 200 dönünce Google adresi "yönlendirmeli" /
+  // soft 404 sayıp listede tutuyordu. Gizli (var olan) kayıt bu yola girmez.
+  const notFound = () => res.status(404).set('Cache-Control', 'public, max-age=300')
+    .send(html.replace(/<meta name="robots" content="[^"]*">/, '<meta name="robots" content="noindex">'));
   try {
     let meta, body = null;
     if (parsed.kind === 'team') {
@@ -3324,7 +3328,8 @@ app.get(['/takim/*', '/etkinlik/*'], async (req, res, next) => {
            FROM teams t LEFT JOIN team_members tm ON tm.team_id = t.id
           WHERE t.id = $1 GROUP BY t.id`, [parsed.id]);
       const t0 = r.rows[0];
-      if (!t0 || t0.is_private) return res.send(html); // yok / gizli → varsayılan kart
+      if (!t0) return notFound();
+      if (t0.is_private) return res.send(html); // gizli → varsayılan kart
       meta = {
         title: `${t0.name} — Muuvlink`,
         description: (t0.description || 'Çevrende spor yapan insanları bul, kendi takımını kur, etkinlikler planla.').slice(0, 200),
@@ -3350,7 +3355,8 @@ app.get(['/takim/*', '/etkinlik/*'], async (req, res, next) => {
            FROM trainings t LEFT JOIN teams ON t.team_id = teams.id
           WHERE t.id = $1`, [parsed.id]);
       const e0 = r.rows[0];
-      if (!e0 || e0.is_public === false) return res.send(html);
+      if (!e0) return notFound();
+      if (e0.is_public === false) return res.send(html);
       // Tarihi geçmiş etkinlik indekste kalmaya devam ediyor. Arama sonucunda
       // "olan bir etkinlik" gibi görünmesin diye özet ve alt metin bunu söyler,
       // okuyucu yaklaşan etkinliklere yönlendirilir.
