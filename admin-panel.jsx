@@ -360,7 +360,7 @@ function PaidEventsTab({ items, setItems, api, token, showToast }) {
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h2 className="font-display font-bold text-slate-900 text-xl" style={{letterSpacing:"-0.01em"}}>Ücretli / Ücretsiz Etkinlikler</h2>
+          <h2 className="font-display font-bold text-slate-900 text-xl" style={{letterSpacing:"-0.01em"}}>Organizasyonlar</h2>
           <p className="text-slate-400 text-sm mt-0.5">Yarış vb. organizatör etkinlikleri; ücretli de ücretsiz de olabilir. Normal etkinlik akışında ve haritada görünür; "Kayıt Ol" butonu dış kayıt linkini açar.</p>
         </div>
         <button onClick={startNew}
@@ -604,7 +604,7 @@ function DiscoveryTab({ api, showToast }) {
       if (r) {
         setItems(prev => prev.filter(i => i.id !== c.id));
         setCounts(p => ({ ...p, pending: Math.max(0, (p.pending || 1) - 1), approved: (p.approved || 0) + 1 }));
-        showToast("Yayınlandı — Ücretli / Ücretsiz Etkinlikler sekmesinde.", "success");
+        showToast("Yayınlandı — Organizasyonlar sekmesinde.", "success");
       }
     } catch (e) { showToast(e.message || "Yayınlanamadı.", "error"); }
     finally { setBusyId(null); }
@@ -1871,7 +1871,7 @@ export default function AdminPanel() {
     { id: "live",      label: "Canlı",       icon: Activity },
     { id: "users",     label: "Kullanıcılar", icon: Users },
     { id: "trainings", label: "Etkinlikler", icon: Activity },
-    { id: "paid-events", label: "Ücretli / Ücretsiz Etkinlikler", icon: Ticket },
+    { id: "paid-events", label: "Organizasyonlar", icon: Ticket },
     { id: "discovery",   label: "Yarış Keşfi",       icon: Radar },
     { id: "teams",     label: "Takımlar",     icon: Shield },
     { id: "logs",      label: "Loglar",       icon: Activity },
