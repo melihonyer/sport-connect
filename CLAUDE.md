@@ -141,6 +141,17 @@ JavaScript ÇALIŞTIRMAZ. Bu yüzden metin sunucudan basılır.
   Search Console'da bu adresler "Yönlendirmeli sayfa"dan "Bulunamadı (404)"
   satırına geçer — silinmiş sayfa için doğru yer, düzeltilecek hata değil;
   "Doğrula"ya basılmaz. Ekim takibinde `takim/spor-severler-39` orada beklenir.
+- **404 sayfasının tasarımı** (`NotFoundPage`, 29 Eylül 2026, Melih'in verdiği
+  şablondan): arkada çok silik dev "404" (Deep Teal, %6), üstte kısa sarı
+  çizgi, büyük Deep Teal başlık, açıklama, arama kutusu + "Ara", altta "Geri"
+  ve ana buton (mobilde ana buton üstte). Arama silinmiş etkinlikte
+  `searchQuery` ile etkinlikler sayfasına, takımda `teamSearchSeedRef` ile
+  takımlar sayfasına geçer (TeamsPage aramasını kendi state'inde tutuyor).
+  "Geri" geçmiş yoksa ana sayfaya gider. `PageHost` içinde çizilir — yoksa
+  üst-render arama kutusunu söküp yazılanı siler. Metinler mevcut anahtarlar
+  (`common.search`, `common.back`, `*.searchPlaceholder`); yeni metin Melih
+  onayı ister. Denenip bırakılanlar: zıplayan monitör ikonu ("çok kötü
+  basit"), Deep Teal kartlı sarı halkalı sürüm.
 - **IndexNow anahtar dosyası `public/<key>.txt` silinmemeli** — her bildirimde
   okunuyor. Bing doğrulama etiketi `msvalidate.01` de silinmemeli.
 
