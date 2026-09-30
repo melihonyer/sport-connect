@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { detectLang, createT, LANGUAGES, SUPPORTED, localeOf, pickLang } from "./i18n.js";
 import Tour from "./Tour.jsx";
+import FreshBuildWatcher from "./FreshBuildWatcher.jsx";
 import BlurReveal from "./BlurReveal.jsx";
 import { MetaEvents, newEventId, getMatchSignals, getAttribution, trackPageView } from "./analytics.js";
 import {
@@ -2884,6 +2885,19 @@ export default function Muuvlink() {
       storyParamRef.current = false; openTrainingStory(selectedTraining);
     }
   }, [currentPage, selectedTeam?.id, selectedTraining?.id]);
+
+  const trainingEditModeRef = useRef(false); // TrainingDetailPage'in yerel editMode'u
+  // Yeni sürüm gelince sayfayı kendiliğinden yenilemek yazılanı siler. Form
+  // sayfası, açık pencere ya da içine bir şey yazılmış alan varsa "yarım iş" sayılır.
+  const hasUnsavedWork = () => {
+    if (["create-training", "create-team", "contact", "reset-password"].includes(currentPage)) return true;
+    if (isAuthModalOpen || showProfileEdit || showInviteModal || showManualLocation || showDeleteModal || storySpec || confirmModal) return true;
+    if (currentPage === "training-detail" && trainingEditModeRef.current) return true;
+    if (currentPage === "team-detail" && teamActiveTabRef.current === "settings") return true;
+    const a = document.activeElement;
+    if (a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA" || a.isContentEditable)) return true;
+    return [...document.querySelectorAll("textarea")].some((el) => el.value.trim());
+  };
 
   const refreshOpenPageRef = useRef(() => {});
   refreshOpenPageRef.current = () => {
@@ -6200,6 +6214,7 @@ export default function Muuvlink() {
     const isPast = !!selectedTraining.is_past;
     const [comment, setComment] = useState("");
     const [editMode, setEditMode] = useState(false);
+    trainingEditModeRef.current = editMode;
     const [editLocAttention, setEditLocAttention] = useState(false);
     const [editRecentLocs, setEditRecentLocs] = useState([]);
     useEffect(() => {
@@ -9592,6 +9607,8 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
       {!isNative && <PageHost key="footer" render={Footer} />}
       </div>
       {isNative && <PageHost key="bottomnav" render={BottomNav} />}
+      {/* Yeni sürüm: öne gelişte kendiliğinden yenilenir; yarım iş varsa şerit çıkar. */}
+      <FreshBuildWatcher isBusy={hasUnsavedWork} label={t("common.newBuild")} cta={t("common.newBuildCta")} />
     </div>
   );
 }

@@ -10,6 +10,7 @@ import {
   Radar, ScanSearch, RefreshCw, Loader2, XCircle, ListChecks, Star, Zap,
 } from "lucide-react";
 import LocationPicker from "./LocationPicker";
+import FreshBuildWatcher from "./FreshBuildWatcher.jsx";
 import { createT, detectLang } from "./i18n.js";
 
 const SPORT_TYPES = ["Basketbol","Bikejoring","Bisiklet","Canicross","Crossfit","Dog Triatlon","Futbol","Kano","Koşu","Kürek","Padel","Pilates","Tenis","Trekking","Triatlon","Voleybol","Yoga","Yürüyüş","Yüzme","Diğer"];
@@ -114,7 +115,7 @@ function HomeNewsTab({ items, setItems, api, token, showToast }) {
       </div>
 
       {showForm && (
-        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
+        <div data-admin-form className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
           <div><label className={lbl}>Başlık</label><input className={inp} value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))} placeholder="Etkinlik başlığı"/></div>
           <div><label className={lbl}>Açıklama <span className="normal-case font-normal text-slate-400">(isteğe bağlı)</span></label><textarea className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-300 resize-none" rows="3" value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))} placeholder="Etkinlik hakkında kısa bir açıklama…"/></div>
           <div><label className={lbl}>Tarih</label><input className={inp} value={form.date_label} onChange={e=>setForm(f=>({...f,date_label:e.target.value}))} placeholder="12 Mayıs 2026"/></div>
@@ -232,7 +233,7 @@ function HomeGalleryTab({ items, setItems, api, token, showToast }) {
       </div>
 
       {showForm && (
-        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
+        <div data-admin-form className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
           <div className="flex items-center gap-3">
             <label className={lbl + " mb-0"}>Aktif</label>
             <button type="button" onClick={()=>setForm(f=>({...f,is_active:!f.is_active}))}
@@ -371,7 +372,7 @@ function PaidEventsTab({ items, setItems, api, token, showToast }) {
       </div>
 
       {showForm && (
-        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
+        <div data-admin-form className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
           <div>
             <label className={lbl}>Başlık *</label>
             <input className={inp} value={form.title} onChange={e=>set("title", e.target.value)} placeholder="Örn. İstanbul Bisiklet Yarışı 2026"/>
@@ -1770,6 +1771,41 @@ export default function AdminPanel() {
 
   useEffect(() => { if (token) loadTab("dashboard"); }, [token]);
 
+  // ─── Açık listeyi taze tut ──────────────────────────────
+  // Liste sekmeleri yalnız tıklanınca yükleniyordu; panel açıkken yeni kurulan
+  // takım/etkinlik görünmüyordu. Sekme görünürken 30 sn'de bir ve sekmeye
+  // dönülünce SESSİZCE tazelenir: yükleniyor ekranı yok, arama/filtre korunur.
+  // Form içeren sekmeler (banner, haber, galeri, organizasyon) tazelenmez.
+  const tabRef = useRef(tab);
+  tabRef.current = tab;
+  const refreshTab = useCallback(async () => {
+    if (document.visibilityState !== "visible") return;
+    const t = tabRef.current;
+    const reqId = loadReqRef.current; // arada sekme değişirse sonucu yazma
+    const same = () => reqId === loadReqRef.current && tabRef.current === t;
+    try {
+      if (t === "dashboard") { const d = await api("/admin/stats"); if (d && same()) setStats(d); }
+      else if (t === "users") {
+        const [d, dep] = await Promise.all([api("/admin/users"), api("/admin/departures").catch(() => null)]);
+        if (d && same()) { setUsers(d); if (dep) setDepartures(dep); }
+      }
+      else if (t === "trainings" || t === "teams") {
+        const [d, delData] = await Promise.all([api(`/admin/${t}`), api("/admin/deletions").catch(() => null)]);
+        if (d && same()) { (t === "teams" ? setTeams : setTrainings)(d); if (delData) setDeletions(delData); }
+      }
+      else if (t === "messages") { const d = await api("/admin/contact"); if (d && same()) setMessages(d); }
+      else if (t === "reports") { const d = await api("/admin/flags"); if (d && same()) setReports(d); }
+    } catch { /* bir sonraki turda yine denenir */ }
+  }, [api]);
+
+  useEffect(() => {
+    if (!token) return;
+    const onVisible = () => { if (document.visibilityState === "visible") refreshTab(); };
+    document.addEventListener("visibilitychange", onVisible);
+    const timer = setInterval(refreshTab, 30000);
+    return () => { document.removeEventListener("visibilitychange", onVisible); clearInterval(timer); };
+  }, [token, refreshTab]);
+
   // ─── Silme / işlemler ───────────────────────────────────
   const del = async (path, label, reload) => {
     if (!window.confirm(`"${label}" silinecek. Emin misiniz?`)) return;
@@ -2270,6 +2306,15 @@ export default function AdminPanel() {
   return (
     <div className="flex min-h-screen bg-slate-50 font-sans">
       <AdminToast toasts={toasts}/>
+      {/* Yeni sürüm: sekmeye dönünce kendiliğinden yenilenir; açık form ya da
+          yazılmış alan varsa yalnız şerit çıkar. */}
+      <FreshBuildWatcher htmlPath="/admin" label="Panelin yeni sürümü hazır" cta="Yenile" place={{ bottom: "1.5rem" }}
+        isBusy={() => {
+          if (document.querySelector("[data-admin-form]")) return true;
+          const a = document.activeElement;
+          if (a && (a.tagName === "TEXTAREA" || a.isContentEditable || (a.tagName === "INPUT" && a.type !== "search" && a.placeholder !== "Ara…"))) return true;
+          return [...document.querySelectorAll("textarea")].some((el) => el.value.trim());
+        }} />
 
       {/* ── Mobil overlay ─────────────────────────────────── */}
       {mobileNavOpen && (
@@ -2841,7 +2886,7 @@ export default function AdminPanel() {
 
               {/* Banner form (ekleme/düzenleme) */}
               {showBannerForm && (
-                <div className="bg-white rounded-2xl border border-brand-200 shadow-lg overflow-hidden">
+                <div data-admin-form className="bg-white rounded-2xl border border-brand-200 shadow-lg overflow-hidden">
                   {/* Header */}
                   <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100"
                     style={{background:"linear-gradient(90deg,#11495611,#0e3c4711)"}}>

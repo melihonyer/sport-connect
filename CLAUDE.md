@@ -553,6 +553,31 @@ olan kullanıcı.
 - Karar: antrenmanlar arasında takım/konum hatırlanmaz — değişebilen bir alanı
   önceden doldurmak, yanlış yerde etkinlik yayınlanmasına yol açar.
 
+## Açık sayfa tazeliği
+
+- **Veri:** sitede açık detay/liste 60 sn'de bir + öne gelişte sessizce tazelenir
+  (`refreshOpenPageRef`); bildirimler SSE ile anlık. Admin'de Genel Bakış,
+  Kullanıcılar, Etkinlikler, Takımlar, Mesajlar, Şikayetler 30 sn'de bir ve
+  sekmeye dönünce sessizce tazelenir (`refreshTab`: yükleniyor ekranı yok,
+  arama/filtre korunur). Form içeren sekmeler (Banner, Haber, Galeri,
+  Organizasyon) tazelenmez. "Canlı" 5 sn.
+- **Yeni sürüm (`FreshBuildWatcher.jsx`, site + admin, 30 Eylül 2026):** Training
+  Agents'taki bileşenin karşılığı. Öne gelişte (visibilitychange, focus, online,
+  Capacitor appStateChange) sunucudaki HTML'in (`/index.html`, admin'de `/admin`)
+  ana betik adını açık sayfanınkiyle karşılaştırır; farklıysa aynı adrese gidip
+  yeniler. Backend ucu yok.
+  - Yarım iş (`hasUnsavedWork` / admin `[data-admin-form]`, yazılmış alan) varsa
+    yenilemez, şerit çıkar: sitede üstte menünün altında "Yeni sürüm hazır ·
+    Yenile" (`common.newBuild*`, 7 dil, Melih onayladı), admin'de altta.
+    Yeni bir form sayfası/pencere eklenirse `hasUnsavedWork`'e de eklenir.
+  - Yeni betik `HEAD` ile 200 + `javascript` içerik türü dönmeden yenilemez
+    (rsync HTML'i önce yazarsa yarım deploy'a gitmesin; SPA yedeği HTML döner).
+  - Aynı sürüm için bir kez kendiliğinden yeniler (`muuv_reloaded_for`,
+    sessionStorage); tekrar eskide kalırsa şerit gösterir, döngüye girmez.
+  - Test: `dist/index.html`'deki `main-*.js` adını bir kopyasıyla değiştirip
+    sayfada `focus` tetikle (panel gizliyse `visibilityState` taklit edilir).
+    Test dosyaları deploy'dan önce `npm run build` ile temizlenir.
+
 ## Mobil uygulama
 
 Capacitor `server.url = https://muuvlink.app?src=app` → JS deploy ile OTA gider,

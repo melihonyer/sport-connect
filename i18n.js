@@ -83,6 +83,8 @@ export const translations = {
     networkError: { tr: "Bağlantı hatası!", en: "Connection error!", de: "Verbindungsfehler!" },
     required:     { tr: "Bu alan zorunludur.", en: "This field is required.", de: "Pflichtfeld." },
     back:         { tr: "Geri",            en: "Back",          de: "Zurück"      },
+    newBuild:     { tr: "Yeni sürüm hazır", en: "New version available", de: "Neue Version verfügbar" },
+    newBuildCta:  { tr: "Yenile",          en: "Refresh",       de: "Aktualisieren" },
     share:        { tr: "Paylaş",          en: "Share",         de: "Teilen"      },
     copyLink:     { tr: "Linki kopyala",   en: "Copy link",     de: "Link kopieren" },
     yes:          { tr: "Evet",            en: "Yes",           de: "Ja"          },

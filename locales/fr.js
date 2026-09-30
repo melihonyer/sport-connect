@@ -55,6 +55,8 @@ export default {
   },
 
   common: {
+    newBuild: "Nouvelle version disponible",
+    newBuildCta: "Actualiser",
     save: "Enregistrer",
     saving: "Enregistrement…",
     cancel: "Annuler",
