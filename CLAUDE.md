@@ -550,6 +550,11 @@ olan kullanıcı.
   (AASA tüm adresleri uygulamaya yönlendiriyor, ikisi de gerekli).
 - **Sözleşmenin tek kaynağı bu depoda değil:**
   `TT COACH APP/docs/muuvlink-integration.md`. İki taraf da oraya yazıyor.
+- **Etkinlik oluşturma formunda takım seçimi** (30 Eylül 2026, Melih): listede
+  takımlar önce, "Bireysel" en sonda. Takımı olan kullanıcıda varsayılan İLK
+  takım (bireysel yayınlanan etkinlik sonradan takıma taşınamıyor). İstisnalar:
+  takım sayfasından gelindiyse o takım; Training Agents taslağında takım boş
+  kalır (aşağıdaki karar).
 - Karar: antrenmanlar arasında takım/konum hatırlanmaz — değişebilen bir alanı
   önceden doldurmak, yanlış yerde etkinlik yayınlanmasına yol açar.
 
@@ -574,6 +579,10 @@ olan kullanıcı.
     (rsync HTML'i önce yazarsa yarım deploy'a gitmesin; SPA yedeği HTML döner).
   - Aynı sürüm için bir kez kendiliğinden yeniler (`muuv_reloaded_for`,
     sessionStorage); tekrar eskide kalırsa şerit gösterir, döngüye girmez.
+  - **Takım/etkinlik kurulunca şerit ÇIKMAZ.** Yeni kayıt listelere veri
+    tazelemesiyle gelir (admin ≤30 sn, site ≤60 sn). Şerit yalnız yeni KOD
+    yayınlandığında ve kullanıcı o an yarım bir iş yapıyorsa görünür; yarım iş
+    yoksa sayfa sessizce yenilenir (Melih'e böyle anlatıldı).
   - Test: `dist/index.html`'deki `main-*.js` adını bir kopyasıyla değiştirip
     sayfada `focus` tetikle (panel gizliyse `visibilityState` taklit edilir).
     Test dosyaları deploy'dan önce `npm run build` ile temizlenir.

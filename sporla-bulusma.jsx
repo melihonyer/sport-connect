@@ -7524,6 +7524,14 @@ export default function Muuvlink() {
             setFormData(f => team
               ? { ...f, team_id: team.id, is_public: !team.is_private, sport: opts.includes(f.sport) ? f.sport : (opts[0] || "") }
               : { ...f, team_id: null });
+          } else if (filtered.length && !taCurrent) {
+            // Takımı olan kullanıcıda varsayılan ilk takım (Melih, 30 Eylül 2026):
+            // bireysel yayınlanan etkinlik sonradan takıma taşınamıyor. Training
+            // Agents taslağında takım bilerek boş kalır — antrenör seçer.
+            const team = filtered[0];
+            const opts = team.sports?.length ? team.sports : (team.sport ? [team.sport] : []);
+            setFormData(f => f.team_id ? f
+              : { ...f, team_id: team.id, is_public: !team.is_private, sport: opts.includes(f.sport) ? f.sport : (opts[0] || "") });
           }
         })
         .catch(() => setEligibleLoading(false));
@@ -7687,10 +7695,11 @@ export default function Muuvlink() {
                   onChange={(e) => handleTeamChange(e.target.value)}
                   className={selectCls}
                 >
-                  <option value="">{t("createTraining.individual")}</option>
+                  {/* Takımlar önce, bireysel en sonda */}
                   {eligibleTeams.map((team) => (
                     <option key={team.id} value={team.id}>{team.name}</option>
                   ))}
+                  <option value="">{t("createTraining.individual")}</option>
                 </select>
                 {taCurrent && isIndividual && (
                   <p className="mt-2 flex items-start gap-1.5 text-xs leading-snug text-amber-700">
