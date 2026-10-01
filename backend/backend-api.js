@@ -5189,11 +5189,14 @@ pool.query(`CREATE TABLE IF NOT EXISTS training_views (
 )`).catch((e) => console.error('[training_views] tablo:', e.message));
 
 const VIEW_BOT_RE = /bot|crawl|spider|slurp|preview|facebookexternalhit|headless|lighthouse|curl|wget|python|node-fetch/i;
+// IP+tarayıcı özeti. Eylül 2026 öncesi görüntülenmeler nginx kayıtlarından bu
+// anahtarla geriye doldurulduğu için biçimi DEĞİŞTİRİLMEZ (aynı cihaz iki kez sayılır).
+const viewerHash = (ip, ua) => 'h:' + crypto.createHash('sha256').update(`${ip}|${ua || ''}`).digest('hex').slice(0, 24);
 const trainingViewerKey = (req) => {
   if (req.user?.id) return `u:${req.user.id}`;
   const v = String(req.get('X-Muuv-Visitor') || '');
   if (/^[a-z0-9-]{16,64}$/i.test(v)) return `v:${v}`;
-  return 'h:' + crypto.createHash('sha256').update(`${req.ip}|${req.get('user-agent') || ''}`).digest('hex').slice(0, 24);
+  return viewerHash(req.ip, req.get('user-agent'));
 };
 
 app.get('/api/trainings/:id', optionalAuth, async (req, res) => {
@@ -5299,8 +5302,12 @@ app.get('/api/trainings/:id', optionalAuth, async (req, res) => {
     const viewerIsAdmin = !!(req.user && (await pool.query('SELECT is_admin FROM users WHERE id = $1', [req.user.id])).rows[0]?.is_admin);
     const seesViews = training.can_manage || viewerIsAdmin;
     if (!seesViews && training.created_by !== req.user?.id && !VIEW_BOT_RE.test(req.get('user-agent') || '')) {
-      pool.query('INSERT INTO training_views (training_id, viewer) VALUES ($1, $2) ON CONFLICT DO NOTHING',
-        [training.id, trainingViewerKey(req)]).catch((e) => console.error('[training_views] yazma:', e.message));
+      // Aynı cihaz geçmiş kayıtlardan (h:) zaten sayıldıysa yeni anahtarla tekrar sayılmaz.
+      pool.query(`INSERT INTO training_views (training_id, viewer) SELECT $1, $2
+                   WHERE NOT EXISTS (SELECT 1 FROM training_views WHERE training_id = $1 AND viewer = $3)
+                   ON CONFLICT DO NOTHING`,
+        [training.id, trainingViewerKey(req), viewerHash(req.ip, req.get('user-agent'))])
+        .catch((e) => console.error('[training_views] yazma:', e.message));
     }
     if (seesViews) {
       const vc = await pool.query('SELECT COUNT(*)::int AS n FROM training_views WHERE training_id = $1', [training.id]);
@@ -6535,6 +6542,7 @@ app.get('/api/admin/trainings', isAdmin, async (req, res) => {
         -- Oluşturan: konumu eksik (haritada görünmeyen) etkinlik için kime yazılacağı
         creator.name as creator_name, creator.email as creator_email,
         COUNT(ta.user_id) as participant_count,
+        (SELECT COUNT(*)::int FROM training_views v WHERE v.training_id = t.id) AS view_count,
         (SELECT json_build_object('sent_at', g.sent_at, 'recipients', g.recipients, 'skipped', g.skipped)
            FROM grow_email_log g WHERE g.kind = 'training' AND g.ref_id = t.id
           ORDER BY g.sent_at DESC LIMIT 1) AS last_grow_email,
