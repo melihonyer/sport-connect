@@ -178,6 +178,13 @@ if (typeof window !== "undefined" && !window.__muuvLangFetch) {
       const l = document.documentElement.lang || localStorage.getItem("muuvlang") || "tr";
       const headers = new Headers(init.headers || (typeof input === "string" ? undefined : input.headers));
       if (!headers.has("X-Muuv-Lang")) headers.set("X-Muuv-Lang", l);
+      // Rastgele tarayıcı kimliği: girişsiz ziyaretçi etkinlik görüntülenmesinde
+      // bir kez sayılsın diye (kişisel veri değil, yalnız bu tarayıcıda durur).
+      try {
+        let vid = localStorage.getItem("muuv_vid");
+        if (!vid) { vid = (crypto.randomUUID?.() || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`); localStorage.setItem("muuv_vid", vid); }
+        if (!headers.has("X-Muuv-Visitor")) headers.set("X-Muuv-Visitor", vid);
+      } catch {}
       return _origFetch(input, { ...init, headers });
     }
     return _origFetch(input, init);
@@ -6382,7 +6389,7 @@ export default function Muuvlink() {
           </div>
 
           {canManage && (
-            <div className="flex gap-2 mb-6">
+            <div className="flex flex-wrap gap-2 mb-6">
               <button
                 onClick={() => setEditMode(!editMode)}
                 className="px-4 py-2 bg-blue-100 text-blue-600 rounded-xl font-semibold hover:bg-blue-200 flex items-center gap-2"
@@ -6397,6 +6404,14 @@ export default function Muuvlink() {
                 <Trash2 className="w-4 h-4" />
                 {t("common.delete")}
               </button>
+              {/* Görüntülenme: sunucu yalnız yönetene gönderir */}
+              {typeof selectedTraining.view_count === "number" && (
+                <span title={t("trainingDetail.viewsHint")}
+                  className="w-full sm:w-auto sm:ml-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-slate-200 text-sm font-semibold text-slate-700 whitespace-nowrap">
+                  <Eye className="w-4 h-4 text-brand-600" />
+                  {t("trainingDetail.views").replace("{n}", selectedTraining.view_count)}
+                </span>
+              )}
             </div>
           )}
 
@@ -6628,10 +6643,23 @@ export default function Muuvlink() {
               <div className="w-11 h-11 rounded-full bg-brand-600 flex items-center justify-center flex-shrink-0 border-2 border-white shadow-sm">
                 <Ticket className="w-5 h-5 text-white" />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="font-semibold text-slate-800 text-sm truncate">{selectedTraining.organizer}</p>
                 <p className="text-xs text-slate-500">{t("trainingDetail.organizer")}</p>
+                {/* Organizasyonda görüntülenme herkese açık — mobilde ayrı satır */}
+                {selectedTraining.view_count > 0 && (
+                  <p className="sm:hidden mt-1 inline-flex items-center gap-1.5 text-xs font-semibold text-brand-700">
+                    <Eye className="w-3.5 h-3.5" />
+                    {t("trainingDetail.views").replace("{n}", selectedTraining.view_count)}
+                  </p>
+                )}
               </div>
+              {selectedTraining.view_count > 0 && (
+                <span className="hidden sm:inline-flex flex-shrink-0 items-center gap-1.5 text-sm font-semibold text-brand-700 whitespace-nowrap">
+                  <Eye className="w-4 h-4" />
+                  {t("trainingDetail.views").replace("{n}", selectedTraining.view_count)}
+                </span>
+              )}
             </div>
           )}
 

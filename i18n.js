@@ -453,6 +453,11 @@ export const translations = {
                       de: "Vergiss nicht, deine Teilnahme auch hier zu markieren." },
     extRegClicks:   { tr: "kişi kayıt sayfasına gitti",    en: "people opened the registration page",
                       de: "Personen haben die Anmeldeseite geöffnet" },
+    // Yalnız etkinliği yönetenlere: kaç farklı kişi sayfayı açtı
+    views:          { tr: "{n} kişi görüntüledi",           en: "{n} people viewed",       de: "Von {n} Personen angesehen" },
+    viewsHint:      { tr: "Etkinliği kaç farklı kişinin açtığı. Yalnız etkinliği yönetenler görür.",
+                      en: "How many different people opened this event. Only organisers see this.",
+                      de: "Wie viele verschiedene Personen dieses Event geöffnet haben. Nur Verwalter sehen das." },
     extRegBadge:    { tr: "Kayıt linki",                    en: "Registration link",       de: "Anmeldelink"             },
     // Geçmiş etkinlik: sayfa arşiv olarak açılabilir ama hiçbir işlem yapılamaz.
     pastTitle:      { tr: "Bu etkinliğin tarihi geçti",     en: "This event has already taken place",

@@ -340,6 +340,8 @@ export default {
     extRegBtn: "Page d'inscription",
     extRegHint: "N'oublie pas d'indiquer aussi ta participation ici.",
     extRegClicks: "personnes ont ouvert la page d'inscription",
+    views: "Vu par {n} personnes",
+    viewsHint: "Combien de personnes différentes ont ouvert cet événement. Visible uniquement par les organisateurs.",
     extRegBadge: "Lien d'inscription",
     pastTitle: "Cet événement a déjà eu lieu",
     pastDesc: "Les inscriptions, désinscriptions et commentaires sont fermés. L'événement reste affiché pour mémoire.",

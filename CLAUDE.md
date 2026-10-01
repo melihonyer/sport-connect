@@ -587,6 +587,27 @@ olan kullanıcı.
     sayfada `focus` tetikle (panel gizliyse `visibilityState` taklit edilir).
     Test dosyaları deploy'dan önce `npm run build` ile temizlenir.
 
+## Etkinlik görüntülenme sayısı
+
+`training_views (training_id, viewer, viewed_at)`, kişi başına bir satır (1 Ekim 2026).
+- **Kim görür:** takım/bireysel etkinlikte yalnız yöneten (`can_manage`) ve
+  platform admini — Düzenle/Sil'in yanında "{n} kişi görüntüledi". **Organizasyon
+  etkinliğinde (is_organizer_event / is_paid) herkes** — organizatör kutusunda;
+  0 iken gösterilmez. Admin › Etkinlikler "Katılımcı · Bakan" sütununda.
+  Sayıyı sunucu yalnız görmesi gerekene gönderir (`view_count`).
+- **Ne sayılır:** `GET /api/trainings/:id`. Yöneten, oluşturan, admin ve botlar
+  sayılmaz. Anahtar: girişliyse `u:<id>`, değilse tarayıcı kimliği
+  `v:<muuv_vid>` (site her API isteğine `X-Muuv-Visitor` ekler), o da yoksa
+  `h:` + sha256(IP|UA) — ham IP saklanmaz. `h:` biçimi DEĞİŞTİRİLMEZ: aynı
+  cihazın geçmişten gelen `h:` satırı varsa yeni anahtarla tekrar sayılmaz.
+- **Geçmiş:** 17 Eylül–1 Ekim 2026 arası 167 görüntülenme nginx kayıtlarından
+  dolduruldu (admin paneli kullanan cihazlar ve etkinliği düzenleyen cihazlar
+  hariç). Kayıtlarda kim giriş yapmış yazmadığı için geçmiş sayılarda yönetenin
+  kendi bakışı kalmış olabilir. nginx 14 gün tutar; daha eskisi yok.
+- **Test ederken** yerel önizleme canlı API'ye gider ve SAYILIR: testten sonra
+  önizleme sekmesinin `localStorage.muuv_vid`'iyle `DELETE FROM training_views
+  WHERE viewer = 'v:<vid>'`.
+
 ## Mobil uygulama
 
 Capacitor `server.url = https://muuvlink.app?src=app` → JS deploy ile OTA gider,

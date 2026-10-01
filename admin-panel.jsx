@@ -2648,6 +2648,8 @@ export default function AdminPanel() {
                           <span>{t.training_time?.slice(0,5) || "—"}</span>
                           <span>·</span>
                           <span>{t.participant_count}/{t.capacity} kişi</span>
+                          <span>·</span>
+                          <span className="flex items-center gap-0.5" title="Etkinliği kaç farklı kişi açtı"><Eye className="w-3 h-3"/> {t.view_count ?? 0}</span>
                           {t.last_grow_email && <><span>·</span><span className="flex items-center gap-0.5"><Mail className="w-3 h-3"/> {fmtSent(t.last_grow_email.sent_at)}</span></>}
                           {t.last_auto_email && <><span>·</span><AutoEmailInfo auto={t.last_auto_email} compact /></>}
                           {/* Durum rozeti mobilde bilgi satırında: sağdaki simge grubu dar kalsın. */}
@@ -2684,7 +2686,7 @@ export default function AdminPanel() {
                       <th className="text-left px-3 py-3">Takım</th>
                       <th className="text-left px-3 py-3">Tarih</th>
                       <th className="text-left px-3 py-3">Saat</th>
-                      <th className="text-center px-3 py-3">Katılımcı</th>
+                      <th className="text-center px-3 py-3">Katılımcı · Bakan</th>
                       <th className="text-center px-3 py-3">Durum</th>
                       <th className="text-left px-3 py-3">E-postalar</th>
                       <th className="px-3 py-3"></th>
@@ -2717,6 +2719,10 @@ export default function AdminPanel() {
                           <td className="px-3 py-3.5 text-center">
                             <span className="font-semibold text-slate-700">{t.participant_count}</span>
                             <span className="text-slate-400">/{t.capacity}</span>
+                            {/* Kaç farklı kişi baktı (training_views; yöneten/admin/bot sayılmaz) */}
+                            <div className="mt-0.5 flex items-center justify-center gap-1 text-xs text-slate-500" title="Etkinliği kaç farklı kişi açtı">
+                              <Eye className="w-3 h-3" /> {t.view_count ?? 0}
+                            </div>
                           </td>
                           <td className="px-3 py-3.5 text-center">
                             <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${isPast ? "bg-slate-100 text-slate-500" : "bg-brand-100 text-brand-700"}`}>
