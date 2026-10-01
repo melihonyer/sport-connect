@@ -5176,8 +5176,8 @@ app.get('/api/trainings/nearby', optionalAuth, async (req, res) => {
 });
 
 // ── Etkinlik görüntülenme sayısı ────────────────────────────────────────────
-// "Kaç kişi baktı" — yalnız etkinliği yönetenlere (can_manage) ve platform
-// adminine döner. Kişi başına bir kez sayılır (PRIMARY KEY), sayfanın 60 sn'lik
+// "Kaç kişi baktı" — etkinliği yönetenlere (can_manage) ve platform adminine
+// döner; organizasyon etkinliklerinde herkese (Melih, 1 Ekim 2026). Kişi başına bir kez sayılır (PRIMARY KEY), sayfanın 60 sn'lik
 // tazelemesi sayıyı şişirmez. Yönetenler, oluşturan, admin ve botlar sayılmaz.
 // Kişisel veri tutulmaz: girişliyse kullanıcı id, değilse tarayıcının rastgele
 // kimliği (X-Muuv-Visitor), o da yoksa IP+tarayıcı özeti (ham IP saklanmaz).
@@ -5300,8 +5300,10 @@ app.get('/api/trainings/:id', optionalAuth, async (req, res) => {
 
     // Görüntülenme: yönetmeyen gerçek ziyaretçiyi kaydet; sayıyı yalnız yönetene ver.
     const viewerIsAdmin = !!(req.user && (await pool.query('SELECT is_admin FROM users WHERE id = $1', [req.user.id])).rows[0]?.is_admin);
-    const seesViews = training.can_manage || viewerIsAdmin;
-    if (!seesViews && training.created_by !== req.user?.id && !VIEW_BOT_RE.test(req.get('user-agent') || '')) {
+    const isManagerView = training.can_manage || viewerIsAdmin;
+    // Organizasyon (admin'den girilen yarış/organizatör etkinliği) sayısı herkese açık.
+    const seesViews = isManagerView || !!training.is_organizer_event || !!training.is_paid;
+    if (!isManagerView && training.created_by !== req.user?.id && !VIEW_BOT_RE.test(req.get('user-agent') || '')) {
       // Aynı cihaz geçmiş kayıtlardan (h:) zaten sayıldıysa yeni anahtarla tekrar sayılmaz.
       pool.query(`INSERT INTO training_views (training_id, viewer) SELECT $1, $2
                    WHERE NOT EXISTS (SELECT 1 FROM training_views WHERE training_id = $1 AND viewer = $3)
