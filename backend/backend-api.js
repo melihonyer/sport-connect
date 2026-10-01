@@ -5175,6 +5175,27 @@ app.get('/api/trainings/nearby', optionalAuth, async (req, res) => {
   }
 });
 
+// ── Etkinlik görüntülenme sayısı ────────────────────────────────────────────
+// "Kaç kişi baktı" — yalnız etkinliği yönetenlere (can_manage) ve platform
+// adminine döner. Kişi başına bir kez sayılır (PRIMARY KEY), sayfanın 60 sn'lik
+// tazelemesi sayıyı şişirmez. Yönetenler, oluşturan, admin ve botlar sayılmaz.
+// Kişisel veri tutulmaz: girişliyse kullanıcı id, değilse tarayıcının rastgele
+// kimliği (X-Muuv-Visitor), o da yoksa IP+tarayıcı özeti (ham IP saklanmaz).
+pool.query(`CREATE TABLE IF NOT EXISTS training_views (
+  training_id INTEGER NOT NULL REFERENCES trainings(id) ON DELETE CASCADE,
+  viewer      TEXT NOT NULL,
+  viewed_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (training_id, viewer)
+)`).catch((e) => console.error('[training_views] tablo:', e.message));
+
+const VIEW_BOT_RE = /bot|crawl|spider|slurp|preview|facebookexternalhit|headless|lighthouse|curl|wget|python|node-fetch/i;
+const trainingViewerKey = (req) => {
+  if (req.user?.id) return `u:${req.user.id}`;
+  const v = String(req.get('X-Muuv-Visitor') || '');
+  if (/^[a-z0-9-]{16,64}$/i.test(v)) return `v:${v}`;
+  return 'h:' + crypto.createHash('sha256').update(`${req.ip}|${req.get('user-agent') || ''}`).digest('hex').slice(0, 24);
+};
+
 app.get('/api/trainings/:id', optionalAuth, async (req, res) => {
   try {
     const trainingId = req.params.id;
@@ -5273,6 +5294,18 @@ app.get('/api/trainings/:id', optionalAuth, async (req, res) => {
       training.attendees = training.attendees.map((a) => ({ ...a, name: maskPersonName(a.name), avatar: null }));
     }
     training.names_masked = !showAttendees;
+
+    // Görüntülenme: yönetmeyen gerçek ziyaretçiyi kaydet; sayıyı yalnız yönetene ver.
+    const viewerIsAdmin = !!(req.user && (await pool.query('SELECT is_admin FROM users WHERE id = $1', [req.user.id])).rows[0]?.is_admin);
+    const seesViews = training.can_manage || viewerIsAdmin;
+    if (!seesViews && training.created_by !== req.user?.id && !VIEW_BOT_RE.test(req.get('user-agent') || '')) {
+      pool.query('INSERT INTO training_views (training_id, viewer) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+        [training.id, trainingViewerKey(req)]).catch((e) => console.error('[training_views] yazma:', e.message));
+    }
+    if (seesViews) {
+      const vc = await pool.query('SELECT COUNT(*)::int AS n FROM training_views WHERE training_id = $1', [training.id]);
+      training.view_count = vc.rows[0].n;
+    }
 
     // Get comments (+ beğeni sayısı, kullanıcı beğenmiş mi, beğenenler)
     const commentsResult = await pool.query(
