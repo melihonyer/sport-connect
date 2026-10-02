@@ -9004,14 +9004,35 @@ pool.query(`CREATE TABLE IF NOT EXISTS activation_email_log (
     user_id INTEGER,
     status VARCHAR(16) NOT NULL,        -- sent | skipped_pref | skipped_rate | skipped_recent | failed
     sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (kind, ref_id)
-  )`).catch((e) => console.error('activation_email_log:', e.message));
+    UNIQUE (kind, ref_id, user_id)
+  )`).then(() => pool.query(
+    // 2 Ekim 2026: etkinlik mailleri takımın tüm yöneticilerine gidiyor → kayıt
+    // alıcı başına. Eski (kind, ref_id) tekilliği kaldırılır.
+    `ALTER TABLE activation_email_log DROP CONSTRAINT IF EXISTS activation_email_log_kind_ref_id_key;
+     CREATE UNIQUE INDEX IF NOT EXISTS activation_email_log_kind_ref_user ON activation_email_log (kind, ref_id, user_id)`))
+  .catch((e) => console.error('activation_email_log:', e.message));
 
 async function claimActivation(kind, refId, userId) {
   const r = await pool.query(
     `INSERT INTO activation_email_log (kind, ref_id, user_id, status) VALUES ($1, $2, $3, 'pending')
-     ON CONFLICT (kind, ref_id) DO NOTHING RETURNING id`, [kind, refId, userId]);
+     ON CONFLICT (kind, ref_id, user_id) DO NOTHING RETURNING id`, [kind, refId, userId]);
   return r.rows[0]?.id || null;
+}
+
+// Etkinlik maillerinin (ec/lc) alıcıları. Takım etkinliğinde etkinliği KİM açarsa
+// açsın (MUUVLINK destek hesabı dahil) takımın yöneticileri: sahip, editör,
+// antrenör, kaptan. Takımsızda oluşturan. Platform adminleri hiç almaz — destek
+// hesabının açtığı etkinliğin maili kendimize gidiyordu (Melih, 2 Ekim 2026).
+async function activationEventRecipients(t) {
+  const r = t.team_id
+    ? await pool.query(
+        `SELECT DISTINCT u.id, u.email FROM team_members tm JOIN users u ON u.id = tm.user_id
+          WHERE tm.team_id = $1 AND tm.role = ANY($2) AND u.deleted_at IS NULL AND u.email IS NOT NULL
+            AND COALESCE(u.is_admin, false) = false`, [t.team_id, TRAINING_MANAGER_ROLES])
+    : await pool.query(
+        `SELECT u.id, u.email FROM users u WHERE u.id = $1 AND u.deleted_at IS NULL AND u.email IS NOT NULL
+            AND COALESCE(u.is_admin, false) = false`, [t.created_by]);
+  return r.rows;
 }
 const setActivationStatus = (id, status) =>
   pool.query('UPDATE activation_email_log SET status = $2 WHERE id = $1', [id, status]).catch(() => {});
@@ -9064,41 +9085,46 @@ async function runActivationEmails() {
       stats.tc++;
     }
 
-    const EV = `SELECT t.id, t.title, t.team_id, t.training_date, t.training_time, t.location_name, t.is_public,
-                       t.capacity, teams.is_private AS team_private, u.id AS uid, u.email,
+    const EV = `SELECT t.id, t.title, t.team_id, t.created_by, t.training_date, t.training_time, t.location_name, t.is_public,
+                       t.capacity, teams.is_private AS team_private,
                        (SELECT COUNT(*)::int FROM training_attendees ta WHERE ta.training_id = t.id) AS attendees
-                  FROM trainings t JOIN users u ON u.id = t.created_by LEFT JOIN teams ON teams.id = t.team_id
-                 WHERE ${USER_OK} AND COALESCE(t.is_organizer_event, false) = false AND COALESCE(t.is_paid, false) = false`;
-    // ec — son 6 saatte oluşturulan, henüz başlamamış etkinlikler. Aynı kişiye
-    // 7 günde en fazla bir kez (her hafta etkinlik açan antrenör her seferinde almasın).
+                  FROM trainings t LEFT JOIN teams ON teams.id = t.team_id
+                 WHERE COALESCE(t.is_organizer_event, false) = false AND COALESCE(t.is_paid, false) = false`;
+    // ec — son 6 saatte oluşturulan, henüz başlamamış etkinlikler; alıcılar
+    // activationEventRecipients. Aynı kişiye 7 günde en fazla bir kez (her hafta
+    // etkinlik açan antrenör her seferinde almasın) — sınır kişi başına.
     const evs = (await pool.query(`${EV}
         AND t.created_at BETWEEN NOW() - INTERVAL '6 hours' AND NOW() - INTERVAL '10 minutes'
         AND ${trainingUtcExpr('t')} > NOW()
         AND NOT EXISTS (SELECT 1 FROM activation_email_log a WHERE a.kind = 'ec' AND a.ref_id = t.id)`)).rows;
     for (const t of evs) {
-      const id = await claimActivation('ec', t.id, t.uid); if (!id) continue;
-      const recent = (await pool.query(
-        `SELECT 1 FROM activation_email_log WHERE kind = 'ec' AND user_id = $1 AND id <> $2 AND status = 'sent'
-            AND sent_at > NOW() - INTERVAL '7 days' LIMIT 1`, [t.uid, id])).rows.length;
-      if (recent) { await setActivationStatus(id, 'skipped_rate'); continue; }
-      await deliverActivation(id, { id: t.uid, email: t.email }, 'ec', (L) => activationEventData(t, L));
-      stats.ec++;
+      for (const u of await activationEventRecipients(t)) {
+        const id = await claimActivation('ec', t.id, u.id); if (!id) continue;
+        const recent = (await pool.query(
+          `SELECT 1 FROM activation_email_log WHERE kind = 'ec' AND user_id = $1 AND id <> $2 AND status = 'sent'
+              AND sent_at > NOW() - INTERVAL '7 days' LIMIT 1`, [u.id, id])).rows.length;
+        if (recent) { await setActivationStatus(id, 'skipped_rate'); continue; }
+        await deliverActivation(id, u, 'ec', (L) => activationEventData(t, L));
+        stats.ec++;
+      }
     }
 
     // lc — 20–28 saat sonra başlayan, kontenjanı dolmamış etkinlikler. Aynı
-    // etkinlik için son 24 saatte "etkinliğin yayında" gittiyse bu gönderilmez.
+    // kişiye bu etkinlik için son 24 saatte "etkinliğin yayında" gittiyse gönderilmez.
     const lcs = (await pool.query(`${EV}
         AND ${trainingUtcExpr('t')} BETWEEN NOW() + INTERVAL '20 hours' AND NOW() + INTERVAL '28 hours'
         AND NOT EXISTS (SELECT 1 FROM activation_email_log a WHERE a.kind = 'lc' AND a.ref_id = t.id)`)).rows
       .filter((t) => t.capacity && t.attendees < t.capacity);
     for (const t of lcs) {
-      const id = await claimActivation('lc', t.id, t.uid); if (!id) continue;
-      const justSent = (await pool.query(
-        `SELECT 1 FROM activation_email_log WHERE kind = 'ec' AND ref_id = $1 AND status = 'sent'
-            AND sent_at > NOW() - INTERVAL '24 hours' LIMIT 1`, [t.id])).rows.length;
-      if (justSent) { await setActivationStatus(id, 'skipped_recent'); continue; }
-      await deliverActivation(id, { id: t.uid, email: t.email }, 'lc', (L) => ({ ...activationEventData(t, L), spotsLeft: t.capacity - t.attendees }));
-      stats.lc++;
+      for (const u of await activationEventRecipients(t)) {
+        const id = await claimActivation('lc', t.id, u.id); if (!id) continue;
+        const justSent = (await pool.query(
+          `SELECT 1 FROM activation_email_log WHERE kind = 'ec' AND ref_id = $1 AND user_id = $2 AND status = 'sent'
+              AND sent_at > NOW() - INTERVAL '24 hours' LIMIT 1`, [t.id, u.id])).rows.length;
+        if (justSent) { await setActivationStatus(id, 'skipped_recent'); continue; }
+        await deliverActivation(id, u, 'lc', (L) => ({ ...activationEventData(t, L), spotsLeft: t.capacity - t.attendees }));
+        stats.lc++;
+      }
     }
 
     // te — 3–7 gün önce kurulmuş, hiç etkinliği olmayan takımlar (7 gün sınırı:

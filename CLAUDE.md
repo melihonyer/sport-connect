@@ -433,12 +433,18 @@ seçilebilir link kutusu, WhatsApp/Telegram/e-posta butonları, hazır davet mes
   |---|---|---|---|
   | wu | kayıttan 2 dk–6 saat sonra (hoş geldin) | yeni kullanıcı | kişi başına 1 |
   | tc | takım kurulduktan 10 dk–6 saat sonra | sahibi | takım başına 1 |
-  | ec | etkinlik açıldıktan 10 dk–6 saat sonra, başlamamışsa | oluşturan | kişi başına 7 günde 1 |
-  | lc | başlamasına 20–28 saat kala, kontenjan dolmamışsa | oluşturan | etkinlik başına 1; aynı etkinliğe son 24 saatte ec gittiyse atlanır |
+  | ec | etkinlik açıldıktan 10 dk–6 saat sonra, başlamamışsa | takımın yöneticileri* | kişi başına 7 günde 1 |
+  | lc | başlamasına 20–28 saat kala, kontenjan dolmamışsa | takımın yöneticileri* | etkinlik+kişi başına 1; o kişiye son 24 saatte bu etkinliğin ec'si gittiyse atlanır |
+  \* `activationEventRecipients`: takım etkinliğinde etkinliği KİM açarsa açsın
+  (MUUVLINK dahil) takımın owner/editor/coach/captain'ı; takımsızda oluşturan.
+  Platform adminleri hiç almaz (2 Ekim 2026, Melih: MUUVLINK'in açtığı etkinliğin
+  maili kendimize gidiyor, 7 gün sınırına takılıp liderlere hiç ulaşmıyordu).
   | te | takım 3–7 gün önce kurulmuş, hiç etkinliği yok | sahibi | takım başına 1 |
   Organizatör/ücretli etkinliğe gitmez. Pencereler bilerek dar: açılışta eski
   kayıtlara toplu gönderim olmadı, olmamalı. Kayıt `activation_email_log`
-  (`UNIQUE(kind, ref_id)`, gönderimden ÖNCE yazılır → iki kez gitmez).
+  (alıcı başına: tekil indeks `(kind, ref_id, user_id)`, gönderimden ÖNCE
+  yazılır → iki kez gitmez; bir etkinliğin herhangi bir ec satırı varsa o
+  etkinlik tekrar işlenmez).
   `gt`/`ge` admin butonuyla gider.
 - Paylaşım butonlarındaki link `utm_source=share&utm_medium=whatsapp|telegram|email
   &utm_campaign=team_invite|event_invite` taşır; kayıt olanın kaynağı users.utm_*'da.
@@ -487,8 +493,8 @@ seçilebilir link kutusu, WhatsApp/Telegram/e-posta butonları, hazır davet mes
   Hepsi salt okuma; sonucu Melih'e isim + rol olarak raporla.
 - **Elle tek gönderim** (ör. pencereyi kaçıran takım): sunucuda kısa bir betikle,
   `backend-api.js`'ten `activationEmail` alınır, alıcının `lang`'ı ve `tips`
-  tercihi kontrol edilir, **önce** `activation_email_log`'a `(kind, ref_id)`
-  yazılır (çakışırsa gönderme), sonra Resend'e gider, durum `sent`/`failed`
+  tercihi kontrol edilir, **önce** `activation_email_log`'a `(kind, ref_id,
+  user_id)` yazılır (çakışırsa gönderme), sonra Resend'e gider, durum `sent`/`failed`
   güncellenir. Böylece otomatik iş aynı yere tekrar göndermez.
   28 Eylül 2026: "Sabah sporu sevenler" (id 55) açılıştan önce kurulduğu için
   6 saatlik pencereyi kaçırdı, hoş geldin maili Melih'in isteğiyle elle gitti.
