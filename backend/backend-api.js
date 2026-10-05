@@ -3861,7 +3861,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     // Silinmeye zamanlanmış hesap → doğru şifreyle giriş onu GERİ GETİRİR.
     let restored = false;
     if (user.deleted_at) {
-      await pool.query('UPDATE users SET deleted_at = NULL WHERE id = $1', [user.id]);
+      await pool.query('UPDATE users SET deleted_at = NULL, leave_reason = NULL, leave_note = NULL WHERE id = $1', [user.id]);
       restored = true;
       pool.query(
         `UPDATE account_departures SET restored_at = NOW(), user_id = NULL
@@ -6315,7 +6315,7 @@ app.get('/api/admin/users', isAdmin, async (req, res) => {
       SELECT
         u.id, u.name, u.email, u.avatar, u.is_admin, u.created_at,
         -- deleted_at doluysa kullanıcı hesabını silmiş (30 gün geri gelebilir, sonra purge siler)
-        u.deleted_at,
+        u.deleted_at, u.leave_reason, u.leave_note,
         COUNT(DISTINCT tm.team_id) as team_count,
         COUNT(DISTINCT ta.training_id) as training_count,
         -- Sayının üzerine gelince gösterilen takım adları (alt sorgu: JOIN'ler satırı çoğaltmasın)
@@ -6325,7 +6325,7 @@ app.get('/api/admin/users', isAdmin, async (req, res) => {
       FROM users u
       LEFT JOIN team_members tm ON u.id = tm.user_id
       LEFT JOIN training_attendees ta ON u.id = ta.user_id
-      GROUP BY u.id, u.name, u.email, u.avatar, u.is_admin, u.created_at, u.deleted_at
+      GROUP BY u.id, u.name, u.email, u.avatar, u.is_admin, u.created_at, u.deleted_at, u.leave_reason, u.leave_note
       ORDER BY u.created_at DESC
     `);
     res.json(result.rows);
@@ -6382,7 +6382,10 @@ app.get('/api/admin/departures', isAdmin, async (req, res) => {
       SELECT to_char(date_trunc('month', left_at AT TIME ZONE 'Europe/Istanbul'), 'YYYY-MM') AS ay, COUNT(*)::int AS n
       FROM account_departures WHERE restored_at IS NULL
       GROUP BY 1 ORDER BY 1 DESC LIMIT 12`);
-    res.json({ ...ozet.rows[0], aylik: aylik.rows });
+    const nedenler = await pool.query(`
+      SELECT reason, COUNT(*)::int AS n FROM account_departures
+       WHERE restored_at IS NULL AND reason IS NOT NULL GROUP BY 1 ORDER BY 2 DESC`);
+    res.json({ ...ozet.rows[0], aylik: aylik.rows, nedenler: nedenler.rows });
   } catch (error) {
     res.status(500).json({ error: 'Ayrılış istatistiği alınamadı' });
   }
@@ -6409,10 +6412,13 @@ app.delete('/api/users/me', authenticateToken, async (req, res) => {
     }
     // Soft-delete: kalıcı silmek yerine "silinmeye zamanlanmış" işaretle.
     // 30 gün içinde giriş yapılırsa geri gelir; sonra purge kalıcı siler.
-    await pool.query('UPDATE users SET deleted_at = NOW() WHERE id = $1', [req.user.id]);
+    const reason = LEAVE_REASONS.includes(req.body?.reason) ? req.body.reason : null;
+    const note = reason === 'other' ? (String(req.body?.note || '').trim().slice(0, 200) || null) : null;
+    await pool.query('UPDATE users SET deleted_at = NOW(), leave_reason = $2, leave_note = $3 WHERE id = $1',
+      [req.user.id, reason, note]);
     pool.query(
-      `INSERT INTO account_departures (user_id, source, signed_up_at, left_at)
-       SELECT id, 'self', created_at, NOW() FROM users WHERE id = $1`, [req.user.id]
+      `INSERT INTO account_departures (user_id, source, signed_up_at, left_at, reason)
+       SELECT id, 'self', created_at, NOW(), $2 FROM users WHERE id = $1`, [req.user.id, reason]
     ).catch((e) => console.error('[DEPARTURES] Kayıt hatası:', e.message));
     res.json({ message: 'Hesabınız silinmek üzere kapatıldı.' });
   } catch (error) {
@@ -8507,6 +8513,13 @@ pool.query(`
   WHERE u.deleted_at IS NOT NULL
     AND NOT EXISTS (SELECT 1 FROM account_departures d WHERE d.user_id = u.id AND d.restored_at IS NULL)
 `)).catch((e) => console.error('[DEPARTURES] Tablo hazırlanamadı:', e.message));
+
+// Ayrılma nedeni (isteğe bağlı, Hesabımı sil penceresi — 5 Ekim 2026). Kod
+// account_departures'a da yazılır (kişisel veri değil, purge'den sonra sayı kalır);
+// "Diğer" metni YALNIZ users.leave_note'ta durur, hesapla birlikte purge'de silinir.
+const LEAVE_REASONS = ['no_local', 'no_sport', 'too_many_notifs', 'hard_to_use', 'other_app', 'just_looking', 'other'];
+pool.query(`ALTER TABLE account_departures ADD COLUMN IF NOT EXISTS reason VARCHAR(20)`).catch(() => {});
+pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS leave_reason VARCHAR(20), ADD COLUMN IF NOT EXISTS leave_note VARCHAR(200)`).catch(() => {});
 
 // Bildirim tercihleri: { key: { app: bool, email: bool } }. Varsayılan app AÇIK, e-posta KAPALI.
 pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS notif_prefs JSONB DEFAULT '{}'::jsonb`).catch(() => {});

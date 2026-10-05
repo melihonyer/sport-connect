@@ -746,6 +746,18 @@ export const translations = {
     dangerZoneDesc:    { tr: "Hesabını silersen 30 gün içinde tekrar giriş yaparak geri getirebilirsin; bu sürenin sonunda kalıcı olarak silinir.", en: "If you delete your account you can restore it by logging back in within 30 days; after that it's permanently deleted.", de: "Wenn du dein Konto löschst, kannst du es innerhalb von 30 Tagen durch erneutes Anmelden wiederherstellen; danach wird es endgültig gelöscht." },
     deleteModalTitle:  { tr: "Hesabını sil", en: "Delete your account", de: "Konto löschen" },
     deleteModalWarning:{ tr: "Hesabın kapatılır ve oturumun kapanır. 30 gün içinde tekrar giriş yaparsan hesabın geri gelir; bu sürenin sonunda profilin, etkinliklerin, mesajların ve rozetlerin kalıcı olarak silinir.", en: "Your account is closed and you're signed out. Log back in within 30 days to restore it; after that your profile, events, messages and badges are permanently deleted.", de: "Dein Konto wird geschlossen und du wirst abgemeldet. Melde dich innerhalb von 30 Tagen wieder an, um es wiederherzustellen; danach werden dein Profil, deine Events, Nachrichten und Abzeichen endgültig gelöscht." },
+    // Hesabımı sil: isteğe bağlı ayrılma nedeni (kodlar backend LEAVE_REASONS ile aynı)
+    leaveReasonTitle: { tr: "İstersen neden ayrıldığını söyle", en: "Tell us why you're leaving, if you like", de: "Wenn du magst, sag uns, warum du gehst" },
+    leaveNotePlaceholder: { tr: "Kısaca yaz…", en: "Write briefly…", de: "Kurz beschreiben…" },
+    leaveReasons: {
+      no_local: { tr: "Bölgemde etkinlik ya da takım bulamadım", en: "I couldn't find events or teams near me", de: "In meiner Nähe gibt es keine Events oder Teams" },
+      no_sport: { tr: "Aradığım spor dalı yok", en: "The sport I'm looking for isn't here", de: "Meine Sportart gibt es nicht" },
+      too_many_notifs: { tr: "Çok fazla bildirim/e-posta geliyor", en: "Too many notifications/emails", de: "Zu viele Benachrichtigungen/E-Mails" },
+      hard_to_use: { tr: "Uygulamayı kullanmak zor geldi", en: "The app was hard to use", de: "Die App war schwer zu bedienen" },
+      other_app: { tr: "Başka bir uygulama kullanıyorum", en: "I use another app", de: "Ich nutze eine andere App" },
+      just_looking: { tr: "Sadece bakmak için kaydolmuştum", en: "I only signed up to have a look", de: "Ich wollte mich nur umsehen" },
+      other: { tr: "Diğer", en: "Other", de: "Sonstiges" },
+    },
     deleteModalTypeLabel: { tr: "Onaylamak için e-posta adresini yaz", en: "Type your email to confirm", de: "Gib zur Bestätigung deine E-Mail ein" },
     deleteModalButton: { tr: "Hesabımı sil", en: "Delete my account", de: "Konto löschen" },
     keepAccount:       { tr: "Vazgeç, hesabımı koru", en: "Cancel, keep my account", de: "Abbrechen, Konto behalten" },

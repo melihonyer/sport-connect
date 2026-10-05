@@ -369,6 +369,15 @@ bunlar haritada ve "Yakınımda" aramasında hiç çıkmıyor.
   `source_ref` benzersiz: aynı silme iki kez yazılmaz.
 - Ayrılan hesaplar `account_departures`'ta; **kişisel veri tutulmaz** (isim/e-posta
   yok), purge'den sonra da sayılar kalır.
+- **Ayrılma nedeni** (5 Ekim 2026, Melih): Hesabımı sil penceresinde isteğe bağlı
+  tek seçim (`settings.leaveReasons.*`, 7 dil; kodlar backend `LEAVE_REASONS`:
+  no_local, no_sport, too_many_notifs, hard_to_use, other_app, just_looking,
+  other). Kod hem `users.leave_reason`'a hem `account_departures.reason`'a
+  yazılır (sayı purge'den sonra kalır). "Diğer" metni (≤200) YALNIZ
+  `users.leave_note`'ta — kişisel bilgi içerebilir, purge'de hesapla gider.
+  Geri gelişte ikisi de temizlenir. Admin: "Ayrıldı" etiketinin altında neden
+  (+ not); ayrılış kartında dağılım. 5 Ekim öncesi ayrılanlara sorulmadığı için
+  onlarda neden satırı gösterilmez. Pencere `PageHost` içinde (yazılan silinmesin).
 - Kayıt tutulmadan önce silinenler için uydurma satır üretilmez; numara
   boşluklarından yalnız SAYI olarak gösterilir.
 

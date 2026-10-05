@@ -2314,22 +2314,45 @@ export default function Muuvlink() {
   };
 
   // Hesap silme — e-postayı yazarak onaylama (yanlışlıkla silmeyi engeller)
-  // Yalnızca açıkken mount edilir ({showDeleteModal && <DeleteAccountModal/>}).
+  // Yalnızca açıkken mount edilir; PageHost içinde (üst-render yazılanı silmesin).
   const DeleteAccountModal = () => {
     const requiredEmail = (user?.email || "").trim();
     const [typed, setTyped] = useState("");
     const [busy, setBusy] = useState(false);
+    // İsteğe bağlı ayrılma nedeni; kodlar backend LEAVE_REASONS ile aynı.
+    const [reason, setReason] = useState(null);
+    const [note, setNote] = useState("");
     const match = typed.trim().toLowerCase() === requiredEmail.toLowerCase() && requiredEmail !== "";
     const close = () => { if (!busy) setShowDeleteModal(false); };
     return (
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[200] p-4" onClick={close}>
-        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[92dvh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
           <div className="p-6">
             <div className="w-11 h-11 rounded-full bg-red-50 flex items-center justify-center mb-4">
               <Trash2 className="w-5 h-5 text-red-500" />
             </div>
             <h3 className="font-display font-bold text-lg text-slate-900">{t("settings.deleteModalTitle")}</h3>
             <p className="mt-2 text-sm leading-relaxed text-slate-600">{t("settings.deleteModalWarning")}</p>
+
+            {/* İsteğe bağlı neden — seçmeden de silinir */}
+            <fieldset className="mt-5">
+              <legend className="mb-2 text-xs font-semibold text-slate-500">{t("settings.leaveReasonTitle")}</legend>
+              <div className="space-y-1.5">
+                {["no_local", "no_sport", "too_many_notifs", "hard_to_use", "other_app", "just_looking", "other"].map((code) => (
+                  <label key={code}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border cursor-pointer text-sm transition-colors ${reason === code ? "border-brand-400 bg-brand-50 text-slate-900" : "border-slate-200 text-slate-600"}`}>
+                    <input type="radio" name="leave-reason" value={code} checked={reason === code}
+                      onChange={() => setReason(code)} className="accent-brand-600 w-4 h-4 flex-shrink-0" />
+                    <span>{t(`settings.leaveReasons.${code}`)}</span>
+                  </label>
+                ))}
+              </div>
+              {reason === "other" && (
+                <textarea value={note} onChange={(e) => setNote(e.target.value.slice(0, 200))} maxLength={200} rows={2}
+                  placeholder={t("settings.leaveNotePlaceholder")}
+                  className="mt-2 w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400" />
+              )}
+            </fieldset>
 
             <label className="block mt-5 mb-1.5 text-xs font-semibold text-slate-500">
               {t("settings.deleteModalTypeLabel")}
@@ -2348,7 +2371,7 @@ export default function Muuvlink() {
           </div>
           <div className="px-6 pb-6 flex flex-col gap-2.5">
             <button
-              onClick={async () => { if (!match || busy) return; setBusy(true); await confirmDeleteAccount(); setBusy(false); }}
+              onClick={async () => { if (!match || busy) return; setBusy(true); await confirmDeleteAccount(reason, reason === "other" ? note : ""); setBusy(false); }}
               disabled={!match || busy}
               className={`w-full h-12 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
                 match && !busy
@@ -3462,12 +3485,13 @@ export default function Muuvlink() {
 
   // Silme onayı DeleteAccountModal'da (e-posta yazarak) alınır; bu fonksiyon
   // yalnızca modal onayından sonra gerçek silme isteğini atar.
-  const confirmDeleteAccount = async () => {
+  const confirmDeleteAccount = async (reason = null, note = "") => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(`${API_URL}/users/me`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ reason, note }),
       });
       if (response.ok) {
         setShowDeleteModal(false);
@@ -9672,7 +9696,7 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
       {showProfileEdit && <ProfileEditModal />}
       {showInviteModal && <InviteModal />}
       <ConfirmModal />
-      {showDeleteModal && <DeleteAccountModal />}
+      {showDeleteModal && <PageHost key="delete-account" render={DeleteAccountModal} />}
       {showNotifPrefs && <NotifPrefsModal />}
       <LegalModal />
       <ReportModal />

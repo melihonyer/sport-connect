@@ -1431,6 +1431,20 @@ const DeparturesCard = ({ d }) => {
           </div>
         ))}
       </div>
+      {/* Ayrılma nedenleri (5 Ekim 2026'dan beri; isteğe bağlı olduğu için toplamdan az) */}
+      {d.nedenler?.length > 0 && (
+        <div className="mt-4">
+          <div className="text-[11px] font-semibold text-slate-500 mb-1.5">Ayrılma nedeni</div>
+          <div className="flex flex-wrap gap-1.5">
+            {d.nedenler.map((r) => (
+              <span key={r.reason} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-100 text-xs text-slate-600">
+                {LEAVE_REASON_TR[r.reason] || r.reason}
+                <span className="font-semibold text-slate-900">{r.n}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
       {d.aylik?.length > 0 && (
         <div className="mt-4 space-y-1.5">
           {d.aylik.map(a => {
@@ -1580,12 +1594,27 @@ const EmailLog = ({ item }) => {
   );
 };
 
-const LeftBadge = ({ at, small = false }) => {
+// Hesabımı sil penceresindeki isteğe bağlı neden (kodlar backend LEAVE_REASONS).
+const LEAVE_REASON_TR = {
+  no_local: "Bölgemde etkinlik/takım yok", no_sport: "Aradığı spor dalı yok",
+  too_many_notifs: "Çok fazla bildirim/e-posta", hard_to_use: "Kullanmak zor geldi",
+  other_app: "Başka uygulama kullanıyor", just_looking: "Sadece bakmak için kaydolmuş", other: "Diğer",
+};
+const LEAVE_REASON_SINCE = new Date("2026-10-05T00:00:00Z"); // neden sorusu bu tarihte eklendi
+const LeftBadge = ({ at, small = false, reason, note }) => {
+  const asked = reason || new Date(at) >= LEAVE_REASON_SINCE; // öncesinde sorulmadı → satır yok
   const kalan = Math.max(0, LEFT_PURGE_DAYS - Math.floor((Date.now() - new Date(at).getTime()) / 86400000));
   return (
-    <span title={`${fmtFull(at)} tarihinde ayrıldı · ${kalan} gün sonra kalıcı silinecek`}
-      className={`${small ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-xs"} bg-red-50 text-red-600 border border-red-100 rounded-lg font-medium whitespace-nowrap`}>
-      Ayrıldı · {fmt(at)}
+    <span className={`inline-flex flex-col ${small ? "items-start" : "items-center"} gap-1 max-w-[220px]`}>
+      <span title={`${fmtFull(at)} tarihinde ayrıldı · ${kalan} gün sonra kalıcı silinecek`}
+        className={`${small ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-xs"} bg-red-50 text-red-600 border border-red-100 rounded-lg font-medium whitespace-nowrap`}>
+        Ayrıldı · {fmt(at)}
+      </span>
+      {/* Ayrılma nedeni: soruldu ama seçmediyse "neden belirtmedi" */}
+      {asked && <span className={`${small ? "text-[10px]" : "text-[11px]"} leading-snug ${reason ? "text-slate-600" : "text-slate-400"} ${small ? "text-left" : "text-center"}`}>
+        {reason ? LEAVE_REASON_TR[reason] || reason : "Neden belirtmedi"}
+        {reason === "other" && note && <span className="block italic text-slate-500 break-words">“{note}”</span>}
+      </span>}
     </span>
   );
 };
@@ -2501,7 +2530,7 @@ export default function AdminPanel() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className={`font-semibold text-sm ${u.deleted_at ? "text-slate-400 line-through" : "text-slate-900"}`}>{u.name}</span>
                         {u.deleted_at
-                          ? <LeftBadge at={u.deleted_at} small />
+                          ? <LeftBadge at={u.deleted_at} small reason={u.leave_reason} note={u.leave_note} />
                           : u.is_admin
                             ? <span className="px-2 py-0.5 bg-brand-100 text-brand-700 rounded-lg text-[10px] font-medium">Admin</span>
                             : <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded-lg text-[10px]">Üye</span>}
@@ -2564,7 +2593,7 @@ export default function AdminPanel() {
                         <td className="px-4 py-3.5 text-center text-slate-700 font-semibold">{u.training_count ?? "—"}</td>
                         <td className="px-4 py-3.5 text-center">
                           {u.deleted_at
-                            ? <LeftBadge at={u.deleted_at} />
+                            ? <LeftBadge at={u.deleted_at} reason={u.leave_reason} note={u.leave_note} />
                             : u.is_admin
                               ? <span className="px-2.5 py-1 bg-brand-100 text-brand-700 rounded-lg text-xs font-medium">Admin</span>
                               : <span className="px-2.5 py-1 bg-slate-100 text-slate-500 rounded-lg text-xs">Üye</span>
