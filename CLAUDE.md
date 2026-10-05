@@ -127,6 +127,14 @@ JavaScript ÇALIŞTIRMAZ. Bu yüzden metin sunucudan basılır.
     doluydu — `/it/squadre` ve `/it/contatti` için istek 30 Eylül'den sonra
     tekrar denenir (kota son istekten 24 saat sonra açılıyor). `takim/spor-severler-39` silinmiş takım: 200 + ana sayfa canonical
     dönüyordu → aynı gün 404'e çevrildi (aşağıda).
+    **5 Ekim 2026 takip sonucu:** "Sayfa dizine ekleme" raporu hâlâ 21 Eylül
+    verisinde (Google güncellemedi). URL denetimi ise düzeltmenin tuttuğunu
+    gösterdi: `etkinlik/..-164` (3 Ekim'de tarandı, beyan edilen standart URL
+    artık kendi adresi), `-108`, `-110` ve `/it/squadre` DİZİNDE. `takim/
+    roots-triathlon-20` hâlâ eski "Yönlendirmeli" kaydında (7 Eylül'den beri
+    taranmadı) → dizine eklenme istendi. `/it/contatti` Google'ca bilinmiyordu
+    (site haritasında var) → istendi. Sıradaki bakış: rapor güncellenince 15'lik
+    listenin www/http/`?takim=` + 404'lere inmesi.
     **Otomatik hatırlatma/zamanlanmış görev KURULMAZ** — Melih kendisi
     "Search Console takibini yapalım" diye soracak.
 - **Silinmiş takım/etkinlik adresi → botlara 404 + `noindex`** (29 Eylül 2026,
@@ -516,6 +524,24 @@ seçilebilir link kutusu, WhatsApp/Telegram/e-posta butonları, hazır davet mes
   6 saatlik pencereyi kaçırdı, hoş geldin maili Melih'in isteğiyle elle gitti.
 - Admin listesinde (takım/etkinlik) otomatik giden son mail görünür
   (`last_auto_email`; gönderilen, atlanandan önce gösterilir). Atlananlar turuncu.
+
+## Admin › E-postalar (gönderim istatistiği)
+
+5 Ekim 2026. `GET /api/admin/emails?date=YYYY-MM-DD` (gün İstanbul saatiyle).
+- **Her gönderim `email_log`'a yazılır** (`sendEmail` sarmalı → `sendEmailRaw`):
+  tür (`kind`; verilmezse `prefKey`), alıcı `user_id`, sonuç sent/skipped/
+  failed/mocked, `resend_id`. **Adres saklanmaz.** Yeni bir gönderim noktası
+  eklenirse `kind` verilir (ör. `act_<tür>`, `grow`, `password_reset`) ve
+  admin'deki `EMAIL_KIND_TR`'ye Türkçe adı eklenir.
+- Gönderilen/teslim/geri dönen/spam **Resend'den** (`last_event`), sayfa sayfa
+  geriye okunur, 60 sn önbellek. **Resend hesabı Training Agents ile ORTAK** —
+  yalnız `from` `@muuvlink.app` olanlar sayılır. Resend'den kime gitti raporu
+  çıkarırken de bu süzgeç unutulmaz.
+- Tür: önce `email_log` (resend_id eşleşmesi), yoksa Türkçe konu kalıbından
+  (`SUBJECT_KIND`; `[Örnek` → "Örnek / test"). Başka dildeki eski konular "Diğer".
+  Konu metni değişirse kalıp da güncellenir.
+- "Atlandı (tercih kapalı)" ve "hata" yalnız `email_log`'da → 5 Ekim öncesi 0 görünür.
+- Bugün açıksa dakikada bir tazelenir; tabloda satıra tıklayınca konular açılır.
 
 ## Instagram hikâye kartı
 

@@ -894,7 +894,30 @@ const mailTransporter = nodemailer.createTransport({
 // (varsayılan kapalı) gönderilmez. prefKey yoksa transactional maildir, her zaman gider.
 // build(lang) verilirse konu + gövde ALICININ dilinde üretilir. Alıcı kayıtlı değilse
 // (davet, iletişim) fallbackLang kullanılır — isteği yapanın dili.
-async function sendEmail({ to, subject, html, build = null, fallbackLang = 'tr', prefKey = null, userId = null }) {
+// Gönderilen her e-postanın kaydı (admin › E-postalar). Adres SAKLANMAZ: tür,
+// alıcının kullanıcı id'si (varsa), sonuç ve Resend id'si. Teslim durumu
+// Resend'den okunur (resend_id ile eşleşir). 5 Ekim 2026.
+pool.query(`CREATE TABLE IF NOT EXISTS email_log (
+    id SERIAL PRIMARY KEY,
+    sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    kind VARCHAR(32) NOT NULL,
+    user_id INTEGER,
+    status VARCHAR(12) NOT NULL,     -- sent | skipped | failed | mocked
+    resend_id VARCHAR(64)
+  )`).then(() => pool.query('CREATE INDEX IF NOT EXISTS email_log_sent_at ON email_log (sent_at)'))
+  .catch((e) => console.error('email_log:', e.message));
+const logEmail = (kind, userId, status, resendId = null) =>
+  pool.query('INSERT INTO email_log (kind, user_id, status, resend_id) VALUES ($1, $2, $3, $4)',
+    [kind || 'other', userId || null, status, resendId]).catch((e) => console.error('email_log yazma:', e.message));
+
+async function sendEmail(opts) {
+  const r = await sendEmailRaw(opts);
+  // Tür: açıkça verilen `kind`, yoksa tercih anahtarı (event_new, comment…).
+  logEmail(opts.kind || opts.prefKey, opts.userId,
+    r?.skipped ? 'skipped' : r?.mocked ? 'mocked' : r ? 'sent' : 'failed', r?.id || null);
+  return r;
+}
+async function sendEmailRaw({ to, subject, html, build = null, fallbackLang = 'tr', prefKey = null, userId = null }) {
   let recipient = null;
   if (prefKey || build) {
     try {
@@ -6369,6 +6392,126 @@ app.get('/api/admin/deletions', isAdmin, async (req, res) => {
   }
 });
 
+// Admin › E-postalar: seçilen günün (İstanbul) gönderimleri. Tür/sonuç email_log'dan,
+// teslim durumu Resend'den (last_event). Resend listesi sayfa sayfa geriye okunur;
+// 60 sn önbellek (panel 30 sn'de bir tazeliyor, Resend'i yormasın).
+const resendDayCache = new Map();
+async function resendEmailsForDay(fromIso, toIso) {
+  const key = `${fromIso}|${toIso}`;
+  const hit = resendDayCache.get(key);
+  if (hit && Date.now() - hit.at < 60000) return hit.items;
+  const items = [];
+  let after = null;
+  for (let page = 0; page < 20 && process.env.RESEND_API_KEY; page++) {
+    const url = `https://api.resend.com/emails?limit=100${after ? `&after=${after}` : ''}`;
+    const r = await fetch(url, { headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` } });
+    if (!r.ok) break;
+    const j = await r.json();
+    const data = j.data || [];
+    if (!data.length) break;
+    let older = false;
+    for (const e of data) {
+      // "2026-10-05 15:11:12.736000+00" → ISO ("+00" JS'te geçersiz)
+      const d = new Date(String(e.created_at).replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00'));
+      if (isNaN(d)) continue;
+      const t = d.toISOString();
+      if (t < fromIso) { older = true; continue; }
+      // Resend hesabı Training Agents ile ORTAK: yalnız Muuvlink'ten gidenler.
+      if (!/@muuvlink\.app>?$/i.test(String(e.from || '').trim())) continue;
+      if (t < toIso) items.push({ id: e.id, subject: e.subject || '', last_event: e.last_event || 'sent', created_at: t });
+    }
+    const last = data[data.length - 1].id;
+    if (older || !j.has_more || last === after) break;
+    after = last;
+  }
+  resendDayCache.set(key, { at: Date.now(), items });
+  if (resendDayCache.size > 20) resendDayCache.delete(resendDayCache.keys().next().value);
+  return items;
+}
+// Konudan tür: email_log'u olmayan (5 Ekim 2026 öncesi) gönderimler için. Türkçe
+// kalıplar MAIL.tr / ACT.tr / WELCOME.tr konularından; başka dilde konu "other".
+const SUBJECT_KIND = [
+  [/^\[Örnek|resend\.dev/i, 'sample'],
+  [/^Muuvlink'e hoş geldin/i, 'act_wu'],
+  [/^Takımın hazır: /, 'act_tc'],
+  [/^Etkinliğin yayında: /, 'act_ec'],
+  [/ yarın — hâlâ boş yer var$/, 'act_lc'],
+  [/ ilk buluşmasını bekliyor$/, 'act_te'],
+  [/ daha da kalabalık olabilir$| daha çok kişiye ulaşabilir$/, 'grow'],
+  [/ — Yeni Etkinlik: /, 'event_new'],
+  [/ — (Yarın|3 Gün Sonra): /, 'event_reminder'],
+  [/ — Yeni Üye: /, 'team_member'],
+  [/ — Yeni Katılımcı: /, 'event_join'],
+  [/ etkinliğine yorum yapıldı$/, 'comment'],
+  [/ etkinliğinde değişiklik var$/, 'event_update'],
+  [/ takımında yeni gönderi var$/, 'wall_post'],
+  [/ takımındaki rolün güncellendi$/, 'role'],
+  [/ takımına davet etti!$/, 'invite'],
+  [/^Muuvlink — Şifre Sıfırlama$/, 'password_reset'],
+  [/^Mesajınız alındı — Muuvlink$/, 'contact_reply'],
+  [/^(📬 )?Yeni İletişim Mesajı: /, 'contact_admin'],
+];
+const kindOfSubject = (subj) => (SUBJECT_KIND.find(([re]) => re.test(subj)) || [null, 'other'])[1];
+const RESEND_DELIVERED = new Set(['delivered', 'opened', 'clicked']);
+const RESEND_PROBLEM = new Set(['bounced', 'complained', 'failed', 'suppressed']);
+
+app.get('/api/admin/emails', isAdmin, async (req, res) => {
+  try {
+    const day = /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.date || '')) ? req.query.date
+      : (await pool.query(`SELECT to_char(NOW() AT TIME ZONE 'Europe/Istanbul', 'YYYY-MM-DD') AS d`)).rows[0].d;
+    const range = (await pool.query(
+      `SELECT ($1::date::timestamp AT TIME ZONE 'Europe/Istanbul') AS f,
+              (($1::date + 1)::timestamp AT TIME ZONE 'Europe/Istanbul') AS t`, [day])).rows[0];
+    const fromIso = new Date(range.f).toISOString(), toIso = new Date(range.t).toISOString();
+
+    const [log, items, daily, since] = await Promise.all([
+      pool.query(`SELECT kind, status, resend_id FROM email_log WHERE sent_at >= $1 AND sent_at < $2`, [fromIso, toIso]),
+      resendEmailsForDay(fromIso, toIso).catch((e) => { console.error('[EMAILS] Resend:', e.message); return null; }),
+      pool.query(`SELECT to_char(sent_at AT TIME ZONE 'Europe/Istanbul', 'YYYY-MM-DD') AS d,
+                         COUNT(*) FILTER (WHERE status = 'sent')::int AS sent,
+                         COUNT(*) FILTER (WHERE status = 'skipped')::int AS skipped
+                    FROM email_log WHERE sent_at > NOW() - INTERVAL '14 days' GROUP BY 1 ORDER BY 1`),
+      pool.query(`SELECT MIN(sent_at) AS m FROM email_log`),
+    ]);
+    // Tür: önce email_log (resend_id eşleşmesi), yoksa konudan. Gönderilen/teslim
+    // Resend'den; atlanan (tercih kapalı) ve hata yalnız email_log'da.
+    const logKind = new Map(log.rows.filter((r) => r.resend_id).map((r) => [r.resend_id, r.kind]));
+    const byKind = new Map();
+    const bucket = (k) => {
+      if (!byKind.has(k)) byKind.set(k, { kind: k, sent: 0, delivered: 0, problem: 0, skipped: 0, failed: 0, subjects: new Map() });
+      return byKind.get(k);
+    };
+    const totals = { sent: 0, delivered: 0, bounced: 0, complained: 0, pending: 0, skipped: 0, failed: 0 };
+    for (const e of items || []) {
+      const b = bucket(logKind.get(e.id) || kindOfSubject(e.subject));
+      b.sent++; totals.sent++;
+      if (RESEND_DELIVERED.has(e.last_event)) { b.delivered++; totals.delivered++; }
+      else if (RESEND_PROBLEM.has(e.last_event)) {
+        b.problem++;
+        if (e.last_event === 'complained') totals.complained++; else totals.bounced++;
+      } else totals.pending++;
+      b.subjects.set(e.subject, (b.subjects.get(e.subject) || 0) + 1);
+    }
+    for (const r of log.rows) {
+      if (r.status === 'skipped') { bucket(r.kind).skipped++; totals.skipped++; }
+      else if (r.status === 'failed') { bucket(r.kind).failed++; totals.failed++; }
+    }
+    res.json({
+      date: day,
+      resendOk: items !== null,
+      totals,
+      byKind: [...byKind.values()]
+        .map((k) => ({ ...k, subjects: [...k.subjects].sort((a, b) => b[1] - a[1]).slice(0, 30).map(([subject, n]) => ({ subject, n })) }))
+        .sort((a, b) => b.sent + b.skipped - (a.sent + a.skipped)),
+      daily: daily.rows,
+      logSince: since.rows[0].m,
+    });
+  } catch (error) {
+    console.error('Admin emails error:', error.message);
+    res.status(500).json({ error: 'E-posta istatistiği alınamadı' });
+  }
+});
+
 // Admin: ayrılış istatistiği (kişisel veri yok). Geri gelenler ayrılış sayılmaz.
 app.get('/api/admin/departures', isAdmin, async (req, res) => {
   try {
@@ -6593,7 +6736,7 @@ async function growEmailGuard(kind, id, force) {
 async function sendGrowEmails(recipients, build) {
   let sent = 0, skipped = 0, failed = 0;
   for (const u of recipients) {
-    const r = await sendEmail({ to: u.email, userId: u.id, prefKey: 'tips', build });
+    const r = await sendEmail({ to: u.email, userId: u.id, prefKey: 'tips', kind: 'grow', build });
     if (r?.skipped) skipped++; else if (r) sent++; else failed++;
   }
   return { sent, skipped, failed };
@@ -6784,8 +6927,9 @@ app.post('/api/contact', async (req, res) => {
     const adminResult = await pool.query('SELECT email FROM users WHERE is_admin = true LIMIT 1');
     if (adminResult.rows[0]) {
       sendEmail({
+        kind: 'contact_admin',
         to: adminResult.rows[0].email,
-        subject: `📬 Yeni İletişim Mesajı: ${subject}`,
+        subject: `Yeni İletişim Mesajı: ${subject}`,
         html: emailWrapper(`
           <h2 style="margin:0 0 16px;color:#1e293b;">Yeni İletişim Formu Mesajı</h2>
           <div style="background:#f8fafc;border-radius:12px;padding:20px;margin-bottom:20px;">
@@ -6808,6 +6952,7 @@ app.post('/api/contact', async (req, res) => {
 
     // Gönderene teşekkür maili
     sendEmail({
+      kind: 'contact_reply',
       to: email,
       fallbackLang: reqLang(req),
       build: (L) => ({
@@ -8869,6 +9014,7 @@ app.post('/api/auth/forgot-password', authLimiter, async (req, res) => {
 
     const resetLink = `${APP_URL}?reset_token=${token}`;
     await sendEmail({
+      kind: 'password_reset',
       to: email,
       userId: user.id,
       build: (L) => ({
@@ -9068,7 +9214,7 @@ function activationEventData(t, L) {
   };
 }
 async function deliverActivation(logId, user, kind, buildData) {
-  const r = await sendEmail({ to: user.email, userId: user.id, prefKey: 'tips',
+  const r = await sendEmail({ to: user.email, userId: user.id, prefKey: 'tips', kind: `act_${kind}`,
     build: (L) => activationEmail(kind, buildData(L), L) });
   await setActivationStatus(logId, r?.skipped ? 'skipped_pref' : r ? 'sent' : 'failed');
   return r;
@@ -9088,7 +9234,7 @@ async function runActivationEmails() {
           AND NOT EXISTS (SELECT 1 FROM activation_email_log a WHERE a.kind = 'wu' AND a.ref_id = u.id)`)).rows;
     for (const u of newUsers) {
       const id = await claimActivation('wu', u.id, u.id); if (!id) continue;
-      const r = await sendEmail({ to: u.email, userId: u.id, prefKey: 'tips', build: (L) => welcomeEmail({ name: u.name }, L) });
+      const r = await sendEmail({ to: u.email, userId: u.id, prefKey: 'tips', kind: 'act_wu', build: (L) => welcomeEmail({ name: u.name }, L) });
       await setActivationStatus(id, r?.skipped ? 'skipped_pref' : r ? 'sent' : 'failed');
       stats.wu++;
     }

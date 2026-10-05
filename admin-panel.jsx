@@ -1024,6 +1024,144 @@ const CatBadge = ({ cat }) => {
   return <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold whitespace-nowrap ${d.cls}`}>{d.label}</span>;
 };
 
+// ─── E-postalar: seçilen günün gönderim istatistiği ──────────────────────────
+// Kaynak /api/admin/emails: gönderilen/teslim Resend'den (yalnız @muuvlink.app),
+// tür email_log'dan (5 Ekim 2026'dan beri) ya da konudan. Bugün açıksa dakikada bir tazelenir.
+const EMAIL_KIND_TR = {
+  act_wu: "Hoş geldin", act_tc: "Takım kuruldu", act_ec: "Etkinlik yayında", act_lc: "Son çağrı",
+  act_te: "İlk buluşma", grow: "Büyüme (panelden)", event_new: "Yeni etkinlik (üyelere)",
+  event_reminder: "Etkinlik hatırlatma", team_member: "Yeni takım üyesi", event_join: "Yeni katılımcı",
+  comment: "Yorum", event_update: "Etkinlik değişti", wall_post: "Duvar gönderisi", role: "Rol değişti",
+  invite: "Takım daveti", password_reset: "Şifre sıfırlama", contact_reply: "İletişim yanıtı",
+  contact_admin: "İletişim (bize)", tips: "İpuçları", sample: "Örnek / test", other: "Diğer",
+};
+const istanbulToday = () => new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Istanbul" });
+const shiftDay = (d, n) => { const x = new Date(`${d}T12:00:00Z`); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
+
+function EmailsTab({ api }) {
+  const [date, setDate] = useState(istanbulToday);
+  const [data, setData] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [open, setOpen] = useState(null);
+  const load = useCallback(async (d, quiet = false) => {
+    if (!quiet) setBusy(true);
+    try { const r = await api(`/admin/emails?date=${d}`); if (r) setData(r); }
+    catch { /* bir sonraki turda */ }
+    finally { if (!quiet) setBusy(false); }
+  }, [api]);
+  useEffect(() => { setOpen(null); load(date); }, [date, load]);
+  useEffect(() => {
+    if (date !== istanbulToday()) return;
+    const id = setInterval(() => { if (document.visibilityState === "visible") load(date, true); }, 60000);
+    return () => clearInterval(id);
+  }, [date, load]);
+
+  const T = data?.totals || {};
+  const pct = T.sent ? Math.round((T.delivered / T.sent) * 100) : null;
+  const today = istanbulToday();
+  const cards = [
+    ["Gönderilen", T.sent, "text-slate-900"],
+    ["Teslim edildi", T.sent ? `${T.delivered} · %${pct}` : 0, "text-brand-700"],
+    ["Geri döndü", T.bounced, T.bounced ? "text-red-600" : "text-slate-900"],
+    ["Spam şikayeti", T.complained, T.complained ? "text-red-600" : "text-slate-900"],
+    ["Yolda", T.pending, "text-slate-900"],
+    ["Atlandı (tercih kapalı)", T.skipped, "text-slate-900"],
+    ["Gönderim hatası", T.failed, T.failed ? "text-red-600" : "text-slate-900"],
+  ];
+  return (
+    <div className="space-y-5">
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 md:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <h2 className="font-medium text-slate-900 flex items-center gap-2">
+            <Mail className="w-4 h-4 text-brand-600" /> Gönderilen e-postalar
+            {busy && <Loader2 className="w-4 h-4 animate-spin text-slate-400" />}
+          </h2>
+          <div className="flex items-center gap-1.5">
+            <button onClick={() => setDate((d) => shiftDay(d, -1))} aria-label="Önceki gün"
+              className="w-9 h-9 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:border-brand-300"><ChevronRight className="w-4 h-4 rotate-180" /></button>
+            <input type="date" value={date} max={today} onChange={(e) => e.target.value && setDate(e.target.value)}
+              className="h-9 px-2.5 rounded-lg border border-slate-200 text-sm text-slate-700" />
+            <button onClick={() => setDate((d) => (d < today ? shiftDay(d, 1) : d))} disabled={date >= today} aria-label="Sonraki gün"
+              className="w-9 h-9 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:border-brand-300 disabled:opacity-40"><ChevronRight className="w-4 h-4" /></button>
+            {date !== today && (
+              <button onClick={() => setDate(today)} className="h-9 px-3 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:border-brand-300">Bugün</button>
+            )}
+          </div>
+        </div>
+        {data && !data.resendOk && (
+          <div className="mb-4 px-3 py-2 rounded-lg bg-amber-50 border border-amber-100 text-xs text-amber-800">Resend'e ulaşılamadı; teslim bilgisi eksik.</div>
+        )}
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+          {cards.map(([label, val, cls]) => (
+            <div key={label} className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-2.5">
+              <div className="text-[11px] text-slate-500">{label}</div>
+              <div className={`text-lg font-semibold mt-0.5 ${cls}`}>{val ?? 0}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="px-4 md:px-6 py-4 border-b border-slate-100 flex flex-wrap items-baseline justify-between gap-2">
+          <h3 className="font-medium text-slate-900">Türe göre</h3>
+          <span className="text-xs text-slate-400">Satıra tıklayınca konular · "Atlandı" {data?.logSince ? `${new Date(data.logSince).toLocaleDateString("tr-TR", { day: "numeric", month: "long" })}'dan` : "bugünden"} beri sayılıyor</span>
+        </div>
+        {!data?.byKind?.length ? (
+          <div className="text-center py-12 text-slate-400 text-sm">{busy ? "Yükleniyor…" : "Bu gün e-posta gönderilmedi"}</div>
+        ) : (
+          <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[520px]">
+            <thead className="bg-slate-50 text-xs text-slate-500 uppercase tracking-wide">
+              <tr>
+                <th className="text-left px-4 md:px-6 py-3">Tür</th>
+                <th className="text-right px-3 py-3">Gönderilen</th>
+                <th className="text-right px-3 py-3">Teslim</th>
+                <th className="text-right px-3 py-3">Sorun</th>
+                <th className="text-right px-4 md:px-6 py-3">Atlandı</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {data.byKind.map((k) => (
+                <React.Fragment key={k.kind}>
+                  <tr onClick={() => setOpen(open === k.kind ? null : k.kind)} className="cursor-pointer hover:bg-slate-50/60">
+                    <td className="px-4 md:px-6 py-3 font-medium text-slate-800">
+                      <span className="inline-flex items-center gap-1.5">
+                        <ChevronRight className={`w-3.5 h-3.5 text-slate-400 transition-transform ${open === k.kind ? "rotate-90" : ""}`} />
+                        {EMAIL_KIND_TR[k.kind] || k.kind}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3 text-right font-semibold text-slate-800">{k.sent}</td>
+                    <td className="px-3 py-3 text-right text-brand-700">{k.delivered}</td>
+                    <td className={`px-3 py-3 text-right ${k.problem || k.failed ? "text-red-600 font-semibold" : "text-slate-400"}`}>{k.problem + k.failed || "—"}</td>
+                    <td className="px-4 md:px-6 py-3 text-right text-slate-500">{k.skipped || "—"}</td>
+                  </tr>
+                  {open === k.kind && (
+                    <tr className="bg-slate-50/60">
+                      <td colSpan={5} className="px-4 md:px-6 py-3">
+                        {k.subjects.length ? (
+                          <ul className="space-y-1">
+                            {k.subjects.map((x) => (
+                              <li key={x.subject} className="flex items-start justify-between gap-3 text-xs text-slate-600">
+                                <span className="min-w-0 break-words">{x.subject}</span>
+                                <span className="font-semibold text-slate-800 flex-shrink-0">{x.n}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : <span className="text-xs text-slate-400">Gönderim yok, yalnız atlananlar</span>}
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              ))}
+            </tbody>
+          </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function LiveTab({ api, showToast }) {
   const [data, setData] = React.useState(null);
   const [err, setErr]   = React.useState(null);
@@ -1966,6 +2104,7 @@ export default function AdminPanel() {
     { id: "discovery",   label: "Yarış Keşfi",       icon: Radar },
     { id: "teams",     label: "Takımlar",     icon: Shield },
     { id: "logs",      label: "Loglar",       icon: Activity },
+    { id: "emails",    label: "E-postalar",   icon: Mail },
     { id: "messages",  label: "Mesajlar",     icon: MessageSquare,
       badge: stats?.unreadContact > 0 ? stats.unreadContact : null },
     { id: "banners",      label: "Bannerlar",    icon: Image },
@@ -3304,6 +3443,7 @@ export default function AdminPanel() {
 
           {/* ── LIVE ────────────────────────────────────── */}
           {!loading && tab === "live" && <LiveTab api={api} showToast={showToast} />}
+          {!loading && tab === "emails" && <EmailsTab api={api} />}
 
           {/* ── DISCOVERY ────────────────────────────────── */}
           {!loading && tab === "discovery" && (
