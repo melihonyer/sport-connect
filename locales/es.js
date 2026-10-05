@@ -25,6 +25,8 @@ export default {
     resetTitle: "Nueva contraseña",
     emailLabel: "Correo electrónico",
     passwordLabel: "Contraseña",
+    showPassword: "Mostrar contraseña",
+    hidePassword: "Ocultar contraseña",
     passwordNew: "Nueva contraseña",
     passwordConfirm: "Repite la contraseña",
     nameLabel: "Nombre y apellidos",

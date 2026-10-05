@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, forwardRef } from "react";
 import { detectLang, createT, LANGUAGES, SUPPORTED, localeOf, pickLang } from "./i18n.js";
 import Tour from "./Tour.jsx";
 import FreshBuildWatcher from "./FreshBuildWatcher.jsx";
@@ -46,6 +46,7 @@ import {
   Mail,
   ShieldCheck,
   Eye,
+  EyeOff,
   ZoomIn,
   Image,
   Menu,
@@ -438,6 +439,24 @@ const MottoReveal = React.memo(({ mottos, color1 = "#114956", color2 = "#643e87"
   );
 });
 // Module-level — uncontrolled inputs ile focus sorunu tamamen çözülür
+// Şifre alanı + göz düğmesi (yazılanı görüp kontrol etmek için). Bileşen dışarıda
+// tanımlı: içeride tanımlansa her üst-render'da sökülür, yazılan ve görünürlük gider.
+// className girdiye gider; sağda düğmeye yer açılır.
+const PasswordInput = forwardRef(({ className = "", t, ...props }, ref) => {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative">
+      <input ref={ref} {...props} type={show ? "text" : "password"} className={`${className} pr-12`}
+        autoCapitalize="none" autoCorrect="off" spellCheck={false} />
+      <button type="button" onClick={() => setShow((v) => !v)} tabIndex={-1}
+        aria-label={t ? t(show ? "auth.hidePassword" : "auth.showPassword") : undefined} aria-pressed={show}
+        className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 transition-colors">
+        {show ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+      </button>
+    </div>
+  );
+});
+
 const AuthModal = ({ authMode, setAuthMode, onClose, handleLogin, handleRegister, setLegalModal, t, lang, onLangChange }) => {
   // Dil seçici yalnız uygulamada (onLangChange verilirse): uygulamada giriş
   // öncesinde dili değiştirecek başka yer yok, telefonun dili geçerli oluyordu.
@@ -582,7 +601,7 @@ const AuthModal = ({ authMode, setAuthMode, onClose, handleLogin, handleRegister
               onInvalid={e => e.target.setCustomValidity(t("auth.emailInvalid"))}
               onInput={e => e.target.setCustomValidity("")}/>
             {authMode !== "forgot" && (
-              <input ref={passRef} type="password" placeholder={t("auth.passwordLabel")}
+              <PasswordInput ref={passRef} t={t} placeholder={t("auth.passwordLabel")}
                 className={`w-full px-4 py-3.5 border rounded-xl text-slate-800 placeholder-slate-400 text-base font-medium outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 transition-all ${error ? "border-red-300 bg-red-50/50" : "border-slate-200"}`}
                 required/>
             )}
@@ -8227,11 +8246,11 @@ export default function Muuvlink() {
                   <AlertTriangle className="w-4 h-4 flex-shrink-0" /> {error}
                 </div>
               )}
-              <input type="password" placeholder={t("auth.passwordNew")} value={password}
+              <PasswordInput t={t} placeholder={t("auth.passwordNew")} value={password}
                 onChange={e => { setPassword(e.target.value); setError(""); }}
                 className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-300"
                 required/>
-              <input type="password" placeholder={t("auth.passwordConfirm")} value={password2}
+              <PasswordInput t={t} placeholder={t("auth.passwordConfirm")} value={password2}
                 onChange={e => { setPassword2(e.target.value); setError(""); }}
                 className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-300"
                 required/>
@@ -8508,8 +8527,8 @@ export default function Muuvlink() {
             <form onSubmit={handleChangePassword} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-2">{t("settings.currentPassword")}</label>
-                <input
-                  type="password"
+                <PasswordInput
+                  t={t}
                   value={pwData.currentPassword}
                   onChange={(e) => setPwData({ ...pwData, currentPassword: e.target.value })}
                   className="w-full px-4 py-3 border rounded-xl"
@@ -8518,8 +8537,8 @@ export default function Muuvlink() {
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">{t("settings.newPassword")}</label>
-                <input
-                  type="password"
+                <PasswordInput
+                  t={t}
                   value={pwData.newPassword}
                   onChange={(e) => setPwData({ ...pwData, newPassword: e.target.value })}
                   className="w-full px-4 py-3 border rounded-xl"
@@ -8528,8 +8547,8 @@ export default function Muuvlink() {
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">{t("settings.confirmPassword")}</label>
-                <input
-                  type="password"
+                <PasswordInput
+                  t={t}
                   value={pwData.confirmPassword}
                   onChange={(e) => setPwData({ ...pwData, confirmPassword: e.target.value })}
                   className="w-full px-4 py-3 border rounded-xl"

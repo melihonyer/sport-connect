@@ -35,6 +35,9 @@ export const translations = {
     resetTitle:       { tr: "Yeni Şifre Belirle",          en: "Set New Password",       de: "Neues Passwort"          },
     emailLabel:       { tr: "E-posta",                     en: "Email",                  de: "E-Mail"                  },
     passwordLabel:    { tr: "Şifre",                       en: "Password",               de: "Passwort"                },
+    // Şifre alanındaki göz düğmesi (ekran okuyucu etiketi)
+    showPassword:     { tr: "Şifreyi göster",              en: "Show password",          de: "Passwort anzeigen"       },
+    hidePassword:     { tr: "Şifreyi gizle",               en: "Hide password",          de: "Passwort verbergen"      },
     passwordNew:      { tr: "Yeni Şifre",                  en: "New Password",           de: "Neues Passwort"          },
     passwordConfirm:  { tr: "Şifre Tekrar",                en: "Confirm Password",       de: "Passwort bestätigen"     },
     nameLabel:        { tr: "Ad Soyad",                    en: "Full Name",              de: "Vollständiger Name"      },

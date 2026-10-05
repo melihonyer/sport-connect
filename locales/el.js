@@ -26,6 +26,8 @@ export default {
     resetTitle: "Ορισμός νέου κωδικού",
     emailLabel: "Email",
     passwordLabel: "Κωδικός",
+    showPassword: "Εμφάνιση κωδικού",
+    hidePassword: "Απόκρυψη κωδικού",
     passwordNew: "Νέος κωδικός",
     passwordConfirm: "Επιβεβαίωση κωδικού",
     nameLabel: "Ονοματεπώνυμο",
