@@ -186,7 +186,20 @@ if (typeof window !== "undefined" && !window.__muuvLangFetch) {
         if (!vid) { vid = (crypto.randomUUID?.() || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`); localStorage.setItem("muuv_vid", vid); }
         if (!headers.has("X-Muuv-Visitor")) headers.set("X-Muuv-Visitor", vid);
       } catch {}
-      return _origFetch(input, { ...init, headers });
+      // Süresi dolmuş/geçersiz oturum (sunucu 403 "Invalid token"): eski anahtar
+      // telefonda kalınca kişi misafir görünüyor ama "Katıl" eski anahtarla gidip
+      // reddediliyordu (5 Ekim 2026). Anahtarı sil, uygulamaya haber ver.
+      // Kontrol cevap çağırana dönmeden biter: çağıranın hata uyarısı bastırılabilsin.
+      return _origFetch(input, { ...init, headers }).then(async (res) => {
+        if (res.status === 403 && headers.has("Authorization")) {
+          const d = await res.clone().json().catch(() => null);
+          if (d?.error === "Invalid token") {
+            try { localStorage.removeItem("token"); } catch {}
+            window.dispatchEvent(new CustomEvent("muuv:session-expired", { detail: { url } }));
+          }
+        }
+        return res;
+      });
     }
     return _origFetch(input, init);
   };
@@ -2287,7 +2300,11 @@ export default function Muuvlink() {
     return <span className="text-inherit font-bold">{letter}</span>;
   };
 
+  // Oturum az önce düştüyse ardından gelen hata uyarısı ("Invalid token") gösterilmez;
+  // giriş penceresi zaten açılıyor.
+  const sessionExpiredAtRef = useRef(0);
   const showToast = (message, type = "success") => {
+    if (type === "error" && Date.now() - sessionExpiredAtRef.current < 4000) return;
     setToast({ message, type });
     setTimeout(() => setToast(null), 3500);
   };
@@ -3486,6 +3503,19 @@ export default function Muuvlink() {
       if (setError) setError(t("auth.serverError"));
     }
   };
+
+  // Geçersiz oturum: kullanıcıyı misafire çevir. Açılıştaki hesap yüklemesinde
+  // (/auth/me) sessizce; bir işlem sırasında düştüyse giriş penceresini aç.
+  useEffect(() => {
+    const onExpired = (e) => {
+      sessionExpiredAtRef.current = Date.now();
+      setUser(null);
+      setMyTeams([]); setMyTrainings([]); setNotifications([]);
+      if (!String(e.detail?.url || "").includes("/auth/me")) { setAuthMode("login"); setIsAuthModalOpen(true); }
+    };
+    window.addEventListener("muuv:session-expired", onExpired);
+    return () => window.removeEventListener("muuv:session-expired", onExpired);
+  }, []);
 
   const handleLogout = () => {
     if (isNative) syncPushToken(null); // çıkış yapılan cihaz artık bildirim almasın

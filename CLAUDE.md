@@ -548,6 +548,23 @@ sayfa kartı kendisi açar (uygulamada `appUrlOpen` de bu parametreyi okur).
   `?hikaye=1` ile açıp önizleme görselini kaydetmek. Kod içine test kancası
   bırakılmaz.
 
+## Süresi dolmuş oturum
+
+Oturum anahtarı 30 gün geçerli. Süresi dolunca sunucu 403 `Invalid token` döner.
+Eskiden anahtar telefonda kalıyordu: kişi misafir görünüyor ama "Katıl" eski
+anahtarla gidip reddediliyor, ekranda "Invalid token" çıkıyordu (5 Ekim 2026,
+Beyaz Triatlon Akademi'ye iki kez katılmaya çalışan biri).
+- `sporla-bulusma.jsx` fetch sarmalı: Authorization'lı istek 403 + `Invalid token`
+  dönerse anahtarı siler, `muuv:session-expired` olayı yayar (cevap çağırana
+  dönmeden önce). Dinleyici kullanıcıyı misafire çevirir; açılıştaki `/auth/me`
+  ise sessiz, bir işlem sırasındaysa giriş penceresi açılır. 4 sn boyunca hata
+  uyarıları bastırılır (pencere zaten mesaj). Yeni metin yok.
+- `authenticateToken`'ın 403 `Invalid token` metni bu kontrolün anahtarı —
+  değiştirilirse sarmal da değişir.
+- Admin "Canlı" akışı etiketi isteğin ADRESİNDEN yazar; sonuç `res.on('finish')`
+  ile `failed` olarak eklenir: reddedilen işlem üstü çizili + "reddedildi ·
+  oturum yok" / "olmadı · <kod>". Akışta "katıldı" görünce önce bu etikete bak.
+
 ## Push bildirimleri
 
 Cihaz jetonu yalnız uygulama açılışında geliyordu; o an giriş yapılmamışsa jeton

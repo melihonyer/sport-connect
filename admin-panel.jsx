@@ -1234,8 +1234,14 @@ function LiveTab({ api, showToast }) {
                   <PlatformBadge p={f.platform} client={f.client} />
                   <span className={`font-medium flex-shrink-0 ${f.suspicious ? "text-red-600" : f.isUser ? "text-brand-700" : "text-slate-400"}`}>{f.who}</span>
                   <span className={f.suspicious ? "text-red-700 min-w-0" : "text-slate-500 min-w-0"}>
-                    {f.label}
+                    <span className={f.failed ? "line-through decoration-slate-300" : ""}>{f.label}</span>
                     {f.target && <span className="text-slate-700 font-medium"> · {f.target}</span>}
+                    {f.failed && (
+                      <span className="ml-1.5 px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 text-[10px] font-semibold whitespace-nowrap"
+                        title={`Sunucu ${f.failed} döndü; işlem gerçekleşmedi`}>
+                        {f.failed === 401 || f.failed === 403 ? "reddedildi · oturum yok" : `olmadı · ${f.failed}`}
+                      </span>
+                    )}
                     {f.suspicious && <span className="font-semibold"> — tarayıcıdan gelmedi</span>}
                   </span>
                 </div>

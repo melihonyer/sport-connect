@@ -503,12 +503,18 @@ app.use('/api', (req, res, next) => {
       const dup = live.feed.find((f) =>
         (f.userId ? `u${f.userId}` : `v${f.vid}`) === actor &&
         f.label === label && f.entity === entity && now - f.ts < LIVE_DEDUPE_MS);
+      let entry = dup;
       if (!dup) {
-        live.feed.unshift({ ts: now, userId, vid: userId ? null : vid, label, path: p, plat, entity, client, suspicious: liveSuspicious(p, plat) });
+        entry = { ts: now, userId, vid: userId ? null : vid, label, path: p, plat, entity, client, suspicious: liveSuspicious(p, plat) };
+        live.feed.unshift(entry);
         if (live.feed.length > LIVE_FEED_MAX) live.feed.length = LIVE_FEED_MAX;
       } else {
         dup.ts = now;
       }
+      // Etiket isteğin ADRESİNDEN gelir; sonucu ancak cevap bitince belli olur.
+      // Reddedilen istek "takıma katıldı" diye görünmesin (5 Ekim 2026: süresi
+      // dolmuş oturumla iki kez 403 alan misafir "katıldı" görünüyordu).
+      res.on('finish', () => { entry.status = res.statusCode; });
     }
   } catch { /* izleme asla isteği bozmasın */ }
   next();
@@ -8097,6 +8103,7 @@ app.get('/api/admin/live', isAdmin, async (req, res) => {
       client: f.client || null,
       suspicious: !!f.suspicious,
       path: f.path,
+      failed: f.status >= 400 ? f.status : null,
     }));
 
     res.json({
