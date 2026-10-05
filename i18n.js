@@ -1330,17 +1330,19 @@ export const translations = {
 // Dil seçiciler, tarih biçimleri, SEO adresleri ve hreflang buradan okur.
 // Yeni dil: buraya bir satır + locales/<kod>.js + LOCALIZED_PAGE_PATHS
 // (sporla-bulusma.jsx) + SEO_LOCALIZED_PATHS (backend) + nginx dil yolları.
+// Sıra = dil menülerindeki sıra: dil koduna göre alfabetik (Melih, 5 Ekim 2026).
+// Sıraya hiçbir mantık bağlanmaz; varsayılan dil Türkçe ayrıca belirtilir.
 export const LANGUAGES = [
-  { code: "tr", label: "Türkçe",   locale: "tr-TR" },
-  { code: "en", label: "English",  locale: "en-US" }, // arayüz hep en-US kullandı; değişmesin
   { code: "de", label: "Deutsch",  locale: "de-DE" },
   { code: "el", label: "Ελληνικά", locale: "el-GR" },
+  { code: "en", label: "English",  locale: "en-US" }, // arayüz hep en-US kullandı; değişmesin
   { code: "es", label: "Español",  locale: "es-ES" },
   { code: "fr", label: "Français", locale: "fr-FR" },
   { code: "it", label: "Italiano", locale: "it-IT" },
+  { code: "tr", label: "Türkçe",   locale: "tr-TR" },
 ];
 export const SUPPORTED = LANGUAGES.map((l) => l.code);
-export const localeOf = (lang) => (LANGUAGES.find((l) => l.code === lang) || LANGUAGES[0]).locale;
+export const localeOf = (lang) => (LANGUAGES.find((l) => l.code === lang) || LANGUAGES.find((l) => l.code === "tr")).locale;
 
 // Satır içi küçük sözlükler için ({ tr, en, de, el }): dil yoksa en, o da yoksa tr.
 export const pickLang = (map, lang) => (map ? (map[lang] ?? map.en ?? map.tr) : "");

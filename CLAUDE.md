@@ -167,7 +167,9 @@ GR ülke kodu; hreflang da `el` ister).
 
 - **Tek kaynak `i18n.js` → `LANGUAGES`** (kod, görünen ad, tarih yerel ayarı).
   Dil seçiciler, tarih biçimi ve `seo-static.mjs` buradan okur; JSX'e dil
-  listesi elle yazılmaz.
+  listesi elle yazılmaz. **Sıra dil koduna göre alfabetik** (de, el, en, es, fr,
+  it, tr — Melih, 5 Ekim 2026); yeni dil araya bu kuralla girer. Sıraya mantık
+  bağlanmaz (`LANGUAGES[0]` varsayılan değildir; varsayılan Türkçe açıkça yazılı).
 - tr/en/de metinleri `i18n.js`'te satır içinde. **Yeni diller
   `locales/<kod>.js`** dosyasında aynı anahtar ağacıyla yazılır, açılışta
   birleştirilir; eksik anahtar İngilizceye düşer. Yeni anahtar eklerken
