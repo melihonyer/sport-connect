@@ -187,6 +187,11 @@ GR ülke kodu; hreflang da `el` ister).
   **es ve fr'de ülke süzülmez** (birçok ülkede konuşuluyor); sıralamayı
   kullanıcının konumu belirler. Yeni dilde `HOME_COUNTRY` kararı verilir
   (`LocationPicker.jsx`).
+- **İlk açılış dili:** adres (`/it/...`) > kayıtlı seçim (`muuvlang` / hesap
+  dili) > telefon/tarayıcı dili > İngilizce (`detectLang`). Web'de dil seçici
+  menüde (giriş yapmadan da). **Uygulamada** giriş öncesi menü yok: giriş/kayıt
+  penceresinin sol üstünde dil açılır menüsü (`AuthModal` `onLangChange`, yalnız
+  `isNative`; 5 Ekim 2026, Melih). Web penceresine konmadı.
 - Yasal metinler (KVKK, gizlilik, koşullar) yalnız Türkçe; çevirisi hukuki
   kontrol ister, kod işi değil.
 - **Hesap dili `users.lang`.** Yalnız kayıtta ve kullanıcı dili ELLE

@@ -438,7 +438,17 @@ const MottoReveal = React.memo(({ mottos, color1 = "#114956", color2 = "#643e87"
   );
 });
 // Module-level — uncontrolled inputs ile focus sorunu tamamen çözülür
-const AuthModal = ({ authMode, setAuthMode, onClose, handleLogin, handleRegister, setLegalModal, t }) => {
+const AuthModal = ({ authMode, setAuthMode, onClose, handleLogin, handleRegister, setLegalModal, t, lang, onLangChange }) => {
+  // Dil seçici yalnız uygulamada (onLangChange verilirse): uygulamada giriş
+  // öncesinde dili değiştirecek başka yer yok, telefonun dili geçerli oluyordu.
+  const [langOpen, setLangOpen]   = useState(false);
+  const langRef = useRef(null);
+  useEffect(() => {
+    if (!langOpen) return;
+    const close = (e) => { if (langRef.current && !langRef.current.contains(e.target)) setLangOpen(false); };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [langOpen]);
   const [error, setError]         = useState("");
   const [success, setSuccess]     = useState("");
   const [loading, setLoading]     = useState(false);
@@ -502,8 +512,35 @@ const AuthModal = ({ authMode, setAuthMode, onClose, handleLogin, handleRegister
             <X className="w-5 h-5" />
           </button>
 
-          {/* Logo */}
-          <div className="flex items-center justify-center gap-2.5 mb-6">
+          {/* Dil seçici — sol üst, kapatmanın karşısında (yalnız uygulama) */}
+          {onLangChange && (
+            <div ref={langRef} className="absolute top-5 left-5 z-10">
+              <button type="button" onClick={() => setLangOpen((o) => !o)}
+                aria-haspopup="listbox" aria-expanded={langOpen}
+                className="h-8 inline-flex items-center gap-1.5 pl-2.5 pr-2 rounded-full border border-slate-200 text-xs font-semibold text-slate-600 bg-white">
+                <Globe className="w-3.5 h-3.5 text-brand-600" />
+                <span className="tracking-wider">{(lang || "").toLocaleUpperCase("en-US")}</span>
+                <ChevronDown className={`w-3 h-3 opacity-60 transition-transform ${langOpen ? "rotate-180" : ""}`} />
+              </button>
+              {langOpen && (
+                <div role="listbox" className="absolute left-0 top-[calc(100%+6px)] w-44 bg-white rounded-2xl border border-slate-200/80 shadow-xl overflow-hidden">
+                  {LANGUAGES.map(({ code, label }) => (
+                    <button key={code} type="button" role="option" aria-selected={lang === code}
+                      onClick={() => { onLangChange(code); setLangOpen(false); }}
+                      className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-left"
+                      style={lang === code ? { background: "rgba(17,73,86,0.07)", color: "#0e3c47", fontWeight: 600 } : { color: "#475569" }}>
+                      <span className="text-[10px] font-bold tracking-widest w-6 text-slate-400">{code.toLocaleUpperCase("en-US")}</span>
+                      <span className="flex-1">{label}</span>
+                      {lang === code && <Check className="w-3.5 h-3.5 flex-shrink-0 text-brand-600" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Logo — uygulamada dil düğmesine değmesin diye biraz aşağıda */}
+          <div className={`flex items-center justify-center gap-2.5 mb-6 ${onLangChange ? "mt-9" : ""}`}>
             <img src="/icons/favicon.png" alt="" className="h-8 w-auto" width="32" height="32"/>
             <img src="/icons/logo-yatay.svg" alt="Muuvlink" className="h-5 w-auto" width="120" height="20"/>
           </div>
@@ -9628,6 +9665,8 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
         handleLogin={handleLogin} handleRegister={handleRegister}
         setLegalModal={setLegalModal}
         t={t}
+        lang={lang}
+        onLangChange={isNative ? changeLang : undefined}
       />}
       {showNotifications && <NotificationsPanel />}
       {showProfileEdit && <ProfileEditModal />}
