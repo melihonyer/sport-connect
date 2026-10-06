@@ -8201,6 +8201,63 @@ app.get('/api/admin/logs', isAdmin, async (req, res) => {
 
 // Admin: canlı trafik anlık görüntüsü. Tamamı bellekten okunur; tek DB sorgusu
 // isim çözmek için, o da yalnızca önbellekte olmayan kullanıcılar varsa.
+// "Şu an içeride" sayımı tek yerde: Canlı sekmesi ve menü rozeti aynı sayıyı göstersin.
+function liveOnlineIds(now) {
+  const ids = new Set([...sseClients.keys()].filter((id) => (sseClients.get(id)?.size || 0) > 0));
+  for (const [id, v] of live.presence) if (now - v.ts <= LIVE_ONLINE_WINDOW_MS) ids.add(id);
+  return ids;
+}
+function liveActiveGuestCount(now) {
+  let n = 0;
+  for (const v of live.visitors.values()) {
+    if (now - v.ts <= LIVE_ONLINE_WINDOW_MS && v.plat !== 'bot' && v.plat !== 'script') n++;
+  }
+  return n;
+}
+
+// ─── ADMIN MENÜ ROZETLERİ ─────────────────────────────
+// Sol menüdeki sayılar. Panel 20 sn'de bir sorar; hepsi tek turda, ucuz COUNT'lar.
+// Önceden Şikayetler rozeti yalnız o sekme bir kez açılınca, Mesajlar rozeti de
+// yalnız Genel Bakış yüklenince hesaplanıyordu — açmadığın sekmenin sayısı yoktu.
+//
+// since_users / since_trainings / since_teams: tarayıcının o sekmeye en son
+// baktığı an (ms, sunucu saatiyle — yanıttaki `now`). Yalnız ondan sonra
+// eklenenler "yeni" sayılır. Bakanın kendi oluşturdukları sayılmaz: yarış
+// onaylayınca "Etkinlikler +5" çıkmasın.
+app.get('/api/admin/badges', isAdmin, async (req, res) => {
+  try {
+    const now = Date.now();
+    const since = (k) => {
+      const v = Number(req.query[`since_${k}`]);
+      return Number.isFinite(v) && v > 0 && v <= now ? new Date(v) : null;
+    };
+    const count = (sql, params = []) => pool.query(sql, params).then((r) => r.rows[0]?.n || 0);
+    const sUsers = since('users'), sTrainings = since('trainings'), sTeams = since('teams');
+    const [messages, reports, discovery, users, trainings, teams] = await Promise.all([
+      count('SELECT COUNT(*)::int AS n FROM contact_messages WHERE is_read = false'),
+      count('SELECT COUNT(*)::int AS n FROM content_reports WHERE resolved = false'),
+      count("SELECT COUNT(*)::int AS n FROM event_candidates WHERE status = 'pending'").catch(() => 0),
+      sUsers
+        ? count('SELECT COUNT(*)::int AS n FROM users WHERE created_at > $1 AND deleted_at IS NULL', [sUsers])
+        : 0,
+      sTrainings
+        ? count('SELECT COUNT(*)::int AS n FROM trainings WHERE created_at > $1 AND created_by IS DISTINCT FROM $2', [sTrainings, req.user.id])
+        : 0,
+      sTeams
+        ? count('SELECT COUNT(*)::int AS n FROM teams WHERE created_at > $1 AND owner_id IS DISTINCT FROM $2', [sTeams, req.user.id])
+        : 0,
+    ]);
+    res.json({
+      now,
+      messages, reports, discovery, users, trainings, teams,
+      live: { members: liveOnlineIds(now).size, guests: liveActiveGuestCount(now) },
+    });
+  } catch (e) {
+    console.error('Admin badges error:', e);
+    res.status(500).json({ error: 'Rozetler alınamadı.' });
+  }
+});
+
 app.get('/api/admin/live', isAdmin, async (req, res) => {
   try {
     const now = Date.now();
@@ -8235,8 +8292,7 @@ app.get('/api/admin/live', isAdmin, async (req, res) => {
     const entityNameOf = (e) => (e ? liveEntityNames.get(`${e.t}:${e.id}`) || null : null);
 
     // Şu an içeride: açık SSE bağlantısı olanlar + son 5 dk içinde istek atanlar
-    const onlineIds = new Set([...sseClients.keys()].filter((id) => (sseClients.get(id)?.size || 0) > 0));
-    for (const [id, v] of live.presence) if (now - v.ts <= LIVE_ONLINE_WINDOW_MS) onlineIds.add(id);
+    const onlineIds = liveOnlineIds(now);
     const online = [...onlineIds].map((id) => ({
       id,
       name: nameOf(id),
@@ -8269,10 +8325,8 @@ app.get('/api/admin/live', isAdmin, async (req, res) => {
       }))
       .sort((a, b) => a.secondsAgo - b.secondsAgo);
 
-    const liveVisitorVals = [...live.visitors.values()];
     // Botlar ziyaretçi sayılmaz — sayıyı şişirirler; nginx günlüğünden ayrı gösterilir.
-    const fresh = (v) => now - v.ts <= LIVE_ONLINE_WINDOW_MS;
-    const activeVisitors = liveVisitorVals.filter((v) => fresh(v) && v.plat !== 'bot' && v.plat !== 'script').length;
+    const activeVisitors = liveActiveGuestCount(now);
     const activeBots = bots.totals.agents5;
     const activeScripts = bots.list.filter((r) => r.cat === 'tool' && r.hits5 > 0).length;
 

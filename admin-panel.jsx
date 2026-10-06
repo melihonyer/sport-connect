@@ -8,6 +8,7 @@ import {
   Trophy, User, ClipboardList, CheckCircle2, DoorOpen, Sparkles, Target, Flag,
   Ticket, MapPin, ExternalLink, MousePointerClick,
   Radar, ScanSearch, RefreshCw, Loader2, XCircle, ListChecks, Star, Zap, Bell,
+  CalendarDays, ScrollText,
 } from "lucide-react";
 import LocationPicker from "./LocationPicker";
 import FreshBuildWatcher from "./FreshBuildWatcher.jsx";
@@ -506,7 +507,7 @@ function PaidEventsTab({ items, setItems, api, token, showToast }) {
 // ─── Yarış Keşfi sekmesi ───────────────────────────────────
 // İnternetten toplanan yarış adayları. Hiçbiri otomatik yayına girmez;
 // onaylanan aday "Ücretli Etkinlik" olarak yayınlanır ve haritada görünür.
-function DiscoveryTab({ api, showToast }) {
+function DiscoveryTab({ api, showToast, onQueueChange }) {
   const [filter, setFilter]   = React.useState("pending");
   const [items, setItems]     = React.useState([]);
   const [counts, setCounts]   = React.useState({});
@@ -544,7 +545,7 @@ function DiscoveryTab({ api, showToast }) {
       if (!s) return;
       setScan(s);
       if (s.running) pollRef.current = setTimeout(poll, 2500);
-      else load(filterRef.current);
+      else { load(filterRef.current); onQueueChange?.(); }
     } catch { /* geçici hata — bir sonraki turda düzelir */ }
   }, [api, load]);
 
@@ -606,6 +607,7 @@ function DiscoveryTab({ api, showToast }) {
         setItems(prev => prev.filter(i => i.id !== c.id));
         setCounts(p => ({ ...p, pending: Math.max(0, (p.pending || 1) - 1), approved: (p.approved || 0) + 1 }));
         showToast("Yayınlandı — Organizasyonlar sekmesinde.", "success");
+        onQueueChange?.();
       }
     } catch (e) { showToast(e.message || "Yayınlanamadı.", "error"); }
     finally { setBusyId(null); }
@@ -616,6 +618,7 @@ function DiscoveryTab({ api, showToast }) {
     try {
       await api(`/admin/discovery/candidates/${c.id}/reject`, { method: "POST" });
       setItems(prev => prev.filter(i => i.id !== c.id));
+      onQueueChange?.();
       setCounts(p => ({ ...p, pending: Math.max(0, (p.pending || 1) - 1), rejected: (p.rejected || 0) + 1 }));
     } catch (e) { showToast(e.message || "Reddedilemedi.", "error"); }
     finally { setBusyId(null); }
@@ -628,6 +631,7 @@ function DiscoveryTab({ api, showToast }) {
       setItems(prev => prev.filter(i => i.id !== c.id));
       setCounts(p => ({ ...p, rejected: Math.max(0, (p.rejected || 1) - 1), pending: (p.pending || 0) + 1 }));
       showToast("Aday onay kuyruğuna geri alındı.", "success");
+      onQueueChange?.();
     } catch (e) { showToast(e.message || "Geri alınamadı.", "error"); }
     finally { setBusyId(null); }
   };
@@ -645,6 +649,7 @@ function DiscoveryTab({ api, showToast }) {
         method: "POST", body: JSON.stringify({ action, status: "rejected" }),
       });
       showToast(action === "restore" ? `${r?.affected ?? 0} aday geri alındı.` : `${r?.affected ?? 0} aday silindi.`, "success");
+      onQueueChange?.();
       load(filter);
     } catch (e) { showToast(e.message || "İşlem başarısız.", "error"); }
     finally { setBulkBusy(false); }
@@ -1853,6 +1858,47 @@ function AdminToast({ toasts }) {
   );
 }
 
+// ─── Menü rozetleri ─────────────────────────────────────────
+// Bu sekmelerde rozet "son baktığından beri yeni" demek. Son bakış anı tarayıcıda
+// (localStorage) sunucu saatiyle tutulur; sekme açılınca sıfırlanır.
+const ADMIN_SEEN_TABS = ["users", "trainings", "teams"];
+const ADMIN_SEEN_KEY = "admin_seen_v1";
+const ADMIN_TITLE = "Muuvlink - Admin Panel";
+
+// alert: aksiyon bekliyor (okunmamış mesaj, çözülmemiş şikayet)
+// new:   son bakıştan beri eklenen (+3)
+// queue: bekleyen kuyruk — acil değil, sakin gösterilir
+function NavBadge({ kind, value, active }) {
+  if (!value) return null;
+  const text = kind === "new" ? `+${value > 99 ? 99 : value}` : (value > 99 ? "99+" : value);
+  const cls = {
+    alert: "bg-red-500 text-white",
+    new:   "bg-pop-400 text-brand-700",
+    queue: active ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500",
+  }[kind];
+  return (
+    <span className={`min-w-[22px] h-5 px-1.5 rounded-full text-[11px] font-bold tabular-nums flex items-center justify-center flex-shrink-0 ${cls}`}>
+      {text}
+    </span>
+  );
+}
+
+// Canlı sekmesi: şu an sitede olan kişi sayısı (üye + misafir), yanıp sönen noktayla
+function LiveDot({ value, active }) {
+  if (value == null) return null;
+  const on = value > 0;
+  return (
+    <span className={`flex items-center gap-1.5 text-[11px] font-bold tabular-nums flex-shrink-0 ${active ? "text-white" : on ? "text-emerald-600" : "text-slate-400"}`}
+      title={on ? `Şu an sitede ${value} kişi` : "Şu an sitede kimse yok"}>
+      <span className="relative flex w-2 h-2">
+        {on && <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60 animate-ping motion-reduce:hidden" />}
+        <span className={`relative inline-flex w-2 h-2 rounded-full ${on ? "bg-emerald-500" : "bg-slate-300"}`} />
+      </span>
+      {value}
+    </span>
+  );
+}
+
 // ─── Ana bileşen ────────────────────────────────────────────
 export default function AdminPanel() {
   const [token, setToken]       = useState(() => sessionStorage.getItem("admin_token") || "");
@@ -2052,6 +2098,74 @@ export default function AdminPanel() {
     return () => { document.removeEventListener("visibilitychange", onVisible); clearInterval(timer); };
   }, [token, refreshTab]);
 
+  // ─── Menü rozetleri: canlı sayılar ──────────────────────
+  // Önceden Şikayetler rozeti yalnız o sekme açılınca, Mesajlar rozeti yalnız
+  // Genel Bakış yüklenince hesaplanıyordu. Artık tek uçtan, 20 sn'de bir
+  // (sekme arka plandayken 60 sn — tarayıcı sekmesindeki "(3)" sayısı taze kalsın).
+  const [badges, setBadges] = useState(null);
+  const seenRef = useRef(null);
+  if (seenRef.current === null) {
+    try { seenRef.current = JSON.parse(localStorage.getItem(ADMIN_SEEN_KEY) || "{}") || {}; }
+    catch { seenRef.current = {}; }
+  }
+  const prevBadgesRef = useRef(null);
+
+  const refreshBadges = useCallback(async () => {
+    const seen = seenRef.current;
+    const qs = ADMIN_SEEN_TABS.filter(k => seen[k]).map(k => `since_${k}=${seen[k]}`).join("&");
+    let b;
+    try { b = await api(`/admin/badges${qs ? `?${qs}` : ""}`); } catch { return; }
+    if (!b) return;
+    let seenChanged = false;
+    // İlk açılışta geçmişin tamamı "yeni" sayılmasın: başlangıç = şimdi
+    for (const k of ADMIN_SEEN_TABS) {
+      if (!seen[k]) { seen[k] = b.now; b[k] = 0; seenChanged = true; }
+    }
+    // Açık sekmeye yeni bir şey geldiyse listeyi beklemeden tazele; o sekmenin
+    // "yeni" rozeti zaten gördüğün için sıfır kalır.
+    const cur = tabRef.current;
+    const prev = prevBadgesRef.current;
+    if (ADMIN_SEEN_TABS.includes(cur)) {
+      if (b[cur] > 0) refreshTab();
+      seen[cur] = b.now; b[cur] = 0; seenChanged = true;
+    } else if (prev && (cur === "messages" || cur === "reports") && b[cur] !== prev[cur]) {
+      refreshTab();
+    }
+    if (seenChanged) { try { localStorage.setItem(ADMIN_SEEN_KEY, JSON.stringify(seen)); } catch {} }
+    prevBadgesRef.current = b;
+    setBadges(b);
+  }, [api, refreshTab]);
+
+  useEffect(() => {
+    if (!token) return;
+    let timer;
+    const loop = () => {
+      refreshBadges();
+      timer = setTimeout(loop, document.visibilityState === "visible" ? 20000 : 60000);
+    };
+    loop();
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      clearTimeout(timer);
+      loop();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => { clearTimeout(timer); document.removeEventListener("visibilitychange", onVisible); };
+  }, [token, refreshBadges]);
+
+  // Sekme açılınca o sekmenin "yeni" rozeti hemen düşsün, son bakış güncellensin
+  useEffect(() => {
+    if (!token || !ADMIN_SEEN_TABS.includes(tab)) return;
+    setBadges(b => (b ? { ...b, [tab]: 0 } : b));
+    refreshBadges();
+  }, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Tarayıcı sekmesinde aksiyon bekleyen sayı: "(3) Muuvlink - Admin Panel"
+  useEffect(() => {
+    const n = (badges?.messages || 0) + (badges?.reports || 0);
+    document.title = n > 0 ? `(${n}) ${ADMIN_TITLE}` : ADMIN_TITLE;
+  }, [badges?.messages, badges?.reports]);
+
   // ─── Silme / işlemler ───────────────────────────────────
   const del = async (path, label, reload) => {
     if (!window.confirm(`"${label}" silinecek. Emin misiniz?`)) return;
@@ -2078,6 +2192,7 @@ export default function AdminPanel() {
     await api(`/admin/contact/${id}/read`, { method: "PUT" });
     setMessages(prev => prev.map(m => m.id === id ? { ...m, is_read: true } : m));
     setStats(prev => prev ? { ...prev, unreadContact: Math.max(0, (prev.unreadContact || 1) - 1) } : prev);
+    refreshBadges();
   };
 
   // ─── LOGIN SAYFASI ──────────────────────────────────────
@@ -2168,24 +2283,38 @@ export default function AdminPanel() {
   }
 
   // ─── ADMIN PANEL (giriş yapıldıktan sonra) ──────────────
-  const navItems = [
-    { id: "dashboard", label: "Genel Bakış", icon: LayoutDashboard },
-    { id: "live",      label: "Canlı",       icon: Activity },
-    { id: "users",     label: "Kullanıcılar", icon: Users },
-    { id: "trainings", label: "Etkinlikler", icon: Activity },
-    { id: "paid-events", label: "Organizasyonlar", icon: Ticket },
-    { id: "discovery",   label: "Yarış Keşfi",       icon: Radar },
-    { id: "teams",     label: "Takımlar",     icon: Shield },
-    { id: "logs",      label: "Loglar",       icon: Activity },
-    { id: "emails",    label: "Bildirimler",  icon: Bell },
-    { id: "messages",  label: "Mesajlar",     icon: MessageSquare,
-      badge: stats?.unreadContact > 0 ? stats.unreadContact : null },
-    { id: "banners",      label: "Bannerlar",    icon: Image },
-    { id: "home-news",    label: "Haberler",     icon: Newspaper },
-    { id: "home-gallery", label: "Galeri",       icon: GalleryHorizontal },
-    { id: "reports",      label: "Şikayetler",   icon: Flag,
-      badge: reports.filter(r => !r.resolved).length || null },
+  // Sekmeler içeriğe göre gruplu. Sık kullanılan üstte; aksiyon bekleyenler
+  // (Gelen Kutusu) ikinci sırada ki rozetleri göz hizasında kalsın.
+  const B = badges || {};
+  const navGroups = [
+    { label: "Takip", items: [
+      { id: "dashboard", label: "Genel Bakış", icon: LayoutDashboard },
+      { id: "live",      label: "Canlı",       icon: Activity,
+        live: B.live ? B.live.members + B.live.guests : null },
+      { id: "logs",      label: "Loglar",      icon: ScrollText },
+      { id: "emails",    label: "Bildirimler", icon: Bell },
+    ]},
+    { label: "Gelen Kutusu", items: [
+      { id: "messages", label: "Mesajlar",   icon: MessageSquare, badge: B.messages, kind: "alert" },
+      { id: "reports",  label: "Şikayetler", icon: Flag,          badge: B.reports,  kind: "alert" },
+    ]},
+    { label: "Topluluk", items: [
+      { id: "users",     label: "Kullanıcılar", icon: Users,        badge: B.users,     kind: "new" },
+      { id: "teams",     label: "Takımlar",     icon: Shield,       badge: B.teams,     kind: "new" },
+      { id: "trainings", label: "Etkinlikler",  icon: CalendarDays, badge: B.trainings, kind: "new" },
+    ]},
+    { label: "Dış Etkinlikler", items: [
+      { id: "paid-events", label: "Organizasyonlar", icon: Ticket },
+      { id: "discovery",   label: "Yarış Keşfi",     icon: Radar, badge: B.discovery, kind: "queue" },
+    ]},
+    { label: "Site İçeriği", items: [
+      { id: "banners",      label: "Bannerlar", icon: Image },
+      { id: "home-news",    label: "Haberler",  icon: Newspaper },
+      { id: "home-gallery", label: "Galeri",    icon: GalleryHorizontal },
+    ]},
   ];
+  const navItems = navGroups.flatMap(g => g.items);
+  const needsAction = (B.messages || 0) + (B.reports || 0);
 
   // ─── Banner helpers ──────────────────────────────────────
   const startEditBanner = (b) => {
@@ -2585,28 +2714,38 @@ export default function AdminPanel() {
           </button>
         </div>
 
-        {/* Nav */}
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {navItems.map(({ id, label, icon: Icon, badge }) => (
-            <button
-              key={id}
-              onClick={() => { loadTab(id); setMobileNavOpen(false); }}
-              className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
-                tab === id
-                  ? "text-white shadow-md"
-                  : "text-slate-500 hover:text-brand-700 hover:bg-brand-50"
-              }`}
-              style={tab === id ? { background: "linear-gradient(135deg,#114956,#0e3c47)" } : {}}
-            >
-              <span className="flex items-center gap-3">
-                <Icon className="w-4 h-4 flex-shrink-0" />
-                {label}
-              </span>
-              {badge && (
-                <span className="w-5 h-5 bg-amber-500 text-white text-[10px] font-medium rounded-full flex items-center justify-center">{badge}</span>
-              )}
-              {tab === id && <ChevronRight className="w-3.5 h-3.5 opacity-60" />}
-            </button>
+        {/* Nav — içeriğe göre gruplu, rozetler canlı */}
+        <nav className="flex-1 px-3 pt-2 pb-4 overflow-y-auto" aria-label="Yönetim menüsü">
+          {navGroups.map(g => (
+            <div key={g.label} className="mt-3 first:mt-1">
+              <div className="px-4 pb-1.5 text-[10.5px] font-bold uppercase tracking-[0.12em] text-slate-400">
+                {g.label}
+              </div>
+              <div className="space-y-0.5">
+                {g.items.map(({ id, label, icon: Icon, badge, kind, live }) => {
+                  const active = tab === id;
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => { loadTab(id); setMobileNavOpen(false); }}
+                      aria-current={active ? "page" : undefined}
+                      className={`w-full flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors duration-150 ${
+                        active
+                          ? "bg-brand-600 text-white"
+                          : "text-slate-500 hover:text-brand-700 hover:bg-brand-50"
+                      }`}
+                    >
+                      <span className="flex items-center gap-3 min-w-0">
+                        <Icon className="w-4 h-4 flex-shrink-0" />
+                        <span className="truncate">{label}</span>
+                      </span>
+                      <LiveDot value={live} active={active} />
+                      <NavBadge kind={kind} value={badge} active={active} />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           ))}
         </nav>
 
@@ -2634,8 +2773,10 @@ export default function AdminPanel() {
         {/* Üst bar */}
         <header className="bg-white border-b border-slate-100 px-4 md:px-8 py-4 flex items-center gap-3 sticky top-0 z-10">
           {/* Hamburger (mobil) */}
-          <button className="md:hidden flex-shrink-0 p-2 rounded-xl hover:bg-slate-100 transition" onClick={() => setMobileNavOpen(true)}>
+          <button className="md:hidden relative flex-shrink-0 p-2 rounded-xl hover:bg-slate-100 transition" onClick={() => setMobileNavOpen(true)}
+            aria-label={needsAction > 0 ? `Menü — ${needsAction} okunmamış` : "Menü"}>
             <Menu className="w-5 h-5 text-slate-600"/>
+            {needsAction > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white" />}
           </button>
           <div className="flex-1 min-w-0">
             <h1 className="font-display font-bold text-slate-900 truncate" style={{fontSize:"clamp(1rem,2.5vw,1.2rem)", letterSpacing:"-0.01em"}}>
@@ -3520,7 +3661,7 @@ export default function AdminPanel() {
 
           {/* ── DISCOVERY ────────────────────────────────── */}
           {!loading && tab === "discovery" && (
-            <DiscoveryTab api={api} showToast={showToast} />
+            <DiscoveryTab api={api} showToast={showToast} onQueueChange={refreshBadges} />
           )}
 
           {/* ── LOGS ─────────────────────────────────────── */}
@@ -3572,6 +3713,7 @@ export default function AdminPanel() {
                             if (!window.confirm("Bu içeriği gizlemek istiyor musunuz? İstersen geri alabilirsin.")) return;
                             await api(`/admin/flags/${r.id}/content`, { method: "DELETE" });
                             setReports(prev => prev.map(x => x.id === r.id ? { ...x, resolved: true, content_deleted: true } : x));
+                            refreshBadges();
                             showToast("İçerik gizlendi.", "success");
                           }}
                           className="text-xs px-3 py-1.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 font-semibold transition-colors whitespace-nowrap"
@@ -3582,6 +3724,7 @@ export default function AdminPanel() {
                           onClick={async () => {
                             await api(`/admin/flags/${r.id}/resolve`, { method: "PUT" });
                             setReports(prev => prev.map(x => x.id === r.id ? { ...x, resolved: true } : x));
+                            refreshBadges();
                           }}
                           className="text-xs px-3 py-1.5 bg-green-50 text-green-600 rounded-xl hover:bg-green-100 font-semibold transition-colors whitespace-nowrap"
                         >
@@ -3594,6 +3737,7 @@ export default function AdminPanel() {
                         onClick={async () => {
                           await api(`/admin/flags/${r.id}/restore`, { method: "POST" });
                           setReports(prev => prev.map(x => x.id === r.id ? { ...x, resolved: false, content_deleted: false } : x));
+                          refreshBadges();
                           showToast("İçerik geri getirildi.", "success");
                         }}
                         className="text-xs px-3 py-1.5 bg-amber-50 text-amber-600 rounded-xl hover:bg-amber-100 font-semibold transition-colors whitespace-nowrap"

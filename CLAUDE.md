@@ -317,6 +317,8 @@ zaman aşımı görebiliyor (bkz. MTU/MSS notu; 18 Eylül 2026'da yaşandı).
 Yanıltıcı olan: `/var/log/nginx/access.log`'da dakikadaki istek sayısının aniden
 düşmesi genelde kesinti değildir. Açık duran admin paneli 5 saniyede bir
 `/api/admin/live` çağırıyor; sekme kapanınca trafik 12/dk'dan 1/dk'ya iner.
+Menü rozetleri (`/api/admin/badges`) ayrıca 20 sn'de bir, sekme arka plandayken
+60 sn'de bir gelir — panel açık unutulursa dakikada 1 istek sürer.
 
 Bu alarmlar tekrar edecek: **sunucu taşıma yeniden önerilmez**, Melih VPS'te
 kalmaya karar verdi. Yapılacak iş sadece ne olduğunu doğru raporlamak.
@@ -643,6 +645,19 @@ olan kullanıcı.
   sekmeye dönünce sessizce tazelenir (`refreshTab`: yükleniyor ekranı yok,
   arama/filtre korunur). Form içeren sekmeler (Banner, Haber, Galeri,
   Organizasyon) tazelenmez. "Canlı" 5 sn.
+- **Admin menüsü gruplu + canlı rozetler** (6 Ekim 2026, Melih): Takip ·
+  Gelen Kutusu · Topluluk · Dış Etkinlikler · Site İçeriği. Rozetler tek uçtan
+  (`GET /api/admin/badges`, 20 sn; arka planda 60 sn). Türler: kırmızı = aksiyon
+  bekliyor (okunmamış mesaj, çözülmemiş şikayet); sarı `+n` = son bakıştan beri
+  yeni üye/takım/etkinlik (bakanın kendi oluşturdukları sayılmaz; son bakış
+  tarayıcıda `admin_seen_v1`, sunucu saatiyle; ilk açılışta geçmiş "yeni"
+  sayılmaz); gri = Yarış Keşfi bekleyen kuyruk; yeşil nokta = şu an sitede
+  (Canlı sekmesiyle aynı sayım: `liveOnlineIds` + `liveActiveGuestCount`).
+  Açık sekmeye yeni kayıt gelince liste 30 sn beklemeden tazelenir. Tarayıcı
+  sekmesi başlığında aksiyon sayısı: "(3) Muuvlink - Admin Panel". Mobilde
+  hamburger üstünde kırmızı nokta. Yeni bir sekmeye rozet eklenecekse sayım bu
+  uca eklenir; sekme verisinden hesaplanmaz (açılmayan sekmenin sayısı olmaz —
+  eski Şikayetler rozetinin hatası buydu).
 - **Yeni sürüm (`FreshBuildWatcher.jsx`, site + admin, 30 Eylül 2026):** Training
   Agents'taki bileşenin karşılığı. Öne gelişte (visibilitychange, focus, online,
   Capacitor appStateChange) sunucudaki HTML'in (`/index.html`, admin'de `/admin`)
