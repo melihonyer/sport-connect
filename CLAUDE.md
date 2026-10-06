@@ -554,7 +554,13 @@ bildirimi" seçimi, gün seçimi ortak.
 - Tür: önce `email_log` (resend_id eşleşmesi), yoksa Türkçe konu kalıbından
   (`SUBJECT_KIND`; `[Örnek` → "Örnek / test"). Başka dildeki eski konular "Diğer".
   Konu metni değişirse kalıp da güncellenir.
-- "Atlandı (tercih kapalı)" ve "hata" yalnız `email_log`'da → 5 Ekim öncesi 0 görünür.
+- Atlanan ikiye ayrılır (6 Ekim 2026, Melih): `skip_default` = tür varsayılan
+  kapalı, kişi hiç açmamış; `skip_user` = kişi kendisi kapatmış (tercih kaydı
+  `email:false`). `sendEmailRaw` `skipReason` döner. Eski `skipped` satırları o
+  günkü tercihe göre ayrıldı. Atlanan ve hata yalnız `email_log`'da → 5 Ekim öncesi 0.
+- Uygulama bildirimi varsayılan AÇIK, bu yüzden oradaki atlanan her zaman "kişi kapattı".
+  E-posta ile uygulama bildirimi ayrı tercihlerdir: e-posta atlanınca uygulama
+  bildirimi yine gider (Melih bir kez karıştırdı — ekran görüntüsü e-posta görünümüydü).
 - Bugün açıksa dakikada bir tazelenir; tabloda satıra tıklayınca konular açılır.
 
 ## Instagram hikâye kartı

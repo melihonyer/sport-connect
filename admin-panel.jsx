@@ -1083,7 +1083,8 @@ function EmailsTab({ api }) {
     ["Geri döndü", T.bounced, T.bounced ? "text-red-600" : "text-slate-900"],
     ["Spam şikayeti", T.complained, T.complained ? "text-red-600" : "text-slate-900"],
     ["Yolda", T.pending, "text-slate-900"],
-    ["Atlandı (tercih kapalı)", T.skipped, "text-slate-900"],
+    ["Atlandı · varsayılan kapalı", T.skip_default, "text-slate-900"],
+    ["Atlandı · kişi kapattı", T.skip_user, T.skip_user ? "text-amber-700" : "text-slate-900"],
     ["Gönderim hatası", T.failed, T.failed ? "text-red-600" : "text-slate-900"],
   ];
   const A = appData?.totals || {};
@@ -1093,7 +1094,8 @@ function EmailsTab({ api }) {
     ["Okunan", A.created ? `${A.read} · %${readPct}` : 0, "text-brand-700"],
     ["Telefona gitti (push)", A.push_ok, "text-slate-900"],
     ["Push hatası", A.push_fail, A.push_fail ? "text-red-600" : "text-slate-900"],
-    ["Atlandı (tercih kapalı)", A.skipped, "text-slate-900"],
+    // Uygulama bildirimi varsayılan AÇIK → atlanan her zaman kişinin kendi kapattığı.
+    ["Atlandı · kişi kapattı", A.skipped, A.skipped ? "text-amber-700" : "text-slate-900"],
   ];
   return (
     <div className="space-y-5">
@@ -1125,7 +1127,7 @@ function EmailsTab({ api }) {
         {mode === "email" && data && !data.resendOk && (
           <div className="mb-4 px-3 py-2 rounded-lg bg-amber-50 border border-amber-100 text-xs text-amber-800">Resend'e ulaşılamadı; teslim bilgisi eksik.</div>
         )}
-        <div className={`grid grid-cols-2 sm:grid-cols-4 gap-3 ${mode === "email" ? "lg:grid-cols-7" : "lg:grid-cols-5"}`}>
+        <div className={`grid grid-cols-2 sm:grid-cols-4 gap-3 ${mode === "email" ? "lg:grid-cols-8" : "lg:grid-cols-5"}`}>
           {(mode === "email" ? cards : appCards).map(([label, val, cls]) => (
             <div key={label} className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-2.5">
               <div className="text-[11px] text-slate-500">{label}</div>
@@ -1139,7 +1141,7 @@ function EmailsTab({ api }) {
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         <div className="px-4 md:px-6 py-4 border-b border-slate-100 flex flex-wrap items-baseline justify-between gap-2">
           <h3 className="font-medium text-slate-900">Türe göre</h3>
-          <span className="text-xs text-slate-400">Push ve "Atlandı" {appData?.logSince ? `${new Date(appData.logSince).toLocaleDateString("tr-TR", { day: "numeric", month: "long" })}'dan` : "bugünden"} beri sayılıyor · kullanıcının sildiği bildirim sayılmaz</span>
+          <span className="text-xs text-slate-400">Push ve atlananlar {appData?.logSince ? `${new Date(appData.logSince).toLocaleDateString("tr-TR", { day: "numeric", month: "long" })}'dan` : "bugünden"} beri sayılıyor · kullanıcının sildiği bildirim sayılmaz</span>
         </div>
         {!appData?.byKind?.length ? (
           <div className="text-center py-12 text-slate-400 text-sm">{busy ? "Yükleniyor…" : "Bu gün bildirim yok"}</div>
@@ -1153,7 +1155,7 @@ function EmailsTab({ api }) {
                 <th className="text-right px-3 py-3">Kişi</th>
                 <th className="text-right px-3 py-3">Okunan</th>
                 <th className="text-right px-3 py-3">Push</th>
-                <th className="text-right px-4 md:px-6 py-3">Atlandı</th>
+                <th className="text-right px-4 md:px-6 py-3" title="Kişi bu bildirim türünü kapatmış">Kişi kapattı</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -1181,20 +1183,21 @@ function EmailsTab({ api }) {
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         <div className="px-4 md:px-6 py-4 border-b border-slate-100 flex flex-wrap items-baseline justify-between gap-2">
           <h3 className="font-medium text-slate-900">Türe göre</h3>
-          <span className="text-xs text-slate-400">Satıra tıklayınca konular · "Atlandı" {data?.logSince ? `${new Date(data.logSince).toLocaleDateString("tr-TR", { day: "numeric", month: "long" })}'dan` : "bugünden"} beri sayılıyor</span>
+          <span className="text-xs text-slate-400">Satıra tıklayınca konular · atlananlar {data?.logSince ? `${new Date(data.logSince).toLocaleDateString("tr-TR", { day: "numeric", month: "long" })}'dan` : "bugünden"} beri sayılıyor</span>
         </div>
         {!data?.byKind?.length ? (
           <div className="text-center py-12 text-slate-400 text-sm">{busy ? "Yükleniyor…" : "Bu gün e-posta gönderilmedi"}</div>
         ) : (
           <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[520px]">
+          <table className="w-full text-sm min-w-[640px]">
             <thead className="bg-slate-50 text-xs text-slate-500 uppercase tracking-wide">
               <tr>
                 <th className="text-left px-4 md:px-6 py-3">Tür</th>
                 <th className="text-right px-3 py-3">Gönderilen</th>
                 <th className="text-right px-3 py-3">Teslim</th>
                 <th className="text-right px-3 py-3">Sorun</th>
-                <th className="text-right px-4 md:px-6 py-3">Atlandı</th>
+                <th className="text-right px-3 py-3" title="Tür varsayılan kapalı, kişi hiç açmamış">Varsayılan kapalı</th>
+                <th className="text-right px-4 md:px-6 py-3" title="Kişi bu e-postayı kendisi kapatmış">Kişi kapattı</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -1210,11 +1213,12 @@ function EmailsTab({ api }) {
                     <td className="px-3 py-3 text-right font-semibold text-slate-800">{k.sent}</td>
                     <td className="px-3 py-3 text-right text-brand-700">{k.delivered}</td>
                     <td className={`px-3 py-3 text-right ${k.problem || k.failed ? "text-red-600 font-semibold" : "text-slate-400"}`}>{k.problem + k.failed || "—"}</td>
-                    <td className="px-4 md:px-6 py-3 text-right text-slate-500">{k.skipped || "—"}</td>
+                    <td className="px-3 py-3 text-right text-slate-500">{k.skip_default || "—"}</td>
+                    <td className={`px-4 md:px-6 py-3 text-right ${k.skip_user ? "text-amber-700 font-semibold" : "text-slate-500"}`}>{k.skip_user || "—"}</td>
                   </tr>
                   {open === k.kind && (
                     <tr className="bg-slate-50/60">
-                      <td colSpan={5} className="px-4 md:px-6 py-3">
+                      <td colSpan={6} className="px-4 md:px-6 py-3">
                         {k.subjects.length ? (
                           <ul className="space-y-1">
                             {k.subjects.map((x) => (

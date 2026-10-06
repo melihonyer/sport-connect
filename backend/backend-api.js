@@ -921,7 +921,7 @@ pool.query(`CREATE TABLE IF NOT EXISTS email_log (
     sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     kind VARCHAR(32) NOT NULL,
     user_id INTEGER,
-    status VARCHAR(12) NOT NULL,     -- sent | skipped | failed | mocked
+    status VARCHAR(12) NOT NULL,     -- sent | skip_default | skip_user | failed | mocked (eski: skipped)
     resend_id VARCHAR(64)
   )`).then(() => pool.query('CREATE INDEX IF NOT EXISTS email_log_sent_at ON email_log (sent_at)'))
   .catch((e) => console.error('email_log:', e.message));
@@ -933,7 +933,7 @@ async function sendEmail(opts) {
   const r = await sendEmailRaw(opts);
   // Tür: açıkça verilen `kind`, yoksa tercih anahtarı (event_new, comment…).
   logEmail(opts.kind || opts.prefKey, opts.userId,
-    r?.skipped ? 'skipped' : r?.mocked ? 'mocked' : r ? 'sent' : 'failed', r?.id || null);
+    r?.skipped ? (r.skipReason === 'user' ? 'skip_user' : 'skip_default') : r?.mocked ? 'mocked' : r ? 'sent' : 'failed', r?.id || null);
   return r;
 }
 async function sendEmailRaw({ to, subject, html, build = null, fallbackLang = 'tr', prefKey = null, userId = null }) {
@@ -951,7 +951,10 @@ async function sendEmailRaw({ to, subject, html, build = null, fallbackLang = 't
   }
   if (prefKey) {
     const prefs = recipient?.notif_prefs || {};
-    if (!prefAllows(prefs, prefKey, 'email')) return { skipped: true };
+    // Neden: kişi bu e-postayı KENDİSİ mi kapattı (tercih kaydı email:false), yoksa
+    // tür varsayılan kapalı ve hiç açmadı mı — admin › Bildirimler ikisini ayrı sayar.
+    if (!prefAllows(prefs, prefKey, 'email'))
+      return { skipped: true, skipReason: prefs[prefKey]?.email === false ? 'user' : 'default' };
   }
   if (build) ({ subject, html } = build(recipient ? mailLang(recipient.lang) : mailLang(fallbackLang)));
   if (!process.env.RESEND_API_KEY) {
@@ -6498,10 +6501,10 @@ app.get('/api/admin/emails', isAdmin, async (req, res) => {
     const logKind = new Map(log.rows.filter((r) => r.resend_id).map((r) => [r.resend_id, r.kind]));
     const byKind = new Map();
     const bucket = (k) => {
-      if (!byKind.has(k)) byKind.set(k, { kind: k, sent: 0, delivered: 0, problem: 0, skipped: 0, failed: 0, subjects: new Map() });
+      if (!byKind.has(k)) byKind.set(k, { kind: k, sent: 0, delivered: 0, problem: 0, skipped: 0, skip_default: 0, skip_user: 0, failed: 0, subjects: new Map() });
       return byKind.get(k);
     };
-    const totals = { sent: 0, delivered: 0, bounced: 0, complained: 0, pending: 0, skipped: 0, failed: 0 };
+    const totals = { sent: 0, delivered: 0, bounced: 0, complained: 0, pending: 0, skipped: 0, skip_default: 0, skip_user: 0, failed: 0 };
     for (const e of items || []) {
       const b = bucket(logKind.get(e.id) || kindOfSubject(e.subject));
       b.sent++; totals.sent++;
@@ -6513,7 +6516,11 @@ app.get('/api/admin/emails', isAdmin, async (req, res) => {
       b.subjects.set(e.subject, (b.subjects.get(e.subject) || 0) + 1);
     }
     for (const r of log.rows) {
-      if (r.status === 'skipped') { bucket(r.kind).skipped++; totals.skipped++; }
+      // skip_default: tür varsayılan kapalı, kişi açmamış · skip_user: kişi kapatmış.
+      if (r.status === 'skip_default' || r.status === 'skip_user' || r.status === 'skipped') {
+        const f = r.status === 'skip_user' ? 'skip_user' : 'skip_default';
+        bucket(r.kind)[f]++; totals[f]++; bucket(r.kind).skipped++; totals.skipped++;
+      }
       else if (r.status === 'failed') { bucket(r.kind).failed++; totals.failed++; }
     }
     res.json({
