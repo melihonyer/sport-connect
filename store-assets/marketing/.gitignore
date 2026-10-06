@@ -1,0 +1,3 @@
+.tmp/
+.tmp-*.png
+out/*-strip.png
