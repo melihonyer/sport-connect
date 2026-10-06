@@ -4300,6 +4300,7 @@ app.post('/api/teams/:id/join', authenticateToken, async (req, res) => {
 
       sendEmail({
         to: leader.email,
+        userId: leader.user_id,
         prefKey: 'team_member',
         build: (L) => ({ subject: tm(L, 'joinTeamSubject', team.name, joinerName), html: emailWrapper(`
           <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">${tm(L, 'joinTeamTitle')}</h2>
