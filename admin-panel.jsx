@@ -1864,6 +1864,7 @@ function AdminToast({ toasts }) {
 const ADMIN_SEEN_TABS = ["users", "trainings", "teams"];
 const ADMIN_SEEN_KEY = "admin_seen_v1";
 const ADMIN_TITLE = "Muuvlink - Admin Panel";
+const ADMIN_NAV_COLLAPSED_KEY = "admin_nav_collapsed_v1";
 
 // alert: aksiyon bekliyor (okunmamış mesaj, çözülmemiş şikayet)
 // new:   son bakıştan beri eklenen (+3)
@@ -2159,6 +2160,20 @@ export default function AdminPanel() {
     setBadges(b => (b ? { ...b, [tab]: 0 } : b));
     refreshBadges();
   }, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Menü grupları açılır/kapanır; seçim tarayıcıda hatırlanır (kişisel kolaylık)
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem(ADMIN_NAV_COLLAPSED_KEY) || "[]")); }
+    catch { return new Set(); }
+  });
+  const toggleGroup = useCallback((label) => {
+    setCollapsed(prev => {
+      const next = new Set(prev);
+      next.has(label) ? next.delete(label) : next.add(label);
+      try { localStorage.setItem(ADMIN_NAV_COLLAPSED_KEY, JSON.stringify([...next])); } catch {}
+      return next;
+    });
+  }, []);
 
   // Tarayıcı sekmesinde aksiyon bekleyen sayı: "(3) Muuvlink - Admin Panel"
   useEffect(() => {
@@ -2714,39 +2729,69 @@ export default function AdminPanel() {
           </button>
         </div>
 
-        {/* Nav — içeriğe göre gruplu, rozetler canlı */}
+        {/* Nav — içeriğe göre gruplu, gruplar açılır/kapanır, rozetler canlı.
+            Başlık ile sekme aynı gri tonda karışıyordu: başlık koyu karbon ve
+            büyük harf, sekmeler girintili ve ince dikey çizgiyle başlığa bağlı. */}
         <nav className="flex-1 px-3 pt-2 pb-4 overflow-y-auto" aria-label="Yönetim menüsü">
-          {navGroups.map(g => (
-            <div key={g.label} className="mt-3 first:mt-1">
-              <div className="px-4 pb-1.5 text-[10.5px] font-bold uppercase tracking-[0.12em] text-slate-400">
-                {g.label}
+          {navGroups.map((g, gi) => {
+            const isOpen = !collapsed.has(g.label);
+            const hasActive = g.items.some(i => i.id === tab);
+            // Kapalı grupta rozetler başlığa toplanır — hiçbir şey gözden kaçmasın
+            const sum = (k) => g.items.reduce((a, i) => a + (i.kind === k ? (i.badge || 0) : 0), 0);
+            const liveItem = g.items.find(i => i.live != null);
+            const panelId = `nav-group-${gi}`;
+            return (
+              <div key={g.label} className={gi > 0 ? "mt-2 pt-2 border-t border-slate-100" : ""}>
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(g.label)}
+                  aria-expanded={isOpen}
+                  aria-controls={panelId}
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors"
+                >
+                  <span className={`flex-1 text-left text-[11.5px] font-semibold uppercase tracking-[0.12em] ${hasActive ? "text-brand-600" : "text-ink-900"}`}>
+                    {g.label}
+                  </span>
+                  {!isOpen && (
+                    <span className="flex items-center gap-1.5">
+                      {liveItem && <LiveDot value={liveItem.live} />}
+                      <NavBadge kind="alert" value={sum("alert")} />
+                      <NavBadge kind="new" value={sum("new")} />
+                      <NavBadge kind="queue" value={sum("queue")} />
+                    </span>
+                  )}
+                  <ChevronDown className={`w-4 h-4 flex-shrink-0 text-slate-400 transition-transform duration-150 motion-reduce:transition-none ${isOpen ? "" : "-rotate-90"}`} />
+                </button>
+
+                {isOpen && (
+                  <div id={panelId} className="ml-[18px] pl-2 border-l border-slate-200 space-y-0.5 mt-0.5 mb-1">
+                    {g.items.map(({ id, label, icon: Icon, badge, kind, live }) => {
+                      const active = tab === id;
+                      return (
+                        <button
+                          key={id}
+                          onClick={() => { loadTab(id); setMobileNavOpen(false); }}
+                          aria-current={active ? "page" : undefined}
+                          className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-[13.5px] transition-colors duration-150 ${
+                            active
+                              ? "bg-brand-600 text-white font-semibold"
+                              : "text-slate-600 font-medium hover:text-brand-700 hover:bg-brand-50"
+                          }`}
+                        >
+                          <span className="flex items-center gap-2.5 min-w-0">
+                            <Icon className={`w-4 h-4 flex-shrink-0 ${active ? "" : "text-slate-400"}`} />
+                            <span className="truncate">{label}</span>
+                          </span>
+                          <LiveDot value={live} active={active} />
+                          <NavBadge kind={kind} value={badge} active={active} />
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-              <div className="space-y-0.5">
-                {g.items.map(({ id, label, icon: Icon, badge, kind, live }) => {
-                  const active = tab === id;
-                  return (
-                    <button
-                      key={id}
-                      onClick={() => { loadTab(id); setMobileNavOpen(false); }}
-                      aria-current={active ? "page" : undefined}
-                      className={`w-full flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors duration-150 ${
-                        active
-                          ? "bg-brand-600 text-white"
-                          : "text-slate-500 hover:text-brand-700 hover:bg-brand-50"
-                      }`}
-                    >
-                      <span className="flex items-center gap-3 min-w-0">
-                        <Icon className="w-4 h-4 flex-shrink-0" />
-                        <span className="truncate">{label}</span>
-                      </span>
-                      <LiveDot value={live} active={active} />
-                      <NavBadge kind={kind} value={badge} active={active} />
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </nav>
 
         {/* Çıkış */}

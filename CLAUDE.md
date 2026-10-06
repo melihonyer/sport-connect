@@ -646,7 +646,12 @@ olan kullanıcı.
   arama/filtre korunur). Form içeren sekmeler (Banner, Haber, Galeri,
   Organizasyon) tazelenmez. "Canlı" 5 sn.
 - **Admin menüsü gruplu + canlı rozetler** (6 Ekim 2026, Melih): Takip ·
-  Gelen Kutusu · Topluluk · Dış Etkinlikler · Site İçeriği. Rozetler tek uçtan
+  Gelen Kutusu · Topluluk · Dış Etkinlikler · Site İçeriği. Gruplar açılır/
+  kapanır (seçim `admin_nav_collapsed_v1`); kapalı grubun rozetleri başlıkta
+  toplanır. Başlık/sekme ayrımı: başlık koyu karbon büyük harf + ok, sekmeler
+  girintili ve ince dikey çizgiyle bağlı (önce ikisi de griydi, karışıyordu —
+  Melih). Başlıkta `font-extrabold` kullanılmaz: Montserrat 800 panelde
+  yüklenmiyor, Türkçe harfler farklı kalınlıkta çıkıyor; 600 kullanılır. Rozetler tek uçtan
   (`GET /api/admin/badges`, 20 sn; arka planda 60 sn). Türler: kırmızı = aksiyon
   bekliyor (okunmamış mesaj, çözülmemiş şikayet); sarı `+n` = son bakıştan beri
   yeni üye/takım/etkinlik (bakanın kendi oluşturdukları sayılmaz; son bakış
