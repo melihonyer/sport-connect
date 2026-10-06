@@ -851,11 +851,28 @@ function prefAllows(prefs, key, channel) {
 // Bildirim oluştur ve anlık ilet — kullanıcı bu türü kapatmışsa hiç oluşturulmaz.
 // build(lang) verilirse başlık/mesaj ALICININ dilinde üretilir (users.lang; boşsa tr).
 // Bildirim satırı alıcıya özel olduğu için metin o dilde saklanır, push da öyle gider.
+// Uygulama bildirimi kaydı (admin › Bildirimler): oluşturuldu/atlandı + push sonucu.
+// Bildirimin kendisi zaten notifications'ta; bu tablo atlananları ve push'u tutar.
+pool.query(`CREATE TABLE IF NOT EXISTS notif_log (
+    id SERIAL PRIMARY KEY,
+    sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    kind VARCHAR(32) NOT NULL,
+    user_id INTEGER,
+    status VARCHAR(10) NOT NULL,     -- created | skipped
+    push_ok SMALLINT NOT NULL DEFAULT 0,
+    push_fail SMALLINT NOT NULL DEFAULT 0
+  )`).then(() => pool.query('CREATE INDEX IF NOT EXISTS notif_log_sent_at ON notif_log (sent_at)'))
+  .catch((e) => console.error('notif_log:', e.message));
+const logNotif = (kind, userId, status, push = {}) =>
+  pool.query('INSERT INTO notif_log (kind, user_id, status, push_ok, push_fail) VALUES ($1, $2, $3, $4, $5)',
+    [kind || 'other', userId || null, status, Math.min(push.ok || 0, 32000), Math.min(push.fail || 0, 32000)])
+    .catch((e) => console.error('notif_log yazma:', e.message));
+
 async function createNotif(userId, { title, message, build = null, type, refId = null, url = null }) {
   try {
     const key = NOTIF_TYPE_TO_KEY[type];
     const u = await getUserNotifInfo(userId);
-    if (key && !prefAllows(u.prefs, key, 'app')) return null; // uygulama bildirimi kapalı
+    if (key && !prefAllows(u.prefs, key, 'app')) { logNotif(type, userId, 'skipped'); return null; } // uygulama bildirimi kapalı
     if (build) ({ title, message } = build(u.lang));
     const r = await pool.query(
       `INSERT INTO notifications (user_id, title, message, notification_type, reference_id, action_url)
@@ -864,7 +881,8 @@ async function createNotif(userId, { title, message, build = null, type, refId =
     );
     pushToUser(userId, { event: 'notification', data: r.rows[0] });
     const unread = await getUnreadCount(userId);
-    sendPushToUser(userId, { title, body: message, data: { type, refId, url }, badge: unread }).catch(() => {});
+    sendPushToUser(userId, { title, body: message, data: { type, refId, url }, badge: unread })
+      .then((push) => logNotif(type, userId, 'created', push)).catch(() => {});
     return r.rows[0];
   } catch (e) {
     console.error('createNotif error:', e.message);
@@ -6513,6 +6531,42 @@ app.get('/api/admin/emails', isAdmin, async (req, res) => {
   }
 });
 
+// Admin › Bildirimler › Uygulama: seçilen günün (İstanbul) bildirimleri. Oluşturulan
+// ve okunan notifications'tan (Mayıs 2026'dan beri), atlanan ve push notif_log'dan
+// (6 Ekim 2026'dan beri). Kullanıcının sildiği bildirim sayıya girmez.
+app.get('/api/admin/notifications', isAdmin, async (req, res) => {
+  try {
+    const day = /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.date || '')) ? req.query.date
+      : (await pool.query(`SELECT to_char(NOW() AT TIME ZONE 'Europe/Istanbul', 'YYYY-MM-DD') AS d`)).rows[0].d;
+    const R = `$1::date::timestamp AT TIME ZONE 'Europe/Istanbul'`, R2 = `($1::date + 1)::timestamp AT TIME ZONE 'Europe/Istanbul'`;
+    const [made, log, since] = await Promise.all([
+      pool.query(`SELECT notification_type AS kind, COUNT(*)::int AS created, COUNT(*) FILTER (WHERE is_read)::int AS read,
+                         COUNT(DISTINCT user_id)::int AS users
+                    FROM notifications WHERE created_at >= ${R} AND created_at < ${R2} GROUP BY 1`, [day]),
+      pool.query(`SELECT kind, COUNT(*) FILTER (WHERE status = 'skipped')::int AS skipped,
+                         COALESCE(SUM(push_ok), 0)::int AS push_ok, COALESCE(SUM(push_fail), 0)::int AS push_fail,
+                         COUNT(*) FILTER (WHERE status = 'created' AND push_ok > 0)::int AS pushed
+                    FROM notif_log WHERE sent_at >= ${R} AND sent_at < ${R2} GROUP BY 1`, [day]),
+      pool.query(`SELECT MIN(sent_at) AS m FROM notif_log`),
+    ]);
+    const by = new Map();
+    const row = (k) => { if (!by.has(k)) by.set(k, { kind: k, created: 0, read: 0, users: 0, skipped: 0, push_ok: 0, push_fail: 0, pushed: 0 }); return by.get(k); };
+    for (const r of made.rows) Object.assign(row(r.kind || 'other'), { created: r.created, read: r.read, users: r.users });
+    for (const r of log.rows) Object.assign(row(r.kind || 'other'), { skipped: r.skipped, push_ok: r.push_ok, push_fail: r.push_fail, pushed: r.pushed });
+    const list = [...by.values()].sort((a, b) => b.created + b.skipped - (a.created + a.skipped));
+    const sum = (f) => list.reduce((n, x) => n + x[f], 0);
+    res.json({
+      date: day,
+      totals: { created: sum('created'), read: sum('read'), skipped: sum('skipped'), push_ok: sum('push_ok'), push_fail: sum('push_fail'), pushed: sum('pushed') },
+      byKind: list,
+      logSince: since.rows[0].m,
+    });
+  } catch (error) {
+    console.error('Admin notifications error:', error.message);
+    res.status(500).json({ error: 'Bildirim istatistiği alınamadı' });
+  }
+});
+
 // Admin: ayrılış istatistiği (kişisel veri yok). Geri gelenler ayrılış sayılmaz.
 app.get('/api/admin/departures', isAdmin, async (req, res) => {
   try {
@@ -9481,7 +9535,7 @@ async function sendPushToIOS(userId, { title, body, data, badge = null }) {
     `SELECT token FROM device_push_tokens WHERE user_id = $1 AND platform = 'ios'`,
     [userId]
   );
-  if (tokensRes.rows.length === 0) return;
+  if (tokensRes.rows.length === 0) return { ok: 0, fail: 0 };
 
   const notification = new apn.Notification();
   notification.alert = { title, body };
@@ -9501,6 +9555,7 @@ async function sendPushToIOS(userId, { title, body, data, badge = null }) {
   if (result.failed.length > 0) {
     console.warn('[PUSH] APNs gönderim hataları:', result.failed.map(f => f.response?.reason));
   }
+  return { ok: result.sent.length, fail: result.failed.length };
 }
 
 async function sendPushToAndroid(userId, { title, body, data, badge = null }) {
@@ -9509,7 +9564,7 @@ async function sendPushToAndroid(userId, { title, body, data, badge = null }) {
     `SELECT token FROM device_push_tokens WHERE user_id = $1 AND platform = 'android'`,
     [userId]
   );
-  if (tokensRes.rows.length === 0) return;
+  if (tokensRes.rows.length === 0) return { ok: 0, fail: 0 };
 
   const admin = require('firebase-admin');
   const tokens = tokensRes.rows.map(r => r.token);
@@ -9535,18 +9590,26 @@ async function sendPushToAndroid(userId, { title, body, data, badge = null }) {
   if (result.failureCount > 0) {
     console.warn('[PUSH] FCM gönderim hataları:', result.responses.filter(r => !r.success).map(r => r.error?.code));
   }
+  return { ok: result.successCount, fail: result.failureCount };
 }
 
+// Döner: { ok, fail } — cihaz başına (iOS + Android). admin › Bildirimler için.
 async function sendPushToUser(userId, { title, body, data = {}, badge = null }) {
-  if (!userId) return;
+  const out = { ok: 0, fail: 0 };
+  if (!userId) return out;
   try {
-    await Promise.allSettled([
+    const rs = await Promise.allSettled([
       sendPushToIOS(userId, { title, body, data, badge }),
       sendPushToAndroid(userId, { title, body, data, badge }),
     ]);
+    for (const r of rs) {
+      if (r.status === 'fulfilled' && r.value) { out.ok += r.value.ok || 0; out.fail += r.value.fail || 0; }
+      else if (r.status === 'rejected') out.fail++;
+    }
   } catch (e) {
     console.error('[PUSH] Gönderim hatası:', e.message);
   }
+  return out;
 }
 
 // Kullanıcının okunmamış bildirim sayısı (uygulama ikonu rozeti için)

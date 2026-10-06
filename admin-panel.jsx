@@ -7,7 +7,7 @@ import {
   Upload, GripVertical, ChevronUp, ChevronDown, Newspaper, GalleryHorizontal, Menu,
   Trophy, User, ClipboardList, CheckCircle2, DoorOpen, Sparkles, Target, Flag,
   Ticket, MapPin, ExternalLink, MousePointerClick,
-  Radar, ScanSearch, RefreshCw, Loader2, XCircle, ListChecks, Star, Zap,
+  Radar, ScanSearch, RefreshCw, Loader2, XCircle, ListChecks, Star, Zap, Bell,
 } from "lucide-react";
 import LocationPicker from "./LocationPicker";
 import FreshBuildWatcher from "./FreshBuildWatcher.jsx";
@@ -1035,26 +1035,39 @@ const EMAIL_KIND_TR = {
   invite: "Takım daveti", password_reset: "Şifre sıfırlama", contact_reply: "İletişim yanıtı",
   contact_admin: "İletişim (bize)", tips: "İpuçları", sample: "Örnek / test", other: "Diğer",
 };
+const NOTIF_KIND_TR = {
+  training: "Yeni etkinlik", training_update: "Etkinlik değişti", training_reminder: "Etkinlik hatırlatma",
+  training_join: "Yeni katılımcı", training_comment: "Yorum", comment_like: "Yorum beğenisi",
+  team: "Yeni takım üyesi", team_post: "Duvar gönderisi", wall_post_like: "Gönderi beğenisi",
+  invitation: "Takım daveti", role_change: "Rol değişti", badge: "Rozet", engagement_nudge: "Hatırlatma (geri çağırma)",
+  other: "Diğer",
+};
 const istanbulToday = () => new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Istanbul" });
 const shiftDay = (d, n) => { const x = new Date(`${d}T12:00:00Z`); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
 
+// Bildirimler sekmesi: aynı gün seçimiyle iki görünüm — E-posta / Uygulama bildirimi.
 function EmailsTab({ api }) {
   const [date, setDate] = useState(istanbulToday);
+  const [mode, setMode] = useState("email"); // email | app
   const [data, setData] = useState(null);
+  const [appData, setAppData] = useState(null);
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(null);
-  const load = useCallback(async (d, quiet = false) => {
+  const load = useCallback(async (d, m, quiet = false) => {
     if (!quiet) setBusy(true);
-    try { const r = await api(`/admin/emails?date=${d}`); if (r) setData(r); }
+    try {
+      if (m === "app") { const r = await api(`/admin/notifications?date=${d}`); if (r) setAppData(r); }
+      else { const r = await api(`/admin/emails?date=${d}`); if (r) setData(r); }
+    }
     catch { /* bir sonraki turda */ }
     finally { if (!quiet) setBusy(false); }
   }, [api]);
-  useEffect(() => { setOpen(null); load(date); }, [date, load]);
+  useEffect(() => { setOpen(null); load(date, mode); }, [date, mode, load]);
   useEffect(() => {
     if (date !== istanbulToday()) return;
-    const id = setInterval(() => { if (document.visibilityState === "visible") load(date, true); }, 60000);
+    const id = setInterval(() => { if (document.visibilityState === "visible") load(date, mode, true); }, 60000);
     return () => clearInterval(id);
-  }, [date, load]);
+  }, [date, mode, load]);
 
   const T = data?.totals || {};
   const pct = T.sent ? Math.round((T.delivered / T.sent) * 100) : null;
@@ -1068,14 +1081,30 @@ function EmailsTab({ api }) {
     ["Atlandı (tercih kapalı)", T.skipped, "text-slate-900"],
     ["Gönderim hatası", T.failed, T.failed ? "text-red-600" : "text-slate-900"],
   ];
+  const A = appData?.totals || {};
+  const readPct = A.created ? Math.round((A.read / A.created) * 100) : null;
+  const appCards = [
+    ["Oluşturulan", A.created, "text-slate-900"],
+    ["Okunan", A.created ? `${A.read} · %${readPct}` : 0, "text-brand-700"],
+    ["Telefona gitti (push)", A.push_ok, "text-slate-900"],
+    ["Push hatası", A.push_fail, A.push_fail ? "text-red-600" : "text-slate-900"],
+    ["Atlandı (tercih kapalı)", A.skipped, "text-slate-900"],
+  ];
   return (
     <div className="space-y-5">
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 md:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <h2 className="font-medium text-slate-900 flex items-center gap-2">
-            <Mail className="w-4 h-4 text-brand-600" /> Gönderilen e-postalar
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="inline-flex p-1 rounded-xl bg-slate-100">
+              {[["email", "E-posta", Mail], ["app", "Uygulama bildirimi", Bell]].map(([k, label, Icon]) => (
+                <button key={k} onClick={() => setMode(k)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${mode === k ? "bg-white text-brand-700 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
+                  <Icon className="w-3.5 h-3.5" /> {label}
+                </button>
+              ))}
+            </div>
             {busy && <Loader2 className="w-4 h-4 animate-spin text-slate-400" />}
-          </h2>
+          </div>
           <div className="flex items-center gap-1.5">
             <button onClick={() => setDate((d) => shiftDay(d, -1))} aria-label="Önceki gün"
               className="w-9 h-9 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:border-brand-300"><ChevronRight className="w-4 h-4 rotate-180" /></button>
@@ -1088,11 +1117,11 @@ function EmailsTab({ api }) {
             )}
           </div>
         </div>
-        {data && !data.resendOk && (
+        {mode === "email" && data && !data.resendOk && (
           <div className="mb-4 px-3 py-2 rounded-lg bg-amber-50 border border-amber-100 text-xs text-amber-800">Resend'e ulaşılamadı; teslim bilgisi eksik.</div>
         )}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-          {cards.map(([label, val, cls]) => (
+        <div className={`grid grid-cols-2 sm:grid-cols-4 gap-3 ${mode === "email" ? "lg:grid-cols-7" : "lg:grid-cols-5"}`}>
+          {(mode === "email" ? cards : appCards).map(([label, val, cls]) => (
             <div key={label} className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-2.5">
               <div className="text-[11px] text-slate-500">{label}</div>
               <div className={`text-lg font-semibold mt-0.5 ${cls}`}>{val ?? 0}</div>
@@ -1101,6 +1130,49 @@ function EmailsTab({ api }) {
         </div>
       </div>
 
+      {mode === "app" && (
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="px-4 md:px-6 py-4 border-b border-slate-100 flex flex-wrap items-baseline justify-between gap-2">
+          <h3 className="font-medium text-slate-900">Türe göre</h3>
+          <span className="text-xs text-slate-400">Push ve "Atlandı" {appData?.logSince ? `${new Date(appData.logSince).toLocaleDateString("tr-TR", { day: "numeric", month: "long" })}'dan` : "bugünden"} beri sayılıyor · kullanıcının sildiği bildirim sayılmaz</span>
+        </div>
+        {!appData?.byKind?.length ? (
+          <div className="text-center py-12 text-slate-400 text-sm">{busy ? "Yükleniyor…" : "Bu gün bildirim yok"}</div>
+        ) : (
+          <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[560px]">
+            <thead className="bg-slate-50 text-xs text-slate-500 uppercase tracking-wide">
+              <tr>
+                <th className="text-left px-4 md:px-6 py-3">Tür</th>
+                <th className="text-right px-3 py-3">Oluşturulan</th>
+                <th className="text-right px-3 py-3">Kişi</th>
+                <th className="text-right px-3 py-3">Okunan</th>
+                <th className="text-right px-3 py-3">Push</th>
+                <th className="text-right px-4 md:px-6 py-3">Atlandı</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {appData.byKind.map((k) => (
+                <tr key={k.kind}>
+                  <td className="px-4 md:px-6 py-3 font-medium text-slate-800">{NOTIF_KIND_TR[k.kind] || k.kind}</td>
+                  <td className="px-3 py-3 text-right font-semibold text-slate-800">{k.created}</td>
+                  <td className="px-3 py-3 text-right text-slate-600">{k.users}</td>
+                  <td className="px-3 py-3 text-right text-brand-700">{k.read}</td>
+                  <td className={`px-3 py-3 text-right ${k.push_fail ? "text-red-600" : "text-slate-600"}`}
+                    title={k.push_fail ? `${k.push_fail} cihaza gitmedi` : undefined}>
+                    {k.push_ok || k.push_fail ? `${k.push_ok}${k.push_fail ? ` · ${k.push_fail} hata` : ""}` : "—"}
+                  </td>
+                  <td className="px-4 md:px-6 py-3 text-right text-slate-500">{k.skipped || "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          </div>
+        )}
+      </div>
+      )}
+
+      {mode === "email" && (
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         <div className="px-4 md:px-6 py-4 border-b border-slate-100 flex flex-wrap items-baseline justify-between gap-2">
           <h3 className="font-medium text-slate-900">Türe göre</h3>
@@ -1158,6 +1230,7 @@ function EmailsTab({ api }) {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }
@@ -2104,7 +2177,7 @@ export default function AdminPanel() {
     { id: "discovery",   label: "Yarış Keşfi",       icon: Radar },
     { id: "teams",     label: "Takımlar",     icon: Shield },
     { id: "logs",      label: "Loglar",       icon: Activity },
-    { id: "emails",    label: "E-postalar",   icon: Mail },
+    { id: "emails",    label: "Bildirimler",  icon: Bell },
     { id: "messages",  label: "Mesajlar",     icon: MessageSquare,
       badge: stats?.unreadContact > 0 ? stats.unreadContact : null },
     { id: "banners",      label: "Bannerlar",    icon: Image },

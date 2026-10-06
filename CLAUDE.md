@@ -525,7 +525,16 @@ seçilebilir link kutusu, WhatsApp/Telegram/e-posta butonları, hazır davet mes
 - Admin listesinde (takım/etkinlik) otomatik giden son mail görünür
   (`last_auto_email`; gönderilen, atlanandan önce gösterilir). Atlananlar turuncu.
 
-## Admin › E-postalar (gönderim istatistiği)
+## Admin › Bildirimler (e-posta + uygulama bildirimi istatistiği)
+
+Sekmenin adı "Bildirimler" (6 Ekim 2026, Melih); üstte "E-posta" / "Uygulama
+bildirimi" seçimi, gün seçimi ortak.
+- **Uygulama bildirimi:** `GET /api/admin/notifications?date=`. Oluşturulan,
+  kişi, okunan `notifications`'tan (Mayıs 2026'dan beri; kullanıcının sildiği
+  sayılmaz). Atlanan (uygulama tercihi kapalı) ve push sonucu `notif_log`'dan
+  (6 Ekim 2026'dan beri): `createNotif` her çağrıda yazar; `sendPushToUser`
+  cihaz başına `{ ok, fail }` döner. Tür adları admin `NOTIF_KIND_TR`.
+- **E-posta** — aşağıdaki gibi.
 
 5 Ekim 2026. `GET /api/admin/emails?date=YYYY-MM-DD` (gün İstanbul saatiyle).
 - **Her gönderim `email_log`'a yazılır** (`sendEmail` sarmalı → `sendEmailRaw`):
