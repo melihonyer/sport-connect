@@ -12,8 +12,11 @@ import { fileURLToPath } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-const UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 HeadlessChrome";
-const W = 430, H = 932, DPR = 3;
+const UA = process.env.DEVICE === "ipad" ? "Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 HeadlessChrome" : "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 HeadlessChrome";
+// DEVICE=ipad → iPad 13" dikey (1032×1376 pt @2x = 2064×2752, App Store 13" ve Play tablet).
+const IPAD = process.env.DEVICE === "ipad";
+const W = IPAD ? 1032 : 430, H = IPAD ? 1376 : 932, DPR = IPAD ? 2 : 3;
+const SAFE = IPAD ? { top: 24, bottom: 20 } : { top: 59, bottom: 34 };
 
 // [ad, yol (dil öneki kodda), bekleme ms, sayfada çalışacak hazırlık]
 const tap = (re) => `[...document.querySelectorAll("button")].find(b=>${re}.test(b.textContent.trim()))?.click()`;
@@ -55,14 +58,14 @@ try {
   await send("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 5 });
   await send("Network.setUserAgentOverride", { userAgent: UA });
   // iPhone'daki çentik/ana çubuk boşluğu: uygulama env(safe-area-inset-*) ile yerleşiyor.
-  try { await send("Emulation.setSafeAreaInsetsOverride", { insets: { top: 59, bottom: 34 } }); console.log("safe-area ok"); } catch (e) { console.log("safe-area yok:", e.message); }
+  try { await send("Emulation.setSafeAreaInsetsOverride", { insets: SAFE }); console.log("safe-area ok"); } catch (e) { console.log("safe-area yok:", e.message); }
   const langs = process.argv.slice(2).length ? process.argv.slice(2) : ["tr", "en"];
   for (const lang of langs) {
     // Önce kökü açıp ilk açılış pencerelerini kapalı işaretle.
     await send("Page.navigate", { url: "https://muuvlink.app/?src=app" });
     await sleep(1500);
     await evaluate(`localStorage.setItem("cookieConsent","true");localStorage.setItem("muuv_dl_dismissed","1");localStorage.setItem("muuvlang","${lang}");Object.keys(localStorage).filter(k=>/tour/i.test(k)).length`);
-    const out = join(HERE, "shots", lang);
+    const out = join(HERE, IPAD ? "shots-ipad" : "shots", lang);
     mkdirSync(out, { recursive: true });
     for (const [name, path, prep, ready] of SHOTS.filter(([n]) => !process.env.ONLY || process.env.ONLY.split(",").includes(n) || (n === "events" && process.env.ONLY.includes("map")))) {
       if (path) {

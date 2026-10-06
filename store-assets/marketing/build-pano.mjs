@@ -16,7 +16,9 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, "..", "..");
 const CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 // iOS 6.9" (zorunlu boyut) ve Google Play telefon (9:16).
-const STORES = { ios: { w: 1320, h: 2868 }, play: { w: 1242, h: 2208 } };
+// DEVICE=ipad → iPad 13" (2064×2752); aynı görseller Play'in 7" ve 10" tablet alanlarına da gider.
+const IPAD = process.env.DEVICE === "ipad";
+const STORES = IPAD ? { ipad: { w: 2064, h: 2752 } } : { ios: { w: 1320, h: 2868 }, play: { w: 1242, h: 2208 } };
 const N = 5;
 
 const uri = (p, type) => `data:${type};base64,${readFileSync(p).toString("base64")}`;
@@ -37,7 +39,7 @@ const COPY = {
   },
 };
 let LANG = "tr";
-const shot = (f) => uri(join(HERE, "shots", LANG, `${f}.png`), "image/png");
+const shot = (f) => uri(join(HERE, IPAD ? "shots-ipad" : "shots", LANG, `${f}.png`), "image/png");
 const photo = (f) => uri(join(ROOT, "public", "story", f), "image/jpeg");
 const ICON = uri(join(ROOT, "public", "icons", "favicon.png"), "image/png");
 const LOGO_SVG = readFileSync(join(ROOT, "public", "icons", "logo-yatay.svg"), "utf8");
@@ -56,6 +58,21 @@ const STATUS = `<svg viewBox="0 0 430 59" xmlns="http://www.w3.org/2000/svg" cla
     <rect x="54" y="2" width="21" height="8" rx="2.2"/><rect x="78.5" y="4" width="1.6" height="4" rx=".8" fill-opacity=".45"/>
   </g></svg>`;
 
+// iPad durum çubuğu: çentik yok, saat solda, simgeler sağda (24 pt).
+const STATUS_IPAD = `<svg viewBox="0 0 1032 24" xmlns="http://www.w3.org/2000/svg" class="sb">
+  <text x="24" y="17" font-family="-apple-system,'SF Pro Text',Inter,sans-serif" font-size="13" font-weight="600" fill="${INK}">9:41</text>
+  <g fill="${INK}" transform="translate(950 7)">
+    <path d="M10 2.6a10.8 10.8 0 0 1 14.6 0l-1.4 1.5a8.7 8.7 0 0 0-11.8 0zM12.6 5.4a7 7 0 0 1 9.4 0l-1.4 1.5a5 5 0 0 0-6.6 0zM15.2 8.2a3.2 3.2 0 0 1 4.2 0l-2.1 2.4z"/>
+    <rect x="32" y="0" width="25" height="12" rx="3.6" fill="none" stroke="${INK}" stroke-opacity=".4" stroke-width="1"/><rect x="34" y="2" width="21" height="8" rx="2.2"/>
+  </g></svg>`;
+
+// Yerleşim: [x (kare genişliği), y (%), genişlik (kare), açı]. Başlık ölçeği iPad'de küçük (kare daha geniş).
+const LAYOUT = IPAD ? {
+  k: 0.62, p1bg: "60% 100%", events: [0.34, 44, 0.74, 6], map: [1.12, 33, 0.76, -5], teams: [2.04, 37, 0.6, -7], team: [2.5, 43, 0.6, 6], event: [3.26, 32, 0.76, -4],
+} : {
+  k: 1, p1bg: "90% center", events: [0.5, 55, 0.6, 8], map: [1.2, 36, 0.64, -6], teams: [2.06, 38, 0.58, -8], team: [2.52, 44, 0.58, 7], event: [3.36, 33, 0.66, -5],
+};
+
 function strip({ w, h }) {
   const C = COPY[LANG];
   const u = w / 100;
@@ -63,10 +80,10 @@ function strip({ w, h }) {
   // Telefon: x ve genişlik kare genişliği cinsinden (0 = 1. karenin sol kenarı), y yüksekliğin %'si.
   const phone = (f, x, y, wid, rot, z = 3) => {
     const pw = wid * w;
-    const bez = pw * 0.028;
-    const r = pw * 0.15;
+    const bez = pw * (IPAD ? 0.018 : 0.028);
+    const r = pw * (IPAD ? 0.045 : 0.15);
     return `<div class="phone" style="left:${x * w}px;top:${H(y)}px;width:${pw}px;padding:${bez}px;border-radius:${r}px;transform:rotate(${rot}deg);z-index:${z}">
-      <div class="screen" style="border-radius:${r - bez}px"><img src="${shot(f)}">${STATUS}</div></div>`;
+      <div class="screen" style="border-radius:${r - bez}px"><img src="${shot(f)}">${IPAD ? STATUS_IPAD : STATUS}</div></div>`;
   };
   const panel = (i, cls, bg = "") => `<div class="panel ${cls}" style="left:${i * w}px;${bg}"></div>`;
   // Başlık: ilk satır düz, ikinci satır vurgu. dark = koyu zemin.
@@ -75,7 +92,7 @@ function strip({ w, h }) {
     const c2 = dark ? YEL : TEAL;
     const second = mark ? `<span class="mark">${b}</span>` : `<span style="color:${c2}">${b}</span>`;
     const lg = logo ? `<div class="logo"><img src="${ICON}"><img src="${wordmark(dark ? "#ffffff" : INK)}"></div>` : "";
-    return `<div class="head" style="left:${i * w + 7 * u}px;top:${H(top)}px;width:${86 * u}px;font-size:${size * u}px">${lg}
+    return `<div class="head" style="left:${i * w + 7 * u}px;top:${H(top)}px;width:${86 * u}px;font-size:${size * LAYOUT.k * u}px">${lg}
       <div style="color:${c1}">${a}</div><div>${second}</div>
       ${sub ? `<div class="sub" style="color:${dark ? "rgba(255,255,255,.86)" : INK}">${sub}</div>` : ""}
       ${chips ? `<div class="chips">${chips.map((c) => `<span class="chip">${c}</span>`).join("")}</div>` : ""}</div>`;
@@ -95,31 +112,31 @@ function strip({ w, h }) {
   .screen .sb{position:absolute;left:0;top:0;width:100%}
   .head{position:absolute;z-index:6;font-weight:900;line-height:1;letter-spacing:-.025em;text-transform:uppercase}
   .mark{background:${YEL};color:${TEAL};padding:0 .12em;box-decoration-break:clone;-webkit-box-decoration-break:clone}
-  .sub{margin-top:${3 * u}px;font-size:${4 * u}px;font-weight:700;line-height:1.32;letter-spacing:0;text-transform:none;max-width:${78 * u}px}
-  .logo{display:flex;align-items:center;gap:${1.8 * u}px;margin-bottom:${5 * u}px}
-  .logo img:first-child{height:${6.4 * u}px}
-  .logo img:last-child{height:${3.6 * u}px}
-  .chips{display:flex;flex-wrap:wrap;gap:${1.8 * u}px;margin-top:${5 * u}px;letter-spacing:0;text-transform:none}
-  .chip{background:#fff;color:${TEAL};font-weight:800;font-size:${3.6 * u}px;padding:${1.5 * u}px ${3.4 * u}px;border-radius:999px;box-shadow:0 ${0.6 * u}px ${2 * u}px rgba(0,0,0,.12)}
+  .sub{margin-top:${3 * LAYOUT.k * u}px;font-size:${4 * LAYOUT.k * u}px;font-weight:700;line-height:1.32;letter-spacing:0;text-transform:none;max-width:${78 * u}px}
+  .logo{display:flex;align-items:center;gap:${1.8 * LAYOUT.k * u}px;margin-bottom:${5 * LAYOUT.k * u}px}
+  .logo img:first-child{height:${6.4 * LAYOUT.k * u}px}
+  .logo img:last-child{height:${3.6 * LAYOUT.k * u}px}
+  .chips{display:flex;flex-wrap:wrap;gap:${1.8 * LAYOUT.k * u}px;margin-top:${5 * LAYOUT.k * u}px;letter-spacing:0;text-transform:none}
+  .chip{background:#fff;color:${TEAL};font-weight:800;font-size:${3.6 * LAYOUT.k * u}px;padding:${1.5 * LAYOUT.k * u}px ${3.4 * LAYOUT.k * u}px;border-radius:999px;box-shadow:0 ${0.6 * u}px ${2 * u}px rgba(0,0,0,.12)}
 </style></head><body>
-  ${panel(0, "smoke", `background-image:url(${photo("kosu.jpg")});background-position:90% center`)}
+  ${panel(0, "smoke", `background-image:url(${photo("kosu.jpg")});background-position:${LAYOUT.p1bg}`)}
   ${panel(1, "teal")}
   ${panel(2, "smoke")}
   ${panel(3, "teal")}
   ${panel(4, "smoke", `background-image:url(${photo("yuzme.jpg")})`)}
 
   ${head(0, 5, C.p1, C.p1s, { logo: true, mark: true, size: 12.5 })}
-  ${phone("events", 0.5, 55, 0.6, 8)}
+  ${phone("events", ...LAYOUT.events)}
 
   ${head(1, 6, C.p2, C.p2s, { dark: true, size: 12 })}
-  ${phone("map", 1.2, 36, 0.64, -6)}
+  ${phone("map", ...LAYOUT.map)}
 
   ${head(2, 6, C.p3, C.p3s, { size: 12.5 })}
-  ${phone("teams", 2.06, 38, 0.58, -8, 3)}
-  ${phone("team", 2.52, 44, 0.58, 7, 4)}
+  ${phone("teams", ...LAYOUT.teams, 3)}
+  ${phone("team", ...LAYOUT.team, 4)}
 
   ${head(3, 6, C.p4, C.p4s, { dark: true, size: 11 })}
-  ${phone("event", 3.36, 33, 0.66, -5)}
+  ${phone("event", ...LAYOUT.event)}
 
   ${head(4, 6, C.p5, "", { mark: true, size: 12.5, chips: C.chips })}
 </body></html>`;

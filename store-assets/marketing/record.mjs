@@ -14,8 +14,10 @@ import { fileURLToPath } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-const UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 HeadlessChrome";
-const W = 430, H = 932, DPR = 2;
+const UA = process.env.DEVICE === "ipad" ? "Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 HeadlessChrome" : "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 HeadlessChrome";
+// DEVICE=ipad → iPad 13" dikey kayıt (.tmp/rec-ipad-<dil>).
+const IPAD = process.env.DEVICE === "ipad";
+const W = IPAD ? 1032 : 430, H = IPAD ? 1376 : 932, DPR = IPAD ? 1.25 : 2;
 
 // Sayfaya eklenen yardımcılar: metne göre bul, halkayla dokun, yumuşak kaydır.
 const HELPERS = `
@@ -106,7 +108,7 @@ try {
   await send("Emulation.setDeviceMetricsOverride", { width: W, height: H, deviceScaleFactor: DPR, mobile: true });
   await send("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 5 });
   await send("Network.setUserAgentOverride", { userAgent: UA });
-  await send("Emulation.setSafeAreaInsetsOverride", { insets: { top: 59, bottom: 34 } });
+  await send("Emulation.setSafeAreaInsetsOverride", { insets: IPAD ? { top: 24, bottom: 20 } : { top: 59, bottom: 34 } });
   const langs = process.argv.slice(2).length ? process.argv.slice(2) : ["tr", "en"];
   for (const [li, lang] of langs.entries()) {
     if (li) await sleep(30000);
@@ -116,7 +118,7 @@ try {
     await send("Page.navigate", { url: "https://muuvlink.app/?src=app" });
     await sleep(5000);
     await evaluate(HELPERS);
-    const dir = join(HERE, ".tmp", `rec-${lang}`);
+    const dir = join(HERE, ".tmp", IPAD ? `rec-ipad-${lang}` : `rec-${lang}`);
     rmSync(dir, { recursive: true, force: true });
     mkdirSync(dir, { recursive: true });
     const frames = [], marks = [];

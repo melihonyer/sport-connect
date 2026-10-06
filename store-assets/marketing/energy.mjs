@@ -18,14 +18,17 @@ import { fileURLToPath } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, "..", "..");
-const TMP = join(HERE, ".tmp", "energy");
+const TMP = join(HERE, ".tmp", process.env.DEVICE === "ipad" ? "energy-ipad" : "energy");
 const OUT = join(HERE, "out", "video");
-const PROXY = join(HERE, "envato", "proxy");
+// DEVICE=ipad → iPad 13" önizleme (1200×1600), görüntüler aynı ham dosyadan 3:4 kırpılır.
+const IPAD = process.env.DEVICE === "ipad";
+const PROXY = join(HERE, "envato", IPAD ? "proxy-ipad" : "proxy");
 const MUSIC = join(HERE, "envato", "music", "Sport Upbeat.wav");
 mkdirSync(TMP, { recursive: true });
 mkdirSync(OUT, { recursive: true });
 const CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-const W = 886, H = 1920, FPS = 30, TOTAL = 30;
+const W = IPAD ? 1200 : 886, H = IPAD ? 1600 : 1920, FPS = 30, TOTAL = 30;
+const LOW = IPAD ? 170 : 300; // alt etiketin alttan uzaklığı
 const TEAL = "#114956", YEL = "#F4F818", INK = "#1F2121";
 const MUSIC_START = 38.6;
 const BEAT = 60 / 135;
@@ -73,24 +76,26 @@ ${css}</style></head><body>${body}</body></html>`;
 const word = (t, last) => page(`<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center">
   <div class="st" style="font-size:${t.length > 9 ? 112 : 150}px;background:${last ? YEL : TEAL};color:${last ? TEAL : "#fff"};transform:rotate(-4deg);box-shadow:0 18px 50px rgba(0,0,0,.35)">${esc(t)}</div></div>`);
 // Alt üçte iki satırlık etiket: üst satır Deep Teal, alt satır sarı.
-const lower = ([a, c]) => page(`<div style="position:absolute;left:56px;bottom:300px;transform:rotate(-3deg);transform-origin:left bottom">
+const lower = ([a, c]) => page(`<div style="position:absolute;left:56px;bottom:${LOW}px;transform:rotate(-3deg);transform-origin:left bottom">
   <div class="st" style="font-size:76px;background:${TEAL};color:#fff">${esc(a)}</div><br>
   <div class="st" style="font-size:76px;background:${YEL};color:${TEAL};margin-top:10px">${esc(c)}</div></div>`);
 // Uygulama bölümü üst yazısı.
-const appCap = (k, t) => page(`<div style="position:absolute;left:56px;top:90px">
+const appCap = (k, t) => page(`<div style="position:absolute;left:56px;top:${IPAD ? 56 : 90}px">
   <div class="st" style="font-size:30px;background:${YEL};color:${TEAL};letter-spacing:.06em">${esc(k)}</div>
   <div style="margin-top:18px;color:#fff;font-size:80px;font-weight:900;line-height:1;text-transform:uppercase;letter-spacing:-.02em;text-shadow:0 6px 30px rgba(0,0,0,.35)">${esc(t)}</div></div>`);
-const PHONE = { w: 620, bez: 16 };
-PHONE.h = Math.round(PHONE.w * 932 / 430);
+const PHONE = IPAD ? { w: 860, bez: 18, ratio: 1376 / 1032, r: 44 } : { w: 620, bez: 16, ratio: 932 / 430, r: 92 };
+PHONE.h = Math.round(PHONE.w * PHONE.ratio);
 PHONE.x = Math.round((W - PHONE.w) / 2);
-PHONE.y = H - PHONE.h - 70;
+PHONE.y = H - PHONE.h - (IPAD ? 50 : 70);
 const frame = () => page(`
-<div style="position:absolute;left:${PHONE.x - PHONE.bez}px;top:${PHONE.y - PHONE.bez}px;width:${PHONE.w + 2 * PHONE.bez}px;height:${PHONE.h + 2 * PHONE.bez}px;border:${PHONE.bez}px solid ${INK};border-radius:92px;box-shadow:0 30px 80px rgba(0,0,0,.45)"></div>
-<svg viewBox="0 0 430 59" style="position:absolute;left:${PHONE.x}px;top:${PHONE.y}px;width:${PHONE.w}px">
+<div style="position:absolute;left:${PHONE.x - PHONE.bez}px;top:${PHONE.y - PHONE.bez}px;width:${PHONE.w + 2 * PHONE.bez}px;height:${PHONE.h + 2 * PHONE.bez}px;border:${PHONE.bez}px solid ${INK};border-radius:${PHONE.r}px;box-shadow:0 30px 80px rgba(0,0,0,.45)"></div>
+${IPAD ? `<svg viewBox="0 0 1032 24" style="position:absolute;left:${PHONE.x}px;top:${PHONE.y}px;width:${PHONE.w}px">
+  <text x="24" y="17" font-family="-apple-system,Montserrat,sans-serif" font-size="13" font-weight="700" fill="${INK}">9:41</text>
+  <g fill="${INK}" transform="translate(980 7)"><rect x="0" y="0" width="25" height="12" rx="3.6" fill="none" stroke="${INK}" stroke-opacity=".4"/><rect x="2" y="2" width="21" height="8" rx="2.2"/></g></svg>` : `<svg viewBox="0 0 430 59" style="position:absolute;left:${PHONE.x}px;top:${PHONE.y}px;width:${PHONE.w}px">
   <text x="58" y="38" font-family="-apple-system,Montserrat,sans-serif" font-size="17" font-weight="700" fill="${INK}" text-anchor="middle">9:41</text>
   <rect x="152" y="11" width="126" height="37" rx="18.5" fill="#000"/>
   <g fill="${INK}" transform="translate(314 26)"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="5" y="5" width="3" height="7" rx="1"/><rect x="10" y="2.5" width="3" height="9.5" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/>
-  <rect x="52" y="0" width="25" height="12" rx="3.6" fill="none" stroke="${INK}" stroke-opacity=".4"/><rect x="54" y="2" width="21" height="8" rx="2.2"/></g></svg>`);
+  <rect x="52" y="0" width="25" height="12" rx="3.6" fill="none" stroke="${INK}" stroke-opacity=".4"/><rect x="54" y="2" width="21" height="8" rx="2.2"/></g></svg>`}`);
 const endCard = (lines, kicker) => page(`<div style="position:absolute;inset:0;background:${TEAL};display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 50px">
   <img src="${ICON}" style="width:200px"><img src="${LOGO_WHITE}" style="width:540px;margin-top:40px">
   <div style="margin-top:60px;color:#fff;font-size:34px;font-weight:700;line-height:1.45">${lines.map(esc).join("<br>")}</div>
@@ -131,7 +136,7 @@ function shot(name, [src, ss], t0, t1) {
 }
 
 function appPart(lang, t0, t1, framePng) {
-  const dir = join(HERE, ".tmp", `rec-${lang}`);
+  const dir = join(HERE, ".tmp", IPAD ? `rec-ipad-${lang}` : `rec-${lang}`);
   const { frames, marks, end } = JSON.parse(readFileSync(join(dir, "frames.json"), "utf8"));
   let list = "";
   for (let i = 0; i < frames.length; i++) {
@@ -193,19 +198,19 @@ try {
     }
     // 2) Drop'tan sonra montaj: 2 vuruşta bir kesim.
     for (let i = 0; i < MONTAGE.length; i++) parts.push(shot(`m${i}`, MONTAGE[i], b(2 + 2 * i), b(4 + 2 * i)));
-    texts.push([await png(`m1-${lang}`, lower(C.m1)), b(2), b(9), true, null, [56, H - 300]]);
-    texts.push([await png(`m2-${lang}`, lower(C.m2)), b(10), b(16), true, null, [56, H - 300]]);
+    texts.push([await png(`m1-${lang}`, lower(C.m1)), b(2), b(9), true, null, [56, H - LOW]]);
+    texts.push([await png(`m2-${lang}`, lower(C.m2)), b(10), b(16), true, null, [56, H - LOW]]);
     // 3) Uygulama.
     const app = appPart(lang, b(16), b(50), framePng);
     parts.push(app.file);
     app.marks.forEach((m, i) => {
       const t1 = i + 1 < app.marks.length ? app.marks[i + 1].t : b(50);
-      texts.push([null, m.t, t1, true, m.name, [56, 90]]);
+      texts.push([null, m.t, t1, true, m.name, [56, IPAD ? 56 : 90]]);
     });
     for (const tx of texts) if (!tx[0] && tx[4]) tx[0] = await png(`a-${tx[4]}-${lang}`, appCap(...C.app[tx[4]]));
     // 4) Kapanış sahneleri + "Sporla buluş".
     for (let i = 0; i < CLOSING.length; i++) parts.push(shot(`c${i}`, CLOSING[i], b(50 + 2 * i), b(52 + 2 * i)));
-    texts.push([await png(`close-${lang}`, lower(C.close)), b(50), b(58), true, null, [56, H - 300]]);
+    texts.push([await png(`close-${lang}`, lower(C.close)), b(50), b(58), true, null, [56, H - LOW]]);
     // 5) Logo.
     parts.push(still(`end-${lang}`, await png(`end-${lang}`, endCard(C.end, C.endKicker)), b(58), TOTAL));
 
@@ -227,7 +232,7 @@ try {
     inputs.push("-ss", String(MUSIC_START), "-t", String(TOTAL), "-i", MUSIC);
     const ai = parts.length + texts.length;
     fc += `;[${ai}]afade=t=in:d=0.12,afade=t=out:st=${TOTAL - 0.5}:d=0.5[a]`;
-    const out = join(OUT, `energy-${lang}.mp4`);
+    const out = join(OUT, IPAD ? `energy-ipad-${lang}.mp4` : `energy-${lang}.mp4`);
     run([...inputs, "-filter_complex", fc, "-map", "[v]", "-map", "[a]", "-t", String(TOTAL), "-r", String(FPS),
       "-c:v", "libx264", "-profile:v", "high", "-level", "4.0", "-b:v", "12M", "-c:a", "aac", "-b:a", "256k", "-movflags", "+faststart", out]);
     console.log(out.replace(HERE + "/", ""));
