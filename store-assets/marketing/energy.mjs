@@ -154,10 +154,16 @@ function appPart(lang, t0, t1, framePng) {
   const speed = (end - 0.3 - start) / dur;
   const out = join(TMP, `app-${lang}.mp4`);
   // Arka plan: koşu görüntüsü, bulanık + Deep Teal örtü (düz renk zemin "sakin" kalıyordu).
-  run(["-ss", String(APP_BG[1]), "-i", join(PROXY, `${APP_BG[0]}.mp4`), "-f", "concat", "-safe", "0", "-i", lst, "-i", framePng,
+  // Ekran maskesi: kayıt kare, çerçeve yuvarlak — köşeler çerçevenin dışına taşıyordu (Melih, 6 Ekim 2026).
+  const R = PHONE.r - PHONE.bez;
+  const mask = join(TMP, "screen-mask.png");
+  run(["-f", "lavfi", "-i", `color=white:s=${PHONE.w}x${PHONE.h}`, "-frames:v", "1", "-vf",
+    `format=gray,geq=lum='if(lte(pow(max(max(${R}-X\\,X-(W-1-${R}))\\,0)\\,2)+pow(max(max(${R}-Y\\,Y-(H-1-${R}))\\,0)\\,2)\\,${R * R})\\,255\\,0)'`, mask]);
+  run(["-ss", String(APP_BG[1]), "-i", join(PROXY, `${APP_BG[0]}.mp4`), "-f", "concat", "-safe", "0", "-i", lst, "-i", framePng, "-loop", "1", "-i", mask,
     "-filter_complex",
     `[0]scale=${W / 4}:${H / 4},boxblur=6:2,scale=${W}:${H},drawbox=c=${TEAL}@0.72:t=fill[bg];` +
-    `[1]fps=${FPS},trim=${start.toFixed(3)},setpts=(PTS-STARTPTS)/${speed.toFixed(4)},fps=${FPS},scale=${PHONE.w}:${PHONE.h}[app];` +
+    `[1]fps=${FPS},trim=${start.toFixed(3)},setpts=(PTS-STARTPTS)/${speed.toFixed(4)},fps=${FPS},scale=${PHONE.w}:${PHONE.h},format=rgba[app0];` +
+    `[3]format=gray[m];[app0][m]alphamerge[app];` +
     `[bg][app]overlay=${PHONE.x}:${PHONE.y}:shortest=1[a];[a][2]overlay,format=yuv420p[v]`,
     "-map", "[v]", "-frames:v", String(n), "-c:v", "libx264", "-preset", "veryfast", "-crf", "15", out]);
   // Yazı geçişleri: kayıttaki bölüm başları, en yakın vuruşa yuvarlanır (yazı vuruşla çıksın).
