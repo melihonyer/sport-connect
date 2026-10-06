@@ -841,7 +841,8 @@ async function getUserNotifInfo(userId) {
 // channel: 'app' (varsayılan açık) | 'email' (varsayılan kapalı)
 // E-postası varsayılan AÇIK olan türler (kullanıcı kapatana kadar). Sitedeki
 // NOTIF_PREF_ROWS'ta emailDefault:true ile işaretli olmalı.
-const EMAIL_DEFAULT_ON = new Set(['tips']);
+// team_member + event_join: liderlere giden yeni üye / yeni katılımcı maili (Melih, 6 Ekim 2026).
+const EMAIL_DEFAULT_ON = new Set(['tips', 'team_member', 'event_join']);
 function prefAllows(prefs, key, channel) {
   const p = (prefs && prefs[key]) || {};
   if (channel === 'email') return EMAIL_DEFAULT_ON.has(key) ? p.email !== false : p.email === true;

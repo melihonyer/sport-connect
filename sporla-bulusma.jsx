@@ -280,8 +280,8 @@ const SPORT_TYPES = ["Basketbol","Bikejoring","Bisiklet","Canicross","Crossfit",
 
 // Bildirim tercihi satırları (backend NOTIF_TYPE_TO_KEY ile hizalı). email:false → sadece uygulama.
 const NOTIF_PREF_ROWS = [
-  { sec: "secTeam",   items: [ { k: "invite", email: true }, { k: "team_member", email: true }, { k: "role", email: true } ] },
-  { sec: "secEvents", items: [ { k: "event_new", email: true }, { k: "event_update", email: true }, { k: "event_reminder", email: true }, { k: "event_join", email: true } ] },
+  { sec: "secTeam",   items: [ { k: "invite", email: true }, { k: "team_member", email: true, emailDefault: true }, { k: "role", email: true } ] },
+  { sec: "secEvents", items: [ { k: "event_new", email: true }, { k: "event_update", email: true }, { k: "event_reminder", email: true }, { k: "event_join", email: true, emailDefault: true } ] },
   { sec: "secSocial", items: [ { k: "comment", email: true }, { k: "wall_post", email: true }, { k: "like", email: false } ] },
   { sec: "secOther",  items: [ { k: "badge", email: false }, { k: "nudge", email: false }, { k: "tips", email: true, app: false, emailDefault: true } ] },
 ];
@@ -5461,10 +5461,11 @@ export default function Muuvlink() {
             <div className="flex items-center gap-1.5 text-sm font-semibold text-brand-900">
               <Globe className="w-4 h-4 text-brand-400"/> {t("profile.language")}
             </div>
-            <div className="flex items-center gap-1 bg-white/70 rounded-xl p-1">
+            {/* 7 dil dar ekrana sığsın: eşit sütunlar (sabit dolgu taşırıp sondakini kesiyordu) */}
+            <div className="flex-1 min-w-0 sm:flex-none grid grid-cols-7 gap-0.5 sm:gap-1 bg-white/70 rounded-xl p-1">
               {LANGUAGES.map(({ code }) => ({ code, label: code.toLocaleUpperCase("en-US") })).map(({ code, label }) => (
                 <button key={code} onClick={() => changeLang(code)}
-                  className="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all"
+                  className="px-0 sm:px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-center"
                   style={lang === code ? {background:"#114956", color:"#fff"} : {color:"#64748b"}}>
                   {label}
                 </button>

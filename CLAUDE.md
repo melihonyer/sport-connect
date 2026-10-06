@@ -490,7 +490,10 @@ seçilebilir link kutusu, WhatsApp/Telegram/e-posta butonları, hazır davet mes
 - **Tercih `tips` ("Muuvlink'ten ipuçları")**: yalnız e-posta, **varsayılan AÇIK**
   (`EMAIL_DEFAULT_ON`). Kapatan atlanır; her mailin altında nasıl kapatılacağı yazar.
   **Melih'in kararı (28 Eylül 2026): yeni bildirim türleri varsayılan AÇIK gelir,
-  isteyen kapatır.** İYS/onay riski konuşuldu, bilerek seçildi; tekrar sorulmaz.
+  isteyen kapatır.** 6 Ekim 2026: liderlere giden "Yeni takım üyesi"
+  (`team_member`) ve "Yeni katılımcı" (`event_join`) e-postaları da varsayılan
+  AÇIK (önceden herkeste kapalıydı, 223 kişiden açan yoktu). Yorum, duvar
+  gönderisi, etkinlik hatırlatma e-postaları bilerek kapalı (sık gelir). İYS/onay riski konuşuldu, bilerek seçildi; tekrar sorulmaz.
   Yeni bir e-posta türü eklenirse `EMAIL_DEFAULT_ON`'a ve arayüzde
   `emailDefault: true` ile eklenir.
 - E-posta çerçevesi dar ekrana uyar (`mv-*` sınıfları + media query). Sabit
