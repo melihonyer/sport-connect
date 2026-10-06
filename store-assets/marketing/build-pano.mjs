@@ -18,7 +18,8 @@ const CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 // iOS 6.9" (zorunlu boyut) ve Google Play telefon (9:16).
 // DEVICE=ipad → iPad 13" (2064×2752); aynı görseller Play'in 7" ve 10" tablet alanlarına da gider.
 const IPAD = process.env.DEVICE === "ipad";
-const STORES = IPAD ? { ipad: { w: 2064, h: 2752 } } : { ios: { w: 1320, h: 2868 }, play: { w: 1242, h: 2208 } };
+// playtab: Play 7"/10" tablet alanı yalnız 9:16 ya da 16:9 kabul ediyor.
+const STORES = IPAD ? { ipad: { w: 2064, h: 2752 }, playtab: { w: 1440, h: 2560 } } : { ios: { w: 1320, h: 2868 }, play: { w: 1242, h: 2208 } };
 const N = 5;
 
 const uri = (p, type) => `data:${type};base64,${readFileSync(p).toString("base64")}`;
@@ -76,6 +77,8 @@ const LAYOUT = IPAD ? {
 function strip({ w, h }) {
   const C = COPY[LANG];
   const u = w / 100;
+  // Dar tablet karesinde (9:16) başlık iPad'deki kadar küçülmez.
+  if (IPAD) LAYOUT.k = w / h > 0.7 ? 0.62 : 0.85;
   const H = (p) => (h * p) / 100;
   // Telefon: x ve genişlik kare genişliği cinsinden (0 = 1. karenin sol kenarı), y yüksekliğin %'si.
   const phone = (f, x, y, wid, rot, z = 3) => {
