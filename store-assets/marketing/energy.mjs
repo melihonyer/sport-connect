@@ -69,7 +69,9 @@ const ICON = uri(join(ROOT, "public", "icons", "favicon.png"), "image/png");
 const LOGO_WHITE = `data:image/svg+xml;base64,${Buffer.from(readFileSync(join(ROOT, "public", "icons", "logo-yatay.svg"), "utf8").replace(/#231f20/g, "#ffffff")).toString("base64")}`;
 const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/\n/g, "<br>");
 
-const page = (body, css = "") => `<!doctype html><html><head><meta charset="utf-8">
+// lang şart: text-transform:uppercase Türkçede i→İ ancak lang="tr" ile yapar (yoksa HARITADA çıkıyordu).
+let PAGE_LANG = "tr";
+const page = (body, css = "") => `<!doctype html><html lang="${PAGE_LANG}"><head><meta charset="utf-8">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=block" rel="stylesheet">
 <style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:${W}px;height:${H}px;background:transparent;font-family:Montserrat,sans-serif;overflow:hidden}
 .st{display:inline-block;font-weight:900;text-transform:uppercase;letter-spacing:-.02em;line-height:1;padding:.12em .22em .1em}
@@ -196,6 +198,7 @@ try {
   const langs = process.argv.slice(2).length ? process.argv.slice(2) : ["tr", "en"];
   for (const lang of langs) {
     const C = COPY[lang];
+    PAGE_LANG = lang;
     const parts = [];
     const texts = []; // [png, t0, t1, pop]
     // 1) Giriş: her vuruşta kesim + kelime (0 → drop).
