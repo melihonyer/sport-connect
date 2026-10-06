@@ -19,7 +19,8 @@ const CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 // DEVICE=ipad → iPad 13" (2064×2752); aynı görseller Play'in 7" ve 10" tablet alanlarına da gider.
 const IPAD = process.env.DEVICE === "ipad";
 // playtab: Play 7"/10" tablet alanı yalnız 9:16 ya da 16:9 kabul ediyor.
-const STORES = IPAD ? { ipad: { w: 2064, h: 2752 }, playtab: { w: 1440, h: 2560 } } : { ios: { w: 1320, h: 2868 }, play: { w: 1242, h: 2208 } };
+// social: Instagram/LinkedIn 4:5 gönderi (1080×1350), tablet düzeniyle.
+const STORES = IPAD ? { ipad: { w: 2064, h: 2752 }, playtab: { w: 1440, h: 2560 }, social: { w: 1080, h: 1350 } } : { ios: { w: 1320, h: 2868 }, play: { w: 1242, h: 2208 } };
 const N = 5;
 
 const uri = (p, type) => `data:${type};base64,${readFileSync(p).toString("base64")}`;
@@ -79,6 +80,9 @@ function strip({ w, h }) {
   const u = w / 100;
   // Dar tablet karesinde (9:16) başlık iPad'deki kadar küçülmez.
   if (IPAD) LAYOUT.k = w / h > 0.7 ? 0.62 : 0.85;
+  // 4:5 sosyal karede koşucular başlığın altına insin.
+  if (IPAD) LAYOUT.p1bg = w / h > 0.78 ? "60% 88%" : "60% 100%";
+  if (IPAD) LAYOUT.events = w / h > 0.78 ? [0.36, 53, 0.74, 6] : [0.34, 44, 0.74, 6];
   const H = (p) => (h * p) / 100;
   // Telefon: x ve genişlik kare genişliği cinsinden (0 = 1. karenin sol kenarı), y yüksekliğin %'si.
   const phone = (f, x, y, wid, rot, z = 3) => {

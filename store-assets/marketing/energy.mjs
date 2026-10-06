@@ -18,16 +18,18 @@ import { fileURLToPath } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, "..", "..");
-const TMP = join(HERE, ".tmp", process.env.DEVICE === "ipad" ? "energy-ipad" : "energy");
+const TMP = join(HERE, ".tmp", process.env.DEVICE ? `energy-${process.env.DEVICE}` : "energy");
 const OUT = join(HERE, "out", "video");
 // DEVICE=ipad → iPad 13" önizleme (1200×1600), görüntüler aynı ham dosyadan 3:4 kırpılır.
 const IPAD = process.env.DEVICE === "ipad";
-const PROXY = join(HERE, "envato", IPAD ? "proxy-ipad" : "proxy");
+// DEVICE=social → 1080×1920 (Reels/Story/TikTok), telefon düzeni.
+const SOCIAL = process.env.DEVICE === "social";
+const PROXY = join(HERE, "envato", IPAD ? "proxy-ipad" : SOCIAL ? "proxy-social" : "proxy");
 const MUSIC = join(HERE, "envato", "music", "Sport Upbeat.wav");
 mkdirSync(TMP, { recursive: true });
 mkdirSync(OUT, { recursive: true });
 const CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-const W = IPAD ? 1200 : 886, H = IPAD ? 1600 : 1920, FPS = 30, TOTAL = 30;
+const W = IPAD ? 1200 : SOCIAL ? 1080 : 886, H = IPAD ? 1600 : 1920, FPS = 30, TOTAL = 30;
 const LOW = IPAD ? 170 : 300; // alt etiketin alttan uzaklığı
 const TEAL = "#114956", YEL = "#F4F818", INK = "#1F2121";
 const MUSIC_START = 38.6;
@@ -232,7 +234,7 @@ try {
     inputs.push("-ss", String(MUSIC_START), "-t", String(TOTAL), "-i", MUSIC);
     const ai = parts.length + texts.length;
     fc += `;[${ai}]afade=t=in:d=0.12,afade=t=out:st=${TOTAL - 0.5}:d=0.5[a]`;
-    const out = join(OUT, IPAD ? `energy-ipad-${lang}.mp4` : `energy-${lang}.mp4`);
+    const out = join(OUT, IPAD ? `energy-ipad-${lang}.mp4` : SOCIAL ? `energy-social-${lang}.mp4` : `energy-${lang}.mp4`);
     run([...inputs, "-filter_complex", fc, "-map", "[v]", "-map", "[a]", "-t", String(TOTAL), "-r", String(FPS),
       "-c:v", "libx264", "-profile:v", "high", "-level", "4.0", "-b:v", "12M", "-c:a", "aac", "-b:a", "256k", "-movflags", "+faststart", out]);
     console.log(out.replace(HERE + "/", ""));
