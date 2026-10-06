@@ -366,6 +366,13 @@ bunlar haritada ve "Yakınımda" aramasında hiç çıkmıyor.
   yine üst üste biner.
 - Ayrılamayan kümeler (açılım zoom'u sınırı aşanlar) zoom 15'ten sonra
   kendiliğinden yelpazeye açılır; merkezde tam konum noktası kalır.
+- **Sığdırma kutu boyut alınca yapılır** (`FitBoundsToTrainings`). Harita tembel
+  yüklenirken kutu bir an 0 boyutlu; o anda sığdırınca yakınlık 13'te kalıyor,
+  işaretçiler ekran dışına düşüyordu ("6 etkinlik" yazıyor, harita boş — 6 Ekim
+  2026'da canlıda bulundu). Artık `ResizeObserver` kullanıcı haritayı elle
+  oynatana kadar yeniden sığdırır; `ClusteredMarkers` görünümü açılışta ve
+  `resize`'da haritadan okur (ilk `moveend`'i kaçırabiliyordu). Kontrol:
+  Etkinlikler › Haritada Göster'de `.leaflet-marker-icon` sayısı > 0.
 - Haritaya verilen liste öne çıkanları DA içermeli. Öne çıkanlar listede ayrı
   bölümde olduğu için `displayedTrainings`'ten çıkarılıyor; harita o listeyi
   alırsa öne çıkan etkinlikler haritadan düşer (Eylül 2026'da yaşandı).

@@ -121,13 +121,41 @@ const MapSizeFixer = () => {
 const boundsKey = (trainings) =>
   trainings.map(t => `${t.id}:${t.location_lat},${t.location_lng}`).join("|");
 
+// Harita tembel yüklenirken kutu bir an 0/eksik boyutlu olabiliyor. O anda sığdırmak
+// yakınlığı üst sınıra (13) çekiyor, sonra kutu büyüse de harita orada kalıyor ve
+// işaretçiler ekran dışında kalıyordu (Ekim 2026: "6 etkinlik" yazıyor, harita boş).
+// Bu yüzden kutu boyut değiştirdikçe, kullanıcı haritayı elle oynatana kadar yeniden sığdırılır.
 const FitBoundsToTrainings = ({ trainings }) => {
   const map = useMap();
   const key = boundsKey(trainings);
+  const userMovedRef = useRef(false);
+  useEffect(() => {
+    const el = map.getContainer();
+    const mark = () => { userMovedRef.current = true; };
+    el.addEventListener("pointerdown", mark);
+    el.addEventListener("wheel", mark, { passive: true });
+    return () => { el.removeEventListener("pointerdown", mark); el.removeEventListener("wheel", mark); };
+  }, [map]);
   useEffect(() => {
     if (!trainings.length) return;
+    userMovedRef.current = false;
     const bounds = L.latLngBounds(trainings.map(t => [parseFloat(t.location_lat), parseFloat(t.location_lng)]));
-    map.fitBounds(bounds, { padding: [48, 48], maxZoom: 13 });
+    const fit = () => {
+      map.invalidateSize({ pan: false });
+      const size = map.getSize();
+      if (size.x < 50 || size.y < 50) return;
+      map.fitBounds(bounds, { padding: [48, 48], maxZoom: 13, animate: false });
+    };
+    fit();
+    let last = "";
+    const ro = new ResizeObserver(([e]) => {
+      const now = `${Math.round(e.contentRect.width)}x${Math.round(e.contentRect.height)}`;
+      if (now === last) return;
+      last = now;
+      if (!userMovedRef.current) fit();
+    });
+    ro.observe(map.getContainer());
+    return () => ro.disconnect();
   }, [key, map]); // eslint-disable-line react-hooks/exhaustive-deps
   return null;
 };
@@ -196,6 +224,15 @@ const ClusteredMarkers = ({ points, renderMarker }) => {
   const map = useMap();
   const [view, setView] = useState(() => ({ zoom: map.getZoom(), bounds: map.getBounds() }));
   const [manualSpider, setManualSpider] = useState(null); // elle açılan kümenin kimliği
+
+  // İlk sığdırma bu bileşen dinlemeye başlamadan bitmiş olabilir; görünümü bir kez
+  // haritadan oku, boyut değişince de tazele.
+  useEffect(() => {
+    const sync = () => setView({ zoom: map.getZoom(), bounds: map.getBounds() });
+    sync();
+    map.on("resize", sync);
+    return () => { map.off("resize", sync); };
+  }, [map]);
 
   useMapEvents({
     moveend: () => setView({ zoom: map.getZoom(), bounds: map.getBounds() }),
