@@ -1,0 +1,7 @@
+[
+ {"id":"kapadokya","lat":38.650,"lon":34.835,"z":13,"scale":1.0,"marks":{"goreme":[38.643,34.829],"ask_vadisi":[38.664,34.818]}},
+ {"id":"aladaglar","lat":37.835,"lon":35.170,"z":13,"scale":1.0,"marks":{"demirkazik":[37.8125,35.1597],"yedigoller":[37.8430,35.1820]}},
+ {"id":"kackar","lat":40.860,"lon":41.130,"z":13,"scale":1.0,"marks":{"zirve":[40.8347,41.1614],"ayder":[40.9530,41.1040]}},
+ {"id":"alanya","lat":36.575,"lon":32.035,"z":13,"scale":1.0,"marks":{"kale":[36.5410,31.9950]}},
+ {"id":"tahtali","lat":36.540,"lon":30.480,"z":13,"scale":1.0,"marks":{"zirve":[36.5372,30.4450]}}
+]

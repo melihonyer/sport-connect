@@ -8,3 +8,8 @@ android/keystore/
 android/keystore.properties
 *.log
 .DS_Store
+
+# Parkur karuseli: lisanslı/kişisel fotoğraflar ve uydu karo önbelleği depoya girmez
+store-assets/marketing/parkur/foto/
+store-assets/marketing/parkur/cache/
+store-assets/marketing/parkur/.tmp/

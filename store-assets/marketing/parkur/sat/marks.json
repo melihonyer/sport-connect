@@ -1,0 +1,44 @@
+{
+ "kapadokya": {
+  "goreme": [
+   505,
+   727
+  ],
+  "ask_vadisi": [
+   441,
+   571
+  ]
+ },
+ "aladaglar": {
+  "demirkazik": [
+   480,
+   841
+  ],
+  "yedigoller": [
+   610,
+   616
+  ]
+ },
+ "kackar": {
+  "zirve": [
+   723,
+   870
+  ],
+  "ayder": [
+   389,
+   -42
+  ]
+ },
+ "alanya": {
+  "kale": [
+   307,
+   922
+  ]
+ },
+ "tahtali": {
+  "zirve": [
+   336,
+   695
+  ]
+ }
+}
