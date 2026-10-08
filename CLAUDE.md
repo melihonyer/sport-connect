@@ -682,7 +682,9 @@ marka adı), her bölümde tek CTA, fiyat/"2 hafta"/birebir koçluk/saat markas�
   siteye yönlendirme yok); web masaüstünde rozetler siteye, telefonda tek rozet mağazaya.
 - **Ana sayfa bandı** (Melih): Training Agents mavisi zemin, düz sarı daire önünde dekupe
   triatlet (`athlete.webp`, Training Agents'ın mağaza görseli `mobile/store/marketing/assets/
-  triathlete-side.png`), 6 disiplin kendi renginde etiket (`ta-tri/run/bike/swim/strength/yoga`).
+  triathlete-side.png`). Sade tutulur (Melih: "çok renkli ve karmaşık" — renkli disiplin
+  etiketleri kaldırıldı, disiplinler tek satır soluk yazı). Telefonda görsel üstte + TEK düğme
+  (doğrudan cihazın mağazasına, rozet yok); masaüstünde düğme + iki rozet (siteye).
   Sarı (`ta-yellow`) yalnız zemin/grafik, yazı rengi değil.
 - **Tek tip mağaza düğmesi** (`StoreButtons.jsx`, Melih: "hepsi bir standart olsun"): Muuvlink
   ve Training Agents'ın App Store/Google Play düğmeleri aynı kalıp — siyah, 48 px, rounded-xl,

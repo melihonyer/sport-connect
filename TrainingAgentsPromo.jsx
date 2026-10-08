@@ -186,49 +186,42 @@ export function TaDiscoverCard({ t, lang, isNative, medium = "kesfet-karti" }) {
 }
 
 // ── Ana sayfa bandı: Ai koç + 6 disiplin ──────────────────────────────────
-// Melih, 8 Ekim 2026: Training Agents'ın kurumsal renkleri, tek dekupe fotoğraf, şık kart.
-// Zemin ana mavi, arkada düz sarı daire (sarı yalnız zemin/grafik — yazı rengi değil),
-// önünde Training Agents'ın kendi mağaza görselindeki dekupe triatlet. 6 disiplin kendi
-// renginde etiket (özet tablosu). Degrade yok. Düğme ve rozetler aynı boyda (h-12).
-const DISCIPLINES = [
-  { key: "triathlon", cls: "bg-ta-tri text-white ring-1 ring-white/25" },
-  { key: "run", cls: "bg-ta-run text-ink-900" },
-  { key: "bike", cls: "bg-ta-bike text-ink-900" },
-  { key: "swim", cls: "bg-ta-swim text-white ring-1 ring-white/25" },
-  { key: "strength", cls: "bg-ta-strength text-white" },
-  { key: "yoga", cls: "bg-ta-yoga text-ink-900" },
-];
+// Melih, 8 Ekim 2026: Training Agents'ın kurumsal renkleri, tek dekupe fotoğraf; sonra
+// "çok renkli ve karmaşık, sadeleştir": renkli disiplin etiketleri yerine tek satır sade
+// yazı, telefonda görsel üstte + tek düğme (doğrudan mağazaya), masaüstünde düğme + rozetler.
+// Zemin ana mavi, düz sarı daire (sarı yalnız zemin/grafik), önünde Training Agents'ın kendi
+// mağaza görselindeki dekupe triatlet. Degrade yok.
+const DISCIPLINE_KEYS = ["triathlon", "run", "bike", "swim", "strength", "yoga"];
 
 export function TaHomeBand({ t, lang, isNative }) {
-  const site = ctaUrl({ isNative, lang, medium: "anasayfa" });
+  const platform = taPlatform(isNative);
+  const phone = platform !== "desktop";
+  // Telefonda (web ya da uygulama) tek CTA doğrudan cihazın mağazasına; masaüstünde siteye.
+  const href = phone ? taStoreUrl(platform, lang, "anasayfa") : taSiteUrl(lang, "home", "anasayfa");
   return (
     <section className="py-12 sm:py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-8">
-        <div className="relative overflow-hidden rounded-3xl bg-ta-blue grid lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] items-stretch">
-          <div className="relative z-10 p-6 sm:p-10 lg:p-12 flex flex-col justify-center">
-            <TaLogo dark width={150} />
-            <span className="mt-7 self-start inline-flex items-center px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-ta-yellow text-ink-900">
-              {t("taPromo.homeEyebrow")}
-            </span>
-            <h2 className="mt-4 text-[26px] sm:text-4xl font-semibold text-white tracking-tight leading-[1.15]">{t("taPromo.homeTitle")}</h2>
-            <p className="mt-4 text-sm sm:text-base text-white/80 leading-relaxed max-w-xl">{t("taPromo.homeBody")}</p>
-            <div className="mt-6 flex flex-wrap gap-2">
-              {DISCIPLINES.map((d) => (
-                <ExtLink key={d.key} href={site} isNative={isNative}
-                  className={`ta-chip inline-flex items-center h-8 px-3 rounded-full text-[13px] font-semibold ${d.cls}`}>
-                  {t(`taPromo.disc.${d.key}`)}
-                </ExtLink>
-              ))}
-            </div>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
-              <TaButton light isNative={isNative} href={site}>{t("taPromo.cardCta")}</TaButton>
-              <TaStoreBadges t={t} lang={lang} medium="anasayfa" isNative={isNative} />
-            </div>
-          </div>
-          <div aria-hidden="true" className="relative h-80 sm:h-[24rem] lg:h-[29rem] overflow-hidden">
-            <div className="absolute left-1/2 top-[54%] -translate-x-1/2 -translate-y-1/2 w-[17rem] h-[17rem] sm:w-[21rem] sm:h-[21rem] lg:w-[24rem] lg:h-[24rem] rounded-full bg-ta-yellow" />
+        <div className="relative overflow-hidden rounded-3xl bg-ta-blue lg:grid lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-stretch">
+          <div aria-hidden="true" className="relative h-60 sm:h-72 lg:h-[27rem] lg:order-2 overflow-hidden">
+            <div className="absolute rounded-full bg-ta-yellow w-48 h-48 sm:w-60 sm:h-60 lg:w-[22rem] lg:h-[22rem] right-5 top-5 sm:right-12 sm:top-6 lg:right-auto lg:left-1/2 lg:-translate-x-1/2 lg:top-1/2 lg:-translate-y-1/2" />
             <img src={`${ASSET}/athlete.webp`} alt="" loading="lazy"
-              className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[96%] w-auto max-w-none" />
+              className="absolute bottom-0 right-3 sm:right-16 h-[96%] w-auto max-w-none lg:right-auto lg:left-1/2 lg:-translate-x-1/2" />
+            <div className="absolute left-6 top-6 sm:left-10 sm:top-8 lg:hidden"><TaLogo dark width={128} /></div>
+          </div>
+          <div className="relative px-6 pb-7 pt-1 sm:px-10 sm:pb-10 lg:p-12 lg:order-1 flex flex-col justify-center">
+            <div className="hidden lg:block"><TaLogo dark width={150} /></div>
+            <h2 className="lg:mt-8 text-2xl sm:text-3xl lg:text-4xl font-semibold text-white tracking-tight leading-[1.15]">{t("taPromo.homeTitle")}</h2>
+            <p className="mt-3 text-sm sm:text-base text-white/75 leading-relaxed max-w-xl">{t("taPromo.homeBody")}</p>
+            <p className="mt-4 text-xs sm:text-[13px] font-medium text-white/60 tracking-wide">
+              {/* Ad içinde satır bölünmesin ("Yoga &" / "Esneme"): boşluklar bölünmez boşluk. */}
+              {DISCIPLINE_KEYS.map((k) => t(`taPromo.disc.${k}`).replace(/ /g, "\u00a0")).join(" · ")}
+            </p>
+            <div className="mt-6 lg:mt-8 flex flex-wrap items-center gap-3">
+              <div className={phone ? "w-full [&>a]:w-full [&>a]:justify-center" : ""}>
+                <TaButton light isNative={isNative} href={href}>{t("taPromo.cardCta")}</TaButton>
+              </div>
+              {!phone && <TaStoreBadges t={t} lang={lang} medium="anasayfa" isNative={isNative} />}
+            </div>
           </div>
         </div>
       </div>
