@@ -155,21 +155,6 @@ export function TaSessionNote({ t, lang, isNative }) {
 }
 
 // ── 7.2 Etkinlikler listesinde tanıtım kartı ───────────────────────────────
-// Kişi başı günde bir: o gün ilk açılan oturumda görünür, aynı gün başka oturumda çıkmaz.
-export function useTaDailyCard() {
-  const [show] = useState(() => {
-    try {
-      const today = new Date().toISOString().slice(0, 10);
-      if (sessionStorage.getItem("ta_card_session") === today) return true;
-      if (localStorage.getItem("ta_card_day") === today) return false;
-      localStorage.setItem("ta_card_day", today);
-      sessionStorage.setItem("ta_card_session", today);
-      return true;
-    } catch { return false; }
-  });
-  return show;
-}
-
 // Liste ızgarasında tam satır kaplar (etkinlik kartları kısa; dikey kart sırayı bozuyordu).
 export function TaDiscoverCard({ t, lang, isNative, medium = "kesfet-karti" }) {
   return (

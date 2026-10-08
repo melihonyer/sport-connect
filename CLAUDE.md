@@ -669,7 +669,8 @@ marka adı), her bölümde tek CTA, fiyat/"2 hafta"/birebir koçluk/saat markas�
   + `locales/<kod>.js` (7 dil; tr/en özetten aynen, diğerleri Melih onaylı çeviri).
   Varlıklar `public/partners/training-agents/` (resmî rozetler + logolar; e-posta PNG'leri `mail/`).
 - Alanlar: ana sayfa bandı (Haberler üstü; web ve uygulama ana sayfası) · alt bilgi şeridi · Etkinlikler sayfasında tam
-  satır kart (öne çıkanların altında, listenin üstünde; kişi başı günde bir — `ta_card_day`) · etkinlik
+  satır kart (öne çıkanların altında, listenin üstünde; her zaman görünür — özetteki "günde bir"
+  sınırı Melih'in isteğiyle kaldırıldı) · etkinlik
   sayfasında `source = 'training-agents'` ise "Bu antrenmanı Training Agents yazdı" ·
   yarış/organizatör etkinliğinin altında hazırlık kartı + rehber (`taRaceGuide`; takım
   etkinliğinde yalnız açık yarış kelimesiyle) · etkinlik oluşturmada antrenör ipucu

@@ -4,7 +4,7 @@ import Tour from "./Tour.jsx";
 import FreshBuildWatcher from "./FreshBuildWatcher.jsx";
 import BlurReveal from "./BlurReveal.jsx";
 import { StoreButton } from "./StoreButtons.jsx";
-import { TaSessionNote, TaDiscoverCard, useTaDailyCard, TaHomeBand, TaCoachTip, TaEmptyState, TaRaceCard, TaFooterStrip, taRaceGuide } from "./TrainingAgentsPromo.jsx";
+import { TaSessionNote, TaDiscoverCard, TaHomeBand, TaCoachTip, TaEmptyState, TaRaceCard, TaFooterStrip, taRaceGuide } from "./TrainingAgentsPromo.jsx";
 import { MetaEvents, newEventId, getMatchSignals, getAttribution, trackPageView } from "./analytics.js";
 import {
   MapPin,
@@ -5689,7 +5689,6 @@ export default function Muuvlink() {
   };
 
   const TrainingsPage = () => {
-    const taCardOn = useTaDailyCard();
     const sports = SPORT_TYPES; // tek kaynak: yukarıdaki SPORT_TYPES
     const difficulties = [
       { val: "Kolay",      label: t("trainings.levelEasy") },
@@ -6041,8 +6040,9 @@ export default function Muuvlink() {
             </section>
           )}
           {/* Training Agents kartı: öne çıkanların hemen altında, listenin üstünde (Melih,
-              8 Ekim 2026; önce listede 6. etkinlikten sonraydı). Kişi başı günde bir. */}
-          {viewMode === "list" && taCardOn && !nearbyLoading && displayedTrainings.length > 0 && (
+              8 Ekim 2026). Sabit yer olduğu için her zaman görünür — "günde bir" sınırı
+              kaldırıldı (Melih: "sürekli gözüksün"). */}
+          {viewMode === "list" && !nearbyLoading && displayedTrainings.length > 0 && (
             <div className="grid mb-10"><TaDiscoverCard t={t} lang={lang} isNative={isNative} /></div>
           )}
           {viewMode === "list" && featuredTrainings.length > 0 && (
