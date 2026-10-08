@@ -679,12 +679,13 @@ marka adı), her bölümde tek CTA, fiyat/"2 hafta"/birebir koçluk/saat markas�
   App Store `?ct=muuvlink-<bölüm>`, Play `&referrer=<kodlu utm>`. Bölümler: rozet,
   kesfet-karti, antrenor, bos-durum, etkinlik, footer, rehber + bizim eklediğimiz
   anasayfa, eposta. Uygulamada (isNative) CTA doğrudan cihazın mağazasına (iOS'ta dış
-  siteye yönlendirme yok); web masaüstünde rozetler siteye, telefonda tek rozet mağazaya.
+  siteye yönlendirme yok). Rozetler HER ZAMAN doğrudan mağazaya (Melih; özetteki "masaüstünde
+  siteye" kuralı uygulanmaz); telefonda yalnız cihazın rozeti.
 - **Ana sayfa bandı** (Melih): Training Agents mavisi zemin, düz sarı daire önünde dekupe
   triatlet (`athlete.webp`, Training Agents'ın mağaza görseli `mobile/store/marketing/assets/
   triathlete-side.png`). Sade tutulur (Melih: "çok renkli ve karmaşık" — renkli disiplin
   etiketleri kaldırıldı, disiplinler tek satır soluk yazı). Telefonda görsel üstte + TEK düğme
-  (doğrudan cihazın mağazasına, rozet yok); masaüstünde düğme + iki rozet (siteye).
+  (doğrudan cihazın mağazasına, rozet yok); masaüstünde düğme (siteye) + iki rozet (mağazalara).
   Sarı (`ta-yellow`) yalnız zemin/grafik, yazı rengi değil.
 - **Tek tip mağaza düğmesi** (`StoreButtons.jsx`, Melih: "hepsi bir standart olsun"): Muuvlink
   ve Training Agents'ın App Store/Google Play düğmeleri aynı kalıp — siyah, 48 px, rounded-xl,

@@ -113,14 +113,15 @@ export function TaLogo({ dark = false, width = 112, className = "" }) {
   );
 }
 
-// Mağaza düğmeleri: Muuvlink'inkilerle aynı kalıp (StoreButtons.jsx). Masaüstünde ikisi
-// yan yana siteye; telefonda (web ya da uygulama) yalnız cihazın mağazası, doğrudan mağazaya.
+// Mağaza düğmeleri: Muuvlink'inkilerle aynı kalıp (StoreButtons.jsx). Her zaman doğrudan
+// mağazaya (Melih, 8 Ekim 2026: "rozete tıklayınca sayfaya gidiyor, storelara gitmeli" —
+// özetteki "masaüstünde siteye" kuralı bu yüzden uygulanmıyor). Masaüstünde ikisi yan yana;
+// telefonda (web ya da uygulama) yalnız cihazın mağazası.
 export function TaStoreBadges({ t, lang, medium, isNative, className = "" }) {
   const platform = taPlatform(isNative);
-  const site = taSiteUrl(lang, "home", medium);
   const open = (href) => (isNative ? (e) => { e.preventDefault(); window.open(href, "_blank", "noopener"); } : undefined);
-  const appleHref = platform === "desktop" ? site : taStoreUrl("ios", lang, medium);
-  const playHref = platform === "desktop" ? site : taStoreUrl("android", lang, medium);
+  const appleHref = taStoreUrl("ios", lang, medium);
+  const playHref = taStoreUrl("android", lang, medium);
   return (
     <div className={`flex flex-wrap items-center gap-3 ${className}`}>
       {platform !== "android" && <StoreButton store="apple" href={appleHref} top={t("download.badgeTop")} onClick={open(appleHref)} />}
