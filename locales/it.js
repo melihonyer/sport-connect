@@ -370,6 +370,7 @@ export default {
   },
 
   taPromo: {
+    adLabel: "Pubblicità",
     session: "Questo allenamento l'ha scritto {brand}.",
     sessionCta: "Fatti scrivere il tuo",
     cardTitle: "Hai trovato con chi allenarti? Ora il piano.",

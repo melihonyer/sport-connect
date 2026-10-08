@@ -545,6 +545,7 @@ export const translations = {
                    en: "For your training plan: {brand} — made for you, rewritten every week.",
                    de: "Für deinen Trainingsplan: {brand} — für dich gemacht, jede Woche neu." },
     close:       { tr: "Kapat", en: "Close", de: "Schließen" },
+    adLabel:     { tr: "Reklam", en: "Ad", de: "Anzeige" },
     // Ana sayfa bandı (8 Ekim 2026): başlık özetin ana mesajı, metin iki destek mesajı.
     homeEyebrow: { tr: "6 disiplin", en: "6 disciplines", de: "6 Disziplinen" },
     homeTitle:   { tr: "Antrenmanını kişiye özel, her hafta yeniden yazan Ai koç.",

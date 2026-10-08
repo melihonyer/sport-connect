@@ -158,7 +158,9 @@ export function TaSessionNote({ t, lang, isNative }) {
 // Liste ızgarasında tam satır kaplar (etkinlik kartları kısa; dikey kart sırayı bozuyordu).
 export function TaDiscoverCard({ t, lang, isNative, medium = "kesfet-karti" }) {
   return (
-    <div className="col-span-full bg-white rounded-2xl border border-slate-100 px-5 py-4 sm:px-6 flex flex-col md:flex-row md:items-center gap-4 md:gap-8">
+    <div className="relative col-span-full rounded-2xl border border-ta-blue/15 bg-ta-blue/[0.04] px-5 py-4 sm:px-6 flex flex-col md:flex-row md:items-center gap-4 md:gap-8">
+      {/* Reklam olduğu açıkça görünsün (Melih, 8 Ekim 2026); zemin mavinin çok hafif tonu. */}
+      <span className="absolute top-2.5 right-3 text-[11px] font-medium text-slate-400">{t("taPromo.adLabel")}</span>
       <TaLogo width={100} />
       <div className="flex-1 min-w-0">
         <h3 className="text-base font-semibold text-slate-900 leading-snug">{t("taPromo.cardTitle")}</h3>
