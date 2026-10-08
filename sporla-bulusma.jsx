@@ -3,6 +3,7 @@ import { detectLang, createT, LANGUAGES, SUPPORTED, localeOf, pickLang } from ".
 import Tour from "./Tour.jsx";
 import FreshBuildWatcher from "./FreshBuildWatcher.jsx";
 import BlurReveal from "./BlurReveal.jsx";
+import { TaSessionNote, TaDiscoverCard, useTaDailyCard, TaHomeBand, TaCoachTip, TaEmptyState, TaRaceCard, TaFooterStrip, taRaceGuide } from "./TrainingAgentsPromo.jsx";
 import { MetaEvents, newEventId, getMatchSignals, getAttribution, trackPageView } from "./analytics.js";
 import {
   MapPin,
@@ -3857,7 +3858,9 @@ export default function Muuvlink() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        // Training Agents taslağından yayınlanıyorsa işaretlenir: etkinlik sayfasında
+        // "Bu antrenmanı Training Agents yazdı" satırı bundan çıkar.
+        body: JSON.stringify(taCurrent ? { ...formData, source: "training-agents" } : formData),
       });
 
       if (response.ok) {
@@ -5316,6 +5319,9 @@ export default function Muuvlink() {
       <NewsSection items={homeNews} t={t} setCurrentPage={setCurrentPage} />
       <GallerySection items={homeGallery} t={t} setCurrentPage={setCurrentPage} />
 
+      {/* Training Agents: dost uygulama — kart metni + resmî mağaza rozetleri */}
+      <TaHomeBand t={t} lang={lang} isNative={isNative} />
+
       <FaqSection t={t} />
 
       {/* ── CTA — Full Bleed Cinematic ── */}
@@ -5561,6 +5567,11 @@ export default function Muuvlink() {
               </div>
             )}
 
+            {/* Yaklaşan etkinlik yok: Training Agents haftayı hazırlasın */}
+            {joinedTrainings.length === 0 && myTeamTrainings.length === 0 && (
+              <TaEmptyState t={t} lang={lang} isNative={isNative} />
+            )}
+
             {/* Team Trainings */}
             {myTeamTrainings.length > 0 && (
               <div className="bg-white rounded-2xl p-6 border border-slate-100">
@@ -5674,6 +5685,7 @@ export default function Muuvlink() {
   };
 
   const TrainingsPage = () => {
+    const taCardOn = useTaDailyCard();
     const sports = SPORT_TYPES; // tek kaynak: yukarıdaki SPORT_TYPES
     const difficulties = [
       { val: "Kolay",      label: t("trainings.levelEasy") },
@@ -6038,8 +6050,16 @@ export default function Muuvlink() {
             </div>
           ) : displayedTrainings.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {displayedTrainings.map((training) => (
-                <TrainingCard key={training.id} training={training} onClick={fetchTrainingDetails} />
+              {displayedTrainings.map((training, i) => (
+                <React.Fragment key={training.id}>
+                  <TrainingCard training={training} onClick={fetchTrainingDetails} />
+                  {/* Training Agents kartı: listede tek, tam satır. 6. etkinlikten
+                      sonra (2 ve 3 sütunda satır sonu; kısa listede sonda);
+                      kişi başı günde bir. */}
+                  {taCardOn && i === Math.min(5, displayedTrainings.length - 1) && displayedTrainings.length >= 3 && (
+                    <TaDiscoverCard t={t} lang={lang} isNative={isNative} />
+                  )}
+                </React.Fragment>
               ))}
             </div>
           ) : (
@@ -6686,6 +6706,11 @@ export default function Muuvlink() {
 
           <p className="text-gray-600 mb-6">{selectedTraining.description}</p>
 
+          {/* Training Agents'tan yayınlanan antrenman: kaynağı tek satır */}
+          {selectedTraining.source === "training-agents" && (
+            <TaSessionNote t={t} lang={lang} isNative={isNative} />
+          )}
+
           {/* Takım bilgisi + katılım */}
           {selectedTraining.team_id && selectedTraining.team_name && (() => {
             const isTeamMember = myTeams.some(tm => tm.id === selectedTraining.team_id);
@@ -7113,6 +7138,14 @@ export default function Muuvlink() {
                 </p>
               </div>
             );
+          })()}
+
+          {/* Yarış / uzun etkinlik: sayfanın en altında hazırlık planı + türüne uygun
+              rehber yazısı. Organizatör etkinliğinde her zaman; takım/bireyselde
+              yalnız açık yarış kelimesi varsa (taRaceGuide). Geçmişte çıkmaz. */}
+          {!isPast && (() => {
+            const guide = taRaceGuide(selectedTraining, isOrg);
+            return guide ? <div className="mt-6"><TaRaceCard t={t} lang={lang} isNative={isNative} guide={guide} /></div> : null;
           })()}
         </div>
       </div>
@@ -7797,6 +7830,9 @@ export default function Muuvlink() {
               Uygun takım yoksa tek çıkış yolu takım kurmak — etkinlik
               oluşturulduktan sonra takımı DEĞİŞTİRİLEMİYOR, o yüzden
               "şimdilik bireysel yayınla, sonra taşırsın" demiyoruz. */}
+          {/* Taslaksız açılışta antrenöre ipucu: planı Training Agents yazabilir */}
+          {!taCurrent && <TaCoachTip t={t} lang={lang} isNative={isNative} />}
+
           {taCurrent && (
             <div className="mb-4 rounded-2xl border p-4" style={{ borderColor: "#c2ede9", background: "#e2f1ef" }}>
               <div className="flex items-start gap-2.5">
@@ -9517,6 +9553,9 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
               <StoreBadges />
             </div>
           )}
+
+          {/* Training Agents — dost uygulama, misafir şerit (logo küçük, sessiz) */}
+          <TaFooterStrip t={t} lang={lang} isNative={isNative} />
 
           {/* Alt çizgi */}
           <div className="border-t border-slate-800 pt-6 text-center">

@@ -153,7 +153,11 @@
        döndüğü için buton kayboluyordu. Burada hover beyaz zemin + deep teal metin. */
     [data-btn="pop-on-dark"]:hover:not(:disabled) { background: #fff !important; color: #114956 !important; }
     [data-btn="pop-on-dark"]:hover:not(:disabled) svg { color: #114956 !important; }
+
+    /* Training Agents tanıtım düğmesi: kendi markasının koyu mavisine döner (sarıya değil). */
+    [data-btn="ta"]:hover { background: #1b46bd !important; }
   }
+  [data-btn="ta"] { transition: background-color .18s ease; }
 
   @media (hover: hover) and (pointer: fine) {
     .btn-primary:hover {

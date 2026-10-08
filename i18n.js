@@ -510,6 +510,42 @@ export const translations = {
     discardConfirm: { tr: "Bekleyen antrenman silinsin mi?", en: "Discard the pending training?",
                       de: "Wartendes Training verwerfen?" },
   },
+
+  // ── TRAINING AGENTS TANITIMI ─────────────────────────────
+  // Kaynak: Training Agents'ın marka özeti (muuvlink-tanitim-brief.md, 08.10.2026).
+  // tr/en metinleri özetten aynen; diğer diller onun tonuyla çevrildi.
+  // {brand} = "Training Agents" (ana mavi, kalın) — metin parça parça kurulmaz.
+  // Fiyat, "2 hafta", birebir koçluk, saat markası yazılmaz.
+  taPromo: {
+    session:     { tr: "Bu antrenmanı {brand} yazdı.", en: "This session was written by {brand}.",
+                   de: "Dieses Training hat {brand} geschrieben." },
+    sessionCta:  { tr: "Senin için de yazsın", en: "Get yours", de: "Hol dir deins" },
+    cardTitle:   { tr: "Birlikte koşacak birini buldun. Peki ne koşacaksınız?", en: "Found your training partner? Now the plan.",
+                   de: "Trainingspartner gefunden? Jetzt fehlt nur der Plan." },
+    cardBody:    { tr: "{brand} haftalık antrenmanını seviyene, hedefine ve ayırabildiğin saate göre yazar; her hafta geçen haftana bakarak yeniler.",
+                   en: "{brand} writes your weekly training around your level, your goal and the hours you really have, and rewrites it every week.",
+                   de: "{brand} schreibt dein Wochentraining passend zu deinem Level, deinem Ziel und den Stunden, die du wirklich hast, und schreibt es jede Woche neu." },
+    cardCta:     { tr: "İlk haftan ücretsiz", en: "Your first week is free", de: "Deine erste Woche ist kostenlos" },
+    coachTitle:  { tr: "Haftalık planı yazmak zorunda değilsin.", en: "You don't have to write the week yourself.",
+                   de: "Den Wochenplan musst du nicht selbst schreiben." },
+    coachBody:   { tr: "{brand} antrenmanı yazar, sen tek dokunuşla Muuvlink'te yayınlarsın. Saat, yer ve takım yine senin kararın.",
+                   en: "{brand} writes the session; you publish it to Muuvlink in one tap. Time, place and team stay your call.",
+                   de: "{brand} schreibt das Training, du veröffentlichst es mit einem Tipp auf Muuvlink. Zeit, Ort und Team entscheidest weiterhin du." },
+    coachCta:    { tr: "Nasıl çalıştığını gör", en: "See how it works", de: "So funktioniert's" },
+    empty:       { tr: "Bu hafta bir planın yok mu? {brand} sana özel haftanı birkaç soruyla hazırlar.",
+                   en: "No plan this week? {brand} builds your week from a few questions.",
+                   de: "Diese Woche noch keinen Plan? {brand} stellt deine Woche mit ein paar Fragen zusammen." },
+    emptyCta:    { tr: "Haftamı hazırla", en: "Build my week", de: "Meine Woche planen" },
+    race:        { tr: "Bu etkinliğe hazırlanıyor musun? {brand} programını etkinlik tarihine göre kurar, son haftalarda yükü azaltır.",
+                   en: "Training for this event? {brand} builds your plan back from race day and eases the load in the final weeks.",
+                   de: "Bereitest du dich auf dieses Event vor? {brand} baut deinen Plan vom Wettkampftag aus auf und reduziert die Belastung in den letzten Wochen." },
+    raceCta:     { tr: "Hazırlık planımı oluştur", en: "Build my race plan", de: "Meinen Wettkampfplan erstellen" },
+    raceGuide:   { tr: "Hazırlık rehberini oku", en: "Read the training guide", de: "Zum Trainingsratgeber" },
+    footer:      { tr: "Antrenman planın için: {brand} — sana özel, her hafta yeniden.",
+                   en: "For your training plan: {brand} — made for you, rewritten every week.",
+                   de: "Für deinen Trainingsplan: {brand} — für dich gemacht, jede Woche neu." },
+    close:       { tr: "Kapat", en: "Close", de: "Schließen" },
+  },
   moderation: {
     delete:               { tr: "Sil",                        en: "Delete",                  de: "Löschen"                 },
     deleted:              { tr: "Silindi.",                   en: "Deleted.",                de: "Gelöscht."               },

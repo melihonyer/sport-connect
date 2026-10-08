@@ -369,6 +369,24 @@ export default {
     discardConfirm: "Ignorer l'entraînement en attente ?",
   },
 
+  taPromo: {
+    session: "Cette séance a été écrite par {brand}.",
+    sessionCta: "Obtiens la tienne",
+    cardTitle: "Tu as trouvé avec qui t'entraîner ? Place au plan.",
+    cardBody: "{brand} écrit ton entraînement de la semaine selon ton niveau, ton objectif et les heures dont tu disposes vraiment, et le réécrit chaque semaine.",
+    cardCta: "Ta première semaine est gratuite",
+    coachTitle: "Tu n'as pas à écrire la semaine toi-même.",
+    coachBody: "{brand} écrit la séance, tu la publies sur Muuvlink en un geste. L'heure, le lieu et l'équipe restent ton choix.",
+    coachCta: "Voir comment ça marche",
+    empty: "Pas de plan cette semaine ? {brand} prépare ta semaine en quelques questions.",
+    emptyCta: "Préparer ma semaine",
+    race: "Tu te prépares pour cet événement ? {brand} construit ton plan à partir du jour de la course et allège la charge les dernières semaines.",
+    raceCta: "Créer mon plan de course",
+    raceGuide: "Lire le guide de préparation",
+    footer: "Pour ton plan d'entraînement : {brand} — fait pour toi, réécrit chaque semaine.",
+    close: "Fermer",
+  },
+
   moderation: {
     delete: "Supprimer",
     deleted: "Supprimé.",

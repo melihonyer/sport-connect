@@ -78,6 +78,12 @@ export default {
           purple: '#643e87',
         },
         smoke: '#F4F4F4',
+        // Training Agents (misafir marka) — yalnız tanıtım alanlarında düğme/marka adı.
+        // Kaynak: Training Agents marka özeti. Muuvlink paleti baskın kalır.
+        ta: {
+          blue:      '#2458ea',
+          'blue-dark': '#1b46bd',
+        },
       },
       boxShadow: {
         'card':      '0 2px 8px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)',

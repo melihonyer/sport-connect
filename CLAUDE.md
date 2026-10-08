@@ -650,6 +650,31 @@ olan kullanıcı.
 - Karar: antrenmanlar arasında takım/konum hatırlanmaz — değişebilen bir alanı
   önceden doldurmak, yanlış yerde etkinlik yayınlanmasına yol açar.
 
+## Training Agents tanıtımı (8 Ekim 2026)
+
+Training Agents lansmanı için Muuvlink'te "dost uygulama" alanları. Kaynak: Training
+Agents'ın marka özeti (`muuvlink-tanitim-brief.md`, Melih verdi). Training Agents bu
+sayfada **misafir**: logosu küçük, renginden yalnız ana mavi (`ta-blue` #2458ea, düğme +
+marka adı), her bölümde tek CTA, fiyat/"2 hafta"/birebir koçluk/saat markası yok, "Ai".
+- Kod: `TrainingAgentsPromo.jsx` (bileşenler + bağlantılar), metinler `i18n.js` `taPromo`
+  + `locales/<kod>.js` (7 dil; tr/en özetten aynen, diğerleri Melih onaylı çeviri).
+  Varlıklar `public/partners/training-agents/` (resmî rozetler + logolar; e-posta PNG'leri `mail/`).
+- Alanlar: ana sayfa bandı (SSS üstü) · alt bilgi şeridi · Etkinlikler listesinde tam
+  satır kart (6. etkinlikten sonra, kişi başı günde bir — `ta_card_day`) · etkinlik
+  sayfasında `source = 'training-agents'` ise "Bu antrenmanı Training Agents yazdı" ·
+  yarış/organizatör etkinliğinin altında hazırlık kartı + rehber (`taRaceGuide`; takım
+  etkinliğinde yalnız açık yarış kelimesiyle) · etkinlik oluşturmada antrenör ipucu
+  (kapatılınca 30 gün) · profilde yaklaşan etkinlik yoksa boş durum · **her e-postanın**
+  alt bilgisinde önce Muuvlink rozetleri, altında Training Agents şeridi (Melih).
+- Bağlantılar: site `?utm_source=muuvlink&utm_medium=<bölüm>&utm_campaign=muuvlink-2026q4`;
+  App Store `?ct=muuvlink-<bölüm>`, Play `&referrer=<kodlu utm>`. Bölümler: rozet,
+  kesfet-karti, antrenor, bos-durum, etkinlik, footer, rehber + bizim eklediğimiz
+  anasayfa, eposta. Uygulamada (isNative) CTA doğrudan cihazın mağazasına (iOS'ta dış
+  siteye yönlendirme yok); web masaüstünde rozetler siteye, telefonda tek rozet mağazaya.
+- `trainings.source`: yalnız Training Agents taslağından yayınlanan etkinlikte yazılır
+  (arayüz `taCurrent` varken gönderir, backend yalnız bu değeri kabul eder). 8 Ekim
+  öncesi yayınlananlar işaretsiz.
+
 ## Açık sayfa tazeliği
 
 - **Veri:** sitede açık detay/liste 60 sn'de bir + öne gelişte sessizce tazelenir

@@ -1004,6 +1004,8 @@ const MAIL = {
   tr: {
     wrapTagline: 'Spor topluluğun seni bekliyor',
     wrapFollow: 'Bizi takip et',
+    wrapDownload: "Muuvlink'i indir",
+    taStrip: "Antrenman planın için: {brand} — sana özel, her hafta yeniden.",
     wrapFooter1: 'Bu maili Muuvlink üzerinden aldınız.',
     wrapFooter2: '© 2026 Muuvlink. Tüm hakları saklıdır.',
     lblDate: 'Tarih', lblTime: 'Saat', lblLocation: 'Konum',
@@ -1099,6 +1101,8 @@ const MAIL = {
   en: {
     wrapTagline: 'Your sports community is waiting',
     wrapFollow: 'Follow us',
+    wrapDownload: "Get Muuvlink",
+    taStrip: "For your training plan: {brand} — made for you, rewritten every week.",
     wrapFooter1: 'You received this email through Muuvlink.',
     wrapFooter2: '© 2026 Muuvlink. All rights reserved.',
     lblDate: 'Date', lblTime: 'Time', lblLocation: 'Location',
@@ -1194,6 +1198,8 @@ const MAIL = {
   de: {
     wrapTagline: 'Deine Sport-Community wartet auf dich',
     wrapFollow: 'Folge uns',
+    wrapDownload: "Muuvlink holen",
+    taStrip: "Für deinen Trainingsplan: {brand} — für dich gemacht, jede Woche neu.",
     wrapFooter1: 'Du hast diese E-Mail über Muuvlink erhalten.',
     wrapFooter2: '© 2026 Muuvlink. Alle Rechte vorbehalten.',
     lblDate: 'Datum', lblTime: 'Uhrzeit', lblLocation: 'Ort',
@@ -1289,6 +1295,8 @@ const MAIL = {
   el: {
     wrapTagline: 'Η αθλητική σου κοινότητα σε περιμένει',
     wrapFollow: 'Ακολούθησέ μας',
+    wrapDownload: "Κατέβασε το Muuvlink",
+    taStrip: "Για το προπονητικό σου πρόγραμμα: {brand} — φτιαγμένο για σένα, νέο κάθε εβδομάδα.",
     wrapFooter1: 'Έλαβες αυτό το email μέσω του Muuvlink.',
     wrapFooter2: '© 2026 Muuvlink. Με την επιφύλαξη παντός δικαιώματος.',
     lblDate: 'Ημερομηνία', lblTime: 'Ώρα', lblLocation: 'Τοποθεσία',
@@ -1384,6 +1392,8 @@ const MAIL = {
   es: {
     wrapTagline: 'Tu comunidad deportiva te espera',
     wrapFollow: 'Síguenos',
+    wrapDownload: "Descarga Muuvlink",
+    taStrip: "Para tu plan de entrenamiento: {brand} — hecho para ti, renovado cada semana.",
     wrapFooter1: 'Has recibido este correo a través de Muuvlink.',
     wrapFooter2: '© 2026 Muuvlink. Todos los derechos reservados.',
     lblDate: 'Fecha', lblTime: 'Hora', lblLocation: 'Lugar',
@@ -1479,6 +1489,8 @@ const MAIL = {
   fr: {
     wrapTagline: "Ta communauté sportive t'attend",
     wrapFollow: 'Suis-nous',
+    wrapDownload: "Télécharge Muuvlink",
+    taStrip: "Pour ton plan d'entraînement : {brand} — fait pour toi, réécrit chaque semaine.",
     wrapFooter1: 'Tu as reçu cet e-mail via Muuvlink.',
     wrapFooter2: '© 2026 Muuvlink. Tous droits réservés.',
     lblDate: 'Date', lblTime: 'Heure', lblLocation: 'Lieu',
@@ -1574,6 +1586,8 @@ const MAIL = {
   it: {
     wrapTagline: 'La tua community sportiva ti aspetta',
     wrapFollow: 'Seguici',
+    wrapDownload: "Scarica Muuvlink",
+    taStrip: "Per il tuo piano di allenamento: {brand} — fatto per te, riscritto ogni settimana.",
     wrapFooter1: 'Hai ricevuto questa email tramite Muuvlink.',
     wrapFooter2: '© 2026 Muuvlink. Tutti i diritti riservati.',
     lblDate: 'Data', lblTime: 'Ora', lblLocation: 'Luogo',
@@ -1685,6 +1699,56 @@ function formatTrDate(d, lang = 'tr') {
   });
 }
 
+// Muuvlink mağaza rozetleri (8 Ekim 2026, Melih): e-posta alt bilgisinde önce Muuvlink,
+// altında Training Agents şeridi. Resmî rozet PNG'leri (icons/mail/store-*); tr → Türkçe,
+// diğer diller İngilizce rozet.
+function muuvEmailBadges(L) {
+  const b = L === 'tr' ? 'tr' : 'en';
+  const A = 'https://muuvlink.app/icons/mail';
+  const appStore = `https://apps.apple.com/${L === 'tr' ? 'tr/' : ''}app/muuvlink/id6781591672`;
+  const play = `https://play.google.com/store/apps/details?id=app.muuvlink&hl=${L}`;
+  return `
+            <p style="margin:0 0 12px;color:#114956;font-size:14px;font-weight:700;">${tm(L, 'wrapDownload')}</p>
+            <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 22px;"><tr>
+              <td style="padding:0 5px;"><a href="${appStore}" style="text-decoration:none;"><img src="${A}/store-app-store-${b}.png" height="44" alt="App Store"
+                style="display:block;border:0;outline:none;height:44px;width:auto;color:#231f20;font-size:12px;" /></a></td>
+              <td style="padding:0 5px;"><a href="${play}" style="text-decoration:none;"><img src="${A}/store-google-play-${b}.png" height="44" alt="Google Play"
+                style="display:block;border:0;outline:none;height:44px;width:auto;color:#231f20;font-size:12px;" /></a></td>
+            </tr></table>`;
+}
+
+// Training Agents şeridi (8 Ekim 2026): her e-postanın alt bilgisinde, sosyal medyanın
+// üstünde. Dost uygulama — logo küçük, tek cümle, resmî mağaza rozetleri (PNG; e-posta
+// istemcileri SVG çizmez). Rozetler doğrudan mağazaya gider (alıcının cihazı bilinmez),
+// kampanya etiketi utm_medium=eposta. Rozet dili: tr → Türkçe, diğerleri İngilizce.
+function taEmailStrip(L) {
+  const utm = 'utm_source=muuvlink&utm_medium=eposta&utm_campaign=muuvlink-2026q4';
+  const site = `https://trainingagentsapp.com${L === 'tr' ? '' : '/en'}/?${utm}`;
+  const appStore = `https://apps.apple.com/${L === 'tr' ? 'tr/' : ''}app/id6808657949?ct=muuvlink-eposta`;
+  const play = `https://play.google.com/store/apps/details?id=com.trainingagentsapp.android&referrer=${encodeURIComponent(utm)}`;
+  const b = L === 'tr' ? 'tr' : 'en';
+  const A = 'https://muuvlink.app/partners/training-agents/mail';
+  const [pre, post = ''] = String(tm(L, 'taStrip')).split('{brand}');
+  const brand = `<a href="${site}" style="color:#2458ea;font-weight:700;text-decoration:none;">Training Agents</a>`;
+  return `
+            <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 20px;">
+              <tr><td align="center" style="padding:0 0 10px;">
+                <a href="${site}" style="text-decoration:none;"><img src="${A}/logo-black.png" width="110" height="22" alt="Training Agents"
+                  style="display:block;border:0;outline:none;color:#231f20;font-family:'Segoe UI',Arial,sans-serif;font-size:13px;font-weight:700;" /></a>
+              </td></tr>
+              <tr><td align="center" style="padding:0 0 12px;color:#64748b;font-size:13px;line-height:1.5;">${pre}${brand}${post}</td></tr>
+              <tr><td align="center">
+                <table cellpadding="0" cellspacing="0" border="0" align="center"><tr>
+                  <td style="padding:0 5px;"><a href="${appStore}" style="text-decoration:none;"><img src="${A}/app-store-${b}.png" height="40" alt="App Store"
+                    style="display:block;border:0;outline:none;height:40px;width:auto;color:#231f20;font-size:12px;" /></a></td>
+                  <td style="padding:0 5px;"><a href="${play}" style="text-decoration:none;"><img src="${A}/google-play-${b}.png" height="40" alt="Google Play"
+                    style="display:block;border:0;outline:none;height:40px;width:auto;color:#231f20;font-size:12px;" /></a></td>
+                </tr></table>
+              </td></tr>
+            </table>
+            <div style="height:1px;background:#e2e8f0;margin:0 0 18px;line-height:1px;font-size:1px;">&nbsp;</div>`;
+}
+
 // Dar ekran (<620px): çerçeve ekrana oturur, iç boşluk küçülür — <style> içindeki
 // media query'yi Gmail ve Apple Mail uygular; desteklemeyen istemci 600px'i görür.
 function emailWrapper(content, lang = 'tr') {
@@ -1728,6 +1792,8 @@ function emailWrapper(content, lang = 'tr') {
             <!-- Sosyal medya. PNG kullanılıyor: e-posta istemcileri SVG çizmez.
                  Görseller engellenirse alt metni ("Instagram"/"YouTube") okunur
                  kalsın diye img'ye renk ve kalınlık verildi. -->
+            ${muuvEmailBadges(L)}
+            ${taEmailStrip(L)}
             <p style="margin:0 0 14px;color:#64748b;font-size:13px;font-weight:600;">${tm(L, 'wrapFollow')}</p>
             <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 18px;">
               <tr>
@@ -3053,6 +3119,10 @@ const updateUserStats = async (userId) => {
 // Buton yazısı düzenleyen tarafından girilir ("Formu Doldur", "Listeye
 // Eklen", "Bilet Al"...). Boşsa arayüz varsayılan metni kullanır.
 pool.query(`ALTER TABLE trainings ADD COLUMN IF NOT EXISTS registration_label TEXT`).catch(() => {});
+// Etkinlik nereden yayınlandı: 'training-agents' = Training Agents taslağından (8 Ekim 2026).
+// Etkinlik sayfasındaki "Bu antrenmanı Training Agents yazdı" satırı buna bakar. Yalnız
+// bu tek değer kabul edilir; öncesinde yayınlananlar boş kalır (geriye dönük işaret yok).
+pool.query(`ALTER TABLE trainings ADD COLUMN IF NOT EXISTS source TEXT`).catch(() => {});
 
 const REG_LABEL_MAX = 24;
 
@@ -4853,7 +4923,9 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
       difficulty,
       registration_url,
       registration_label,
+      source,
     } = req.body;
+    const trainingSource = source === 'training-agents' ? 'training-agents' : null;
 
     if (!title || !training_date || !training_time || !location_name) {
       return res.status(400).json({ error: 'Required fields missing' });
@@ -4909,8 +4981,8 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
       `INSERT INTO trainings (
         team_id, sport, created_by, title, description, training_date, training_time, duration_minutes,
         location_name, location_lat, location_lng, location_address, capacity, is_public, difficulty,
-        training_timezone, registration_url, registration_label
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+        training_timezone, registration_url, registration_label, source
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
       RETURNING *`,
       [
         team_id || null,
@@ -4931,6 +5003,7 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
         trainingTimezone,
         regUrl,
         regLabel,
+        trainingSource,
       ]
     );
 
