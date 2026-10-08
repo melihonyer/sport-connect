@@ -6040,6 +6040,11 @@ export default function Muuvlink() {
               </div>
             </section>
           )}
+          {/* Training Agents kartı: öne çıkanların hemen altında, listenin üstünde (Melih,
+              8 Ekim 2026; önce listede 6. etkinlikten sonraydı). Kişi başı günde bir. */}
+          {viewMode === "list" && taCardOn && !nearbyLoading && displayedTrainings.length > 0 && (
+            <div className="grid mb-10"><TaDiscoverCard t={t} lang={lang} isNative={isNative} /></div>
+          )}
           {viewMode === "list" && featuredTrainings.length > 0 && (
             <h2 className="text-xl sm:text-2xl font-semibold text-brand-900 tracking-tight mb-4">{t("trainings.allTitle")}</h2>
           )}
@@ -6054,16 +6059,8 @@ export default function Muuvlink() {
             </div>
           ) : displayedTrainings.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {displayedTrainings.map((training, i) => (
-                <React.Fragment key={training.id}>
-                  <TrainingCard training={training} onClick={fetchTrainingDetails} />
-                  {/* Training Agents kartı: listede tek, tam satır. 6. etkinlikten
-                      sonra (2 ve 3 sütunda satır sonu; kısa listede sonda);
-                      kişi başı günde bir. */}
-                  {taCardOn && i === Math.min(5, displayedTrainings.length - 1) && displayedTrainings.length >= 3 && (
-                    <TaDiscoverCard t={t} lang={lang} isNative={isNative} />
-                  )}
-                </React.Fragment>
+              {displayedTrainings.map((training) => (
+                <TrainingCard key={training.id} training={training} onClick={fetchTrainingDetails} />
               ))}
             </div>
           ) : (
