@@ -25,7 +25,7 @@ const MARKS = JSON.parse(readFileSync(join(HERE, "sat", "marks.json"), "utf8"));
 
 // Her parkur: harita karesi (el yazısı + ok) ve fotoğraf karesi.
 // text: el yazısının sol üst köşesi; from: okun çıktığı yer; bend: eğrinin yana kaçışı (+ sağa).
-const PARKUR = [
+export const PARKUR = [
   {
     id: "kapadokya", name: "KAPADOKYA", coord: "38.64° K · 34.83° D", mark: "goreme", r: 95,
     hand: ["balonların", "arasında koştuk"], text: [86, 190], from: [420, 470], bend: -0.35, balloons: true,
@@ -125,36 +125,57 @@ const SVG_FILTER = `<defs><filter id="rough" x="-5%" y="-5%" width="110%" height
   <feDisplacementMap in="SourceGraphic" scale="4"/></filter>
   <filter id="lift"><feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#000" flood-opacity=".45"/></filter></defs>`;
 
-const doc = (body) => `<!doctype html><html lang="tr"><head><meta charset="utf-8">${FONTS}<style>${BASE}</style></head><body>${body}</body></html>`;
+// Video kipi (v): arka plan görseli yok, gövde saydam; [data-a="tür,başla,bitir"] öğeleri
+// setT(sn) ile zamanlanır (wipe: soldan yazılır gibi açılır, draw: çizgi çizilir, fade, pop).
+// video-parkur.py bu katmanı uydu yaklaşması / drone videosu / fotoğrafın üstüne bindirir.
+const ANIM = `<style>html,body{background:transparent!important}</style><script>
+const ease = (t) => (t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+window.setT = (t) => document.querySelectorAll("[data-a]").forEach((el) => {
+  const [k, s, e] = el.dataset.a.split(","), p = ease(Math.min(1, Math.max(0, (t - s) / (e - s))));
+  if (k === "wipe") el.style.clipPath = "inset(-30% " + (1 - p) * 100 + "% -30% -8%)";
+  else if (k === "draw") { el.style.strokeDasharray = "1 1"; el.style.strokeDashoffset = String(1 - p); el.style.opacity = p > 0 ? 1 : 0; }
+  else if (k === "fade") { el.style.opacity = p; el.style.transform = "translateY(" + (1 - p) * 24 + "px)"; }
+  else if (k === "pop") { el.style.opacity = p; el.style.transformBox = "fill-box"; el.style.transformOrigin = "center"; el.style.transform = "scale(" + (.3 + .7 * p) + ")"; }
+  else if (k === "op") el.style.opacity = p;
+});
+window.setT(0);</script>`;
+const A = (v, k, s, e) => (v ? ` data-a="${k},${s},${e}"` : "");
+// Bir SVG parçasındaki <path> öğelerine sırayla zamanlama ekle (çizgi uzunluğu 1'e normalize).
+const timed = (v, svg, ...spans) => (v ? svg.replace(/<path /g, () => { const sp = spans.shift() || spans.at(-1); return `<path pathLength="1"${A(v, "draw", ...sp)} `; }) : svg);
+const lines = (v, arr, t0, per) => arr.map((l, i) => `<span style="display:block"${A(v, "wipe", (t0 + i * per * 0.9).toFixed(2), (t0 + i * per * 0.9 + per).toFixed(2))}>${l}</span>`).join("");
 
-function mapSlide(p, first) {
+const doc = (body, v) => `<!doctype html><html lang="tr"><head><meta charset="utf-8">${FONTS}<style>${BASE}</style>${v ? ANIM : ""}</head><body>${body}</body></html>`;
+
+export function mapSlide(p, first, v = false) {
   const target = MARKS[p.id][p.mark];
   const tip = edge(p.from, target, p.r);
-  const swipeText = first ? `<div class="hand" style="right:66px;top:${H / 2 - 60}px;font-size:56px">kaydır</div>` : "";
-  const swipeArrow = first ? `<g class="ink" style="stroke:#fff;stroke-width:7">${arrow([W - 170, H / 2 + 30], [W - 58, H / 2 + 36], 0.1)}</g>` : "";
+  const swipeText = first ? `<div class="hand" style="right:66px;top:${H / 2 - 60}px;font-size:56px"${A(v, "wipe", 3.8, 4.3)}>kaydır</div>` : "";
+  const swipeArrow = first ? `<g class="ink" style="stroke:#fff;stroke-width:7">${timed(v, arrow([W - 170, H / 2 + 30], [W - 58, H / 2 + 36], 0.1), [4.2, 4.6], [4.6, 4.75])}</g>` : "";
   const balloons = p.balloons
-    ? `<g class="ink" style="stroke-width:6">${balloon(880, 250, 1.25)}${balloon(985, 380, 0.85)}${balloon(780, 420, 0.65)}</g>`
+    ? `<g class="ink" style="stroke-width:6"><g${A(v, "pop", 1.2, 1.6)}>${balloon(880, 250, 1.25)}</g><g${A(v, "pop", 1.4, 1.8)}>${balloon(985, 380, 0.85)}</g><g${A(v, "pop", 1.6, 2.0)}>${balloon(780, 420, 0.65)}</g></g>`
     : "";
-  return doc(`<img class="bg" src="${uri(join(HERE, "sat", `${p.id}.jpg`))}">
+  const shaft = arrow(p.from, tip, p.bend);
+  return doc(`${v ? "" : `<img class="bg" src="${uri(join(HERE, "sat", `${p.id}.jpg`))}">`}
   <img class="logo" src="${wordmark("#ffffff")}">
-  <div class="hand" style="left:${p.text[0]}px;top:${p.text[1]}px;font-size:118px">${p.hand.join("<br>")}</div>
+  <div class="hand" style="left:${p.text[0]}px;top:${p.text[1]}px;font-size:118px">${lines(v, p.hand, 0.4, 0.85)}</div>
   ${swipeText}
   <svg width="${W}" height="${H}" style="position:absolute;inset:0">${SVG_FILTER}
-    <g filter="url(#lift)"><g class="ink">${circle(target, p.r)}${arrow(p.from, tip, p.bend)}</g>${balloons}${swipeArrow}</g>
+    <g filter="url(#lift)"><g class="ink">${timed(v, circle(target, p.r), [2.85, 3.6])}${timed(v, shaft, [2.0, 2.7], [2.7, 2.9])}</g>${balloons}${swipeArrow}</g>
   </svg>
   <div class="place">${p.name}</div><div class="coord">${p.coord}</div>
-  <div class="credit">Uydu: Copernicus Sentinel-2 · s2maps.eu EOX (CC BY 4.0)</div>`);
+  <div class="credit">Uydu: Copernicus Sentinel-2 · s2maps.eu EOX (CC BY 4.0)</div>`, v);
 }
 
-function photoSlide(p) {
-  return doc(`<img class="bg" src="${uri(join(HERE, "foto", `${p.id}.jpg`))}" style="object-position:${p.photo.pos}">
-  <div class="tag">${p.photo.tag}</div>
+// noteAt: videoda el yazısının başladığı an (drone çekiminden fotoğrafa geçince).
+export function photoSlide(p, v = false, noteAt = 3.8) {
+  return doc(`${v ? "" : `<img class="bg" src="${uri(join(HERE, "foto", `${p.id}.jpg`))}" style="object-position:${p.photo.pos}">`}
+  <div class="tag"${A(v, "fade", 0.2, 0.7)}>${p.photo.tag}</div>
   <img class="logo" style="top:74px" src="${wordmark("#ffffff")}">
-  <div class="hand note">${p.photo.note}</div>`);
+  <div class="hand note"${A(v, "wipe", noteAt, noteAt + 1.1)}>${p.photo.note}</div>`, v);
 }
 
 // Kapanış: Türkiye silueti, beş parkur noktası, çağrı.
-function endSlide() {
+export function endSlide(v = false) {
   const geo = JSON.parse(readFileSync(join(HERE, "turkiye.geojson"), "utf8"));
   const k = Math.cos((39 * Math.PI) / 180);
   const [lon0, lon1, lat0, lat1] = [25.6, 44.9, 35.8, 42.2];
@@ -165,18 +186,21 @@ function endSlide() {
   const pins = [
     ["Kapadokya", 34.83, 38.64, [-215, -18]], ["Kaçkar", 41.16, 40.83, [-120, -34]], ["Tahtalı", 30.45, 36.54, [-150, 58]],
     ["Alanya", 32.0, 36.54, [14, 62]], ["Aladağlar", 35.16, 37.81, [24, 50]],
-  ].map(([n, lo, la, [tx, ty]]) => { const [x, y] = P(lo, la); return `<circle cx="${x}" cy="${y}" r="13" fill="${RED}" stroke="#fff" stroke-width="4"/>
-    <text x="${x + tx}" y="${y + ty}" font-family="Caveat" font-weight="700" font-size="50" fill="#fff">${n}</text>`; }).join("");
+  ].map(([n, lo, la, [tx, ty]], i) => { const [x, y] = P(lo, la), t = 1.6 + i * 0.18; return `<g${A(v, "pop", t.toFixed(2), (t + 0.35).toFixed(2))}><circle cx="${x}" cy="${y}" r="13" fill="${RED}" stroke="#fff" stroke-width="4"/>
+    <text x="${x + tx}" y="${y + ty}" font-family="Caveat" font-weight="700" font-size="50" fill="#fff">${n}</text></g>`; }).join("");
+  const head = ["SIRADAKİ", "PARKURA", `<span style="color:${YEL}">BİRLİKTE.</span>`].map((l, i) => `<div${A(v, "fade", (0.1 + i * 0.2).toFixed(1), (0.6 + i * 0.2).toFixed(1))}>${l}</div>`).join("");
   return doc(`<div style="position:absolute;inset:0;background:${TEAL}"></div>
   <img class="logo" style="left:72px;right:auto;top:72px;height:46px;filter:none" src="${wordmark("#ffffff")}">
-  <div style="position:absolute;left:72px;top:190px;color:#fff;font-weight:800;font-size:92px;line-height:1;letter-spacing:-.025em">SIRADAKİ<br>PARKURA<br><span style="color:${YEL}">BİRLİKTE.</span></div>
+  <div style="position:absolute;left:72px;top:190px;color:#fff;font-weight:800;font-size:92px;line-height:1;letter-spacing:-.025em">${head}</div>
   <svg width="${W}" height="${H}" style="position:absolute;inset:0">
-    <path d="${d}" fill="rgba(255,255,255,.1)" stroke="rgba(255,255,255,.55)" stroke-width="2.5" stroke-linejoin="round"/>${pins}
+    <path d="${d}" fill="rgba(255,255,255,.1)" stroke="none"${A(v, "op", 1.1, 1.8)}/>
+    <path${v ? ` pathLength="1"${A(v, "draw", 0.6, 1.8)}` : ""} d="${d}" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="2.5" stroke-linejoin="round"/>${pins}
   </svg>
-  <div style="position:absolute;left:72px;bottom:178px;color:#fff;font-weight:700;font-size:34px;line-height:1.3;max-width:820px">Yakınındaki koşu takımlarını ve etkinlikleri bul, bir sonrakine birlikte hazırlan.</div>
-  <div data-btn="pop" style="position:absolute;left:72px;bottom:82px;background:${YEL};color:${TEAL};font-weight:800;font-size:34px;padding:18px 34px;border-radius:999px">muuvlink.app</div>`);
+  <div style="position:absolute;left:72px;bottom:178px;color:#fff;font-weight:700;font-size:34px;line-height:1.3;max-width:820px"${A(v, "fade", 2.6, 3.1)}>Yakınındaki koşu takımlarını ve etkinlikleri bul, bir sonrakine birlikte hazırlan.</div>
+  <div data-btn="pop" style="position:absolute;left:72px;bottom:82px;background:${YEL};color:${TEAL};font-weight:800;font-size:34px;padding:18px 34px;border-radius:999px"${A(v, "fade", 2.9, 3.3)}>muuvlink.app</div>`, v);
 }
 
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
 const slides = PARKUR.flatMap((p, i) => [mapSlide(p, i === 0), photoSlide(p)]).concat(endSlide());
 
 const out = join(HERE, "..", "out", "parkur-tr"), tmp = join(HERE, ".tmp");
@@ -204,4 +228,5 @@ for (const [i, html] of slides.entries()) {
   c.kill("SIGKILL");
   rmSync(join(tmp, `profile-${n}`), { recursive: true, force: true });
   console.log(existsSync(png) ? `out/parkur-tr/${n}.png` : `HATA ${n}`);
+}
 }
