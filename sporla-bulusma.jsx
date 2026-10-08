@@ -5130,6 +5130,9 @@ export default function Muuvlink() {
           )}
         </div>
 
+        {/* Training Agents: uygulamada da haberlerin üstünde; rozet cihazın mağazasına gider */}
+        <TaHomeBand t={t} lang={lang} isNative={isNative} />
+
         {/* Takım Etkinlikleri — adminden home-news */}
         <NewsSection items={homeNews} t={t} setCurrentPage={setCurrentPage} />
 
@@ -5317,11 +5320,11 @@ export default function Muuvlink() {
         </div>
       </div>
 
+      {/* Training Agents: dost uygulama — haberlerin üstünde (Melih, 8 Ekim 2026) */}
+      <TaHomeBand t={t} lang={lang} isNative={isNative} />
+
       <NewsSection items={homeNews} t={t} setCurrentPage={setCurrentPage} />
       <GallerySection items={homeGallery} t={t} setCurrentPage={setCurrentPage} />
-
-      {/* Training Agents: dost uygulama — kart metni + resmî mağaza rozetleri */}
-      <TaHomeBand t={t} lang={lang} isNative={isNative} />
 
       <FaqSection t={t} />
 

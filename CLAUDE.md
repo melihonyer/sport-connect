@@ -668,7 +668,7 @@ marka adı), her bölümde tek CTA, fiyat/"2 hafta"/birebir koçluk/saat markas�
 - Kod: `TrainingAgentsPromo.jsx` (bileşenler + bağlantılar), metinler `i18n.js` `taPromo`
   + `locales/<kod>.js` (7 dil; tr/en özetten aynen, diğerleri Melih onaylı çeviri).
   Varlıklar `public/partners/training-agents/` (resmî rozetler + logolar; e-posta PNG'leri `mail/`).
-- Alanlar: ana sayfa bandı (SSS üstü) · alt bilgi şeridi · Etkinlikler listesinde tam
+- Alanlar: ana sayfa bandı (Haberler üstü; web ve uygulama ana sayfası) · alt bilgi şeridi · Etkinlikler listesinde tam
   satır kart (6. etkinlikten sonra, kişi başı günde bir — `ta_card_day`) · etkinlik
   sayfasında `source = 'training-agents'` ise "Bu antrenmanı Training Agents yazdı" ·
   yarış/organizatör etkinliğinin altında hazırlık kartı + rehber (`taRaceGuide`; takım
