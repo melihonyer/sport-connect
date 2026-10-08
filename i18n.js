@@ -924,8 +924,11 @@ export const translations = {
                       de: "Hier findest du Antworten auf deine Fragen." },
   },
 
-  // ── FAQ ─────────────────────────────────────────────────
-  faq: {
+  // ── Eski iletişim sayfası SSS'si (Haziran 2026) ─────────────────────────
+  // KULLANILMIYOR. Aşağıdaki SEO `faq` bloğu aynı adla bunu eziyordu (27 Ağustos 2026);
+  // iletişim sayfası artık o bloğun 6 sorusunu gösteriyor. Metinler eskidi (antrenman,
+  // kaptan rolü, 3 dil); gerekirse buradan güncellenip geri alınır.
+  faqLegacy: {
     q1: { tr: "Muuvlink'e nasıl üye olurum?",
           en: "How do I sign up for Muuvlink?",
           de: "Wie registriere ich mich bei Muuvlink?" },
@@ -1198,6 +1201,8 @@ export const translations = {
                     de: "Entdecke Events, tritt deinem Team bei und vernetze dich mit Sportfreunden – jederzeit, überall." },
     appStoreTop:  { tr: "App Store'dan indir",  en: "Download on the",  de: "Laden im"              },
     playTop:      { tr: "Şuradan indir:",       en: "GET IT ON",        de: "JETZT BEI"             },
+    // Tek tip mağaza düğmesinin üst satırı (iki mağazada aynı; StoreButtons.jsx).
+    badgeTop:     { tr: "Şimdi indir", en: "Download on", de: "Erhältlich bei" },
   },
 
   // ── REPORT & BLOCK ───────────────────────────────────────

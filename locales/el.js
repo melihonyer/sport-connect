@@ -847,6 +847,7 @@ export default {
   },
 
   download: {
+    badgeTop: "Διαθέσιμο στο",
     title: "Κατέβασε το Muuvlink",
     subtitle: "Εγκατάστησε την εφαρμογή στο κινητό σου και συνδέσου από παντού.",
     ctaTitle: "Κατέβασε το Muuvlink στο κινητό σου",

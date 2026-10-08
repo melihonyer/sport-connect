@@ -3,6 +3,7 @@ import { detectLang, createT, LANGUAGES, SUPPORTED, localeOf, pickLang } from ".
 import Tour from "./Tour.jsx";
 import FreshBuildWatcher from "./FreshBuildWatcher.jsx";
 import BlurReveal from "./BlurReveal.jsx";
+import { StoreButton } from "./StoreButtons.jsx";
 import { TaSessionNote, TaDiscoverCard, useTaDailyCard, TaHomeBand, TaCoachTip, TaEmptyState, TaRaceCard, TaFooterStrip, taRaceGuide } from "./TrainingAgentsPromo.jsx";
 import { MetaEvents, newEventId, getMatchSignals, getAttribution, trackPageView } from "./analytics.js";
 import {
@@ -8961,7 +8962,10 @@ export default function Muuvlink() {
     const [sending, setSending] = React.useState(false);
     const [openFaq, setOpenFaq] = React.useState(null);
 
-    const faqs = [1,2,3,4,5,6,7,8,9,10,11,12,13].map(n => ({ q: t(`faq.q${n}`), a: t(`faq.a${n}`) }));
+    // Ana sayfadaki SSS ile aynı 6 soru (i18n.js `faq`, 7 dil; SEO metinlerinin de kaynağı).
+    // 27 Ağustos 2026'dan beri eski 13 soruluk blok aynı adla ezilmişti; sayfada 7.–13.
+    // satırlar ham anahtar ("faq.q7") olarak görünüyordu. Eski metinler `faqLegacy`'de.
+    const faqs = [1,2,3,4,5,6].map(n => ({ q: t(`faq.q${n}`), a: t(`faq.a${n}`) }));
 
     const handleContactSubmit = async (e) => {
       e.preventDefault();
@@ -9423,21 +9427,14 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
   // =====================================================
   // App Store + Google Play indirme rozetleri. Native uygulama içinde ANLAMSIZ
   // olduğu için yalnızca web'de (mobil web dahil) render edilir.
-  // Resmî Apple/Google rozetleri (8 Ekim 2026, Melih: "rozetleri standart hale getirelim").
-  // Yeniden çizilmez, renklendirilmez; ikisi aynı yükseklikte. Türkçe sayfada Türkçe
-  // rozet, diğer dillerde İngilizce (elimizdeki resmî sürümler bunlar).
-  const StoreBadges = ({ className = "", size = "md" }) => {
+  // Mağaza düğmeleri: Muuvlink ve Training Agents'ta aynı kalıp (StoreButtons.jsx;
+  // Melih, 8 Ekim 2026: "hepsi bir standart olsun").
+  const StoreBadges = ({ className = "" }) => {
     if (isNative) return null;
-    const h = size === "sm" ? 44 : 48;
-    const b = lang === "tr" ? "tr" : "en";
     return (
-      <div className={`flex flex-wrap items-center ${className}`} style={{ gap: Math.ceil(h / 4) }}>
-        <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer">
-          <img src={`/icons/store/app-store-${b}.svg`} alt="App Store" style={{ height: h, width: "auto" }} className="block" />
-        </a>
-        <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer">
-          <img src={`/icons/store/google-play-${b}.png`} alt="Google Play" style={{ height: h, width: "auto" }} className="block" />
-        </a>
+      <div className={`flex flex-wrap items-center gap-3 ${className}`}>
+        <StoreButton store="apple" href={APP_STORE_URL} top={t("download.badgeTop")} />
+        <StoreButton store="play" href={PLAY_STORE_URL} top={t("download.badgeTop")} />
       </div>
     );
   };

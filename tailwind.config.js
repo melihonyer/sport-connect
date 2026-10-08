@@ -83,6 +83,8 @@ export default {
         ta: {
           blue:      '#2458ea',
           'blue-dark': '#1b46bd',
+          // Sarı: YALNIZ zemin ve grafik (özet: açık zeminde yazı rengi olarak kullanılmaz).
+          yellow:    '#d6df22',
           // Disiplin renkleri (özetteki tablo; her yerde aynı). Üstüne yazı: tri, swim,
           // strength beyaz; run, bike, yoga siyah.
           tri:       '#141c69',

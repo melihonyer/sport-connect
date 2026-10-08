@@ -68,6 +68,10 @@ JavaScript ÇALIŞTIRMAZ. Bu yüzden metin sunucudan basılır.
 - **Bot yönlendirmesi nginx'te.** `map $http_user_agent $muuv_og_bot` sosyal ve
   yapay zeka botlarını backend'e düşürür; insanlar statik `index.html`'i
   nginx'ten alır. Node insan trafiğinin yolunda değildir.
+- **`faq` bloğu tek:** ana sayfa SSS'si, iletişim sayfası SSS'si ve SEO metni aynı 6 soru
+  (`faq.q1–q6`). 27 Ağustos'ta eklenen SEO bloğu eski 13 soruluk iletişim SSS'sini aynı adla
+  ezmişti, sayfada "faq.q7" gibi ham anahtarlar çıkıyordu (8 Ekim 2026'da düzeltildi; eski
+  metinler `faqLegacy`). i18n.js'e aynı adla ikinci bir üst anahtar YAZILMAZ — sessizce ezer.
 - **Şema görünür metni işaretler, yerine geçmez.** Bir sayfada FAQPage şeması
   varsa aynı metin sayfada da olmalı; olmayan sayfalarda şema kaldırılır.
 - **Çok dillilik yalnız dört sabit sayfada**: ana sayfa, etkinlikler, takımlar,
@@ -671,6 +675,16 @@ marka adı), her bölümde tek CTA, fiyat/"2 hafta"/birebir koçluk/saat markas�
   kesfet-karti, antrenor, bos-durum, etkinlik, footer, rehber + bizim eklediğimiz
   anasayfa, eposta. Uygulamada (isNative) CTA doğrudan cihazın mağazasına (iOS'ta dış
   siteye yönlendirme yok); web masaüstünde rozetler siteye, telefonda tek rozet mağazaya.
+- **Ana sayfa bandı** (Melih): Training Agents mavisi zemin, düz sarı daire önünde dekupe
+  triatlet (`athlete.webp`, Training Agents'ın mağaza görseli `mobile/store/marketing/assets/
+  triathlete-side.png`), 6 disiplin kendi renginde etiket (`ta-tri/run/bike/swim/strength/yoga`).
+  Sarı (`ta-yellow`) yalnız zemin/grafik, yazı rengi değil.
+- **Tek tip mağaza düğmesi** (`StoreButtons.jsx`, Melih: "hepsi bir standart olsun"): Muuvlink
+  ve Training Agents'ın App Store/Google Play düğmeleri aynı kalıp — siyah, 48 px, rounded-xl,
+  üst satır `download.badgeTop`. Resmî rozet görselleri kullanılmıyor (yanındaki düğmeyle aynı
+  boy/çerçevede durmuyordu). E-postadaki PNG'ler bu tasarımdan üretildi (`icons/mail/storebtn-*`);
+  tasarım değişirse PNG'ler de yeniden üretilir. Tanıtım düğmesi de aynı boy (h-12).
+  Hover yalnız imleçli cihazda (`.store-btn`, `data-btn="ta"|"ta-light"`, `.ta-chip`).
 - `trainings.source`: yalnız Training Agents taslağından yayınlanan etkinlikte yazılır
   (arayüz `taCurrent` varken gönderir, backend yalnız bu değeri kabul eder). 8 Ekim
   öncesi yayınlananlar işaretsiz.

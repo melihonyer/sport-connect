@@ -1699,9 +1699,9 @@ function formatTrDate(d, lang = 'tr') {
   });
 }
 
-// Muuvlink mağaza rozetleri (8 Ekim 2026, Melih): e-posta alt bilgisinde önce Muuvlink,
-// altında Training Agents şeridi. Resmî rozet PNG'leri (icons/mail/store-*); tr → Türkçe,
-// diğer diller İngilizce rozet.
+// Muuvlink mağaza düğmeleri (8 Ekim 2026, Melih): e-posta alt bilgisinde önce Muuvlink,
+// altında Training Agents şeridi. İkisi de sitedeki tek tip düğmenin PNG'si
+// (icons/mail/storebtn-*, StoreButtons.jsx'ten üretildi); tr → Türkçe, diğer diller İngilizce.
 function muuvEmailBadges(L) {
   const b = L === 'tr' ? 'tr' : 'en';
   const A = 'https://muuvlink.app/icons/mail';
@@ -1710,9 +1710,9 @@ function muuvEmailBadges(L) {
   return `
             <p style="margin:0 0 12px;color:#114956;font-size:14px;font-weight:700;">${tm(L, 'wrapDownload')}</p>
             <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 22px;"><tr>
-              <td style="padding:0 5px;"><a href="${appStore}" style="text-decoration:none;"><img src="${A}/store-app-store-${b}.png" height="44" alt="App Store"
+              <td style="padding:0 5px;"><a href="${appStore}" style="text-decoration:none;"><img src="${A}/storebtn-app-store-${b}.png" height="44" alt="App Store"
                 style="display:block;border:0;outline:none;height:44px;width:auto;color:#231f20;font-size:12px;" /></a></td>
-              <td style="padding:0 5px;"><a href="${play}" style="text-decoration:none;"><img src="${A}/store-google-play-${b}.png" height="44" alt="Google Play"
+              <td style="padding:0 5px;"><a href="${play}" style="text-decoration:none;"><img src="${A}/storebtn-google-play-${b}.png" height="44" alt="Google Play"
                 style="display:block;border:0;outline:none;height:44px;width:auto;color:#231f20;font-size:12px;" /></a></td>
             </tr></table>`;
 }
@@ -1728,6 +1728,7 @@ function taEmailStrip(L) {
   const play = `https://play.google.com/store/apps/details?id=com.trainingagentsapp.android&referrer=${encodeURIComponent(utm)}`;
   const b = L === 'tr' ? 'tr' : 'en';
   const A = 'https://muuvlink.app/partners/training-agents/mail';
+  const S = 'https://muuvlink.app/icons/mail'; // tek tip mağaza düğmeleri (Muuvlink ile aynı)
   const [pre, post = ''] = String(tm(L, 'taStrip')).split('{brand}');
   const brand = `<a href="${site}" style="color:#2458ea;font-weight:700;text-decoration:none;">Training Agents</a>`;
   return `
@@ -1739,10 +1740,10 @@ function taEmailStrip(L) {
               <tr><td align="center" style="padding:0 0 12px;color:#64748b;font-size:13px;line-height:1.5;">${pre}${brand}${post}</td></tr>
               <tr><td align="center">
                 <table cellpadding="0" cellspacing="0" border="0" align="center"><tr>
-                  <td style="padding:0 5px;"><a href="${appStore}" style="text-decoration:none;"><img src="${A}/app-store-${b}.png" height="40" alt="App Store"
-                    style="display:block;border:0;outline:none;height:40px;width:auto;color:#231f20;font-size:12px;" /></a></td>
-                  <td style="padding:0 5px;"><a href="${play}" style="text-decoration:none;"><img src="${A}/google-play-${b}.png" height="40" alt="Google Play"
-                    style="display:block;border:0;outline:none;height:40px;width:auto;color:#231f20;font-size:12px;" /></a></td>
+                  <td style="padding:0 5px;"><a href="${appStore}" style="text-decoration:none;"><img src="${S}/storebtn-app-store-${b}.png" height="44" alt="App Store"
+                    style="display:block;border:0;outline:none;height:44px;width:auto;color:#231f20;font-size:12px;" /></a></td>
+                  <td style="padding:0 5px;"><a href="${play}" style="text-decoration:none;"><img src="${S}/storebtn-google-play-${b}.png" height="44" alt="Google Play"
+                    style="display:block;border:0;outline:none;height:44px;width:auto;color:#231f20;font-size:12px;" /></a></td>
                 </tr></table>
               </td></tr>
             </table>

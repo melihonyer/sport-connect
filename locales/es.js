@@ -846,6 +846,7 @@ export default {
   },
 
   download: {
+    badgeTop: "Disponible en",
     title: "Descarga Muuvlink",
     subtitle: "Instala la app en tu móvil y conéctate desde cualquier lugar.",
     ctaTitle: "Descarga Muuvlink en tu móvil",

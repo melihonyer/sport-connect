@@ -10,6 +10,7 @@
 // telefonda rozet mağazaya. Training Agents sitesi yalnız tr/en; diğer diller İngilizce sayfa.
 import React, { useState } from "react";
 import { ArrowRight, X } from "lucide-react";
+import { StoreButton } from "./StoreButtons.jsx";
 
 const SITE = "https://trainingagentsapp.com";
 const APP_STORE_ID = "6808657949";
@@ -112,36 +113,28 @@ export function TaLogo({ dark = false, width = 112, className = "" }) {
   );
 }
 
-// Resmî rozetler, aynı yükseklikte. Masaüstünde ikisi yan yana siteye; telefonda
-// (web ya da uygulama) yalnız cihazın mağazası, doğrudan mağazaya.
-export function TaStoreBadges({ lang, medium, isNative, height = 40, className = "" }) {
+// Mağaza düğmeleri: Muuvlink'inkilerle aynı kalıp (StoreButtons.jsx). Masaüstünde ikisi
+// yan yana siteye; telefonda (web ya da uygulama) yalnız cihazın mağazası, doğrudan mağazaya.
+export function TaStoreBadges({ t, lang, medium, isNative, className = "" }) {
   const platform = taPlatform(isNative);
-  const L = isTr(lang) ? "tr" : "en";
-  const apple = (
-    <img src={`${ASSET}/app-store-${L}.svg`} alt={isTr(lang) ? "App Store'dan İndirin" : "Download on the App Store"}
-      style={{ height, width: "auto" }} className="block" />
-  );
-  const google = (
-    <img src={`${ASSET}/google-play-${L}.png`} alt={isTr(lang) ? "Google Play'den İndirin" : "Get it on Google Play"}
-      style={{ height, width: "auto" }} className="block" />
-  );
   const site = taSiteUrl(lang, "home", medium);
+  const open = (href) => (isNative ? (e) => { e.preventDefault(); window.open(href, "_blank", "noopener"); } : undefined);
+  const appleHref = platform === "desktop" ? site : taStoreUrl("ios", lang, medium);
+  const playHref = platform === "desktop" ? site : taStoreUrl("android", lang, medium);
   return (
-    <div className={`flex flex-wrap items-center ${className}`} style={{ gap: Math.ceil(height / 4) }}>
-      {platform !== "android" && (
-        <ExtLink isNative={isNative} href={platform === "desktop" ? site : taStoreUrl("ios", lang, medium)}>{apple}</ExtLink>
-      )}
-      {platform !== "ios" && (
-        <ExtLink isNative={isNative} href={platform === "desktop" ? site : taStoreUrl("android", lang, medium)}>{google}</ExtLink>
-      )}
+    <div className={`flex flex-wrap items-center gap-3 ${className}`}>
+      {platform !== "android" && <StoreButton store="apple" href={appleHref} top={t("download.badgeTop")} onClick={open(appleHref)} />}
+      {platform !== "ios" && <StoreButton store="play" href={playHref} top={t("download.badgeTop")} onClick={open(playHref)} />}
     </div>
   );
 }
 
-function TaButton({ href, isNative, children }) {
+// Tanıtım düğmesi: mağaza düğmeleriyle aynı boy ve köşe (h-12, rounded-xl).
+// light = mavi zemin üstünde beyaz düğme (hover'da Training Agents sarısı).
+function TaButton({ href, isNative, children, light = false }) {
   return (
-    <ExtLink href={href} isNative={isNative} data-btn="ta"
-      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-ta-blue">
+    <ExtLink href={href} isNative={isNative} data-btn={light ? "ta-light" : "ta"}
+      className={`inline-flex items-center gap-2 h-12 px-6 rounded-xl text-[15px] font-semibold ${light ? "bg-white text-ta-blue" : "bg-ta-blue text-white"}`}>
       {children} <ArrowRight className="w-4 h-4" />
     </ExtLink>
   );
@@ -193,15 +186,15 @@ export function TaDiscoverCard({ t, lang, isNative, medium = "kesfet-karti" }) {
 }
 
 // ── Ana sayfa bandı: Ai koç + 6 disiplin ──────────────────────────────────
-// Training Agents sitesindeki disiplin duvarının karşılığı (Melih, 8 Ekim 2026: "sadece
-// koşu yazıyor gibi; 6 disiplini, Ai koçu, kişiye özel antrenmanı vurgulayalım").
-// Fotoğraflar Training Agents'ın kendi görselleri; etiket disiplinin renginde, düz zemin
-// (degrade yok). Her karo siteye gider; ana CTA ve rozetler solda.
+// Melih, 8 Ekim 2026: Training Agents'ın kurumsal renkleri, tek dekupe fotoğraf, şık kart.
+// Zemin ana mavi, arkada düz sarı daire (sarı yalnız zemin/grafik — yazı rengi değil),
+// önünde Training Agents'ın kendi mağaza görselindeki dekupe triatlet. 6 disiplin kendi
+// renginde etiket (özet tablosu). Degrade yok. Düğme ve rozetler aynı boyda (h-12).
 const DISCIPLINES = [
-  { key: "triathlon", cls: "bg-ta-tri text-white" },
+  { key: "triathlon", cls: "bg-ta-tri text-white ring-1 ring-white/25" },
   { key: "run", cls: "bg-ta-run text-ink-900" },
   { key: "bike", cls: "bg-ta-bike text-ink-900" },
-  { key: "swim", cls: "bg-ta-swim text-white" },
+  { key: "swim", cls: "bg-ta-swim text-white ring-1 ring-white/25" },
   { key: "strength", cls: "bg-ta-strength text-white" },
   { key: "yoga", cls: "bg-ta-yoga text-ink-900" },
 ];
@@ -211,30 +204,31 @@ export function TaHomeBand({ t, lang, isNative }) {
   return (
     <section className="py-12 sm:py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-8">
-        <div className="bg-white rounded-3xl border border-slate-100 p-5 sm:p-8 lg:p-10 grid lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-8 lg:gap-12 items-center">
-          <div className="min-w-0">
-            <TaLogo width={132} />
-            <span className="mt-6 inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold text-white bg-ta-blue">
+        <div className="relative overflow-hidden rounded-3xl bg-ta-blue grid lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] items-stretch">
+          <div className="relative z-10 p-6 sm:p-10 lg:p-12 flex flex-col justify-center">
+            <TaLogo dark width={150} />
+            <span className="mt-7 self-start inline-flex items-center px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-ta-yellow text-ink-900">
               {t("taPromo.homeEyebrow")}
             </span>
-            <h2 className="mt-3 text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight leading-tight">{t("taPromo.homeTitle")}</h2>
-            <p className="mt-3 text-sm sm:text-base text-slate-500 leading-relaxed">{t("taPromo.homeBody")}</p>
-            <div className="mt-6 flex flex-wrap items-center gap-4">
-              <TaButton isNative={isNative} href={site}>{t("taPromo.cardCta")}</TaButton>
-              <TaStoreBadges lang={lang} medium="anasayfa" isNative={isNative} height={40} />
+            <h2 className="mt-4 text-[26px] sm:text-4xl font-semibold text-white tracking-tight leading-[1.15]">{t("taPromo.homeTitle")}</h2>
+            <p className="mt-4 text-sm sm:text-base text-white/80 leading-relaxed max-w-xl">{t("taPromo.homeBody")}</p>
+            <div className="mt-6 flex flex-wrap gap-2">
+              {DISCIPLINES.map((d) => (
+                <ExtLink key={d.key} href={site} isNative={isNative}
+                  className={`ta-chip inline-flex items-center h-8 px-3 rounded-full text-[13px] font-semibold ${d.cls}`}>
+                  {t(`taPromo.disc.${d.key}`)}
+                </ExtLink>
+              ))}
+            </div>
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <TaButton light isNative={isNative} href={site}>{t("taPromo.cardCta")}</TaButton>
+              <TaStoreBadges t={t} lang={lang} medium="anasayfa" isNative={isNative} />
             </div>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-            {DISCIPLINES.map((d) => (
-              <ExtLink key={d.key} href={site} isNative={isNative}
-                className="group relative block aspect-[4/3] overflow-hidden rounded-2xl bg-slate-100">
-                <img src={`${ASSET}/disc/${d.key}.webp`} alt="" loading="lazy"
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                <span className={`absolute left-2 bottom-2 sm:left-3 sm:bottom-3 px-2.5 py-1 rounded-lg text-xs sm:text-sm font-semibold ${d.cls}`}>
-                  {t(`taPromo.disc.${d.key}`)}
-                </span>
-              </ExtLink>
-            ))}
+          <div aria-hidden="true" className="relative h-80 sm:h-[24rem] lg:h-[29rem] overflow-hidden">
+            <div className="absolute left-1/2 top-[54%] -translate-x-1/2 -translate-y-1/2 w-[17rem] h-[17rem] sm:w-[21rem] sm:h-[21rem] lg:w-[24rem] lg:h-[24rem] rounded-full bg-ta-yellow" />
+            <img src={`${ASSET}/athlete.webp`} alt="" loading="lazy"
+              className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[96%] w-auto max-w-none" />
           </div>
         </div>
       </div>
@@ -311,7 +305,7 @@ export function TaFooterStrip({ t, lang, isNative }) {
         <TaLogo dark width={112} />
         <p className="text-slate-400 text-sm">{withBrand(t("taPromo.footer"), "font-semibold text-white")}</p>
       </div>
-      <TaStoreBadges lang={lang} medium="footer" isNative={isNative} height={40} />
+      <TaStoreBadges t={t} lang={lang} medium="footer" isNative={isNative} />
     </div>
   );
 }

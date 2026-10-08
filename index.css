@@ -155,9 +155,15 @@
     [data-btn="pop-on-dark"]:hover:not(:disabled) svg { color: #114956 !important; }
 
     /* Training Agents tanıtım düğmesi: kendi markasının koyu mavisine döner (sarıya değil). */
-    [data-btn="ta"]:hover { background: #1b46bd !important; }
+    [data-btn="ta"]:hover { background: #1b46bd !important; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(36,88,234,.28); }
+    /* Mavi zemin üstündeki beyaz düğme: hover'da Training Agents sarısı. */
+    [data-btn="ta-light"]:hover { background: #d6df22 !important; transform: translateY(-1px); }
+    /* Tek tip mağaza düğmeleri (StoreButtons.jsx): hafif yükselir, koyu griye döner. */
+    .store-btn:hover { background: #262626; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,0,0,.22); }
+    /* Training Agents disiplin etiketleri tıklanabilir: üzerine gelince yükselir. */
+    .ta-chip:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,.18); }
   }
-  [data-btn="ta"] { transition: background-color .18s ease; }
+  [data-btn="ta"], [data-btn="ta-light"], .store-btn, .ta-chip { transition: background-color .18s ease, transform .18s ease, box-shadow .18s ease; }
 
   @media (hover: hover) and (pointer: fine) {
     .btn-primary:hover {
