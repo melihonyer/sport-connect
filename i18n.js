@@ -545,6 +545,22 @@ export const translations = {
                    en: "For your training plan: {brand} — made for you, rewritten every week.",
                    de: "Für deinen Trainingsplan: {brand} — für dich gemacht, jede Woche neu." },
     close:       { tr: "Kapat", en: "Close", de: "Schließen" },
+    // Ana sayfa bandı (8 Ekim 2026): başlık özetin ana mesajı, metin iki destek mesajı.
+    homeEyebrow: { tr: "6 disiplin", en: "6 disciplines", de: "6 Disziplinen" },
+    homeTitle:   { tr: "Antrenmanını kişiye özel, her hafta yeniden yazan Ai koç.",
+                   en: "The Ai coach that writes your training just for you, fresh every week.",
+                   de: "Der Ai-Coach, der dein Training nur für dich schreibt, jede Woche neu." },
+    homeBody:    { tr: "Haftada kaç saatin varsa, plan ona göre yazılır. Her yeni hafta, geçen haftana bakarak yazılır: ne yaptın, ne kadar zorlandın.",
+                   en: "Your plan is built around the hours you have each week. Every new week is written from your last one: what you did and how hard it felt.",
+                   de: "Dein Plan richtet sich nach den Stunden, die du pro Woche hast. Jede neue Woche baut auf der letzten auf: was du gemacht hast und wie schwer es dir fiel." },
+    disc: {
+      triathlon: { tr: "Triatlon", en: "Triathlon", de: "Triathlon" },
+      run:       { tr: "Koşu", en: "Run", de: "Laufen" },
+      bike:      { tr: "Bisiklet", en: "Bike", de: "Radfahren" },
+      swim:      { tr: "Yüzme", en: "Swim", de: "Schwimmen" },
+      strength:  { tr: "Güç", en: "Strength", de: "Kraft" },
+      yoga:      { tr: "Yoga & Esneme", en: "Yoga & Stretching", de: "Yoga & Dehnen" },
+    },
   },
   moderation: {
     delete:               { tr: "Sil",                        en: "Delete",                  de: "Löschen"                 },

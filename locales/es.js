@@ -385,6 +385,17 @@ export default {
     raceGuide: "Lee la guía de preparación",
     footer: "Para tu plan de entrenamiento: {brand} — hecho para ti, renovado cada semana.",
     close: "Cerrar",
+    homeEyebrow: "6 disciplinas",
+    homeTitle: "El coach de Ai que escribe tu entrenamiento a tu medida, de nuevo cada semana.",
+    homeBody: "Tu plan se escribe según las horas que tienes cada semana. Cada semana nueva parte de la anterior: lo que hiciste y cuánto te costó.",
+    disc: {
+      triathlon: "Triatlón",
+      run: "Carrera",
+      bike: "Ciclismo",
+      swim: "Natación",
+      strength: "Fuerza",
+      yoga: "Yoga y estiramientos",
+    },
   },
 
   moderation: {

@@ -9423,35 +9423,20 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
   // =====================================================
   // App Store + Google Play indirme rozetleri. Native uygulama içinde ANLAMSIZ
   // olduğu için yalnızca web'de (mobil web dahil) render edilir.
+  // Resmî Apple/Google rozetleri (8 Ekim 2026, Melih: "rozetleri standart hale getirelim").
+  // Yeniden çizilmez, renklendirilmez; ikisi aynı yükseklikte. Türkçe sayfada Türkçe
+  // rozet, diğer dillerde İngilizce (elimizdeki resmî sürümler bunlar).
   const StoreBadges = ({ className = "", size = "md" }) => {
     if (isNative) return null;
-    const h = size === "sm" ? "h-11" : "h-[52px]";
+    const h = size === "sm" ? 44 : 48;
+    const b = lang === "tr" ? "tr" : "en";
     return (
-      <div className={`flex flex-wrap items-center gap-3 ${className}`}>
-        <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer"
-          aria-label="App Store'dan indir"
-          className={`inline-flex items-center gap-2.5 ${h} px-4 rounded-xl bg-black text-white hover:bg-neutral-800 transition-colors`}>
-          <svg viewBox="0 0 24 24" className="w-6 h-6 flex-shrink-0" fill="currentColor" aria-hidden="true">
-            <path d="M17.05 12.54c-.03-2.6 2.13-3.85 2.22-3.91-1.21-1.77-3.1-2.02-3.77-2.05-1.6-.16-3.13.94-3.94.94-.81 0-2.07-.92-3.4-.9-1.75.03-3.36 1.02-4.26 2.58-1.82 3.15-.47 7.8 1.29 10.36.86 1.25 1.88 2.65 3.22 2.6 1.29-.05 1.78-.83 3.34-.83 1.56 0 2 .83 3.37.81 1.39-.03 2.27-1.27 3.12-2.53.98-1.45 1.39-2.86 1.41-2.93-.03-.01-2.7-1.04-2.73-4.12zM14.54 4.84c.71-.87 1.19-2.07 1.06-3.27-1.02.04-2.27.68-3.01 1.54-.66.76-1.24 1.99-1.09 3.16 1.14.09 2.31-.58 3.04-1.43z"/>
-          </svg>
-          <span className="flex flex-col leading-none text-left">
-            <span className="text-[10px] opacity-80">{t("download.appStoreTop")}</span>
-            <span className="text-lg font-semibold -mt-0.5">App Store</span>
-          </span>
+      <div className={`flex flex-wrap items-center ${className}`} style={{ gap: Math.ceil(h / 4) }}>
+        <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer">
+          <img src={`/icons/store/app-store-${b}.svg`} alt="App Store" style={{ height: h, width: "auto" }} className="block" />
         </a>
-        <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer"
-          aria-label="Google Play'den indir"
-          className={`inline-flex items-center gap-2.5 ${h} px-4 rounded-xl bg-black text-white hover:bg-neutral-800 transition-colors`}>
-          <svg viewBox="0 0 512 512" className="w-6 h-6 flex-shrink-0" aria-hidden="true">
-            <path fill="#00d3ff" d="M47 24.8c-3.5 3.7-5.5 9.4-5.5 16.8v429c0 7.4 2 13.1 5.5 16.8l1.4 1.4L288 258.8v-5.6L48.4 23.4 47 24.8z"/>
-            <path fill="#ffce00" d="M368 338.8l-80-80v-5.6l80.1-80.1 1.8 1L465 229c27.1 15.4 27.1 40.6 0 56l-95.1 54-1.9 1z"/>
-            <path fill="#ff3948" d="M369.9 337.8L288 256 47 497c8.9 9.4 23.7 10.6 40.3 1.2l282.6-160.4z"/>
-            <path fill="#00f076" d="M369.9 174.2L87.3 13.8C70.7 4.4 55.9 5.6 47 15l241 241 81.9-81.8z"/>
-          </svg>
-          <span className="flex flex-col leading-none text-left">
-            <span className="text-[10px] opacity-80">{t("download.playTop")}</span>
-            <span className="text-lg font-semibold -mt-0.5">Google Play</span>
-          </span>
+        <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer">
+          <img src={`/icons/store/google-play-${b}.png`} alt="Google Play" style={{ height: h, width: "auto" }} className="block" />
         </a>
       </div>
     );

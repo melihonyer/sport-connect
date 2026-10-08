@@ -83,6 +83,14 @@ export default {
         ta: {
           blue:      '#2458ea',
           'blue-dark': '#1b46bd',
+          // Disiplin renkleri (özetteki tablo; her yerde aynı). Üstüne yazı: tri, swim,
+          // strength beyaz; run, bike, yoga siyah.
+          tri:       '#141c69',
+          run:       '#bfed61',
+          bike:      '#c7f0f0',
+          swim:      '#2978f7',
+          strength:  '#f26938',
+          yoga:      '#edf5db',
         },
       },
       boxShadow: {
