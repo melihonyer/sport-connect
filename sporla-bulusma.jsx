@@ -1064,7 +1064,7 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                         </button>
                       )}
                       {/* Buton 2: Admin panelinden düzenlenebilir — her zaman göster */}
-                      <button
+                      <button data-hover="own"
                         onClick={() => handleCtaClick(banner?.cta_primary_url, () => setCurrentPage("trainings"))}
                         className={`flex items-center gap-2 px-7 py-3.5 font-semibold text-sm transition-all duration-300 rounded-[14px] ${user ? "group relative overflow-hidden hover:scale-[1.03] hover:shadow-2xl" : ""}`}
                         style={user
@@ -5229,7 +5229,7 @@ export default function Muuvlink() {
               </p>
               <div className="flex flex-wrap gap-2 mb-4">
                 {[5, 10, 25, 50].map((km) => (
-                  <button
+                  <button data-hover="own"
                     key={km}
                     onClick={() => setNearbyDistance(km)}
                     className="px-4 py-2 rounded-xl text-xs font-medium transition-all duration-300 hover:scale-105 hover:shadow-md"
@@ -6239,7 +6239,7 @@ export default function Muuvlink() {
         <div className="absolute inset-0 pointer-events-none"
           style={{background:"radial-gradient(ellipse at center,rgba(17,73,86,0.08) 0%,transparent 65%)"}}/>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-8 py-12">
-          <button onClick={() => setCurrentPage("profile")}
+          <button data-hover="own" onClick={() => setCurrentPage("profile")}
             className="flex items-center gap-2 text-sm font-semibold mb-6 transition-colors"
             style={{color:"#0e3c47"}}
             onMouseEnter={e=>e.currentTarget.style.color="#0b2f38"}
@@ -8698,7 +8698,7 @@ export default function Muuvlink() {
     const [mobileOpen, setMobileOpen] = React.useState(false);
 
     const navLink = (page, label) => (
-      <button
+      <button data-hover="own"
         onClick={() => setCurrentPage(page)}
         data-tour={page === "teams" ? "teams-tab" : undefined}
         className="relative text-sm font-medium tracking-wide transition-all duration-200"
@@ -9158,7 +9158,7 @@ export default function Muuvlink() {
                   {faqs.map((faq, i) => (
                     <div key={i} className="border border-slate-100 rounded-xl overflow-hidden transition-all duration-200"
                       style={openFaq === i ? {borderColor:"#c2ede9", boxShadow:"0 0 0 3px rgba(17,73,86,0.07)"} : {}}>
-                      <button
+                      <button data-hover="own"
                         onClick={() => setOpenFaq(openFaq === i ? null : i)}
                         className="w-full flex items-center justify-between px-5 py-4 text-left transition-colors"
                         style={openFaq === i ? {background:"#f0fbfa"} : {}}
@@ -9181,21 +9181,8 @@ export default function Muuvlink() {
             </div>
           </div>
 
-          {/* İndirme CTA — yalnızca web */}
-          {!isNative && (
-            <div className="mt-10 rounded-3xl overflow-hidden relative"
-              style={{background:"#114956"}}>
-              <div className="px-8 py-10 sm:px-12 sm:py-12 flex flex-col md:flex-row items-center justify-between gap-8 text-white">
-                <div className="text-center md:text-left max-w-lg">
-                  <h2 className="font-display font-bold leading-tight mb-2" style={{fontSize:"clamp(1.6rem,3vw,2.2rem)"}}>
-                    {t("download.ctaTitle")}
-                  </h2>
-                  <p className="text-white/85 text-base leading-relaxed">{t("download.ctaSubtitle")}</p>
-                </div>
-                <StoreBadges className="flex-shrink-0" />
-              </div>
-            </div>
-          )}
+          {/* İndirme kartı kaldırıldı (8 Ekim 2026, Melih): hemen altındaki alt bilgide
+              aynı indirme bandı var, iki kez çıkıyordu. */}
         </div>
       </div>
     );

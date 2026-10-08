@@ -47,6 +47,9 @@ class RootErrorBoundary extends React.Component {
   }
 }
 
+// Yalnız sitenin CSS kuralları için (admin aynı index.css'i kullanıyor): ör. genel hover.
+document.body.classList.add('muuv-site');
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <RootErrorBoundary>
     <App />

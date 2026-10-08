@@ -165,6 +165,20 @@
   }
   [data-btn="ta"], [data-btn="ta-light"], .store-btn, .ta-chip { transition: background-color .18s ease, transform .18s ease, box-shadow .18s ease; }
 
+  /* Genel hover (8 Ekim 2026, Melih: "hover olmayan düğmelere buton olduklarını anlatan basit
+     hover"). Sitede ~200 düğme/bağlantının çoğunda hover yoktu ya da JS ile renk değişiyordu.
+     Kendi hover sınıfı (hover:…), data-btn ya da özel sınıfı OLMAYAN her düğme ve düğme
+     görünümlü bağlantı (rounded) üzerine gelince hafifçe soluklaşır. Yalnız sitede
+     (body.muuv-site, main.jsx) ve imleçli cihazda; harita kontrolleri hariç. Yeni düğmeye
+     özel hover verilirse bu kural kendiliğinden çekilir. */
+  @media (hover: hover) and (pointer: fine) {
+    .muuv-site button:not(:disabled):not([class*="hover:"]):not([data-btn]):not([data-hover]):not(.store-btn):not(.ta-chip):not(.btn-primary):hover,
+    .muuv-site a[href][class*="rounded"]:not([class*="hover:"]):not([data-btn]):not([data-hover]):not(.store-btn):not(.ta-chip):not(.btn-primary):hover {
+      opacity: .82;
+    }
+    .muuv-site .leaflet-container button:hover, .muuv-site .leaflet-container a:hover { opacity: 1 !important; }
+  }
+
   @media (hover: hover) and (pointer: fine) {
     .btn-primary:hover {
       background: #F4F818;

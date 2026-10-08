@@ -254,6 +254,11 @@ Kurallar:
   Sarı butonlar `data-btn="pop"` taşır → hover'da deep teal zemin + beyaz metin.
 - Hover kuralları `@media (hover: hover) and (pointer: fine)` içindedir.
   Dokunmatikte hover "yapışkan" kalır, bu yüzden mobilde hiç uygulanmaz.
+- **Genel hover** (8 Ekim 2026, Melih): kendi hover'ı olmayan her düğme ve düğme görünümlü
+  bağlantı (`a[class*=rounded]`) üzerine gelince `opacity: .82` (index.css, yalnız sitede —
+  `body.muuv-site`, main.jsx). Muaf: `hover:` sınıfı, `data-btn`, `.store-btn`, `.ta-chip`,
+  harita kontrolleri ve hover'ı JS ile yapanlar — onlara `data-hover="own"` yazılır
+  (onMouseEnter ile renk değiştiren yeni düğmeye de eklenir, yoksa iki etki üst üste biner).
 
 ## Doğrulama
 
