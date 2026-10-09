@@ -1752,6 +1752,17 @@ function taEmailStrip(L) {
 
 // Dar ekran (<620px): çerçeve ekrana oturur, iç boşluk küçülür — <style> içindeki
 // media query'yi Gmail ve Apple Mail uygular; desteklemeyen istemci 600px'i görür.
+// Muuvlink sosyal medya hesapları (9 Ekim 2026). Sitedeki liste SocialLinks.jsx, link sayfası
+// public/link, şema scripts/seo-static.mjs — hesap eklenirse hepsi birlikte güncellenir.
+// E-postada yalnız ikon (icons/social-<key>.png, 96 px, köşe 22): adlar çok yer tutuyordu.
+const MUUV_SOCIAL = [
+  { key: 'instagram', label: 'Instagram', href: 'https://www.instagram.com/muuvlinkapp/' },
+  { key: 'tiktok', label: 'TikTok', href: 'https://www.tiktok.com/@muuvlink' },
+  { key: 'youtube', label: 'YouTube', href: 'https://www.youtube.com/@Muuvlink' },
+  { key: 'facebook', label: 'Facebook', href: 'https://www.facebook.com/muuvlink' },
+  { key: 'threads', label: 'Threads', href: 'https://www.threads.com/@muuvlinkapp' },
+];
+
 function emailWrapper(content, lang = 'tr') {
   const L = mailLang(lang);
   return `<!DOCTYPE html>
@@ -1791,25 +1802,19 @@ function emailWrapper(content, lang = 'tr') {
         <tr>
           <td style="background:#f8fafc;padding:24px 40px;text-align:center;border-top:1px solid #e2e8f0;">
             <!-- Sosyal medya. PNG kullanılıyor: e-posta istemcileri SVG çizmez.
-                 Görseller engellenirse alt metni ("Instagram"/"YouTube") okunur
+                 Görseller engellenirse alt metni ("Instagram", "TikTok"…) okunur
                  kalsın diye img'ye renk ve kalınlık verildi. -->
             ${muuvEmailBadges(L)}
             ${taEmailStrip(L)}
             <p style="margin:0 0 14px;color:#64748b;font-size:13px;font-weight:600;">${tm(L, 'wrapFollow')}</p>
             <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 18px;">
               <tr>
-                <td style="padding:0 7px;">
-                  <a href="https://www.instagram.com/muuvlinkapp/" style="text-decoration:none;">
-                    <img src="https://muuvlink.app/icons/social-instagram.png" width="34" height="34" alt="Instagram"
+${MUUV_SOCIAL.map((x) => `                <td style="padding:0 6px;">
+                  <a href="${x.href}" style="text-decoration:none;">
+                    <img src="https://muuvlink.app/icons/social-${x.key}.png" width="34" height="34" alt="${x.label}"
                          style="display:block;border:0;outline:none;border-radius:9px;color:#114956;font-family:'Segoe UI',Arial,sans-serif;font-size:13px;font-weight:600;text-decoration:none;" />
                   </a>
-                </td>
-                <td style="padding:0 7px;">
-                  <a href="https://www.youtube.com/@Muuvlink" style="text-decoration:none;">
-                    <img src="https://muuvlink.app/icons/social-youtube.png" width="34" height="34" alt="YouTube"
-                         style="display:block;border:0;outline:none;border-radius:9px;color:#114956;font-family:'Segoe UI',Arial,sans-serif;font-size:13px;font-weight:600;text-decoration:none;" />
-                  </a>
-                </td>
+                </td>`).join('\n')}
               </tr>
             </table>
             <p style="margin:0;color:#94a3b8;font-size:13px;">${tm(L, 'wrapFooter1')}</p>
@@ -3642,7 +3647,7 @@ const seoContactText = async (lang) => {
       <ul style="margin:0 0 24px;padding-left:20px">
 ${topics.map((x) => `        <li>${htmlAttrEscape(x)}</li>`).join('\n')}
       </ul>
-      <p style="margin:0"><a href="https://instagram.com/muuvlinkapp" style="${SEO_LINK_STYLE}">Instagram: @muuvlinkapp</a></p>
+      <p style="margin:0">${MUUV_SOCIAL.map((x) => `<a href="${x.href}" style="${SEO_LINK_STYLE}">${x.label}</a>`).join(' · ')}</p>
 ${seoFooterLinks(lang, L)}
     </div>`;
   return {
@@ -3679,7 +3684,9 @@ ${faq.map((f) => `      <h3 style="font-size:1rem;font-weight:600;color:#1F2121;
       '@context': 'https://schema.org',
       '@graph': [
         { '@type': 'Organization', '@id': `${SITE_ORIGIN}/#organization`, name: 'Muuvlink',
-          url: SITE_ORIGIN, logo: `${SITE_ORIGIN}/icons/favicon.png`, description: faq[0].a },
+          url: SITE_ORIGIN, logo: `${SITE_ORIGIN}/icons/favicon.png`, description: faq[0].a,
+          sameAs: ['https://apps.apple.com/app/id6781591672', 'https://play.google.com/store/apps/details?id=app.muuvlink',
+            ...MUUV_SOCIAL.map((x) => x.href)] },
         { '@type': 'FAQPage', '@id': `${SITE_ORIGIN}${SEO_LOCALIZED_PATHS[lang].home}#faq`, inLanguage: lang,
           mainEntity: faq.map((f) => ({ '@type': 'Question', name: f.q,
             acceptedAnswer: { '@type': 'Answer', text: f.a } })) },

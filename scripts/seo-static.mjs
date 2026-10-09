@@ -92,7 +92,16 @@ const jsonLd = {
       url: ORIGIN,
       logo: `${ORIGIN}/icons/favicon.png`,
       description: faq[0].a,
-      sameAs: ['https://apps.apple.com/app/id6781591672'],
+      // Sosyal hesaplar: SocialLinks.jsx ile aynı liste.
+      sameAs: [
+        'https://apps.apple.com/app/id6781591672',
+        'https://play.google.com/store/apps/details?id=app.muuvlink',
+        'https://www.instagram.com/muuvlinkapp/',
+        'https://www.tiktok.com/@muuvlink',
+        'https://www.youtube.com/@Muuvlink',
+        'https://www.facebook.com/muuvlink',
+        'https://www.threads.com/@muuvlinkapp',
+      ],
     },
     {
       '@type': 'FAQPage',

@@ -225,6 +225,16 @@ GR ülke kodu; hreflang da `el` ister).
 - Bildirim tekrar kontrolü BAŞLIĞA bakmaz (başlık alıcı diline göre değişir);
   tür + zaman penceresine bakar.
 
+## Sosyal medya hesapları
+
+Instagram `@muuvlinkapp`, TikTok `@muuvlink`, YouTube `@Muuvlink`, Facebook `muuvlink`,
+Threads `@muuvlinkapp` (9 Ekim 2026). **Her yerde yalnız ikon** (Melih: adlar çok yer tutuyor);
+ad `aria-label`/`title`'da. Liste dört yerde, hesap eklenirse hepsi birlikte değişir:
+`SocialLinks.jsx` (iletişim kartı + alt bilgi), `backend-api.js` `MUUV_SOCIAL` (e-posta alt
+bilgisi, iletişim SEO metni, Organization `sameAs`), `public/link/index.html`,
+`scripts/seo-static.mjs` (`sameAs`). E-posta ikonları `public/icons/social-<key>.png`
+(96 px, köşe 22, marka renginde kare + beyaz glif; Instagram'ınki eski, degradeli).
+
 ## Emoji kullanılmaz
 
 Arayüzde, e-postada, bildirimde, hazır paylaşım mesajında **standart emoji
