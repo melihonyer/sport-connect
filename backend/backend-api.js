@@ -541,9 +541,13 @@ app.use('/uploads', express.static(uploadsDir));
 
 // Multer: banner görselleri için
 // Multer: memory storage — dosyalar Supabase Storage'a yüklenir, diske yazılmaz
+// Sınır 20 MB = nginx client_max_body_size. Görsel sunucuda zaten küçültülüp WebP'ye
+// çevriliyor (toWebP); 10 MB sınırı telefon fotoğraflarını reddediyordu (9 Ekim 2026,
+// organizatör etkinliği görseli 500 verdi). Aşılırsa UPLOAD_ERROR_HANDLER 413 döner.
+const UPLOAD_MAX_BYTES = 20 * 1024 * 1024;
 const uploadBanner = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 },
+  limits: { fileSize: UPLOAD_MAX_BYTES },
   fileFilter: (req, file, cb) => {
     if (/image\/(png|jpe?g|gif|webp|svg)/.test(file.mimetype)) cb(null, true);
     else cb(new Error('Sadece görsel dosyaları yüklenebilir.'));
@@ -551,7 +555,7 @@ const uploadBanner = multer({
 });
 const uploadAvatar = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: UPLOAD_MAX_BYTES },
   fileFilter: (req, file, cb) => {
     if (/image\/(png|jpe?g|gif|webp)/.test(file.mimetype)) cb(null, true);
     else cb(new Error('Sadece PNG/JPEG/GIF/WEBP yüklenebilir.'));
@@ -2901,6 +2905,9 @@ const SERVER_MSG = {
   'Şifre en az 6 karakter olmalıdır.': { en: 'The password must be at least 6 characters.', de: 'Das Passwort muss mindestens 6 Zeichen haben.', el: 'Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες.', es: 'La contraseña debe tener al menos 6 caracteres.', fr: 'Le mot de passe doit contenir au moins 6 caractères.', it: 'La password deve avere almeno 6 caratteri.' },
   'Şifre en az 6 karakter olmalı.': { en: 'The password must be at least 6 characters.', de: 'Das Passwort muss mindestens 6 Zeichen haben.', el: 'Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες.', es: 'La contraseña debe tener al menos 6 caracteres.', fr: 'Le mot de passe doit contenir au moins 6 caractères.', it: 'La password deve avere almeno 6 caratteri.' },
   'İsim en az 2 karakter olmalıdır.': { en: 'The name must be at least 2 characters.', de: 'Der Name muss mindestens 2 Zeichen haben.', el: 'Το όνομα πρέπει να έχει τουλάχιστον 2 χαρακτήρες.', es: 'El nombre debe tener al menos 2 caracteres.', fr: 'Le nom doit contenir au moins 2 caractères.', it: 'Il nome deve avere almeno 2 caratteri.' },
+  'Görsel çok büyük. En fazla 20 MB yüklenebilir.': { en: 'The image is too large. The maximum is 20 MB.', de: 'Das Bild ist zu groß. Maximal 20 MB.', el: 'Η εικόνα είναι πολύ μεγάλη. Το μέγιστο είναι 20 MB.', es: 'La imagen es demasiado grande. El máximo es 20 MB.', fr: 'L\'image est trop lourde. 20 Mo maximum.', it: 'L\'immagine è troppo grande. Massimo 20 MB.' },
+  'Sadece görsel dosyaları yüklenebilir.': { en: 'Only image files can be uploaded.', de: 'Es können nur Bilddateien hochgeladen werden.', el: 'Μπορούν να ανέβουν μόνο αρχεία εικόνας.', es: 'Solo se pueden subir imágenes.', fr: 'Seules les images peuvent être envoyées.', it: 'Si possono caricare solo immagini.' },
+  'Sadece PNG/JPEG/GIF/WEBP yüklenebilir.': { en: 'Only PNG/JPEG/GIF/WEBP can be uploaded.', de: 'Nur PNG/JPEG/GIF/WEBP können hochgeladen werden.', el: 'Μόνο PNG/JPEG/GIF/WEBP.', es: 'Solo se pueden subir PNG/JPEG/GIF/WEBP.', fr: 'Seuls les formats PNG/JPEG/GIF/WEBP sont acceptés.', it: 'Si possono caricare solo PNG/JPEG/GIF/WEBP.' },
   'Dosya yüklenmedi.': { en: 'No file was uploaded.', de: 'Es wurde keine Datei hochgeladen.', el: 'Δεν ανέβηκε αρχείο.', es: 'No se ha subido ningún archivo.', fr: 'Aucun fichier n\'a été envoyé.', it: 'Nessun file caricato.' },
   'Avatar güncellendi': { en: 'Photo updated', de: 'Foto aktualisiert', el: 'Η φωτογραφία ενημερώθηκε', es: 'Foto actualizada', fr: 'Photo mise à jour', it: 'Foto aggiornata' },
   'Takım bulunamadı.': { en: 'Team not found.', de: 'Team nicht gefunden.', el: 'Η ομάδα δεν βρέθηκε.', es: 'Equipo no encontrado.', fr: 'Équipe introuvable.', it: 'Squadra non trovata.' },
@@ -10086,6 +10093,20 @@ app.delete('/api/admin/flags/:id/content', isAdmin, async (req, res) => {
   } catch (e) {
     res.status(500).json({ error: 'Silme başarısız.' });
   }
+});
+
+// Yükleme hataları (multer): boyut aşımı ve dosya türü. Eskiden yakalanmıyordu, Express
+// varsayılanı HTML 500 dönüyordu; kullanıcı yalnız "Yükleme hatası (500)" görüyordu.
+app.use((err, req, res, next) => {
+  if (!err) return next();
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ error: 'Görsel çok büyük. En fazla 20 MB yüklenebilir.' });
+    return res.status(400).json({ error: 'Dosya yüklenmedi.' });
+  }
+  if (err.message === 'Sadece görsel dosyaları yüklenebilir.' || err.message === 'Sadece PNG/JPEG/GIF/WEBP yüklenebilir.') {
+    return res.status(400).json({ error: err.message });
+  }
+  return next(err);
 });
 
 app.listen(PORT, () => {

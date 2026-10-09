@@ -288,6 +288,11 @@ Kurallar:
   zamanlayıcı `toastTimerRef`.
 - **Tarih dili** `document.documentElement.lang`'tan (etkin dil); yalnız `muuvlang`'a bakılmaz.
 - Yalnız ikonlu düğmeye `aria-label`; dokunma alanı ≥ 44 px (`w-11 h-11` ya da negatif marj).
+- **Görsel yükleme sınırı 20 MB** (`UPLOAD_MAX_BYTES` = nginx `client_max_body_size 20m`); sunucu
+  zaten küçültüp WebP'ye çeviriyor. Aşımı ve yanlış türü `app.listen` öncesindeki hata
+  yakalayıcı 413/400 + `SERVER_MSG` mesajıyla döner (eskiden HTML 500). Dikkat: `toWebP`
+  dönüştüremediği veriyi OLDUĞU GİBİ yükler — test için sahte bayt göndermek Supabase'e dosya
+  bırakır (9 Ekim'de bırakıldı, silindi).
 - Degrade yok kuralı: fotoğraf üstündeki karartma katmanları (okunurluk için) ve admin'den gelen
   banner renkleri hariç. Branş adı her yerde `sportLabel()` ile görenin dilinde.
 
