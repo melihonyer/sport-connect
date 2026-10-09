@@ -471,6 +471,52 @@ const MottoReveal = React.memo(({ mottos, color1 = "#114956", color2 = "#643e87"
 // Şifre alanı + göz düğmesi (yazılanı görüp kontrol etmek için). Bileşen dışarıda
 // tanımlı: içeride tanımlansa her üst-render'da sökülür, yazılan ve görünürlük gider.
 // className girdiye gider; sağda düğmeye yer açılır.
+// ── Kullanıcı metnindeki linkler (açıklama, yorum, duvar) ─────────────────
+// Link tıklanabilir; ekranda KISA hali görünür (protokol, www, ?/# sonrası takip
+// parametreleri gösterilmez, uzunsa "…"); tam adres href ve title'da. Yalnız http(s).
+// Muuvlink adresleri aynı sekmede, dış adresler yeni sekmede (uygulamada sistem tarayıcısı).
+const LINK_RE = /((?:https?:\/\/|www\.)[^\s<>"]+)/gi;
+const LINK_MAX = 30; // telefonda tek satıra sığsın
+const shortLinkLabel = (href) => {
+  try {
+    const u = new URL(href);
+    const host = u.hostname.replace(/^www\./i, "");
+    let path = decodeURIComponent(u.pathname).replace(/\/+$/, "");
+    const label = host + path;
+    return label.length > LINK_MAX ? label.slice(0, LINK_MAX - 1) + "…" : label;
+  } catch { return href.length > LINK_MAX ? href.slice(0, LINK_MAX - 1) + "…" : href; }
+};
+const splitLink = (raw) => {
+  // Sondaki noktalama linke dahil değil ("... bakın: x.com/y." / "(x.com/y)")
+  let url = raw, tail = "";
+  while (/[.,;:!?'"»)\]]$/.test(url)) {
+    if (url.endsWith(")") && (url.match(/\(/g) || []).length >= (url.match(/\)/g) || []).length) break;
+    tail = url.slice(-1) + tail; url = url.slice(0, -1);
+  }
+  return [url, tail];
+};
+const LinkText = ({ text, linkClassName = "" }) => {
+  if (!text) return null;
+  const parts = String(text).split(LINK_RE);
+  return parts.map((part, i) => {
+    if (i % 2 === 0) return part;
+    const [url, tail] = splitLink(part);
+    const href = /^https?:\/\//i.test(url) ? url : `https://${url}`;
+    let internal = false;
+    try { internal = /(^|\.)muuvlink\.app$/i.test(new URL(href).hostname); } catch { return part; }
+    return (
+      <React.Fragment key={i}>
+        <a href={href} title={href}
+          {...(internal ? {} : { target: "_blank", rel: "noopener noreferrer nofollow ugc" })}
+          onClick={(e) => e.stopPropagation()}
+          className={`font-medium underline underline-offset-2 [overflow-wrap:anywhere] ${linkClassName || "text-brand-600 decoration-brand-200 hover:decoration-brand-600"}`}>
+          {shortLinkLabel(href)}
+        </a>{tail}
+      </React.Fragment>
+    );
+  });
+};
+
 const PasswordInput = forwardRef(({ className = "", t, ...props }, ref) => {
   const [show, setShow] = useState(false);
   return (
@@ -6773,7 +6819,7 @@ export default function Muuvlink() {
           })()}
 
           {/* Satır sonları korunur; uzun link telefonda sayfayı yana kaydırmaz. */}
-          <p className="text-gray-600 mb-6 whitespace-pre-line [overflow-wrap:anywhere]">{selectedTraining.description}</p>
+          <p className="text-gray-600 mb-6 whitespace-pre-line [overflow-wrap:anywhere]"><LinkText text={selectedTraining.description} /></p>
 
           {/* Training Agents'tan yayınlanan antrenman: kaynağı tek satır */}
           {selectedTraining.source === "training-agents" && (
@@ -7045,7 +7091,7 @@ export default function Muuvlink() {
                         </div>
                       )}
                     </div>
-                    <p className="text-gray-700 whitespace-pre-wrap break-words">{c.comment}</p>
+                    <p className="text-gray-700 whitespace-pre-wrap break-words"><LinkText text={c.comment} /></p>
                     <div className="flex justify-end mt-1.5 -mb-0.5">
                       <MessageLike item={c} endpoint={`${API_URL}/comments/${c.id}/like`} />
                     </div>
@@ -7372,7 +7418,7 @@ export default function Muuvlink() {
             </div>
 
             {selectedTeam.description && (
-              <p className="mt-3.5 text-sm text-slate-300 leading-relaxed whitespace-pre-line [overflow-wrap:anywhere]">{selectedTeam.description}</p>
+              <p className="mt-3.5 text-sm text-slate-300 leading-relaxed whitespace-pre-line [overflow-wrap:anywhere]"><LinkText text={selectedTeam.description} linkClassName="text-white decoration-white/40 hover:decoration-white" /></p>
             )}
 
             {/* aksiyonlar — ince çizgiyle ayrılmış kendi şeridinde; mobilde iki sütun */}
@@ -7525,7 +7571,7 @@ export default function Muuvlink() {
                           </div>
                         )}
                       </div>
-                      <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-wrap break-words">{post.message}</p>
+                      <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-wrap break-words"><LinkText text={post.message} /></p>
                       <div className="flex justify-end mt-1.5 -mb-0.5">
                         <MessageLike item={post} endpoint={`${API_URL}/team-posts/${post.id}/like`} />
                       </div>

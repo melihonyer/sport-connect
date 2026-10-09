@@ -288,6 +288,10 @@ Kurallar:
   zamanlayıcı `toastTimerRef`.
 - **Tarih dili** `document.documentElement.lang`'tan (etkin dil); yalnız `muuvlang`'a bakılmaz.
 - Yalnız ikonlu düğmeye `aria-label`; dokunma alanı ≥ 44 px (`w-11 h-11` ya da negatif marj).
+- **Kullanıcı metnindeki linkler** `LinkText` (etkinlik/takım açıklaması, yorum, duvar): tıklanabilir,
+  ekranda kısa hali (`shortLinkLabel`: protokol/www/?# sonrası yok, en çok 30 karakter + "…",
+  telefonda tek satır), tam adres href + title. Dış link `rel="noopener noreferrer nofollow ugc"`,
+  yeni sekme; muuvlink.app aynı sekme. Yeni bir kullanıcı metni alanı da bununla çizilir.
 - **Görsel yükleme sınırı 20 MB** (`UPLOAD_MAX_BYTES` = nginx `client_max_body_size 20m`); sunucu
   zaten küçültüp WebP'ye çeviriyor. Aşımı ve yanlış türü `app.listen` öncesindeki hata
   yakalayıcı 413/400 + `SERVER_MSG` mesajıyla döner (eskiden HTML 500). Dikkat: `toWebP`
