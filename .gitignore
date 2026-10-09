@@ -14,3 +14,7 @@ store-assets/marketing/parkur/foto/
 store-assets/marketing/parkur/cache/
 store-assets/marketing/parkur/.tmp/
 store-assets/marketing/parkur/video/
+
+# Proje medyası (logo, video, görsel) — yerel arşiv, repoya girmez
+images/
+store-assets/marketing/strava/.tmp/
