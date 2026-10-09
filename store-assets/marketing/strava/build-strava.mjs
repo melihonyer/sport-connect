@@ -96,11 +96,39 @@ const kapakIst = page(1300, 637, `
     <div style="margin-top:18px;font-weight:700;font-size:21px;line-height:1.35">Yakınındaki takımları ve etkinlikleri<br>keşfet, birlikte antrenman yap.</div>
   </div>`);
 
+// Kapak · dekupe grup (Melih, 9 Ekim 2026: harita yerine dekupe sporcu ya da toplu koşu). İlk deneme
+// stüdyo çekimi grup "çok abdal bakıyorlar" dendi; yerine gülerek koşan karışık grup: Envato "Smiling
+// Friends Running Outdoors On A Bright Day" (mstandret, 5504×3674, SALT hesabıyla lisanslı). Arka plan
+// Adobe Photoshop API ile kaldırıldı → grup-kosu2-dekupe@2x.png (depoya girmez). Kişiler belden kesik
+// çekildiği için grup alt kenardan taşar; başlar dar görünüm bandının (y ≈ 120–517) içinde.
+const GROUP = uri(join(HERE, "grup-kosu2-dekupe@2x.png"), "image/png");
+const kapakGrup = page(1300, 637, `
+  <div style="position:absolute;left:905px;top:345px;width:560px;height:560px;margin:-280px 0 0 -280px;border-radius:50%;background:${YEL}"></div>
+  <img src="${GROUP}" style="position:absolute;right:6px;bottom:0;height:480px">
+  <div style="position:absolute;left:70px;top:146px;width:430px;color:#fff">
+    <img src="${WORDMARK}" style="height:38px;display:block">
+    <div style="margin-top:28px;font-weight:800;font-size:66px;line-height:1;letter-spacing:-.02em">Sporla<br><span style="color:${YEL}">buluş.</span></div>
+    <div style="margin-top:20px;font-weight:700;font-size:21px;line-height:1.38;opacity:.9">Yakınındaki takımları ve etkinlikleri<br>keşfet, birlikte antrenman yap.</div>
+  </div>`);
+
+// Kapak · altın saat (Melih, 9 Ekim 2026: stüdyo/dekupe gruplar olmadı, enerjik fotoğraf; 4 numara).
+// Envato "Men Running During Golden Hour in City" (YuriArcursPeopleimages, 4096×2160, SALT hesabıyla
+// lisanslı). Hareket bulanıklığı olduğu için dekupe edilmez: sağda fotoğraf (kosu4-panel@2x.jpg), solda
+// Deep Teal panel. Yazı bloğu y 146–419, avatar sol alttaki boş alana biner.
+const FOTO4 = uri(join(HERE, "kosu4-panel@2x.jpg"), "image/jpeg");
+const kapakAltin = page(1300, 637, `
+  <img src="${FOTO4}" style="position:absolute;right:0;top:0;width:720px;height:637px">
+  <div style="position:absolute;left:70px;top:146px;width:470px;color:#fff">
+    <img src="${WORDMARK}" style="height:38px;display:block">
+    <div style="margin-top:28px;font-weight:800;font-size:66px;line-height:1;letter-spacing:-.02em">Sporla<br><span style="color:${YEL}">buluş.</span></div>
+    <div style="margin-top:20px;font-weight:700;font-size:21px;line-height:1.38;opacity:.9">Yakınındaki takımları ve etkinlikleri<br>keşfet, birlikte antrenman yap.</div>
+  </div>`);
+
 // Chrome 154'te DevTools ekran görüntüsü büyük görselde donuyor (bkz. parkur/build-parkur.mjs):
 // --screenshot ile, dosya yazılıp boyutu sabitlenince süreç kapatılır.
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 mkdirSync(OUT, { recursive: true }); mkdirSync(TMP, { recursive: true });
-for (const [name, w, h, html, dpr] of [["muuvlink-strava-profil-1024", 1024, 1024, profil, 1], ["muuvlink-strava-kapak-2360x1158", 1180, 579, kapak, 2], ["muuvlink-strava-kapak-istanbul-2600x1274", 1300, 637, kapakIst, 2]]) {
+for (const [name, w, h, html, dpr] of [["muuvlink-strava-profil-1024", 1024, 1024, profil, 1], ["muuvlink-strava-kapak-2360x1158", 1180, 579, kapak, 2], ["muuvlink-strava-kapak-istanbul-2600x1274", 1300, 637, kapakIst, 2], ["muuvlink-strava-kapak-grup-2600x1274", 1300, 637, kapakGrup, 2], ["muuvlink-strava-kapak-altin-2600x1274", 1300, 637, kapakAltin, 2]]) {
   const f = join(TMP, `${name}.html`), png = join(OUT, `${name}.png`), prof = join(TMP, `profile-${name}`);
   writeFileSync(f, html);
   rmSync(png, { force: true });
