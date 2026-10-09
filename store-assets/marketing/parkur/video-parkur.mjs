@@ -25,11 +25,11 @@ const DRONE = 3.6, XFADE = 0.6; // drone 0–3.6 sn, 3.0–3.6 arası fotoğrafa
 
 const slides = [];
 PARKUR.forEach((p, i) => {
-  slides.push({ kind: "map", id: p.id, T: 6, anim: 4.8, html: mapSlide(p, i === 0, true) });
+  if (!p.noMap) slides.push({ kind: "map", id: p.id, T: 6, anim: 4.8, html: mapSlide(p, i === 0, true) });
   const hasClip = p.id in CLIP;
   const noteAt = hasClip ? DRONE + 0.2 : 1.0;
   slides.push({
-    kind: hasClip ? "video" : "photo", id: p.id, T: hasClip ? 7 : 6, anim: noteAt + 1.2, noteAt,
+    kind: hasClip ? "video" : "photo", id: p.id, T: hasClip ? 7 : 6, anim: noteAt + 2.0, noteAt,
     pos: p.photo.pos, clip: hasClip ? { ss: CLIP[p.id], dur: DRONE, xfade: XFADE } : null,
     html: photoSlide(p, true, noteAt),
   });

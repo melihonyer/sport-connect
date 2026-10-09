@@ -47,9 +47,10 @@ export const PARKUR = [
     photo: { tag: "Alanya Ultra", note: "kalenin içinden başladık", pos: "38% 50%" },
   },
   {
-    id: "aladaglar", name: "ALADAĞLAR", coord: "37.81° K · 35.16° D", mark: "demirkazik", r: 95,
+    // Uydu karesi yok (Melih, 9 Ekim 2026: karusel 10 kare kabul ediyor) — yalnız fotoğraf.
+    id: "aladaglar", noMap: true, name: "ALADAĞLAR", coord: "37.81° K · 35.16° D", mark: "demirkazik", r: 95,
     hand: ["sırada", "burası var"], text: [86, 190], from: [360, 470], bend: -0.35,
-    photo: { tag: "Aladağlar", note: "kim geliyor?", pos: "50% 50%" },
+    photo: { tag: "Aladağlar", note: ["sırada burası var,", "kim geliyor?"], pos: "50% 50%" },
   },
 ];
 
@@ -132,7 +133,9 @@ const ANIM = `<style>html,body{background:transparent!important}</style><script>
 const ease = (t) => (t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 window.setT = (t) => document.querySelectorAll("[data-a]").forEach((el) => {
   const [k, s, e] = el.dataset.a.split(","), p = ease(Math.min(1, Math.max(0, (t - s) / (e - s))));
-  if (k === "wipe") el.style.clipPath = "inset(-30% " + (1 - p) * 100 + "% -30% -8%)";
+  // Sağ kenar sonda -15%'e kadar açılır, bitince kırpma tamamen kalkar: el yazısının taşan
+  // harfleri (k, e, ?) ve gölgesi metin kutusunun dışına çıkıyor, 0%'da kesiliyordu.
+  if (k === "wipe") el.style.clipPath = p >= 1 ? "none" : "inset(-30% " + ((1 - p) * 115 - 15) + "% -30% -8%)";
   else if (k === "draw") { el.style.strokeDasharray = "1 1"; el.style.strokeDashoffset = String(1 - p); el.style.opacity = p > 0 ? 1 : 0; }
   else if (k === "fade") { el.style.opacity = p; el.style.transform = "translateY(" + (1 - p) * 24 + "px)"; }
   else if (k === "pop") { el.style.opacity = p; el.style.transformBox = "fill-box"; el.style.transformOrigin = "center"; el.style.transform = "scale(" + (.3 + .7 * p) + ")"; }
@@ -171,7 +174,7 @@ export function photoSlide(p, v = false, noteAt = 3.8) {
   return doc(`${v ? "" : `<img class="bg" src="${uri(join(HERE, "foto", `${p.id}.jpg`))}" style="object-position:${p.photo.pos}">`}
   <div class="tag"${A(v, "fade", 0.2, 0.7)}>${p.photo.tag}</div>
   <img class="logo" style="top:74px" src="${wordmark("#ffffff")}">
-  <div class="hand note"${A(v, "wipe", noteAt, noteAt + 1.1)}>${p.photo.note}</div>`, v);
+  <div class="hand note"${Array.isArray(p.photo.note) ? "" : A(v, "wipe", noteAt, noteAt + 1.1)}>${Array.isArray(p.photo.note) ? lines(v, p.photo.note, noteAt, 0.9) : p.photo.note}</div>`, v);
 }
 
 // Kapanış: Türkiye silueti, beş parkur noktası, çağrı.
@@ -201,7 +204,7 @@ export function endSlide(v = false) {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-const slides = PARKUR.flatMap((p, i) => [mapSlide(p, i === 0), photoSlide(p)]).concat(endSlide());
+const slides = PARKUR.flatMap((p, i) => (p.noMap ? [photoSlide(p)] : [mapSlide(p, i === 0), photoSlide(p)])).concat(endSlide());
 
 const out = join(HERE, "..", "out", "parkur-tr"), tmp = join(HERE, ".tmp");
 mkdirSync(out, { recursive: true }); mkdirSync(tmp, { recursive: true });
