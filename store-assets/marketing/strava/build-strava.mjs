@@ -1,5 +1,6 @@
 // Strava kulübü için profil ve kapak görseli (9 Ekim 2026).
-//   profil 1024×1024 — Deep Teal zemin, beyaz M amblemi; Strava yuvarlak kırptığı için amblem ortada ve küçük
+//   profil 1024×1024 — beyaz zemin, M amblemi kendi renklerinde (uygulama ikonu gibi; Melih); Strava yuvarlak
+//                      kırptığı için amblem ortada ve küçük
 //   kapak  1180×579  — Strava'nın önerdiği ölçü. Web sürümü üstten/alttan kırpıp ~1180×393 gösteriyor,
 //                      mobilde kulüp profil resmi sol alt köşeye biniyor: yazı ve koşucular ortadaki bantta.
 // Fotoğraf public/story/kosu.jpg (Canva, telifsiz — hikâye kartındakiyle aynı).
@@ -20,7 +21,7 @@ const TEAL = "#114956", YEL = "#F4F818";
 const uri = (p, type) => `data:${type};base64,${readFileSync(p).toString("base64")}`;
 const LOGO_SVG = readFileSync(join(ROOT, "public", "icons", "logo-yatay.svg"), "utf8");
 const WORDMARK = `data:image/svg+xml;base64,${Buffer.from(LOGO_SVG.replace(/#231f20/g, "#ffffff")).toString("base64")}`;
-const EMBLEM = uri(join(HERE, "amblem-beyaz.png"), "image/png");
+const EMBLEM = uri(join(HERE, "amblem-renkli.png"), "image/png");
 const PHOTO = uri(join(ROOT, "public", "story", "kosu.jpg"), "image/jpeg");
 
 const LATIN = "U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD";
@@ -32,7 +33,7 @@ const page = (w, h, body) => `<!doctype html><html lang="tr"><head><meta charset
 *{margin:0;padding:0;box-sizing:border-box}html,body{width:${w}px;height:${h}px;overflow:hidden;font-family:Montserrat,sans-serif;background:${TEAL}}
 </style></head><body>${body}</body></html>`;
 
-const profil = page(1024, 1024, `<img src="${EMBLEM}" style="position:absolute;left:50%;top:50%;width:560px;transform:translate(-50%,-50%)">`);
+const profil = page(1024, 1024, `<div style="position:absolute;inset:0;background:#fff"></div><img src="${EMBLEM}" style="position:absolute;left:50%;top:50%;width:560px;transform:translate(-50%,-50%)">`);
 
 // Fotoğraf: kaynakta koşucular x 320–780, y 830–1180. Sağ panelde (680×579) 0,895 ölçekle ortada.
 const S = 0.895, PX = 170, PY = 690;
