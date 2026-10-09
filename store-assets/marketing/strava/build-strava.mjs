@@ -1,7 +1,7 @@
 // Strava kulübü için profil ve kapak görseli (9 Ekim 2026).
 //   profil 1024×1024 — beyaz zemin, M amblemi kendi renklerinde (uygulama ikonu gibi; Melih); Strava yuvarlak
 //                      kırptığı için amblem ortada ve küçük
-//   kapak  1180×579  — Strava'nın önerdiği ölçü. Web sürümü yalnız orta bandı gösteriyor (ölçüldü, 9 Ekim 2026:
+//   kapak  2360×1158 — Strava'nın önerdiği 1180×579'un 2x'i. Web sürümü yalnız orta bandı gösteriyor (ölçüldü, 9 Ekim 2026:
 //                      y ≈ 110–470) ve avatar kutusu sol altı (x 19–136, y ≥ 412) kapatıyor: yazı bloğu y 122–370'te.
 // Fotoğraf public/story/kosu.jpg (Canva, telifsiz — hikâye kartındakiyle aynı).
 // Kurumsal palet: Deep Teal zemin, tek vurgu sarı, degrade yok, emoji yok.
@@ -22,7 +22,9 @@ const uri = (p, type) => `data:${type};base64,${readFileSync(p).toString("base64
 const LOGO_SVG = readFileSync(join(ROOT, "public", "icons", "logo-yatay.svg"), "utf8");
 const WORDMARK = `data:image/svg+xml;base64,${Buffer.from(LOGO_SVG.replace(/#231f20/g, "#ffffff")).toString("base64")}`;
 const EMBLEM = uri(join(HERE, "amblem-renkli.png"), "image/png");
-const PHOTO = uri(join(ROOT, "public", "story", "kosu.jpg"), "image/jpeg");
+// Sağ panelin fotoğrafı 2x (1360×1158) önceden kırpılıp Lanczos ile büyütülmüş hali: kosu.jpg yalnız
+// 1080×1920, daha büyük aslı yok (Canva'da üretildi). Yazı ve logo ise 2x'te vektörden çizilir.
+const PHOTO = uri(join(HERE, "kosu-panel@2x.jpg"), "image/jpeg");
 
 const LATIN = "U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD";
 const LATIN_EXT = "U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF";
@@ -35,28 +37,25 @@ const page = (w, h, body) => `<!doctype html><html lang="tr"><head><meta charset
 
 const profil = page(1024, 1024, `<div style="position:absolute;inset:0;background:#fff"></div><img src="${EMBLEM}" style="position:absolute;left:50%;top:50%;width:560px;transform:translate(-50%,-50%)">`);
 
-// Fotoğraf: kaynakta koşucular x 320–780, y 830–1180. Sağ panelde (680×579) 0,895 ölçekle ortada.
-const S = 0.895, PX = 170, PY = 690;
+// Kapak 1180×579 CSS pikseli, 2x çizilir → 2360×1158 (Strava sayfada 1288 px gösteriyor, Retina'da flu kalıyordu).
+// Sol altta avatar alanı boş (2x'te ~340×300), sarı "muuvlink.app" düğmesi yok; yazı bloğu dikeyde ortada.
 const kapak = page(1180, 579, `
-  <div style="position:absolute;right:0;top:0;width:680px;height:579px;overflow:hidden">
-    <img src="${PHOTO}" style="position:absolute;width:${1080 * S}px;left:${-PX * S}px;top:${-PY * S}px">
-  </div>
-  <div style="position:absolute;left:64px;top:122px;width:420px;color:#fff">
+  <img src="${PHOTO}" style="position:absolute;right:0;top:0;width:680px;height:579px">
+  <div style="position:absolute;left:64px;top:50%;transform:translateY(-50%);width:420px;color:#fff">
     <img src="${WORDMARK}" style="height:36px;display:block">
     <div style="margin-top:26px;font-weight:800;font-size:52px;line-height:1;letter-spacing:-.02em">Sporla <span style="color:${YEL}">buluş.</span></div>
     <div style="margin-top:16px;font-weight:700;font-size:20px;line-height:1.35;opacity:.88">Yakınındaki takımları ve etkinlikleri keşfet, birlikte antrenman yap.</div>
-    <div style="margin-top:18px;display:inline-block;background:${YEL};color:${TEAL};font-weight:800;font-size:19px;padding:9px 19px;border-radius:999px">muuvlink.app</div>
   </div>`);
 
 // Chrome 154'te DevTools ekran görüntüsü büyük görselde donuyor (bkz. parkur/build-parkur.mjs):
 // --screenshot ile, dosya yazılıp boyutu sabitlenince süreç kapatılır.
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 mkdirSync(OUT, { recursive: true }); mkdirSync(TMP, { recursive: true });
-for (const [name, w, h, html] of [["muuvlink-strava-profil-1024", 1024, 1024, profil], ["muuvlink-strava-kapak-1180x579", 1180, 579, kapak]]) {
+for (const [name, w, h, html, dpr] of [["muuvlink-strava-profil-1024", 1024, 1024, profil, 1], ["muuvlink-strava-kapak-2360x1158", 1180, 579, kapak, 2]]) {
   const f = join(TMP, `${name}.html`), png = join(OUT, `${name}.png`), prof = join(TMP, `profile-${name}`);
   writeFileSync(f, html);
   rmSync(png, { force: true });
-  const c = spawn(CHROME, ["--headless=new", "--hide-scrollbars", `--window-size=${w},${h}`, "--virtual-time-budget=3000",
+  const c = spawn(CHROME, ["--headless=new", "--hide-scrollbars", `--window-size=${w},${h}`, `--force-device-scale-factor=${dpr}`, "--virtual-time-budget=3000",
     `--user-data-dir=${prof}`, `--screenshot=${png}`, `file://${f}`], { stdio: "ignore" });
   let last = -1;
   for (let t = 0; t < 120; t++) {
