@@ -1,8 +1,8 @@
 // Instagram karuseli "Parkurlar" (7 Ekim 2026): uydu haritasında elle çizilmiş kırmızı ok +
 // el yazısı, kaydırınca o parkurdan toplu koşu fotoğrafı. Sonda Türkiye haritası + çağrı.
 //
-// Uydu: Sentinel-2 cloudless 2016 (EOX, CC BY 4.0) — ticari kullanım serbest, atıf her harita
-// karesinde. Fotoğraflar foto/ altında, depoya girmez (Melih'in Drive'ı + Envato).
+// Uydu: Sentinel-2 cloudless 2016 (EOX, CC BY 4.0) — ticari kullanım serbest. Atıf karede değil
+// gönderi metninde (Melih, 9 Ekim 2026: karede kaynak yazısı istemedi); lisans gereği orada kalmalı. Fotoğraflar foto/ altında, depoya girmez (Melih'in Drive'ı + Envato).
 //
 // Önce:  python3 sat.py          → sat/*.jpg + sat/marks.json (hedef noktaların piksel yeri)
 // Sonra: node build-parkur.mjs   → ../out/parkur-tr/NN.png (1080×1350)
@@ -117,7 +117,6 @@ html,body{width:${W}px;height:${H}px;overflow:hidden;font-family:Montserrat,sans
 .coord{position:absolute;left:76px;bottom:82px;color:#fff;font-weight:700;font-size:24px;letter-spacing:.08em;opacity:.92;
   text-shadow:0 0 10px rgba(0,0,0,.8)}
 .logo{position:absolute;right:64px;top:64px;height:40px;filter:drop-shadow(0 0 8px rgba(0,0,0,.55))}
-.credit{position:absolute;right:28px;bottom:22px;color:#fff;opacity:.75;font-size:15px;font-weight:600;text-shadow:0 0 6px rgba(0,0,0,.9)}
 .tag{position:absolute;left:64px;top:64px;background:${YEL};color:${TEAL};font-weight:800;font-size:30px;padding:14px 26px;border-radius:999px}
 .note{position:absolute;left:66px;bottom:70px;font-size:84px}
 .ink{fill:none;stroke:${RED};stroke-width:10;stroke-linecap:round;stroke-linejoin:round}`;
@@ -166,7 +165,7 @@ export function mapSlide(p, first, v = false) {
     <g filter="url(#lift)"><g class="ink">${timed(v, circle(target, p.r), [2.85, 3.6])}${timed(v, shaft, [2.0, 2.7], [2.7, 2.9])}</g>${balloons}${swipeArrow}</g>
   </svg>
   <div class="place">${p.name}</div><div class="coord">${p.coord}</div>
-  <div class="credit">Uydu: Copernicus Sentinel-2 · s2maps.eu EOX (CC BY 4.0)</div>`, v);
+`, v);
 }
 
 // noteAt: videoda el yazısının başladığı an (drone çekiminden fotoğrafa geçince).
