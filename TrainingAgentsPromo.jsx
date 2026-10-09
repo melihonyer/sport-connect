@@ -69,6 +69,7 @@ function ExtLink({ href, isNative, className, style, children, ...rest }) {
 
 // "{brand}" yer tutucusunu kalın, ana mavi marka adıyla değiştirir.
 function withBrand(text, className = "font-bold text-ta-blue") {
+  if (!String(text).includes("{brand}")) return text; // marka adı metinde yoksa ekleme (logo yanında)
   const [a, b = ""] = String(text).split("{brand}");
   return <>{a}<strong className={className}>{BRAND}</strong>{b}</>;
 }
@@ -251,7 +252,8 @@ export function TaEmptyState({ t, lang, isNative }) {
   return (
     <div className="bg-white rounded-2xl p-6 border border-slate-100">
       <TaLogo width={104} />
-      <p className="mt-4 text-sm text-slate-600 leading-relaxed">{withBrand(t("taPromo.empty"))}</p>
+      <h3 className="mt-4 text-base font-semibold text-slate-900 leading-snug">{t("taPromo.emptyTitle")}</h3>
+      <p className="mt-1 text-sm text-slate-600 leading-relaxed">{withBrand(t("taPromo.empty"))}</p>
       <div className="mt-4">
         <TaButton isNative={isNative} href={ctaUrl({ isNative, lang, medium: "bos-durum" })}>{t("taPromo.emptyCta")}</TaButton>
       </div>
@@ -264,7 +266,8 @@ export function TaRaceCard({ t, lang, isNative, guide }) {
   return (
     <div className="rounded-2xl border border-slate-100 bg-white p-5">
       <TaLogo width={96} />
-      <p className="mt-3 text-sm text-slate-600 leading-relaxed">{withBrand(t("taPromo.race"))}</p>
+      <h3 className="mt-3 text-base font-semibold text-slate-900 leading-snug">{t("taPromo.raceTitle")}</h3>
+      <p className="mt-1 text-sm text-slate-600 leading-relaxed">{withBrand(t("taPromo.race"))}</p>
       <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-3">
         <TaButton isNative={isNative} href={ctaUrl({ isNative, lang, medium: "etkinlik" })}>{t("taPromo.raceCta")}</TaButton>
         {guide && (

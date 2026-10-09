@@ -1009,7 +1009,7 @@ const MAIL = {
     wrapTagline: 'Spor topluluğun seni bekliyor',
     wrapFollow: 'Bizi takip et',
     wrapDownload: "Muuvlink'i indir",
-    taStrip: "Antrenman planın için: {brand} — sana özel, her hafta yeniden.",
+    taStrip: "Programını milli antrenörlerin deneyimiyle geliştirilen Ai koç yazsın.",
     wrapFooter1: 'Bu maili Muuvlink üzerinden aldınız.',
     wrapFooter2: '© 2026 Muuvlink. Tüm hakları saklıdır.',
     lblDate: 'Tarih', lblTime: 'Saat', lblLocation: 'Konum',
@@ -1106,7 +1106,7 @@ const MAIL = {
     wrapTagline: 'Your sports community is waiting',
     wrapFollow: 'Follow us',
     wrapDownload: "Get Muuvlink",
-    taStrip: "For your training plan: {brand} — made for you, rewritten every week.",
+    taStrip: "Let an Ai coach built on national-team coaching experience write your plan.",
     wrapFooter1: 'You received this email through Muuvlink.',
     wrapFooter2: '© 2026 Muuvlink. All rights reserved.',
     lblDate: 'Date', lblTime: 'Time', lblLocation: 'Location',
@@ -1203,7 +1203,7 @@ const MAIL = {
     wrapTagline: 'Deine Sport-Community wartet auf dich',
     wrapFollow: 'Folge uns',
     wrapDownload: "Muuvlink holen",
-    taStrip: "Für deinen Trainingsplan: {brand} — für dich gemacht, jede Woche neu.",
+    taStrip: "Lass deinen Plan von einem Ai-Coach schreiben, entwickelt mit der Erfahrung von Nationaltrainern.",
     wrapFooter1: 'Du hast diese E-Mail über Muuvlink erhalten.',
     wrapFooter2: '© 2026 Muuvlink. Alle Rechte vorbehalten.',
     lblDate: 'Datum', lblTime: 'Uhrzeit', lblLocation: 'Ort',
@@ -1300,7 +1300,7 @@ const MAIL = {
     wrapTagline: 'Η αθλητική σου κοινότητα σε περιμένει',
     wrapFollow: 'Ακολούθησέ μας',
     wrapDownload: "Κατέβασε το Muuvlink",
-    taStrip: "Για το προπονητικό σου πρόγραμμα: {brand} — φτιαγμένο για σένα, νέο κάθε εβδομάδα.",
+    taStrip: "Άσε έναν Ai προπονητή, φτιαγμένο με την εμπειρία εθνικών προπονητών, να γράψει το πρόγραμμά σου.",
     wrapFooter1: 'Έλαβες αυτό το email μέσω του Muuvlink.',
     wrapFooter2: '© 2026 Muuvlink. Με την επιφύλαξη παντός δικαιώματος.',
     lblDate: 'Ημερομηνία', lblTime: 'Ώρα', lblLocation: 'Τοποθεσία',
@@ -1397,7 +1397,7 @@ const MAIL = {
     wrapTagline: 'Tu comunidad deportiva te espera',
     wrapFollow: 'Síguenos',
     wrapDownload: "Descarga Muuvlink",
-    taStrip: "Para tu plan de entrenamiento: {brand} — hecho para ti, renovado cada semana.",
+    taStrip: "Que tu plan lo escriba un entrenador Ai desarrollado con la experiencia de entrenadores nacionales.",
     wrapFooter1: 'Has recibido este correo a través de Muuvlink.',
     wrapFooter2: '© 2026 Muuvlink. Todos los derechos reservados.',
     lblDate: 'Fecha', lblTime: 'Hora', lblLocation: 'Lugar',
@@ -1494,7 +1494,7 @@ const MAIL = {
     wrapTagline: "Ta communauté sportive t'attend",
     wrapFollow: 'Suis-nous',
     wrapDownload: "Télécharge Muuvlink",
-    taStrip: "Pour ton plan d'entraînement : {brand} — fait pour toi, réécrit chaque semaine.",
+    taStrip: "Confie ton plan à un coach Ai conçu avec l'expérience d'entraîneurs nationaux.",
     wrapFooter1: 'Tu as reçu cet e-mail via Muuvlink.',
     wrapFooter2: '© 2026 Muuvlink. Tous droits réservés.',
     lblDate: 'Date', lblTime: 'Heure', lblLocation: 'Lieu',
@@ -1591,7 +1591,7 @@ const MAIL = {
     wrapTagline: 'La tua community sportiva ti aspetta',
     wrapFollow: 'Seguici',
     wrapDownload: "Scarica Muuvlink",
-    taStrip: "Per il tuo piano di allenamento: {brand} — fatto per te, riscritto ogni settimana.",
+    taStrip: "Fatti scrivere il piano da un coach Ai sviluppato con l'esperienza di allenatori nazionali.",
     wrapFooter1: 'Hai ricevuto questa email tramite Muuvlink.',
     wrapFooter2: '© 2026 Muuvlink. Tutti i diritti riservati.',
     lblDate: 'Data', lblTime: 'Ora', lblLocation: 'Luogo',
@@ -1733,8 +1733,10 @@ function taEmailStrip(L) {
   const b = L === 'tr' ? 'tr' : 'en';
   const A = 'https://muuvlink.app/partners/training-agents/mail';
   const S = 'https://muuvlink.app/icons/mail'; // tek tip mağaza düğmeleri (Muuvlink ile aynı)
-  const [pre, post = ''] = String(tm(L, 'taStrip')).split('{brand}');
-  const brand = `<a href="${site}" style="color:#2458ea;font-weight:700;text-decoration:none;">Training Agents</a>`;
+  // Metinde {brand} yoksa marka adı eklenmez (logo hemen üstünde).
+  const raw = String(tm(L, 'taStrip'));
+  const [pre, post = ''] = raw.split('{brand}');
+  const brand = raw.includes('{brand}') ? `<a href="${site}" style="color:#2458ea;font-weight:700;text-decoration:none;">Training Agents</a>` : '';
   return `
             <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 20px;">
               <tr><td align="center" style="padding:0 0 10px;">
