@@ -270,6 +270,27 @@ Kurallar:
   harita kontrolleri ve hover'ı JS ile yapanlar — onlara `data-hover="own"` yazılır
   (onMouseEnter ile renk değiştiren yeni düğmeye de eklenir, yoksa iki etki üst üste biner).
 
+## Arayüz temel kuralları (9 Ekim 2026 denetimi)
+
+- **Yazı tipi:** Yunanca alt küme (`index.css`) ağırlık BAŞINA ayrı `@font-face` (300–800 +
+  italik 400/600). Tek "300 800" aralıklı tanım Chrome'da Google'ın 700/800 Latin dosyalarını
+  gölgeliyordu; kalın başlıklar sistem yazı tipine düşüyordu. Google'a yeni ağırlık eklenirse
+  buraya da eklenir. Kontrol: `document.fonts.load('700 40px Montserrat','N')` boş dönmemeli.
+- **Hover yalnız imleçli cihazda:** `tailwind.config.js` `future.hoverOnlyWhenSupported`. JS ile
+  hover yapan düğmeler `onPointerEnter/Leave` + `pointerType === "mouse"` (mouseenter dokunuşta
+  gelip mouseleave gelmiyor, takılı kalıyordu).
+- **Kartlar gerçek bağlantı:** `TrainingCard`/`TeamCard` `<a href={trainingPath|teamPath}>` +
+  `openCardLink` (düz tıklama SPA, ctrl/cmd/orta tık tarayıcıya; uygulamada hep SPA).
+- **Pencereler:** kök `zIndex` ≥ 1000000 (alt menü 999999), `role="dialog" aria-modal`, uzun
+  içerikte kök `overflow-y-auto overscroll-contain` + kart `my-auto`. Esc ve Android geri tuşu
+  `closeTopOverlayRef`'ten kapatır — yeni pencere oraya da eklenir.
+- **Uyarı baloncuğu** `renderToast()` düz fonksiyon (bileşen değil; animasyon yalnız yeni uyarıda),
+  zamanlayıcı `toastTimerRef`.
+- **Tarih dili** `document.documentElement.lang`'tan (etkin dil); yalnız `muuvlang`'a bakılmaz.
+- Yalnız ikonlu düğmeye `aria-label`; dokunma alanı ≥ 44 px (`w-11 h-11` ya da negatif marj).
+- Degrade yok kuralı: fotoğraf üstündeki karartma katmanları (okunurluk için) ve admin'den gelen
+  banner renkleri hariç. Branş adı her yerde `sportLabel()` ile görenin dilinde.
+
 ## Doğrulama
 
 - **Backend değişikliği statik okumayla onaylanmaz.** Gerçek istek atılır

@@ -30,6 +30,12 @@ export default defineConfig({
         changeOrigin: true,
         secure: true,
       },
+      // Yerel önizlemede yüklenen görseller (banner, özellik görselleri) canlıdan gelsin.
+      '/uploads': {
+        target: 'https://muuvlink.app',
+        changeOrigin: true,
+        secure: true,
+      },
     },
   },
 })

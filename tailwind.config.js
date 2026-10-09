@@ -1,4 +1,7 @@
 export default {
+  // hover: sınıfları yalnız imleçli cihazda (@media (hover:hover) and (pointer:fine)).
+  // Yoksa telefonda/uygulamada dokunulan kart kalkık, düğme büyümüş kalıyordu (9 Ekim 2026).
+  future: { hoverOnlyWhenSupported: true },
   content: [
     "./index.html",
     "./*.{js,jsx}",
@@ -102,40 +105,6 @@ export default {
         'glow-sm':   '0 4px 14px rgba(17,73,86,0.22)',
         'glow-md':   '0 8px 32px rgba(17,73,86,0.28)',
         'glow-lg':   '0 12px 48px rgba(17,73,86,0.32)',
-      },
-      keyframes: {
-        fadeInUp: {
-          '0%':   { opacity: '0', transform: 'translateY(16px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
-        },
-        fadeIn: {
-          '0%':   { opacity: '0' },
-          '100%': { opacity: '1' },
-        },
-        slideInRight: {
-          '0%':   { opacity: '0', transform: 'translateX(20px)' },
-          '100%': { opacity: '1', transform: 'translateX(0)' },
-        },
-        shimmer: {
-          '0%':   { backgroundPosition: '-200% 0' },
-          '100%': { backgroundPosition: '200% 0' },
-        },
-        popIn: {
-          '0%':   { opacity: '0', transform: 'scale(0.92)' },
-          '70%':  { transform: 'scale(1.02)' },
-          '100%': { opacity: '1', transform: 'scale(1)' },
-        },
-      },
-      animation: {
-        'fade-in-up':   'fadeInUp 0.4s ease forwards',
-        'fade-in':      'fadeIn 0.3s ease forwards',
-        'slide-in-right': 'slideInRight 0.35s ease forwards',
-        'pop-in':       'popIn 0.3s ease forwards',
-        'shimmer':      'shimmer 2s linear infinite',
-      },
-      transitionTimingFunction: {
-        'spring': 'cubic-bezier(0.34, 1.56, 0.64, 1)',
-        'smooth': 'cubic-bezier(0.4, 0, 0.2, 1)',
       },
       scale: {
         '97': '0.97',

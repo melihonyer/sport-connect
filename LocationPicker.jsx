@@ -448,8 +448,8 @@ export default function LocationPicker({
 
           {/* Başlık */}
           <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-200 bg-white flex-shrink-0">
-            <button type="button" onClick={closeMap}
-              className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-colors flex-shrink-0">
+            <button type="button" onClick={closeMap} aria-label={tt("common.back", "Geri")}
+              className="w-11 h-11 -ml-1 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-colors flex-shrink-0">
               <ArrowLeft className="w-5 h-5 text-slate-600"/>
             </button>
             <div className="min-w-0">
@@ -485,8 +485,8 @@ export default function LocationPicker({
                 className="w-full pl-9 pr-8 h-10 border border-slate-200 rounded-xl text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 bg-slate-50 focus:bg-white transition-colors"
               />
               {mapQuery && (
-                <button type="button" onClick={() => { setMapQuery(""); setMapResults([]); }}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                <button type="button" onClick={() => { setMapQuery(""); setMapResults([]); }} aria-label={tt("common.close", "Kapat")}
+                  className="absolute right-0.5 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center text-slate-500 hover:text-slate-700">
                   <X className="w-4 h-4"/>
                 </button>
               )}
@@ -544,7 +544,7 @@ export default function LocationPicker({
             {/* Konumuma git butonu */}
             <button
               type="button"
-              title={t("location.useMyLocation")}
+              title={t("location.useMyLocation")} aria-label={t("location.useMyLocation")}
               onClick={() => {
                 if (!navigator.geolocation) return;
                 setGettingGPS(true);
@@ -608,7 +608,7 @@ export default function LocationPicker({
         <div className="flex items-start gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
           <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
           <span>{locationError}</span>
-          <button type="button" onClick={() => setLocationError(null)} className="ml-auto flex-shrink-0 text-red-400 hover:text-red-600">
+          <button type="button" onClick={() => setLocationError(null)} aria-label={tt("common.close", "Kapat")} className="ml-auto -my-2 -mr-2 w-10 h-10 flex items-center justify-center flex-shrink-0 text-red-500 hover:text-red-700">
             <X className="w-4 h-4" />
           </button>
         </div>

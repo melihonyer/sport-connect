@@ -135,7 +135,8 @@ const Tour = ({ steps, onFinish, t }) => {
       <div style={{
         position: "fixed", top: hole.top, left: hole.left, width: hole.width, height: hole.height,
         borderRadius: RADIUS, boxShadow: "0 0 0 3px rgba(255,255,255,0.9), 0 0 22px 6px rgba(17,73,86,0.45)",
-        zIndex: 9999, pointerEvents: "none", transition: "all .25s ease",
+        // Geçiş yok: perdeler ve baloncuk anında yer değiştiriyor, halka kayarsa delikten ayrılıyordu.
+        zIndex: 9999, pointerEvents: "none",
       }} />
 
       {/* Açıklama baloncuğu */}

@@ -63,6 +63,9 @@ import {
   CalendarX2,
   SearchX,
   Compass,
+  Flame,
+  Timer,
+  SatelliteDish,
 } from "lucide-react";
 import SharedLocationPicker from "./LocationPicker";
 // Ağır kütüphaneler lazy yüklenir — ilk bundle'ı küçültür
@@ -149,13 +152,13 @@ class ErrorBoundary extends React.Component {
     };
     const _t = (k) => pickLang(_eb[k], lng);
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 px-6 text-center gap-5">
+      <div className="min-h-screen min-h-svh flex flex-col items-center justify-center bg-slate-50 px-6 text-center gap-5">
         <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-red-50">
           <AlertTriangle className="w-8 h-8 text-red-400"/>
         </div>
         <div>
           <p className="text-slate-800 font-semibold text-lg mb-1">{_t("title")}</p>
-          <p className="text-slate-400 text-sm max-w-xs">
+          <p className="text-slate-500 text-sm max-w-xs">
             {this.state.error?.message || _t("unexpected")}
           </p>
         </div>
@@ -210,8 +213,11 @@ if (typeof window !== "undefined" && !window.__muuvLangFetch) {
 
 // ── Tarih formatlama yardımcıları ──────────────────────────────────────────
 // Aktif dile göre BCP-47 locale — seçili dil değişince tarihler de o dilde gelir.
+// documentElement.lang her zaman ETKİN dili taşır (adres > kayıtlı > tarayıcı); yalnız
+// muuvlang'a bakınca dili kendiliğinden İngilizce açılan ziyaretçi Türkçe tarih görüyordu.
 const _dateLocale = () => {
-  const l = (typeof localStorage !== "undefined" && localStorage.getItem("muuvlang")) || "tr";
+  const l = (typeof document !== "undefined" && document.documentElement.lang)
+    || (typeof localStorage !== "undefined" && localStorage.getItem("muuvlang")) || "tr";
   return localeOf(l);
 };
 // "1 Haziran 2026 Pazartesi" — etkinlik detay gibi önemli yerlerde
@@ -267,7 +273,7 @@ const LevelSelect = ({ value, onChange, t }) => (
           className={`text-left rounded-xl border p-3 cursor-pointer transition-all ${selected
             ? "border-brand-500 bg-brand-50 ring-1 ring-brand-500"
             : "border-slate-200 bg-white hover:border-brand-300"}`}>
-          <span className={selected ? "text-brand-600" : "text-slate-400"}>
+          <span className={selected ? "text-brand-600" : "text-slate-500"}>
             <LevelIcon lv={lv} />
           </span>
           <div className={`mt-2 text-sm font-semibold leading-tight ${selected ? "text-brand-700" : "text-slate-700"}`}>{t(`trainings.${lv.key}`)}</div>
@@ -370,11 +376,18 @@ const CAL_BAND_COLORS = [
   "#9765C8", "#099A97", "#15CDA9", "#F0E4E4",
 ];
 const calBandColor = (id) => CAL_BAND_COLORS[((((id || 0) * 2654435761) >>> 0) + 7) % CAL_BAND_COLORS.length];
-// Şerit açık renkse koyu, koyu renkse beyaz metin (kontrast).
-const calBandTextColor = (hex) => {
+// Şerit metni: beyaz ile koyudan WCAG kontrastı yüksek olanı. Eski parlaklık eşiği
+// #15CDA9/#00A79D gibi orta tonlarda beyaz seçip 2:1–3:1 kontrast veriyordu.
+const _relLum = (hex) => {
   const h = hex.replace("#", "");
-  const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
-  return (0.299 * r + 0.587 * g + 0.114 * b) > 150 ? "#1f2937" : "#ffffff";
+  const c = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16) / 255)
+    .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+};
+const calBandTextColor = (hex) => {
+  const L = _relLum(hex);
+  const vsWhite = 1.05 / (L + 0.05), vsInk = (L + 0.05) / (_relLum("#1f2937") + 0.05);
+  return vsWhite >= vsInk ? "#ffffff" : "#1f2937";
 };
 
 const DEFAULT_MOTTOS = {
@@ -534,16 +547,17 @@ const AuthModal = ({ authMode, setAuthMode, onClose, handleLogin, handleRegister
   const titles = { login: t("auth.loginTitle"), register: t("auth.registerTitle"), forgot: t("auth.forgotTitle") };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center z-50 p-4 modal-backdrop">
-      <div className="bg-white rounded-3xl max-w-md w-full relative overflow-hidden shadow-2xl modal-content">
+    <div className="fixed inset-0 bg-black/50 flex justify-center p-4 overflow-y-auto overscroll-contain modal-backdrop"
+      style={{ zIndex: 1000000 }} role="dialog" aria-modal="true" aria-label={titles[authMode] || titles.login}>
+      <div className="bg-white rounded-3xl max-w-md w-full relative overflow-hidden shadow-2xl modal-content my-auto">
 
         {/* Üst gradient şerit */}
-        <div className="h-1.5" style={{background:"linear-gradient(90deg,#00a499,#643e87)"}}/>
+        <div className="h-1.5 bg-logo-teal"/>
 
         <div className="px-8 pt-7 pb-8">
           {/* Kapat butonu */}
-          <button onClick={onClose}
-            className="absolute top-5 right-5 w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
+          <button onClick={onClose} aria-label={t("common.close")}
+            className="absolute top-4 right-4 w-11 h-11 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors">
             <X className="w-5 h-5" />
           </button>
 
@@ -585,9 +599,9 @@ const AuthModal = ({ authMode, setAuthMode, onClose, handleLogin, handleRegister
             {titles[authMode]}
           </h2>
           {authMode === "forgot" ? (
-            <p className="text-slate-400 text-sm text-center mb-6">{t("auth.forgotTitle")}</p>
+            <p className="text-slate-500 text-sm text-center mb-6">{t("auth.forgotTitle")}</p>
           ) : (
-            <p className="text-slate-400 text-sm text-center mb-6">
+            <p className="text-slate-500 text-sm text-center mb-6">
               {authMode === "login" ? t("auth.loginTitle") : t("auth.registerTitle")}
             </p>
           )}
@@ -607,24 +621,27 @@ const AuthModal = ({ authMode, setAuthMode, onClose, handleLogin, handleRegister
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-3">
             {authMode === "register" && (
-              <input ref={nameRef} type="text" placeholder={t("auth.namePlaceholder")}
+              <input ref={nameRef} type="text" placeholder={t("auth.namePlaceholder")} aria-label={t("auth.namePlaceholder")}
+                name="name" autoComplete="name"
                 className="w-full px-4 py-3.5 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 text-base font-medium outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 transition-all"
                 required/>
             )}
-            <input ref={emailRef} type="email" placeholder={t("auth.emailPlaceholder")}
+            <input ref={emailRef} type="email" placeholder={t("auth.emailPlaceholder")} aria-label={t("auth.emailLabel")}
+              name="email" autoComplete={authMode === "register" ? "email" : "username"} inputMode="email" autoCapitalize="none"
               className={`w-full px-4 py-3.5 border rounded-xl text-slate-800 placeholder-slate-400 text-base font-medium outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 transition-all ${error ? "border-red-300 bg-red-50/50" : "border-slate-200"}`}
               required
               onInvalid={e => e.target.setCustomValidity(t("auth.emailInvalid"))}
               onInput={e => e.target.setCustomValidity("")}/>
             {authMode !== "forgot" && (
-              <PasswordInput ref={passRef} t={t} placeholder={t("auth.passwordLabel")}
+              <PasswordInput ref={passRef} t={t} placeholder={t("auth.passwordLabel")} aria-label={t("auth.passwordLabel")}
+                name="password" autoComplete={authMode === "register" ? "new-password" : "current-password"}
                 className={`w-full px-4 py-3.5 border rounded-xl text-slate-800 placeholder-slate-400 text-base font-medium outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 transition-all ${error ? "border-red-300 bg-red-50/50" : "border-slate-200"}`}
                 required/>
             )}
             {authMode === "login" && (
               <div className="text-right">
                 <button type="button" onClick={() => setAuthMode("forgot")}
-                  className="text-xs text-brand-600 hover:text-brand-700 font-medium hover:underline">
+                  className="text-xs text-brand-600 hover:text-brand-700 font-medium hover:underline py-2 -my-2">
                   {t("auth.forgotLink")}
                 </button>
               </div>
@@ -704,7 +721,7 @@ function NewsSection({ items, t, setCurrentPage }) {
           style={{fontSize:"clamp(2rem,5vw,3rem)", letterSpacing:"0.08em"}}>
           {t ? t("news.title") : "Team Events"}
         </h2>
-        <p className="text-slate-400 font-light italic text-base">{t ? t("news.subtitle") : "Event news from the Muuvlink community"}</p>
+        <p className="text-slate-500 font-light italic text-base">{t ? t("news.subtitle") : "Event news from the Muuvlink community"}</p>
       </div>
       <div className="flex w-full" style={{height:"320px"}}>
         {items.map((item) => (
@@ -713,7 +730,7 @@ function NewsSection({ items, t, setCurrentPage }) {
             className="group relative flex-1 overflow-hidden cursor-pointer"
             style={{background:"#1a2a1a"}}>
             {item.image_url && (
-              <img src={item.image_url} alt={item.title}
+              <img loading="lazy" decoding="async" src={item.image_url} alt={item.title}
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"/>
             )}
             <div className="absolute inset-0" style={{background:"linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.25) 55%, transparent 100%)"}}/>
@@ -743,12 +760,12 @@ function NewsSection({ items, t, setCurrentPage }) {
 
       {/* Lightbox */}
       {lightbox && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/85 p-4"
+        <div className="fixed inset-0 flex items-center justify-center bg-black/85 p-4" style={{ zIndex: 1000200 }} role="dialog" aria-modal="true"
           onClick={() => setLightbox(null)}>
           <div className="relative bg-white rounded-2xl overflow-hidden shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col"
             onClick={e => e.stopPropagation()}>
-            <button
-              className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 flex items-center justify-center text-white transition"
+            <button aria-label={t ? t("common.close") : "Close"}
+              className="absolute top-2 right-2 z-10 w-11 h-11 rounded-full bg-black/40 hover:bg-black/60 flex items-center justify-center text-white transition"
               onClick={() => setLightbox(null)}>
               <X className="w-4 h-4"/>
             </button>
@@ -759,7 +776,7 @@ function NewsSection({ items, t, setCurrentPage }) {
             <div className="p-6">
               <h3 className="text-lg font-semibold text-slate-900 mb-1">{lightbox.title}</h3>
               {lightbox.date_label && (
-                <p className="text-xs text-slate-400 mb-3">{t ? t("news.published") : "Published"} {lightbox.date_label}</p>
+                <p className="text-xs text-slate-500 mb-3">{t ? t("news.published") : "Published"} {lightbox.date_label}</p>
               )}
               {lightbox.description && (
                 <p className="text-sm text-slate-600 leading-relaxed">{lightbox.description}</p>
@@ -778,7 +795,7 @@ function GalleryItem({ p, style, onOpen }) {
     <div className="group relative overflow-hidden cursor-pointer bg-slate-900" style={style}
       onClick={() => p.image_url && onOpen(p)}>
       {p.image_url && (
-        <img src={p.image_url} alt=""
+        <img loading="lazy" decoding="async" src={p.image_url} alt=""
           className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"/>
       )}
       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-center justify-center">
@@ -798,7 +815,7 @@ function GallerySection({ items, t, setCurrentPage, titleOverride, subtitleOverr
       <div className="text-center mb-10 px-4">
         <h2 className="font-display font-bold text-slate-900 uppercase mb-3"
           style={{fontSize:"clamp(2rem,5vw,3rem)", letterSpacing:"0.08em"}}>{titleOverride || (t ? t("gallery.title") : "Gallery")}</h2>
-        <p className="text-slate-400 font-light italic text-base mb-6">{subtitleOverride || (t ? t("gallery.subtitle") : "Moments from Muuvlink events")}</p>
+        <p className="text-slate-500 font-light italic text-base mb-6">{subtitleOverride || (t ? t("gallery.subtitle") : "Moments from Muuvlink events")}</p>
       </div>
 
       {total <= 3 ? (
@@ -842,8 +859,8 @@ function GallerySection({ items, t, setCurrentPage, titleOverride, subtitleOverr
       </div>
 
       {lightbox && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90" onClick={() => setLightbox(null)}>
-          <button className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition" onClick={() => setLightbox(null)}>
+        <div className="fixed inset-0 flex items-center justify-center bg-black/90" style={{ zIndex: 1000200 }} role="dialog" aria-modal="true" onClick={() => setLightbox(null)}>
+          <button aria-label={t ? t("common.close") : "Close"} className="absolute top-4 right-4 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition" onClick={() => setLightbox(null)}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
           </button>
           <img src={lightbox.image_url} alt="" className="max-w-[90vw] max-h-[90vh] object-contain rounded-xl shadow-2xl" onClick={e => e.stopPropagation()}/>
@@ -867,7 +884,7 @@ function FieldSwitch({ on, onChange, label, hint }) {
       <div className="min-w-0">
         <button type="button" onClick={() => onChange(!on)}
           className="text-sm text-slate-700 text-left leading-snug">{label}</button>
-        {hint && <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">{hint}</p>}
+        {hint && <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{hint}</p>}
       </div>
     </div>
   );
@@ -1008,7 +1025,8 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
           const uiBadgeBg    = isLightBg ? "rgba(0,0,0,0.07)"   : "rgba(255,255,255,0.06)";
           const uiSecHover   = isLightBg ? "rgba(0,0,0,0.06)"   : "rgba(255,255,255,0.08)";
           return (
-            <div key={banner.id} style={{
+            // Görünmeyen slaytlar ekran okuyucudan gizli (yoksa her slaytın başlığı ayrı h1 okunuyordu).
+            <div key={banner.id} aria-hidden={!isActive} style={{
               position:"absolute", inset:0,
               opacity: isActive ? 1 : 0,
               transform: isActive ? "scale(1)" : "scale(1.015)",
@@ -1073,8 +1091,8 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                               ? {background:"#114956", color:"#fff", borderRadius:"14px", boxShadow:"0 2px 8px rgba(17,73,86,0.18)"}
                               : {background:"#ffffff", color:"#114956", borderRadius:"14px", boxShadow:"0 2px 10px rgba(0,0,0,0.18)"})
                           : {color:uiText, border:`1px solid ${uiBorder}`, background:"transparent"}}
-                        onMouseEnter={e=>{ if(!user) e.currentTarget.style.background=uiSecHover; }}
-                        onMouseLeave={e=>{ if(!user) e.currentTarget.style.background="transparent"; }}
+                        onPointerEnter={e => { if (e.pointerType !== "mouse") return; if(!user) e.currentTarget.style.background=uiSecHover; }}
+                        onPointerLeave={e => { if (e.pointerType !== "mouse") return; if(!user) e.currentTarget.style.background="transparent"; }}
                       >
                         {user && <span className={`absolute inset-0 ${isLightBg ? "bg-white/10" : "bg-brand-600/10"} opacity-0 group-hover:opacity-100 transition-opacity rounded-[14px]`}/>}
                         {(lang === "tr" ? banner?.cta_primary_text : lang === "de" ? banner?.cta_primary_text_de : lang === "en" ? banner?.cta_primary_text_en : null) || t("home.heroCtaSecondary")}
@@ -1130,10 +1148,10 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                     style={{right:"10%", bottom:0, width:"500px", height:"400px", borderRadius:"50%", filter:"blur(80px)", background:"radial-gradient(ellipse,rgba(17,73,86,0.2) 0%,rgba(17,73,86,0.1) 55%,transparent 70%)"}}/>
                   {/* Görsel: right side, bottom:-50px → float sırasında alt kenar görünmez */}
                   <div className="bn-banner-img absolute pointer-events-none"
-                    style={{right:0, top:0, bottom:"-50px", width:"52%", display:"flex", justifyContent:"center", alignItems:"flex-end", animation:"heroFloat 5s ease-in-out infinite"}}>
+                    style={{right:0, top:0, bottom:"-50px", width:"52%", display:"flex", justifyContent:"center", alignItems:"flex-end", animation: isActive ? "heroFloat 5s ease-in-out infinite" : "none"}}>
                     <img
                       src={`${BASE_URL}${banner.image_url}`}
-                      alt=""
+                      alt="" decoding="async" fetchPriority={i === 0 ? "high" : "low"}
                       className="select-none"
                       style={{height:"100%", width:"auto", maxWidth:"none", objectFit:"contain", objectPosition:"bottom center", filter:"drop-shadow(0 8px 32px rgba(0,0,0,0.22))"}}
                     />
@@ -1160,7 +1178,7 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                 width: i === activeIdx ? "32px" : "16px",
                 borderRadius:"2px", border:"none", cursor:"pointer", padding:0,
                 background: i === activeIdx ? navActiveColor : navInactiveColor,
-                transition:"all 0.4s cubic-bezier(0.34,1.56,0.64,1)",
+                transition:"width 300ms cubic-bezier(0.23,1,0.32,1), background-color 300ms ease",
               }}/>
           ))}
         </div>
@@ -1168,7 +1186,6 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
 
       <style>{`
         @keyframes heroFloat { 0%,100%{transform:translateY(0)} 45%{transform:translateY(-14px)} 70%{transform:translateY(-8px)} }
-        @keyframes blink     { 0%,100%{opacity:1} 50%{opacity:0} }
         @media (max-width: 767px) {
           /* Slaytlar absolute (cross-fade) olduğu için sarmalayıcı içerikle büyüyemez:
              yükseklik en uzun banner'a göre SABİT verilir. Sabit olması bilinçli —
@@ -1752,7 +1769,7 @@ async function badgeCardBlob(badge, dateStr, texts) {
     g.addColorStop(0, theme.c1); g.addColorStop(1, theme.c2);
     x.fillStyle = g; roundRectPath(x, bx, by, bw, bh, bw * 0.42); x.fill();
     x.font = "240px Arial"; x.textBaseline = "middle"; x.fillStyle = "#fff";
-    x.fillText(badge.icon || "🏅", W / 2, by + bh * 0.5); x.textBaseline = "alphabetic";
+    x.fillText(badge.icon || "", W / 2, by + bh * 0.5); x.textBaseline = "alphabetic";
   }
 
   // Metinler
@@ -2046,6 +2063,14 @@ const urlSlug = (s) =>
 
 // Detay path'i üret / çözümle:  /takim/<slug>-<id>  ·  /etkinlik/<slug>-<id>
 const teamPath = (team) => `/takim/${urlSlug(team?.name)}-${team?.id}`;
+// Kartlar gerçek <a href>: klavyeyle açılır, "yeni sekmede aç" ve arama motoru bağlantısı
+// çalışır. Düz tıklamada sayfa SPA içinde açılır; uygulamada her zaman SPA (dışarı çıkmaz).
+const openCardLink = (e, open) => {
+  const native = typeof window !== "undefined" && window.Capacitor?.isNativePlatform?.();
+  if (!native && (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1)) return;
+  e.preventDefault();
+  open();
+};
 const trainingPath = (tr) => `/etkinlik/${urlSlug(tr?.title)}-${tr?.id}`;
 const parseDetailPath = (pathname) => {
   let m = pathname.match(/^\/takim\/.*-(\d+)$/);
@@ -2117,6 +2142,12 @@ export default function Muuvlink() {
     return l;
   });
   const t = createT(lang);
+  // Branş adı görenin dilinde; listede olmayan (eski/serbest) değer olduğu gibi kalır.
+  const sportLabel = (sp) => {
+    if (!sp) return "";
+    const v = t(`sports.${sp}`);
+    return v === `sports.${sp}` ? sp : v;
+  };
   // Kullanıcı dili ELLE değiştirdi: arayüz + bu cihaz + (girişliyse) hesap.
   // Hesaptaki dil e-posta/bildirim dilini ve başka cihazdaki açılışı belirler.
   const changeLang = (l) => {
@@ -2297,7 +2328,7 @@ export default function Muuvlink() {
   const renderAvatar = (avatar, name, className = "") => {
     if (avatar?.startsWith("/uploads/") || avatar?.startsWith("http")) {
       const src = avatar.startsWith("http") ? avatar : `${BASE_URL}${avatar}`;
-      return <img src={src} alt="" className={`w-full h-full object-cover ${className}`} />;
+      return <img loading="lazy" decoding="async" src={src} alt="" className={`w-full h-full object-cover ${className}`} />;
     }
     const letter = name?.[0]?.toLocaleUpperCase("en-US") ?? "?";
     return <span className="text-inherit font-bold">{letter}</span>;
@@ -2306,10 +2337,13 @@ export default function Muuvlink() {
   // Oturum az önce düştüyse ardından gelen hata uyarısı ("Invalid token") gösterilmez;
   // giriş penceresi zaten açılıyor.
   const sessionExpiredAtRef = useRef(0);
+  // Zamanlayıcı ref'te: art arda iki uyarıda ilkinin süresi ikinciyi erken kapatmasın.
+  const toastTimerRef = useRef(null);
   const showToast = (message, type = "success") => {
     if (type === "error" && Date.now() - sessionExpiredAtRef.current < 4000) return;
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3500);
+    clearTimeout(toastTimerRef.current);
+    setToast({ message, type, id: Date.now() });
+    toastTimerRef.current = setTimeout(() => setToast(null), 3500);
   };
 
   const showConfirm = (message, onConfirm, { danger = false, alertOnly = false } = {}) => {
@@ -2321,7 +2355,7 @@ export default function Muuvlink() {
     const { message, onConfirm, danger, alertOnly } = confirmModal;
     const close = () => setConfirmModal(null);
     return (
-      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[200]">
+      <div className="fixed inset-0 bg-black/40 flex items-center justify-center" style={{ zIndex: 1000200 }} role="alertdialog" aria-modal="true">
         <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 overflow-hidden">
           <div className="p-6">
             <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-4 ${danger ? "bg-red-50" : "bg-amber-50"}`}>
@@ -2364,7 +2398,8 @@ export default function Muuvlink() {
     const match = typed.trim().toLowerCase() === requiredEmail.toLowerCase() && requiredEmail !== "";
     const close = () => { if (!busy) setShowDeleteModal(false); };
     return (
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[200] p-4" onClick={close}>
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 overflow-y-auto overscroll-contain" style={{ zIndex: 1000200 }} onClick={close}
+        role="dialog" aria-modal="true">
         <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[92dvh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
           <div className="p-6">
             <div className="w-11 h-11 rounded-full bg-red-50 flex items-center justify-center mb-4">
@@ -2496,14 +2531,14 @@ export default function Muuvlink() {
     );
 
     return (
-      <div className="fixed inset-0 z-[100] bg-black/40 flex sm:items-center justify-center"
+      <div className="fixed inset-0 bg-black/40 flex sm:items-center justify-center overscroll-contain" role="dialog" aria-modal="true"
         style={{ zIndex: 1000000 }} onClick={() => setShowNotifPrefs(false)}>
         <div className="bg-white w-full sm:max-w-md sm:rounded-2xl sm:my-8 flex flex-col sm:max-h-[85vh] max-h-full"
           style={isNative ? { paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" } : {}}
           onClick={(e) => e.stopPropagation()}>
           {/* Başlık */}
           <div className="flex items-center gap-3 px-4 py-3.5 border-b border-slate-100 flex-shrink-0">
-            <button onClick={() => setShowNotifPrefs(false)} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 -ml-1">
+            <button onClick={() => setShowNotifPrefs(false)} aria-label={t("common.back")} className="w-11 h-11 flex items-center justify-center rounded-xl hover:bg-slate-100 -ml-2">
               <ArrowLeft className="w-5 h-5 text-slate-600" />
             </button>
             <div className="min-w-0 flex-1">
@@ -2787,8 +2822,8 @@ export default function Muuvlink() {
           </div>
           <div className="text-sm text-slate-700 truncate">
             {session.title}
-            <span className="text-slate-400"> · {fmtDateShort(session.date)}</span>
-            {more > 0 && <span className="text-slate-400"> · {t("ta.more").replace("{n}", more)}</span>}
+            <span className="text-slate-500"> · {fmtDateShort(session.date)}</span>
+            {more > 0 && <span className="text-slate-500"> · {t("ta.more").replace("{n}", more)}</span>}
           </div>
         </div>
         <button type="button" data-btn="solid" onClick={onPublish}
@@ -3261,9 +3296,10 @@ export default function Muuvlink() {
   // ekrandan uygulamadan çıkamıyordu. Bir backButton dinleyicisi kaydedince
   // Capacitor varsayılan davranışı (webview.goBack/çıkış) devre dışı kalır ve
   // geri tuşunu tamamen biz yönetiriz. Ref sayesinde her zaman güncel state okunur.
-  const backNavRef = useRef(() => true);
-  backNavRef.current = () => {
-    // 1) Açık bir modal/katman varsa önce onu kapat (en üsttekinden başla)
+  // En üstteki açık pencereyi kapatır; Android geri tuşu ve masaüstünde Esc ikisi de kullanır.
+  const closeTopOverlayRef = useRef(() => false);
+  closeTopOverlayRef.current = () => {
+    if (storySpec)         { setStorySpec(null);         return true; }
     if (legalModal)        { setLegalModal(null);        return true; }
     if (reportModal)       { setReportModal(null);       return true; }
     if (confirmModal)      { setConfirmModal(null);       return true; }
@@ -3274,6 +3310,21 @@ export default function Muuvlink() {
     if (showNotifPrefs)    { setShowNotifPrefs(false);    return true; }
     if (showNotifications) { setShowNotifications(false); return true; }
     if (isAuthModalOpen)   { setIsAuthModalOpen(false);   return true; }
+    return false;
+  };
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      if (closeTopOverlayRef.current()) e.preventDefault();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const backNavRef = useRef(() => true);
+  backNavRef.current = () => {
+    // 1) Açık bir modal/katman varsa önce onu kapat (en üsttekinden başla)
+    if (closeTopOverlayRef.current()) return true;
 
     // 2) Detay sayfasındaysa ilgili listeye dön
     if (currentPage === "training-detail") { setSelectedTraining(null); setCurrentPage("trainings"); return true; }
@@ -4022,6 +4073,9 @@ export default function Muuvlink() {
     const [hover, setHover] = useState(false);
     const [pop, setPop] = useState(false);
     const [busy, setBusy] = useState(false);
+    // Göz kırpma yalnız beğenme ANINDA: "liked" durumuna bağlıyken sayfa her
+    // yenilendiğinde (bileşen yeniden kurulunca) beğenilmiş tüm gözler tekrar kırpıyordu.
+    const [wink, setWink] = useState(false);
     const wrapRef = useRef(null);
 
     // Mobilde: beğenenler açıkken dışarı dokununca kapat.
@@ -4039,6 +4093,7 @@ export default function Muuvlink() {
       const prev = { liked, count, likers };
       const nextLiked = !liked;
       setLiked(nextLiked);
+      setWink(nextLiked);
       setCount((c) => Math.max(0, c + (nextLiked ? 1 : -1)));
       try {
         const token = localStorage.getItem("token");
@@ -4055,12 +4110,14 @@ export default function Muuvlink() {
     const showPop = (hover || pop) && likers.length > 0;
     return (
       <div ref={wrapRef} className="relative flex items-center gap-0.5 select-none"
-        onMouseEnter={() => setHover(true)} onMouseLeave={() => { setHover(false); setPop(false); }}>
+        // Yalnız fare: dokunuşta sahte mouseenter gelir ama mouseleave gelmez, liste açık kalıyordu.
+        onPointerEnter={(e) => { if (e.pointerType === "mouse") setHover(true); }}
+        onPointerLeave={(e) => { if (e.pointerType === "mouse") { setHover(false); setPop(false); } }}>
         <button type="button" onClick={toggle} disabled={busy}
-          aria-label={liked ? t("messageLike.unlike") : t("messageLike.like")}
-          className="p-1 -m-1 active:scale-90 transition-transform">
-          <svg viewBox={liked ? "0 0 87.6 70.9" : "0 0 87.8 70.4"} width="21" height="17"
-            className={liked ? "msg-like-wink" : ""} fill={liked ? "#ef4444" : "#94a3b8"}>
+          aria-label={liked ? t("messageLike.unlike") : t("messageLike.like")} aria-pressed={liked}
+          className="p-2.5 -m-2.5 active:scale-90 transition-transform">
+          <svg viewBox={liked ? "0 0 87.6 70.9" : "0 0 87.8 70.4"} width="21" height="17" aria-hidden="true"
+            className={wink ? "msg-like-wink" : ""} onAnimationEnd={() => setWink(false)} fill={liked ? "#ef4444" : "#94a3b8"}>
             {(liked ? EYE_ACTIVE : EYE_INACTIVE).map((d, i) => <path key={i} d={d} fillRule="evenodd" />)}
           </svg>
         </button>
@@ -4667,7 +4724,7 @@ export default function Muuvlink() {
               {f.image ? (
                 <>
                   {/* Fotoğraf — cover */}
-                  <img src={f.image} alt={f.sub}
+                  <img loading="lazy" decoding="async" src={f.image} alt={f.sub}
                     className="absolute inset-0 w-full h-full object-cover select-none"
                     style={{opacity:0.88}}/>
                   {/* Alt gradient overlay */}
@@ -4753,9 +4810,10 @@ export default function Muuvlink() {
   const subtitleName = isOrg ? training.organizer : (training.team_name || training.creator_display);
 
   return (
-    <div
-      onClick={() => onClick(training.id)}
-      className="group flex items-stretch gap-0 bg-white border-b border-dashed border-slate-100 cursor-pointer transition-all duration-200 py-6 px-2 hover:bg-slate-50/80 hover:border-slate-200 active:scale-[0.99]"
+    <a
+      href={trainingPath(training)}
+      onClick={(e) => openCardLink(e, () => onClick(training.id))}
+      className="group flex items-stretch gap-0 bg-white border-b border-dashed border-slate-100 cursor-pointer transition-colors duration-150 py-6 px-2 hover:bg-slate-50/80 hover:border-slate-200 active:bg-slate-50 no-underline text-inherit"
     >
       {/* Sol: Takvim ikonu (üst şerit rengi paletten rastgele) */}
       <div className="flex items-center justify-center w-20 flex-shrink-0 pr-5">
@@ -4782,7 +4840,10 @@ export default function Muuvlink() {
 
       {/* Sağ: İçerik */}
       <div className="flex-1 pl-5 flex flex-col justify-center gap-1 min-w-0">
-        <div className="flex items-center gap-2 min-w-0">
+        {/* Rozetler kendi satırında: başlıkla aynı satırdayken telefonda başlık
+            "Ölüdeniz Op…" diye kesiliyordu. */}
+        {(isOrg || training.registration_url) && (
+        <div className="flex flex-wrap items-center gap-1.5">
           {isOrg && (
             <span className={`flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold ${isPaid ? "bg-pop-400 text-ink-900" : "bg-brand-100 text-brand-700"}`}>
               <Ticket className="w-3 h-3"/> {t(isPaid ? "trainings.paidBadge" : "trainings.freeBadge")}
@@ -4797,12 +4858,13 @@ export default function Muuvlink() {
               <ExternalLink className="w-3 h-3"/> {t("trainingDetail.extRegBadge")}
             </span>
           )}
-          <h3 className="font-display font-bold text-slate-900 group-hover:text-brand-700 transition-colors line-clamp-1 leading-snug"
-            style={{fontSize:"1.05rem", letterSpacing:"-0.01em"}}>
-            {training.title}
-          </h3>
         </div>
-        <p className="text-sm text-slate-400 italic">
+        )}
+        <h3 className="font-display font-bold text-slate-900 group-hover:text-brand-700 transition-colors line-clamp-2 leading-snug [overflow-wrap:anywhere]"
+          style={{fontSize:"1.05rem", letterSpacing:"-0.01em"}}>
+          {training.title}
+        </h3>
+        <p className="text-sm text-slate-500 italic line-clamp-2">
           {training.training_time && <span>{String(training.training_time).slice(0, 5)}</span>}
           {training.training_time && (subtitleName || training.location_name) && <span className="mx-2">·</span>}
           {subtitleName && <span className="not-italic font-medium text-brand-700">{subtitleName}</span>}
@@ -4820,41 +4882,42 @@ export default function Muuvlink() {
       {/* Organizatör etkinliğinin görseli (varsa) */}
       {isOrg && training.image_url && (
         <div className="hidden sm:block flex-shrink-0 self-center ml-3">
-          <img src={training.image_url} alt="" className="w-16 h-16 rounded-xl object-cover border border-slate-100"/>
+          <img src={training.image_url} alt="" loading="lazy" decoding="async" className="w-16 h-16 rounded-xl object-cover border border-slate-100"/>
         </div>
       )}
 
       {/* Sağ ok */}
       <div className="flex items-center pl-4 flex-shrink-0">
-        <svg className="w-4 h-4 text-slate-300 group-hover:text-brand-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-4 h-4 text-slate-300 group-hover:text-brand-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/>
         </svg>
       </div>
-    </div>
+    </a>
   );
 };
 
   const TeamCard = ({ team, onClick }) => (
-    <div
-      onClick={() => onClick(team.id)}
-      className="group bg-white rounded-2xl border border-slate-100 hover:border-brand-200 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 cursor-pointer overflow-hidden"
+    <a
+      href={teamPath(team)}
+      onClick={(e) => openCardLink(e, () => onClick(team.id))}
+      className="group block bg-white rounded-2xl border border-slate-100 hover:border-brand-200 hover:shadow-xl hover:-translate-y-0.5 active:bg-slate-50 transition-[transform,box-shadow,border-color] duration-200 ease-out cursor-pointer overflow-hidden no-underline text-inherit"
     >
-      {/* Dekoratif üst şerit */}
-      <div className="h-1.5 w-full" style={{background:"linear-gradient(90deg,#00a499,#643e87)"}}/>
+      {/* Üst şerit — düz Ana1 (kurumsal: degrade yok) */}
+      <div className="h-1.5 w-full bg-logo-teal"/>
       <div className="p-5">
         <div className="flex items-start justify-between mb-3 gap-2">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-12 h-12 rounded-xl overflow-hidden flex items-center justify-center text-white text-lg font-bold flex-shrink-0"
               style={{background:"#114956"}}>
               {(team.avatar?.startsWith("/uploads/") || team.avatar?.startsWith("http"))
-                ? <img src={team.avatar.startsWith("http") ? team.avatar : `${BASE_URL}${team.avatar}`} alt="" className="w-full h-full object-cover" />
+                ? <img src={team.avatar.startsWith("http") ? team.avatar : `${BASE_URL}${team.avatar}`} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                 : (team.name?.[0]?.toLocaleUpperCase("en-US") || "T")}
             </div>
             <div className="min-w-0">
               <h3 className="font-medium text-slate-900 truncate group-hover:text-brand-700 transition-colors">{team.name}</h3>
               <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
-                <span className="px-2 py-0.5 bg-brand-50 text-brand-600 rounded-md text-xs font-semibold flex-shrink-0 whitespace-nowrap">{team.sport}</span>
-                {team.location && <span className="text-slate-400 text-xs flex items-center gap-1 min-w-0"><MapPin className="w-3 h-3 flex-shrink-0"/><span className="truncate">{team.location}</span></span>}
+                <span className="px-2 py-0.5 bg-brand-50 text-brand-600 rounded-md text-xs font-semibold flex-shrink-0 whitespace-nowrap">{sportLabel(team.sport)}</span>
+                {team.location && <span className="text-slate-500 text-xs flex items-center gap-1 min-w-0"><MapPin className="w-3 h-3 flex-shrink-0"/><span className="truncate">{team.location}</span></span>}
               </div>
             </div>
           </div>
@@ -4877,7 +4940,7 @@ export default function Muuvlink() {
           </div>
           {team.my_role && (
             user?.is_admin ? (
-              <span className="px-2.5 py-1 text-xs font-medium rounded-lg inline-flex items-center gap-1" style={{ background: '#F3E8FF', color: '#7E22CE' }}>
+              <span className="px-2.5 py-1 text-xs font-medium rounded-lg inline-flex items-center gap-1 bg-accent-50 text-accent-700">
                 <ShieldCheck className="w-3 h-3"/>{t("teamDetail.roles.admin")}
               </span>
             ) : (
@@ -4891,7 +4954,7 @@ export default function Muuvlink() {
           )}
         </div>
       </div>
-    </div>
+    </a>
   );
 
   const [sharingBadge, setSharingBadge] = useState(null);
@@ -4935,8 +4998,8 @@ export default function Muuvlink() {
           style={earned ? {filter:"drop-shadow(0 10px 18px rgba(15,42,50,0.18))"} : {}}
           dangerouslySetInnerHTML={{ __html: svg }}/>
 
-        <h3 className={`font-bold text-sm mb-1 ${earned ? "text-slate-800" : "text-slate-400"}`}>{badge.name}</h3>
-        <p className={`text-xs leading-relaxed mb-3 ${earned ? "text-slate-500" : "text-slate-400"}`}>{badge.description}</p>
+        <h3 className={`font-bold text-sm mb-1 ${earned ? "text-slate-800" : "text-slate-500"}`}>{badge.name}</h3>
+        <p className={`text-xs leading-relaxed mb-3 ${earned ? "text-slate-500" : "text-slate-500"}`}>{badge.description}</p>
 
         {/* Kazanıldı: tarih + paylaş */}
         {earned && (
@@ -4964,15 +5027,15 @@ export default function Muuvlink() {
             {showProgress ? (
               <>
                 <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                  <div className="h-full rounded-full transition-all duration-700"
-                    style={{width:`${pct}%`, background:`linear-gradient(90deg,${badgeTheme(badge.name).c1},${badgeTheme(badge.name).c2})`}}/>
+                  <div className="h-full rounded-full"
+                    style={{width:`${pct}%`, background:badgeTheme(badge.name).c1}}/>
                 </div>
-                <div className="mt-1.5 text-[10px] font-semibold text-slate-400 tabular-nums">
+                <div className="mt-1.5 text-[10px] font-semibold text-slate-500 tabular-nums">
                   {done}/{badge.requirement_value}
                 </div>
               </>
             ) : (
-              <div className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-300 uppercase tracking-wider">
+              <div className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 uppercase tracking-wider">
                 <Lock className="w-2.5 h-2.5"/> {t("badges.notEarned")}
               </div>
             )}
@@ -5079,7 +5142,7 @@ export default function Muuvlink() {
                     background: i === bannerIdx
                       ? (isLightBg ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.9)")
                       : (isLightBg ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.35)"),
-                    transition:"all 0.3s", border:"none", padding:0, cursor:"pointer"
+                    transition:"width 250ms cubic-bezier(0.23,1,0.32,1), background-color 250ms ease", border:"none", padding:0, cursor:"pointer"
                   }}/>
               ))}
             </div>
@@ -5240,8 +5303,8 @@ export default function Muuvlink() {
                     style={nearbyDistance === km
                       ? {background:"#114956", color:"#fff", boxShadow:"0 2px 8px rgba(17,73,86,0.18)"}
                       : {background:"#e6f7f5", color:"#0b2f38", border:"1px solid #c2ede9", boxShadow:"0 2px 8px rgba(17,73,86,0.0)"}}
-                    onMouseEnter={e => { if(nearbyDistance !== km) e.currentTarget.style.boxShadow="0 4px 16px rgba(17,73,86,0.25)"; }}
-                    onMouseLeave={e => { if(nearbyDistance !== km) e.currentTarget.style.boxShadow="0 2px 8px rgba(17,73,86,0.0)"; }}
+                    onPointerEnter={e => { if (e.pointerType !== "mouse") return; if(nearbyDistance !== km) e.currentTarget.style.boxShadow="0 4px 16px rgba(17,73,86,0.25)"; }}
+                    onPointerLeave={e => { if (e.pointerType !== "mouse") return; if(nearbyDistance !== km) e.currentTarget.style.boxShadow="0 2px 8px rgba(17,73,86,0.0)"; }}
                   >
                     {km} km
                   </button>
@@ -5309,7 +5372,7 @@ export default function Muuvlink() {
                 <div className="text-center py-16 bg-slate-50 rounded-2xl border border-dashed border-slate-200 mt-6">
                   <Activity className="w-10 h-10 text-slate-200 mx-auto mb-3" />
                   <p className="text-slate-500 font-medium mb-1">{t("home.noTrainingsFound")}</p>
-                  <p className="text-slate-400 text-sm mb-4">{t("home.checkingServer")}</p>
+                  <p className="text-slate-500 text-sm mb-4">{t("home.checkingServer")}</p>
                   <button onClick={fetchTrainings} className="px-5 py-2.5 rounded-xl text-sm font-medium text-brand-700 bg-brand-100 hover:bg-brand-200 transition-colors">
                     {t("common.retry")}
                   </button>
@@ -5388,7 +5451,7 @@ export default function Muuvlink() {
   const ProfilePage = () => {
     if (!user) {
       return (
-        <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center px-6 text-center gap-5">
+        <div className="min-h-screen min-h-svh bg-slate-50 flex flex-col items-center justify-center px-6 text-center gap-5">
           <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-white"
             style={{background:"#114956"}}>
             <User className="w-7 h-7"/>
@@ -5412,7 +5475,7 @@ export default function Muuvlink() {
       );
     }
     return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen min-h-svh bg-slate-50">
       {/* ── Profile hero header ── */}
       <div className="relative overflow-hidden" style={{background:"#e6f7f5"}}>
         <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
@@ -5438,7 +5501,7 @@ export default function Muuvlink() {
               </div>
               <div>
                 <h1 className="font-display font-bold text-brand-900" style={{fontSize:"2rem", letterSpacing:"-0.01em"}}>{user?.name}</h1>
-                <p className="text-slate-400 text-sm mt-0.5">{user?.email}</p>
+                <p className="text-slate-500 text-sm mt-0.5">{user?.email}</p>
               </div>
             </div>
             <div className="flex items-center gap-2.5">
@@ -5491,9 +5554,9 @@ export default function Muuvlink() {
               {val: myTeams.length,                  label: t("home.statTeams"),     accent:"#00a499"},
               {val: userBadges.length,               label: t("home.statBadges"),    accent:"#643e87"},
             ].map((s, i) => (
-              <div key={i} className="px-5 py-4 rounded-2xl bg-white border border-brand-100">
-                <div className="text-3xl font-bold leading-none" style={{color:s.accent}}>{s.val}</div>
-                <div className="text-[10px] text-slate-500 mt-2 uppercase tracking-widest font-bold">{s.label}</div>
+              <div key={i} className="px-3 sm:px-5 py-4 rounded-2xl bg-white border border-brand-100 min-w-0">
+                <div className="text-2xl sm:text-3xl font-bold leading-none tabular-nums" style={{color:s.accent}}>{s.val}</div>
+                <div className="text-[10px] text-slate-500 mt-2 uppercase tracking-wide font-bold [overflow-wrap:anywhere]">{s.label}</div>
               </div>
             ))}
           </div>
@@ -5506,7 +5569,7 @@ export default function Muuvlink() {
 
           {/* Left: Quick actions */}
           <div className="space-y-3 min-w-0">
-            <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase mb-4">{t("home.quickAccess")}</div>
+            <div className="text-xs font-semibold tracking-[0.25em] text-slate-500 uppercase mb-4">{t("home.quickAccess")}</div>
             {[
               {label: t("createTraining.pageTitle"), icon:Plus,   page:"create-training", tone:"solid"},
               {label: t("teams.create"),             icon:Users,  page:"create-team",     tone:"solid"},
@@ -5529,11 +5592,11 @@ export default function Muuvlink() {
             <div className="bg-white rounded-2xl p-6 border border-slate-100 overflow-hidden min-w-0">
               {/* Başlık + özet */}
               <div className="flex items-center justify-between mb-4">
-                <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase">{t("home.weeklyActivity")}</div>
+                <div className="text-xs font-semibold tracking-[0.25em] text-slate-500 uppercase">{t("home.weeklyActivity")}</div>
                 <div className="flex items-center gap-3">
                   {activityMeta.streak > 1 && (
                     <span className="flex items-center gap-1 text-xs font-semibold text-orange-500 bg-orange-50 px-2.5 py-1 rounded-full">
-                      🔥 {activityMeta.streak} {t("activity.streakDays")}
+                      <Flame className="w-3.5 h-3.5" aria-hidden="true"/> {activityMeta.streak} {t("activity.streakDays")}
                     </span>
                   )}
                 </div>
@@ -5550,7 +5613,7 @@ export default function Muuvlink() {
               <div className="bg-white rounded-2xl p-6 border border-slate-100">
                 <div className="flex items-center gap-2 mb-4">
                   <div className="w-2 h-2 rounded-full bg-brand-500" />
-                  <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase">{t("home.joinedTrainingsList")}</div>
+                  <div className="text-xs font-semibold tracking-[0.25em] text-slate-500 uppercase">{t("home.joinedTrainingsList")}</div>
                   <span className="ml-auto text-xs font-semibold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-full">{joinedTrainings.length}</span>
                 </div>
                 <div className="space-y-2">
@@ -5559,7 +5622,7 @@ export default function Muuvlink() {
                       className="w-full flex items-center justify-between px-4 py-3 rounded-xl hover:bg-brand-50/50 transition-colors text-left border border-transparent hover:border-brand-100">
                       <div className="min-w-0">
                         <div className="font-medium text-slate-800 text-sm truncate">{t.title}</div>
-                        <div className="text-xs text-slate-400 mt-0.5 flex items-center gap-2">
+                        <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-2">
                           <MapPin className="w-3 h-3 flex-shrink-0"/> <span className="truncate">{t.location_name}</span>
                           <span>·</span>
                           <Calendar className="w-3 h-3 flex-shrink-0"/> {fmtDateMed(t.training_date)}
@@ -5581,18 +5644,18 @@ export default function Muuvlink() {
             {myTeamTrainings.length > 0 && (
               <div className="bg-white rounded-2xl p-6 border border-slate-100">
                 <div className="flex items-center gap-2 mb-4">
-                  <div className="w-2 h-2 rounded-full bg-blue-400" />
-                  <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase">{t("home.teamTrainingsList")}</div>
-                  <span className="ml-auto text-xs font-semibold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">{myTeamTrainings.length}</span>
+                  <div className="w-2 h-2 rounded-full bg-logo-teal" />
+                  <div className="text-xs font-semibold tracking-[0.25em] text-slate-500 uppercase">{t("home.teamTrainingsList")}</div>
+                  <span className="ml-auto text-xs font-semibold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-full">{myTeamTrainings.length}</span>
                 </div>
                 <div className="space-y-2">
                   {myTeamTrainings.slice(0, 5).map((t) => (
                     <button key={t.id} onClick={() => fetchTrainingDetails(t.id)}
-                      className="w-full flex items-center justify-between px-4 py-3 rounded-xl hover:bg-blue-50/50 transition-colors text-left border border-transparent hover:border-blue-100">
+                      className="w-full flex items-center justify-between px-4 py-3 rounded-xl hover:bg-brand-50/50 transition-colors text-left border border-transparent hover:border-brand-100">
                       <div className="min-w-0">
                         <div className="font-medium text-slate-800 text-sm truncate">{t.title}</div>
-                        <div className="text-xs text-slate-400 mt-0.5 flex items-center gap-2">
-                          <span className="truncate font-medium text-blue-400">{t.team_name}</span>
+                        <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-2">
+                          <span className="truncate font-medium text-brand-600">{t.team_name}</span>
                           <span>·</span>
                           <Calendar className="w-3 h-3 flex-shrink-0"/> {fmtDateMed(t.training_date)}
                         </div>
@@ -5607,7 +5670,7 @@ export default function Muuvlink() {
             {/* My Teams */}
             {myTeams.length > 0 && (
               <div className="bg-white rounded-2xl p-6 border border-slate-100">
-                <div className="text-xs font-semibold tracking-[0.25em] text-slate-400 uppercase mb-4">{t("profile.myTeams")}</div>
+                <div className="text-xs font-semibold tracking-[0.25em] text-slate-500 uppercase mb-4">{t("profile.myTeams")}</div>
                 <div className="grid sm:grid-cols-2 gap-3">
                   {myTeams.map((team) => (
                     <button key={team.id} onClick={() => fetchTeamDetails(team.id)}
@@ -5615,12 +5678,12 @@ export default function Muuvlink() {
                       <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center text-white text-base font-bold flex-shrink-0"
                         style={{background:"#114956"}}>
                         {(team.avatar?.startsWith("/uploads/") || team.avatar?.startsWith("http"))
-                          ? <img src={team.avatar.startsWith("http") ? team.avatar : `${BASE_URL}${team.avatar}`} alt="" className="w-full h-full object-cover" />
+                          ? <img loading="lazy" decoding="async" src={team.avatar.startsWith("http") ? team.avatar : `${BASE_URL}${team.avatar}`} alt="" className="w-full h-full object-cover" />
                           : (team.name?.[0]?.toLocaleUpperCase("en-US") || "T")}
                       </div>
                       <div className="min-w-0">
                         <div className="font-medium text-slate-800 text-sm truncate">{team.name}</div>
-                        <div className="text-xs text-slate-400">{team.sport} · {team.member_count} {t("teams.members")}</div>
+                        <div className="text-xs text-slate-500">{sportLabel(team.sport)} · {team.member_count} {t("teams.members")}</div>
                       </div>
                     </button>
                   ))}
@@ -5671,7 +5734,7 @@ export default function Muuvlink() {
                 className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm transition-all border border-slate-200 text-slate-700 hover:bg-slate-50">
                 <LogOut className="w-4 h-4"/> {t("nav.logout")}
               </button>
-              <p className="mt-2 text-center text-xs text-slate-400">{t("settings.logoutHint")}</p>
+              <p className="mt-2 text-center text-xs text-slate-500">{t("settings.logoutHint")}</p>
             </div>
 
             {/* Hesabı silme — ayrıştırılmış bölüm (soft-delete: 30 gün geri alınabilir) */}
@@ -5744,7 +5807,7 @@ export default function Muuvlink() {
                  t("trainings.gpsHintOther")}
               </p>
             </div>
-            <button onClick={() => setShowManualLocation(false)} className="text-gray-400 hover:text-gray-600 flex-shrink-0">
+            <button onClick={() => setShowManualLocation(false)} aria-label={t("common.close")} className="w-11 h-11 -m-3 flex items-center justify-center text-gray-500 hover:text-gray-700 flex-shrink-0">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -5754,9 +5817,9 @@ export default function Muuvlink() {
             {gpsErrorCode === 1 ? (
               <><Lock className="w-3.5 h-3.5 inline mr-1 -mt-0.5"/><span className="font-medium">{t("trainings.gpsHowToEnable")}</span><br/>{t("trainings.gpsEnableHint")}</>
             ) : gpsErrorCode === 3 ? (
-              <>⏱ <span className="font-medium">{t("trainings.gpsTimeout")}.</span> {t("trainings.gpsTimeoutHint")}</>
+              <><Timer className="w-3.5 h-3.5 inline mr-1 -mt-0.5" aria-hidden="true"/><span className="font-medium">{t("trainings.gpsTimeout")}.</span> {t("trainings.gpsTimeoutHint")}</>
             ) : (
-              <>📡 <span className="font-medium">{t("trainings.gpsNotWorking")}.</span> {t("trainings.gpsNotWorkingHint")}</>
+              <><SatelliteDish className="w-3.5 h-3.5 inline mr-1 -mt-0.5" aria-hidden="true"/><span className="font-medium">{t("trainings.gpsNotWorking")}.</span> {t("trainings.gpsNotWorkingHint")}</>
             )}
           </div>
 
@@ -5765,7 +5828,7 @@ export default function Muuvlink() {
             <button
               onClick={() => handleNearbySearch()}
               disabled={locationLoading}
-              className="w-full py-2.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white text-sm font-semibold rounded-xl flex items-center justify-center gap-2 transition-colors"
+              data-btn="solid" className="w-full py-2.5 bg-brand-600 disabled:opacity-60 text-white text-sm font-semibold rounded-xl flex items-center justify-center gap-2 transition-colors"
             >
               {locationLoading ? (
                 <><Loader2 className="w-4 h-4 animate-spin" /> {t("trainings.gettingLocation")}</>
@@ -5794,7 +5857,7 @@ export default function Muuvlink() {
                 className="flex-1 px-4 py-2.5 border border-orange-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white"
               />
               <button
-                onClick={search}
+                onClick={search} aria-label={t("common.search")}
                 disabled={searching}
                 className="px-4 py-2.5 bg-orange-100 text-orange-600 border border-orange-300 rounded-xl hover:bg-orange-200 disabled:opacity-60 flex items-center gap-1"
               >
@@ -5867,7 +5930,7 @@ export default function Muuvlink() {
     };
 
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen min-h-svh bg-slate-50">
         {/* ── Dark athletic page header ── */}
         <div className="relative overflow-hidden" style={{background:"#e6f7f5"}}>
           <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
@@ -5879,7 +5942,7 @@ export default function Muuvlink() {
               <div>
                 <span className="text-xs font-semibold tracking-[0.35em] text-brand-800 uppercase block mb-2">{t("home.heroCta")}</span>
                 <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-brand-900 tracking-tighter leading-none">{t("trainings.pageTitle")}</h1>
-                <p className="text-slate-400 mt-2 text-sm sm:text-base">{t("trainings.pageSubtitle")}</p>
+                <p className="text-slate-600 mt-2 text-sm sm:text-base">{t("trainings.pageSubtitle")}</p>
               </div>
               {user && (
                 <button data-btn="solid"
@@ -5898,7 +5961,7 @@ export default function Muuvlink() {
         </div>
 
         {/* ── Filter bar ── */}
-        <div className="bg-white border-b border-slate-100 sticky top-[68px] z-40 shadow-sm">
+        <div className="bg-white border-b border-slate-100 sticky z-40 shadow-sm" style={{ top: isNative ? "env(safe-area-inset-top)" : "calc(68px + env(safe-area-inset-top, 0px))" }}>
           <div className="max-w-7xl mx-auto px-4 sm:px-8 py-3 space-y-2">
 
             {/* Satır 1: Arama (full-width) + tek view toggle butonu */}
@@ -5950,6 +6013,7 @@ export default function Muuvlink() {
               </select>
               {(searchQuery || sportFilter || levelFilter) && (
                 <button onClick={() => { setSearchQuery(""); setSportFilter(""); setLevelFilter(""); }}
+                  aria-label={t("trainings.clearFilters")} title={t("trainings.clearFilters")}
                   className="flex-shrink-0 flex items-center justify-center w-10 h-10 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-slate-400 hover:text-slate-600 shadow-sm transition-colors">
                   <X className="w-4 h-4"/>
                 </button>
@@ -5978,7 +6042,7 @@ export default function Muuvlink() {
               </button>
               {nearbyMode && userLocation && !nearbyLoading && (
                 <span className="ml-auto text-xs font-semibold text-brand-600 flex items-center gap-1">
-                  <MapPin className="w-3 h-3"/> {nearbyTrainings.length} sonuç
+                  <MapPin className="w-3 h-3"/> {t("trainings.nearbyResults").replace("{n}", nearbyTrainings.length)}
                 </span>
               )}
             </div>
@@ -6056,7 +6120,7 @@ export default function Muuvlink() {
             // Yükseklik korunmazsa sayfa kısalıyor ve tarayıcı kullanıcıyı en üste atıyor.
             <div className="flex flex-col items-center justify-center py-32 gap-5 min-h-[70vh]">
               <div className="w-14 h-14 border-4 border-brand-100 rounded-full" style={{borderTopColor:"#114956", animation:"spin 0.8s linear infinite"}}/>
-              <p className="text-slate-500 font-semibold">{nearbyDistance} km içinde aranıyor…</p>
+              <p className="text-slate-500 font-semibold">{t("trainings.nearbySearching").replace("{n}", nearbyDistance)}</p>
             </div>
           ) : displayedTrainings.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -6073,7 +6137,7 @@ export default function Muuvlink() {
                     <MapPin className="w-9 h-9" style={{color:"rgba(17,73,86,0.4)"}}/>
                   </div>
                   <p className="text-slate-800 font-semibold text-xl mb-2">{t("trainings.noNearby").replace("{n}", nearbyDistance)}</p>
-                  <p className="text-slate-400 text-sm mb-7 max-w-sm mx-auto">{t("trainings.nearbyGpsNote")}</p>
+                  <p className="text-slate-500 text-sm mb-7 max-w-sm mx-auto">{t("trainings.nearbyGpsNote")}</p>
                   <div className="flex flex-wrap justify-center gap-3">
                     {[10,25,50].filter(k => k > nearbyDistance).map(k => (
                       <button key={k} onClick={() => handleDistanceChange(k)}
@@ -6090,7 +6154,7 @@ export default function Muuvlink() {
                     <Activity className="w-9 h-9" style={{color:"rgba(17,73,86,0.4)"}}/>
                   </div>
                   <p className="text-slate-800 font-semibold text-xl mb-2">{t("trainings.noTrainings")}</p>
-                  <p className="text-slate-400 text-sm mb-7 max-w-xs mx-auto">{t("trainings.noTrainingsHint")}</p>
+                  <p className="text-slate-500 text-sm mb-7 max-w-xs mx-auto">{t("trainings.noTrainingsHint")}</p>
                   {user && (
                     <button data-btn="solid" onClick={() => setCurrentPage("create-training")}
                       className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-medium text-white text-sm transition-all hover:opacity-90 hover:shadow-lg"
@@ -6120,7 +6184,7 @@ export default function Muuvlink() {
     });
 
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen min-h-svh bg-slate-50">
         {/* ── Dark athletic page header ── */}
         <div className="relative overflow-hidden" style={{background:"#e6f7f5"}}>
           <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
@@ -6132,7 +6196,7 @@ export default function Muuvlink() {
               <div>
                 <span className="text-xs font-semibold tracking-[0.35em] text-brand-600 uppercase block mb-3">{t("teams.community")}</span>
                 <h1 className="text-5xl md:text-6xl font-semibold text-brand-900 tracking-tighter leading-none">{t("teams.pageTitle")}</h1>
-                <p className="text-slate-400 mt-3 text-base">{t("teams.pageSubtitle")}</p>
+                <p className="text-slate-600 mt-3 text-base">{t("teams.pageSubtitle")}</p>
               </div>
               {user && (
                 <button data-btn="solid"
@@ -6149,7 +6213,7 @@ export default function Muuvlink() {
         </div>
 
         {/* ── Filter bar ── */}
-        <div className="bg-white border-b border-slate-100 sticky top-[68px] z-40">
+        <div className="bg-white border-b border-slate-100 sticky z-40" style={{ top: isNative ? "env(safe-area-inset-top)" : "calc(68px + env(safe-area-inset-top, 0px))" }}>
           <div className="max-w-7xl mx-auto px-4 sm:px-8 py-3">
             <div className="flex flex-wrap gap-2.5 items-center">
               <div className="flex-1 min-w-48 relative">
@@ -6169,7 +6233,7 @@ export default function Muuvlink() {
                   <X className="w-3.5 h-3.5"/> {t("trainings.clearFilters")}
                 </button>
               )}
-              <span className="ml-auto text-xs text-slate-400 font-semibold">{filteredTeams.length} {t("teams.teamsCount")}</span>
+              <span className="ml-auto text-xs text-slate-500 font-semibold">{filteredTeams.length} {t("teams.teamsCount")}</span>
             </div>
           </div>
         </div>
@@ -6193,7 +6257,7 @@ export default function Muuvlink() {
               <p className="text-slate-800 font-semibold text-xl mb-2">
                 {teamSearch || teamSport ? t("common.noResults") : t("teams.noTeams")}
               </p>
-              <p className="text-slate-400 text-sm mb-7 max-w-xs mx-auto">
+              <p className="text-slate-500 text-sm mb-7 max-w-xs mx-auto">
                 {teamSearch || teamSport ? t("teams.noResultsHint") : t("teams.noTeamsHint")}
               </p>
               {teamSearch || teamSport ? (
@@ -6232,7 +6296,7 @@ export default function Muuvlink() {
     const pctAll = badges.length > 0 ? Math.round((earnedList.length / badges.length) * 100) : 0;
 
     return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen min-h-svh bg-slate-50">
       {/* ── Light green header ── */}
       <div className="relative overflow-hidden" style={{background:"#e6f7f5"}}>
         <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
@@ -6243,8 +6307,8 @@ export default function Muuvlink() {
           <button data-hover="own" onClick={() => setCurrentPage("profile")}
             className="flex items-center gap-2 text-sm font-semibold mb-6 transition-colors"
             style={{color:"#0e3c47"}}
-            onMouseEnter={e=>e.currentTarget.style.color="#0b2f38"}
-            onMouseLeave={e=>e.currentTarget.style.color="#0e3c47"}>
+            onPointerEnter={e => { if (e.pointerType !== "mouse") return; e.currentTarget.style.color="#0b2f38" }}
+            onPointerLeave={e => { if (e.pointerType !== "mouse") return; e.currentTarget.style.color="#0e3c47" }}>
             <ArrowLeft className="w-4 h-4"/> {t("common.back")}
           </button>
           <div className="flex items-end justify-between gap-6">
@@ -6294,10 +6358,10 @@ export default function Muuvlink() {
               {nextBadge.requirement_type === "training_count" && nextBadge.requirement_value > 0 && (
                 <div className="max-w-sm">
                   <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                    <div className="h-full rounded-full transition-all duration-700"
-                      style={{width:`${Math.min(100, Math.round((done/nextBadge.requirement_value)*100))}%`, background:`linear-gradient(90deg,${badgeTheme(nextBadge.name).c1},${badgeTheme(nextBadge.name).c2})`}}/>
+                    <div className="h-full rounded-full"
+                      style={{width:`${Math.min(100, Math.round((done/nextBadge.requirement_value)*100))}%`, background:badgeTheme(nextBadge.name).c1}}/>
                   </div>
-                  <div className="mt-1.5 text-xs font-semibold text-slate-400 tabular-nums">{done}/{nextBadge.requirement_value}</div>
+                  <div className="mt-1.5 text-xs font-semibold text-slate-500 tabular-nums">{done}/{nextBadge.requirement_value}</div>
                 </div>
               )}
             </div>
@@ -6321,8 +6385,8 @@ export default function Muuvlink() {
         {lockedList.length > 0 && (
           <section>
             <div className="flex items-center gap-2 mb-4">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">{t("badges.lockedSection")}</h2>
-              <span className="text-xs font-semibold text-slate-400 bg-slate-100 rounded-full px-2 py-0.5">{lockedList.length}</span>
+              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500">{t("badges.lockedSection")}</h2>
+              <span className="text-xs font-semibold text-slate-500 bg-slate-100 rounded-full px-2 py-0.5">{lockedList.length}</span>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {lockedList.map((badge) => <BadgeCard key={badge.id} badge={badge} earned={false}/>)}
@@ -6443,9 +6507,11 @@ export default function Muuvlink() {
                   <Ticket className="w-3.5 h-3.5"/> {t(isPaid ? "trainings.paidBadge" : "trainings.freeBadge")}
                 </span>
               )}
+              {(selectedTraining.sport || selectedTraining.team_sport) && (
               <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-white/10 ring-1 ring-white/15 text-white">
-                {selectedTraining.sport || selectedTraining.team_sport || "Genel"}
+                {sportLabel(selectedTraining.sport || selectedTraining.team_sport)}
               </span>
+              )}
               {!isOrg && (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/10 ring-1 ring-white/15 text-slate-200">
                   <span className="text-slate-400"><LevelIcon lv={TRAINING_LEVELS.find((l) => l.val === selectedTraining.difficulty) || { bars: 0 }} size={13} /></span>
@@ -6455,7 +6521,7 @@ export default function Muuvlink() {
             </div>
 
             {/* 2) Başlık */}
-            <h1 className="font-display font-bold mt-3 text-white" style={{fontSize:"clamp(1.6rem,4vw,2.4rem)", letterSpacing:"-0.01em", lineHeight:1.15}}>{selectedTraining.title}</h1>
+            <h1 className="font-display font-bold mt-3 text-white [overflow-wrap:anywhere]" style={{fontSize:"clamp(1.6rem,4vw,2.4rem)", letterSpacing:"-0.01em", lineHeight:1.15}}>{selectedTraining.title}</h1>
 
             {/* 3) Aksiyonlar — ince çizgiyle ayrılmış kendi şeridinde; şikayet sessiz ikon.
                    Tarihi geçmiş etkinlikte paylaş/linki kopyala da kapanır: link
@@ -6513,7 +6579,7 @@ export default function Muuvlink() {
             )}
             {/* Mobilde hover ipucu yok — nedeni tek satır olarak burada duruyor. */}
             {!isPast && (
-            <p className="sm:hidden mt-2.5 flex items-start gap-1.5 text-xs leading-snug text-slate-400">
+            <p className="sm:hidden mt-2.5 flex items-start gap-1.5 text-xs leading-snug text-slate-500">
               <Share2 className="w-3.5 h-3.5 mt-px flex-shrink-0" />
               <span>{t("tips.shareTrainingMobile")}</span>
             </p>
@@ -6525,7 +6591,7 @@ export default function Muuvlink() {
             <div className="flex flex-wrap gap-2 mb-6">
               <button
                 onClick={() => setEditMode(!editMode)}
-                className="px-4 py-2 bg-blue-100 text-blue-600 rounded-xl font-semibold hover:bg-blue-200 flex items-center gap-2"
+                className="px-4 py-2 bg-brand-50 text-brand-700 rounded-xl font-semibold hover:bg-brand-100 flex items-center gap-2"
               >
                 <Edit className="w-4 h-4" />
                 {editMode ? t("common.cancel") : t("common.edit")}
@@ -6568,7 +6634,7 @@ export default function Muuvlink() {
 
                 {/* Açıklama */}
                 <div className="bg-white border border-slate-100 rounded-2xl p-5">
-                  <label className={lCls}>{t("createTraining.descLabel")} <span className="normal-case font-normal text-slate-400">({t("common.optional")})</span></label>
+                  <label className={lCls}>{t("createTraining.descLabel")} <span className="normal-case font-normal text-slate-500">({t("common.optional")})</span></label>
                   <textarea value={editData.description}
                     onChange={(e) => setEditData((d) => ({ ...d, description: e.target.value }))}
                     className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition-colors resize-none"
@@ -6680,7 +6746,7 @@ export default function Muuvlink() {
                     <input type="url" inputMode="url" value={editData.registration_url}
                       onChange={(e) => setEditData((d) => ({ ...d, registration_url: e.target.value }))}
                       className={iCls} placeholder="https://..." maxLength={500} />
-                    <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                    <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
                       {t("createTraining.regUrlHint")}
                     </p>
                     {editData.registration_url.trim() && (
@@ -6689,7 +6755,7 @@ export default function Muuvlink() {
                         <input type="text" value={editData.registration_label}
                           onChange={(e) => setEditData((d) => ({ ...d, registration_label: e.target.value }))}
                           className={iCls} placeholder={t("trainingDetail.extRegBtn")} maxLength={24} />
-                        <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                        <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
                           {t("createTraining.regLabelHint")}
                         </p>
                       </div>
@@ -6706,7 +6772,8 @@ export default function Muuvlink() {
             );
           })()}
 
-          <p className="text-gray-600 mb-6">{selectedTraining.description}</p>
+          {/* Satır sonları korunur; uzun link telefonda sayfayı yana kaydırmaz. */}
+          <p className="text-gray-600 mb-6 whitespace-pre-line [overflow-wrap:anywhere]">{selectedTraining.description}</p>
 
           {/* Training Agents'tan yayınlanan antrenman: kaynağı tek satır */}
           {selectedTraining.source === "training-agents" && (
@@ -6717,10 +6784,10 @@ export default function Muuvlink() {
           {selectedTraining.team_id && selectedTraining.team_name && (() => {
             const isTeamMember = myTeams.some(tm => tm.id === selectedTraining.team_id);
             return (
-              <div className="flex items-center justify-between gap-3 p-4 rounded-2xl border border-slate-100 bg-slate-50 mb-6">
+              <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl border border-slate-100 bg-slate-50 mb-6">
                 <button
                   onClick={() => fetchTeamDetails(selectedTraining.team_id)}
-                  className="flex items-center gap-3 min-w-0 text-left"
+                  className="flex items-center gap-3 min-w-[9rem] flex-1 text-left"
                 >
                   {(selectedTraining.team_avatar?.startsWith("/uploads/") || selectedTraining.team_avatar?.startsWith("http")) ? (
                     <img
@@ -6737,7 +6804,7 @@ export default function Muuvlink() {
                   <div className="min-w-0">
                     <p className="font-semibold text-slate-800 text-sm truncate">{selectedTraining.team_name}</p>
                     {selectedTraining.team_sport && (
-                      <p className="text-xs text-slate-500">{selectedTraining.team_sport}</p>
+                      <p className="text-xs text-slate-500">{sportLabel(selectedTraining.team_sport)}</p>
                     )}
                   </div>
                 </button>
@@ -6746,7 +6813,7 @@ export default function Muuvlink() {
                   isTeamMember ? (
                     <span className="flex-shrink-0 flex items-center gap-1.5 text-xs font-semibold text-brand-600">
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                      {t("trainingDetail.alreadyMember") || "Üyesiniz"}
+                      {t("trainingDetail.alreadyMember")}
                     </span>
                   ) : (
                     <button data-btn="solid"
@@ -6824,11 +6891,11 @@ export default function Muuvlink() {
                   : null;
               return (
                 <div className="p-4 bg-gray-50 rounded-xl">
-                  <div className="flex items-center text-gray-600 mb-2">
-                    <MapPin className="w-5 h-5 mr-2" />
-                    <span className="font-semibold">{t("common.location")}</span>
+                  <div className="flex items-center text-gray-600 mb-2 min-w-0">
+                    <MapPin className="w-5 h-5 mr-2 flex-shrink-0" />
+                    <span className="font-semibold min-w-0 [overflow-wrap:anywhere]">{t("common.location")}</span>
                   </div>
-                  <p className="text-slate-700 mb-3">{selectedTraining.location_name}</p>
+                  {selectedTraining.location_name && <p className="text-slate-700 mb-3 [overflow-wrap:anywhere]">{selectedTraining.location_name}</p>}
                   {mapsUrl && (
                     <a data-btn="solid"
                       href={mapsUrl}
@@ -6845,25 +6912,25 @@ export default function Muuvlink() {
               );
             })()}
             <div className="p-4 bg-gray-50 rounded-xl">
-              <div className="flex items-center text-gray-600 mb-2">
-                <Calendar className="w-5 h-5 mr-2" />
-                <span className="font-semibold">{t("common.date")}</span>
+              <div className="flex items-center text-gray-600 mb-2 min-w-0">
+                <Calendar className="w-5 h-5 mr-2 flex-shrink-0" />
+                <span className="font-semibold min-w-0 [overflow-wrap:anywhere]">{t("common.date")}</span>
               </div>
               <p>{fmtDateFull(selectedTraining.training_date)}</p>
             </div>
             <div className="p-4 bg-gray-50 rounded-xl">
-              <div className="flex items-center text-gray-600 mb-2">
-                <Clock className="w-5 h-5 mr-2" />
-                <span className="font-semibold">{t("common.time")}</span>
+              <div className="flex items-center text-gray-600 mb-2 min-w-0">
+                <Clock className="w-5 h-5 mr-2 flex-shrink-0" />
+                <span className="font-semibold min-w-0 [overflow-wrap:anywhere]">{t("common.time")}</span>
               </div>
               {/* Postgres TIME alanı "HH:MM:SS" döner; saniye kullanıcıya gösterilmez */}
               <p>{String(selectedTraining.training_time || "").slice(0, 5)}</p>
             </div>
             {!isOrg && (
             <div className="p-4 bg-gray-50 rounded-xl">
-              <div className="flex items-center text-gray-600 mb-2">
-                <Users className="w-5 h-5 mr-2" />
-                <span className="font-semibold">{t("common.capacity")}</span>
+              <div className="flex items-center text-gray-600 mb-2 min-w-0">
+                <Users className="w-5 h-5 mr-2 flex-shrink-0" />
+                <span className="font-semibold min-w-0 [overflow-wrap:anywhere]">{t("common.capacity")}</span>
               </div>
               <p>
                 {selectedTraining.attendees?.length || 0}/{selectedTraining.capacity}
@@ -6878,13 +6945,13 @@ export default function Muuvlink() {
               {t("trainingDetail.joinedList")} ({selectedTraining.attendees?.length || 0})
             </h3>
             {selectedTraining.names_masked && selectedTraining.attendees?.length > 0 && (
-              <p className="text-xs text-slate-400 mb-4 flex items-center gap-1"><Lock className="w-3 h-3 flex-shrink-0" /> {t("trainingDetail.namesMasked")}</p>
+              <p className="text-xs text-slate-500 mb-4 flex items-center gap-1"><Lock className="w-3 h-3 flex-shrink-0" /> {t("trainingDetail.namesMasked")}</p>
             )}
             {selectedTraining.attendees && selectedTraining.attendees.length > 0 ? (
               <div className="space-y-2">
                 {selectedTraining.attendees.filter(a => !blockedUsers.some(b => b.id === a.id)).map((attendee) => (
                   <div key={attendee.id} className="flex items-center p-3 bg-gray-50 rounded-xl">
-                    <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full overflow-hidden flex items-center justify-center text-white font-medium mr-3">
+                    <div className="w-10 h-10 bg-brand-600 rounded-full overflow-hidden flex items-center justify-center text-white font-medium mr-3 flex-shrink-0">
                       {renderAvatar(attendee.avatar, attendee.name)}
                     </div>
                     <div className="flex-1">
@@ -6927,7 +6994,7 @@ export default function Muuvlink() {
                     className="flex-1 px-4 py-2.5 border rounded-xl resize-y leading-relaxed min-h-[46px]"
                   />
                   <button data-btn="solid"
-                    type="submit"
+                    type="submit" aria-label={t("common.send")}
                     className="px-6 bg-brand-600 text-white rounded-xl font-semibold flex items-center justify-center self-stretch"
                   >
                     <Send className="w-5 h-5" />
@@ -6941,7 +7008,7 @@ export default function Muuvlink() {
                 {selectedTraining.comments.filter(c => !blockedUsers.some(b => b.id === c.user_id)).map((c) => (
                   <div key={c.id} className="p-3 bg-gray-50 rounded-xl">
                     <div className="flex items-center mb-2">
-                      <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-full overflow-hidden flex items-center justify-center text-white font-medium mr-2">
+                      <div className="w-8 h-8 bg-brand-600 rounded-full overflow-hidden flex items-center justify-center text-white font-medium mr-2 flex-shrink-0">
                         {renderAvatar(c.user_avatar, c.user_name)}
                       </div>
                       <div className="flex-1">
@@ -6952,7 +7019,7 @@ export default function Muuvlink() {
                         <div className="flex gap-1">
                           {c.user_id !== user.id && (
                             <>
-                              <button
+                              <button aria-label={t("report.btn")} title={t("report.btn")}
                                 onClick={() => setReportModal({ type: "comment", id: c.id })}
                                 className="text-xs text-slate-400 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors"
                               >
@@ -7033,8 +7100,8 @@ export default function Muuvlink() {
           ) : !user ? (
             <div className="rounded-2xl overflow-hidden border border-brand-100 shadow-sm">
               {/* Üst gradient şerit */}
-              <div className="h-1.5" style={{background:"linear-gradient(90deg,#00a499,#643e87,#00a499)"}}/>
-              <div className="p-6 bg-gradient-to-br from-brand-50 to-brand-50">
+              <div className="h-1.5 bg-logo-teal"/>
+              <div className="p-6 bg-brand-50">
                 <div className="text-center mb-5">
                   <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-md"
                     style={{background:"#114956"}}>
@@ -7047,15 +7114,16 @@ export default function Muuvlink() {
                 </div>
 
                 {/* Özellikler */}
-                <div className="grid grid-cols-3 gap-3 mb-5">
+                {/* Telefonda tek sütun (ikon + yazı yan yana): 3 sütunda yazılar kutudan taşıyordu */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 mb-5">
                   {[
                     { icon: Activity,    label: t("trainingDetail.loginFeat1") },
                     { icon: ShieldCheck, label: t("trainingDetail.loginFeat2") },
                     { icon: Users,       label: t("trainingDetail.loginFeat3") },
                   ].map(f => (
-                    <div key={f.label} className="bg-white rounded-xl p-3 text-center border border-brand-100 shadow-sm">
-                      <div className="mb-1.5 flex justify-center"><f.icon className="w-5 h-5 text-brand-500"/></div>
-                      <div className="text-xs font-medium text-slate-600 leading-tight">{f.label}</div>
+                    <div key={f.label} className="bg-white rounded-xl p-3 border border-brand-100 shadow-sm flex items-center gap-2.5 text-left sm:block sm:text-center">
+                      <div className="flex-shrink-0 sm:mb-1.5 flex justify-center"><f.icon className="w-5 h-5 text-brand-500" aria-hidden="true"/></div>
+                      <div className="text-xs font-medium text-slate-600 leading-tight hyphens-auto [overflow-wrap:anywhere]">{f.label}</div>
                     </div>
                   ))}
                 </div>
@@ -7080,8 +7148,8 @@ export default function Muuvlink() {
             </div>
           ) : isParticipant ? (
             <div className="flex gap-3">
-              <div className="flex-1 py-4 rounded-xl font-semibold text-center text-brand-700 bg-brand-50 border border-brand-200">
-                ✓ {t("trainings.joined")}
+              <div className="flex-1 py-4 rounded-xl font-semibold text-center text-brand-700 bg-brand-50 border border-brand-200 inline-flex items-center justify-center gap-1.5">
+                <CheckCircle className="w-4 h-4" aria-hidden="true"/> {t("trainings.joined")}
               </div>
               <button
                 onClick={() => handleLeaveTraining(selectedTraining.id)}
@@ -7194,7 +7262,7 @@ export default function Muuvlink() {
 
     const roleBadge = (member) => {
       // Platform admini için rol yerine "Admin" rozeti gösterilir.
-      if (member?.is_admin) return <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold flex items-center gap-1"><ShieldCheck className="w-3 h-3" /> {t("teamDetail.roles.admin")}</span>;
+      if (member?.is_admin) return <span className="px-2 py-0.5 bg-accent-50 text-accent-700 rounded-full text-xs font-semibold flex items-center gap-1"><ShieldCheck className="w-3 h-3" /> {t("teamDetail.roles.admin")}</span>;
       const role = member?.role;
       if (role === "owner")   return <span className="px-2 py-0.5 bg-brand-600 text-white rounded-full text-xs font-semibold flex items-center gap-1"><Crown className="w-3 h-3" /> {t("teamDetail.roles.owner")}</span>;
       if (role === "editor")  return <span className="px-2 py-0.5 bg-brand-50 text-brand-700 rounded-full text-xs font-semibold flex items-center gap-1"><Edit className="w-3 h-3" /> {t("teamDetail.roles.editor")}</span>;
@@ -7262,7 +7330,7 @@ export default function Muuvlink() {
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h1 className="font-display font-bold leading-tight text-white" style={{fontSize:"clamp(1.35rem,5vw,1.8rem)", letterSpacing:"-0.01em"}}>{selectedTeam.name}</h1>
+                  <h1 className="font-display font-bold leading-tight text-white [overflow-wrap:anywhere]" style={{fontSize:"clamp(1.35rem,5vw,1.8rem)", letterSpacing:"-0.01em"}}>{selectedTeam.name}</h1>
                   {myRole && (() => {
                     const roleIcons = { owner: Crown, editor: Edit, coach: Target, captain: Navigation2, member: User };
                     const roleLabels = { owner: t("teamDetail.roles.owner"), editor: t("teamDetail.roles.editor"), coach: t("teamDetail.roles.coach"), captain: t("teamDetail.roles.captain"), member: t("teamDetail.roles.member") };
@@ -7285,7 +7353,7 @@ export default function Muuvlink() {
             </div>
 
             {/* meta satırı — üye / konum / gizlilik aynı ağırlıkta, tek satırda */}
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-3.5 text-[13px] text-slate-400">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-3.5 text-[13px] text-slate-500">
               <span className="inline-flex items-center gap-1.5">
                 <Users className="w-4 h-4 text-slate-500" />
                 <b className="font-semibold text-white">{selectedTeam.members?.length || 0}</b> {t("teams.members")}
@@ -7304,7 +7372,7 @@ export default function Muuvlink() {
             </div>
 
             {selectedTeam.description && (
-              <p className="mt-3.5 text-sm text-slate-300 leading-relaxed">{selectedTeam.description}</p>
+              <p className="mt-3.5 text-sm text-slate-300 leading-relaxed whitespace-pre-line [overflow-wrap:anywhere]">{selectedTeam.description}</p>
             )}
 
             {/* aksiyonlar — ince çizgiyle ayrılmış kendi şeridinde; mobilde iki sütun */}
@@ -7312,14 +7380,14 @@ export default function Muuvlink() {
               {canCreateTraining && (
                 <button data-btn="pop-on-dark"
                   onClick={() => { setCreatePresetTeamId(selectedTeam.id); setCurrentPage("create-training"); window.scrollTo(0, 0); }}
-                  className={`${canManage ? "col-span-1" : "col-span-2"} sm:col-span-1 w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2.5 bg-pop-400 text-ink-900 rounded-xl text-sm font-bold transition-colors whitespace-nowrap`}>
+                  className={`${canManage ? "col-span-1" : "col-span-2"} sm:col-span-1 w-full sm:w-auto flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2.5 bg-pop-400 text-ink-900 rounded-xl text-sm font-bold transition-colors text-center leading-tight sm:whitespace-nowrap`}>
                   <Plus className="w-4 h-4 flex-shrink-0" /> {t("nav.createTrainingFull")}
                 </button>
               )}
               {canManage && (
                 <HoverTip text={t("tips.inviteTeam")} align="left" className={`${canCreateTraining ? "col-span-1" : "col-span-2"} sm:col-span-1`}>
                   <button onClick={() => setShowInviteModal(true)}
-                    className={`w-full flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors whitespace-nowrap ${canCreateTraining ? "bg-white text-brand-700 hover:bg-brand-50" : "bg-pop-400 text-ink-900 hover:bg-pop-300"}`}>
+                    className={`w-full flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2.5 rounded-xl text-sm font-bold transition-colors text-center leading-tight sm:whitespace-nowrap ${canCreateTraining ? "bg-white text-brand-700 hover:bg-brand-50" : "bg-pop-400 text-ink-900 hover:bg-pop-300"}`}>
                     <UserPlus className="w-4 h-4 flex-shrink-0" /> {t("teamDetail.invite")}
                   </button>
                 </HoverTip>
@@ -7360,7 +7428,7 @@ export default function Muuvlink() {
               </HoverTip>
             </div>
             {/* Mobilde hover ipucu yok — nedeni tek satır olarak burada duruyor. */}
-            <p className="sm:hidden mt-2.5 flex items-start gap-1.5 text-xs leading-snug text-slate-400">
+            <p className="sm:hidden mt-2.5 flex items-start gap-1.5 text-xs leading-snug text-slate-500">
               <Share2 className="w-3.5 h-3.5 mt-px flex-shrink-0" />
               <span>{t("tips.shareTeamMobile")}</span>
             </p>
@@ -7408,7 +7476,7 @@ export default function Muuvlink() {
                     placeholder={t("teamDetail.postPlaceholder")}
                     rows={2}
                     className="flex-1 w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition-colors resize-y leading-relaxed min-h-[46px]" />
-                  <button data-btn="solid" type="submit"
+                  <button data-btn="solid" type="submit" aria-label={t("common.send")}
                     className="px-5 bg-brand-600 text-white rounded-xl transition-colors flex items-center justify-center self-stretch">
                     <Send className="w-4 h-4" />
                   </button>
@@ -7420,26 +7488,26 @@ export default function Muuvlink() {
                   {selectedTeam.posts.filter(p => !blockedUsers.some(b => b.id === p.user_id)).map((post) => (
                     <div key={post.id} className="p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-colors">
                       <div className="flex items-center gap-3 mb-2">
-                        <div className="w-9 h-9 bg-gradient-to-br from-brand-500 to-brand-600 rounded-full overflow-hidden flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                        <div className="w-9 h-9 bg-brand-600 rounded-full overflow-hidden flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
                           {renderAvatar(post.user_avatar, post.user_name)}
                         </div>
                         <div className="flex-1">
                           <div className="font-semibold text-sm text-slate-800">{post.user_name}</div>
-                          <div className="text-xs text-slate-400">{fmtDateShort(post.created_at)}</div>
+                          <div className="text-xs text-slate-500">{fmtDateShort(post.created_at)}</div>
                         </div>
                         {user && (
                           <div className="flex gap-1">
                             {post.user_id !== user.id && (
                               <>
-                                <button
+                                <button aria-label={t("report.btn")} title={t("report.btn")}
                                   onClick={() => setReportModal({ type: "wall_post", id: post.id })}
-                                  className="text-slate-300 hover:text-red-400 p-1 rounded-lg hover:bg-red-50 transition-colors"
+                                  className="text-slate-400 hover:text-red-500 p-2 -m-1 rounded-lg hover:bg-red-50 transition-colors"
                                 >
                                   <Flag className="w-3.5 h-3.5" />
                                 </button>
                                 <button
                                   onClick={() => handleBlock(post.user_id, post.user_name)}
-                                  className="text-xs text-slate-300 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors"
+                                  className="text-xs text-slate-500 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors"
                                 >
                                   {t("block.btn")}
                                 </button>
@@ -7480,9 +7548,9 @@ export default function Muuvlink() {
             <div>
               <div className="flex items-center justify-between mb-5">
                 <div>
-                  <h3 className="font-bold text-slate-800 text-lg">{t("teamDetail.membersTab")} <span className="text-slate-400 font-normal text-base">({selectedTeam.members?.length || 0})</span></h3>
+                  <h3 className="font-bold text-slate-800 text-lg">{t("teamDetail.membersTab")} <span className="text-slate-500 font-normal text-base">({selectedTeam.members?.length || 0})</span></h3>
                   {selectedTeam.names_masked && (
-                    <p className="text-xs text-slate-400 mt-1 flex items-center gap-1"><Lock className="w-3 h-3 flex-shrink-0" /> {t("teamDetail.namesMasked")}</p>
+                    <p className="text-xs text-slate-500 mt-1 flex items-center gap-1"><Lock className="w-3 h-3 flex-shrink-0" /> {t("teamDetail.namesMasked")}</p>
                   )}
                 </div>
                 {canManage && (
@@ -7498,24 +7566,24 @@ export default function Muuvlink() {
               {/* Bekleyen davetler */}
               {canManage && pendingInvitations.length > 0 && (
                 <div className="mb-5">
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1">
                     <Clock className="w-3.5 h-3.5" /> {t("teamDetail.pendingInvites")} ({pendingInvitations.length})
                   </p>
                   <div className="space-y-2">
                     {pendingInvitations.map(inv => (
-                      <div key={inv.id} className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-2xl">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 bg-amber-100 rounded-full flex items-center justify-center">
+                      <div key={inv.id} className="flex items-center justify-between gap-2 p-3 bg-amber-50 border border-amber-200 rounded-2xl">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="w-9 h-9 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
                             <Mail className="w-4 h-4 text-amber-600" />
                           </div>
-                          <div>
-                            <div className="font-semibold text-slate-700 text-sm">{inv.invitee_email}</div>
-                            <div className="text-xs text-slate-400">{inv.inviter_name} · {fmtDateShort(inv.created_at)}</div>
+                          <div className="min-w-0">
+                            <div className="font-semibold text-slate-700 text-sm truncate" title={inv.invitee_email}>{inv.invitee_email}</div>
+                            <div className="text-xs text-slate-500">{inv.inviter_name} · {fmtDateShort(inv.created_at)}</div>
                           </div>
                         </div>
                         <button onClick={() => handleCancelInvitation(selectedTeam.id, inv.id)}
-                          className="text-xs px-3 py-1.5 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 font-semibold transition-colors">
-                          İptal
+                          className="text-xs px-3 py-1.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 font-semibold transition-colors flex-shrink-0">
+                          {t("common.cancel")}
                         </button>
                       </div>
                     ))}
@@ -7530,25 +7598,25 @@ export default function Muuvlink() {
                   const isMe = member.id === user?.id;
                   return (
                     <div key={member.id}
-                      className="flex items-center justify-between p-3.5 rounded-2xl border border-transparent hover:bg-slate-50 hover:border-slate-100 transition-all">
-                      <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 bg-gradient-to-br from-brand-500 to-brand-600 rounded-full overflow-hidden flex items-center justify-center text-white font-semibold flex-shrink-0">
+                      className="flex flex-wrap items-center justify-between gap-2 p-3.5 rounded-2xl border border-transparent hover:bg-slate-50 hover:border-slate-100 transition-colors">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="w-11 h-11 bg-brand-600 rounded-full overflow-hidden flex items-center justify-center text-white font-semibold flex-shrink-0">
                           {renderAvatar(member.avatar, member.name)}
                         </div>
-                        <div>
-                          <div className="font-semibold text-slate-800 flex items-center gap-1.5">
+                        <div className="min-w-0">
+                          <div className="font-semibold text-slate-800 flex flex-wrap items-center gap-x-1.5 [overflow-wrap:anywhere]">
                             {member.name}
-                            {isMe && <span className="text-xs text-slate-400 font-normal">({t("teamDetail.me")})</span>}
+                            {isMe && <span className="text-xs text-slate-500 font-normal">({t("teamDetail.me")})</span>}
                           </div>
                           <div className="mt-0.5">{roleBadge(member)}</div>
                         </div>
                       </div>
 
                       {canAdmin && !isThisOwner && !isMe && !member.is_admin && (member.role !== "owner" || isOwner || isPlatformAdmin) && (
-                        <div className="flex items-center gap-2">
-                          <select value={member.role}
+                        <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
+                          <select value={member.role} aria-label={t("teamDetail.changeRole")}
                             onChange={(e) => handleChangeMemberRole(selectedTeam.id, member.id, e.target.value)}
-                            className="text-sm h-9 px-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 bg-white text-slate-700">
+                            className="text-sm h-9 px-3 max-w-[9rem] border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 bg-white text-slate-700">
                             <option value="member">{t("teamDetail.roles.member")}</option>
                             <option value="captain">{t("teamDetail.roles.captain")}</option>
                             <option value="coach">{t("teamDetail.roles.coach")}</option>
@@ -7556,16 +7624,16 @@ export default function Muuvlink() {
                             {/* "Takım Lideri" rolünü asıl sahip veya platform admini atayabilir */}
                             {(isOwner || isPlatformAdmin) && <option value="owner">{t("teamDetail.roles.owner")}</option>}
                           </select>
-                          <button onClick={() => handleRemoveMember(selectedTeam.id, member.id)}
-                            className="w-9 h-9 flex items-center justify-center bg-red-50 text-red-400 rounded-xl hover:bg-red-100 transition-colors">
+                          <button onClick={() => handleRemoveMember(selectedTeam.id, member.id)} aria-label={t("teamDetail.removeMember")} title={t("teamDetail.removeMember")}
+                            className="w-11 h-11 flex items-center justify-center bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-colors">
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       )}
 
                       {isCoach && !isThisOwner && !isMe && member.role === "member" && (
-                        <button onClick={() => handleRemoveMember(selectedTeam.id, member.id)}
-                          className="w-9 h-9 flex items-center justify-center bg-red-50 text-red-400 rounded-xl hover:bg-red-100 transition-colors">
+                        <button onClick={() => handleRemoveMember(selectedTeam.id, member.id)} aria-label={t("teamDetail.removeMember")} title={t("teamDetail.removeMember")}
+                          className="w-11 h-11 flex-shrink-0 flex items-center justify-center bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-colors">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       )}
@@ -7664,7 +7732,7 @@ export default function Muuvlink() {
                 <Lock className="w-8 h-8 text-slate-400" />
               </div>
               <p className="font-semibold text-slate-700">{t("teams.privateTeam")}</p>
-              <p className="text-sm text-slate-400 mt-1">{t("teams.privateInfo")}</p>
+              <p className="text-sm text-slate-500 mt-1">{t("teams.privateInfo")}</p>
             </div>
           )}
 
@@ -7813,13 +7881,13 @@ export default function Muuvlink() {
 
     return (
       <form onSubmit={handleSubmit}>
-      <div className="min-h-screen bg-slate-50 py-10 px-4">
+      <div className="min-h-screen min-h-svh bg-slate-50 py-10 px-4">
         <div className="max-w-xl mx-auto">
 
           {/* Başlık */}
           <div className="mb-6">
             <h1 className="font-display font-bold text-slate-900" style={{fontSize:"2.2rem", letterSpacing:"-0.01em"}}>{t("createTraining.pageTitle")}</h1>
-            <p className="text-sm text-slate-400 mt-1">{t("createTraining.pageSubtitle")}</p>
+            <p className="text-sm text-slate-500 mt-1">{t("createTraining.pageSubtitle")}</p>
           </div>
 
           {eligibleLoading && (
@@ -7944,7 +8012,7 @@ export default function Muuvlink() {
                 />
               </div>
               <div>
-                <label className={labelCls}>{t("createTraining.descLabel")} <span className="normal-case font-normal text-slate-400">({t("common.optional")})</span></label>
+                <label className={labelCls}>{t("createTraining.descLabel")} <span className="normal-case font-normal text-slate-500">({t("common.optional")})</span></label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -8070,7 +8138,7 @@ export default function Muuvlink() {
                     placeholder="https://..."
                     maxLength={500}
                   />
-                  <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                  <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
                     {t("createTraining.regUrlHint")}
                   </p>
 
@@ -8086,7 +8154,7 @@ export default function Muuvlink() {
                         placeholder={t("trainingDetail.extRegBtn")}
                         maxLength={24}
                       />
-                      <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                      <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
                         {t("createTraining.regLabelHint")}
                       </p>
                     </div>
@@ -8143,13 +8211,13 @@ export default function Muuvlink() {
 
     return (
       <form onSubmit={handleSubmit}>
-        <div className="min-h-screen bg-slate-50 py-10 px-4">
+        <div className="min-h-screen min-h-svh bg-slate-50 py-10 px-4">
           <div className="max-w-xl mx-auto">
 
             {/* Başlık */}
             <div className="mb-6">
               <h1 className="font-display font-bold text-slate-900" style={{fontSize:"2.2rem", letterSpacing:"-0.01em"}}>{t("createTeam.pageTitle")}</h1>
-              <p className="text-sm text-slate-400 mt-1">{t("createTeam.pageSubtitle")}</p>
+              <p className="text-sm text-slate-500 mt-1">{t("createTeam.pageSubtitle")}</p>
             </div>
 
             <div className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100">
@@ -8174,13 +8242,13 @@ export default function Muuvlink() {
                     onChange={(sports) => setFormData({ ...formData, sports })}
                     t={t}
                   />
-                  <p className="mt-2 text-xs text-slate-400">{t("createTeam.sportsHint")}</p>
+                  <p className="mt-2 text-xs text-slate-500">{t("createTeam.sportsHint")}</p>
                 </div>
               </div>
 
               {/* Açıklama */}
               <div className="p-5">
-                <label className={labelCls}>{t("createTeam.descLabel")} <span className="normal-case font-normal text-slate-400">({t("common.optional")})</span></label>
+                <label className={labelCls}>{t("createTeam.descLabel")} <span className="normal-case font-normal text-slate-500">({t("common.optional")})</span></label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -8192,7 +8260,7 @@ export default function Muuvlink() {
 
               {/* Konum */}
               <div className="p-5">
-                <label className={labelCls}>{t("common.location")} <span className="normal-case font-normal text-slate-400">({t("common.optional")})</span></label>
+                <label className={labelCls}>{t("common.location")} <span className="normal-case font-normal text-slate-500">({t("common.optional")})</span></label>
                 <input
                   type="text"
                   value={formData.location}
@@ -8291,7 +8359,7 @@ export default function Muuvlink() {
     };
 
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <div className="min-h-screen min-h-svh bg-slate-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-3xl shadow-xl max-w-md w-full p-8">
           <div className="text-center mb-8">
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
@@ -8315,16 +8383,16 @@ export default function Muuvlink() {
                   <AlertTriangle className="w-4 h-4 flex-shrink-0" /> {error}
                 </div>
               )}
-              <PasswordInput t={t} placeholder={t("auth.passwordNew")} value={password}
+              <PasswordInput t={t} placeholder={t("auth.passwordNew")} aria-label={t("auth.passwordNew")} autoComplete="new-password" value={password}
                 onChange={e => { setPassword(e.target.value); setError(""); }}
-                className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-300"
+                className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-200"
                 required/>
-              <PasswordInput t={t} placeholder={t("auth.passwordConfirm")} value={password2}
+              <PasswordInput t={t} placeholder={t("auth.passwordConfirm")} aria-label={t("auth.passwordConfirm")} autoComplete="new-password" value={password2}
                 onChange={e => { setPassword2(e.target.value); setError(""); }}
-                className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-300"
+                className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-200"
                 required/>
               <button type="submit" disabled={loading}
-                className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold disabled:opacity-60 flex items-center justify-center gap-2">
+                data-btn="solid" className="w-full py-4 bg-brand-600 text-white rounded-xl font-semibold disabled:opacity-60 flex items-center justify-center gap-2">
                 {loading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>}
                 {t("reset.btn")}
               </button>
@@ -8339,7 +8407,8 @@ export default function Muuvlink() {
     const unreadCount = notifications.filter((n) => !n.is_read).length;
 
     return (
-      <div className="fixed inset-0 z-[100] sm:bg-transparent bg-black/40" onClick={() => setShowNotifications(false)}>
+      <div className="fixed inset-0 sm:bg-transparent bg-black/40" style={{ zIndex: 1000000 }} onClick={() => setShowNotifications(false)}
+        role="dialog" aria-modal="true" aria-label={t("notifications.title")}>
       <div onClick={(e) => e.stopPropagation()}
         className="absolute bg-white flex flex-col overflow-hidden shadow-2xl
           inset-0 sm:inset-auto sm:right-4 sm:top-20 sm:w-96 sm:max-h-[600px] sm:rounded-2xl sm:border"
@@ -8349,7 +8418,7 @@ export default function Muuvlink() {
             <h3 className="font-semibold text-lg">
               {t("notifications.title")} {unreadCount > 0 && `(${unreadCount})`}
             </h3>
-            <button onClick={() => setShowNotifications(false)} aria-label="Kapat" className="p-1 -m-1 text-slate-500 hover:text-slate-800">
+            <button onClick={() => setShowNotifications(false)} aria-label={t("common.close")} className="w-11 h-11 -m-2.5 flex items-center justify-center text-slate-500 hover:text-slate-800">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -8358,7 +8427,7 @@ export default function Muuvlink() {
               {unreadCount > 0 && (
                 <button
                   onClick={handleMarkAllNotificationsRead}
-                  className="text-xs font-medium text-blue-600 hover:bg-blue-50 rounded-lg px-2.5 py-1.5 transition-colors"
+                  className="text-xs font-medium text-brand-600 hover:bg-brand-50 rounded-lg px-2.5 py-1.5 transition-colors"
                 >
                   {t("notifications.markAllRead")}
                 </button>
@@ -8383,10 +8452,10 @@ export default function Muuvlink() {
                   tabIndex={0}
                   onClick={() => handleNotificationClick(notif)}
                   onKeyDown={(e) => { if (e.key === "Enter") handleNotificationClick(notif); }}
-                  className={`p-4 hover:bg-gray-50 cursor-pointer ${!notif.is_read ? "bg-blue-50" : ""}`}
+                  className={`p-4 hover:bg-gray-50 cursor-pointer ${!notif.is_read ? "bg-brand-50" : ""}`}
                 >
                   <div className="flex justify-between items-start mb-2 gap-2">
-                    <h4 className="font-semibold min-w-0">{notif.title}</h4>
+                    <h4 className="font-semibold min-w-0 [overflow-wrap:anywhere]">{notif.title}</h4>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleDeleteNotification(notif.id); }}
                       onPointerDown={(e) => e.stopPropagation()}
@@ -8396,7 +8465,7 @@ export default function Muuvlink() {
                       <X className="w-5 h-5" />
                     </button>
                   </div>
-                  <p className="text-sm text-gray-600 mb-2">{notif.message}</p>
+                  <p className="text-sm text-gray-600 mb-2 line-clamp-3 [overflow-wrap:anywhere]">{notif.message}</p>
                   <div className="flex justify-between items-center">
                     <span className="text-xs text-gray-400">
                       {fmtDateShort(notif.created_at)}
@@ -8404,7 +8473,7 @@ export default function Muuvlink() {
                     {!notif.is_read && (
                       <button
                         onClick={(e) => { e.stopPropagation(); handleMarkNotificationRead(notif.id); }}
-                        className="text-xs text-blue-600 hover:underline"
+                        className="text-xs text-brand-600 hover:underline"
                       >
                         {t("notifications.markRead")}
                       </button>
@@ -8504,9 +8573,11 @@ export default function Muuvlink() {
     };
 
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-3xl max-w-md w-full p-8 relative m-4">
-          <button onClick={() => setShowProfileEdit(false)} className="absolute top-4 right-4">
+      <div className="fixed inset-0 bg-black/50 flex justify-center overflow-y-auto overscroll-contain p-4"
+        style={{ zIndex: 1000000 }} role="dialog" aria-modal="true" aria-label={t("settings.pageTitle")}>
+        <div className="bg-white rounded-3xl max-w-md w-full p-8 relative my-auto">
+          <button onClick={() => setShowProfileEdit(false)} aria-label={t("common.close")}
+            className="absolute top-3 right-3 w-11 h-11 flex items-center justify-center rounded-full hover:bg-slate-100 transition-colors">
             <X className="w-6 h-6" />
           </button>
 
@@ -8573,8 +8644,8 @@ export default function Muuvlink() {
                 />
               </div>
               <button
-                type="submit"
-                className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold"
+                type="submit" data-btn="solid"
+                className="w-full py-4 bg-brand-600 text-white rounded-xl font-semibold"
               >
                 {t("common.save")}
               </button>
@@ -8587,7 +8658,7 @@ export default function Muuvlink() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold text-slate-800 text-sm">{t("notifPrefs.title")}</div>
-                  <div className="text-xs text-slate-400">{t("notifPrefs.rowHint")}</div>
+                  <div className="text-xs text-slate-500">{t("notifPrefs.rowHint")}</div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-slate-300 flex-shrink-0" />
               </button>
@@ -8627,7 +8698,7 @@ export default function Muuvlink() {
               <button
                 type="submit"
                 disabled={pwLoading}
-                className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold disabled:opacity-70 flex items-center justify-center gap-2"
+                data-btn="solid" className="w-full py-4 bg-brand-600 text-white rounded-xl font-semibold disabled:opacity-70 flex items-center justify-center gap-2"
               >
                 {pwLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> {t("reset.updating")}</> : t("reset.btn")}
               </button>
@@ -8656,9 +8727,11 @@ export default function Muuvlink() {
     };
 
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-3xl max-w-md w-full p-8 relative m-4">
-          <button onClick={() => setShowInviteModal(false)} className="absolute top-4 right-4">
+      <div className="fixed inset-0 bg-black/50 flex justify-center overflow-y-auto overscroll-contain p-4"
+        style={{ zIndex: 1000000 }} role="dialog" aria-modal="true" aria-label={t("teamDetail.inviteByEmail")}>
+        <div className="bg-white rounded-3xl max-w-md w-full p-8 relative my-auto">
+          <button onClick={() => setShowInviteModal(false)} aria-label={t("common.close")}
+            className="absolute top-3 right-3 w-11 h-11 flex items-center justify-center rounded-full hover:bg-slate-100 transition-colors">
             <X className="w-6 h-6" />
           </button>
 
@@ -8679,7 +8752,7 @@ export default function Muuvlink() {
             <button
               type="submit"
               disabled={sending}
-              className="w-full py-4 bg-gradient-to-r from-brand-600 to-brand-600 text-white rounded-xl font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
+              data-btn="solid" className="w-full py-4 bg-brand-600 text-white rounded-xl font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {sending ? t("contact.sending") : t("teamDetail.sendInvite")}
             </button>
@@ -8704,8 +8777,8 @@ export default function Muuvlink() {
         data-tour={page === "teams" ? "teams-tab" : undefined}
         className="relative text-sm font-medium tracking-wide transition-all duration-200"
         style={{color: isActive(page) ? "#0e3c47" : "#64748b"}}
-        onMouseEnter={e=>{ if(!isActive(page)) e.currentTarget.style.color="#0b2f38"; }}
-        onMouseLeave={e=>{ if(!isActive(page)) e.currentTarget.style.color="#64748b"; }}
+        onPointerEnter={e => { if (e.pointerType !== "mouse") return; if(!isActive(page)) e.currentTarget.style.color="#0b2f38"; }}
+        onPointerLeave={e => { if (e.pointerType !== "mouse") return; if(!isActive(page)) e.currentTarget.style.color="#64748b"; }}
       >
         {label}
         <span className="absolute -bottom-[24px] left-0 right-0 h-0.5 rounded-full transition-all duration-300"
@@ -8724,7 +8797,7 @@ export default function Muuvlink() {
         data-tour={page === "teams" ? "teams-tab-mobile" : undefined}
         className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-sm font-medium transition-colors"
         style={{
-          background: isActive(page) ? "linear-gradient(135deg,#e6f7f5,#e6f7f5)" : "transparent",
+          background: isActive(page) ? "#e6f7f5" : "transparent",
           color: isActive(page) ? "#0e3c47" : "#475569",
         }}
       >
@@ -8801,8 +8874,8 @@ export default function Muuvlink() {
                   >
                     <Bell className="w-[18px] h-[18px] text-slate-500"/>
                     {unreadCount > 0 && (
-                      <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-medium rounded-full flex items-center justify-center">
-                        {unreadCount}
+                      <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 bg-red-500 text-white text-[10px] font-medium rounded-full flex items-center justify-center tabular-nums">
+                        {unreadCount > 99 ? "99+" : unreadCount}
                       </span>
                     )}
                   </button>
@@ -8814,13 +8887,13 @@ export default function Muuvlink() {
                       {(user.avatar?.startsWith("/uploads/") || user.avatar?.startsWith("http")) ? (
                         <img src={user.avatar.startsWith("http") ? user.avatar : `${BASE_URL}${user.avatar}`} alt="" className="w-full h-full object-cover" />
                       ) : (
-                        user.avatar || user.name[0].toLocaleUpperCase("en-US")
+                        user.avatar || (user.name?.[0] || "?").toLocaleUpperCase("en-US")
                       )}
                     </div>
-                    <span className="text-sm font-semibold text-slate-700">{user.name.split(" ")[0]}</span>
+                    <span className="text-sm font-semibold text-slate-700 max-w-[8rem] truncate">{(user.name || "").split(" ")[0]}</span>
                   </button>
 
-                  <button onClick={handleLogout}
+                  <button onClick={handleLogout} aria-label={t("nav.logout")} title={t("nav.logout")}
                     className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-red-50 transition-colors">
                     <LogOut className="w-4 h-4 text-slate-400 hover:text-red-500"/>
                   </button>
@@ -8849,19 +8922,20 @@ export default function Muuvlink() {
               {user && (
                 <button
                   onClick={() => setShowNotifications(!showNotifications)}
-                  className="relative w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-colors"
+                  className="relative w-11 h-11 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-colors"
+                  aria-label={t("nav.notifications")}
                 >
                   <Bell className="w-[18px] h-[18px] text-slate-500"/>
                   {unreadCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-medium rounded-full flex items-center justify-center">
-                      {unreadCount}
+                    <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 bg-red-500 text-white text-[10px] font-medium rounded-full flex items-center justify-center tabular-nums">
+                      {unreadCount > 99 ? "99+" : unreadCount}
                     </span>
                   )}
                 </button>
               )}
               <button
-                onClick={() => setMobileOpen(o => !o)}
-                className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-colors"
+                onClick={() => setMobileOpen(o => !o)} aria-expanded={mobileOpen} aria-label={mobileOpen ? t("common.close") : t("nav.menu")}
+                className="w-11 h-11 -mr-1 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-colors"
               >
                 {mobileOpen ? <X className="w-5 h-5 text-slate-600"/> : <Menu className="w-5 h-5 text-slate-600"/>}
               </button>
@@ -8897,9 +8971,9 @@ export default function Muuvlink() {
                       style={{background:"#114956"}}>
                       {(user.avatar?.startsWith("/uploads/") || user.avatar?.startsWith("http")) ? (
                         <img src={user.avatar.startsWith("http") ? user.avatar : `${BASE_URL}${user.avatar}`} alt="" className="w-full h-full object-cover" />
-                      ) : (user.avatar || user.name[0].toLocaleUpperCase("en-US"))}
+                      ) : (user.avatar || (user.name?.[0] || "?").toLocaleUpperCase("en-US"))}
                     </div>
-                    {user.name.split(" ")[0]} — {t("nav.profile")}
+                    {(user.name || "").split(" ")[0]} — {t("nav.profile")}
                   </button>
                   <button
                     onClick={() => { handleLogout(); setMobileOpen(false); }}
@@ -8929,7 +9003,7 @@ export default function Muuvlink() {
                   <div className="mt-2 pt-3 border-t border-slate-100">
                     <div className="flex items-center gap-1.5 px-1 mb-1">
                       <Globe className="w-3.5 h-3.5 text-slate-400"/>
-                      <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">Language</span>
+                      <span className="text-[10px] font-bold tracking-widest text-slate-500 uppercase">Language</span>
                     </div>
                     <div className="flex flex-col gap-0.5">
                       {LANGUAGES.map(({ code, label }) => (
@@ -8997,7 +9071,7 @@ export default function Muuvlink() {
     const inputCls = "w-full h-12 border border-slate-200 rounded-xl px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition placeholder:text-slate-400";
 
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen min-h-svh bg-slate-50">
         {/* ── Header ── */}
         <div className="relative overflow-hidden" style={{background:"#e6f7f5"}}>
           <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
@@ -9024,7 +9098,7 @@ export default function Muuvlink() {
               <div className="bg-white rounded-2xl p-6 border border-slate-100">
                 <div className="section-label mb-4">{t("contact.social")}</div>
                 <SocialIcons variant="light" />
-                <p className="text-xs text-slate-400 mt-4 leading-relaxed text-center">
+                <p className="text-xs text-slate-500 mt-4 leading-relaxed text-center">
                   {t("contact.followUs")}
                 </p>
               </div>
@@ -9051,7 +9125,7 @@ export default function Muuvlink() {
               {/* Form */}
               <div className="bg-white rounded-2xl p-8 border border-slate-100">
                 <div className="section-label mb-2">{t("contact.formTitle")}</div>
-                <p className="text-slate-400 text-sm mb-6">{t("contact.formSubtitle")}</p>
+                <p className="text-slate-500 text-sm mb-6">{t("contact.formSubtitle")}</p>
                 <form onSubmit={handleContactSubmit} className="space-y-4">
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
@@ -9117,7 +9191,7 @@ export default function Muuvlink() {
               {/* SSS */}
               <div className="bg-white rounded-2xl p-8 border border-slate-100">
                 <div className="section-label mb-2">{t("contact.faqTitle")}</div>
-                <p className="text-slate-400 text-sm mb-6">{t("contact.faqSubtitle")}</p>
+                <p className="text-slate-500 text-sm mb-6">{t("contact.faqSubtitle")}</p>
                 <div className="space-y-2">
                   {faqs.map((faq, i) => (
                     <div key={i} className="border border-slate-100 rounded-xl overflow-hidden transition-all duration-200"
@@ -9126,11 +9200,11 @@ export default function Muuvlink() {
                         onClick={() => setOpenFaq(openFaq === i ? null : i)}
                         className="w-full flex items-center justify-between px-5 py-4 text-left transition-colors"
                         style={openFaq === i ? {background:"#f0fbfa"} : {}}
-                        onMouseEnter={e => { if (openFaq !== i) e.currentTarget.style.background = "#f8fafc"; }}
-                        onMouseLeave={e => { if (openFaq !== i) e.currentTarget.style.background = ""; }}
+                        onPointerEnter={e => { if (e.pointerType !== "mouse") return; if (openFaq !== i) e.currentTarget.style.background = "#f8fafc"; }}
+                        onPointerLeave={e => { if (e.pointerType !== "mouse") return; if (openFaq !== i) e.currentTarget.style.background = ""; }}
                       >
                         <span className="font-semibold text-slate-800 text-sm pr-4">{faq.q}</span>
-                        <ChevronDown className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 ${openFaq === i ? "rotate-180" : "text-slate-400"}`}
+                        <ChevronDown className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 ${openFaq === i ? "rotate-180" : "text-slate-500"}`}
                           style={openFaq === i ? {color:"#114956"} : {}}/>
                       </button>
                       {openFaq === i && (
@@ -9291,11 +9365,12 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
   const ReportModal = () => {
     if (!reportModal) return null;
     return (
-      <div className="fixed inset-0 z-[350] flex items-center justify-center p-4" style={{background:"rgba(0,0,0,0.6)"}}>
+      <div className="fixed inset-0 flex items-center justify-center p-4" style={{background:"rgba(0,0,0,0.6)", zIndex: 1000350}}
+        role="dialog" aria-modal="true" aria-label={t("report.title")}>
         <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-slate-800">{t("report.title")}</h2>
-            <button onClick={() => setReportModal(null)} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100">
+            <button onClick={() => setReportModal(null)} aria-label={t("common.close")} className="w-11 h-11 -mr-2 flex items-center justify-center rounded-xl hover:bg-slate-100">
               <X className="w-5 h-5 text-slate-500" />
             </button>
           </div>
@@ -9318,16 +9393,17 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
     if (!legalModal) return null;
     const content = legalContent[legalModal];
     return (
-      <div className="fixed inset-0 z-[300] flex items-center justify-center p-4" style={{background:"rgba(0,0,0,0.6)"}}>
+      <div className="fixed inset-0 flex items-center justify-center p-4" style={{background:"rgba(0,0,0,0.6)", zIndex: 1000300}}
+        role="dialog" aria-modal="true" aria-label={content.title}>
         <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col">
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
             <h2 className="text-lg font-medium text-slate-800">{content.title}</h2>
-            <button onClick={() => setLegalModal(null)} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-colors">
+            <button onClick={() => setLegalModal(null)} aria-label={t("common.close")} className="w-11 h-11 -mr-2 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-colors">
               <X className="w-5 h-5 text-slate-500" />
             </button>
           </div>
           <div
-            className="overflow-y-auto px-6 py-5 text-sm text-slate-600 leading-relaxed space-y-3 prose prose-sm max-w-none"
+            className="overflow-y-auto overscroll-contain px-6 py-5 text-sm text-slate-600 leading-relaxed space-y-3 prose prose-sm max-w-none"
             dangerouslySetInnerHTML={{__html: content.body}}
             style={{"--tw-prose-headings":"#1e293b","--tw-prose-links":"#643e87"}}
           />
@@ -9407,8 +9483,8 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
             {/* Kolon 1 — Marka */}
             <div className="lg:col-span-1">
               <button onClick={() => setCurrentPage("home")} className="flex items-center gap-2 mb-4 group hover:opacity-80 transition-opacity">
-                <img src="/icons/favicon.png" alt="" className="h-8 w-auto flex-shrink-0" />
-                <img src="/icons/logo-yatay.svg" alt="Muuvlink" className="h-5 w-auto" style={{filter:"brightness(0) invert(1)"}} />
+                <img loading="lazy" decoding="async" src="/icons/favicon.png" alt="" className="h-8 w-auto flex-shrink-0" />
+                <img loading="lazy" decoding="async" src="/icons/logo-yatay.svg" alt="Muuvlink" className="h-5 w-auto" style={{filter:"brightness(0) invert(1)"}} />
               </button>
               <p className="text-slate-400 text-sm leading-relaxed">
                 {t("footer.tagline")}
@@ -9559,18 +9635,23 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
   // MAIN RENDER
   // =====================================================
 
-  // TOAST BİLDİRİMİ
-  const Toast = () => !toast ? null : (
-    <div style={isNative ? { top: "calc(env(safe-area-inset-top) + 12px)", left: "16px", right: "16px" } : { bottom: "24px", right: "24px" }}
-      className={`fixed z-[200] flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl text-white font-medium max-w-sm transition-all ${isNative ? "animate-in slide-in-from-top-2" : "animate-in slide-in-from-bottom-2"} ${
+  // TOAST BİLDİRİMİ — bileşen değil düz fonksiyon: üst-render'da yeniden kurulmasın,
+  // giriş animasyonu yalnız YENİ uyarıda (key = id) oynasın.
+  const renderToast = () => !toast ? null : (
+    <div key={toast.id} role="status" aria-live="polite"
+      style={isNative
+        ? { top: "calc(env(safe-area-inset-top) + 12px)", left: "16px", right: "16px", zIndex: 1000400 }
+        : { bottom: "calc(env(safe-area-inset-bottom, 0px) + 24px)", right: "16px", left: "auto", zIndex: 1000400 }}
+      className={`fixed flex items-center gap-3 pl-5 pr-2 py-2 rounded-2xl shadow-2xl text-white font-medium max-w-[calc(100vw-32px)] sm:max-w-sm ${isNative ? "toast-in-top" : "toast-in-bottom"} ${
       toast.type === "success" ? "bg-brand-600" :
       toast.type === "error" ? "bg-red-600" : "bg-brand-600"
     }`}>
       <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
         {toast.type === "success" ? <CheckCircle className="w-5 h-5" /> : toast.type === "error" ? <XCircle className="w-5 h-5" /> : <Info className="w-5 h-5" />}
       </div>
-      <span className="flex-1 text-sm leading-snug">{toast.message}</span>
-      <button onClick={() => setToast(null)} className="opacity-60 hover:opacity-100 flex-shrink-0 transition-opacity">
+      <span className="flex-1 text-sm leading-snug py-1.5">{toast.message}</span>
+      <button onClick={() => setToast(null)} aria-label={t("common.close")}
+        className="w-11 h-11 flex items-center justify-center rounded-xl opacity-70 hover:opacity-100 hover:bg-white/10 flex-shrink-0 transition-opacity">
         <X className="w-4 h-4" />
       </button>
     </div>
@@ -9596,9 +9677,10 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
             return (
               <button key={tab.key} onClick={() => { triggerHaptic("light"); setCurrentPage(tab.key); }}
                 data-tour={tab.key === "teams" ? "teams-tab-bottom" : undefined}
-                className="flex-1 flex flex-col items-center gap-1 py-3 transition-all"
+                aria-current={active ? "page" : undefined}
+                className="flex-1 flex flex-col items-center gap-1 py-3"
                 style={{color: active ? "#114956" : "#94a3b8"}}>
-                <div className="relative" style={{transform: active ? "scale(1.1)" : "scale(1)", transition:"transform 0.15s"}}>
+                <div className="relative" style={{transform: active ? "scale(1.1)" : "scale(1)", transition:"transform 150ms cubic-bezier(0.23,1,0.32,1)"}}>
                   {tab.icon}
                   {/* Profil ikonunda okunmamış bildirim kırmızı noktası */}
                   {tab.key === "profile" && unreadCount > 0 && (
@@ -9651,7 +9733,7 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
             style={{ background: "#114956" }}>
             <Download className="w-4 h-4" /> İndir
           </a>
-          <button onClick={dismiss} aria-label="Kapat" className="flex-shrink-0 p-1.5 text-slate-400 hover:text-slate-600">
+          <button onClick={dismiss} aria-label={t("common.close")} className="flex-shrink-0 w-11 h-11 -mr-2 flex items-center justify-center text-slate-500 hover:text-slate-700">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -9660,7 +9742,13 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans antialiased" style={isNative ? {paddingTop:"env(safe-area-inset-top)"} : {}}>
+    <div className="min-h-screen min-h-svh bg-slate-50 font-sans antialiased" style={isNative ? {paddingTop:"env(safe-area-inset-top)"} : {}}>
+      {/* Uygulamada sabit üst menü yok: kaydırılan içerik saat/pil yazısının altına
+          girmesin diye güvenli alan kadar sabit bir perde (zemin rengi #F4F4F4, StatusBar ile aynı). */}
+      {isNative && (
+        <div aria-hidden="true" className="fixed top-0 inset-x-0 pointer-events-none"
+          style={{ height: "env(safe-area-inset-top)", background: "#F4F4F4", zIndex: 999998 }} />
+      )}
       {isNative ? null : <PageHost key="nav" render={Navigation} />}
       {isNative ? null : <AppInstallBanner />}
 
@@ -9708,7 +9796,7 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
       {storySpec && <StoryShareModal spec={storySpec} onClose={() => setStorySpec(null)} t={t} showToast={showToast} />}
       <CookieBanner />
       {tourActive && <Tour steps={tourSteps} onFinish={finishTour} t={t} />}
-      <Toast />
+      {renderToast()}
       {!isNative && <PageHost key="footer" render={Footer} />}
       </div>
       {isNative && <PageHost key="bottomnav" render={BottomNav} />}

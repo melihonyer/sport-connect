@@ -232,7 +232,7 @@ export function TaCoachTip({ t, lang, isNative }) {
   return (
     <div className="relative mb-5 rounded-2xl border border-slate-200 bg-white p-4 pr-10">
       <button type="button" onClick={close} aria-label={t("taPromo.close")}
-        className="absolute top-3 right-3 p-1 rounded-lg text-slate-400 hover:text-slate-600">
+        className="absolute top-1 right-1 w-10 h-10 flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-700">
         <X className="w-4 h-4" />
       </button>
       <TaLogo width={96} />
