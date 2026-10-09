@@ -1,8 +1,8 @@
 // Strava kulübü için profil ve kapak görseli (9 Ekim 2026).
 //   profil 1024×1024 — beyaz zemin, M amblemi kendi renklerinde (uygulama ikonu gibi; Melih); Strava yuvarlak
 //                      kırptığı için amblem ortada ve küçük
-//   kapak  1180×579  — Strava'nın önerdiği ölçü. Web sürümü üstten/alttan kırpıp ~1180×393 gösteriyor,
-//                      mobilde kulüp profil resmi sol alt köşeye biniyor: yazı ve koşucular ortadaki bantta.
+//   kapak  1180×579  — Strava'nın önerdiği ölçü. Web sürümü yalnız orta bandı gösteriyor (ölçüldü, 9 Ekim 2026:
+//                      y ≈ 110–470) ve avatar kutusu sol altı (x 19–136, y ≥ 412) kapatıyor: yazı bloğu y 122–370'te.
 // Fotoğraf public/story/kosu.jpg (Canva, telifsiz — hikâye kartındakiyle aynı).
 // Kurumsal palet: Deep Teal zemin, tek vurgu sarı, degrade yok, emoji yok.
 //
@@ -41,11 +41,11 @@ const kapak = page(1180, 579, `
   <div style="position:absolute;right:0;top:0;width:680px;height:579px;overflow:hidden">
     <img src="${PHOTO}" style="position:absolute;width:${1080 * S}px;left:${-PX * S}px;top:${-PY * S}px">
   </div>
-  <div style="position:absolute;left:64px;top:124px;width:400px;color:#fff">
-    <img src="${WORDMARK}" style="height:40px;display:block">
-    <div style="margin-top:34px;font-weight:800;font-size:54px;line-height:1.02;letter-spacing:-.02em">Sporla<br><span style="color:${YEL}">buluş.</span></div>
-    <div style="margin-top:20px;font-weight:700;font-size:21px;line-height:1.35;opacity:.88">Yakınındaki takımları ve etkinlikleri keşfet, birlikte antrenman yap.</div>
-    <div style="margin-top:22px;display:inline-block;background:${YEL};color:${TEAL};font-weight:800;font-size:20px;padding:10px 20px;border-radius:999px">muuvlink.app</div>
+  <div style="position:absolute;left:64px;top:122px;width:420px;color:#fff">
+    <img src="${WORDMARK}" style="height:36px;display:block">
+    <div style="margin-top:26px;font-weight:800;font-size:52px;line-height:1;letter-spacing:-.02em">Sporla <span style="color:${YEL}">buluş.</span></div>
+    <div style="margin-top:16px;font-weight:700;font-size:20px;line-height:1.35;opacity:.88">Yakınındaki takımları ve etkinlikleri keşfet, birlikte antrenman yap.</div>
+    <div style="margin-top:18px;display:inline-block;background:${YEL};color:${TEAL};font-weight:800;font-size:19px;padding:9px 19px;border-radius:999px">muuvlink.app</div>
   </div>`);
 
 // Chrome 154'te DevTools ekran görüntüsü büyük görselde donuyor (bkz. parkur/build-parkur.mjs):
