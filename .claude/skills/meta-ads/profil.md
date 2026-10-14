@@ -76,7 +76,7 @@ Kart 7178 Training Agents ile ortak; Meta'nın "kart başına reklam hesabı" s�
   kümelerinde sorun yok. Açık destek talebi: "Ad publishing error" (12.10.2026, inceleniyor) —
   büyük olasılıkla profil ziyareti uygunluğu. Kontrol yeri:
   `facebook.com/business-support-home/1316540033789452/`. Meta bildirim e-postaları bağlı
-  Gmail'e (`info@saltajans.com`) gelmiyor; Facebook hesabının e-postasına gidiyor.
+  Gmail'de (`info@saltajans.com`) yok; hangi adrese gittiği bilinmiyor (muhtemelen Facebook hesabının e-postası).
 - Hesapta **2 yayımlanmamış taslak** ("Review and publish (2)"; V8 ve Takipçi setinde
   değişiklik). Kimin/neden yaptığı bilinmiyor — Melih'e sormadan yayımlama/atma.
 - Reklamlar zaten §4'teki UTM'yi taşıyor (`utm_source=meta&utm_medium=paid`, kampanya ve
