@@ -59,11 +59,28 @@ Kart 7178 Training Agents ile ortak; Meta'nın "kart başına reklam hesabı" s�
   kontrolüyle yüklenebilir.
 - Statik liste yerine **CompleteRegistration olay kitlesi** kur (otomatik büyür) — yapılmadı.
 
-## Kampanyalar (son bilinen: 26.08.2026 — canlıdan oku)
-| Kampanya | Amaç | Durum | Not |
-|---|---|---|---|
-| Yeni Uygulama tanıtımı | APP_INSTALLS | duraklatıldı | SDK yok, ölçülemedi |
-| Beğenme Reklamı | LINK_CLICKS | aktifti | dönüşüm kampanyası çalışıp doğrulanınca kapatılması önerilecek |
+## Kampanyalar (Ads Manager'dan okundu: 14.10.2026, son 30 gün 14.09–13.10)
+| Kampanya | Reklam seti | Durum | Sonuç | Harcama |
+|---|---|---|---|---|
+| `MUUV \| Kayit \| Web` | `14 il \| 19-50 \| Genis \| FB+IG` · 100 ₺/gün | kapalı | 34 CompleteRegistration (Meta), 66,43 ₺/kayıt | 2.258,55 ₺ |
+| `MUUV \| Takipci \| IG` | `Takipci \| 14 il \| 19-50 \| IG profil` · 200 ₺/gün | **açık ama teslim yok** | 546 profil ziyareti, 2,34 ₺ | 1.278,06 ₺ |
+| Beğenme Reklamı | — | kapalı | — | 0 |
+| Yeni Uygulama tanıtımı | — | kapalı · 55 ₺/gün | SDK yok, ölçülemez | 0 |
+
+- Kayıt kampanyası reklamları: `V9 | Video | Harita` (en iyi), `V5 | Gorsel | Takimlar ekrani`,
+  `V11 | Reel | Etkinlik olustur`, `V8 | Gorsel | Harita`, `V7 | Gorsel | Paylas`.
+- Takipçi kampanyası hatası: "Ad account isn't eligible for Profile Visit ads" — hesap bu
+  reklam türüne uygun değil (Meta destek). Ayrıca `Takipci | 14 il | 19-50` seti ve
+  "Tavsiye edilen ayarlarla yeni Trafik Reklam" (inceleme bekliyor) var.
+- Hesapta **2 yayımlanmamış taslak** ("Review and publish (2)"; V8 ve Takipçi setinde
+  değişiklik). Kimin/neden yaptığı bilinmiyor — Melih'e sormadan yayımlama/atma.
+- Reklamlar zaten §4'teki UTM'yi taşıyor (`utm_source=meta&utm_medium=paid`, kampanya ve
+  reklam adı) → `users.utm_campaign` / `utm_content` reklam bazında eşleşiyor.
+
+**Kendi verimiz (aynı 30 gün):** toplam 75 kayıt; `utm_source=meta` 20 (+1 yalnız fbclid).
+Reklam bazında: V9 12 · V5 3 · V11 3 · V8 2. Meta 34 diyor (rıza/iOS/atıf penceresi farkı +
+uygulamadan kayıtlar). Gerçek kayıt başı ≈ 113 ₺. Bu 21 kişiden **yalnız 2'si** bir
+etkinliğe katıldı → asıl sorun kayıttan katılıma geçiş.
 
 ## Dil ve marka kuralları (CLAUDE.md'den)
 - **Emoji yok** — metinde de görselde de. Görselde ikon gerekiyorsa SVG (lucide).

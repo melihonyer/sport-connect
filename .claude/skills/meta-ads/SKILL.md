@@ -44,8 +44,16 @@ claude.ai bağlayıcısı **"Meta Ads"** = `https://mcp.facebook.com/ads` (Meta'
    `set_session_connector_enabled("Meta Ads", true)`; araçlar **bir sonraki turda** gelir.
    Listede hiç yoksa Melih'ten claude.ai → Ayarlar → Bağlayıcılar'da eklemesini iste
    (ekledikten sonra yeni oturum gerekebilir).
-   Eski yol Windsor.ai (`connector: "facebook"`) yalnız okumaydı; bağlayıcı yoksa rapor
-   için hâlâ kullanılabilir.
+   Bağlayıcı listesi oturum açılırken alınır; sonradan eklenen bağlayıcı eski oturuma gelmez.
+   **Bağlayıcı yoksa Claude in Chrome ile Ads Manager** (Melih'in oturumu açık):
+   `adsmanager.facebook.com/adsmanager/manage/campaigns?act=1342462507830325&business_id=1316540033789452`.
+   İlk açılışta "Loading your ad account" takılırsa aynı adrese bir kez daha git.
+   Tabloyu `get_page_text` ile oku; hata rozetinin ayrıntısı üstüne gelince çıkar.
+   Chrome'da da aynı kurallar: yeni nesne PAUSED, açma/kapatma/yayımlama yalnız talimatla,
+   "Review and publish" / "Discard drafts"e kendiliğinden basılmaz.
+   Windsor.ai (`connector: "facebook"`) yalnız okuma yedeği.
+   **Kendi verimiz:** sunucuda geçici `.mjs` ile yalnız SELECT (`users.utm_*`, `fbclid`,
+   `training_attendees`), çalıştırıp sil; isim değil sayı raporla.
 2. **Oku:** reklam hesabı, mevcut kampanyalar, veri kümesindeki olaylar, son 7 gün.
 3. **Kur:** kampanya → reklam seti → kreatif (görsel/video yükle) → reklam; hepsi PAUSED.
 4. **Doğrula:** oluşturduğunu yeniden oku (amaç, olay, bütçe, kitle, yerleşim, URL + UTM).
