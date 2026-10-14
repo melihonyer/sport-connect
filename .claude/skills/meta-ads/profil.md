@@ -72,6 +72,11 @@ Kart 7178 Training Agents ile ortak; Meta'nın "kart başına reklam hesabı" s�
 - Takipçi kampanyası hatası: "Ad account isn't eligible for Profile Visit ads" — hesap bu
   reklam türüne uygun değil (Meta destek). Ayrıca `Takipci | 14 il | 19-50` seti ve
   "Tavsiye edilen ayarlarla yeni Trafik Reklam" (inceleme bekliyor) var.
+- **Politika (14.10.2026):** Business Support Home'da ihlal yok, reddedilen reklam yok, veri
+  kümelerinde sorun yok. Açık destek talebi: "Ad publishing error" (12.10.2026, inceleniyor) —
+  büyük olasılıkla profil ziyareti uygunluğu. Kontrol yeri:
+  `facebook.com/business-support-home/1316540033789452/`. Meta bildirim e-postaları bağlı
+  Gmail'e (`info@saltajans.com`) gelmiyor; Facebook hesabının e-postasına gidiyor.
 - Hesapta **2 yayımlanmamış taslak** ("Review and publish (2)"; V8 ve Takipçi setinde
   değişiklik). Kimin/neden yaptığı bilinmiyor — Melih'e sormadan yayımlama/atma.
 - Reklamlar zaten §4'teki UTM'yi taşıyor (`utm_source=meta&utm_medium=paid`, kampanya ve
