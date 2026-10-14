@@ -62,13 +62,13 @@ Kart 7178 Training Agents ile ortak; Meta'nın "kart başına reklam hesabı" s�
 ## Kampanyalar (Ads Manager'dan okundu: 14.10.2026, son 30 gün 14.09–13.10)
 | Kampanya | Reklam seti | Durum | Sonuç | Harcama |
 |---|---|---|---|---|
-| `MUUV \| Kayit \| Web` | `14 il \| 19-50 \| Genis \| FB+IG` · 100 ₺/gün | kapalı | 34 CompleteRegistration (Meta), 66,43 ₺/kayıt | 2.258,55 ₺ |
-| `MUUV \| Takipci \| IG` | `Takipci \| 14 il \| 19-50 \| IG profil` · 200 ₺/gün | **açık ama teslim yok** | 546 profil ziyareti, 2,34 ₺ | 1.278,06 ₺ |
+| `MUUV \| Kayit \| Web` (`120253936542240288`) | `14 il \| 19-50 \| Genis \| FB+IG` (`120253936559940288`) · 100 ₺/gün | **açık — 14.10.2026, Melih'in talimatıyla** | 34 CompleteRegistration (Meta), 66,43 ₺/kayıt | 2.258,55 ₺ |
+| `MUUV \| Takipci \| IG` (`120253936790580288`) | `Takipci \| 14 il \| 19-50 \| IG profil` · 200 ₺/gün | **açık ama teslim yok** | 546 profil ziyareti, 2,34 ₺ | 1.278,06 ₺ |
 | Beğenme Reklamı | — | kapalı | — | 0 |
 | Yeni Uygulama tanıtımı | — | kapalı · 55 ₺/gün | SDK yok, ölçülemez | 0 |
 
-- Kayıt kampanyası reklamları: `V9 | Video | Harita` (en iyi), `V5 | Gorsel | Takimlar ekrani`,
-  `V11 | Reel | Etkinlik olustur`, `V8 | Gorsel | Harita`, `V7 | Gorsel | Paylas`.
+- Kayıt kampanyası: açık reklamlar V5, V8, V9 (en iyi), V11; kapalı V1–V4, V6, V7.
+  Kampanya açılınca dördü de `delivery: active`, hata yok (14.10.2026).
 - Takipçi kampanyası hatası: "Ad account isn't eligible for Profile Visit ads" — hesap bu
   reklam türüne uygun değil (Meta destek). Ayrıca `Takipci | 14 il | 19-50` seti ve
   "Tavsiye edilen ayarlarla yeni Trafik Reklam" (inceleme bekliyor) var.

@@ -44,7 +44,8 @@ claude.ai bağlayıcısı **"Meta Ads"** = `https://mcp.facebook.com/ads` (Meta'
    `set_session_connector_enabled("Meta Ads", true)`; araçlar **bir sonraki turda** gelir.
    Listede hiç yoksa Melih'ten claude.ai → Ayarlar → Bağlayıcılar'da eklemesini iste
    (ekledikten sonra yeni oturum gerekebilir).
-   Bağlayıcı listesi oturum açılırken alınır; sonradan eklenen bağlayıcı eski oturuma gelmez.
+   Taslak okuma (`object_state=draft`) bu hesapta henüz açık değil (14.10.2026) — Ads Manager
+   taslaklarını API göremez. Bağlayıcı listesi oturum açılırken alınır; sonradan eklenen bağlayıcı eski oturuma gelmez.
    **Bağlayıcı yoksa Claude in Chrome ile Ads Manager** (Melih'in oturumu açık):
    `adsmanager.facebook.com/adsmanager/manage/campaigns?act=1342462507830325&business_id=1316540033789452`.
    İlk açılışta "Loading your ad account" takılırsa aynı adrese bir kez daha git.
