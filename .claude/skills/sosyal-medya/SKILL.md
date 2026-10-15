@@ -14,10 +14,12 @@ description: Muuvlink'in organik sosyal medya içeriği — gönderi/karusel/Ree
 | YouTube | `@Muuvlink` | YouTube Studio |
 | TikTok | `@muuvlink` | TikTok Studio |
 | Strava | Muuvlink kulübü | strava.com kulüp gönderisi |
+| X | `@muuvlink` (Ekim 2026'da açıldı; sitedeki hesap listesinde henüz yok) | x.com — ücretsiz hesap, 280 karakter |
 
 Hesap listesi koddaki dört yerle aynı kalır (CLAUDE.md "Sosyal medya hesapları").
 Tarayıcı: Melih'in oturumu açık olan Chrome (Claude in Chrome). Giriş gerekirse Melih yapar;
-şifre girilmez.
+şifre girilmez. **X ve TikTok'ta Training Agents hesabı da açık olabiliyor** — işe başlamadan
+sağ üst/sol alttaki hesabın @muuvlink olduğunu kontrol et; değilse Melih geçirir.
 
 ## Kırmızı çizgiler
 - **Yayınlamak = önce onay.** Metni, görselleri ve platform listesini göster; "paylaş" onayı
@@ -73,6 +75,19 @@ Tarayıcı: Melih'in oturumu açık olan Chrome (Claude in Chrome). Giriş gerek
   - YouTube Shorts: Studio düzenleyici → Ses kitaplığı.
   - TikTok: Studio düzenleyici → "Sesler". TikTok Studio programatik dosya eklemeyi kabul
     etmiyor → **Melih dosyayı sürükleyip bırakır**, sonra devam.
+- **X zamanlama (web, Ekim 2026):** ana sayfadaki sabit gönderi kutusunu kullan (pencere
+  `compose/post` öğeleri kararsız). Sıra: dosya alanına `file_upload` → metin alanına koordinatla
+  tıkla, yaz, Esc (hashtag önerisi) → "…: Hazır" yazısını bekle → takvim simgesine **koordinatla**
+  tıkla (ref ile tıklama paneli açmıyor) → `read_page` ile Ay/Gün/Saat/Dakika/AM-PM seçicileri,
+  `form_input` → üstteki "… itibarıyla gönderilecek" satırını oku → Onayla → düğme "Planla" olunca
+  bas. Metin önce yazılıp video sonra eklenince "Medya hazırlanıyor"da takılıyor. Doğrulama:
+  `x.com/compose/post/unsent/scheduled`. Birden çok görsel: en çok 4.
+- **Tarayıcıya dosya yükleme sınırı 10 MB / çağrı:** büyük videolar ffmpeg 2-geçişle ~9 MB'a
+  (gerekirse 720×1280) geçici klasörde yeniden kodlanır; orijinallere dokunulmaz.
+- **Instagram'dan içerik okuma:** gönderi sayfası gerçekten açılınca `script[type=application/json]`
+  içinde metin + medya var (`fetch` ile çekilen HTML'de yok, `/api/v1` 429/HTML dönüyor). Video
+  süresi `mediaPresentationDuration`'da — yerel dosyayla eşleştirmenin en güvenilir yolu.
+  Medya adresleri imzalı; araç bunları dışarı vermez, zorlanmaz. Önce yerel orijinal, sonra Canva.
 - **Strava kulübü:** yalnız JPEG/PNG (video yok → açılış/kapanış karesi). Metindeki URL
   kaldırılıp bağlantı kartına çevriliyor; kart kapatılınca URL metni de gidiyor → metinde
   adres yazma. Form alanlarına `form_input` ile yaz (click+type tutmuyor); "Güncelle" düğmesi
@@ -82,11 +97,14 @@ Tarayıcı: Melih'in oturumu açık olan Chrome (Claude in Chrome). Giriş gerek
 - Dosya seçici açılmıyorsa: `HTMLInputElement.prototype.click`'i yakalayıp `file_upload`.
 
 ## Teslim ve kayıt
-- Bitmiş medya: `images/sosyal-medya/<konu>/` (görsel, `gorsel/` `video/` `gorsel-jpg/`
-  alt klasörleri), videolar `images/video/sosyal-medya/`. `images/` git'e girmez;
+- Bitmiş medya iki klasörde, alt klasör açılmaz: görseller (PNG/JPG, PSD) ve metin
+  dosyaları `images/sosyal-medya/gorseller/`, videolar `images/sosyal-medya/video/`.
+  Konu dosya adının başına önek olarak yazılır: `parkurlar-01-kapadokya-harita.png`,
+  `strava-aday-gorseller.jpg`. Stok/ham kaynaklar `images/stok/<konu>-kaynak-*`,
+  logolar `images/logolar/` (kurumsal kimlik `logolar/kurumsal/`). `images/` git'e girmez;
   üretim betikleri `store-assets/marketing/` altında commit edilir, stok dosyaları gitignore.
-- Her paylaşım için yanında `<ad>-metin.txt` (ya da `gonderi-metni.txt`): metin + hashtag +
+- Her paylaşım için yanında `<konu>-metin.txt` (ya da `<konu>-gonderi-metni.txt`): metin + hashtag +
   **platform başına durum** (yayında / taslak / Melih telefondan, seçilen müzik, tarih).
-  Karusel ise `karusel-icerigi.md` (kare kare metin, alternatif metin, kaynak/lisans tablosu).
+  Karusel ise `<konu>-karusel-icerigi.md` (kare kare metin, alternatif metin, kaynak/lisans tablosu).
 - Dosya taşındıysa `APPS/GENEL/medya-tasima-kaydi-*.tsv`'ye satır.
 - Paylaşım bitince Melih'e platform → durum → müzik listesi, kısa.
