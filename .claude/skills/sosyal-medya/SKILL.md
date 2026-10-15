@@ -73,8 +73,11 @@ sağ üst/sol alttaki hesabın @muuvlink olduğunu kontrol et; değilse Melih ge
     ayar penceresi açıyor — dokunma.
   - Threads: web'de müzik → "Gündem" listesi.
   - YouTube Shorts: Studio düzenleyici → Ses kitaplığı.
-  - TikTok: Studio düzenleyici → "Sesler". TikTok Studio programatik dosya eklemeyi kabul
-    etmiyor → **Melih dosyayı sürükleyip bırakır**, sonra devam.
+  - TikTok: Studio düzenleyici → "Sesler".
+  - **Videonun kendi müziği varsa platform müziği EKLENMEZ.** TikTok eklenen sesin altında
+    orijinal sesi kısmıyor (0 dB kalıyor), iki parça üst üste çalıyor (Ekim 2026'da 7 video
+    silinip yeniden kuruldu). Ses eklemeden önce dosyada müzik var mı dinle/kontrol et; varsa
+    "Orijinal ses" kalır. Müzik kuralı sessiz video ve fotoğraf gönderisi içindir.
 - **X zamanlama (web, Ekim 2026):** ana sayfadaki sabit gönderi kutusunu kullan (pencere
   `compose/post` öğeleri kararsız). Sıra: dosya alanına `file_upload` → metin alanına koordinatla
   tıkla, yaz, Esc (hashtag önerisi) → "…: Hazır" yazısını bekle → takvim simgesine **koordinatla**
@@ -88,8 +91,14 @@ sağ üst/sol alttaki hesabın @muuvlink olduğunu kontrol et; değilse Melih ge
   üstüne tıkla + JS `focus()`, sonra yaz; `innerText` ile kontrol et. Müzik: Sesler › **Sınırsız**
   (kurumsal hesap için telifsiz) › + › Kaydet. Planla › saat/dakika tekerleği (aynı noktaya art
   arda tıklama tek sayılıyor, araya ekran görüntüsü koy) › tarih takvimi. **"İçerik kontrolü
-  (hafif)"i kapat** — açıkken çıkan pencerede "Hemen paylaş" planı atlayabilir. Takvim ayın
-  sonuna kadar seçilebiliyor. `execCommand`/yapıştırma ile metin verme editörü çökertir, yapma.
+  (hafif)"i kapat** — açıkken çıkan pencerede "Hemen paylaş" planı atlayabilir. Takvim ~30 gün
+  ileriye seçilebiliyor; açılan takvimin satır konumu sayfaya göre değişir → tıklamadan önce bak.
+  Saat tekerleğinde açık saat penceresi Esc ile kapanmıyor, boş alana tıkla.
+  **Fotoğraf gönderisi:** Yükle › "Fotoğraflar" sekmesi (çoklu `file_upload`, sıra yükleme sırası).
+  Başlık (90 karakter, düz `input`) ve açıklama ayrı alan; "İçerik kontrolü" yok. "Ses ekle"
+  penceresinde Sınırsız sekmesi yok → parça adıyla ara. Küçük resme tıklamak önizleme açar,
+  dışına tıklayarak kapat. Gönderiler listesi kaydırınca yüklenir ve yeni kayıt geç düşer;
+  arama kutusu yalnız açıklamada arar (başlıkta değil). `execCommand`/yapıştırma ile metin verme editörü çökertir, yapma.
   Klavye çalışmıyorsa Chrome'da öne çıkan sekme başka sekmedir (bekleyen "ayrıl" penceresi).
 - **Tarayıcıya dosya yükleme sınırı 10 MB / çağrı:** büyük videolar ffmpeg 2-geçişle ~9 MB'a
   (gerekirse 720×1280) geçici klasörde yeniden kodlanır; orijinallere dokunulmaz.
