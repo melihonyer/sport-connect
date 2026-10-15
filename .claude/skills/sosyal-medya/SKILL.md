@@ -82,6 +82,15 @@ sağ üst/sol alttaki hesabın @muuvlink olduğunu kontrol et; değilse Melih ge
   `form_input` → üstteki "… itibarıyla gönderilecek" satırını oku → Onayla → düğme "Planla" olunca
   bas. Metin önce yazılıp video sonra eklenince "Medya hazırlanıyor"da takılıyor. Doğrulama:
   `x.com/compose/post/unsent/scheduled`. Birden çok görsel: en çok 4.
+- **TikTok Studio zamanlama (web, Ekim 2026):** `file_upload` artık kabul ediliyor. **Önce
+  Gönderiler listesine bak** — aynı içerik daha önce paylaşılmış olabilir (Ekim 2026'da 4 tekrar
+  çıktı). Yükleme bitince açıklama dosya adıyla yenilenir: "Yüklendi" yazısını bekle, metnin
+  üstüne tıkla + JS `focus()`, sonra yaz; `innerText` ile kontrol et. Müzik: Sesler › **Sınırsız**
+  (kurumsal hesap için telifsiz) › + › Kaydet. Planla › saat/dakika tekerleği (aynı noktaya art
+  arda tıklama tek sayılıyor, araya ekran görüntüsü koy) › tarih takvimi. **"İçerik kontrolü
+  (hafif)"i kapat** — açıkken çıkan pencerede "Hemen paylaş" planı atlayabilir. Takvim ayın
+  sonuna kadar seçilebiliyor. `execCommand`/yapıştırma ile metin verme editörü çökertir, yapma.
+  Klavye çalışmıyorsa Chrome'da öne çıkan sekme başka sekmedir (bekleyen "ayrıl" penceresi).
 - **Tarayıcıya dosya yükleme sınırı 10 MB / çağrı:** büyük videolar ffmpeg 2-geçişle ~9 MB'a
   (gerekirse 720×1280) geçici klasörde yeniden kodlanır; orijinallere dokunulmaz.
 - **Instagram'dan içerik okuma:** gönderi sayfası gerçekten açılınca `script[type=application/json]`
