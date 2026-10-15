@@ -54,6 +54,14 @@ sağ üst/sol alttaki hesabın @muuvlink olduğunu kontrol et; değilse Melih ge
   (`parkur/video-parkur.*`). Yazı açılma animasyonunda kelime sonu kırpılmasın
   (`clip-path` payı). Prompt'tan video için `video-uretim-akisi` skill'i (Remotion).
 - Kontrol: her kareyi görüntü olarak aç, kesik kelime/taşma var mı bak; sonra Melih'e göster.
+- **Logo kilidi filmi** (amblem sabit, etrafında nesneler vuruşta değişir; Ekim 2026):
+  `APPS/GENEL/muuvlink-kimlik`. Envato maketi → `scripts/ps/mockups.mjs` (amblemli A + amblemsiz B tasarım,
+  boy `fit()` ile) → `apply-all.sh` (Photoshop'u osascript ile sürer) → `locate.py` (A/B farkının en büyük
+  parçası = amblemin yeri) → `src/Kimlik.tsx` (kesme listesi vuruşa bağlı, `scripts/beat.py` tempoyu ölçer).
+  Yeni sahne = `mockups.mjs`'e iş + `CUTS`'a satır. Dersler: Envato'da "Download" lisansı kendiliğinden yazar;
+  büyük PSD'lerde Photoshop geçici diski dolarsa sonraki işler de açılmaz — ~20 GB boş yer gerekli; boş (saydam)
+  tasarım bazı akıllı nesnelerde "initial bounding rectangle is empty" verir → tasarıma zemin rengi ver.
+  Ses efekti: ElevenLabs Sound Effects (web, Melih'in oturumu), WAV indir.
 
 ## Metin
 - Ton X/Z kuşağı, sade, "cringe" yok: "Selam!", ünlem yığını, "kanka/efsane" yok.
