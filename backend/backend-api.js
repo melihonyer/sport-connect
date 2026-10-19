@@ -2900,6 +2900,98 @@ const reqLang = (req) => mailLang(String(req.headers['x-muuv-lang'] || '').slice
 // Uçlar Türkçe mesaj üretmeye devam eder; yanıt çıkmadan önce isteği yapanın
 // diline (X-Muuv-Lang) çevrilir. Anahtar = Türkçe metnin kendisi. Burada olmayan
 // mesaj olduğu gibi gider. Yeni kullanıcıya dönük mesaj eklerken buraya da yaz.
+// =====================================================
+// UYGUNSUZ İFADE SÜZGECİ (19 Ekim 2026, Melih onayladı)
+// App Store 1.2: kullanıcı içeriğinde "yayınlanmadan süzme" şartı. Yorum, duvar,
+// takım/etkinlik adı-açıklaması ve kişi adı kaydedilmeden önce kontrol edilir;
+// eşleşirse 400 + OBJECTIONABLE_MSG, hiçbir şey yazılmaz/bildirilmez.
+// Takılan deneme moderation_blocks'a yazılır (kim, alan, eşleşen kelime — METİN SAKLANMAZ),
+// admin › Şikayetler'de görünür. 7 dil. Yeni kelime eklerken canlıdaki metinlerle yanlış
+// alarm taraması yapılır (yalnız SELECT) — masum kelimeler: sık/sıkı/götür, μαλακός, γάμος,
+// Amina (ad), Troia, retardant… Bu yüzden riskli kökler TAM kelime listesinde.
+// Türkçe harfler KORUNUR (ı→i yapılmaz): "sık", "sıkı", "götür" gibi masum kelimeler
+// ASCII'ye çevrilince küfür köküne benziyordu. Yalnız rakam/simge kaçamakları
+// (s1kt1r, @mk) ve 3+ tekrar (siiiiktir) toparlanır.
+const MOD_PREFIX = [
+  // tr
+  "siktir", "sikeyim", "sikerim", "sikiyim", "siktiğim", "siktigim", "sikik", "sikiş",
+  "orospu", "orosbu", "oruspu", "orusbu", "amına", "aminako", "aminak", "amcık", "amcik",
+  "yarrak", "yarağ", "dalyarak", "kahpe", "pezevenk", "ibne", "gavat", "kaltak",
+  "sürtük", "surtuk", "yavşak", "yavsak", "şerefsiz", "serefsiz", "puşt",
+  "götveren", "gotveren", "götoş", "gotos", "götlek", "gotlek",
+  // en
+  "fuck", "motherfuck", "shit", "bitch", "cunt", "asshole", "whore", "slut",
+  "nigger", "nigga", "faggot", "dickhead", "motherfock",
+  // de
+  "scheiß", "scheiss", "fick", "arschloch", "hurensohn", "fotze", "wichser", "schlampe",
+  "missgeburt", "schwuchtel", "kanake",
+  // el (kök yerine çoğu tam kelime: "μαλακός" yumuşak, "γάμος" düğün)
+  "πουτάν", "πουταν", "καριόλ", "καριολ", "πούστ", "πουστ", "γαμημέν", "γαμημεν",
+  // es
+  "hijoputa", "hijodeputa", "gilipoll", "pendej", "maricón", "maricon",
+  // fr
+  "connard", "connasse", "salope", "enculé", "encule", "putain", "niquer",
+  // it
+  "vaffancul", "stronz", "puttan", "coglion", "froci",
+];
+const MOD_EXACT = new Set([
+  // tr
+  "amk", "aq", "göt", "piç", "oç",
+  // en
+  "cock", "cocks", "pussy", "fag", "fags", "retard", "retarded", "retards",
+  // el
+  "μαλάκα", "μαλακα", "μαλάκας", "μαλακας", "μαλάκες", "μαλακες", "γαμώ", "γαμω", "γαμιέσαι",
+  "γαμιεσαι", "γαμιόλη", "γαμιολη", "γαμήσου", "γαμησου", "μουνί", "μουνι", "μουνιά",
+  // es
+  "puta", "putas", "mierda", "coño", "follar", "follando",
+  // fr
+  "pute", "putes", "merde", "pédé", "nique", "bâtard", "batard", "bâtards", "batards",
+  // it
+  "cazzo", "cazzi", "cazzata", "cazzate", "minchia", "merda", "figa",
+]);
+// Kökle başlayan ama masum kelimeler (ad, yemek…)
+const MOD_ALLOW = new Set(["shitake", "shiitake"]);
+const MOD_LEET = { "0": "o", "1": "i", "3": "e", "4": "a", "5": "s", "7": "t", "@": "a", "$": "s" };
+
+function findObjectionable(...texts) {
+  for (const raw of texts) {
+    if (!raw) continue;
+    const tokens = String(raw).toLocaleLowerCase("tr").split(/[^\p{L}\p{N}@$]+/u);
+    for (let tok of tokens) {
+      if (!tok) continue;
+      // Rakam/simge yalnız harfli kelimenin içindeyse çevrilir ("5K", "10km" dokunulmaz)
+      if (/\p{L}/u.test(tok) && /[0-9@$]/.test(tok) && !/^\d+\p{L}{1,3}$/u.test(tok)) {
+        tok = tok.replace(/[013457@$]/g, (c) => MOD_LEET[c]);
+      }
+      tok = tok.replace(/(.)\1{2,}/gu, "$1");
+      if (MOD_ALLOW.has(tok)) continue;
+      if (MOD_EXACT.has(tok)) return tok;
+      for (const p of MOD_PREFIX) if (tok.startsWith(p)) return tok;
+    }
+  }
+  return null;
+}
+
+const OBJECTIONABLE_MSG = 'Bu metinde topluluk kurallarımıza uymayan bir ifade var. Lütfen düzenleyip tekrar dene.';
+pool.query(`
+  CREATE TABLE IF NOT EXISTS moderation_blocks (
+    id         SERIAL PRIMARY KEY,
+    user_id    INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    field      TEXT NOT NULL,   -- comment, wall_post, team, training, user_name
+    matched    TEXT NOT NULL,   -- eşleşen kelime (metnin tamamı saklanmaz)
+    created_at TIMESTAMPTZ DEFAULT NOW()
+  )
+`).catch(() => {});
+// true dönerse yanıt verilmiştir; uç hemen return eder.
+function rejectIfObjectionable(req, res, field, ...texts) {
+  const hit = findObjectionable(...texts);
+  if (!hit) return false;
+  pool.query('INSERT INTO moderation_blocks (user_id, field, matched) VALUES ($1, $2, $3)',
+    [req.user?.id || null, field, String(hit).slice(0, 60)]).catch((e) => console.error('moderation log:', e.message));
+  res.status(400).json({ error: OBJECTIONABLE_MSG, code: 'objectionable' });
+  return true;
+}
+
 const SERVER_MSG = {
   'Çok fazla istek. Lütfen 15 dakika sonra tekrar deneyin.': { en: 'Too many requests. Please try again in 15 minutes.', de: 'Zu viele Anfragen. Bitte versuche es in 15 Minuten erneut.', el: 'Πάρα πολλά αιτήματα. Δοκίμασε ξανά σε 15 λεπτά.', es: 'Demasiadas solicitudes. Inténtalo de nuevo en 15 minutos.', fr: 'Trop de requêtes. Réessaie dans 15 minutes.', it: 'Troppe richieste. Riprova tra 15 minuti.' },
   'Çok fazla istek. Lütfen bir süre bekleyin.': { en: 'Too many requests. Please wait a moment.', de: 'Zu viele Anfragen. Bitte warte einen Moment.', el: 'Πάρα πολλά αιτήματα. Περίμενε λίγο.', es: 'Demasiadas solicitudes. Espera un momento.', fr: 'Trop de requêtes. Patiente un instant.', it: 'Troppe richieste. Attendi un momento.' },
@@ -2907,6 +2999,7 @@ const SERVER_MSG = {
   'Şifre en az 6 karakter olmalıdır.': { en: 'The password must be at least 6 characters.', de: 'Das Passwort muss mindestens 6 Zeichen haben.', el: 'Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες.', es: 'La contraseña debe tener al menos 6 caracteres.', fr: 'Le mot de passe doit contenir au moins 6 caractères.', it: 'La password deve avere almeno 6 caratteri.' },
   'Şifre en az 6 karakter olmalı.': { en: 'The password must be at least 6 characters.', de: 'Das Passwort muss mindestens 6 Zeichen haben.', el: 'Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες.', es: 'La contraseña debe tener al menos 6 caracteres.', fr: 'Le mot de passe doit contenir au moins 6 caractères.', it: 'La password deve avere almeno 6 caratteri.' },
   'İsim en az 2 karakter olmalıdır.': { en: 'The name must be at least 2 characters.', de: 'Der Name muss mindestens 2 Zeichen haben.', el: 'Το όνομα πρέπει να έχει τουλάχιστον 2 χαρακτήρες.', es: 'El nombre debe tener al menos 2 caracteres.', fr: 'Le nom doit contenir au moins 2 caractères.', it: 'Il nome deve avere almeno 2 caratteri.' },
+  [OBJECTIONABLE_MSG]: { en: "This text contains wording that goes against our community guidelines. Please edit it and try again.", de: 'Dieser Text enthält eine Formulierung, die gegen unsere Community-Richtlinien verstößt. Bitte bearbeite ihn und versuche es erneut.', el: 'Αυτό το κείμενο περιέχει έκφραση που αντιβαίνει στους κανόνες της κοινότητάς μας. Διόρθωσέ το και δοκίμασε ξανά.', es: 'Este texto contiene una expresión que va en contra de nuestras normas de la comunidad. Edítalo y vuelve a intentarlo.', fr: 'Ce texte contient une expression contraire aux règles de notre communauté. Modifie-le puis réessaie.', it: 'Questo testo contiene un\'espressione contraria alle regole della nostra community. Modificalo e riprova.' },
   'Görsel çok büyük. En fazla 20 MB yüklenebilir.': { en: 'The image is too large. The maximum is 20 MB.', de: 'Das Bild ist zu groß. Maximal 20 MB.', el: 'Η εικόνα είναι πολύ μεγάλη. Το μέγιστο είναι 20 MB.', es: 'La imagen es demasiado grande. El máximo es 20 MB.', fr: 'L\'image est trop lourde. 20 Mo maximum.', it: 'L\'immagine è troppo grande. Massimo 20 MB.' },
   'Sadece görsel dosyaları yüklenebilir.': { en: 'Only image files can be uploaded.', de: 'Es können nur Bilddateien hochgeladen werden.', el: 'Μπορούν να ανέβουν μόνο αρχεία εικόνας.', es: 'Solo se pueden subir imágenes.', fr: 'Seules les images peuvent être envoyées.', it: 'Si possono caricare solo immagini.' },
   'Sadece PNG/JPEG/GIF/WEBP yüklenebilir.': { en: 'Only PNG/JPEG/GIF/WEBP can be uploaded.', de: 'Nur PNG/JPEG/GIF/WEBP können hochgeladen werden.', el: 'Μόνο PNG/JPEG/GIF/WEBP.', es: 'Solo se pueden subir PNG/JPEG/GIF/WEBP.', fr: 'Seuls les formats PNG/JPEG/GIF/WEBP sont acceptés.', it: 'Si possono caricare solo PNG/JPEG/GIF/WEBP.' },
@@ -3893,6 +3986,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
     if (password.length < 6) {
       return res.status(400).json({ error: 'Şifre en az 6 karakter olmalıdır.' });
     }
+    if (rejectIfObjectionable(req, res, 'user_name', name)) return;
     if (name.trim().length < 2) {
       return res.status(400).json({ error: 'İsim en az 2 karakter olmalıdır.' });
     }
@@ -4057,6 +4151,7 @@ app.post('/api/auth/onboarding', authenticateToken, async (req, res) => {
 app.put('/api/auth/profile', authenticateToken, async (req, res) => {
   try {
     const { name, phone, avatar } = req.body;
+    if (rejectIfObjectionable(req, res, 'user_name', name)) return;
 
     const result = await pool.query(
       `UPDATE users SET name = $1, phone = $2, avatar = $3, updated_at = CURRENT_TIMESTAMP
@@ -4166,6 +4261,7 @@ app.post('/api/teams', authenticateToken, async (req, res) => {
     if (!name || !sportsArr.length) {
       return res.status(400).json({ error: 'Name and at least one sport are required' });
     }
+    if (rejectIfObjectionable(req, res, 'team', name, description)) return;
     const primarySport = sportsArr[0]; // tekil `sport` = birincil dal (mevcut gösterimlerle uyum)
 
     const teamResult = await pool.query(
@@ -4625,6 +4721,7 @@ app.put('/api/teams/:id', authenticateToken, async (req, res) => {
     // Not: avatar burada GÜNCELLENMEZ — fotoğraf yalnızca POST /teams/:id/avatar
     // ile yönetilir. Aksi halde formdaki bayat avatar değeri yeni fotoğrafı geri alabilir.
     const { name, sport, sports, description, location, is_private } = req.body;
+    if (rejectIfObjectionable(req, res, 'team', name, description)) return;
 
     const ownerCheck = await pool.query('SELECT owner_id FROM teams WHERE id = $1', [teamId]);
     if (!ownerCheck.rows.length) return res.status(404).json({ error: 'Team not found' });
@@ -4829,6 +4926,7 @@ app.post('/api/teams/:id/posts', authenticateToken, async (req, res) => {
     if (!message || !message.trim()) {
       return res.status(400).json({ error: 'Mesaj boş olamaz.' });
     }
+    if (rejectIfObjectionable(req, res, 'wall_post', message)) return;
 
     // Üyelik kontrolü + göndericinin bilgilerini çek
     const memberCheck = await pool.query(
@@ -4942,6 +5040,7 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
       registration_label,
       source,
     } = req.body;
+    if (rejectIfObjectionable(req, res, 'training', title, description)) return;
     const trainingSource = source === 'training-agents' ? 'training-agents' : null;
 
     if (!title || !training_date || !training_time || !location_name) {
@@ -5663,6 +5762,7 @@ app.post('/api/trainings/:id/comments', authenticateToken, async (req, res) => {
     if (!comment || !comment.trim()) {
       return res.status(400).json({ error: 'Yorum boş olamaz.' });
     }
+    if (rejectIfObjectionable(req, res, 'comment', comment)) return;
 
     if (!(await canSeeTrainingComments(trainingId, req.user.id))) {
       return res.status(403).json({ error: 'Yorumlar yalnız takım üyelerine ve katılımcılara açık.' });
@@ -5958,6 +6058,7 @@ app.put('/api/trainings/:id', authenticateToken, async (req, res) => {
   try {
     const trainingId = req.params.id;
     const { title, description, training_date, training_time, location_name, location_lat, location_lng, capacity, difficulty, sport, registration_url, registration_label } = req.body;
+    if (rejectIfObjectionable(req, res, 'training', title, description)) return;
 
     const trainingResult = await pool.query(
       'SELECT team_id, created_by FROM trainings WHERE id = $1',
@@ -10034,6 +10135,19 @@ app.get('/api/admin/flags', isAdmin, async (req, res) => {
       LIMIT 200
     `);
     res.json(result.rows);
+  } catch (e) {
+    res.status(500).json([]);
+  }
+});
+
+// Admin: süzgece takılan denemeler (son 200). Metin saklanmaz; kim, alan, eşleşen kelime.
+app.get('/api/admin/moderation-blocks', isAdmin, async (req, res) => {
+  try {
+    const r = await pool.query(`
+      SELECT mb.id, mb.user_id, mb.field, mb.matched, mb.created_at, u.name AS user_name, u.email AS user_email
+      FROM moderation_blocks mb LEFT JOIN users u ON u.id = mb.user_id
+      ORDER BY mb.created_at DESC LIMIT 200`);
+    res.json(r.rows);
   } catch (e) {
     res.status(500).json([]);
   }

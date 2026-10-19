@@ -3679,9 +3679,13 @@ export default function Muuvlink() {
         setUser(data.user);
         setShowProfileEdit(false);
         showToast(t("toast.profileUpdated"), "success");
+      } else {
+        const d = await response.json().catch(() => ({}));
+        showToast(errText(d, t("common.error")), "error");
       }
     } catch (error) {
       console.error("Update profile error:", error);
+      showToast(t("toast.networkError"), "error");
     }
   };
 
@@ -4044,11 +4048,14 @@ export default function Muuvlink() {
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
         showToast(errText(d, t("toast.networkError")), "error");
-        return;
+        return false;
       }
       fetchTrainingDetails(trainingId);
+      return true;
     } catch (error) {
       console.error("Add comment error:", error);
+      showToast(t("toast.networkError"), "error");
+      return false;
     }
   };
 
@@ -4442,9 +4449,13 @@ export default function Muuvlink() {
         fetchTeams();
         fetchMyTeams(token);
         fetchMyTrainings(token);
+      } else {
+        const d = await response.json().catch(() => ({}));
+        showToast(errText(d, t("common.error")), "error");
       }
     } catch (error) {
       console.error("Create team error:", error);
+      showToast(t("toast.networkError"), "error");
     }
   };
 
@@ -4512,15 +4523,17 @@ export default function Muuvlink() {
 
       if (!response.ok) {
         showToast(data.error || t("toast.postFail"), "error");
-        return;
+        return false;
       }
 
       // Takım detayını yenileyerek yeni gönderiyi göster
       fetchTeamDetails(teamId);
       showToast(t("toast.postShared"), "success");
+      return true;
     } catch (error) {
       console.error("Add post error:", error);
       showToast(t("common.error"), "error");
+      return false;
     }
   };
 
@@ -6521,8 +6534,9 @@ export default function Muuvlink() {
     const handleSubmitComment = (e) => {
       e.preventDefault();
       if (comment.trim()) {
-        handleAddComment(selectedTraining.id, comment);
+        const sent = comment;
         setComment("");
+        handleAddComment(selectedTraining.id, sent).then((ok) => { if (!ok) setComment(sent); });
       }
     };
 
@@ -7319,7 +7333,11 @@ export default function Muuvlink() {
 
     const handleSubmitPost = (e) => {
       e.preventDefault();
-      if (message.trim()) { handleAddTeamPost(selectedTeam.id, message); setMessage(""); }
+      if (message.trim()) {
+        const sent = message;
+        setMessage("");
+        handleAddTeamPost(selectedTeam.id, sent).then((ok) => { if (!ok) setMessage(sent); });
+      }
     };
 
     const handleEditSubmit = (e) => {

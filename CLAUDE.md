@@ -297,6 +297,15 @@ Kurallar:
   yakalayıcı 413/400 + `SERVER_MSG` mesajıyla döner (eskiden HTML 500). Dikkat: `toWebP`
   dönüştüremediği veriyi OLDUĞU GİBİ yükler — test için sahte bayt göndermek Supabase'e dosya
   bırakır (9 Ekim'de bırakıldı, silindi).
+- **Uygunsuz ifade süzgeci** (19 Ekim 2026, App Store 1.2): `findObjectionable` + `rejectIfObjectionable`
+  (backend-api.js). Yorum, duvar, takım adı/açıklaması, etkinlik adı/açıklaması, kişi adı (kayıt +
+  profil) — 9 uç; yazmadan ÖNCE kontrol, eşleşirse 400 `code:'objectionable'` + `OBJECTIONABLE_MSG`
+  (SERVER_MSG, 7 dil). Listeler 7 dilde (tr, en, de, el, es, fr, it). Türkçe harfler korunur
+  (ı→i YAPILMAZ: "sık/sıkı/götür" masum); riskli kökler tam kelime listesinde. Kelime eklerken
+  canlı metinlerle yanlış alarm taraması (yalnız SELECT) — 19 Ekim'de 493 kayıtta 0. Takılan deneme
+  `moderation_blocks` (kim, alan, kelime; METİN SAKLANMAZ) → admin › Şikayetler üstünde "Süzgece
+  takılanlar". Site: yorum/duvar kutusu reddedilince yazılan metin geri gelir. Yeni kullanıcı metni
+  alanı eklenirse ona da `rejectIfObjectionable` konur.
 - Degrade yok kuralı: fotoğraf üstündeki karartma katmanları (okunurluk için) ve admin'den gelen
   banner renkleri hariç. Branş adı her yerde `sportLabel()` ile görenin dilinde.
 

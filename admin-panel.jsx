@@ -64,6 +64,42 @@ function ImageUploadBtn({ itemId, endpoint, token, onUploaded, onError, currentU
 }
 
 // ─── Haberler sekmesi ────────────────────────────────────────
+// ─── Süzgece takılanlar (Şikayetler sekmesinin üstü) ─────────────────────
+// Uygunsuz ifade süzgeci (backend findObjectionable) yayınlanmadan durdurduğu denemeler.
+// Metin saklanmaz: kim, hangi alanda, hangi kelimeye takıldı.
+const MOD_FIELD_TR = { comment: "Yorum", wall_post: "Takım duvarı", team: "Takım adı/açıklaması", training: "Etkinlik adı/açıklaması", user_name: "Kişi adı" };
+function ModerationBlocksPanel({ api }) {
+  const [rows, setRows] = React.useState(null);
+  const [open, setOpen] = React.useState(false);
+  React.useEffect(() => { api("/admin/moderation-blocks").then((d) => setRows(Array.isArray(d) ? d : [])).catch(() => setRows([])); }, []);
+  if (rows === null) return null;
+  return (
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm">
+      <button type="button" onClick={() => setOpen((o) => !o)} className="w-full flex items-center gap-3 p-4 text-left">
+        <div className="w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center flex-shrink-0"><Shield className="w-4 h-4 text-slate-500" /></div>
+        <div className="flex-1 min-w-0">
+          <div className="font-semibold text-slate-800 text-sm">Süzgece takılanlar <span className="text-slate-400 font-normal">({rows.length})</span></div>
+          <div className="text-xs text-slate-500">Uygunsuz ifade içerdiği için yayınlanmadan durdurulan denemeler. Metin saklanmaz.</div>
+        </div>
+        {open ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+      </button>
+      {open && (
+        <div className="border-t border-slate-100 divide-y divide-slate-50">
+          {rows.length === 0 && <div className="p-4 text-sm text-slate-400">Henüz takılan yok.</div>}
+          {rows.map((r) => (
+            <div key={r.id} className="px-4 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+              <span className="font-medium text-slate-700">{r.user_name || "Kayıt sırasında (hesap yok)"}</span>
+              <span className="text-slate-400">{MOD_FIELD_TR[r.field] || r.field}</span>
+              <span className="px-2 py-0.5 rounded-md bg-red-50 text-red-700 text-xs font-mono">{r.matched}</span>
+              <span className="ml-auto text-xs text-slate-400 tabular-nums">{new Date(r.created_at).toLocaleString("tr-TR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function HomeNewsTab({ items, setItems, api, token, showToast }) {
   const [showForm, setShowForm] = React.useState(false);
   const [editId, setEditId]   = React.useState(null);
@@ -3719,6 +3755,7 @@ export default function AdminPanel() {
           {/* ── REPORTS ──────────────────────────────────── */}
           {!loading && tab === "reports" && (
             <div className="space-y-3">
+              <ModerationBlocksPanel api={api} />
               {reports.length === 0 && (
                 <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-16 text-center text-slate-400">
                   <Flag className="w-12 h-12 mx-auto mb-3 text-slate-200" />
