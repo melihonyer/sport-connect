@@ -80,6 +80,10 @@ sağ üst/sol alttaki hesabın @muuvlink olduğunu kontrol et; değilse Melih ge
     Sayfa ayarı gereği Reels Facebook hikâyesine de düşüyor; hikâye anahtarı hesap geneli
     ayar penceresi açıyor — dokunma.
   - Threads: web'de müzik → "Gündem" listesi.
+  - **Business Suite "Share to Threads":** fotoğraf/karusel gönderisinde Threads'e de düşüyor (19.10.2026
+    doğrulandı); **Reels'te düşmedi** (17.10.2026 videosu Threads'te yok) → video Threads'e ayrıca, elle.
+    Business Suite'te dosya seçici açılmıyor: `HTMLInputElement.prototype.click` yakala + `file_upload`.
+    Yayından sonra çıkan "reklam oluştur" penceresinde "Maybe later".
   - YouTube Shorts: Studio düzenleyici → Ses kitaplığı.
   - TikTok: Studio düzenleyici → "Sesler".
   - **Videonun kendi müziği varsa platform müziği EKLENMEZ.** TikTok eklenen sesin altında
