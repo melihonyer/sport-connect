@@ -1,5 +1,7 @@
 // Muuvlink Backend API - FULL VERSION
 require('dotenv').config();
+// Threshold: Melih'in kişisel bildirim merkezi (beklenmez, hata fırlatmaz, ayar yoksa susar).
+const { threshold, shortName } = require('./threshold');
 // Render'da IPv6 üzerinden SMTP bağlantısı çalışmıyor — IPv4 öncelikli yap
 const dns = require('dns');
 dns.setDefaultResultOrder('ipv4first');
@@ -4703,11 +4705,16 @@ app.post('/api/teams/:id/accept-invite', authenticateToken, async (req, res) => 
       return res.status(404).json({ error: 'Bekleyen davet bulunamadı.' });
     }
 
-    await pool.query(
+    const katildi = await pool.query(
       'INSERT INTO team_members (team_id, user_id, role) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING',
       [teamId, req.user.id, 'member']
     );
     await pool.query('DELETE FROM team_invitations WHERE id = $1', [invite.rows[0].id]);
+
+    // Threshold: davetle katılım (bu yol logActivity'ye yazmıyor).
+    if (katildi.rowCount === 1) {
+      threshold({ type: 'team.joined', title: 'Takıma katılım', body: 'Davetle katıldı', dedupe_key: `davet-${invite.rows[0].id}` });
+    }
 
     res.json({ message: 'Takıma başarıyla katıldınız!' });
   } catch (e) {
@@ -6823,6 +6830,12 @@ app.delete('/api/users/me', authenticateToken, async (req, res) => {
       `INSERT INTO account_departures (user_id, source, signed_up_at, left_at, reason)
        SELECT id, 'self', created_at, NOW(), $2 FROM users WHERE id = $1`, [req.user.id, reason]
     ).catch((e) => console.error('[DEPARTURES] Kayıt hatası:', e.message));
+    // Threshold: hesap kapatma ve seçilen ayrılma nedeni (serbest not gitmez).
+    threshold({
+      type: 'account.deleted', title: 'Hesap kapatıldı',
+      body: reason ? `Neden: ${reason}` : null,
+      dedupe_key: `hesap-silme-${req.user.id}-${new Date().toISOString().slice(0, 10)}`,
+    });
     res.json({ message: 'Hesabınız silinmek üzere kapatıldı.' });
   } catch (error) {
     console.error('Self-delete error:', error.message);
@@ -7222,6 +7235,15 @@ app.post('/api/contact', async (req, res) => {
         </div>
       `, L),
       }),
+    });
+
+    // Threshold: yalnız konu ve kısa ad; mesajın kendisi ve e-posta gitmez.
+    threshold({
+      type: 'contact.received', title: 'Yeni mesaj',
+      body: `İletişim formu: ${subject.trim().slice(0, 80)}`,
+      actor: shortName(name),
+      url: `${APP_URL}/admin.html?tab=messages`,
+      dedupe_key: `iletisim-${result.rows[0].id}`,
     });
 
     res.json({ message: 'Mesajınız başarıyla gönderildi.', id: result.rows[0].id });
@@ -9146,12 +9168,31 @@ function trackMeta(eventName, opts) {
 // yazılmasını veritabanı seviyesinde engeller. Yalnızca "varlık başına bir kez"
 // olabilen olaylarda verilir (kayıt/takım kurma/etkinlik oluşturma).
 // Tekrarlanabilen olaylarda (katıl/ayrıl) boş bırakılır.
+// Threshold'a giden olaylar. Yalnız gerçekten eklenen satır gönderilir
+// (ON CONFLICT → rowCount 0), böylece tekrar eden olay telefonu iki kez titretmez.
+// user_register meta'sındaki e-posta kullanılmaz: Threshold'a e-posta gitmez.
+const THRESHOLD_EVENTS = {
+  user_register: (n) => ({ type: 'user.signup', title: 'Yeni üye', body: n ? `${n} Muuvlink'e katıldı` : null }),
+  team_create: (n, m) => ({ type: 'team.created', title: 'Yeni takım', body: [m.team_name, m.sport].filter(Boolean).join(' · ') || null }),
+  team_join: (n, m) => ({ type: 'team.joined', title: 'Takıma katılım', body: [n, m.team_name].filter(Boolean).join(' · ') || null }),
+  training_create: (n, m) => ({ type: 'event.created', title: 'Yeni etkinlik', body: [m.training_title, m.team_name].filter(Boolean).join(' · ') || null }),
+  training_join: (n, m) => ({ type: 'event.joined', title: 'Etkinliğe katılım', body: m.training_title || null }),
+  training_leave: (n, m) => ({ type: 'event.left', title: 'Etkinlikten ayrılma', body: m.training_title || null }),
+  team_delete: (n, m) => ({ type: 'team.deleted', title: 'Takım silindi', body: m.name || null }),
+  training_delete: (n, m) => ({ type: 'event.deleted', title: 'Etkinlik silindi', body: m.name || null }),
+};
+
 async function logActivity(event_type, user_id, user_name, meta = {}, source_ref = null) {
   try {
-    await pool.query(
+    const r = await pool.query(
       'INSERT INTO activity_logs (event_type, user_id, user_name, meta, source_ref) VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING',
       [event_type, user_id || null, user_name || null, JSON.stringify(meta), source_ref]
     );
+    const map = THRESHOLD_EVENTS[event_type];
+    if (map && r.rowCount === 1) {
+      const kisa = shortName(user_name);
+      threshold({ ...map(kisa, meta || {}), actor: kisa, dedupe_key: source_ref || undefined });
+    }
   } catch (e) { /* sessiz */ }
 }
 
@@ -10073,6 +10114,11 @@ app.post('/api/report', authenticateToken, async (req, res) => {
       'INSERT INTO content_reports (reporter_id, content_type, content_id, reason) VALUES ($1,$2,$3,$4)',
       [req.user.id, content_type, content_id, reason]
     );
+    // Threshold: şikayet edilen içeriğin türü ve kısa gerekçe; içerik metni gitmez.
+    threshold({
+      type: 'report.created', level: 'alert', title: 'İçerik şikayeti',
+      body: `${content_type} #${content_id} · ${String(reason).slice(0, 40)}`,
+    });
     res.json({ ok: true });
   } catch (e) {
     res.status(500).json({ error: 'Şikayet kaydedilemedi.' });
