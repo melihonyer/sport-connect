@@ -74,7 +74,12 @@ Kart 7178 Training Agents ile ortak; Meta'nın "kart başına reklam hesabı" s�
   "Tavsiye edilen ayarlarla yeni Trafik Reklam" (inceleme bekliyor) var.
 - **Politika (14.10.2026):** Business Support Home'da ihlal yok, reddedilen reklam yok, veri
   kümelerinde sorun yok. Açık destek talebi: "Ad publishing error" (12.10.2026, inceleniyor) —
-  büyük olasılıkla profil ziyareti uygunluğu. Kontrol yeri:
+  büyük olasılıkla profil ziyareti uygunluğu.
+  **19.10.2026 Meta cevabı** (vaka 1090881883725173, durum "Action required"): teknik ekip hatanın
+  Reklam Yöneticisi MOBİL uygulamasında hedef kitle düzenlenirken profil ziyareti reklamlarında oluşan
+  bir yayınlama sorunundan kaynaklandığını söyledi. Öneri: reklamı BİLGİSAYARDAN Reklam Yöneticisi'nde
+  çoğalt, yeni kopyayı yayınla; hedef kitleyi mobilden düzenleme. Sürerse hatayı gösteren İngilizce ekran
+  kaydı istiyorlar. Cevap verilmediği için sohbet duraklatıldı; vaka uzman ekipte açık. Kontrol yeri:
   `facebook.com/business-support-home/1316540033789452/`. Meta bildirim e-postaları bağlı
   Gmail'de (`info@saltajans.com`) yok; hangi adrese gittiği bilinmiyor (muhtemelen Facebook hesabının e-postası).
 - Hesapta **2 yayımlanmamış taslak** ("Review and publish (2)"; V8 ve Takipçi setinde
