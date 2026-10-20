@@ -63,7 +63,7 @@ Kart 7178 Training Agents ile ortak; Meta'nın "kart başına reklam hesabı" s�
 | Kampanya | Reklam seti | Durum | Sonuç | Harcama |
 |---|---|---|---|---|
 | `MUUV \| Kayit \| Web` (`120253936542240288`) | `14 il \| 19-50 \| Genis \| FB+IG` (`120253936559940288`) · 100 ₺/gün | **açık — 14.10.2026, Melih'in talimatıyla** | 34 CompleteRegistration (Meta), 66,43 ₺/kayıt | 2.258,55 ₺ |
-| `MUUV \| Takipci \| IG` (`120253936790580288`) | `Takipci \| 14 il \| 19-50 \| IG profil` · 200 ₺/gün | **açık ama teslim yok** | 546 profil ziyareti, 2,34 ₺ | 1.278,06 ₺ |
+| `MUUV \| Takipci \| IG` (`120253936790580288`) | `Takipci \| 14 il \| 19-50 \| IG profil` · 200 ₺/gün | **duraklatıldı — 20.10.2026, Melih** (#2016153 yüzünden hiç teslim yoktu) | 546 profil ziyareti, 2,34 ₺ | 1.278,06 ₺ |
 | Beğenme Reklamı | — | kapalı | — | 0 |
 | Yeni Uygulama tanıtımı | — | kapalı · 55 ₺/gün | SDK yok, ölçülemez | 0 |
 
@@ -79,7 +79,11 @@ Kart 7178 Training Agents ile ortak; Meta'nın "kart başına reklam hesabı" s�
   Reklam Yöneticisi MOBİL uygulamasında hedef kitle düzenlenirken profil ziyareti reklamlarında oluşan
   bir yayınlama sorunundan kaynaklandığını söyledi. Öneri: reklamı BİLGİSAYARDAN Reklam Yöneticisi'nde
   çoğalt, yeni kopyayı yayınla; hedef kitleyi mobilden düzenleme. Sürerse hatayı gösteren İngilizce ekran
-  kaydı istiyorlar. Cevap verilmediği için sohbet duraklatıldı; vaka uzman ekipte açık. Kontrol yeri:
+  kaydı istiyorlar. Cevap verilmediği için sohbet duraklatıldı; vaka uzman ekipte açık.
+  **20.10.2026:** Melih'in kararıyla takipçi kampanyası duraklatıldı, bütçe kayıt kampanyasına kalıyor
+  (14–19 Ekim: 795,90 ₺ / 18 kayıt / 44,22 ₺ Meta sayımıyla). Destek sohbetine "kampanyayı duraklattık,
+  talebi kapatıyoruz" yazıldı; "Close this support case" iki kez "trouble completing your request" hatası
+  verdi — vaka açık kaldı (temsilci kuyruğunda). Profil ziyareti gerekirse: masaüstü Reklam Yöneticisi'nde çoğalt. Kontrol yeri:
   `facebook.com/business-support-home/1316540033789452/`. Meta bildirim e-postaları bağlı
   Gmail'de (`info@saltajans.com`) yok; hangi adrese gittiği bilinmiyor (muhtemelen Facebook hesabının e-postası).
 - Hesapta **2 yayımlanmamış taslak** ("Review and publish (2)"; V8 ve Takipçi setinde
