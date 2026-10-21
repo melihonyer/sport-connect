@@ -602,6 +602,11 @@ seçilebilir link kutusu, WhatsApp/Telegram/e-posta butonları, hazır davet mes
   `invite` tercihi varsayılan AÇIK — kapalıyken davet e-postası üyeye de yeni kişiye de hiç gitmiyordu.
   Sitede etkinlik başlığının altında sarı "Davet Et"; takım davet penceresi ortak (`inviteTrainingId`).
   Gönderim kod hatasıyla düşerse davet kaydı geri alınır.
+- **Takım önerisi** (22 Ekim 2026, Melih onayladı): takım dışından biri takım etkinliğine katılınca
+  "Katıldın" uyarısı yerine pencere (`renderTeamSuggest`, `teamSuggest.*` 7 dil): "Takıma da katılmak ister
+  misin?" + Takıma Katıl / Şimdi değil. Gizli takım, organizatör/ücretli etkinlik ve üye hariç. Kapatılan
+  takım o cihazda bir daha önerilmez (`muuv_team_suggest_off`). Metindeki "bildirim alırsın" doğru:
+  takıma yeni etkinlik açılınca üyelere bildirim gider.
 - E-posta çerçevesi dar ekrana uyar (`mv-*` sınıfları + media query). Sabit
   600px'e geri dönülmez; telefonda sağ taraf kesiliyordu.
 - Örnek göndermek için gerçek alıcı yerine `delivered+etiket@resend.dev` kullan

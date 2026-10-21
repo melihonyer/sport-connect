@@ -1177,6 +1177,15 @@ export const translations = {
   },
 
   // ── COOKIE BANNER ────────────────────────────────────────
+  // Takım dışından etkinliğe katılana takım önerisi (22 Ekim 2026)
+  teamSuggest: {
+    joined:  { tr: "Etkinliğe katıldın",                en: "You're in",                         de: "Du bist dabei"                },
+    title:   { tr: "Takıma da katılmak ister misin?",   en: "Want to join the team too?",        de: "Willst du auch dem Team beitreten?" },
+    body:    { tr: "Bu etkinliği {team} takımı düzenliyor. Takıma katılırsan yeni etkinlikler açıldığında bildirim alırsın.",
+               en: "This event is organised by {team}. Join the team and you'll get a notification whenever a new event opens.",
+               de: "Dieses Event organisiert das Team {team}. Wenn du beitrittst, bekommst du eine Benachrichtigung, sobald ein neues Event startet." },
+    later:   { tr: "Şimdi değil",                       en: "Not now",                           de: "Jetzt nicht"                  },
+  },
   cookie: {
     title:          { tr: "Çerez Bildirimi",              en: "Cookie Notice",           de: "Cookie-Hinweis"          },
     text:           { tr: "Oturumunu açık tutmak için zorunlu depolama kullanıyoruz. Reklamlarımızın sonucunu ölçmek için Meta pikseli, ziyaret sayısı için çerezsiz istatistik de çalışır.",

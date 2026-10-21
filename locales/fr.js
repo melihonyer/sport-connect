@@ -829,6 +829,12 @@ export default {
     trainingsCount: "événements",
   },
 
+  teamSuggest: {
+    joined: "C'est noté, tu participes",
+    title: "Tu veux aussi rejoindre l'équipe ?",
+    body: "Cet événement est organisé par l'équipe {team}. Si tu rejoins l'équipe, tu recevras une notification à chaque nouvel événement.",
+    later: "Pas maintenant",
+  },
   cookie: {
     title: "Cookies",
     text: "Nous utilisons un stockage essentiel pour te garder connecté. Le pixel Meta fonctionne aussi pour mesurer les résultats de nos publicités, ainsi que des statistiques de visite sans cookies.",

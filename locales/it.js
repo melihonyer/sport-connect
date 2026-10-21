@@ -829,6 +829,12 @@ export default {
     trainingsCount: "eventi",
   },
 
+  teamSuggest: {
+    joined: "Ci sei",
+    title: "Vuoi entrare anche nella squadra?",
+    body: "Questo evento è organizzato dalla squadra {team}. Se entri nella squadra, riceverai una notifica ogni volta che si apre un nuovo evento.",
+    later: "Non ora",
+  },
   cookie: {
     title: "Informativa cookie",
     text: "Usiamo un'archiviazione essenziale per mantenerti connesso. Funzionano anche il pixel di Meta, per misurare i risultati delle nostre pubblicità, e statistiche di visita senza cookie.",

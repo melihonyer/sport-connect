@@ -2340,6 +2340,9 @@ export default function Muuvlink() {
   const [resetToken, setResetToken] = useState(null); // URL'den gelen şifre sıfırlama token'ı
   const [joiningTrainingId, setJoiningTrainingId] = useState(null);
   const [joiningTeamId, setJoiningTeamId] = useState(null);
+  // Takım dışından etkinliğe katılana bir kez takım önerisi. "Şimdi değil" denen takım
+  // bu tarayıcıda bir daha önerilmez (muuv_team_suggest_off).
+  const [teamSuggest, setTeamSuggest] = useState(null);
   const [showManualLocation, setShowManualLocation] = useState(false);
   const [gpsErrorCode, setGpsErrorCode] = useState(null); // 1=denied, 2=unavailable, 3=timeout
   const [manualLocationName, setManualLocationName] = useState("");
@@ -3357,6 +3360,7 @@ export default function Muuvlink() {
     if (showManualLocation){ setShowManualLocation(false);return true; }
     if (showInviteModal)   { setShowInviteModal(false);   return true; }
     if (inviteTrainingId)  { setInviteTrainingId(null);   return true; }
+    if (teamSuggest)       { dismissTeamSuggest();        return true; }
     if (showProfileEdit)   { setShowProfileEdit(false);   return true; }
     if (showNotifPrefs)    { setShowNotifPrefs(false);    return true; }
     if (showNotifications) { setShowNotifications(false); return true; }
@@ -3911,7 +3915,15 @@ export default function Muuvlink() {
         MetaEvents.joinTraining(trainingId, eventId);
         umamiTrack("event:join");
         triggerHaptic("success");
-        showToast(t("toast.joinTraining"), "success");
+        const tr = selectedTraining?.id === trainingId ? selectedTraining : trainings.find((x) => x.id === trainingId);
+        let suggestOff = [];
+        try { suggestOff = JSON.parse(localStorage.getItem("muuv_team_suggest_off") || "[]"); } catch {}
+        if (tr?.team_id && tr.team_name && !myTeams.some((tm) => tm.id === tr.team_id)
+            && !tr.team_is_private && !tr.is_organizer_event && !tr.is_paid && !suggestOff.includes(tr.team_id)) {
+          setTeamSuggest({ id: tr.team_id, name: tr.team_name, avatar: tr.team_avatar, sport: tr.team_sport });
+        } else {
+          showToast(t("toast.joinTraining"), "success");
+        }
         fetchTrainings();
         fetchMyTrainings(token);
         if (selectedTraining?.id === trainingId) {
@@ -8817,6 +8829,60 @@ export default function Muuvlink() {
     );
   };
 
+  const dismissTeamSuggest = () => {
+    if (teamSuggest) {
+      try {
+        const off = JSON.parse(localStorage.getItem("muuv_team_suggest_off") || "[]");
+        if (!off.includes(teamSuggest.id)) localStorage.setItem("muuv_team_suggest_off", JSON.stringify([...off, teamSuggest.id].slice(-50)));
+      } catch {}
+    }
+    setTeamSuggest(null);
+  };
+
+  const renderTeamSuggest = () => {
+    if (!teamSuggest) return null;
+    const s = teamSuggest;
+    const img = s.avatar?.startsWith("/uploads/") || s.avatar?.startsWith("http")
+      ? (s.avatar.startsWith("http") ? s.avatar : `${BASE_URL}${s.avatar}`) : null;
+    return (
+      <div className="fixed inset-0 bg-black/50 flex justify-center items-end sm:items-center overflow-y-auto overscroll-contain p-4"
+        style={{ zIndex: 1000000 }} role="dialog" aria-modal="true" aria-label={t("teamSuggest.title")}
+        onClick={(e) => { if (e.target === e.currentTarget) dismissTeamSuggest(); }}>
+        <div className="bg-white rounded-3xl max-w-sm w-full p-6 relative text-center" style={{ marginBottom: "env(safe-area-inset-bottom)" }}>
+          <button onClick={dismissTeamSuggest} aria-label={t("common.close")}
+            className="absolute top-2 right-2 w-11 h-11 flex items-center justify-center rounded-full hover:bg-slate-100 transition-colors">
+            <X className="w-5 h-5 text-slate-500" />
+          </button>
+          <p className="flex items-center justify-center gap-1.5 text-xs font-semibold text-brand-600 mb-4">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+            {t("teamSuggest.joined")}
+          </p>
+          {img ? (
+            <img src={img} alt="" className="w-16 h-16 rounded-full object-cover mx-auto border-2 border-white shadow" />
+          ) : (
+            <div className="w-16 h-16 rounded-full mx-auto flex items-center justify-center text-white text-2xl font-bold shadow" style={{ background: "#114956" }}>
+              {s.name?.[0]?.toLocaleUpperCase("tr-TR")}
+            </div>
+          )}
+          <p className="mt-2 font-semibold text-slate-800">{s.name}</p>
+          {s.sport && <p className="text-xs text-slate-500">{sportLabel(s.sport)}</p>}
+          <h2 className="mt-5 text-xl font-bold text-slate-900">{t("teamSuggest.title")}</h2>
+          <p className="mt-2 text-sm text-slate-600 leading-relaxed">{t("teamSuggest.body").replace("{team}", s.name)}</p>
+          <button data-btn="solid"
+            onClick={async () => { const id = s.id; setTeamSuggest(null); await handleJoinTeam(id); }}
+            className="mt-6 w-full py-3.5 rounded-xl font-semibold text-white flex items-center justify-center gap-2"
+            style={{ background: "#114956" }}>
+            <UserPlus className="w-4 h-4" />{t("teamDetail.joinTeam")}
+          </button>
+          <button onClick={dismissTeamSuggest}
+            className="mt-2 w-full py-3 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+            {t("teamSuggest.later")}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   const InviteModal = () => {
     const [email, setEmail] = useState("");
     const [sending, setSending] = useState(false);
@@ -9913,6 +9979,7 @@ Vergi Dairesi: Karşıyaka V.D. | VN: 7420957827<br/>
       {showNotifications && <NotificationsPanel />}
       {showProfileEdit && <ProfileEditModal />}
       {(showInviteModal || inviteTrainingId) && <InviteModal />}
+      {renderTeamSuggest()}
       <ConfirmModal />
       {showDeleteModal && <PageHost key="delete-account" render={DeleteAccountModal} />}
       {showNotifPrefs && <NotifPrefsModal />}
