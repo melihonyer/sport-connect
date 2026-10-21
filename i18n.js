@@ -1179,9 +1179,9 @@ export const translations = {
   // ── COOKIE BANNER ────────────────────────────────────────
   cookie: {
     title:          { tr: "Çerez Bildirimi",              en: "Cookie Notice",           de: "Cookie-Hinweis"          },
-    text:           { tr: "Oturumunuzu açık tutmak için gerekli teknik depolamayı kullanıyoruz. Reklam veya takip amaçlı çerez kullanılmaz.",
-                      en: "We use essential storage to keep you signed in. No advertising or tracking cookies are used.",
-                      de: "Wir verwenden nur technisch notwendige Speicherung, um dich angemeldet zu halten. Es werden keine Werbe- oder Tracking-Cookies verwendet." },
+    text:           { tr: "Oturumunu açık tutmak için zorunlu depolama kullanıyoruz. Reklamlarımızın sonucunu ölçmek için Meta pikseli, ziyaret sayısı için çerezsiz istatistik de çalışır.",
+                      en: "We use essential storage to keep you signed in. The Meta pixel also runs to measure how our ads perform, along with cookie-free visit statistics.",
+                      de: "Wir verwenden notwendige Speicherung, um dich angemeldet zu halten. Außerdem laufen das Meta-Pixel, um den Erfolg unserer Werbung zu messen, und eine cookiefreie Besucherstatistik." },
     policy:         { tr: "Çerez Politikası",             en: "Cookie Policy",           de: "Cookie-Richtlinie"       },
     details:        { tr: "Detaylar",                     en: "Details",                 de: "Details"                 },
     accept:         { tr: "Kabul Et",                     en: "Accept",                  de: "Akzeptieren"             },

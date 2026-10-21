@@ -831,7 +831,7 @@ export default {
 
   cookie: {
     title: "Aviso de cookies",
-    text: "Solo usamos el almacenamiento técnico necesario para mantener tu sesión iniciada. No usamos cookies de publicidad ni de seguimiento.",
+    text: "Usamos almacenamiento esencial para mantener tu sesión iniciada. También funcionan el píxel de Meta, para medir el resultado de nuestros anuncios, y estadísticas de visitas sin cookies.",
     policy: "Política de cookies",
     details: "Detalles",
     accept: "Aceptar",

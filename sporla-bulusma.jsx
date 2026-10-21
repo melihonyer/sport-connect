@@ -9350,6 +9350,7 @@ export default function Muuvlink() {
       title: t("footer.kvkk"),
       body: `
 <h3>Kişisel Verilerin İşlenmesi Hakkında Aydınlatma Metni</h3>
+<p>Son güncelleme: Ekim 2026</p>
 <p>SALT KREATİF REKLAM TİC. LTD. ŞTİ. ("Şirket") olarak, Muuvlink platformu aracılığıyla 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") kapsamında veri sorumlusu sıfatıyla kişisel verilerinizi aşağıda açıklanan amaçlar doğrultusunda işlemekteyiz.</p>
 
 <h4>1. Veri Sorumlusu</h4>
@@ -9359,16 +9360,18 @@ Vergi Dairesi: Karşıyaka V.D. | VN: 7420957827<br/>
 İletişim: Uygulama içi iletişim formu aracılığıyla ulaşabilirsiniz.</p>
 
 <h4>2. İşlenen Kişisel Veriler</h4>
-<p>Ad, soyad, e-posta adresi, profil fotoğrafı, konum bilgisi (yalnızca kullanıcı izni ile), etkinlik ve takım verileri, uygulama kullanım geçmişi.</p>
+<p>Ad, soyad, e-posta adresi, profil fotoğrafı, konum bilgisi (yalnızca kullanıcı izni ile), etkinlik ve takım verileri, uygulama kullanım geçmişi; reklam ölçümü verileri (Meta pikseli); çerezsiz ziyaret istatistiği.</p>
 
 <h4>3. İşleme Amaçları</h4>
-<p>Üyelik oluşturma ve kimlik doğrulama; platform hizmetlerinin (etkinlik oluşturma, takım yönetimi, spor arkadaşı eşleştirme) sunulması; bildirim ve e-posta gönderimi; platform güvenliğinin sağlanması; yasal yükümlülüklerin yerine getirilmesi.</p>
+<p>Üyelik oluşturma ve kimlik doğrulama; platform hizmetlerinin (etkinlik oluşturma, takım yönetimi, spor arkadaşı eşleştirme) sunulması; bildirim ve e-posta gönderimi; platform güvenliğinin sağlanması; reklamlarımızın sonucunun ölçülmesi ve reklamların gösterileceği kitlenin belirlenmesi; sayfaların kaç kez açıldığının ve ziyaretlerin hangi kampanyadan geldiğinin sayılması (çerez yazılmaz, IP adresi saklanmaz); yasal yükümlülüklerin yerine getirilmesi.</p>
 
 <h4>4. Hukuki Dayanak</h4>
-<p>KVKK Madde 5/2-c uyarınca sözleşmenin ifası; Madde 5/2-ç uyarınca hukuki yükümlülük; Madde 5/2-f uyarınca meşru menfaat; gerektiğinde Madde 5/1 uyarınca açık rıza.</p>
+<p>KVKK Madde 5/2-c uyarınca sözleşmenin ifası; Madde 5/2-ç uyarınca hukuki yükümlülük; Madde 5/2-f uyarınca meşru menfaat (reklam ölçümü ve çerezsiz ziyaret istatistiği dahil); gerektiğinde Madde 5/1 uyarınca açık rıza.</p>
 
 <h4>5. Veri Aktarımı</h4>
 <p>Kişisel verileriniz; yalnızca hizmet sunumu için zorunlu olan altyapı ve e-posta hizmet sağlayıcılarıyla ve yasal zorunluluk halinde yetkili kamu kurumlarıyla paylaşılabilir. Bu sağlayıcılar, gizlilik yükümlülükleriyle bağlıdır ve verilerinizi kendi amaçları için kullanamazlar.</p>
+<p><strong>Meta Platforms Ireland Ltd. (reklam ölçümü):</strong> görüntülenen sayfalar ile kayıt olma, etkinliğe ve takıma katılma adımları; kayıt ve katılım anlarında SHA-256 ile özetlenmiş (hash) e-posta adresi, telefon numarası ve ad, IP adresi ve tarayıcı bilgisi. Bu veriler web sitesinde ve mobil uygulamada toplanır ve Meta'nın yurt dışındaki sunucularında işlenir.</p>
+<p><strong>Umami Software, Inc. (Umami Cloud, veriler Avrupa Birliği'ndeki sunucularda):</strong> ziyaret edilen sayfa (kampanya etiketleri dışındaki parametreler çıkarılarak), geldiğiniz kaynak, tarayıcı ve cihaz türü, IP adresinden türetilen ülke. Çerez yazılmaz, IP adresi saklanmaz.</p>
 
 <h4>6. Saklama Süresi</h4>
 <p>Kişisel verileriniz, hesabınız aktif olduğu sürece ve hesabın silinmesinden itibaren ilgili mevzuatta öngörülen süreler boyunca saklanır. Hesabınızı silmeniz halinde verileriniz 30 gün içinde anonimleştirilir veya kalıcı olarak silinir.</p>
@@ -9381,23 +9384,25 @@ Vergi Dairesi: Karşıyaka V.D. | VN: 7420957827<br/>
       title: t("footer.privacy"),
       body: `
 <h3>Gizlilik Politikası</h3>
-<p>Son güncelleme: Haziran 2025</p>
+<p>Son güncelleme: Ekim 2026</p>
 <p>SALT KREATİF REKLAM TİC. LTD. ŞTİ. olarak, Muuvlink platformu üzerinden kullanıcı gizliliğini en temel önceliklerimizden biri olarak kabul ediyoruz. Bu politika, hangi verileri topladığımızı, nasıl kullandığımızı ve nasıl koruduğumuzu açıklamaktadır.</p>
 
 <h4>1. Topladığımız Bilgiler</h4>
 <p><strong>Doğrudan sağladığınız bilgiler:</strong> Kayıt sırasında girdiğiniz ad, e-posta adresi ve şifre; profil sayfasında eklediğiniz fotoğraf ve biyografi.<br/>
 <strong>Platform kullanım verileri:</strong> Oluşturduğunuz veya katıldığınız etkinlikler, takım üyelikleri, rozet bilgileri.<br/>
 <strong>Konum verisi:</strong> Yalnızca tarayıcı izni verdiğinizde ve yalnızca yakın etkinlikleri listelemek için kullanılır. Sunucularımızda kalıcı olarak saklanmaz.<br/>
-<strong>Teknik veriler:</strong> Çerezler ve oturum bilgileri (detaylar için Çerez Politikamıza bakınız).</p>
+<strong>Teknik veriler:</strong> Oturum bilgileri, reklam ölçümü çerezleri (Meta pikseli) ve çerezsiz ziyaret istatistiği (detaylar için Çerez Politikamıza bakınız).</p>
 
 <h4>2. Verilerin Kullanımı</h4>
-<p>Toplanan veriler; hesabınızı ve oturumunuzu yönetmek, spor arkadaşı eşleştirme ve etkinlik önerilerini kişiselleştirmek, platform güvenliğini korumak, bildirim ve hatırlatıcı e-postalar göndermek ve yasal yükümlülükleri yerine getirmek amacıyla kullanılır. Verileriniz reklam amacıyla üçüncü taraflarla paylaşılmaz.</p>
+<p>Toplanan veriler; hesabınızı ve oturumunuzu yönetmek, spor arkadaşı eşleştirme ve etkinlik önerilerini kişiselleştirmek, platform güvenliğini korumak, bildirim ve hatırlatıcı e-postalar göndermek ve yasal yükümlülükleri yerine getirmek amacıyla kullanılır. Verileriniz satılmaz ve başka şirketlerin reklamı için kullanılmaz. Kendi reklamlarımızın sonucunu ölçmek amacıyla 4. maddede açıklanan veriler Meta ile paylaşılır.</p>
 
 <h4>3. Veri Güvenliği</h4>
 <p>Verileriniz endüstri standardı şifreleme (HTTPS/TLS) ile iletilmekte; şifreleriniz bcrypt algoritmasıyla hash'lenerek saklanmakta, hiçbir zaman düz metin olarak tutulmamaktadır. Sunucu altyapımız düzenli güvenlik güncellemeleri almaktadır.</p>
 
 <h4>4. Üçüncü Taraf Hizmetler</h4>
-<p>Platform; altyapı (sunucu barındırma) ve e-posta bildirimleri için güvenilir üçüncü taraf sağlayıcılar kullanmaktadır. Bu sağlayıcılara yalnızca hizmet sunumu için gereken minimum veri aktarılır ve sağlayıcılar verilerinizi kendi amaçları için kullanamaz.</p>
+<p>Platform; altyapı (sunucu barındırma) ve e-posta bildirimleri için güvenilir üçüncü taraf sağlayıcılar kullanmaktadır. Bu sağlayıcılara yalnızca hizmet sunumu için gereken minimum veri aktarılır ve sağlayıcılar verilerinizi kendi amaçları için kullanamaz.<br/>
+<strong>Meta Platforms Ireland Ltd.:</strong> reklamlarımızın sonucunu ölçmek için Meta pikseli (web sitesinde ve mobil uygulamada). Görüntülenen sayfalar ile kayıt ve katılım adımları; bu anlarda SHA-256 ile özetlenmiş e-posta, telefon ve ad, IP adresi ve tarayıcı bilgisi Meta'ya iletilir ve yurt dışında işlenir. Meta bu verileri reklam sonuçlarını ölçmek ve reklamların gösterileceği kitleyi belirlemek için kullanır.<br/>
+<strong>Umami Software, Inc. (Umami Cloud, veriler Avrupa Birliği'nde):</strong> web sitesinde çerezsiz ziyaret istatistiği — hangi sayfanın kaç kez açıldığı ve ziyaretin hangi kampanyadan geldiği. Çerez yazılmaz, IP adresi saklanmaz.</p>
 
 <h4>5. Haklarınız</h4>
 <p>Verilerinize erişim, düzeltme veya silinmesini talep etme hakkına sahipsiniz. Hesap silme işlemi; profil sayfası → Ayarlar üzerinden yapılabilir. Ek talepler için uygulama içi iletişim formumuzu kullanabilirsiniz.</p>
@@ -9450,21 +9455,26 @@ Vergi Dairesi: Karşıyaka V.D. | VN: 7420957827<br/>
       title: t("footer.cookies"),
       body: `
 <h3>Çerez Politikası</h3>
-<p>Son güncelleme: Haziran 2026</p>
-<p>Bu politika, SALT KREATİF REKLAM TİC. LTD. ŞTİ. tarafından işletilen Muuvlink platformunun teknik depolama (çerez/localStorage) kullanımını açıklamaktadır.</p>
+<p>Son güncelleme: Ekim 2026</p>
+<p>Bu politika, SALT KREATİF REKLAM TİC. LTD. ŞTİ. tarafından işletilen Muuvlink platformunda kullanılan çerezleri, cihaz depolamasını ve ölçüm araçlarını açıklamaktadır.</p>
 
-<h4>Önemli: Reklam veya Takip Amaçlı Çerez Kullanılmamaktadır</h4>
-<p>Muuvlink; reklam, pazarlama, profil oluşturma veya kullanıcıları üçüncü taraflarla takip etme amacıyla hiçbir çerez, SDK veya benzeri teknoloji kullanmaz. Platformda üçüncü taraf reklam ağı, analitik SDK'sı veya takip pikseli bulunmamaktadır.</p>
+<h4>Özet</h4>
+<p>Muuvlink'te başka şirketlerin reklamı gösterilmez. Üç tür araç kullanırız: platformun çalışması için zorunlu oturum depolaması, kendi reklamlarımızın sonucunu ölçmek için Meta pikseli ve çerez yazmayan ziyaret istatistiği (Umami).</p>
 
-<h4>Kullandığımız Tek Teknik Depolama Türü</h4>
-<p><strong>Zorunlu Oturum Depolama</strong><br/>
-Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik doğrulama bilginizi (oturum jetonu) ve dil tercihinizi cihazınızda saklar. Bu veriler yalnızca sizin cihazınızda tutulur; reklam veya analiz amacıyla işlenmez, üçüncü taraflarla paylaşılmaz ya da sizi diğer uygulama/web sitelerinde takip etmek için kullanılmaz. Devre dışı bırakılması durumunda platforma giriş yapamazsınız.</p>
+<h4>1. Zorunlu Oturum Depolama</h4>
+<p>Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik doğrulama bilginizi (oturum jetonu) ve dil tercihinizi cihazınızda saklar. Bu veriler yalnızca sizin cihazınızda tutulur; reklam veya analiz amacıyla işlenmez, üçüncü taraflarla paylaşılmaz ya da sizi diğer uygulama/web sitelerinde takip etmek için kullanılmaz. Devre dışı bırakılması durumunda platforma giriş yapamazsınız.</p>
+
+<h4>2. Reklam Ölçümü (Meta Pikseli)</h4>
+<p>Muuvlink reklamlarının sonucunu ölçmek için Meta Platforms Ireland Ltd.'nin piksel teknolojisini web sitesinde ve mobil uygulamada kullanırız. Piksel tarayıcınıza <code>_fbp</code> çerezini yazar; bir Meta reklamından geldiyseniz <code>_fbc</code> çerezi de eklenir. Görüntülediğiniz sayfalar ile kayıt olma, etkinliğe veya takıma katılma gibi adımlar Meta'ya iletilir. Kayıt ve katılım anlarında sunucumuz da aynı bilgiyi Meta'ya gönderir; bu gönderimde e-posta adresiniz, telefon numaranız ve adınız SHA-256 ile özetlenmiş (hash) olarak yer alır, IP adresiniz ve tarayıcı bilginiz de iletilir. Meta bu verileri reklam sonuçlarını ölçmek ve reklamların gösterileceği kitleyi belirlemek için kullanır; veriler Meta'nın yurt dışındaki sunucularında işlenir.</p>
+
+<h4>3. Ziyaret İstatistiği (Umami)</h4>
+<p>Ziyaret istatistiğini çerez yazmayan ve IP adresi saklamayan bir araçla tutuyoruz: Umami Cloud (Umami Software, Inc.), veriler Avrupa Birliği'ndeki sunucularda. Adreslerdeki kampanya etiketleri dışındaki parametreler gönderilmeden silinir. Bu sayım reklam için kullanılmaz ve kimseyle paylaşılmaz.</p>
 
 <h4>Yönetimi</h4>
-<p>Tarayıcınızın veya cihazınızın ayarlarından bu depolanan verileri istediğiniz zaman temizleyebilirsiniz; bu işlem yalnızca sizi oturumdan çıkarır, başka hiçbir etkisi yoktur.</p>
+<p>Tarayıcınızın veya cihazınızın ayarlarından çerezleri ve depolanan verileri istediğiniz zaman silebilir, üçüncü taraf çerezlerini engelleyebilirsiniz; oturum verisini silmek sizi oturumdan çıkarır. Meta'nın sizin hakkınızda aldığı verileri ve reklam tercihlerinizi Facebook veya Instagram hesabınızın "Hesaplar Merkezi › Reklam tercihleri" ve "Diğer şirketlerdeki etkinliğiniz" bölümlerinden görebilir ve yönetebilirsiniz.</p>
 
-<h4>Rızanız</h4>
-<p>Platformu ilk ziyaretinizde gösterilen bildirime "Kabul Et" diyerek bu zorunlu teknik depolamayı onaylarsınız. Bu onay herhangi bir takip, reklam veya üçüncü taraf veri paylaşımı içermez.</p>
+<h4>Bildirim</h4>
+<p>Platformu ilk ziyaretinizde gösterilen bildirim, bu sayfada açıklanan araçlar hakkında bilgi verir.</p>
       `
     }
   };

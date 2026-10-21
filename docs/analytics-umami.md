@@ -36,5 +36,8 @@ göründü (Türkiye, Chrome, macOS). Bu deneme satırı veride kalır. `/admin`
 
 ## Yasal metinler
 
-Çerez/gizlilik/KVKK satırları Melih'in onayını bekliyor (21 Ekim 2026). Çerez Politikası'ndaki
-"takip pikseli bulunmamaktadır" cümlesi Meta pikseli yüzünden zaten yanlış; birlikte düzeltilecek.
+22 Ekim 2026 yayında ("Son güncelleme: Ekim 2026"): Çerez Politikası baştan (zorunlu depolama,
+Meta pikseli, Umami, yönetimi), Gizlilik (1, 2, 4. madde) ve KVKK (2–5. madde) Meta + Umami'yi
+anlatıyor; çerez bildirimi metni 7 dilde. Meta pikseli Melih'in kararıyla onaya BAĞLI DEĞİL
+(her ziyaret, web + uygulama); metinler bunu olduğu gibi söyler. Avukat incelemesi önerildi
+(KVKK m.9 yurt dışı aktarım, Çerez Rehberi, iOS ATT).

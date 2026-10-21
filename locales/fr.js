@@ -831,7 +831,7 @@ export default {
 
   cookie: {
     title: "Cookies",
-    text: "Nous utilisons uniquement le stockage technique nécessaire pour te garder connecté. Aucun cookie publicitaire ni de suivi.",
+    text: "Nous utilisons un stockage essentiel pour te garder connecté. Le pixel Meta fonctionne aussi pour mesurer les résultats de nos publicités, ainsi que des statistiques de visite sans cookies.",
     policy: "Politique relative aux cookies",
     details: "Détails",
     accept: "Accepter",

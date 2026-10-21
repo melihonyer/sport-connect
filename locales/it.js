@@ -831,7 +831,7 @@ export default {
 
   cookie: {
     title: "Informativa cookie",
-    text: "Usiamo solo l'archiviazione tecnica necessaria per mantenerti connesso. Nessun cookie pubblicitario o di tracciamento.",
+    text: "Usiamo un'archiviazione essenziale per mantenerti connesso. Funzionano anche il pixel di Meta, per misurare i risultati delle nostre pubblicità, e statistiche di visita senza cookie.",
     policy: "Cookie policy",
     details: "Dettagli",
     accept: "Accetta",
