@@ -381,6 +381,19 @@ Menü rozetleri (`/api/admin/badges`) ayrıca 20 sn'de bir, sekme arka plandayke
 Bu alarmlar tekrar edecek: **sunucu taşıma yeniden önerilmez**, Melih VPS'te
 kalmaya karar verdi. Yapılacak iş sadece ne olduğunu doğru raporlamak.
 
+## Veritabanı bağlantısı (21 Ekim 2026, Threshold tanısı)
+
+- **`pool.on('error')` silinmez.** Supabase'e giden ağ yolu ara ara takılıyor (`read ETIMEDOUT`);
+  boştaki bağlantı kopunca pg-pool havuzda 'error' yayar, dinleyici yoksa süreç düşer (14–21 Ekim:
+  8 çökme, pm2 sayacı 392'de). Dinleyici kaydeder (`[DB] Boştaki bağlantı koptu…`), havuz yenisini açar.
+- **Oturum ayarları `POOL_TIMEOUTS.verify`'da** (`POOL_SESSION_SETUP`, tek sorgu): bağlantı ayarlar
+  bitmeden çağırana verilmez. Eski `pool.on('connect', async …)` ilk kullanıcı sorgusunu UTC ve
+  2 dk zaman aşımıyla koşturuyordu (sunucuda ölçüldü) + "already executing a query" uyarısı.
+- `connectionTimeoutMillis` 3000'de bırakıldı (Threshold 5000 önermişti; kullanıcıyı uzun bekletmemek için).
+- **Threshold sayfa bildirimi:** `threshold-page.js` `reportPage()` her rota değişiminde
+  `navigator.sendBeacon('/_thr/page/<yol>')`; nginx (`location ^~ /_thr/`) arka uca iletmeden 204
+  döner, yalnız Threshold loguna yazar. Yalnız yol gider.
+
 ## Sayfa bileşenleri ve PageHost
 
 Sayfa/modal bileşenlerinin çoğu ana bileşenin İÇİNDE tanımlı. Her üst-render'da

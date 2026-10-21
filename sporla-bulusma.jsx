@@ -7,6 +7,7 @@ import { StoreButton } from "./StoreButtons.jsx";
 import { SocialIcons } from "./SocialLinks.jsx";
 import { TaSessionNote, TaDiscoverCard, TaHomeBand, TaCoachTip, TaEmptyState, TaRaceCard, TaFooterStrip, taRaceGuide } from "./TrainingAgentsPromo.jsx";
 import { MetaEvents, newEventId, getMatchSignals, getAttribution, trackPageView } from "./analytics.js";
+import { reportPage } from "./threshold-page.js";
 import {
   MapPin,
   Users,
@@ -3173,6 +3174,7 @@ export default function Muuvlink() {
     // Tek sayfa uygulamasında rota değişimi tarayıcı için sayfa yüklemesi
     // değildir; bildirilmezse tüm gezinme tek ziyaret olarak sayılır.
     trackPageView();
+    reportPage(); // Threshold İzleme (threshold-page.js)
     if (currentPage === "training-detail" && selectedTraining) {
       MetaEvents.viewContent("training", selectedTraining.id, selectedTraining.title);
     } else if (currentPage === "team-detail" && selectedTeam) {

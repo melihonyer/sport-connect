@@ -636,7 +636,14 @@ async function uploadToSupabase(bucket, fileName, buffer, mimetype) {
 // el sıkışmaya zorluyordu, yani her istek bu riske giriyordu. Açık bağlantı
 // takılan dakikada da çalışmaya devam eder; sıcak tutmak maruziyeti düşürür.
 // 10 boş bağlantı Supabase sınırının (60) çok altında.
+// Yeni bağlantının oturum ayarları (aşağıdaki açıklama). pg-pool `verify`: bağlantı bu
+// ayarlar BİTENE kadar çağırana verilmez — ilk kullanıcı sorgusu her zaman İstanbul
+// saatinde ve 15 sn zaman aşımıyla koşar, aynı anda iki sorgu olmaz (pg uyarısı da yok).
+const POOL_SESSION_SETUP = "SET search_path TO public; SET timezone = 'Europe/Istanbul'; SET statement_timeout = 15000";
 const POOL_TIMEOUTS = {
+  verify: (client, done) => {
+    client.query(POOL_SESSION_SETUP).then(() => done(), () => done());
+  },
   connectionTimeoutMillis: 3000,
   idleTimeoutMillis: 10 * 60 * 1000,
   keepAlive: true,
@@ -669,10 +676,19 @@ const pool = process.env.PGHOST
 // CURRENT_TIME/CURRENT_DATE karşılaştırmaları da İstanbul saatiyle tutarlı olmalı.
 // statement_timeout: tek bir sorgu takılırsa (kilit, network vb.) 15sn sonra Postgres
 // sorguyu otomatik iptal etsin — bağlantı sonsuza kadar askıda kalmasın.
-pool.on('connect', async client => {
-  await client.query("SET search_path TO public").catch(() => {});
-  await client.query("SET timezone = 'Europe/Istanbul'").catch(() => {});
-  await client.query("SET statement_timeout = 15000").catch(() => {});
+//
+// Ayarlar POOL_TIMEOUTS.verify'da (POOL_SESSION_SETUP), tek sorguda. Eskiden burada
+// 'connect' dinleyicisinde üç ayrı await vardı: pg-pool bağlantıyı 'connect' yayar yaymaz
+// çağırana verdiği için ilk kullanıcı sorgusu SET timezone'dan ÖNCE koşuyordu (UTC ve
+// 2 dk zaman aşımıyla — 21 Ekim 2026'da sunucuda ölçüldü) ve pg "already executing a
+// query" uyarısı veriyordu (Threshold tanısı).
+
+// Boştaki bir bağlantı ağ takılmasında koptuğunda pg-pool bunu havuzda 'error'
+// olayı olarak yayar; dinleyici yoksa Node süreci düşer (14–21 Ekim'de 8
+// çökme, hepsi "Error: read ETIMEDOUT"). Havuz kopan bağlantıyı zaten atıyor
+// ve sonraki sorgu için yenisini açıyor; burada yalnız kaydedip devam ediyoruz.
+pool.on('error', (err) => {
+  console.error('[DB] Boştaki bağlantı koptu, havuz yenileyecek:', err.message);
 });
 
 // Bu sunucunun ağ katmanında yeni TCP/TLS bağlantısı kurmak ARALIKLI olarak
