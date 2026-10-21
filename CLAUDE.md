@@ -583,6 +583,15 @@ seçilebilir link kutusu, WhatsApp/Telegram/e-posta butonları, hazır davet mes
   gönderisi, etkinlik hatırlatma e-postaları bilerek kapalı (sık gelir). İYS/onay riski konuşuldu, bilerek seçildi; tekrar sorulmaz.
   Yeni bir e-posta türü eklenirse `EMAIL_DEFAULT_ON`'a ve arayüzde
   `emailDefault: true` ile eklenir.
+- **Davetler** (21 Ekim 2026, Melih): takım daveti + **etkinliğe e-postayla davet** (`POST
+  /api/trainings/:id/invite`, `event_invitations`, tekil `(training_id, lower(email))`). Davet edebilen:
+  etkinliği yöneten, katılan, admin. Gizli takım etkinliğinde (önce takıma davet) ve organizatör
+  etkinliğinde kapalı; geçmişte kapalı; davet eden başına saatte 10. Üyeye uygulama bildirimi
+  (`event_invitation`) + e-posta, yeni kişiye e-posta (davet edenin dilinde). Şablonlar
+  `teamInviteEmail` / `eventInviteEmail` aynı görünüm (ikon kutusu, düz renk, "sen", ünlem yok).
+  `invite` tercihi varsayılan AÇIK — kapalıyken davet e-postası üyeye de yeni kişiye de hiç gitmiyordu.
+  Sitede etkinlik başlığının altında sarı "Davet Et"; takım davet penceresi ortak (`inviteTrainingId`).
+  Gönderim kod hatasıyla düşerse davet kaydı geri alınır.
 - E-posta çerçevesi dar ekrana uyar (`mv-*` sınıfları + media query). Sabit
   600px'e geri dönülmez; telefonda sağ taraf kesiliyordu.
 - Örnek göndermek için gerçek alıcı yerine `delivered+etiket@resend.dev` kullan

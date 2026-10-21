@@ -829,6 +829,7 @@ function pushToUser(userId, payload) {
 // Varsayılan: uygulama (app) AÇIK, e-posta KAPALI.
 const NOTIF_TYPE_TO_KEY = {
   invitation:        'invite',
+  event_invitation:  'invite',
   team:              'team_member',
   role_change:       'role',
   training:          'event_new',
@@ -864,7 +865,9 @@ async function getUserNotifInfo(userId) {
 // E-postası varsayılan AÇIK olan türler (kullanıcı kapatana kadar). Sitedeki
 // NOTIF_PREF_ROWS'ta emailDefault:true ile işaretli olmalı.
 // team_member + event_join: liderlere giden yeni üye / yeni katılımcı maili (Melih, 6 Ekim 2026).
-const EMAIL_DEFAULT_ON = new Set(['tips', 'team_member', 'event_join']);
+// 'invite' (21 Ekim 2026): takım ve etkinlik daveti kişiye özel; varsayılan kapalıyken
+// davet e-postası üyeye de, henüz üye olmayana da (tercihi yok) HİÇ gitmiyordu.
+const EMAIL_DEFAULT_ON = new Set(['tips', 'team_member', 'event_join', 'invite']);
 function prefAllows(prefs, key, channel) {
   const p = (prefs && prefs[key]) || {};
   if (channel === 'email') return EMAIL_DEFAULT_ON.has(key) ? p.email !== false : p.email === true;
@@ -1037,15 +1040,26 @@ const MAIL = {
     roles: { owner: 'Takım Lideri', editor: 'Editör', coach: 'Antrenör', captain: 'Kaptan', member: 'Üye', admin: 'Yönetici' },
     someone: 'Biri', teamFallback: 'Takımınız', changerFallback: 'Takım yöneticisi', updaterFallback: 'Antrenör',
 
-    inviteNotifTitle: 'Takım Daveti!',
-    inviteNotifMsg: (inv, team) => `${inv} sizi "${team}" takımına davet etti.`,
-    inviteSubject: (inv, team) => `${inv} sizi "${team}" takımına davet etti!`,
-    inviteExTitle: 'Takıma Davet Edildiniz!',
-    inviteExBody: (inv, team) => `${mB(inv)} sizi ${mB(team)} takımına davet etti.`,
-    inviteExNote: 'Uygulamaya giriş yaparak daveti kabul edebilirsiniz.',
-    inviteNewTitle: "Muuvlink'e Davet Edildiniz!",
-    inviteNewBody: (inv, team) => `${mB(inv)} sizi ${mB(team)} takımına davet etti.\n      Katılmak için ücretsiz hesap oluşturun.`,
-    inviteNewNote: 'Kayıt olduktan sonra takıma katılma daveti sizi bekliyor olacak.',
+    inviteNotifTitle: 'Takım daveti',
+    inviteNotifMsg: (inv, team) => `${inv} seni ${team} takımına davet etti.`,
+    inviteSubject: (inv, team) => `${inv} seni ${team} takımına davet etti`,
+    inviteExTitle: 'Bir takıma davet edildin',
+    inviteExBody: (inv, team) => `${mB(inv)} seni ${mB(team)} takımına davet etti.`,
+    inviteExNote: 'Düğmeye bas; giriş yaptığında davet kabul edilir.',
+    inviteNewTitle: "Muuvlink'te bir takıma davet edildin",
+    inviteNewBody: (inv, team) => `${mB(inv)} seni ${mB(team)} takımına davet etti. Katılmak için ücretsiz bir hesap aç.`,
+    inviteNewNote: 'Hesabını açtığında takım daveti seni bekliyor olacak.',
+    // Etkinlik daveti (21 Ekim 2026). Ad + etkinlik adına ek getirilmez.
+    evInviteNotifTitle: 'Etkinlik daveti',
+    evInviteNotifMsg: (inv, ev) => `${inv} seni bir etkinliğe davet etti: ${ev}`,
+    evInviteSubject: (inv, ev) => `${inv} seni bir etkinliğe davet etti: ${ev}`,
+    evInviteExTitle: 'Bir etkinliğe davet edildin',
+    evInviteExBody: (inv) => `${mB(inv)} seni bu etkinliğe davet etti. Ayrıntılara bak, uygunsa katıl.`,
+    evInviteExNote: 'Katılmak için etkinlik sayfasındaki Katıl düğmesine basman yeterli.',
+    evInviteNewTitle: "Muuvlink'te bir etkinliğe davet edildin",
+    evInviteNewBody: (inv) => `${mB(inv)} seni bu etkinliğe davet etti. Muuvlink, çevrendeki spor etkinliklerini ve takımları bir araya getiren ücretsiz bir uygulama.`,
+    evInviteNewNote: 'Katılmak için ücretsiz bir hesap açman ve etkinlik sayfasında Katıl düğmesine basman yeterli.',
+    lblTeam: 'Takım',
 
     roleNotifTitle: 'Takım rolün güncellendi',
     roleNotifMsg: (ch, team, role) => `${ch}, "${team}" takımındaki rolünü "${role}" olarak güncelledi.`,
@@ -1134,15 +1148,25 @@ const MAIL = {
     roles: { owner: 'Team Leader', editor: 'Editor', coach: 'Coach', captain: 'Captain', member: 'Member', admin: 'Admin' },
     someone: 'Someone', teamFallback: 'Your team', changerFallback: 'A team manager', updaterFallback: 'The coach',
 
-    inviteNotifTitle: 'Team invitation!',
-    inviteNotifMsg: (inv, team) => `${inv} invited you to the team "${team}".`,
-    inviteSubject: (inv, team) => `${inv} invited you to the team "${team}"!`,
-    inviteExTitle: "You've been invited to a team!",
+    inviteNotifTitle: 'Team invitation',
+    inviteNotifMsg: (inv, team) => `${inv} invited you to the team ${team}.`,
+    inviteSubject: (inv, team) => `${inv} invited you to the team ${team}`,
+    inviteExTitle: "You've been invited to a team",
     inviteExBody: (inv, team) => `${mB(inv)} invited you to the team ${mB(team)}.`,
-    inviteExNote: 'Log in to the app to accept the invitation.',
-    inviteNewTitle: "You've been invited to Muuvlink!",
-    inviteNewBody: (inv, team) => `${mB(inv)} invited you to the team ${mB(team)}.\n      Create a free account to join.`,
+    inviteExNote: 'Tap the button; the invitation is accepted once you log in.',
+    inviteNewTitle: "You've been invited to a team on Muuvlink",
+    inviteNewBody: (inv, team) => `${mB(inv)} invited you to the team ${mB(team)}. Create a free account to join.`,
     inviteNewNote: 'Once you sign up, the team invitation will be waiting for you.',
+    evInviteNotifTitle: 'Event invitation',
+    evInviteNotifMsg: (inv, ev) => `${inv} invited you to an event: ${ev}`,
+    evInviteSubject: (inv, ev) => `${inv} invited you to an event: ${ev}`,
+    evInviteExTitle: "You've been invited to an event",
+    evInviteExBody: (inv) => `${mB(inv)} invited you to this event. Take a look and join if it suits you.`,
+    evInviteExNote: 'To join, just tap Join on the event page.',
+    evInviteNewTitle: "You've been invited to an event on Muuvlink",
+    evInviteNewBody: (inv) => `${mB(inv)} invited you to this event. Muuvlink is a free app that brings together sports events and teams near you.`,
+    evInviteNewNote: 'To join, create a free account and tap Join on the event page.',
+    lblTeam: 'Team',
 
     roleNotifTitle: 'Your team role was updated',
     roleNotifMsg: (ch, team, role) => `${ch} changed your role in "${team}" to "${role}".`,
@@ -1231,15 +1255,25 @@ const MAIL = {
     roles: { owner: 'Teamleitung', editor: 'Redakteur', coach: 'Trainer', captain: 'Kapitän', member: 'Mitglied', admin: 'Admin' },
     someone: 'Jemand', teamFallback: 'Dein Team', changerFallback: 'Eine Teamleitung', updaterFallback: 'Der Trainer',
 
-    inviteNotifTitle: 'Team-Einladung!',
-    inviteNotifMsg: (inv, team) => `${inv} hat dich in das Team „${team}“ eingeladen.`,
-    inviteSubject: (inv, team) => `${inv} hat dich in das Team „${team}“ eingeladen!`,
-    inviteExTitle: 'Du wurdest in ein Team eingeladen!',
+    inviteNotifTitle: 'Team-Einladung',
+    inviteNotifMsg: (inv, team) => `${inv} hat dich in das Team ${team} eingeladen.`,
+    inviteSubject: (inv, team) => `${inv} hat dich in das Team ${team} eingeladen`,
+    inviteExTitle: 'Du wurdest in ein Team eingeladen',
     inviteExBody: (inv, team) => `${mB(inv)} hat dich in das Team ${mB(team)} eingeladen.`,
-    inviteExNote: 'Melde dich in der App an, um die Einladung anzunehmen.',
-    inviteNewTitle: 'Du wurdest zu Muuvlink eingeladen!',
-    inviteNewBody: (inv, team) => `${mB(inv)} hat dich in das Team ${mB(team)} eingeladen.\n      Erstelle ein kostenloses Konto, um beizutreten.`,
+    inviteExNote: 'Tippe auf den Button; nach dem Login ist die Einladung angenommen.',
+    inviteNewTitle: 'Du wurdest bei Muuvlink in ein Team eingeladen',
+    inviteNewBody: (inv, team) => `${mB(inv)} hat dich in das Team ${mB(team)} eingeladen. Erstelle ein kostenloses Konto, um beizutreten.`,
     inviteNewNote: 'Nach der Registrierung wartet die Team-Einladung auf dich.',
+    evInviteNotifTitle: 'Event-Einladung',
+    evInviteNotifMsg: (inv, ev) => `${inv} hat dich zu einem Event eingeladen: ${ev}`,
+    evInviteSubject: (inv, ev) => `${inv} hat dich zu einem Event eingeladen: ${ev}`,
+    evInviteExTitle: 'Du wurdest zu einem Event eingeladen',
+    evInviteExBody: (inv) => `${mB(inv)} hat dich zu diesem Event eingeladen. Schau es dir an und mach mit, wenn es passt.`,
+    evInviteExNote: 'Zum Mitmachen tippst du auf der Eventseite einfach auf Teilnehmen.',
+    evInviteNewTitle: 'Du wurdest bei Muuvlink zu einem Event eingeladen',
+    evInviteNewBody: (inv) => `${mB(inv)} hat dich zu diesem Event eingeladen. Muuvlink ist eine kostenlose App, die Sportevents und Teams in deiner Nähe zusammenbringt.`,
+    evInviteNewNote: 'Zum Mitmachen erstellst du ein kostenloses Konto und tippst auf der Eventseite auf Teilnehmen.',
+    lblTeam: 'Team',
 
     roleNotifTitle: 'Deine Teamrolle wurde geändert',
     roleNotifMsg: (ch, team, role) => `${ch} hat deine Rolle im Team „${team}“ auf „${role}“ geändert.`,
@@ -1328,15 +1362,25 @@ const MAIL = {
     roles: { owner: 'Αρχηγός ομάδας', editor: 'Συντάκτης', coach: 'Προπονητής', captain: 'Αρχηγός', member: 'Μέλος', admin: 'Διαχειριστής' },
     someone: 'Κάποιος', teamFallback: 'Η ομάδα σου', changerFallback: 'Ένας διαχειριστής της ομάδας', updaterFallback: 'Ο προπονητής',
 
-    inviteNotifTitle: 'Πρόσκληση σε ομάδα!',
-    inviteNotifMsg: (inv, team) => `Ο/Η ${inv} σε προσκάλεσε στην ομάδα «${team}».`,
-    inviteSubject: (inv, team) => `Ο/Η ${inv} σε προσκάλεσε στην ομάδα «${team}»!`,
-    inviteExTitle: 'Έχεις πρόσκληση σε ομάδα!',
+    inviteNotifTitle: 'Πρόσκληση σε ομάδα',
+    inviteNotifMsg: (inv, team) => `Ο/Η ${inv} σε προσκάλεσε στην ομάδα ${team}.`,
+    inviteSubject: (inv, team) => `Ο/Η ${inv} σε προσκάλεσε στην ομάδα ${team}`,
+    inviteExTitle: 'Σε προσκάλεσαν σε μια ομάδα',
     inviteExBody: (inv, team) => `Ο/Η ${mB(inv)} σε προσκάλεσε στην ομάδα ${mB(team)}.`,
-    inviteExNote: 'Συνδέσου στην εφαρμογή για να αποδεχτείς την πρόσκληση.',
-    inviteNewTitle: 'Έχεις πρόσκληση στο Muuvlink!',
-    inviteNewBody: (inv, team) => `Ο/Η ${mB(inv)} σε προσκάλεσε στην ομάδα ${mB(team)}.\n      Φτιάξε δωρεάν λογαριασμό για να γίνεις μέλος.`,
+    inviteExNote: 'Πάτησε το κουμπί· μόλις συνδεθείς, η πρόσκληση γίνεται αποδεκτή.',
+    inviteNewTitle: 'Σε προσκάλεσαν σε μια ομάδα στο Muuvlink',
+    inviteNewBody: (inv, team) => `Ο/Η ${mB(inv)} σε προσκάλεσε στην ομάδα ${mB(team)}. Φτιάξε δωρεάν λογαριασμό για να συμμετάσχεις.`,
     inviteNewNote: 'Μόλις εγγραφείς, η πρόσκληση της ομάδας θα σε περιμένει.',
+    evInviteNotifTitle: 'Πρόσκληση σε εκδήλωση',
+    evInviteNotifMsg: (inv, ev) => `Ο/Η ${inv} σε προσκάλεσε σε μια εκδήλωση: ${ev}`,
+    evInviteSubject: (inv, ev) => `Ο/Η ${inv} σε προσκάλεσε σε μια εκδήλωση: ${ev}`,
+    evInviteExTitle: 'Σε προσκάλεσαν σε μια εκδήλωση',
+    evInviteExBody: (inv) => `Ο/Η ${mB(inv)} σε προσκάλεσε σε αυτή την εκδήλωση. Ρίξε μια ματιά και δήλωσε συμμετοχή αν σου ταιριάζει.`,
+    evInviteExNote: 'Για να συμμετάσχεις, πάτα «Συμμετοχή» στη σελίδα της εκδήλωσης.',
+    evInviteNewTitle: 'Σε προσκάλεσαν σε μια εκδήλωση στο Muuvlink',
+    evInviteNewBody: (inv) => `Ο/Η ${mB(inv)} σε προσκάλεσε σε αυτή την εκδήλωση. Το Muuvlink είναι μια δωρεάν εφαρμογή που φέρνει κοντά αθλητικές εκδηλώσεις και ομάδες της περιοχής σου.`,
+    evInviteNewNote: 'Για να συμμετάσχεις, φτιάξε δωρεάν λογαριασμό και πάτα «Συμμετοχή» στη σελίδα της εκδήλωσης.',
+    lblTeam: 'Ομάδα',
 
     roleNotifTitle: 'Ο ρόλος σου στην ομάδα άλλαξε',
     roleNotifMsg: (ch, team, role) => `Ο/Η ${ch} άλλαξε τον ρόλο σου στην ομάδα «${team}» σε «${role}».`,
@@ -1425,15 +1469,25 @@ const MAIL = {
     roles: { owner: 'Líder del equipo', editor: 'Editor', coach: 'Entrenador', captain: 'Capitán', member: 'Miembro', admin: 'Administrador' },
     someone: 'Alguien', teamFallback: 'Tu equipo', changerFallback: 'Un responsable del equipo', updaterFallback: 'El entrenador',
 
-    inviteNotifTitle: '¡Invitación a un equipo!',
-    inviteNotifMsg: (inv, team) => `${inv} te ha invitado al equipo «${team}».`,
-    inviteSubject: (inv, team) => `¡${inv} te ha invitado al equipo «${team}»!`,
-    inviteExTitle: '¡Te han invitado a un equipo!',
+    inviteNotifTitle: 'Invitación a un equipo',
+    inviteNotifMsg: (inv, team) => `${inv} te ha invitado al equipo ${team}.`,
+    inviteSubject: (inv, team) => `${inv} te ha invitado al equipo ${team}`,
+    inviteExTitle: 'Te han invitado a un equipo',
     inviteExBody: (inv, team) => `${mB(inv)} te ha invitado al equipo ${mB(team)}.`,
-    inviteExNote: 'Inicia sesión en la app para aceptar la invitación.',
-    inviteNewTitle: '¡Te han invitado a Muuvlink!',
-    inviteNewBody: (inv, team) => `${mB(inv)} te ha invitado al equipo ${mB(team)}.\n      Crea una cuenta gratis para unirte.`,
+    inviteExNote: 'Toca el botón; al iniciar sesión, la invitación queda aceptada.',
+    inviteNewTitle: 'Te han invitado a un equipo en Muuvlink',
+    inviteNewBody: (inv, team) => `${mB(inv)} te ha invitado al equipo ${mB(team)}. Crea una cuenta gratuita para unirte.`,
     inviteNewNote: 'Cuando te registres, la invitación al equipo te estará esperando.',
+    evInviteNotifTitle: 'Invitación a un evento',
+    evInviteNotifMsg: (inv, ev) => `${inv} te ha invitado a un evento: ${ev}`,
+    evInviteSubject: (inv, ev) => `${inv} te ha invitado a un evento: ${ev}`,
+    evInviteExTitle: 'Te han invitado a un evento',
+    evInviteExBody: (inv) => `${mB(inv)} te ha invitado a este evento. Échale un vistazo y apúntate si te encaja.`,
+    evInviteExNote: 'Para apuntarte, basta con tocar Unirse en la página del evento.',
+    evInviteNewTitle: 'Te han invitado a un evento en Muuvlink',
+    evInviteNewBody: (inv) => `${mB(inv)} te ha invitado a este evento. Muuvlink es una app gratuita que reúne eventos deportivos y equipos cerca de ti.`,
+    evInviteNewNote: 'Para apuntarte, crea una cuenta gratuita y toca Unirse en la página del evento.',
+    lblTeam: 'Equipo',
 
     roleNotifTitle: 'Tu rol en el equipo ha cambiado',
     roleNotifMsg: (ch, team, role) => `${ch} ha cambiado tu rol en «${team}» a «${role}».`,
@@ -1522,15 +1576,25 @@ const MAIL = {
     roles: { owner: "Chef d'équipe", editor: 'Éditeur', coach: 'Coach', captain: 'Capitaine', member: 'Membre', admin: 'Administrateur' },
     someone: "Quelqu'un", teamFallback: 'Ton équipe', changerFallback: "Un responsable de l'équipe", updaterFallback: 'Le coach',
 
-    inviteNotifTitle: "Invitation dans une équipe !",
-    inviteNotifMsg: (inv, team) => `${inv} t'invite à rejoindre l'équipe « ${team} ».`,
-    inviteSubject: (inv, team) => `${inv} t'invite à rejoindre l'équipe « ${team} » !`,
-    inviteExTitle: 'Tu es invité dans une équipe !',
-    inviteExBody: (inv, team) => `${mB(inv)} t'invite à rejoindre l'équipe ${mB(team)}.`,
-    inviteExNote: "Connecte-toi à l'application pour accepter l'invitation.",
-    inviteNewTitle: 'Tu es invité sur Muuvlink !',
-    inviteNewBody: (inv, team) => `${mB(inv)} t'invite à rejoindre l'équipe ${mB(team)}.\n      Crée un compte gratuit pour la rejoindre.`,
+    inviteNotifTitle: "Invitation dans une équipe",
+    inviteNotifMsg: (inv, team) => `${inv} t'a invité dans l'équipe ${team}.`,
+    inviteSubject: (inv, team) => `${inv} t'a invité dans l'équipe ${team}`,
+    inviteExTitle: "Tu as été invité dans une équipe",
+    inviteExBody: (inv, team) => `${mB(inv)} t'a invité dans l'équipe ${mB(team)}.`,
+    inviteExNote: "Appuie sur le bouton ; l'invitation est acceptée dès que tu te connectes.",
+    inviteNewTitle: "Tu as été invité dans une équipe sur Muuvlink",
+    inviteNewBody: (inv, team) => `${mB(inv)} t'a invité dans l'équipe ${mB(team)}. Crée un compte gratuit pour la rejoindre.`,
     inviteNewNote: "Une fois inscrit, l'invitation de l'équipe t'attendra.",
+    evInviteNotifTitle: "Invitation à un événement",
+    evInviteNotifMsg: (inv, ev) => `${inv} t'a invité à un événement : ${ev}`,
+    evInviteSubject: (inv, ev) => `${inv} t'a invité à un événement : ${ev}`,
+    evInviteExTitle: "Tu as été invité à un événement",
+    evInviteExBody: (inv) => `${mB(inv)} t'a invité à cet événement. Jette un œil et participe si ça te convient.`,
+    evInviteExNote: "Pour participer, appuie simplement sur Participer sur la page de l'événement.",
+    evInviteNewTitle: "Tu as été invité à un événement sur Muuvlink",
+    evInviteNewBody: (inv) => `${mB(inv)} t'a invité à cet événement. Muuvlink est une appli gratuite qui réunit les événements sportifs et les équipes près de chez toi.`,
+    evInviteNewNote: "Pour participer, crée un compte gratuit puis appuie sur Participer sur la page de l'événement.",
+    lblTeam: 'Équipe',
 
     roleNotifTitle: "Ton rôle dans l'équipe a changé",
     roleNotifMsg: (ch, team, role) => `${ch} a changé ton rôle dans « ${team} » en « ${role} ».`,
@@ -1619,15 +1683,25 @@ const MAIL = {
     roles: { owner: 'Capo squadra', editor: 'Editor', coach: 'Allenatore', captain: 'Capitano', member: 'Membro', admin: 'Amministratore' },
     someone: 'Qualcuno', teamFallback: 'La tua squadra', changerFallback: 'Un responsabile della squadra', updaterFallback: "L'allenatore",
 
-    inviteNotifTitle: 'Invito in una squadra!',
-    inviteNotifMsg: (inv, team) => `${inv} ti ha invitato nella squadra «${team}».`,
-    inviteSubject: (inv, team) => `${inv} ti ha invitato nella squadra «${team}»!`,
-    inviteExTitle: 'Sei stato invitato in una squadra!',
+    inviteNotifTitle: 'Invito in una squadra',
+    inviteNotifMsg: (inv, team) => `${inv} ti ha invitato nella squadra ${team}.`,
+    inviteSubject: (inv, team) => `${inv} ti ha invitato nella squadra ${team}`,
+    inviteExTitle: 'Sei stato invitato in una squadra',
     inviteExBody: (inv, team) => `${mB(inv)} ti ha invitato nella squadra ${mB(team)}.`,
-    inviteExNote: "Accedi all'app per accettare l'invito.",
-    inviteNewTitle: 'Sei stato invitato su Muuvlink!',
-    inviteNewBody: (inv, team) => `${mB(inv)} ti ha invitato nella squadra ${mB(team)}.\n      Crea un account gratuito per entrare.`,
+    inviteExNote: "Tocca il pulsante: l'invito viene accettato appena accedi.",
+    inviteNewTitle: 'Sei stato invitato in una squadra su Muuvlink',
+    inviteNewBody: (inv, team) => `${mB(inv)} ti ha invitato nella squadra ${mB(team)}. Crea un account gratuito per unirti.`,
     inviteNewNote: "Dopo la registrazione, l'invito della squadra ti aspetterà.",
+    evInviteNotifTitle: 'Invito a un evento',
+    evInviteNotifMsg: (inv, ev) => `${inv} ti ha invitato a un evento: ${ev}`,
+    evInviteSubject: (inv, ev) => `${inv} ti ha invitato a un evento: ${ev}`,
+    evInviteExTitle: 'Sei stato invitato a un evento',
+    evInviteExBody: (inv) => `${mB(inv)} ti ha invitato a questo evento. Dai un'occhiata e partecipa se fa per te.`,
+    evInviteExNote: "Per partecipare basta toccare Partecipa nella pagina dell'evento.",
+    evInviteNewTitle: 'Sei stato invitato a un evento su Muuvlink',
+    evInviteNewBody: (inv) => `${mB(inv)} ti ha invitato a questo evento. Muuvlink è un'app gratuita che riunisce eventi sportivi e squadre vicino a te.`,
+    evInviteNewNote: "Per partecipare crea un account gratuito e tocca Partecipa nella pagina dell'evento.",
+    lblTeam: 'Squadra',
 
     roleNotifTitle: 'Il tuo ruolo nella squadra è cambiato',
     roleNotifMsg: (ch, team, role) => `${ch} ha cambiato il tuo ruolo in «${team}» in «${role}».`,
@@ -1853,63 +1927,90 @@ ${MUUV_SOCIAL.map((x) => `                <td style="padding:0 6px;">
 }
 
 // Şablon 1: Takım daveti (kayıtlı kullanıcı)
-function inviteEmailExisting({ teamName, teamSport, inviterName, teamId, avatar }, lang = 'tr') {
-  return emailWrapper(`
-    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">${tm(lang, 'inviteExTitle')}</h2>
-    <p style="margin:0 0 28px;color:#64748b;font-size:15px;line-height:1.6;">
-      ${tm(lang, 'inviteExBody', inviterName, teamName)}
-    </p>
+function inviteEmailExisting(d, lang = 'tr') { return teamInviteEmail(d, lang, true); }
+function inviteEmailNew(d, lang = 'tr') { return teamInviteEmail(d, lang, false); }
 
-    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:24px;margin-bottom:28px;">
-      <div style="display:flex;align-items:center;gap:16px;">
-        <div style="width:56px;height:56px;background:linear-gradient(135deg,#114956,#0e3c47);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;text-align:center;line-height:56px;">${avatar || teamName.charAt(0).toUpperCase()}</div>
-        <div>
-          <div style="font-size:18px;font-weight:700;color:#1e293b;">${teamName}</div>
-          <div style="font-size:14px;color:#114956;margin-top:2px;">${teamSport}</div>
-        </div>
-      </div>
-    </div>
+// Şablon: Takım daveti (21 Ekim 2026 yenilendi — etkinlik davetiyle aynı görünüm). Eskisi
+// degradeliydi, "siz" diliyle ve ünlemliydi; takımın fotoğrafı varsa kutuda resim yerine
+// resmin ADRESİ düz yazı çıkıyordu. Üyeye düğme daveti kabul eder (?accept_invite),
+// yeni kişiye kayıt açar (?auth=register; kayıttan sonra davet bekliyor).
+function teamInviteEmail({ teamName, teamSport, inviterName, teamId, avatar }, lang = 'tr', isRegistered = true) {
+  const L = mailLang(lang);
+  const esc = htmlAttrEscape;
+  const ICON = 'https://muuvlink.app/icons/mail';
+  const href = isRegistered ? `${APP_URL}?accept_invite=${teamId}` : `${APP_URL}?auth=register`;
+  return emailWrapper(`
+    <table cellpadding="0" cellspacing="0" border="0" style="margin:0 0 16px;"><tr><td style="width:52px;height:52px;background:#e6f7f5;border-radius:14px;text-align:center;vertical-align:middle;">
+      <img src="${ICON}/k-tc.png" width="28" height="28" alt="" style="display:block;margin:0 auto;border:0;">
+    </td></tr></table>
+    <h2 style="margin:0 0 10px;color:#1e293b;font-size:24px;line-height:1.3;">${esc(tm(L, isRegistered ? 'inviteExTitle' : 'inviteNewTitle'))}</h2>
+    <p style="margin:0 0 24px;color:#475569;font-size:16px;line-height:1.6;">${tm(L, isRegistered ? 'inviteExBody' : 'inviteNewBody', esc(inviterName), esc(teamName))}</p>
+
+    <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:separate;background:#e6f7f5;border:1px solid #c2ede9;border-radius:12px;margin:0 0 26px;">
+      <tr><td style="padding:18px 20px;">
+        <table cellpadding="0" cellspacing="0" style="border-collapse:collapse;"><tr>
+          <td style="vertical-align:middle;padding-right:14px;">${avatarHtml(avatar, teamName, 48, '#114956')}</td>
+          <td style="vertical-align:middle;">
+            <div style="font-size:18px;font-weight:700;color:#0e3c47;line-height:1.3;">${esc(teamName)}</div>
+            ${teamSport ? `<div style="font-size:14px;color:#114956;margin-top:2px;">${esc(teamSport)}</div>` : ''}
+          </td>
+        </tr></table>
+      </td></tr>
+    </table>
 
     <div style="text-align:center;">
-      <a href="${APP_URL}?accept_invite=${teamId}"
-         style="display:inline-block;background:linear-gradient(135deg,#114956,#0e3c47);color:#ffffff;text-decoration:none;
-                padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;letter-spacing:0.2px;">
-        ${tm(lang, 'btnJoinTeam')}
+      <a href="${href}"
+         style="display:inline-block;background:#114956;color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:10px;font-size:16px;font-weight:700;">
+        ${esc(tm(L, isRegistered ? 'btnJoinTeam' : 'btnCreateAccount'))}
       </a>
     </div>
-    <p style="text-align:center;margin:16px 0 0;color:#94a3b8;font-size:13px;">
-      ${tm(lang, 'inviteExNote')}
+    <p style="text-align:center;margin:16px 0 0;color:#64748b;font-size:13px;line-height:1.5;">
+      ${esc(tm(L, isRegistered ? 'inviteExNote' : 'inviteNewNote'))}
     </p>
-  `, lang);
+  `, L);
 }
 
-// Şablon 2: Takım daveti (yeni kullanıcı)
-function inviteEmailNew({ teamName, teamSport, inviterName, avatar }, lang = 'tr') {
+// Şablon: Etkinlik daveti (takım davetiyle aynı görünüm: ikon, başlık, açıklama, bilgi kutusu,
+// düğme, alt not). Kayıtlı alıcıya ve yeni kişiye iki ayrı metin; ikisinde de düğme etkinlik
+// sayfasına gider (misafir de görebilir).
+function eventInviteEmail(d, lang = 'tr', isRegistered = true) {
+  const L = mailLang(lang);
+  const esc = htmlAttrEscape;
+  const ICON = 'https://muuvlink.app/icons/mail';
+  const url = `${d.url}${d.url.includes('?') ? '&' : '?'}utm_source=email&utm_medium=invite&utm_campaign=event_invite`;
+  const row = (label, value) => value
+    ? `<tr><td style="padding:3px 20px;color:#334155;font-size:14px;line-height:1.5;">${esc(label)}: <strong>${esc(value)}</strong></td></tr>` : '';
+  const when = [d.when, d.time].filter(Boolean).join(' · ');
   return emailWrapper(`
-    <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;">${tm(lang, 'inviteNewTitle')}</h2>
-    <p style="margin:0 0 28px;color:#64748b;font-size:15px;line-height:1.6;">
-      ${tm(lang, 'inviteNewBody', inviterName, teamName)}
-    </p>
+    <table cellpadding="0" cellspacing="0" border="0" style="margin:0 0 16px;"><tr><td style="width:52px;height:52px;background:#e6f7f5;border-radius:14px;text-align:center;vertical-align:middle;">
+      <img src="${ICON}/k-ec.png" width="28" height="28" alt="" style="display:block;margin:0 auto;border:0;">
+    </td></tr></table>
+    <h2 style="margin:0 0 10px;color:#1e293b;font-size:24px;line-height:1.3;">${esc(tm(L, isRegistered ? 'evInviteExTitle' : 'evInviteNewTitle'))}</h2>
+    <p style="margin:0 0 24px;color:#475569;font-size:16px;line-height:1.6;">${tm(L, isRegistered ? 'evInviteExBody' : 'evInviteNewBody', esc(d.inviterName))}</p>
 
-    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:24px;margin-bottom:28px;">
-      <div style="width:56px;height:56px;background:linear-gradient(135deg,#114956,#0e3c47);border-radius:12px;font-size:22px;font-weight:800;color:#fff;text-align:center;line-height:56px;margin:0 auto 12px;">${avatar || teamName.charAt(0).toUpperCase()}</div>
-      <div style="text-align:center;">
-        <div style="font-size:18px;font-weight:700;color:#1e293b;">${teamName}</div>
-        <div style="font-size:14px;color:#114956;margin-top:4px;">${teamSport}</div>
-      </div>
-    </div>
+    <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:separate;background:#e6f7f5;border:1px solid #c2ede9;border-radius:12px;margin:0 0 26px;">
+      <tr><td style="padding:18px 20px 6px;">
+        <table cellpadding="0" cellspacing="0" style="border-collapse:collapse;"><tr>
+          ${d.teamName ? `<td style="vertical-align:middle;padding-right:14px;">${avatarHtml(d.teamAvatar, d.teamName, 48, '#114956')}</td>` : ''}
+          <td style="vertical-align:middle;font-size:18px;font-weight:700;color:#0e3c47;line-height:1.3;">${esc(d.title)}</td>
+        </tr></table>
+      </td></tr>
+      ${row(tm(L, 'lblDate'), when)}
+      ${row(tm(L, 'lblLocation'), d.location)}
+      ${row(tm(L, 'lblTeam'), d.teamName)}
+      <tr><td style="padding:0 0 14px;"></td></tr>
+    </table>
 
     <div style="text-align:center;">
-      <a href="${APP_URL}?auth=register"
-         style="display:inline-block;background:linear-gradient(135deg,#114956,#0e3c47);color:#ffffff;text-decoration:none;
-                padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
-        ${tm(lang, 'btnCreateAccount')}
+      <a href="${url}"
+         style="display:inline-block;background:#114956;color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:10px;font-size:16px;font-weight:700;">
+        ${esc(tm(L, 'btnViewEvent'))}
       </a>
     </div>
-    <p style="text-align:center;margin:16px 0 0;color:#94a3b8;font-size:13px;">
-      ${tm(lang, 'inviteNewNote')}
+    <p style="text-align:center;margin:16px 0 0;color:#64748b;font-size:13px;line-height:1.5;">
+      ${esc(tm(L, isRegistered ? 'evInviteExNote' : 'evInviteNewNote'))}
     </p>
-  `, lang);
+  `, L);
 }
 
 // Rol etiketleri (TR)
@@ -3039,6 +3140,14 @@ function rejectIfObjectionable(req, res, field, ...texts) {
 }
 
 const SERVER_MSG = {
+  // Etkinlik daveti (21 Ekim 2026)
+  "Organizatör etkinliklerine davet gönderilemez; etkinliği paylaşabilirsin.": {"en": "Invitations can't be sent for organizer events; you can share the event instead.", "de": "Für Veranstalter-Events können keine Einladungen gesendet werden; du kannst das Event teilen.", "el": "Δεν μπορείς να στείλεις πρόσκληση σε εκδηλώσεις διοργανωτών· μπορείς να κοινοποιήσεις την εκδήλωση.", "es": "No se pueden enviar invitaciones a eventos de organizadores; puedes compartir el evento.", "fr": "On ne peut pas envoyer d'invitation pour un événement d'organisateur ; tu peux partager l'événement.", "it": "Non puoi inviare inviti per gli eventi degli organizzatori; puoi condividere l'evento."},
+  "Bu etkinlik gizli bir takıma ait. Davet etmek için kişiyi önce takıma davet et.": {"en": "This event belongs to a private team. To invite someone, invite them to the team first.", "de": "Dieses Event gehört zu einem privaten Team. Lade die Person zuerst in das Team ein.", "el": "Αυτή η εκδήλωση ανήκει σε ιδιωτική ομάδα. Για να προσκαλέσεις κάποιον, προσκάλεσέ τον πρώτα στην ομάδα.", "es": "Este evento pertenece a un equipo privado. Para invitar a alguien, invítalo primero al equipo.", "fr": "Cet événement appartient à une équipe privée. Pour inviter quelqu'un, invite-le d'abord dans l'équipe.", "it": "Questo evento appartiene a una squadra privata. Per invitare qualcuno, invitalo prima nella squadra."},
+  "Kendini davet edemezsin.": {"en": "You can't invite yourself.", "de": "Du kannst dich nicht selbst einladen.", "el": "Δεν μπορείς να προσκαλέσεις τον εαυτό σου.", "es": "No puedes invitarte a ti mismo.", "fr": "Tu ne peux pas t’inviter toi-même.", "it": "Non puoi invitare te stesso."},
+  "Davet için etkinliğe katılmış olman gerekiyor.": {"en": "You need to have joined the event to invite others.", "de": "Um andere einzuladen, musst du am Event teilnehmen.", "el": "Για να προσκαλέσεις άλλους πρέπει να συμμετέχεις στην εκδήλωση.", "es": "Para invitar a otros tienes que haberte unido al evento.", "fr": "Pour inviter d'autres personnes, tu dois participer à l'événement.", "it": "Per invitare altri devi partecipare all'evento."},
+  "Bir saatte en fazla 10 davet gönderebilirsin. Biraz sonra tekrar dene.": {"en": "You can send up to 10 invitations an hour. Please try again a bit later.", "de": "Du kannst bis zu 10 Einladungen pro Stunde senden. Versuch es etwas später erneut.", "el": "Μπορείς να στείλεις έως 10 προσκλήσεις την ώρα. Δοκίμασε ξανά λίγο αργότερα.", "es": "Puedes enviar hasta 10 invitaciones por hora. Vuelve a intentarlo un poco más tarde.", "fr": "Tu peux envoyer jusqu'à 10 invitations par heure. Réessaie un peu plus tard.", "it": "Puoi inviare fino a 10 inviti all'ora. Riprova tra poco."},
+  "Bu kişi zaten bu etkinliğe katılıyor.": {"en": "This person has already joined this event.", "de": "Diese Person nimmt bereits an diesem Event teil.", "el": "Αυτό το άτομο συμμετέχει ήδη σε αυτή την εκδήλωση.", "es": "Esta persona ya está apuntada a este evento.", "fr": "Cette personne participe déjà à cet événement.", "it": "Questa persona partecipa già a questo evento."},
+  "Bu e-posta adresi bu etkinliğe zaten davet edildi.": {"en": "This email address has already been invited to this event.", "de": "Diese E-Mail-Adresse wurde bereits zu diesem Event eingeladen.", "el": "Αυτή η διεύθυνση email έχει ήδη προσκληθεί σε αυτή την εκδήλωση.", "es": "Esta dirección de correo ya ha sido invitada a este evento.", "fr": "Cette adresse e-mail a déjà été invitée à cet événement.", "it": "Questo indirizzo email è già stato invitato a questo evento."},
   'Çok fazla istek. Lütfen 15 dakika sonra tekrar deneyin.': { en: 'Too many requests. Please try again in 15 minutes.', de: 'Zu viele Anfragen. Bitte versuche es in 15 Minuten erneut.', el: 'Πάρα πολλά αιτήματα. Δοκίμασε ξανά σε 15 λεπτά.', es: 'Demasiadas solicitudes. Inténtalo de nuevo en 15 minutos.', fr: 'Trop de requêtes. Réessaie dans 15 minutes.', it: 'Troppe richieste. Riprova tra 15 minuti.' },
   'Çok fazla istek. Lütfen bir süre bekleyin.': { en: 'Too many requests. Please wait a moment.', de: 'Zu viele Anfragen. Bitte warte einen Moment.', el: 'Πάρα πολλά αιτήματα. Περίμενε λίγο.', es: 'Demasiadas solicitudes. Espera un momento.', fr: 'Trop de requêtes. Patiente un instant.', it: 'Troppe richieste. Attendi un momento.' },
   'Geçerli bir e-posta adresi girin.': { en: 'Please enter a valid email address.', de: 'Bitte gib eine gültige E-Mail-Adresse ein.', el: 'Συμπλήρωσε μια έγκυρη διεύθυνση email.', es: 'Introduce un correo electrónico válido.', fr: 'Saisis une adresse e-mail valide.', it: 'Inserisci un indirizzo email valido.' },
@@ -4668,6 +4777,8 @@ app.post('/api/teams/:id/invite', authenticateToken, async (req, res) => {
     await sendEmail({
       to: email,
       prefKey: 'invite',
+      kind: 'invite',
+      userId: isRegistered ? userResult.rows[0].id : null,
       fallbackLang: reqLang(req),
       build: (L) => ({
         subject: tm(L, 'inviteSubject', team.inviter_name, team.name),
@@ -5805,6 +5916,116 @@ app.delete('/api/trainings/:id/leave', authenticateToken, async (req, res) => {
   }
 });
 
+// =====================================================
+// ETKİNLİĞE E-POSTAYLA DAVET (21 Ekim 2026, Melih onayladı)
+// Davet edebilen: etkinliği yöneten (takım rolü / bireyselde oluşturan), etkinliğe katılan,
+// platform admini. Gizli takım etkinliğinde kapalı (davetli göremez — önce takıma davet),
+// organizatör etkinliğinde kapalı (kayıt dışarıda), geçmiş etkinlikte kapalı.
+// Sınır: davet eden başına saatte 10; aynı adrese aynı etkinlik için tek davet.
+// =====================================================
+pool.query(`
+  CREATE TABLE IF NOT EXISTS event_invitations (
+    id            SERIAL PRIMARY KEY,
+    training_id   INTEGER NOT NULL REFERENCES trainings(id) ON DELETE CASCADE,
+    inviter_id    INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    invitee_email TEXT NOT NULL,
+    created_at    TIMESTAMPTZ DEFAULT NOW()
+  )
+`).then(() => pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS event_invitations_once ON event_invitations (training_id, lower(invitee_email))`))
+  .catch(() => {});
+const EVENT_INVITE_PER_HOUR = 10;
+
+app.post('/api/trainings/:id/invite', authenticateToken, async (req, res) => {
+  try {
+    const trainingId = parseInt(req.params.id, 10);
+    const email = String(req.body.email || '').trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'Geçerli bir e-posta adresi girin.' });
+
+    const tr = (await pool.query(
+      `SELECT t.id, t.title, t.training_date, t.training_time, t.location_name, t.team_id, t.created_by,
+              t.is_public, t.is_organizer_event, t.is_paid,
+              tm.name AS team_name, tm.avatar AS team_avatar, tm.is_private AS team_is_private,
+              u.name AS inviter_name, u.email AS inviter_email
+       FROM trainings t
+       LEFT JOIN teams tm ON tm.id = t.team_id
+       JOIN users u ON u.id = $2
+       WHERE t.id = $1`, [trainingId, req.user.id])).rows[0];
+    if (!tr) return res.status(404).json({ error: 'Training not found' });
+    if (tr.is_organizer_event || tr.is_paid) return res.status(400).json({ error: 'Organizatör etkinliklerine davet gönderilemez; etkinliği paylaşabilirsin.' });
+    if (tr.team_is_private && !tr.is_public) return res.status(400).json({ error: 'Bu etkinlik gizli bir takıma ait. Davet etmek için kişiyi önce takıma davet et.' });
+    if (await isTrainingPast(trainingId)) return res.status(409).json({ error: PAST_TRAINING_MSG, code: 'training_past' });
+    if (email === String(tr.inviter_email || '').toLowerCase()) return res.status(400).json({ error: 'Kendini davet edemezsin.' });
+
+    // Yetki: yöneten, katılan ya da platform admini
+    let allowed = await isPlatformAdmin(req.user.id);
+    if (!allowed) {
+      if (tr.team_id) {
+        const role = (await pool.query('SELECT role FROM team_members WHERE team_id = $1 AND user_id = $2', [tr.team_id, req.user.id])).rows[0]?.role;
+        allowed = TRAINING_MANAGER_ROLES.includes(role);
+      } else {
+        allowed = tr.created_by === req.user.id;
+      }
+    }
+    if (!allowed) {
+      allowed = (await pool.query('SELECT 1 FROM training_attendees WHERE training_id = $1 AND user_id = $2', [trainingId, req.user.id])).rows.length > 0;
+    }
+    if (!allowed) return res.status(403).json({ error: 'Davet için etkinliğe katılmış olman gerekiyor.' });
+
+    const recent = (await pool.query(
+      "SELECT count(*)::int n FROM event_invitations WHERE inviter_id = $1 AND created_at > now() - interval '1 hour'", [req.user.id])).rows[0].n;
+    if (recent >= EVENT_INVITE_PER_HOUR) return res.status(429).json({ error: 'Bir saatte en fazla 10 davet gönderebilirsin. Biraz sonra tekrar dene.' });
+
+    const invitee = (await pool.query('SELECT id FROM users WHERE lower(email) = $1 AND deleted_at IS NULL', [email])).rows[0] || null;
+    if (invitee) {
+      const already = await pool.query('SELECT 1 FROM training_attendees WHERE training_id = $1 AND user_id = $2', [trainingId, invitee.id]);
+      if (already.rows.length) return res.status(409).json({ error: 'Bu kişi zaten bu etkinliğe katılıyor.' });
+    }
+
+    const ins = await pool.query(
+      `INSERT INTO event_invitations (training_id, inviter_id, invitee_email) VALUES ($1, $2, $3)
+       ON CONFLICT DO NOTHING RETURNING id`, [trainingId, req.user.id, email]);
+    if (!ins.rows.length) return res.status(409).json({ error: 'Bu e-posta adresi bu etkinliğe zaten davet edildi.' });
+
+    const url = `${SITE_ORIGIN}/etkinlik/${slugify(tr.title)}-${tr.id}`;
+    // Gönderim kod hatasıyla düşerse davet kaydı geri alınır; yoksa kişi tekrar deneyince
+    // "zaten davet edildi" görür ama hiçbir şey gitmemiş olur.
+    try {
+    if (invitee) {
+      await createNotif(invitee.id, {
+        build: (L) => ({ title: tm(L, 'evInviteNotifTitle'), message: tm(L, 'evInviteNotifMsg', tr.inviter_name, tr.title) }),
+        type: 'event_invitation',
+        refId: trainingId,
+        url: `/etkinlik/${slugify(tr.title)}-${tr.id}`,
+      });
+    }
+    const dataFor = (L) => ({
+      inviterName: tr.inviter_name, title: tr.title, url,
+      when: new Date(tr.training_date).toLocaleDateString(MAIL_LOCALE[mailLang(L)], { timeZone: 'UTC', day: 'numeric', month: 'long' }),
+      time: String(tr.training_time || '').slice(0, 5),
+      location: tr.location_name, teamName: tr.team_name, teamAvatar: tr.team_avatar,
+    });
+    await sendEmail({
+      to: email,
+      prefKey: 'invite',
+      kind: 'event_invite',
+      userId: invitee?.id || null,
+      fallbackLang: reqLang(req),
+      build: (L) => ({
+        subject: tm(L, 'evInviteSubject', tr.inviter_name, tr.title),
+        html: eventInviteEmail(dataFor(L), L, !!invitee),
+      }),
+    });
+    } catch (e) {
+      await pool.query('DELETE FROM event_invitations WHERE id = $1', [ins.rows[0].id]).catch(() => {});
+      throw e;
+    }
+    res.json({ ok: true, is_registered: !!invitee });
+  } catch (error) {
+    console.error('Event invite error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 app.post('/api/trainings/:id/comments', authenticateToken, async (req, res) => {
   try {
     const trainingId = req.params.id;
@@ -6711,7 +6932,8 @@ const SUBJECT_KIND = [
   [/ etkinliğinde değişiklik var$/, 'event_update'],
   [/ takımında yeni gönderi var$/, 'wall_post'],
   [/ takımındaki rolün güncellendi$/, 'role'],
-  [/ takımına davet etti!$/, 'invite'],
+  [/ takımına davet etti!?$/, 'invite'],
+  [/ seni bir etkinliğe davet etti: /, 'event_invite'],
   [/^Muuvlink — Şifre Sıfırlama$/, 'password_reset'],
   [/^Mesajınız alındı — Muuvlink$/, 'contact_reply'],
   [/^(📬 )?Yeni İletişim Mesajı: /, 'contact_admin'],

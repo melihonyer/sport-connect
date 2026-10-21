@@ -290,7 +290,7 @@ const SPORT_TYPES = ["Basketbol","Bikejoring","Bisiklet","Canicross","Crossfit",
 
 // Bildirim tercihi satırları (backend NOTIF_TYPE_TO_KEY ile hizalı). email:false → sadece uygulama.
 const NOTIF_PREF_ROWS = [
-  { sec: "secTeam",   items: [ { k: "invite", email: true }, { k: "team_member", email: true, emailDefault: true }, { k: "role", email: true } ] },
+  { sec: "secTeam",   items: [ { k: "invite", email: true, emailDefault: true }, { k: "team_member", email: true, emailDefault: true }, { k: "role", email: true } ] },
   { sec: "secEvents", items: [ { k: "event_new", email: true }, { k: "event_update", email: true }, { k: "event_reminder", email: true }, { k: "event_join", email: true, emailDefault: true } ] },
   { sec: "secSocial", items: [ { k: "comment", email: true }, { k: "wall_post", email: true }, { k: "like", email: false } ] },
   { sec: "secOther",  items: [ { k: "badge", email: false }, { k: "nudge", email: false }, { k: "tips", email: true, app: false, emailDefault: true } ] },
@@ -2305,6 +2305,8 @@ export default function Muuvlink() {
   const [showNotifPrefs, setShowNotifPrefs] = useState(false);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  // Etkinliğe e-postayla davet: aynı pencere, hedef etkinlik (21 Ekim 2026)
+  const [inviteTrainingId, setInviteTrainingId] = useState(null);
   const [teamActiveTab, setTeamActiveTab] = useState("wall");
   // Takım ayarları formu ÜST bileşende durur. TeamDetailPage her üst-render'da
   // yeniden kurulduğu için form state'i içeride tutulamaz: kaydetme sonrası
@@ -3354,6 +3356,7 @@ export default function Muuvlink() {
     if (showDeleteModal)   { setShowDeleteModal(false);   return true; }
     if (showManualLocation){ setShowManualLocation(false);return true; }
     if (showInviteModal)   { setShowInviteModal(false);   return true; }
+    if (inviteTrainingId)  { setInviteTrainingId(null);   return true; }
     if (showProfileEdit)   { setShowProfileEdit(false);   return true; }
     if (showNotifPrefs)    { setShowNotifPrefs(false);    return true; }
     if (showNotifications) { setShowNotifications(false); return true; }
@@ -4490,6 +4493,29 @@ export default function Muuvlink() {
     } catch (error) {
       console.error("Invite error:", error);
       showToast(t("common.error"), "error");
+    }
+  };
+
+  const handleInviteToTraining = async (trainingId, email) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_URL}/trainings/${trainingId}/invite`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ email }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        showToast(errText(data, t("toast.inviteFail")), "error");
+        return false;
+      }
+      showToast(t(data.is_registered ? "toast.inviteSent" : "toast.inviteSentNew"), data.is_registered ? "success" : "info");
+      setInviteTrainingId(null);
+      return true;
+    } catch (error) {
+      console.error("Event invite error:", error);
+      showToast(t("toast.networkError"), "error");
+      return false;
     }
   };
 
@@ -6626,6 +6652,17 @@ export default function Muuvlink() {
                   <InstagramGlyph className="w-4 h-4" /> {t("story.btn")}
                 </button>
               </HoverTip>
+              {/* E-postayla davet: yöneten, katılan ya da admin. Organizatör etkinliğinde ve
+                  gizli takımın etkinliğinde yok (sunucu da reddeder). */}
+              {user && !isOrg && (canManage || isParticipant || user.is_admin)
+                && !(selectedTraining.team_is_private && !selectedTraining.is_public) && (
+                <button data-btn="pop-on-dark"
+                  onClick={() => setInviteTrainingId(selectedTraining.id)}
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-pop-400 text-ink-900 rounded-xl text-sm font-bold transition-colors"
+                >
+                  <UserPlus className="w-4 h-4" /> {t("teamDetail.invite")}
+                </button>
+              )}
               </>)}
               {user && !canManage && (
                 <button
@@ -8781,11 +8818,18 @@ export default function Muuvlink() {
 
     const handleSubmit = async (e) => {
       e.preventDefault();
+      if (!email) return;
+      if (inviteTrainingId) {
+        setSending(true);
+        const ok = await handleInviteToTraining(inviteTrainingId, email);
+        setSending(false);
+        if (ok) setEmail("");
+        return;
+      }
       if (!selectedTeam) {
         showToast(t("teams.teamNotFound"), "error");
         return;
       }
-      if (!email) return;
       setSending(true);
       await handleInviteToTeam(selectedTeam.id, email);
       setSending(false);
@@ -8796,7 +8840,7 @@ export default function Muuvlink() {
       <div className="fixed inset-0 bg-black/50 flex justify-center overflow-y-auto overscroll-contain p-4"
         style={{ zIndex: 1000000 }} role="dialog" aria-modal="true" aria-label={t("teamDetail.inviteByEmail")}>
         <div className="bg-white rounded-3xl max-w-md w-full p-8 relative my-auto">
-          <button onClick={() => setShowInviteModal(false)} aria-label={t("common.close")}
+          <button onClick={() => { setShowInviteModal(false); setInviteTrainingId(null); }} aria-label={t("common.close")}
             className="absolute top-3 right-3 w-11 h-11 flex items-center justify-center rounded-full hover:bg-slate-100 transition-colors">
             <X className="w-6 h-6" />
           </button>
@@ -9853,7 +9897,7 @@ Platformun çalışabilmesi için gereklidir: giriş yaptığınızda kimlik do�
       />}
       {showNotifications && <NotificationsPanel />}
       {showProfileEdit && <ProfileEditModal />}
-      {showInviteModal && <InviteModal />}
+      {(showInviteModal || inviteTrainingId) && <InviteModal />}
       <ConfirmModal />
       {showDeleteModal && <PageHost key="delete-account" render={DeleteAccountModal} />}
       {showNotifPrefs && <NotifPrefsModal />}

@@ -58,6 +58,7 @@ function threshold(event) {
 const seen = new Map();
 let timer = null;
 let lastSent = 0;
+const ADMIN = /^\/([a-z]{2}\/)?(api\/)?admin(\/|$)/;
 
 function deviceOf(ua = "") {
   if (/iPad/.test(ua) || (/Macintosh/.test(ua) && /Mobile/.test(ua))) return "tablet";
@@ -100,10 +101,14 @@ function touchUser(user, req) {
   if (!user || user.id == null || !hub()) return;
   try {
     const id = String(user.id);
-    seen.set(id, {
+    const path = user.path || (req ? pagePath(req) : null);
+    // Admin panel and site activity are kept apart within a batch, so a panel
+    // refreshing every few seconds cannot hide that the same person is also
+    // browsing the site in another tab.
+    seen.set(path && ADMIN.test(path) ? `${id}#admin` : id, {
       id,
       name: personName(user.name) || "Üye",
-      path: user.path || (req ? pagePath(req) : null),
+      path,
       device: user.device || (req ? deviceOf(req.headers["user-agent"]) : null),
       staff: user.staff === true,
     });

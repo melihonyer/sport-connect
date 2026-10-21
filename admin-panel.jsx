@@ -1073,7 +1073,7 @@ const EMAIL_KIND_TR = {
   act_te: "İlk buluşma", grow: "Büyüme (panelden)", event_new: "Yeni etkinlik (üyelere)",
   event_reminder: "Etkinlik hatırlatma", team_member: "Yeni takım üyesi", event_join: "Yeni katılımcı",
   comment: "Yorum", event_update: "Etkinlik değişti", wall_post: "Duvar gönderisi", role: "Rol değişti",
-  invite: "Takım daveti", password_reset: "Şifre sıfırlama", contact_reply: "İletişim yanıtı",
+  invite: "Takım daveti", event_invite: "Etkinlik daveti", password_reset: "Şifre sıfırlama", contact_reply: "İletişim yanıtı",
   contact_admin: "İletişim (bize)", tips: "İpuçları", sample: "Örnek / test", other: "Diğer",
 };
 const NOTIF_KIND_TR = {
