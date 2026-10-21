@@ -393,6 +393,13 @@ kalmaya karar verdi. Yapılacak iş sadece ne olduğunu doğru raporlamak.
 - **Threshold sayfa bildirimi:** `threshold-page.js` `reportPage()` her rota değişiminde
   `navigator.sendBeacon('/_thr/page/<yol>')`; nginx (`location ^~ /_thr/`) arka uca iletmeden 204
   döner, yalnız Threshold loguna yazar. Yalnız yol gider.
+- **Threshold oturum açık üyeler + tam ad** (21 Ekim 2026, Melih'in kararı): `backend/threshold.js`
+  (Threshold'daki `integrations/threshold.cjs`'in birebir kopyası; güncellenirse dosya olduğu gibi
+  değiştirilir ve backend ile birlikte scp edilir). `authenticateToken`, `optionalAuth` ve `isAdmin`
+  `reportSignedIn` çağırır → `touchUser` (30 sn'de bir toplu `POST /api/v1/presence`). Ad JWT'de yok:
+  `presenceNames` önbelleği (id → ad + is_admin, 10 dk); istek beklemez, ilk istekte sorgu arka planda.
+  Admin `staff: true` (Threshold sayılara katmaz). Sayfa Referer'dan. Olaylarda `personName` (tam ad;
+  e-posta silinir). E-posta, telefon, mesaj içeriği Threshold'a GİTMEZ.
 
 ## Sayfa bileşenleri ve PageHost
 

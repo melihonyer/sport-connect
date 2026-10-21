@@ -1,7 +1,7 @@
 // Muuvlink Backend API - FULL VERSION
 require('dotenv').config();
 // Threshold: Melih'in kişisel bildirim merkezi (beklenmez, hata fırlatmaz, ayar yoksa susar).
-const { threshold, shortName } = require('./threshold');
+const { threshold, touchUser, personName } = require('./threshold');
 // Render'da IPv6 üzerinden SMTP bağlantısı çalışmıyor — IPv4 öncelikli yap
 const dns = require('dns');
 dns.setDefaultResultOrder('ipv4first');
@@ -2860,6 +2860,32 @@ function welcomeEmail(d, lang = 'tr') {
 // MIDDLEWARE
 // =====================================================
 
+// Threshold "oturum açık üyeler" (21 Ekim 2026, Melih: tam adla). JWT'de ad yok; her istekte
+// veritabanına gitmemek için id → { ad, admin } 10 dk bellekte. İstek ASLA beklemez: önbellekte
+// yoksa sorgu arka planda gider, kişi bir sonraki istekte bildirilir. Yalnız ad + bulunduğu sayfa
+// (Referer'dan) gider; e-posta, telefon, mesaj gitmez (threshold.js).
+const presenceNames = new Map();
+const PRESENCE_NAME_TTL = 10 * 60 * 1000;
+function reportSignedIn(user, req) {
+  if (!user || user.id == null) return;
+  const hit = presenceNames.get(user.id);
+  if (hit && Date.now() - hit.at < PRESENCE_NAME_TTL) {
+    touchUser({ id: user.id, name: hit.name, staff: hit.staff }, req);
+    return;
+  }
+  if (hit?.loading) return;
+  presenceNames.set(user.id, { ...(hit || {}), loading: true, at: hit?.at || 0 });
+  pool.query('SELECT name, is_admin FROM users WHERE id = $1 AND deleted_at IS NULL', [user.id])
+    .then((r) => {
+      const row = r.rows[0];
+      if (!row) { presenceNames.delete(user.id); return; }
+      presenceNames.set(user.id, { name: row.name, staff: row.is_admin === true, at: Date.now() });
+      if (presenceNames.size > 5000) presenceNames.delete(presenceNames.keys().next().value);
+      touchUser({ id: user.id, name: row.name, staff: row.is_admin === true }, req);
+    })
+    .catch(() => { presenceNames.delete(user.id); });
+}
+
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -2873,6 +2899,7 @@ const authenticateToken = (req, res, next) => {
       return res.status(403).json({ error: 'Invalid token' });
     }
     req.user = user;
+    reportSignedIn(user, req);
     next();
   });
 };
@@ -2883,7 +2910,7 @@ const optionalAuth = (req, res, next) => {
   const token = authHeader && authHeader.split(' ')[1];
   if (!token) return next();
   jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (!err) req.user = user;
+    if (!err) { req.user = user; reportSignedIn(user, req); }
     next();
   });
 };
@@ -2899,6 +2926,7 @@ const isAdmin = async (req, res, next) => {
       const result = await pool.query('SELECT is_admin FROM users WHERE id = $1', [decoded.id]);
       if (!result.rows[0]?.is_admin) return res.status(403).json({ error: 'Admin access required' });
       req.user = decoded;
+      reportSignedIn(decoded, req);
       next();
     } catch (e) {
       res.status(500).json({ error: 'Server error' });
@@ -7257,7 +7285,7 @@ app.post('/api/contact', async (req, res) => {
     threshold({
       type: 'contact.received', title: 'Yeni mesaj',
       body: `İletişim formu: ${subject.trim().slice(0, 80)}`,
-      actor: shortName(name),
+      actor: personName(name),
       url: `${APP_URL}/admin.html?tab=messages`,
       dedupe_key: `iletisim-${result.rows[0].id}`,
     });
@@ -9206,7 +9234,7 @@ async function logActivity(event_type, user_id, user_name, meta = {}, source_ref
     );
     const map = THRESHOLD_EVENTS[event_type];
     if (map && r.rowCount === 1) {
-      const kisa = shortName(user_name);
+      const kisa = personName(user_name);
       threshold({ ...map(kisa, meta || {}), actor: kisa, dedupe_key: source_ref || undefined });
     }
   } catch (e) { /* sessiz */ }
