@@ -401,6 +401,16 @@ kalmaya karar verdi. Yapılacak iş sadece ne olduğunu doğru raporlamak.
   Admin `staff: true` (Threshold sayılara katmaz). Sayfa Referer'dan. Olaylarda `personName` (tam ad;
   e-posta silinir). E-posta, telefon, mesaj içeriği Threshold'a GİTMEZ.
 
+## Ziyaret istatistiği (Umami Cloud, 21 Ekim 2026)
+
+Çerezsiz sayaç, AB bölgesi, muuvlinkapp@gmail.com hesabı, ücretsiz paket. Ayrıntı
+`docs/analytics-umami.md`, yönerge `umami-analytics` skill'i. Kendi sunucuya Umami KURULMAZ.
+- `index.html` süzgeci sorgudan yalnız `utm_*` geçirir; yeni bir sorgu parametresi eklenirse
+  kişisel/gizli değilse ve gerçekten gerekliyse beyaz listeye adıyla eklenir.
+- `/admin` açan tarayıcı sayılmaz (`umami.disabled`, admin.html de koyar).
+- Olay = yalnız başarı anı, kişisel veri yok (`umamiTrack`). Ölçülecek karar yoksa olay eklenmez.
+- Meta pikseli ayrı ve olduğu gibi duruyor; Umami çerez onayına bağlanmaz.
+
 ## Sayfa bileşenleri ve PageHost
 
 Sayfa/modal bileşenlerinin çoğu ana bileşenin İÇİNDE tanımlı. Her üst-render'da
