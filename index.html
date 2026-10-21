@@ -16,6 +16,53 @@
     })();
   </script>
 
+  <!-- Ziyaret istatistiği: Umami Cloud, AB bölgesi (docs/analytics-umami.md). Çerez yazmaz,
+       IP saklamaz; çerez onayına bağlı DEĞİL. Her gönderim önce bu süzgeçten geçer:
+       sorgu dizesinden yalnız utm_* kalır (ta jwt'si, reset_token, accept_invite gitmez),
+       /admin açan tarayıcı bir daha hiç sayılmaz (admin.html de aynı işareti koyar).
+       Uygulama (Capacitor server.url) ziyareti app-ios / app-android etiketi alır;
+       ?src=app yalnız ilk açılışta adreste olduğu için işaret burada bir kez konur. -->
+  <script>
+    (function () {
+      try {
+        var C = window.Capacitor;
+        var app = (C && C.isNativePlatform && C.isNativePlatform()) ||
+          new URLSearchParams(location.search).get('src') === 'app';
+        if (app) {
+          var p = (C && C.getPlatform && C.getPlatform()) ||
+            (/iPhone|iPad|iPod/i.test(navigator.userAgent) ? 'ios' : /Android/i.test(navigator.userAgent) ? 'android' : '');
+          // Masaüstünde ?src=app ile deneme etiket almaz; yalnız gerçek iki kabuk.
+          if (p === 'ios' || p === 'android') document.documentElement.setAttribute('data-app-shell', p);
+        }
+      } catch (e) {}
+    })();
+    window.umamiBeforeSend = function (type, p) {
+      try {
+        var u = new URL(p.url, location.origin);
+        if (/^\/admin(\/|$)/.test(u.pathname)) {
+          try { localStorage.setItem('umami.disabled', '1'); } catch (e) {}
+          return false;
+        }
+        var keep = new URLSearchParams();
+        u.searchParams.forEach(function (v, n) {
+          if (/^utm_(source|medium|campaign|content|term)$/.test(n)) keep.set(n, v);
+        });
+        u.search = keep.toString();
+        u.hash = '';
+        p.url = u.toString();
+        if (p.referrer) {
+          try { var r = new URL(p.referrer, location.origin); r.search = ''; r.hash = ''; p.referrer = r.toString(); }
+          catch (e) { p.referrer = ''; }
+        }
+        var shell = document.documentElement.getAttribute('data-app-shell');
+        if (shell) p.tag = 'app-' + shell;
+        return p;
+      } catch (e) {
+        return false;
+      }
+    };
+  </script>
+
   <!-- Meta domain doğrulaması — iOS 14.5+ dönüşüm ölçümünün (AEM) ön koşulu.
        STATİK kalmalı: React ya da başka bir script tarafından eklenirse
        Meta'nın tarayıcısı göremez ve doğrulama başarısız olur. -->

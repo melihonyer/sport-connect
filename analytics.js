@@ -250,3 +250,16 @@ export const MetaEvents = {
 };
 
 export const isAnalyticsEnabled = IS_ENABLED;
+
+/**
+ * Umami Cloud olayı (index.html'deki betik; docs/analytics-umami.md). Yalnız başarı anı,
+ * kişisel veri YOK: ad, e-posta, kullanıcı/etkinlik numarası olaya girmez. Ad biçimi
+ * `alan:eylem`. Betik yüklenmediyse (reklam engelleyici, yerel geliştirme) sessiz geçer.
+ */
+export function umamiTrack(name, data) {
+  try {
+    if (typeof window !== 'undefined' && window.umami && typeof window.umami.track === 'function') {
+      if (data) window.umami.track(name, data); else window.umami.track(name);
+    }
+  } catch { /* ölçüm hatası kullanıcı akışını durdurmaz */ }
+}

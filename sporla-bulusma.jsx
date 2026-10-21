@@ -6,7 +6,7 @@ import BlurReveal from "./BlurReveal.jsx";
 import { StoreButton } from "./StoreButtons.jsx";
 import { SocialIcons } from "./SocialLinks.jsx";
 import { TaSessionNote, TaDiscoverCard, TaHomeBand, TaCoachTip, TaEmptyState, TaRaceCard, TaFooterStrip, taRaceGuide } from "./TrainingAgentsPromo.jsx";
-import { MetaEvents, newEventId, getMatchSignals, getAttribution, trackPageView } from "./analytics.js";
+import { MetaEvents, newEventId, getMatchSignals, getAttribution, trackPageView, umamiTrack } from "./analytics.js";
 import { reportPage } from "./threshold-page.js";
 import {
   MapPin,
@@ -3583,6 +3583,7 @@ export default function Muuvlink() {
 
       if (response.ok) {
         MetaEvents.completeRegistration(eventId);
+        umamiTrack("signup");
         localStorage.setItem("token", data.token);
         if (isNative) syncPushToken(data.token); // cihazı bu kullanıcıya bağla
         setUser(data.user);
@@ -3908,6 +3909,7 @@ export default function Muuvlink() {
 
       if (response.ok) {
         MetaEvents.joinTraining(trainingId, eventId);
+        umamiTrack("event:join");
         triggerHaptic("success");
         showToast(t("toast.joinTraining"), "success");
         fetchTrainings();
@@ -3973,6 +3975,7 @@ export default function Muuvlink() {
 
       if (response.ok) {
         showToast(t("toast.trainingCreated"), "success");
+        umamiTrack("event:create", taCurrent ? { kaynak: "training-agents" } : undefined);
         // Training Agents taslağı varsa yayınlanan antrenmanı düş; sırada
         // başka antrenman varsa şerit onunla görünmeye devam eder.
         if (taDraft) {
@@ -4414,6 +4417,7 @@ export default function Muuvlink() {
 
       if (response.ok) {
         MetaEvents.joinTeam(teamId, eventId);
+        umamiTrack("team:join");
         showToast(t("teams.joinSuccess"), "success");
         fetchTeams();
         fetchMyTeams(token);
@@ -4447,6 +4451,7 @@ export default function Muuvlink() {
 
       if (response.ok) {
         showToast(t("createTeam.success"), "success");
+        umamiTrack("team:create");
         // Antrenman taslağı bekliyorsa profil yerine forma dön: kullanıcı
         // takımı zaten onu yayınlamak için kurdu.
         if (taDraft) { showToast(t("ta.teamReady"), "success"); setCurrentPage("create-training"); }
