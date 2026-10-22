@@ -472,6 +472,11 @@ bunlar haritada ve "Yakınımda" aramasında hiç çıkmıyor.
 - Silinen takım/etkinlik `activity_logs`'a `team_delete` / `training_delete`
   olarak yazılır (`logDeletion`), panelde "Silinenler" filtresinde görünür.
   `source_ref` benzersiz: aynı silme iki kez yazılmaz.
+- **Takımdan ayrılma** (22 Ekim 2026, Melih): `DELETE /api/teams/:teamId/members/:userId` eskiden
+  hiçbir yere yazılmıyordu. Artık kendi çıkan `team_leave`, lider/admin çıkardıysa `team_remove`
+  (user_id çıkarılan, `meta.by` çıkaran) — yalnız satır gerçekten silindiyse. Admin › Kayıtlar
+  "Takım Ayrıl" filtresi ikisini birlikte gösterir; Canlı akışta "takımdan ayrıldı" / "takımdan üye
+  çıkardı"; Threshold'a da gider. 22 Ekim öncesi ayrılmalar yalnız nginx'te (14 gün).
 - Ayrılan hesaplar `account_departures`'ta; **kişisel veri tutulmaz** (isim/e-posta
   yok), purge'den sonra da sayılar kalır.
 - **Ayrılma nedeni** (5 Ekim 2026, Melih): Hesabımı sil penceresinde isteğe bağlı

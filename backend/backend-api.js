@@ -484,9 +484,12 @@ app.use('/api', (req, res, next) => {
     else if (plat !== 'bot' && plat !== 'script') bucket.visitors.add(vid);
     // NOT: userId doluysa vid hiçbir misafir yapısına yazılmaz (aşağıda da).
 
-    const label = p === '/live/view'
+    let label = p === '/live/view'
       ? (LIVE_PAGE_LABELS[String(req.query?.p || '')] || null)
       : liveDescribe(req.method, p);
+    // Takımdan çıkma: aynı adres hem kendi ayrılmayı hem liderin üye çıkarmasını taşır.
+    const memberDel = req.method === 'DELETE' && /^\/teams\/\d+\/members\/(\d+)$/.exec(p);
+    if (memberDel && userId) label = Number(memberDel[1]) === userId ? 'takımdan ayrıldı' : 'takımdan üye çıkardı';
     const entity = liveEntity(p);
     const client = (plat === 'bot' || plat === 'script') ? liveClientName(req.headers['user-agent']) : null;
     if (userId) {
@@ -5068,10 +5071,24 @@ app.delete('/api/teams/:teamId/members/:userId', authenticateToken, async (req, 
       return res.status(403).json({ error: 'Bu işlem için yetkiniz yok.' });
     }
 
-    await pool.query(
-      'DELETE FROM team_members WHERE team_id = $1 AND user_id = $2',
+    const removed = await pool.query(
+      'DELETE FROM team_members WHERE team_id = $1 AND user_id = $2 RETURNING id',
       [teamId, userId]
     );
+
+    // Kayıt (22 Ekim 2026): eskiden takımdan ayrılma/çıkarma hiçbir yere yazılmıyordu,
+    // panelde katılım görünüp ayrılma görünmüyordu. Kendi çıkan → team_leave; lider/admin
+    // çıkardıysa → team_remove (user_id çıkarılan kişi, meta.by çıkaran).
+    if (removed.rowCount > 0) {
+      const names = await pool.query(
+        'SELECT (SELECT name FROM teams WHERE id = $1) AS team_name, (SELECT name FROM users WHERE id = $2) AS member_name, (SELECT name FROM users WHERE id = $3) AS actor_name',
+        [teamId, userId, req.user.id]
+      ).catch(() => ({ rows: [{}] }));
+      const n = names.rows[0] || {};
+      const teamName = (n.team_name || '').trim() || undefined;
+      if (isSelf) logActivity('team_leave', req.user.id, n.member_name, { team_name: teamName });
+      else logActivity('team_remove', parseInt(userId), n.member_name, { team_name: teamName, by: n.actor_name || undefined });
+    }
 
     res.json({ message: 'Member removed' });
   } catch (error) {
@@ -9444,6 +9461,8 @@ const THRESHOLD_EVENTS = {
   training_create: (n, m) => ({ type: 'event.created', title: 'Yeni etkinlik', body: [m.training_title, m.team_name].filter(Boolean).join(' · ') || null }),
   training_join: (n, m) => ({ type: 'event.joined', title: 'Etkinliğe katılım', body: m.training_title || null }),
   training_leave: (n, m) => ({ type: 'event.left', title: 'Etkinlikten ayrılma', body: m.training_title || null }),
+  team_leave: (n, m) => ({ type: 'team.left', title: 'Takımdan ayrılma', body: [n, m.team_name].filter(Boolean).join(' · ') || null }),
+  team_remove: (n, m) => ({ type: 'team.removed', title: 'Takımdan çıkarıldı', body: [n, m.team_name, m.by ? `çıkaran: ${personName(m.by)}` : null].filter(Boolean).join(' · ') || null }),
   team_delete: (n, m) => ({ type: 'team.deleted', title: 'Takım silindi', body: m.name || null }),
   training_delete: (n, m) => ({ type: 'event.deleted', title: 'Etkinlik silindi', body: m.name || null }),
 };

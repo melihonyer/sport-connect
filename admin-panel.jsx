@@ -5,7 +5,7 @@ import {
   TrendingUp, Calendar, AlertTriangle, Search, X,
   ChevronRight, Lock, Globe, Image, Plus, Edit2, ToggleLeft, ToggleRight,
   Upload, GripVertical, ChevronUp, ChevronDown, Newspaper, GalleryHorizontal, Menu,
-  Trophy, User, ClipboardList, CheckCircle2, DoorOpen, Sparkles, Target, Flag,
+  Trophy, User, ClipboardList, CheckCircle2, DoorOpen, UserMinus, Sparkles, Target, Flag,
   Ticket, MapPin, ExternalLink, MousePointerClick,
   Radar, ScanSearch, RefreshCw, Loader2, XCircle, ListChecks, Star, Zap, Bell,
   CalendarDays, ScrollText,
@@ -2503,6 +2503,8 @@ export default function AdminPanel() {
     training_create:  { icon: ClipboardList, label: "Etkinlik Oluşturdu",   color: "bg-brand-100 text-brand-700"  },
     training_join:    { icon: CheckCircle2,  label: "Etkinliğe Katıldı",    color: "bg-brand-100 text-brand-700" },
     training_leave:   { icon: DoorOpen,      label: "Etkinlik Ayrıldı",     color: "bg-orange-100 text-orange-700" },
+    team_leave:       { icon: DoorOpen,      label: "Takımdan Ayrıldı",     color: "bg-orange-100 text-orange-700" },
+    team_remove:      { icon: UserMinus,     label: "Takımdan Çıkarıldı",   color: "bg-rose-100 text-rose-700" },
   };
 
   const LOG_FILTERS = [
@@ -2510,6 +2512,7 @@ export default function AdminPanel() {
     { id: "user_register",  label: "Üye Kayıt" },
     { id: "team_create",    label: "Takım" },
     { id: "team_join",      label: "Takım Katıl" },
+    { id: "team_leave",     label: "Takım Ayrıl" },
     { id: "training_create",label: "Etkinlik" },
     { id: "training_join",  label: "Katılım" },
   ];
@@ -2520,7 +2523,7 @@ export default function AdminPanel() {
     const chartData = analytics?.[chartPeriod] || [];
     const filteredLogs = logFilter === "all"
       ? logs.slice(0, 100)
-      : logs.filter(l => l.event_type === logFilter).slice(0, 100);
+      : logs.filter(l => l.event_type === logFilter || (logFilter === "team_leave" && l.event_type === "team_remove")).slice(0, 100);
 
     const periodKey = chartPeriod === "monthly" ? 7 : 5;
 
