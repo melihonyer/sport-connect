@@ -3175,6 +3175,7 @@ const SERVER_MSG = {
   'Sahip rolünü yalnızca takımın asıl sahibi yönetebilir.': { en: 'Only the original team owner can manage the owner role.', de: 'Nur die ursprüngliche Teamleitung kann die Leitungsrolle vergeben.', el: 'Μόνο ο αρχικός ιδιοκτήτης της ομάδας μπορεί να διαχειριστεί τον ρόλο ιδιοκτήτη.', es: 'Solo el propietario original del equipo puede gestionar el rol de propietario.', fr: 'Seul le propriétaire d\'origine de l\'équipe peut gérer le rôle de propriétaire.', it: 'Solo il proprietario originale della squadra può gestire il ruolo di proprietario.' },
   'Takım sahibi çıkarılamaz.': { en: "The team owner can't be removed.", de: 'Die Teamleitung kann nicht entfernt werden.', el: 'Ο ιδιοκτήτης της ομάδας δεν μπορεί να αφαιρεθεί.', es: 'No se puede quitar al propietario del equipo.', fr: 'Le propriétaire de l\'équipe ne peut pas être retiré.', it: 'Il proprietario della squadra non può essere rimosso.' },
   'Mesaj boş olamaz.': { en: "The message can't be empty.", de: 'Die Nachricht darf nicht leer sein.', el: 'Το μήνυμα δεν μπορεί να είναι κενό.', es: 'El mensaje no puede estar vacío.', fr: 'Le message ne peut pas être vide.', it: 'Il messaggio non può essere vuoto.' },
+  'Rota dosyası okunamadı. Geçerli bir GPX dosyası seç.': { en: 'The route file couldn\'t be read. Choose a valid GPX file.', de: 'Die Routendatei konnte nicht gelesen werden. Wähle eine gültige GPX-Datei.', el: 'Δεν ήταν δυνατή η ανάγνωση του αρχείου διαδρομής. Επίλεξε ένα έγκυρο αρχείο GPX.', es: 'No se pudo leer el archivo de ruta. Elige un archivo GPX válido.', fr: 'Le fichier d\'itinéraire est illisible. Choisis un fichier GPX valide.', it: 'Impossibile leggere il file del percorso. Scegli un file GPX valido.' },
   'Kayıt adresi geçersiz. http:// veya https:// ile başlamalı.': { en: 'Invalid registration link. It must start with http:// or https://.', de: 'Ungültiger Anmeldelink. Er muss mit http:// oder https:// beginnen.', el: 'Μη έγκυρος σύνδεσμος εγγραφής. Πρέπει να ξεκινά με http:// ή https://.', es: 'El enlace de inscripción no es válido. Debe empezar por http:// o https://.', fr: 'Le lien d\'inscription n\'est pas valide. Il doit commencer par http:// ou https://.', it: 'Link di iscrizione non valido. Deve iniziare con http:// o https://.' },
   'Etkinlik oluşturmak için takımın sahibi, antrenörü veya kaptanı olmanız gerekiyor.': { en: 'You need to be the team owner, coach or captain to create an event.', de: 'Um ein Event zu erstellen, musst du Teamleitung, Trainer oder Kapitän sein.', el: 'Για να δημιουργήσεις εκδήλωση πρέπει να είσαι ιδιοκτήτης, προπονητής ή αρχηγός της ομάδας.', es: 'Para crear un evento tienes que ser propietario, entrenador o capitán del equipo.', fr: 'Pour créer un événement, tu dois être propriétaire, coach ou capitaine de l\'équipe.', it: 'Per creare un evento devi essere proprietario, allenatore o capitano della squadra.' },
   'Bu takımın konumlarına erişim yok.': { en: "You don't have access to this team's locations.", de: 'Kein Zugriff auf die Orte dieses Teams.', el: 'Δεν έχεις πρόσβαση στις τοποθεσίες αυτής της ομάδας.', es: 'No tienes acceso a las ubicaciones de este equipo.', fr: 'Tu n\'as pas accès aux lieux de cette équipe.', it: 'Non hai accesso ai luoghi di questa squadra.' },
@@ -5218,8 +5219,11 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
       registration_url,
       registration_label,
       source,
+      route,
     } = req.body;
     if (rejectIfObjectionable(req, res, 'training', title, description)) return;
+    const cleanRoute = route ? sanitizeRoute(route) : null;
+    if (route && !cleanRoute) return res.status(400).json({ error: ROUTE_INVALID_MSG });
     const trainingSource = source === 'training-agents' ? 'training-agents' : null;
 
     if (!title || !training_date || !training_time || !location_name) {
@@ -5303,6 +5307,10 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
     );
 
     const training = result.rows[0];
+    if (cleanRoute) {
+      await saveTrainingRoute(training.id, cleanRoute)
+        .catch((e) => console.error('[route] kayıt:', e.message));
+    }
 
     // Takım etkinliğiyse takım üyelerine haber ver. Bireysel etkinlikte bildirilecek takım yok.
     if (team_id) {
@@ -5426,7 +5434,9 @@ app.get('/api/trainings', optionalAuth, async (req, res) => {
              teams.sport as team_sport,
              teams.avatar as team_avatar,
              creator.name as creator_name,
-             COUNT(DISTINCT ta.user_id) as attendee_count
+             COUNT(DISTINCT ta.user_id) as attendee_count,
+             -- Etkinlikler haritası rotayı yalnız bunda true olana sorar
+             EXISTS (SELECT 1 FROM training_routes rt WHERE rt.training_id = t.id) AS has_route
       FROM trainings t
       LEFT JOIN teams ON t.team_id = teams.id
       LEFT JOIN users creator ON creator.id = t.created_by
@@ -5570,6 +5580,7 @@ app.get('/api/trainings/nearby', optionalAuth, async (req, res) => {
              (SELECT COUNT(*) FROM training_attendees ta WHERE ta.training_id = t.id),
              0
            ) AS attendee_count,
+           EXISTS (SELECT 1 FROM training_routes rt WHERE rt.training_id = t.id) AS has_route,
            (6371 * acos(LEAST(1.0,
              cos(radians($1)) * cos(radians(t.location_lat)) * cos(radians(t.location_lng) - radians($2))
              + sin(radians($1)) * sin(radians(t.location_lat))
@@ -5592,6 +5603,82 @@ app.get('/api/trainings/nearby', optionalAuth, async (req, res) => {
   } catch (error) {
     console.error('Nearby trainings error:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── Etkinlik rotası (GPX) ───────────────────────────────────────────────────
+// Etkinliği kuran GPX yükler, haritada yol çizilir; katılacaklar rotanın
+// nereden geçtiğini görüp yol üstünden katılabilir (Melih, 23 Ekim 2026).
+// GPX tarayıcıda okunur ve sadeleştirilir; sunucuya YALNIZ [lat, lng] dizisi
+// gelir — kalp atışı, saat, sıcaklık gibi kayıt verisi buraya hiç ulaşmaz.
+// Ayrı tablo: trainings'i `t.*` ile çeken liste sorguları rotayı taşımasın.
+pool.query(`CREATE TABLE IF NOT EXISTS training_routes (
+  training_id INTEGER PRIMARY KEY REFERENCES trainings(id) ON DELETE CASCADE,
+  points      JSONB NOT NULL,
+  distance_m  INTEGER NOT NULL,
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+)`).catch((e) => console.error('[training_routes] tablo:', e.message));
+
+const ROUTE_MAX_POINTS = 5000;
+const ROUTE_INVALID_MSG = 'Rota dosyası okunamadı. Geçerli bir GPX dosyası seç.';
+// Geçersizse null döner. Mesafe istemciden alınmaz, burada hesaplanır.
+const sanitizeRoute = (route) => {
+  const raw = route?.points;
+  if (!Array.isArray(raw) || raw.length < 2 || raw.length > ROUTE_MAX_POINTS) return null;
+  const points = [];
+  for (const p of raw) {
+    if (!Array.isArray(p) || p.length < 2) return null;
+    const lat = Number(p[0]), lng = Number(p[1]);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+    points.push([Math.round(lat * 1e5) / 1e5, Math.round(lng * 1e5) / 1e5]);
+  }
+  let m = 0;
+  for (let i = 1; i < points.length; i++) {
+    const [la1, lo1] = points[i - 1], [la2, lo2] = points[i];
+    const r = Math.PI / 180;
+    const a = Math.sin((la2 - la1) * r / 2) ** 2
+      + Math.cos(la1 * r) * Math.cos(la2 * r) * Math.sin((lo2 - lo1) * r / 2) ** 2;
+    m += 2 * 6371000 * Math.asin(Math.sqrt(a));
+  }
+  return { points, distance_m: Math.round(m) };
+};
+// `route` alanı hiç gelmediyse dokunulmaz, null geldiyse silinir.
+const saveTrainingRoute = async (trainingId, clean) => {
+  if (!clean) {
+    await pool.query('DELETE FROM training_routes WHERE training_id = $1', [trainingId]);
+    return;
+  }
+  await pool.query(
+    `INSERT INTO training_routes (training_id, points, distance_m) VALUES ($1, $2, $3)
+     ON CONFLICT (training_id) DO UPDATE SET points = EXCLUDED.points, distance_m = EXCLUDED.distance_m, updated_at = NOW()`,
+    [trainingId, JSON.stringify(clean.points), clean.distance_m]
+  );
+};
+
+// Etkinlikler haritası rotayı buradan alır: detay ucunu çağırmak görüntülenme
+// sayardı. Görme kuralı detayla aynı (gizli takım etkinliği yalnız üyeye).
+app.get('/api/trainings/:id/route', optionalAuth, async (req, res) => {
+  try {
+    const r = await pool.query(
+      `SELECT r.points, r.distance_m, t.team_id, t.is_public, teams.is_private AS team_is_private
+         FROM training_routes r
+         JOIN trainings t ON t.id = r.training_id
+         LEFT JOIN teams ON teams.id = t.team_id
+        WHERE r.training_id = $1`,
+      [req.params.id]
+    );
+    if (r.rows.length === 0) return res.status(404).json({ error: 'Route not found' });
+    const row = r.rows[0];
+    if (row.team_is_private && !row.is_public) {
+      const member = req.user && (await pool.query(
+        'SELECT 1 FROM team_members WHERE team_id = $1 AND user_id = $2', [row.team_id, req.user.id]
+      )).rows.length > 0;
+      if (!member) return res.status(404).json({ error: 'Route not found' });
+    }
+    res.json({ points: row.points, distance_m: row.distance_m });
+  } catch (e) {
+    console.error('[route] get:', e.message);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
@@ -5687,6 +5774,11 @@ app.get('/api/trainings/:id', optionalAuth, async (req, res) => {
 
     // Kayıt sayfası tıklama sayısı yalnız etkinliği yönetenlere görünür.
     if (!training.can_manage) delete training.registration_clicks;
+
+    const routeRes = await pool.query(
+      'SELECT points, distance_m FROM training_routes WHERE training_id = $1', [trainingId]
+    );
+    training.route = routeRes.rows[0] || null;
 
     const attendeesResult = await pool.query(
       `SELECT u.id, u.name, u.avatar, ta.status, ta.joined_at
@@ -6346,8 +6438,12 @@ app.delete('/api/team-posts/:id', authenticateToken, async (req, res) => {
 app.put('/api/trainings/:id', authenticateToken, async (req, res) => {
   try {
     const trainingId = req.params.id;
-    const { title, description, training_date, training_time, location_name, location_lat, location_lng, capacity, difficulty, sport, registration_url, registration_label } = req.body;
+    const { title, description, training_date, training_time, location_name, location_lat, location_lng, capacity, difficulty, sport, registration_url, registration_label, route } = req.body;
     if (rejectIfObjectionable(req, res, 'training', title, description)) return;
+    // Alan hiç gelmediyse (eski istemci) rotaya dokunulmaz; null = rotayı kaldır.
+    const routeTouched = Object.prototype.hasOwnProperty.call(req.body, 'route');
+    const cleanRoute = route ? sanitizeRoute(route) : null;
+    if (route && !cleanRoute) return res.status(400).json({ error: ROUTE_INVALID_MSG });
 
     const trainingResult = await pool.query(
       'SELECT team_id, created_by FROM trainings WHERE id = $1',
@@ -6402,6 +6498,7 @@ app.put('/api/trainings/:id', authenticateToken, async (req, res) => {
     );
 
     const updated = result.rows[0];
+    if (routeTouched) await saveTrainingRoute(trainingId, cleanRoute);
     indexNowPing(indexNowTrainingUrl(updated));
 
     // Güncelleyenin adını çek

@@ -1246,6 +1246,29 @@ export const translations = {
     unblocked:   { tr: "Engel kaldırıldı.",         en: "User unblocked.",             de: "Blockierung aufgehoben."   },
   },
 
+  // ── ROTA (GPX) — 23 Ekim 2026 ───────────────────────────
+  route: {
+    label:      { tr: "Rota (GPX)",              en: "Route (GPX)",              de: "Route (GPX)" },
+    add:        { tr: "GPX dosyası ekle",        en: "Add a GPX file",           de: "GPX-Datei hinzufügen" },
+    hint:       { tr: "İsteğe bağlı. Strava, Garmin ya da Komoot'tan indirdiğin GPX'i ekle; katılacaklar yolun nereden geçtiğini haritada görsün.",
+                  en: "Optional. Add a GPX from Strava, Garmin or Komoot so people can see on the map where the route goes.",
+                  de: "Optional. Füge eine GPX-Datei von Strava, Garmin oder Komoot hinzu, damit alle auf der Karte sehen, wo die Route entlangführt." },
+    replace:    { tr: "Değiştir",                en: "Replace",                  de: "Ersetzen" },
+    remove:     { tr: "Kaldır",                  en: "Remove",                   de: "Entfernen" },
+    invalid:    { tr: "Bu dosyada rota bulunamadı. GPX dosyası seç.",
+                  en: "No route found in this file. Choose a GPX file.",
+                  de: "In dieser Datei wurde keine Route gefunden. Wähle eine GPX-Datei." },
+    tooBig:     { tr: "Dosya çok büyük. En çok 25 MB olabilir.",
+                  en: "The file is too large. The limit is 25 MB.",
+                  de: "Die Datei ist zu groß. Maximal 25 MB." },
+    title:      { tr: "Rota",                    en: "Route",                    de: "Route" },
+    detailHint: { tr: "Yol üstünden katılacaksan rotanın nereden geçtiğine buradan bak.",
+                  en: "Joining along the way? Check here where the route goes.",
+                  de: "Willst du unterwegs dazustoßen? Hier siehst du, wo die Route entlangführt." },
+    meeting:    { tr: "Buluşma noktası",         en: "Meeting point",            de: "Treffpunkt" },
+    download:   { tr: "GPX indir",               en: "Download GPX",             de: "GPX herunterladen" },
+  },
+
   // ── 404 PAGE ─────────────────────────────────────────────
   notFound: {
     title:          { tr: "Sayfa Bulunamadı",             en: "Page Not Found",          de: "Seite nicht gefunden"    },

@@ -882,6 +882,20 @@ export default {
     unblocked: "Utente sbloccato.",
   },
 
+  route: {
+    label: "Percorso (GPX)",
+    add: "Aggiungi un file GPX",
+    hint: "Facoltativo. Aggiungi un GPX da Strava, Garmin o Komoot così chi partecipa vede sulla mappa dove passa il percorso.",
+    replace: "Sostituisci",
+    remove: "Rimuovi",
+    invalid: "Nessun percorso trovato in questo file. Scegli un file GPX.",
+    tooBig: "Il file è troppo grande. Il limite è 25 MB.",
+    title: "Percorso",
+    detailHint: "Ti unisci lungo la strada? Guarda qui dove passa il percorso.",
+    meeting: "Punto d'incontro",
+    download: "Scarica GPX",
+  },
+
   notFound: {
     title: "Pagina non trovata",
     subtitle: "La pagina che cerchi non esiste o è stata spostata.",

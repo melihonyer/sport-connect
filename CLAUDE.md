@@ -465,6 +465,25 @@ bunlar haritada ve "Yakınımda" aramasında hiç çıkmıyor.
   bölümde olduğu için `displayedTrainings`'ten çıkarılıyor; harita o listeyi
   alırsa öne çıkan etkinlikler haritadan düşer (Eylül 2026'da yaşandı).
 
+## Etkinlik rotası (GPX, 23 Ekim 2026)
+
+Etkinliği kuran GPX yükler; rota haritada Ana1 teal çizilir, yol üstünden katılacaklar nereden
+geçtiğini görür (Melih'in fikri; örnek: Urla'dan çıkan sürüşe Balıklıova'dan katılmak).
+- GPX **tarayıcıda** okunur (`gpxRoute.js`): kalp atışı/saat/sıcaklık atılır, Douglas–Peucker ile
+  ~1500 noktaya sadeleşir; sunucuya yalnız `[lat, lng]` gider. Rotanın tamamı gösterilir
+  (başı/sonu gizlenmez — Melih seçti).
+- Ayrı tablo `training_routes` (trainings'e sütun DEĞİL: `t.*` çeken ~15 liste sorgusu şişerdi).
+  Mesafe sunucuda hesaplanır, en çok 5000 nokta. Detay ucu `route` döner; liste/yakınımda yalnız
+  `has_route`; Etkinlikler haritası noktaları `GET /api/trainings/:id/route`'tan alır (detay ucu
+  görüntülenme sayardı). Görme kuralı detayla aynı.
+- PUT'ta `route` alanı yoksa dokunulmaz, `null` silinir. Düzenleme formu yalnız kullanıcı rotayı
+  değiştirdiyse gönderir (`routeTouched`): selectedTraining önce rotasız liste verisiyle dolabiliyor.
+- Bileşenler `RouteField.jsx` (form) ve `RouteMap.jsx` (tembel); metinler `route.*` (7 dil). Sığdırmada
+  sol üst +/− ve alt atıf için boşluk bırakılır, yoksa rota ucu düğmelerin altında kalıyordu.
+- **Yerelde backend kopyası çalıştırırken** Supabase oturum havuzu (5432, 15 istemci) canlıyla
+  ortak: kopya canlının bağlantılarını yer. İşlem havuzu (6543) + `max: 2` kullanılır, zamanlanmış
+  işler (hatırlatma, aktivasyon e-postası, purge) ve e-posta anahtarı kapatılır.
+
 ## Silme ve kayıt
 
 - Kullanıcı hesabı **yumuşak** silinir (`users.deleted_at`, 30 gün, sonra purge).

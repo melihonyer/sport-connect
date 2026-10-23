@@ -882,6 +882,20 @@ export default {
     unblocked: "Utilisateur débloqué.",
   },
 
+  route: {
+    label: "Itinéraire (GPX)",
+    add: "Ajouter un fichier GPX",
+    hint: "Facultatif. Ajoute un GPX de Strava, Garmin ou Komoot pour que les participants voient sur la carte par où passe l'itinéraire.",
+    replace: "Remplacer",
+    remove: "Retirer",
+    invalid: "Aucun itinéraire trouvé dans ce fichier. Choisis un fichier GPX.",
+    tooBig: "Le fichier est trop volumineux. La limite est de 25 Mo.",
+    title: "Itinéraire",
+    detailHint: "Tu rejoins en cours de route ? Regarde ici par où passe l'itinéraire.",
+    meeting: "Point de rendez-vous",
+    download: "Télécharger le GPX",
+  },
+
   notFound: {
     title: "Page introuvable",
     subtitle: "La page que tu cherches n'existe pas ou a été déplacée.",

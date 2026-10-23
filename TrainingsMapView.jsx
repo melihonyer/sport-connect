@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { MapContainer, Marker, Popup, Polyline, useMap, useMapEvents } from "react-leaflet";
 import Supercluster from "supercluster";
 import VectorBasemap from "./VectorBasemap.jsx";
+import { RouteLine } from "./RouteMap.jsx";
 import { localeOf } from "./i18n.js";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -340,8 +341,22 @@ const ClusteredMarkers = ({ points, renderMarker }) => {
   );
 };
 
+const API_URL = import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? "http://localhost:3000/api" : "/api");
+
 const TrainingsMapView = ({ trainings, onSelectTraining, t, containerStyle }) => {
   const [active, setActive] = useState(null);
+  // Seçili etkinliğin rotası (GPX). Liste yalnız has_route bayrağını taşır;
+  // noktalar tıklanınca ayrı uçtan gelir (detay ucu görüntülenme sayardı).
+  const [routes, setRoutes] = useState({});
+  useEffect(() => {
+    if (!active || routes[active] !== undefined) return;
+    if (!trainings.find((tr) => tr.id === active)?.has_route) return;
+    const token = localStorage.getItem("token");
+    fetch(`${API_URL}/trainings/${active}/route`, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setRoutes((prev) => ({ ...prev, [active]: d?.points || null })))
+      .catch(() => {});
+  }, [active]); // eslint-disable-line react-hooks/exhaustive-deps
   const [teamColors, setTeamColors] = useState({});
   const processingRef = useRef(new Set());
   const mapped = useMemo(
@@ -389,6 +404,7 @@ const TrainingsMapView = ({ trainings, onSelectTraining, t, containerStyle }) =>
           <VectorBasemap/>
           <MapSizeFixer/>
           <FitBoundsToTrainings trainings={mapped}/>
+          {active && routes[active] && <RouteLine points={routes[active]}/>}
           <ClusteredMarkers points={mapped} renderMarker={(tr, position) => {
             // Organizatör etkinliği (ücretli ya da ücretsiz): adı yazan özel pin.
             // Ücret bilgisi pini değiştirmez, yalnız popup'taki rozeti belirler.

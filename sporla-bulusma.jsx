@@ -67,8 +67,11 @@ import {
   Flame,
   Timer,
   SatelliteDish,
+  Route,
 } from "lucide-react";
 import SharedLocationPicker from "./LocationPicker";
+import RouteField from "./RouteField";
+import { formatRouteDistance, routeToGpx } from "./gpxRoute.js";
 // Ağır kütüphaneler lazy yüklenir — ilk bundle'ı küçültür
 // Deploy sonrası eski sekme sorunu: rsync --delete-after eski parça dosyalarını
 // siler, ama açık duran sekmedeki index.html hâlâ ESKİ parça adlarını biliyor.
@@ -131,6 +134,7 @@ const lazyWithReload = (factory) => React.lazy(() => factory().catch((err) => {
 
 const TrainingsMapViewLazy = lazyWithReload(() => import("./TrainingsMapView"));
 const ActivityChartLazy    = lazyWithReload(() => import("./ActivityChart"));
+const RouteMapLazy         = lazyWithReload(() => import("./RouteMap"));
 
 // Training Agents taslağı: doğrulanmış içerik burada, kendi süresiyle saklanır.
 const TA_DRAFT_KEY = "taDraft";
@@ -6553,6 +6557,10 @@ export default function Muuvlink() {
       reg_enabled: !!selectedTraining.registration_url,
       registration_url: selectedTraining.registration_url || "",
       registration_label: selectedTraining.registration_label || "",
+      route: selectedTraining.route || null,
+      // Rota yalnız elle değiştirildiyse gönderilir: selectedTraining önce liste
+      // verisiyle (rotasız) dolabiliyor; her kayıtta göndermek rotayı silebilirdi.
+      routeTouched: false,
     });
 
     const saveEdit = () => {
@@ -6561,7 +6569,8 @@ export default function Muuvlink() {
         showToast(t("createTraining.regUrlInvalid"), "error");
         return;
       }
-      handleUpdateTraining(selectedTraining.id, { ...editData, registration_url: u });
+      const { route, routeTouched, ...rest } = editData;
+      handleUpdateTraining(selectedTraining.id, { ...rest, registration_url: u, ...(routeTouched ? { route } : {}) });
       setEditLocAttention(false);
       setEditMode(false);
     };
@@ -6814,6 +6823,16 @@ export default function Muuvlink() {
                   />
                 </div>
 
+                {/* Rota (GPX) */}
+                <div className="bg-white border border-slate-100 rounded-2xl p-5">
+                  <RouteField
+                    t={t} lang={lang} labelCls={lCls} MapView={RouteMapLazy}
+                    value={editData.route}
+                    onChange={(route) => setEditData((d) => ({ ...d, route, routeTouched: true }))}
+                    meeting={{ lat: editData.location_lat, lng: editData.location_lng }}
+                  />
+                </div>
+
                 {/* Spor Dalı + Kapasite + Seviye */}
                 <div className="bg-white border border-slate-100 rounded-2xl p-5 space-y-4">
                   <div>
@@ -7054,6 +7073,43 @@ export default function Muuvlink() {
             </div>
             )}
           </div>
+
+          {/* Rota (GPX): yol üstünden katılacaklar nereden geçtiğini görsün */}
+          {selectedTraining.route?.points?.length > 1 && (
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-1 min-w-0">
+                <Route className="w-5 h-5 flex-shrink-0 text-logo-teal" />
+                <h3 className="text-xl font-medium">{t("route.title")}</h3>
+                <span className="text-sm font-semibold text-slate-500">· {formatRouteDistance(selectedTraining.route.distance_m, lang)}</span>
+                {!isNative && (
+                  <button type="button"
+                    onClick={() => {
+                      const blob = new Blob([routeToGpx(selectedTraining.route.points, selectedTraining.title)], { type: "application/gpx+xml" });
+                      const a = document.createElement("a");
+                      a.href = URL.createObjectURL(blob);
+                      a.download = `${urlSlug(selectedTraining.title) || "muuvlink-rota"}.gpx`;
+                      a.click();
+                      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+                    }}
+                    className="ml-auto flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2 -my-2 rounded-lg text-xs font-semibold text-brand-600 hover:bg-brand-50">
+                    <Download className="w-3.5 h-3.5" /> {t("route.download")}
+                  </button>
+                )}
+              </div>
+              <p className="text-sm text-slate-500 mb-3">{t("route.detailHint")}</p>
+              <React.Suspense fallback={<div className="h-72 sm:h-96 rounded-xl bg-slate-100 animate-pulse" />}>
+                <RouteMapLazy
+                  points={selectedTraining.route.points}
+                  meeting={{ lat: selectedTraining.location_lat, lng: selectedTraining.location_lng }}
+                  className="h-72 sm:h-96"
+                />
+              </React.Suspense>
+              <div className="flex items-center gap-4 mt-2 text-xs text-slate-500">
+                <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-brand-600" />{t("route.meeting")}</span>
+                <span className="inline-flex items-center gap-1.5"><span className="w-4 h-1 rounded-full bg-logo-teal" />{t("route.title")}</span>
+              </div>
+            </div>
+          )}
 
           {!isOrg && (
           <div className="mb-6">
@@ -7920,6 +7976,7 @@ export default function Muuvlink() {
       reg_enabled: false,
       registration_url: "", // yalnızca TAKIM etkinliğinde; bireysele geçince temizlenir
       registration_label: "", // buton yazısı; boşsa arayüz varsayılanı kullanır
+      route: null, // { points, distance_m } — GPX tarayıcıda okunur (gpxRoute.js)
     }));
 
     // Seçili takım nesnesini bul (team_id null ise bireysel)
@@ -8204,6 +8261,16 @@ export default function Muuvlink() {
                 needsAttention={locAttention && !formData.location_lat}
                 onContinueWithout={() => { setLocAttention(false); submitOnce(); }}
                 recentLocations={recentLocs}
+              />
+            </div>
+
+            {/* Rota (GPX) — isteğe bağlı */}
+            <div className="p-5">
+              <RouteField
+                t={t} lang={lang} labelCls={labelCls} MapView={RouteMapLazy}
+                value={formData.route}
+                onChange={(route) => setFormData((f) => ({ ...f, route }))}
+                meeting={{ lat: formData.location_lat, lng: formData.location_lng }}
               />
             </div>
 
