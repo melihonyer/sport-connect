@@ -71,6 +71,7 @@ import {
 } from "lucide-react";
 import SharedLocationPicker from "./LocationPicker";
 import RouteField from "./RouteField";
+import RouteAnnounce, { ROUTE_ANNOUNCE_UNTIL, ROUTE_ANNOUNCE_KEY } from "./RouteAnnounce";
 import { formatRouteDistance, routeToGpx } from "./gpxRoute.js";
 // Ağır kütüphaneler lazy yüklenir — ilk bundle'ı küçültür
 // Deploy sonrası eski sekme sorunu: rsync --delete-after eski parça dosyalarını
@@ -2347,6 +2348,8 @@ export default function Muuvlink() {
   // Takım dışından etkinliğe katılana bir kez takım önerisi. "Şimdi değil" denen takım
   // bu tarayıcıda bir daha önerilmez (muuv_team_suggest_off).
   const [teamSuggest, setTeamSuggest] = useState(null);
+  // "Etkinlik rotası" duyurusu: cihaz başına bir kez, 25 Kasım 2026'ya kadar (RouteAnnounce.jsx)
+  const [routeAnnounce, setRouteAnnounce] = useState(false);
   const [showManualLocation, setShowManualLocation] = useState(false);
   const [gpsErrorCode, setGpsErrorCode] = useState(null); // 1=denied, 2=unavailable, 3=timeout
   const [manualLocationName, setManualLocationName] = useState("");
@@ -3365,6 +3368,7 @@ export default function Muuvlink() {
     if (showInviteModal)   { setShowInviteModal(false);   return true; }
     if (inviteTrainingId)  { setInviteTrainingId(null);   return true; }
     if (teamSuggest)       { dismissTeamSuggest();        return true; }
+    if (routeAnnounce)     { setRouteAnnounce(false);     return true; }
     if (showProfileEdit)   { setShowProfileEdit(false);   return true; }
     if (showNotifPrefs)    { setShowNotifPrefs(false);    return true; }
     if (showNotifications) { setShowNotifications(false); return true; }
@@ -3463,10 +3467,27 @@ export default function Muuvlink() {
   // İlk girişte, ana ekrana gelindiğinde bir kez başlat
   useEffect(() => {
     if (!user || user.onboarding_done !== false) return;
-    if (currentPage !== "home" || isAuthModalOpen || tourActive) return;
+    if (currentPage !== "home" || isAuthModalOpen || tourActive || routeAnnounce) return;
     const timer = setTimeout(() => setTourActive(true), 900);
     return () => clearTimeout(timer);
-  }, [user?.id, user?.onboarding_done, currentPage, isAuthModalOpen]); // eslint-disable-line
+  }, [user?.id, user?.onboarding_done, currentPage, isAuthModalOpen, routeAnnounce]); // eslint-disable-line
+
+  // Rota duyurusu: liste sayfalarında, başka pencere/tur yokken 2,5 sn sonra BİR KEZ.
+  // Paylaşılan bir etkinlik/takım linkinden gelen kişinin önüne çıkmaz (detay sayfaları
+  // listede yok). Yeni üyede önce tur çalışır. Gösterildiği an işaretlenir: kapatmadan
+  // sayfayı yenileyen de bir daha görmez. Süre bitince hiç çalışmaz.
+  useEffect(() => {
+    if (Date.now() >= ROUTE_ANNOUNCE_UNTIL) return;
+    if (!["home", "trainings", "teams", "profile"].includes(currentPage)) return;
+    if (tourActive || isAuthModalOpen || teamSuggest || storySpec || legalModal || confirmModal) return;
+    if (user && user.onboarding_done === false) return;
+    try { if (localStorage.getItem(ROUTE_ANNOUNCE_KEY)) return; } catch { return; }
+    const timer = setTimeout(() => {
+      try { localStorage.setItem(ROUTE_ANNOUNCE_KEY, String(Date.now())); } catch { /* yok say */ }
+      setRouteAnnounce(true);
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [currentPage, tourActive, isAuthModalOpen, teamSuggest, storySpec, legalModal, confirmModal, user?.onboarding_done]); // eslint-disable-line
 
   // Sayfa değişince en üste scroll
   useEffect(() => {
@@ -10047,6 +10068,18 @@ Vergi Dairesi: Karşıyaka V.D. | VN: 7420957827<br/>
       {showProfileEdit && <ProfileEditModal />}
       {(showInviteModal || inviteTrainingId) && <InviteModal />}
       {renderTeamSuggest()}
+      {routeAnnounce && (
+        <RouteAnnounce
+          isGuest={!user}
+          onClose={() => setRouteAnnounce(false)}
+          onCreate={() => {
+            setRouteAnnounce(false);
+            if (user) { setCurrentPage("create-training"); return; }
+            setAuthMode("register");
+            setIsAuthModalOpen(true);
+          }}
+        />
+      )}
       <ConfirmModal />
       {showDeleteModal && <PageHost key="delete-account" render={DeleteAccountModal} />}
       {showNotifPrefs && <NotifPrefsModal />}

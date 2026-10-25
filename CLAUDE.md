@@ -480,6 +480,12 @@ geçtiğini görür (Melih'in fikri; örnek: Urla'dan çıkan sürüşe Balıkl�
   değiştirdiyse gönderir (`routeTouched`): selectedTraining önce rotasız liste verisiyle dolabiliyor.
 - Bileşenler `RouteField.jsx` (form) ve `RouteMap.jsx` (tembel); metinler `route.*` (7 dil). Sığdırmada
   sol üst +/− ve alt atıf için boşluk bırakılır, yoksa rota ucu düğmelerin altında kalıyordu.
+- **Duyuru penceresi** (`RouteAnnounce.jsx`, 25 Ekim 2026, Melih onayladı): sosyal medyadaki film
+  (`public/announce/rota-gpx.mp4`, 540×960, 1,9 MB) + "Etkinliğine rota ekle". **Herkese, dil ayrımı
+  yok, yalnız Türkçe** (Melih: "şu anda sadece Türk sporcular var"; videolar çevrilmedi). Cihaz başına
+  bir kez (`muuv_announce_route_v1`, gösterildiği an yazılır), yalnız ana/etkinlikler/takımlar/profil
+  sayfasında, başka pencere ve tur yokken. **25 Kasım 2026'da kendiliğinden kapanır**
+  (`ROUTE_ANNOUNCE_UNTIL`); sonrasında dosya, çağrı yeri ve `public/announce/` silinebilir.
 - **Yerelde backend kopyası çalıştırırken** Supabase oturum havuzu (5432, 15 istemci) canlıyla
   ortak: kopya canlının bağlantılarını yer. İşlem havuzu (6543) + `max: 2` kullanılır, zamanlanmış
   işler (hatırlatma, aktivasyon e-postası, purge) ve e-posta anahtarı kapatılır.
