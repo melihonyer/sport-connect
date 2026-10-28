@@ -696,6 +696,15 @@ kanal) → "Gönder". `POST /api/admin/contact/:id/reply`.
   `DELETE /api/users/me/messages/:id`. Kayıt SİLİNMEZ, `contact_messages.user_hidden_at` yazılır:
   kişinin listesinden çıkar, admin'de "kişi listesinden kaldırdı" görünür; panelden yeni cevap
   verilirse `user_hidden_at` boşalır, mesaj listesine geri döner.
+- **"Cevap yaz"** (28 Ekim 2026, Melih): kişi pencerede her yazışmaya karşılık yazar →
+  `POST /api/users/me/messages/:id/reply` → `contact_replies` satırı `from_user = true`. Mesaj
+  okunmamışa döner (admin kırmızı rozet), listesinden kaldırdıysa geri gelir, yöneticiye
+  "Mesaja cevap geldi: <konu>" e-postası (`contact_admin`). Saatte en çok 10, ≤2000 karakter,
+  `rejectIfObjectionable` (`contact_reply`). Admin'de yazışma sırayla: ekip cevabı gri, kişinin
+  cevabı "Kişinin cevabı"; son söz kişideyse panel "tekrar" diye sormaz (`lastWordIsOurs`).
+  Listeler son harekete göre sıralı (`CONTACT_LAST_ACTIVITY_SQL`). Kutu kontrolsüz textarea
+  (`myMsgReplyRef`) — her harfte ana bileşen çizilmesin; yazılı textarea `hasUnsavedWork`'e takılır.
+  Yeni metin yalnız `myMessages.reply` ("Cevap yaz"); Gönder/İptal mevcut `common.*`.
 - **Mesaj ↔ hesap:** giriş yapmış kişinin form mesajı `contact_messages.user_id` ile bağlanır
   (formda başka e-posta yazsa da); `user_id` yoksa (28 Ekim öncesi, misafir) e-posta eşleşmesi.
   Cevap ucu, admin listesi ve kullanıcı ucu aynı kuralı kullanır (`CONTACT_ACCOUNT_SQL`).

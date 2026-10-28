@@ -628,6 +628,7 @@ export default {
     empty: "Tu ne nous as pas encore envoyé de message.",
     write: "Écris-nous",
     loadError: "Impossible de charger les messages. Réessaie dans un instant.",
+    reply: "Répondre",
   },
 
   notifPrefs: {

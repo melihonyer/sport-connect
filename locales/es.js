@@ -628,6 +628,7 @@ export default {
     empty: "Todavía no nos has enviado ningún mensaje.",
     write: "Escríbenos",
     loadError: "No se pudieron cargar los mensajes. Vuelve a intentarlo en un rato.",
+    reply: "Responder",
   },
 
   notifPrefs: {

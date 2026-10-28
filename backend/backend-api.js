@@ -3175,6 +3175,9 @@ const SERVER_MSG = {
   // Etkinlik daveti (21 Ekim 2026)
   "Organizatör etkinliklerine davet gönderilemez; etkinliği paylaşabilirsin.": {"en": "Invitations can't be sent for organizer events; you can share the event instead.", "de": "Für Veranstalter-Events können keine Einladungen gesendet werden; du kannst das Event teilen.", "el": "Δεν μπορείς να στείλεις πρόσκληση σε εκδηλώσεις διοργανωτών· μπορείς να κοινοποιήσεις την εκδήλωση.", "es": "No se pueden enviar invitaciones a eventos de organizadores; puedes compartir el evento.", "fr": "On ne peut pas envoyer d'invitation pour un événement d'organisateur ; tu peux partager l'événement.", "it": "Non puoi inviare inviti per gli eventi degli organizzatori; puoi condividere l'evento."},
   "Bu etkinlik gizli bir takıma ait. Davet etmek için kişiyi önce takıma davet et.": {"en": "This event belongs to a private team. To invite someone, invite them to the team first.", "de": "Dieses Event gehört zu einem privaten Team. Lade die Person zuerst in das Team ein.", "el": "Αυτή η εκδήλωση ανήκει σε ιδιωτική ομάδα. Για να προσκαλέσεις κάποιον, προσκάλεσέ τον πρώτα στην ομάδα.", "es": "Este evento pertenece a un equipo privado. Para invitar a alguien, invítalo primero al equipo.", "fr": "Cet événement appartient à une équipe privée. Pour inviter quelqu'un, invite-le d'abord dans l'équipe.", "it": "Questo evento appartiene a una squadra privata. Per invitare qualcuno, invitalo prima nella squadra."},
+  // "Mesajların"dan karşılık (28 Ekim 2026)
+  'Bir saatte en fazla 10 mesaj gönderebilirsin. Biraz sonra tekrar dene.': { en: 'You can send up to 10 messages an hour. Please try again a bit later.', de: 'Du kannst bis zu 10 Nachrichten pro Stunde senden. Versuch es etwas später erneut.', el: 'Μπορείς να στείλεις έως 10 μηνύματα την ώρα. Δοκίμασε ξανά λίγο αργότερα.', es: 'Puedes enviar hasta 10 mensajes por hora. Vuelve a intentarlo un poco más tarde.', fr: "Tu peux envoyer jusqu'à 10 messages par heure. Réessaie un peu plus tard.", it: 'Puoi inviare fino a 10 messaggi all\'ora. Riprova tra poco.' },
+  'Mesaj en çok 2000 karakter olabilir.': { en: 'The message can be at most 2000 characters.', de: 'Die Nachricht darf höchstens 2000 Zeichen lang sein.', el: 'Το μήνυμα μπορεί να έχει έως 2000 χαρακτήρες.', es: 'El mensaje puede tener como máximo 2000 caracteres.', fr: 'Le message peut contenir 2000 caractères au maximum.', it: 'Il messaggio può avere al massimo 2000 caratteri.' },
   "Kendini davet edemezsin.": {"en": "You can't invite yourself.", "de": "Du kannst dich nicht selbst einladen.", "el": "Δεν μπορείς να προσκαλέσεις τον εαυτό σου.", "es": "No puedes invitarte a ti mismo.", "fr": "Tu ne peux pas t’inviter toi-même.", "it": "Non puoi invitare te stesso."},
   "Davet için etkinliğe katılmış olman gerekiyor.": {"en": "You need to have joined the event to invite others.", "de": "Um andere einzuladen, musst du am Event teilnehmen.", "el": "Για να προσκαλέσεις άλλους πρέπει να συμμετέχεις στην εκδήλωση.", "es": "Para invitar a otros tienes que haberte unido al evento.", "fr": "Pour inviter d'autres personnes, tu dois participer à l'événement.", "it": "Per invitare altri devi partecipare all'evento."},
   "Bir saatte en fazla 10 davet gönderebilirsin. Biraz sonra tekrar dene.": {"en": "You can send up to 10 invitations an hour. Please try again a bit later.", "de": "Du kannst bis zu 10 Einladungen pro Stunde senden. Versuch es etwas später erneut.", "el": "Μπορείς να στείλεις έως 10 προσκλήσεις την ώρα. Δοκίμασε ξανά λίγο αργότερα.", "es": "Puedes enviar hasta 10 invitaciones por hora. Vuelve a intentarlo un poco más tarde.", "fr": "Tu peux envoyer jusqu'à 10 invitations par heure. Réessaie un peu plus tard.", "it": "Puoi inviare fino a 10 inviti all'ora. Riprova tra poco."},
@@ -7081,6 +7084,7 @@ const SUBJECT_KIND = [
   [/^Mesajınız alındı — Muuvlink$/, 'contact_reply'],
   [/^Mesajına cevap verdik — Muuvlink$/, 'contact_answer'],
   [/^(📬 )?Yeni İletişim Mesajı: /, 'contact_admin'],
+  [/^Mesaja cevap geldi: /, 'contact_admin'],
 ];
 const kindOfSubject = (subj) => (SUBJECT_KIND.find(([re]) => re.test(subj)) || [null, 'other'])[1];
 const RESEND_DELIVERED = new Set(['delivered', 'opened', 'clicked']);
@@ -7564,8 +7568,16 @@ const CONTACT_ACCOUNT_SQL = `SELECT id, name FROM users u
   WHERE u.deleted_at IS NULL AND (u.id = $1 OR ($1::int IS NULL AND lower(u.email) = lower($2)))
   ORDER BY id LIMIT 1`;
 const contactAccount = async (cm) => (await pool.query(CONTACT_ACCOUNT_SQL, [cm.user_id || null, cm.email])).rows[0] || null;
-const CONTACT_REPLIES_SQL = (alias) => `COALESCE((SELECT json_agg(json_build_object('id', r.id, 'text', r.text, 'channel', r.channel, 'created_at', r.created_at) ORDER BY r.created_at)
+const CONTACT_REPLIES_SQL = (alias) => `COALESCE((SELECT json_agg(json_build_object('id', r.id, 'text', r.text, 'channel', r.channel, 'from_user', r.from_user, 'created_at', r.created_at) ORDER BY r.created_at, r.id)
   FROM contact_replies r WHERE r.message_id = ${alias}.id), '[]'::json)`;
+// Yazışmanın son hareketi (mesaj ya da son cevap/karşılık) — listeler buna göre sıralanır.
+const CONTACT_LAST_ACTIVITY_SQL = (alias) => `COALESCE((SELECT MAX(r.created_at) FROM contact_replies r WHERE r.message_id = ${alias}.id), ${alias}.created_at)`;
+// Kullanıcının kendi mesajları: user_id ya da (user_id yoksa) e-posta eşleşmesi. $1 = kullanıcı id.
+const MY_CONTACT_WHERE = `(cm.user_id = u.id OR (cm.user_id IS NULL AND lower(cm.email) = lower(u.email)))`;
+const MY_CONTACT_SELECT = `SELECT cm.id, cm.subject, cm.message, cm.created_at,
+    COALESCE((SELECT json_agg(json_build_object('id', r.id, 'text', r.text, 'from_user', r.from_user, 'created_at', r.created_at) ORDER BY r.created_at, r.id)
+                FROM contact_replies r WHERE r.message_id = cm.id), '[]'::json) AS replies
+   FROM contact_messages cm JOIN users u ON u.id = $1`;
 const escMail = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 app.get('/api/admin/contact', isAdmin, async (req, res) => {
@@ -7576,7 +7588,7 @@ app.get('/api/admin/contact', isAdmin, async (req, res) => {
          LEFT JOIN LATERAL (SELECT id, name FROM users u
                              WHERE u.deleted_at IS NULL AND (u.id = cm.user_id OR (cm.user_id IS NULL AND lower(u.email) = lower(cm.email)))
                              ORDER BY id LIMIT 1) mu ON true
-        ORDER BY cm.created_at DESC`
+        ORDER BY ${CONTACT_LAST_ACTIVITY_SQL('cm')} DESC`
     );
     res.json(result.rows);
   } catch (error) {
@@ -7604,7 +7616,11 @@ app.post('/api/admin/contact/:id/reply', isAdmin, async (req, res) => {
     // replied_raw: metin hali — JS Date mikrosaniyeyi atar, karşılaştırma hiç tutmazdı.
     const cur = (await pool.query('SELECT *, replied_at::text AS replied_raw FROM contact_messages WHERE id = $1', [req.params.id])).rows[0];
     if (!cur) return res.status(404).json({ error: 'Mesaj bulunamadı.' });
-    if (cur.replied_at && req.body?.again !== true) return res.status(409).json({ error: 'Bu mesaja zaten cevap verildi.' });
+    if (cur.replied_at && req.body?.again !== true) {
+      // Kişi cevabımıza karşılık yazdıysa yeni cevap "tekrar" sayılmaz.
+      const last = (await pool.query('SELECT from_user FROM contact_replies WHERE message_id = $1 ORDER BY created_at DESC, id DESC LIMIT 1', [cur.id])).rows[0];
+      if (!last?.from_user) return res.status(409).json({ error: 'Bu mesaja zaten cevap verildi.' });
+    }
     const claim = await pool.query(
       `UPDATE contact_messages SET replied_at = NOW(), replied_by = $2, reply_text = $3, reply_channel = NULL, is_read = true,
               user_hidden_at = NULL  -- kişi listesinden kaldırmışsa yeni cevapla geri gelir
@@ -7666,14 +7682,9 @@ app.post('/api/admin/contact/:id/reply', isAdmin, async (req, res) => {
 app.get('/api/users/me/messages', authenticateToken, async (req, res) => {
   try {
     const r = await pool.query(
-      `SELECT cm.id, cm.subject, cm.message, cm.created_at,
-              COALESCE((SELECT json_agg(json_build_object('id', r.id, 'text', r.text, 'created_at', r.created_at) ORDER BY r.created_at)
-                          FROM contact_replies r WHERE r.message_id = cm.id), '[]'::json) AS replies
-         FROM contact_messages cm
-         JOIN users u ON u.id = $1
-        WHERE (cm.user_id = u.id OR (cm.user_id IS NULL AND lower(cm.email) = lower(u.email)))
-          AND cm.user_hidden_at IS NULL
-        ORDER BY cm.created_at DESC
+      `${MY_CONTACT_SELECT}
+        WHERE ${MY_CONTACT_WHERE} AND cm.user_hidden_at IS NULL
+        ORDER BY ${CONTACT_LAST_ACTIVITY_SQL('cm')} DESC
         LIMIT 100`,
       [req.user.id]
     );
@@ -7693,7 +7704,7 @@ app.delete('/api/users/me/messages/:id', authenticateToken, async (req, res) => 
       `UPDATE contact_messages cm SET user_hidden_at = NOW()
          FROM users u
         WHERE u.id = $1 AND cm.id = $2 AND cm.user_hidden_at IS NULL
-          AND (cm.user_id = u.id OR (cm.user_id IS NULL AND lower(cm.email) = lower(u.email)))`,
+          AND ${MY_CONTACT_WHERE}`,
       [req.user.id, req.params.id]
     );
     if (!r.rowCount) return res.status(404).json({ error: 'Mesaj bulunamadı.' });
@@ -7701,6 +7712,49 @@ app.delete('/api/users/me/messages/:id', authenticateToken, async (req, res) => 
   } catch (error) {
     console.error('Hide my message error:', error.message);
     res.status(500).json({ error: 'Mesaj silinemedi.' });
+  }
+});
+
+// Kişi "Mesajların"dan yazışmaya karşılık yazar. Mesaj okunmamışa döner (admin rozeti),
+// listesinden kaldırdıysa geri gelir, yöneticiye e-posta gider. Saatte en çok 10.
+const MY_CONTACT_REPLY_PER_HOUR = 10;
+app.post('/api/users/me/messages/:id/reply', authenticateToken, async (req, res) => {
+  if (!/^\d+$/.test(req.params.id)) return res.status(404).json({ error: 'Mesaj bulunamadı.' });
+  const text = String(req.body?.text || '').trim();
+  if (!text) return res.status(400).json({ error: 'Mesaj boş olamaz.' });
+  if (text.length > 2000) return res.status(400).json({ error: 'Mesaj en çok 2000 karakter olabilir.' });
+  if (rejectIfObjectionable(req, res, 'contact_reply', text)) return;
+  try {
+    const cm = (await pool.query(`SELECT cm.* FROM contact_messages cm JOIN users u ON u.id = $1 WHERE cm.id = $2 AND ${MY_CONTACT_WHERE}`,
+      [req.user.id, req.params.id])).rows[0];
+    if (!cm) return res.status(404).json({ error: 'Mesaj bulunamadı.' });
+    const recent = (await pool.query(
+      `SELECT count(*)::int n FROM contact_replies WHERE from_user AND replied_by = $1 AND created_at > now() - interval '1 hour'`, [req.user.id])).rows[0].n;
+    if (recent >= MY_CONTACT_REPLY_PER_HOUR) return res.status(429).json({ error: 'Bir saatte en fazla 10 mesaj gönderebilirsin. Biraz sonra tekrar dene.' });
+    await pool.query(`INSERT INTO contact_replies (message_id, text, replied_by, from_user) VALUES ($1, $2, $3, true)`, [cm.id, text, req.user.id]);
+    await pool.query(`UPDATE contact_messages SET is_read = false, user_hidden_at = NULL WHERE id = $1`, [cm.id]);
+    const adm = (await pool.query('SELECT email FROM users WHERE is_admin = true LIMIT 1')).rows[0];
+    if (adm) {
+      sendEmail({
+        kind: 'contact_admin', to: adm.email,
+        subject: `Mesaja cevap geldi: ${cm.subject}`,
+        html: emailWrapper(`
+          <h2 style="margin:0 0 16px;color:#1e293b;">Mesaja cevap geldi</h2>
+          <p style="margin:0 0 12px;color:#334155;"><strong>${escMail(cm.name)}</strong> · ${escMail(cm.subject)}</p>
+          <div style="background:#f8fafc;border-left:3px solid #114956;border-radius:8px;padding:20px;">
+            <p style="margin:0;color:#334155;line-height:1.7;">${escMail(text).replace(/\n/g, '<br>')}</p>
+          </div>
+          <div style="margin-top:24px;text-align:center;">
+            <a href="${APP_URL}/admin.html?tab=messages" style="display:inline-block;background:#114956;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;">Panelde görüntüle</a>
+          </div>
+        `),
+      });
+    }
+    const row = (await pool.query(`${MY_CONTACT_SELECT} WHERE cm.id = $2`, [req.user.id, cm.id])).rows[0];
+    res.json(row);
+  } catch (error) {
+    console.error('My message reply error:', error.message);
+    res.status(500).json({ error: 'Mesaj gönderilemedi.' });
   }
 });
 
@@ -9481,6 +9535,8 @@ pool.query(`ALTER TABLE contact_messages
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`))
   .then(() => pool.query('CREATE INDEX IF NOT EXISTS contact_replies_message ON contact_replies (message_id)'))
+  // from_user: kişinin "Mesajların"dan yazdığı karşılık (28 Ekim 2026); false = Muuvlink ekibinin cevabı
+  .then(() => pool.query('ALTER TABLE contact_replies ADD COLUMN IF NOT EXISTS from_user BOOLEAN NOT NULL DEFAULT false'))
   .then(() => pool.query(`INSERT INTO contact_replies (message_id, text, replied_by, channel, created_at)
     SELECT cm.id, cm.reply_text, cm.replied_by, cm.reply_channel, cm.replied_at FROM contact_messages cm
      WHERE cm.reply_text IS NOT NULL AND cm.reply_channel IS NOT NULL

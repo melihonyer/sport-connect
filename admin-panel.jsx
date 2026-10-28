@@ -2250,12 +2250,13 @@ export default function AdminPanel() {
   const sendReply = async (m) => {
     const d = replyDraft;
     if (!d || d.id !== m.id || d.sending) return;
-    if (m.replied_at && !window.confirm("Bu mesaja daha önce cevap verildi. Yeni cevap da gönderilsin mi?")) return;
+    const again = lastWordIsOurs(m);
+    if (again && !window.confirm("Bu mesaja daha önce cevap verildi. Yeni cevap da gönderilsin mi?")) return;
     setReplyDraft({ ...d, sending: true });
     try {
       const row = await api(`/admin/contact/${m.id}/reply`, {
         method: "POST",
-        body: JSON.stringify({ text: d.text.trim(), alsoEmail: !!d.alsoEmail, again: !!m.replied_at }),
+        body: JSON.stringify({ text: d.text.trim(), alsoEmail: !!d.alsoEmail, again }),
       });
       if (!row) return;
       setMessages(prev => prev.map(x => x.id === m.id ? { ...x, ...row } : x));
@@ -2267,6 +2268,8 @@ export default function AdminPanel() {
       showToast(e.message || "Cevap gönderilemedi.", "error");
     }
   };
+  // Yazışmada son söz bizdeyse yeni cevap "tekrar" sayılır; kişi karşılık yazdıysa değil.
+  const lastWordIsOurs = (m) => m.replies?.length ? !m.replies[m.replies.length - 1].from_user : !!m.replied_at;
   const REPLY_CHANNEL_TR = { app: "Uygulama bildirimi + push", email: "E-posta", "app+email": "Uygulama bildirimi + push + e-posta" };
 
   const markRead = async (id) => {
@@ -3906,7 +3909,16 @@ export default function AdminPanel() {
                           <p className="mt-2 text-xs text-amber-700">Kişi bu mesajı kendi listesinden kaldırdı · {fmtFull(m.user_hidden_at)} (yeni cevap verilirse listesine geri döner)</p>
                         )}
                         {/* Her cevap ayrı (contact_replies); kullanıcı aynılarını "Mesajların"da görür. */}
-                        {(m.replies?.length ? m.replies : m.reply_channel ? [{ id: "last", text: m.reply_text, created_at: m.replied_at, channel: m.reply_channel }] : []).map(r => (
+                        {(m.replies?.length ? m.replies : m.reply_channel ? [{ id: "last", text: m.reply_text, created_at: m.replied_at, channel: m.reply_channel }] : []).map(r => r.from_user ? (
+                          <div key={r.id} className="mt-3 rounded-xl p-3 border border-brand-200 bg-white">
+                            <div className="text-xs text-slate-500 mb-1.5 flex items-center gap-1.5 flex-wrap">
+                              <MessageSquare className="w-3.5 h-3.5 text-brand-600" />
+                              <span className="font-semibold text-brand-700">Kişinin cevabı</span>
+                              <span>· {fmtFull(r.created_at)}</span>
+                            </div>
+                            <p className="text-sm text-slate-700 whitespace-pre-wrap">{r.text}</p>
+                          </div>
+                        ) : (
                           <div key={r.id} className="mt-3 bg-slate-50 rounded-xl p-3 border border-slate-100">
                             <div className="text-xs text-slate-500 mb-1.5 flex items-center gap-1.5 flex-wrap">
                               <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
@@ -3979,7 +3991,7 @@ export default function AdminPanel() {
                         )}
                         <button onClick={() => setReplyDraft(replyDraft?.id === m.id ? null : { id: m.id, text: "", alsoEmail: false, step: "write", sending: false })}
                           className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-medium hover:bg-slate-200 transition whitespace-nowrap">
-                          <Mail className="w-3.5 h-3.5" /> {m.replied_at ? "Tekrar yanıtla" : "Yanıtla"}
+                          <Mail className="w-3.5 h-3.5" /> {lastWordIsOurs(m) ? "Tekrar yanıtla" : "Yanıtla"}
                         </button>
                         <button onClick={() => del(`/admin/contact/${m.id}`, m.subject, "messages")}
                           className="flex items-center gap-1.5 px-3 py-2 bg-red-50 text-red-500 rounded-xl text-xs font-medium hover:bg-red-100 transition whitespace-nowrap">

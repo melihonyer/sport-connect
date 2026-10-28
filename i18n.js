@@ -847,6 +847,7 @@ export const translations = {
     empty:      { tr: "Henüz bize bir mesaj göndermedin.", en: "You haven't sent us a message yet.", de: "Du hast uns noch keine Nachricht geschickt." },
     write:      { tr: "Bize yaz", en: "Write to us", de: "Schreib uns" },
     loadError:  { tr: "Mesajlar yüklenemedi. Biraz sonra tekrar dene.", en: "Couldn't load your messages. Please try again shortly.", de: "Nachrichten konnten nicht geladen werden. Versuch es gleich noch einmal." },
+    reply:     { tr: "Cevap yaz", en: "Reply", de: "Antworten" },
   },
 
   // ── NOTIFICATION PREFERENCES ────────────────────────────

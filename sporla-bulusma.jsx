@@ -2311,6 +2311,7 @@ export default function Muuvlink() {
   // cevap burada kalır. null = kapalı; { focusId, loading, error, items }.
   const [myMsgs, setMyMsgs] = useState(null);
   const myMsgsScrolledRef = useRef(false);
+  const myMsgReplyRef = useRef(null); // "Cevap yaz" kutusu (kontrolsüz: her harfte ana bileşen çizilmesin)
   const openMyMessagesRef = useRef(() => {});
   const [showNotifPrefs, setShowNotifPrefs] = useState(false);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
@@ -4680,7 +4681,7 @@ export default function Muuvlink() {
     const token = localStorage.getItem("token");
     if (!token) return;
     myMsgsScrolledRef.current = false;
-    setMyMsgs({ focusId: focusId != null ? String(focusId) : null, loading: true, error: false, items: [] });
+    setMyMsgs({ focusId: focusId != null ? String(focusId) : null, loading: true, error: false, items: [], replyFor: null, sending: false });
     try {
       const res = await fetch(`${API_URL}/users/me/messages`, { headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) throw new Error(String(res.status));
@@ -4691,6 +4692,26 @@ export default function Muuvlink() {
     }
   };
   openMyMessagesRef.current = openMyMessages;
+
+  // Yazışmaya karşılık: sunucu güncel mesajı döner, kart yerinde tazelenir.
+  const sendMyReply = async (id) => {
+    const text = (myMsgReplyRef.current?.value || "").trim();
+    if (!text || myMsgs?.sending) return;
+    setMyMsgs((cur) => cur && { ...cur, sending: true });
+    try {
+      const res = await fetch(`${API_URL}/users/me/messages/${id}/reply`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("token")}` },
+        body: JSON.stringify({ text }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "");
+      setMyMsgs((cur) => cur && { ...cur, sending: false, replyFor: null, items: cur.items.map((m) => (m.id === id ? data : m)) });
+    } catch (e) {
+      setMyMsgs((cur) => cur && { ...cur, sending: false });
+      showToast(e.message || t("common.error"), "error");
+    }
+  };
 
   // Kişi mesajını kendi listesinden kaldırır (admin'de kayıt kalır; yeni cevap gelirse geri döner).
   const deleteMyMessage = (id) => {
@@ -4759,9 +4780,14 @@ export default function Muuvlink() {
                 </div>
                 <div className="text-xs font-medium text-slate-500 mb-1">{t("myMessages.you")}</div>
                 <p className="text-sm text-slate-600 bg-slate-50 rounded-xl px-3 py-2.5 whitespace-pre-wrap [overflow-wrap:anywhere]">{m.message}</p>
-                {m.replies.length === 0 ? (
-                  <p className="mt-3 text-xs text-slate-500">{t("myMessages.waiting")}</p>
-                ) : m.replies.map((r) => (
+                {m.replies.map((r) => r.from_user ? (
+                  <div key={r.id} className="mt-3">
+                    <div className="text-xs font-medium text-slate-500 mb-1">
+                      {t("myMessages.you")} <span className="text-slate-400 font-normal">· {fmtDateShort(r.created_at)}</span>
+                    </div>
+                    <p className="text-sm text-slate-600 bg-slate-50 rounded-xl px-3 py-2.5 whitespace-pre-wrap [overflow-wrap:anywhere]">{r.text}</p>
+                  </div>
+                ) : (
                   <div key={r.id} className="mt-3">
                     <div className="text-xs font-medium text-brand-700 mb-1">
                       {t("myMessages.team")} <span className="text-slate-400 font-normal">· {fmtDateShort(r.created_at)}</span>
@@ -4771,6 +4797,30 @@ export default function Muuvlink() {
                     </p>
                   </div>
                 ))}
+                {(m.replies.length === 0 || m.replies[m.replies.length - 1].from_user) && (
+                  <p className="mt-3 text-xs text-slate-500">{t("myMessages.waiting")}</p>
+                )}
+                {myMsgs.replyFor === m.id ? (
+                  <div className="mt-3 space-y-2">
+                    <textarea ref={myMsgReplyRef} rows={4} maxLength={2000} autoFocus aria-label={t("myMessages.reply")}
+                      className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-brand-200" />
+                    <div className="flex gap-2 justify-end">
+                      <button onClick={() => setMyMsgs((cur) => cur && { ...cur, replyFor: null })} disabled={myMsgs.sending}
+                        className="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 border border-slate-200 bg-white">
+                        {t("common.cancel")}
+                      </button>
+                      <button onClick={() => sendMyReply(m.id)} disabled={myMsgs.sending} data-btn="solid"
+                        className="px-4 py-2 rounded-xl text-sm font-semibold bg-brand-600 text-white disabled:opacity-60 flex items-center gap-1.5">
+                        {myMsgs.sending && <Loader2 className="w-3.5 h-3.5 animate-spin" />} {t("common.send")}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button onClick={() => setMyMsgs((cur) => cur && { ...cur, replyFor: m.id })}
+                    className="mt-3 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold text-brand-600 border border-brand-200 bg-white">
+                    <MessageSquare className="w-4 h-4" /> {t("myMessages.reply")}
+                  </button>
+                )}
               </div>
             );
           })}
