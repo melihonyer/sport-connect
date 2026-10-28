@@ -2268,6 +2268,18 @@ export default function AdminPanel() {
       showToast(e.message || "Cevap gönderilemedi.", "error");
     }
   };
+  // Bildirimle gitmiş bir cevabı yalnız e-postayla da gönder (yeni bildirim/push yok).
+  const emailReply = async (m, r) => {
+    if (!window.confirm(`Bu cevap ${m.email} adresine e-postayla da gönderilsin mi? Yeni bildirim ya da push gitmez.`)) return;
+    try {
+      const row = await api(`/admin/contact/${m.id}/replies/${r.id}/email`, { method: "POST" });
+      if (!row) return;
+      setMessages(prev => prev.map(x => x.id === m.id ? { ...x, ...row } : x));
+      showToast("E-posta gönderildi.", "success");
+    } catch (e) {
+      showToast(e.message || "E-posta gönderilemedi.", "error");
+    }
+  };
   // Yazışmada son söz bizdeyse yeni cevap "tekrar" sayılır; kişi karşılık yazdıysa değil.
   const lastWordIsOurs = (m) => m.replies?.length ? !m.replies[m.replies.length - 1].from_user : !!m.replied_at;
   const REPLY_CHANNEL_TR = { app: "Uygulama bildirimi + push", email: "E-posta", "app+email": "Uygulama bildirimi + push + e-posta" };
@@ -3926,6 +3938,12 @@ export default function AdminPanel() {
                               <span>· {fmtFull(r.created_at)}{r.channel ? ` · ${REPLY_CHANNEL_TR[r.channel] || r.channel}` : ""}</span>
                             </div>
                             <p className="text-sm text-slate-700 whitespace-pre-wrap">{r.text}</p>
+                            {r.id !== "last" && !String(r.channel || "").includes("email") && (
+                              <button onClick={() => emailReply(m, r)}
+                                className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-brand-700 bg-white border border-brand-200 hover:bg-brand-50 transition">
+                                <Mail className="w-3.5 h-3.5" /> E-postayla da gönder
+                              </button>
+                            )}
                           </div>
                         ))}
                         {replyDraft?.id === m.id && (

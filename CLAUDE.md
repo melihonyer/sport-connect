@@ -705,6 +705,11 @@ kanal) → "Gönder". `POST /api/admin/contact/:id/reply`.
   Listeler son harekete göre sıralı (`CONTACT_LAST_ACTIVITY_SQL`). Kutu kontrolsüz textarea
   (`myMsgReplyRef`) — her harfte ana bileşen çizilmesin; yazılı textarea `hasUnsavedWork`'e takılır.
   Yeni metin yalnız `myMessages.reply` ("Cevap yaz"); Gönder/İptal mevcut `common.*`.
+- **"E-postayla da gönder"** (28 Ekim 2026; Melih Osman'a cevapta kutuyu işaretlemeyi unuttu):
+  admin'de e-postayla gitmemiş her ekip cevabının altında düğme → `POST /api/admin/contact/:id/
+  replies/:replyId/email`. Yalnız e-posta (`sendContactAnswerEmail`, panel cevabıyla aynı şablon);
+  yeni bildirim/push YOK. Cevap satırı önce sahiplenilir, aynı cevaba ikinci e-posta gitmez (409).
+  Osman'ın cevabı (mesaj 8) bununla 28 Ekim'de e-postayla da gitti, teslim edildi.
 - **Mesaj ↔ hesap:** giriş yapmış kişinin form mesajı `contact_messages.user_id` ile bağlanır
   (formda başka e-posta yazsa da); `user_id` yoksa (28 Ekim öncesi, misafir) e-posta eşleşmesi.
   Cevap ucu, admin listesi ve kullanıcı ucu aynı kuralı kullanır (`CONTACT_ACCOUNT_SQL`).

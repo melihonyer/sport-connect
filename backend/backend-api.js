@@ -7605,6 +7605,26 @@ app.put('/api/admin/contact/:id/read', isAdmin, async (req, res) => {
   }
 });
 
+// Cevap e-postası (panelden cevap ve "E-postayla da gönder" aynı şablonu kullanır).
+async function sendContactAnswerEmail(cm, text, acc) {
+  const quoted = cm.message.length > 300 ? `${cm.message.slice(0, 300)}…` : cm.message;
+  const r = await sendEmail({
+    kind: 'contact_answer', to: cm.email, userId: acc?.id || null, fallbackLang: cm.lang || 'tr',
+    build: (L) => ({
+      subject: tm(L, 'replySubject'),
+      html: emailWrapper(`
+        <h2 style="margin:0 0 12px;color:#1e293b;">${tm(L, 'replyHeading')}</h2>
+        <p style="color:#334155;line-height:1.7;margin:0 0 20px;">${escMail(text).replace(/\n/g, '<br>')}</p>
+        <div style="background:#f8fafc;border-left:3px solid #114956;border-radius:8px;padding:20px;">
+          <p style="margin:0 0 8px;font-weight:600;color:#1e293b;">${tm(L, 'replyYourMsg')}</p>
+          <p style="margin:0;color:#64748b;font-size:14px;">${escMail(quoted).replace(/\n/g, '<br>')}</p>
+        </div>
+      `, L),
+    }),
+  });
+  return !!(r && !r.skipped);
+}
+
 // Panelden cevap. Hesabı olana uygulama bildirimi + push (alsoEmail ile e-posta da),
 // hesabı olmayana e-posta. Satır gönderimden ÖNCE sahiplenilir (replied_at): iki sekmeden
 // iki kez gitmez; ikinci cevap yalnız again:true ile. Hiçbir kanal gitmezse eski hale döner.
@@ -7640,22 +7660,7 @@ app.post('/api/admin/contact/:id/reply', isAdmin, async (req, res) => {
       if (n) channels.push('app');
     }
     if (!acc || req.body?.alsoEmail === true) {
-      const quoted = cur.message.length > 300 ? `${cur.message.slice(0, 300)}…` : cur.message;
-      const r = await sendEmail({
-        kind: 'contact_answer', to: cur.email, userId: acc?.id || null, fallbackLang: cur.lang || 'tr',
-        build: (L) => ({
-          subject: tm(L, 'replySubject'),
-          html: emailWrapper(`
-            <h2 style="margin:0 0 12px;color:#1e293b;">${tm(L, 'replyHeading')}</h2>
-            <p style="color:#334155;line-height:1.7;margin:0 0 20px;">${escMail(text).replace(/\n/g, '<br>')}</p>
-            <div style="background:#f8fafc;border-left:3px solid #114956;border-radius:8px;padding:20px;">
-              <p style="margin:0 0 8px;font-weight:600;color:#1e293b;">${tm(L, 'replyYourMsg')}</p>
-              <p style="margin:0;color:#64748b;font-size:14px;">${escMail(quoted).replace(/\n/g, '<br>')}</p>
-            </div>
-          `, L),
-        }),
-      });
-      if (r && !r.skipped) channels.push('email');
+      if (await sendContactAnswerEmail(cur, text, acc)) channels.push('email');
     }
 
     if (!channels.length) {
@@ -7692,6 +7697,36 @@ app.get('/api/users/me/messages', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('My messages error:', error.message);
     res.status(500).json({ error: 'Mesajlar yüklenemedi.' });
+  }
+});
+
+// Uygulama bildirimiyle gitmiş bir cevabı yalnız e-postayla da gönderir (kutu işaretlenmeyi
+// unutulduysa). Yeni bildirim/push yok. Aynı cevaba ikinci e-posta gitmez.
+app.post('/api/admin/contact/:id/replies/:replyId/email', isAdmin, async (req, res) => {
+  try {
+    const cm = (await pool.query('SELECT * FROM contact_messages WHERE id = $1', [req.params.id])).rows[0];
+    const rp = (await pool.query('SELECT * FROM contact_replies WHERE id = $1 AND message_id = $2 AND NOT from_user', [req.params.replyId, req.params.id])).rows[0];
+    if (!cm || !rp) return res.status(404).json({ error: 'Cevap bulunamadı.' });
+    if (String(rp.channel || '').includes('email')) return res.status(409).json({ error: 'Bu cevap zaten e-postayla gitti.' });
+    // Önce sahiplen: iki tıklama iki e-posta göndermesin
+    const claim = await pool.query(`UPDATE contact_replies SET channel = COALESCE(channel, '') || '+email' WHERE id = $1 AND channel IS NOT DISTINCT FROM $2`, [rp.id, rp.channel]);
+    if (!claim.rowCount) return res.status(409).json({ error: 'Bu cevap az önce gönderildi.' });
+    const acc = await contactAccount(cm);
+    const ok = await sendContactAnswerEmail(cm, rp.text, acc);
+    if (!ok) {
+      await pool.query('UPDATE contact_replies SET channel = $2 WHERE id = $1', [rp.id, rp.channel]);
+      return res.status(502).json({ error: 'E-posta gönderilemedi.' });
+    }
+    const channel = rp.channel ? `${rp.channel}+email` : 'email';
+    await pool.query('UPDATE contact_replies SET channel = $2 WHERE id = $1', [rp.id, channel]);
+    // Son cevapsa özet satır da güncellensin
+    await pool.query(`UPDATE contact_messages SET reply_channel = $2 WHERE id = $1
+      AND NOT EXISTS (SELECT 1 FROM contact_replies r WHERE r.message_id = $1 AND NOT r.from_user AND r.id > $3)`, [cm.id, channel, rp.id]);
+    const row = (await pool.query(`SELECT cm.*, ${CONTACT_REPLIES_SQL('cm')} AS replies FROM contact_messages cm WHERE cm.id = $1`, [cm.id])).rows[0];
+    res.json({ ...row, account_id: acc?.id || null, account_name: acc?.name || null });
+  } catch (error) {
+    console.error('Reply email error:', error.message);
+    res.status(500).json({ error: 'E-posta gönderilemedi.' });
   }
 });
 
