@@ -897,7 +897,8 @@ const logNotif = (kind, userId, status, push = {}) =>
     [kind || 'other', userId || null, status, Math.min(push.ok || 0, 32000), Math.min(push.fail || 0, 32000)])
     .catch((e) => console.error('notif_log yazma:', e.message));
 
-async function createNotif(userId, { title, message, build = null, type, refId = null, url = null }) {
+// pushBody: push'a giden kısa metin (verilmezse message). Uzun metin push sınırını aşmasın.
+async function createNotif(userId, { title, message, build = null, type, refId = null, url = null, pushBody = null }) {
   try {
     const key = NOTIF_TYPE_TO_KEY[type];
     const u = await getUserNotifInfo(userId);
@@ -910,7 +911,7 @@ async function createNotif(userId, { title, message, build = null, type, refId =
     );
     pushToUser(userId, { event: 'notification', data: r.rows[0] });
     const unread = await getUnreadCount(userId);
-    sendPushToUser(userId, { title, body: message, data: { type, refId, url }, badge: unread })
+    sendPushToUser(userId, { title, body: pushBody || message, data: { type, refId, url }, badge: unread })
       .then((push) => logNotif(type, userId, 'created', push)).catch(() => {});
     return r.rows[0];
   } catch (e) {
@@ -1135,6 +1136,10 @@ const MAIL = {
     contactThanks: (n) => `Mesajınız için teşekkürler, ${n}!`,
     contactBody: 'Mesajınız başarıyla alındı. En kısa sürede size dönüş yapacağız.',
     contactTopic: 'Konu:',
+    replyNotifTitle: 'Muuvlink ekibinden cevap',
+    replySubject: 'Mesajına cevap verdik — Muuvlink',
+    replyHeading: 'Mesajına cevabımız',
+    replyYourMsg: 'Senin mesajın',
   },
 
   en: {
@@ -1242,6 +1247,10 @@ const MAIL = {
     contactThanks: (n) => `Thanks for your message, ${n}!`,
     contactBody: "We've received your message and will get back to you soon.",
     contactTopic: 'Subject:',
+    replyNotifTitle: 'A reply from the Muuvlink team',
+    replySubject: 'We replied to your message — Muuvlink',
+    replyHeading: 'Our reply to your message',
+    replyYourMsg: 'Your message',
   },
 
   de: {
@@ -1349,6 +1358,10 @@ const MAIL = {
     contactThanks: (n) => `Danke für deine Nachricht, ${n}!`,
     contactBody: 'Deine Nachricht ist bei uns angekommen. Wir melden uns so bald wie möglich.',
     contactTopic: 'Betreff:',
+    replyNotifTitle: 'Antwort vom Muuvlink-Team',
+    replySubject: 'Wir haben auf deine Nachricht geantwortet — Muuvlink',
+    replyHeading: 'Unsere Antwort auf deine Nachricht',
+    replyYourMsg: 'Deine Nachricht',
   },
 
   el: {
@@ -1456,6 +1469,10 @@ const MAIL = {
     contactThanks: (n) => `Ευχαριστούμε για το μήνυμά σου, ${n}!`,
     contactBody: 'Λάβαμε το μήνυμά σου και θα σου απαντήσουμε σύντομα.',
     contactTopic: 'Θέμα:',
+    replyNotifTitle: 'Απάντηση από την ομάδα του Muuvlink',
+    replySubject: 'Απαντήσαμε στο μήνυμά σου — Muuvlink',
+    replyHeading: 'Η απάντησή μας στο μήνυμά σου',
+    replyYourMsg: 'Το μήνυμά σου',
   },
 
   es: {
@@ -1563,6 +1580,10 @@ const MAIL = {
     contactThanks: (n) => `¡Gracias por tu mensaje, ${n}!`,
     contactBody: 'Hemos recibido tu mensaje y te responderemos lo antes posible.',
     contactTopic: 'Asunto:',
+    replyNotifTitle: 'Respuesta del equipo de Muuvlink',
+    replySubject: 'Hemos respondido a tu mensaje — Muuvlink',
+    replyHeading: 'Nuestra respuesta a tu mensaje',
+    replyYourMsg: 'Tu mensaje',
   },
 
   fr: {
@@ -1670,6 +1691,10 @@ const MAIL = {
     contactThanks: (n) => `Merci pour ton message, ${n} !`,
     contactBody: 'Nous avons bien reçu ton message et te répondrons au plus vite.',
     contactTopic: 'Sujet :',
+    replyNotifTitle: "Réponse de l'équipe Muuvlink",
+    replySubject: 'Nous avons répondu à ton message — Muuvlink',
+    replyHeading: 'Notre réponse à ton message',
+    replyYourMsg: 'Ton message',
   },
 
   it: {
@@ -1777,6 +1802,10 @@ const MAIL = {
     contactThanks: (n) => `Grazie per il tuo messaggio, ${n}!`,
     contactBody: 'Abbiamo ricevuto il tuo messaggio e ti risponderemo al più presto.',
     contactTopic: 'Oggetto:',
+    replyNotifTitle: 'Risposta dal team di Muuvlink',
+    replySubject: 'Abbiamo risposto al tuo messaggio — Muuvlink',
+    replyHeading: 'La nostra risposta al tuo messaggio',
+    replyYourMsg: 'Il tuo messaggio',
   },
 };
 
@@ -7050,6 +7079,7 @@ const SUBJECT_KIND = [
   [/ seni bir etkinliğe davet etti: /, 'event_invite'],
   [/^Muuvlink — Şifre Sıfırlama$/, 'password_reset'],
   [/^Mesajınız alındı — Muuvlink$/, 'contact_reply'],
+  [/^Mesajına cevap verdik — Muuvlink$/, 'contact_answer'],
   [/^(📬 )?Yeni İletişim Mesajı: /, 'contact_admin'],
 ];
 const kindOfSubject = (subj) => (SUBJECT_KIND.find(([re]) => re.test(subj)) || [null, 'other'])[1];
@@ -7527,10 +7557,20 @@ app.delete('/api/admin/teams/:id', isAdmin, async (req, res) => {
 });
 
 // ─── ADMIN CONTACT MESSAGES ─────────────────────────
+// Mesajı yazanın hesabı: e-posta eşleşmesi (form giriş istemiyor). Varsa cevap uygulama
+// bildirimi + push olarak gider, yoksa e-postayla.
+const contactAccount = async (email) => (await pool.query(
+  `SELECT id, name FROM users WHERE lower(email) = lower($1) AND deleted_at IS NULL ORDER BY id LIMIT 1`, [email]
+)).rows[0] || null;
+const escMail = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
 app.get('/api/admin/contact', isAdmin, async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT * FROM contact_messages ORDER BY created_at DESC'
+      `SELECT cm.*, mu.id AS account_id, mu.name AS account_name
+         FROM contact_messages cm
+         LEFT JOIN LATERAL (SELECT id, name FROM users u WHERE lower(u.email) = lower(cm.email) AND u.deleted_at IS NULL ORDER BY id LIMIT 1) mu ON true
+        ORDER BY cm.created_at DESC`
     );
     res.json(result.rows);
   } catch (error) {
@@ -7544,6 +7584,71 @@ app.put('/api/admin/contact/:id/read', isAdmin, async (req, res) => {
     res.json({ message: 'Okundu.' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to mark as read' });
+  }
+});
+
+// Panelden cevap. Hesabı olana uygulama bildirimi + push (alsoEmail ile e-posta da),
+// hesabı olmayana e-posta. Satır gönderimden ÖNCE sahiplenilir (replied_at): iki sekmeden
+// iki kez gitmez; ikinci cevap yalnız again:true ile. Hiçbir kanal gitmezse eski hale döner.
+app.post('/api/admin/contact/:id/reply', isAdmin, async (req, res) => {
+  const text = String(req.body?.text || '').trim();
+  if (!text) return res.status(400).json({ error: 'Cevap boş olamaz.' });
+  if (text.length > 2000) return res.status(400).json({ error: 'Cevap en çok 2000 karakter olabilir.' });
+  try {
+    // replied_raw: metin hali — JS Date mikrosaniyeyi atar, karşılaştırma hiç tutmazdı.
+    const cur = (await pool.query('SELECT *, replied_at::text AS replied_raw FROM contact_messages WHERE id = $1', [req.params.id])).rows[0];
+    if (!cur) return res.status(404).json({ error: 'Mesaj bulunamadı.' });
+    if (cur.replied_at && req.body?.again !== true) return res.status(409).json({ error: 'Bu mesaja zaten cevap verildi.' });
+    const claim = await pool.query(
+      `UPDATE contact_messages SET replied_at = NOW(), replied_by = $2, reply_text = $3, reply_channel = NULL, is_read = true
+        WHERE id = $1 AND replied_at::text IS NOT DISTINCT FROM $4`,
+      [cur.id, req.user.id, text, cur.replied_raw]
+    );
+    if (!claim.rowCount) return res.status(409).json({ error: 'Bu mesaja az önce cevap verildi.' });
+
+    const acc = await contactAccount(cur.email);
+    const channels = [];
+    if (acc) {
+      const n = await createNotif(acc.id, {
+        type: 'admin_reply', refId: cur.id,
+        pushBody: text.length > 180 ? `${text.slice(0, 179)}…` : text,
+        build: (L) => ({ title: tm(L, 'replyNotifTitle'), message: text }),
+      });
+      if (n) channels.push('app');
+    }
+    if (!acc || req.body?.alsoEmail === true) {
+      const quoted = cur.message.length > 300 ? `${cur.message.slice(0, 300)}…` : cur.message;
+      const r = await sendEmail({
+        kind: 'contact_answer', to: cur.email, userId: acc?.id || null, fallbackLang: cur.lang || 'tr',
+        build: (L) => ({
+          subject: tm(L, 'replySubject'),
+          html: emailWrapper(`
+            <h2 style="margin:0 0 12px;color:#1e293b;">${tm(L, 'replyHeading')}</h2>
+            <p style="color:#334155;line-height:1.7;margin:0 0 20px;">${escMail(text).replace(/\n/g, '<br>')}</p>
+            <div style="background:#f8fafc;border-left:3px solid #114956;border-radius:8px;padding:20px;">
+              <p style="margin:0 0 8px;font-weight:600;color:#1e293b;">${tm(L, 'replyYourMsg')}</p>
+              <p style="margin:0;color:#64748b;font-size:14px;">${escMail(quoted).replace(/\n/g, '<br>')}</p>
+            </div>
+          `, L),
+        }),
+      });
+      if (r && !r.skipped) channels.push('email');
+    }
+
+    if (!channels.length) {
+      await pool.query(
+        `UPDATE contact_messages SET replied_at = $2::timestamptz, replied_by = $3, reply_text = $4, reply_channel = $5 WHERE id = $1`,
+        [cur.id, cur.replied_raw, cur.replied_by, cur.reply_text, cur.reply_channel]
+      );
+      return res.status(502).json({ error: 'Cevap gönderilemedi.' });
+    }
+    const row = (await pool.query(
+      `UPDATE contact_messages SET reply_channel = $2 WHERE id = $1 RETURNING *`, [cur.id, channels.join('+')]
+    )).rows[0];
+    res.json({ ...row, account_id: acc?.id || null, account_name: acc?.name || null });
+  } catch (error) {
+    console.error('Contact reply error:', error.message);
+    res.status(500).json({ error: 'Cevap gönderilemedi.' });
   }
 });
 
@@ -7565,9 +7670,9 @@ app.post('/api/contact', async (req, res) => {
     }
 
     const result = await pool.query(
-      `INSERT INTO contact_messages (name, email, subject, message)
-       VALUES ($1, $2, $3, $4) RETURNING *`,
-      [name.trim(), email.trim(), subject.trim(), message.trim()]
+      `INSERT INTO contact_messages (name, email, subject, message, lang)
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [name.trim(), email.trim(), subject.trim(), message.trim(), reqLang(req)]
     );
 
     // Admin'e mail gönder
@@ -9306,6 +9411,12 @@ pool.query(`
     source_ref TEXT UNIQUE  -- backfill kayıtları için benzersiz ref (örn: 'user_1'), canlı kayıtlar NULL
   )
 `).catch(() => {});
+
+// İletişim mesajına panelden verilen cevap + mesajın yazıldığı dil (hesabı olmayana cevap e-postası o dilde)
+pool.query(`ALTER TABLE contact_messages
+  ADD COLUMN IF NOT EXISTS reply_text TEXT, ADD COLUMN IF NOT EXISTS replied_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS replied_by INT, ADD COLUMN IF NOT EXISTS reply_channel TEXT,
+  ADD COLUMN IF NOT EXISTS lang VARCHAR(5)`).catch(() => {});
 
 // source_ref sütunu yoksa ekle (eski kurulumlar için)
 pool.query(`ALTER TABLE activity_logs ADD COLUMN IF NOT EXISTS source_ref TEXT`).catch(() => {});

@@ -8,7 +8,7 @@ import {
   Trophy, User, ClipboardList, CheckCircle2, DoorOpen, UserMinus, Sparkles, Target, Flag,
   Ticket, MapPin, ExternalLink, MousePointerClick,
   Radar, ScanSearch, RefreshCw, Loader2, XCircle, ListChecks, Star, Zap, Bell,
-  CalendarDays, ScrollText,
+  CalendarDays, ScrollText, Send,
 } from "lucide-react";
 import LocationPicker from "./LocationPicker";
 import FreshBuildWatcher from "./FreshBuildWatcher.jsx";
@@ -1074,6 +1074,7 @@ const EMAIL_KIND_TR = {
   event_reminder: "Etkinlik hatırlatma", team_member: "Yeni takım üyesi", event_join: "Yeni katılımcı",
   comment: "Yorum", event_update: "Etkinlik değişti", wall_post: "Duvar gönderisi", role: "Rol değişti",
   invite: "Takım daveti", event_invite: "Etkinlik daveti", password_reset: "Şifre sıfırlama", contact_reply: "İletişim yanıtı",
+  contact_answer: "Destek cevabı (panelden)",
   contact_admin: "İletişim (bize)", tips: "İpuçları", sample: "Örnek / test", other: "Diğer",
 };
 const NOTIF_KIND_TR = {
@@ -1081,6 +1082,7 @@ const NOTIF_KIND_TR = {
   training_join: "Yeni katılımcı", training_comment: "Yorum", comment_like: "Yorum beğenisi",
   team: "Yeni takım üyesi", team_post: "Duvar gönderisi", wall_post_like: "Gönderi beğenisi",
   invitation: "Takım daveti", role_change: "Rol değişti", badge: "Rozet", engagement_nudge: "Hatırlatma (geri çağırma)",
+  admin_reply: "Destek cevabı (panelden)",
   other: "Diğer",
 };
 const istanbulToday = () => new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Istanbul" });
@@ -1967,6 +1969,8 @@ export default function AdminPanel() {
   const [teamFilter, setTeamFilter] = useState("all"); // all | deleted
   const [teams, setTeams]       = useState([]);
   const [messages, setMessages] = useState([]);
+  // Panelden cevap: tek açık kutu. step "write" → "preview" (alıcının göreceği hali) → gönder.
+  const [replyDraft, setReplyDraft] = useState(null); // { id, text, alsoEmail, step, sending }
   const [banners, setBanners]   = useState([]);
   const [homeNews, setHomeNews] = useState([]);
   const [homeGallery, setHomeGallery] = useState([]);
@@ -2242,6 +2246,28 @@ export default function AdminPanel() {
       showToast(e.message || "İşlem başarısız.", "error");
     }
   };
+
+  const sendReply = async (m) => {
+    const d = replyDraft;
+    if (!d || d.id !== m.id || d.sending) return;
+    if (m.replied_at && !window.confirm("Bu mesaja daha önce cevap verildi. Yeni cevap da gönderilsin mi?")) return;
+    setReplyDraft({ ...d, sending: true });
+    try {
+      const row = await api(`/admin/contact/${m.id}/reply`, {
+        method: "POST",
+        body: JSON.stringify({ text: d.text.trim(), alsoEmail: !!d.alsoEmail, again: !!m.replied_at }),
+      });
+      if (!row) return;
+      setMessages(prev => prev.map(x => x.id === m.id ? { ...x, ...row } : x));
+      setReplyDraft(null);
+      refreshBadges();
+      showToast("Cevap gönderildi.", "success");
+    } catch (e) {
+      setReplyDraft(cur => cur && cur.id === m.id ? { ...cur, sending: false } : cur);
+      showToast(e.message || "Cevap gönderilemedi.", "error");
+    }
+  };
+  const REPLY_CHANNEL_TR = { app: "Uygulama bildirimi + push", email: "E-posta", "app+email": "Uygulama bildirimi + push + e-posta" };
 
   const markRead = async (id) => {
     await api(`/admin/contact/${id}/read`, { method: "PUT" });
@@ -3871,6 +3897,73 @@ export default function AdminPanel() {
                         <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-wrap border-l-2 border-brand-200 pl-4">
                           {m.message}
                         </p>
+                        <p className="mt-3 text-xs text-slate-500">
+                          {m.account_id
+                            ? <>Hesabı var: <span className="font-semibold text-slate-700">{m.account_name}</span> — cevap uygulama bildirimi + push olarak gider.</>
+                            : <>Muuvlink hesabı yok — cevap e-postayla gider.</>}
+                        </p>
+                        {m.replied_at && (
+                          <div className="mt-3 bg-slate-50 rounded-xl p-3 border border-slate-100">
+                            <div className="text-xs text-slate-500 mb-1.5 flex items-center gap-1.5 flex-wrap">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
+                              <span className="font-semibold text-green-700">Cevaplandı</span>
+                              <span>· {fmtFull(m.replied_at)}{m.reply_channel ? ` · ${REPLY_CHANNEL_TR[m.reply_channel] || m.reply_channel}` : ""}</span>
+                            </div>
+                            <p className="text-sm text-slate-700 whitespace-pre-wrap">{m.reply_text}</p>
+                          </div>
+                        )}
+                        {replyDraft?.id === m.id && (
+                          <div data-admin-form className="mt-4 bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+                            {replyDraft.step === "write" ? (
+                              <>
+                                <textarea value={replyDraft.text} maxLength={2000} rows={8} autoFocus
+                                  onChange={(e) => setReplyDraft({ ...replyDraft, text: e.target.value })}
+                                  placeholder="Cevabını yaz…"
+                                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-brand-200 bg-white" />
+                                <div className="flex items-center gap-3 flex-wrap">
+                                  {m.account_id && (
+                                    <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
+                                      <input type="checkbox" checked={!!replyDraft.alsoEmail}
+                                        onChange={(e) => setReplyDraft({ ...replyDraft, alsoEmail: e.target.checked })} />
+                                      E-posta olarak da gönder
+                                    </label>
+                                  )}
+                                  <span className="text-xs text-slate-400 ml-auto">{replyDraft.text.length}/2000</span>
+                                </div>
+                                <div className="flex gap-2 justify-end">
+                                  <button onClick={() => setReplyDraft(null)}
+                                    className="px-3 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-xs font-medium hover:bg-slate-100 transition">Vazgeç</button>
+                                  <button disabled={!replyDraft.text.trim()} onClick={() => setReplyDraft({ ...replyDraft, step: "preview" })}
+                                    className="flex items-center gap-1.5 px-3 py-2 bg-brand-600 text-white rounded-xl text-xs font-semibold hover:bg-brand-700 transition disabled:opacity-50">
+                                    <Eye className="w-3.5 h-3.5" /> Önizle
+                                  </button>
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Önizleme — {m.account_id ? m.account_name : m.email} şunu görecek</p>
+                                <div className="bg-white rounded-xl border border-slate-200 p-4">
+                                  <p className="text-xs text-slate-400 mb-1">{m.account_id ? "Bildirim başlığı" : "E-posta konusu"}</p>
+                                  <p className="font-semibold text-slate-900 mb-3">{m.account_id ? "Muuvlink ekibinden cevap" : "Mesajına cevap verdik — Muuvlink"}</p>
+                                  <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{replyDraft.text.trim()}</p>
+                                </div>
+                                <p className="text-xs text-slate-500">
+                                  Gidecek: <span className="font-semibold text-slate-700">
+                                    {m.account_id ? (replyDraft.alsoEmail ? REPLY_CHANNEL_TR["app+email"] : REPLY_CHANNEL_TR.app) : `E-posta (${m.email})`}
+                                  </span>. Push ve e-posta geri alınamaz.
+                                </p>
+                                <div className="flex gap-2 justify-end">
+                                  <button disabled={replyDraft.sending} onClick={() => setReplyDraft({ ...replyDraft, step: "write" })}
+                                    className="px-3 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-xs font-medium hover:bg-slate-100 transition">Düzenle</button>
+                                  <button disabled={replyDraft.sending} onClick={() => sendReply(m)}
+                                    className="flex items-center gap-1.5 px-3 py-2 bg-brand-600 text-white rounded-xl text-xs font-semibold hover:bg-brand-700 transition disabled:opacity-60">
+                                    {replyDraft.sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />} Gönder
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       <div className="flex flex-row md:flex-col gap-2 flex-shrink-0 flex-wrap">
@@ -3880,10 +3973,10 @@ export default function AdminPanel() {
                             <CheckCheck className="w-3.5 h-3.5" /> Okundu
                           </button>
                         )}
-                        <a href={`mailto:${m.email}?subject=Re: ${encodeURIComponent(m.subject)}`}
+                        <button onClick={() => setReplyDraft(replyDraft?.id === m.id ? null : { id: m.id, text: "", alsoEmail: false, step: "write", sending: false })}
                           className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-medium hover:bg-slate-200 transition whitespace-nowrap">
-                          <Mail className="w-3.5 h-3.5" /> Yanıtla
-                        </a>
+                          <Mail className="w-3.5 h-3.5" /> {m.replied_at ? "Tekrar yanıtla" : "Yanıtla"}
+                        </button>
                         <button onClick={() => del(`/admin/contact/${m.id}`, m.subject, "messages")}
                           className="flex items-center gap-1.5 px-3 py-2 bg-red-50 text-red-500 rounded-xl text-xs font-medium hover:bg-red-100 transition whitespace-nowrap">
                           <Trash2 className="w-3.5 h-3.5" /> Sil

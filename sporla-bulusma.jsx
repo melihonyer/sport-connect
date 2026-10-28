@@ -2307,6 +2307,9 @@ export default function Muuvlink() {
   const [levelFilter, setLevelFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [showNotifications, setShowNotifications] = useState(false);
+  // Muuvlink ekibinin cevabı (admin_reply): listede özet, dokununca tam metin bu pencerede.
+  const [notifDetail, setNotifDetail] = useState(null);
+  const pendingReplyRefRef = useRef(null); // push'a dokunuldu, bildirim listesi gelince açılır
   const [showNotifPrefs, setShowNotifPrefs] = useState(false);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -2783,6 +2786,13 @@ export default function Muuvlink() {
         PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
           // Backend push data'sı { type, refId, url } gönderir — url ilgili takım/etkinlik detayına götürür
           const data = action.notification.data || {};
+          if (data.type === "admin_reply" && data.refId) {
+            pendingReplyRefRef.current = String(data.refId);
+            setShowNotifications(true);
+            const tk = localStorage.getItem("token");
+            if (tk) fetchNotifications(tk);
+            return;
+          }
           if (navigateToNotificationTarget(data.url)) return;
           // Geriye dönük: url yoksa type + refId'den hedefi çıkar
           if (data.refId && String(data.type || "").startsWith("training")) {
@@ -3371,6 +3381,7 @@ export default function Muuvlink() {
     if (routeAnnounce)     { setRouteAnnounce(false);     return true; }
     if (showProfileEdit)   { setShowProfileEdit(false);   return true; }
     if (showNotifPrefs)    { setShowNotifPrefs(false);    return true; }
+    if (notifDetail)       { setNotifDetail(null);        return true; }
     if (showNotifications) { setShowNotifications(false); return true; }
     if (isAuthModalOpen)   { setIsAuthModalOpen(false);   return true; }
     return false;
@@ -4664,9 +4675,50 @@ export default function Muuvlink() {
   const handleNotificationClick = (notif) => {
     if (!notif) return;
     if (!notif.is_read) handleMarkNotificationRead(notif.id);
+    if (notif.notification_type === "admin_reply") { setNotifDetail(notif); return; }
     const moved = navigateToNotificationTarget(notif.action_url);
     if (moved) setShowNotifications(false);
   };
+  useEffect(() => {
+    const ref = pendingReplyRefRef.current;
+    if (!ref) return;
+    const n = notifications.find((x) => x.notification_type === "admin_reply" && String(x.reference_id) === ref);
+    if (!n) return;
+    pendingReplyRefRef.current = null;
+    handleNotificationClick(n);
+  }, [notifications]);
+
+  // Muuvlink ekibinin cevabı — tam metin. Düz fonksiyon (bileşen değil): üst-render'da sökülmesin.
+  const renderNotifDetail = () => !notifDetail ? null : (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 overflow-y-auto overscroll-contain"
+      style={{ zIndex: 1000001 }} onClick={() => setNotifDetail(null)}
+      role="dialog" aria-modal="true" aria-label={notifDetail.title}>
+      <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl w-full max-w-lg my-auto">
+        <div className="flex items-start gap-3 p-5 border-b">
+          <div className="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center flex-shrink-0">
+            <MessageSquare className="w-5 h-5 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-lg text-slate-900 leading-snug [overflow-wrap:anywhere]">{notifDetail.title}</h3>
+            <span className="text-xs text-slate-400">{fmtDateShort(notifDetail.created_at)}</span>
+          </div>
+          <button onClick={() => setNotifDetail(null)} aria-label={t("common.close")}
+            className="w-11 h-11 -m-2.5 flex items-center justify-center text-slate-500 hover:text-slate-800 flex-shrink-0">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <p className="p-5 text-slate-700 leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]">
+          <LinkText text={notifDetail.message} linkClassName="text-brand-600 underline" />
+        </p>
+        <div className="px-5 pb-5">
+          <button onClick={() => setNotifDetail(null)} data-btn="solid"
+            className="w-full py-3 bg-brand-600 text-white rounded-xl font-semibold">
+            {t("common.close")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   const handleMarkNotificationRead = async (notificationId) => {
     try {
@@ -10065,6 +10117,7 @@ Vergi Dairesi: Karşıyaka V.D. | VN: 7420957827<br/>
         onLangChange={isNative ? changeLang : undefined}
       />}
       {showNotifications && <NotificationsPanel />}
+      {renderNotifDetail()}
       {showProfileEdit && <ProfileEditModal />}
       {(showInviteModal || inviteTrainingId) && <InviteModal />}
       {renderTeamSuggest()}

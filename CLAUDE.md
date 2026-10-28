@@ -669,6 +669,20 @@ seçilebilir link kutusu, WhatsApp/Telegram/e-posta butonları, hazır davet mes
 - Admin listesinde (takım/etkinlik) otomatik giden son mail görünür
   (`last_auto_email`; gönderilen, atlanandan önce gösterilir). Atlananlar turuncu.
 
+## Admin › Mesajlar: panelden cevap (28 Ekim 2026, Melih)
+
+İletişim formuna gelen mesaja "Yanıtla" → cevap kutusu → "Önizle" (alıcının göreceği hal +
+kanal) → "Gönder". `POST /api/admin/contact/:id/reply`.
+- Mesajı yazanın hesabı e-posta eşleşmesiyle bulunur (form giriş istemiyor). Hesap varsa
+  uygulama bildirimi `admin_reply` + push (push metni ilk 180 karakter; `createNotif` `pushBody`),
+  isteğe bağlı e-posta kopyası; hesap yoksa e-posta (`contact_answer`, mesajın dilinde —
+  `contact_messages.lang`, 28 Ekim öncesi mesajlarda boş = Türkçe). Tercihle kapatılamaz.
+- Sitede bildirim listesi özet gösterir; `admin_reply`'a dokununca tam metin penceresi
+  (`renderNotifDetail`, push dokunuşu da açar). Metinler `MAIL.reply*` (7 dil, Melih onayladı).
+- Satır gönderimden ÖNCE sahiplenilir (`replied_at`); ikinci cevap yalnız `again: true` ile
+  (panel ayrıca sorar). Hiçbir kanal gitmezse satır eski haline döner. Karşılaştırma
+  `replied_at::text` ile — JS Date mikrosaniyeyi attığı için eşitlik hiç tutmuyordu (testte bulundu).
+
 ## Admin › Bildirimler (e-posta + uygulama bildirimi istatistiği)
 
 Sekmenin adı "Bildirimler" (6 Ekim 2026, Melih); üstte "E-posta" / "Uygulama
