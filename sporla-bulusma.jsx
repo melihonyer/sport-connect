@@ -5790,13 +5790,15 @@ export default function Muuvlink() {
               {label: t("createTraining.pageTitle"), icon:Plus,   page:"create-training", tone:"solid"},
               {label: t("teams.create"),             icon:Users,  page:"create-team",     tone:"solid"},
               {label: t("badges.pageTitle"),         icon:Trophy, page:"badges",          tone:"pop"},
+              // Muuvlink'e yazdıkları + cevaplarımız (Ayarlar penceresinin dibinde bulunmuyordu — Melih)
+              {label: t("myMessages.title"),         icon:MessageSquare, onClick: () => openMyMessages(), tone:"outline"},
             ].map((a) => (
-              <button key={a.label} onClick={() => setCurrentPage(a.page)}
-                data-btn={a.tone}
-                className="w-full flex items-center gap-3 px-5 py-3.5 rounded-xl font-semibold text-sm transition-all"
+              <button key={a.label} onClick={() => (a.onClick ? a.onClick() : setCurrentPage(a.page))}
+                data-btn={a.tone === "outline" ? undefined : a.tone}
+                className={`w-full flex items-center gap-3 px-5 py-3.5 rounded-xl font-semibold text-sm transition-all ${a.tone === "outline" ? "bg-white text-brand-600 border border-brand-200" : ""}`}
                 style={a.tone === "pop"
                   ? {background:"#F4F818", color:"#1F2121"}
-                  : {background:"#114956", color:"#fff"}}>
+                  : a.tone === "outline" ? undefined : {background:"#114956", color:"#fff"}}>
                 <a.icon className="w-4 h-4"/> {a.label}
               </button>
             ))}

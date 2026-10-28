@@ -683,8 +683,9 @@ kanal) → "Gönder". `POST /api/admin/contact/:id/reply`.
   `replied_at::text` ile — JS Date mikrosaniyeyi attığı için eşitlik hiç tutmuyordu (testte bulundu).
 - **Her cevap ayrı satır: `contact_replies`** (28 Ekim 2026). `contact_messages.reply_*` yalnız
   son cevap (admin özeti + sahiplenme). Admin mesajın altında hepsini listeler.
-- **"Muuvlink'e mesajların"** (Melih: bildirim silinince cevaba ulaşılamıyordu): Profili Düzenle'de
-  Bildirim Tercihleri'nin altında satır → pencere (`renderMyMessages`, `myMessages.*` 7 dil, Melih
+- **"Muuvlink'e mesajların"** (Melih: bildirim silinince cevaba ulaşılamıyordu): profil sayfası
+  Hızlı Erişim'de Rozetlerim'in altında beyaz çerçeveli düğme (Ayarlar'ın dibindeki satırı Melih
+  bulamadı; o da kalıyor) → pencere (`renderMyMessages`, `myMessages.*` 7 dil, Melih
   onayladı). Kaynak `GET /api/users/me/messages` — bildirim değil, mesaj kaydı; silinen bildirim
   cevabı götürmez. `admin_reply` bildirimine/push'una dokununca da bu pencere açılır, o mesaja
   kaydırır. Kimin cevapladığı ve kanal kullanıcıya gönderilmez.
