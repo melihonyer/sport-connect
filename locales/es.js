@@ -619,6 +619,17 @@ export default {
     accountRestored: "¡Hola de nuevo! Tu cuenta se ha recuperado.",
   },
 
+  myMessages: {
+    title: "Tus mensajes a Muuvlink",
+    rowHint: "Lo que nos escribiste y nuestras respuestas",
+    you: "Tu mensaje",
+    team: "Equipo de Muuvlink",
+    waiting: "Hemos recibido tu mensaje y te responderemos lo antes posible.",
+    empty: "Todavía no nos has enviado ningún mensaje.",
+    write: "Escríbenos",
+    loadError: "No se pudieron cargar los mensajes. Vuelve a intentarlo en un rato.",
+  },
+
   notifPrefs: {
     title: "Preferencias de notificaciones",
     row: "Preferencias de notificaciones",

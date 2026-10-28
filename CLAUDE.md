@@ -677,11 +677,20 @@ kanal) → "Gönder". `POST /api/admin/contact/:id/reply`.
   uygulama bildirimi `admin_reply` + push (push metni ilk 180 karakter; `createNotif` `pushBody`),
   isteğe bağlı e-posta kopyası; hesap yoksa e-posta (`contact_answer`, mesajın dilinde —
   `contact_messages.lang`, 28 Ekim öncesi mesajlarda boş = Türkçe). Tercihle kapatılamaz.
-- Sitede bildirim listesi özet gösterir; `admin_reply`'a dokununca tam metin penceresi
-  (`renderNotifDetail`, push dokunuşu da açar). Metinler `MAIL.reply*` (7 dil, Melih onayladı).
+- Bildirim/e-posta metinleri `MAIL.reply*` (7 dil, Melih onayladı).
 - Satır gönderimden ÖNCE sahiplenilir (`replied_at`); ikinci cevap yalnız `again: true` ile
   (panel ayrıca sorar). Hiçbir kanal gitmezse satır eski haline döner. Karşılaştırma
   `replied_at::text` ile — JS Date mikrosaniyeyi attığı için eşitlik hiç tutmuyordu (testte bulundu).
+- **Her cevap ayrı satır: `contact_replies`** (28 Ekim 2026). `contact_messages.reply_*` yalnız
+  son cevap (admin özeti + sahiplenme). Admin mesajın altında hepsini listeler.
+- **"Muuvlink'e mesajların"** (Melih: bildirim silinince cevaba ulaşılamıyordu): Profili Düzenle'de
+  Bildirim Tercihleri'nin altında satır → pencere (`renderMyMessages`, `myMessages.*` 7 dil, Melih
+  onayladı). Kaynak `GET /api/users/me/messages` — bildirim değil, mesaj kaydı; silinen bildirim
+  cevabı götürmez. `admin_reply` bildirimine/push'una dokununca da bu pencere açılır, o mesaja
+  kaydırır. Kimin cevapladığı ve kanal kullanıcıya gönderilmez.
+- **Mesaj ↔ hesap:** giriş yapmış kişinin form mesajı `contact_messages.user_id` ile bağlanır
+  (formda başka e-posta yazsa da); `user_id` yoksa (28 Ekim öncesi, misafir) e-posta eşleşmesi.
+  Cevap ucu, admin listesi ve kullanıcı ucu aynı kuralı kullanır (`CONTACT_ACCOUNT_SQL`).
 
 ## Admin › Bildirimler (e-posta + uygulama bildirimi istatistiği)
 

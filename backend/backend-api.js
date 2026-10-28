@@ -7557,19 +7557,25 @@ app.delete('/api/admin/teams/:id', isAdmin, async (req, res) => {
 });
 
 // ─── ADMIN CONTACT MESSAGES ─────────────────────────
-// Mesajı yazanın hesabı: e-posta eşleşmesi (form giriş istemiyor). Varsa cevap uygulama
-// bildirimi + push olarak gider, yoksa e-postayla.
-const contactAccount = async (email) => (await pool.query(
-  `SELECT id, name FROM users WHERE lower(email) = lower($1) AND deleted_at IS NULL ORDER BY id LIMIT 1`, [email]
-)).rows[0] || null;
+// Mesajı yazanın hesabı: giriş yapıp yazdıysa user_id (28 Ekim 2026'dan beri), yoksa e-posta
+// eşleşmesi (form giriş istemiyor). Varsa cevap uygulama bildirimi + push olarak gider, yoksa e-postayla.
+// Aynı kural kullanıcının "Mesajların" penceresinde de (GET /api/users/me/messages).
+const CONTACT_ACCOUNT_SQL = `SELECT id, name FROM users u
+  WHERE u.deleted_at IS NULL AND (u.id = $1 OR ($1::int IS NULL AND lower(u.email) = lower($2)))
+  ORDER BY id LIMIT 1`;
+const contactAccount = async (cm) => (await pool.query(CONTACT_ACCOUNT_SQL, [cm.user_id || null, cm.email])).rows[0] || null;
+const CONTACT_REPLIES_SQL = (alias) => `COALESCE((SELECT json_agg(json_build_object('id', r.id, 'text', r.text, 'channel', r.channel, 'created_at', r.created_at) ORDER BY r.created_at)
+  FROM contact_replies r WHERE r.message_id = ${alias}.id), '[]'::json)`;
 const escMail = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 app.get('/api/admin/contact', isAdmin, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT cm.*, mu.id AS account_id, mu.name AS account_name
+      `SELECT cm.*, mu.id AS account_id, mu.name AS account_name, ${CONTACT_REPLIES_SQL('cm')} AS replies
          FROM contact_messages cm
-         LEFT JOIN LATERAL (SELECT id, name FROM users u WHERE lower(u.email) = lower(cm.email) AND u.deleted_at IS NULL ORDER BY id LIMIT 1) mu ON true
+         LEFT JOIN LATERAL (SELECT id, name FROM users u
+                             WHERE u.deleted_at IS NULL AND (u.id = cm.user_id OR (cm.user_id IS NULL AND lower(u.email) = lower(cm.email)))
+                             ORDER BY id LIMIT 1) mu ON true
         ORDER BY cm.created_at DESC`
     );
     res.json(result.rows);
@@ -7606,7 +7612,7 @@ app.post('/api/admin/contact/:id/reply', isAdmin, async (req, res) => {
     );
     if (!claim.rowCount) return res.status(409).json({ error: 'Bu mesaja az önce cevap verildi.' });
 
-    const acc = await contactAccount(cur.email);
+    const acc = await contactAccount(cur);
     const channels = [];
     if (acc) {
       const n = await createNotif(acc.id, {
@@ -7642,13 +7648,37 @@ app.post('/api/admin/contact/:id/reply', isAdmin, async (req, res) => {
       );
       return res.status(502).json({ error: 'Cevap gönderilemedi.' });
     }
+    await pool.query(`INSERT INTO contact_replies (message_id, text, replied_by, channel) VALUES ($1, $2, $3, $4)`,
+      [cur.id, text, req.user.id, channels.join('+')]);
     const row = (await pool.query(
-      `UPDATE contact_messages SET reply_channel = $2 WHERE id = $1 RETURNING *`, [cur.id, channels.join('+')]
+      `UPDATE contact_messages cm SET reply_channel = $2 WHERE id = $1 RETURNING *, ${CONTACT_REPLIES_SQL('cm')} AS replies`, [cur.id, channels.join('+')]
     )).rows[0];
     res.json({ ...row, account_id: acc?.id || null, account_name: acc?.name || null });
   } catch (error) {
     console.error('Contact reply error:', error.message);
     res.status(500).json({ error: 'Cevap gönderilemedi.' });
+  }
+});
+
+// Kullanıcının "Mesajların" penceresi: iletişim formundan yazdıkları + Muuvlink'in cevapları.
+// Bildirim silinse de cevap burada kalır. Kim cevapladı ve kanal gönderilmez.
+app.get('/api/users/me/messages', authenticateToken, async (req, res) => {
+  try {
+    const r = await pool.query(
+      `SELECT cm.id, cm.subject, cm.message, cm.created_at,
+              COALESCE((SELECT json_agg(json_build_object('id', r.id, 'text', r.text, 'created_at', r.created_at) ORDER BY r.created_at)
+                          FROM contact_replies r WHERE r.message_id = cm.id), '[]'::json) AS replies
+         FROM contact_messages cm
+         JOIN users u ON u.id = $1
+        WHERE cm.user_id = u.id OR (cm.user_id IS NULL AND lower(cm.email) = lower(u.email))
+        ORDER BY cm.created_at DESC
+        LIMIT 100`,
+      [req.user.id]
+    );
+    res.json({ messages: r.rows });
+  } catch (error) {
+    console.error('My messages error:', error.message);
+    res.status(500).json({ error: 'Mesajlar yüklenemedi.' });
   }
 });
 
@@ -7662,7 +7692,7 @@ app.delete('/api/admin/contact/:id', isAdmin, async (req, res) => {
 });
 
 // ─── PUBLIC: İLETİŞİM FORMU ────────────────────────
-app.post('/api/contact', async (req, res) => {
+app.post('/api/contact', optionalAuth, async (req, res) => {
   try {
     const { name, email, subject, message } = req.body;
     if (!name || !email || !subject || !message) {
@@ -7670,9 +7700,9 @@ app.post('/api/contact', async (req, res) => {
     }
 
     const result = await pool.query(
-      `INSERT INTO contact_messages (name, email, subject, message, lang)
-       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [name.trim(), email.trim(), subject.trim(), message.trim(), reqLang(req)]
+      `INSERT INTO contact_messages (name, email, subject, message, lang, user_id)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [name.trim(), email.trim(), subject.trim(), message.trim(), reqLang(req), req.user?.id || null]
     );
 
     // Admin'e mail gönder
@@ -9416,7 +9446,23 @@ pool.query(`
 pool.query(`ALTER TABLE contact_messages
   ADD COLUMN IF NOT EXISTS reply_text TEXT, ADD COLUMN IF NOT EXISTS replied_at TIMESTAMPTZ,
   ADD COLUMN IF NOT EXISTS replied_by INT, ADD COLUMN IF NOT EXISTS reply_channel TEXT,
-  ADD COLUMN IF NOT EXISTS lang VARCHAR(5)`).catch(() => {});
+  ADD COLUMN IF NOT EXISTS lang VARCHAR(5), ADD COLUMN IF NOT EXISTS user_id INT`)
+  // Her cevap ayrı satır: kullanıcının "Mesajların" penceresi ve admin geçmişi buradan okur
+  // (contact_messages.reply_* yalnız son cevap). İlk kurulumda o güne kadarki cevaplar aktarılır.
+  .then(() => pool.query(`CREATE TABLE IF NOT EXISTS contact_replies (
+    id SERIAL PRIMARY KEY,
+    message_id INT NOT NULL REFERENCES contact_messages(id) ON DELETE CASCADE,
+    text TEXT NOT NULL,
+    replied_by INT,
+    channel TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`))
+  .then(() => pool.query('CREATE INDEX IF NOT EXISTS contact_replies_message ON contact_replies (message_id)'))
+  .then(() => pool.query(`INSERT INTO contact_replies (message_id, text, replied_by, channel, created_at)
+    SELECT cm.id, cm.reply_text, cm.replied_by, cm.reply_channel, cm.replied_at FROM contact_messages cm
+     WHERE cm.reply_text IS NOT NULL AND cm.reply_channel IS NOT NULL
+       AND NOT EXISTS (SELECT 1 FROM contact_replies r WHERE r.message_id = cm.id)`))
+  .catch((e) => console.error('contact_replies:', e.message));
 
 // source_ref sütunu yoksa ekle (eski kurulumlar için)
 pool.query(`ALTER TABLE activity_logs ADD COLUMN IF NOT EXISTS source_ref TEXT`).catch(() => {});

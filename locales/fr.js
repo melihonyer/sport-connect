@@ -619,6 +619,17 @@ export default {
     accountRestored: "Content de te revoir ! Ton compte a été rétabli.",
   },
 
+  myMessages: {
+    title: "Tes messages à Muuvlink",
+    rowHint: "Ce que tu nous as écrit et nos réponses",
+    you: "Ton message",
+    team: "Équipe Muuvlink",
+    waiting: "Nous avons bien reçu ton message et te répondrons au plus vite.",
+    empty: "Tu ne nous as pas encore envoyé de message.",
+    write: "Écris-nous",
+    loadError: "Impossible de charger les messages. Réessaie dans un instant.",
+  },
+
   notifPrefs: {
     title: "Préférences de notification",
     row: "Préférences de notification",

@@ -3899,19 +3899,20 @@ export default function AdminPanel() {
                         </p>
                         <p className="mt-3 text-xs text-slate-500">
                           {m.account_id
-                            ? <>Hesabı var: <span className="font-semibold text-slate-700">{m.account_name}</span> — cevap uygulama bildirimi + push olarak gider.</>
+                            ? <>Hesabı var: <span className="font-semibold text-slate-700">{m.account_name}</span> — cevap uygulama bildirimi + push olarak gider, "Mesajların"da da kalır.</>
                             : <>Muuvlink hesabı yok — cevap e-postayla gider.</>}
                         </p>
-                        {m.replied_at && (
-                          <div className="mt-3 bg-slate-50 rounded-xl p-3 border border-slate-100">
+                        {/* Her cevap ayrı (contact_replies); kullanıcı aynılarını "Mesajların"da görür. */}
+                        {(m.replies?.length ? m.replies : m.reply_channel ? [{ id: "last", text: m.reply_text, created_at: m.replied_at, channel: m.reply_channel }] : []).map(r => (
+                          <div key={r.id} className="mt-3 bg-slate-50 rounded-xl p-3 border border-slate-100">
                             <div className="text-xs text-slate-500 mb-1.5 flex items-center gap-1.5 flex-wrap">
                               <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
                               <span className="font-semibold text-green-700">Cevaplandı</span>
-                              <span>· {fmtFull(m.replied_at)}{m.reply_channel ? ` · ${REPLY_CHANNEL_TR[m.reply_channel] || m.reply_channel}` : ""}</span>
+                              <span>· {fmtFull(r.created_at)}{r.channel ? ` · ${REPLY_CHANNEL_TR[r.channel] || r.channel}` : ""}</span>
                             </div>
-                            <p className="text-sm text-slate-700 whitespace-pre-wrap">{m.reply_text}</p>
+                            <p className="text-sm text-slate-700 whitespace-pre-wrap">{r.text}</p>
                           </div>
-                        )}
+                        ))}
                         {replyDraft?.id === m.id && (
                           <div data-admin-form className="mt-4 bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
                             {replyDraft.step === "write" ? (

@@ -837,6 +837,18 @@ export const translations = {
     accountRestored:   { tr: "Tekrar hoş geldin! Hesabın geri getirildi.", en: "Welcome back! Your account has been restored.", de: "Willkommen zurück! Dein Konto wurde wiederhergestellt." },
   },
 
+  // ── MUUVLINK'E MESAJLARIN (iletişim formu + cevaplar) ──
+  myMessages: {
+    title:      { tr: "Muuvlink'e mesajların", en: "Your messages to Muuvlink", de: "Deine Nachrichten an Muuvlink" },
+    rowHint:    { tr: "Bize yazdıkların ve cevaplarımız", en: "What you wrote to us and our replies", de: "Was du uns geschrieben hast und unsere Antworten" },
+    you:        { tr: "Senin mesajın", en: "Your message", de: "Deine Nachricht" },
+    team:       { tr: "Muuvlink ekibi", en: "Muuvlink team", de: "Muuvlink-Team" },
+    waiting:    { tr: "Mesajını aldık, en kısa sürede cevap vereceğiz.", en: "We got your message and will reply as soon as we can.", de: "Wir haben deine Nachricht erhalten und antworten so bald wie möglich." },
+    empty:      { tr: "Henüz bize bir mesaj göndermedin.", en: "You haven't sent us a message yet.", de: "Du hast uns noch keine Nachricht geschickt." },
+    write:      { tr: "Bize yaz", en: "Write to us", de: "Schreib uns" },
+    loadError:  { tr: "Mesajlar yüklenemedi. Biraz sonra tekrar dene.", en: "Couldn't load your messages. Please try again shortly.", de: "Nachrichten konnten nicht geladen werden. Versuch es gleich noch einmal." },
+  },
+
   // ── NOTIFICATION PREFERENCES ────────────────────────────
   notifPrefs: {
     title:      { tr: "Bildirim Tercihleri",      en: "Notification Preferences", de: "Benachrichtigungen" },
