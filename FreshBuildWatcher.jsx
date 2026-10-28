@@ -27,6 +27,7 @@ const currentEntry = () => {
 
 export default function FreshBuildWatcher({ htmlPath = "/index.html", isBusy = () => false, label, cta, place = { top: "calc(env(safe-area-inset-top) + 76px)" } }) {
   const [stale, setStale] = useState(false);
+  const [reloading, setReloading] = useState(false); // "Yenile"ye basıldı: ikon döner, sayfa gidene kadar
   const busyRef = useRef(isBusy);
   busyRef.current = isBusy;
 
@@ -81,6 +82,14 @@ export default function FreshBuildWatcher({ htmlPath = "/index.html", isBusy = (
     };
   }, [htmlPath]);
 
+  // Önce dönen ikon çizilsin, sonra gidilsin; ağ yoksa sayfa gitmez, düğme 8 sn sonra geri gelir.
+  const reload = () => {
+    if (reloading) return;
+    setReloading(true);
+    setTimeout(() => { window.location.href = window.location.href; }, 60);
+    setTimeout(() => setReloading(false), 8000);
+  };
+
   if (!stale) return null;
   return (
     // Sitede üstte, menünün altında (altta çerez bildirimi ve uygulamanın alt menüsü var).
@@ -88,10 +97,9 @@ export default function FreshBuildWatcher({ htmlPath = "/index.html", isBusy = (
       style={{ ...place, zIndex: 1000001 }}>
       <div role="status" className="pointer-events-auto flex items-center gap-3 rounded-full bg-brand-600 pl-4 pr-1.5 py-1.5 text-white shadow-xl">
         <span className="text-xs font-semibold">{label}</span>
-        <button data-btn="pop-on-dark"
-          onClick={() => { window.location.href = window.location.href; }}
-          className="inline-flex items-center gap-1.5 rounded-full bg-pop-400 text-ink-900 px-3 py-1.5 text-xs font-bold">
-          <RefreshCw className="w-3.5 h-3.5" /> {cta}
+        <button data-btn="pop-on-dark" onClick={reload} disabled={reloading} aria-busy={reloading}
+          className="inline-flex items-center gap-1.5 rounded-full bg-pop-400 text-ink-900 px-3 py-1.5 text-xs font-bold disabled:cursor-wait">
+          <RefreshCw className={`w-3.5 h-3.5 ${reloading ? "animate-spin" : ""}`} /> {cta}
         </button>
       </div>
     </div>
