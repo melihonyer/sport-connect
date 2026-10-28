@@ -3365,11 +3365,11 @@ export default function Muuvlink() {
   // En üstteki açık pencereyi kapatır; Android geri tuşu ve masaüstünde Esc ikisi de kullanır.
   const closeTopOverlayRef = useRef(() => false);
   closeTopOverlayRef.current = () => {
-    if (myMsgs)            { setMyMsgs(null);             return true; } // en üstte (ayarların/bildirimlerin üstünde açılır)
     if (storySpec)         { setStorySpec(null);         return true; }
     if (legalModal)        { setLegalModal(null);        return true; }
     if (reportModal)       { setReportModal(null);       return true; }
     if (confirmModal)      { setConfirmModal(null);       return true; }
+    if (myMsgs)            { setMyMsgs(null);             return true; } // ayarların/bildirimlerin üstünde açılır
     if (showDeleteModal)   { setShowDeleteModal(false);   return true; }
     if (showManualLocation){ setShowManualLocation(false);return true; }
     if (showInviteModal)   { setShowInviteModal(false);   return true; }
@@ -4692,13 +4692,31 @@ export default function Muuvlink() {
   };
   openMyMessagesRef.current = openMyMessages;
 
+  // Kişi mesajını kendi listesinden kaldırır (admin'de kayıt kalır; yeni cevap gelirse geri döner).
+  const deleteMyMessage = (id) => {
+    showConfirm(t("moderation.confirmDeleteComment"), async () => {
+      try {
+        const res = await fetch(`${API_URL}/users/me/messages/${id}`, {
+          method: "DELETE", headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        });
+        if (!res.ok) throw new Error(String(res.status));
+        setMyMsgs((cur) => cur && { ...cur, items: cur.items.filter((m) => m.id !== id) });
+      } catch {
+        showToast(t("common.error"), "error");
+      }
+    }, { danger: true });
+  };
+
   // Mesajların penceresi. Düz fonksiyon (bileşen değil): üst-render'da sökülmesin.
   // Bildirimden açılınca o mesaja kaydırılır ve çerçevelenir.
   const renderMyMessages = () => !myMsgs ? null : (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 overflow-y-auto overscroll-contain"
-      style={{ zIndex: 1000001 }} onClick={() => setMyMsgs(null)}
+    // Kutu ekrana sığar (çentik/ana çubuk payı dahil), başlık sabit, liste içinde kayar.
+    // min-h-0 şart: yoksa flex çocuğu küçülmüyor, kutu ekrandan taşıp çentiğin altına giriyordu (iOS).
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center px-4 overscroll-contain"
+      style={{ zIndex: 1000001, paddingTop: "calc(env(safe-area-inset-top) + 1rem)", paddingBottom: "calc(env(safe-area-inset-bottom) + 1rem)" }}
+      onClick={() => setMyMsgs(null)}
       role="dialog" aria-modal="true" aria-label={t("myMessages.title")}>
-      <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl w-full max-w-lg my-auto flex flex-col max-h-[calc(100dvh-2rem)]">
+      <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-full min-h-0 overflow-hidden">
         <div className="flex items-center gap-3 p-5 border-b flex-shrink-0">
           <div className="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center flex-shrink-0">
             <MessageSquare className="w-5 h-5 text-white" />
@@ -4709,7 +4727,7 @@ export default function Muuvlink() {
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="overflow-y-auto overscroll-contain p-5 space-y-4">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-5 space-y-4">
           {myMsgs.loading ? (
             <div className="py-10 flex justify-center"><Loader2 className="w-6 h-6 text-brand-600 animate-spin" /></div>
           ) : myMsgs.error ? (
@@ -4729,9 +4747,15 @@ export default function Muuvlink() {
               <div key={m.id}
                 ref={focused ? (el) => { if (el && !myMsgsScrolledRef.current) { myMsgsScrolledRef.current = true; el.scrollIntoView({ block: "start" }); } } : undefined}
                 className={`rounded-2xl border p-4 ${focused ? "border-brand-300 ring-2 ring-brand-100" : "border-slate-200"}`}>
-                <div className="flex items-baseline justify-between gap-3 mb-3">
-                  <span className="font-semibold text-slate-900 min-w-0 [overflow-wrap:anywhere]">{m.subject}</span>
-                  <span className="text-xs text-slate-400 flex-shrink-0">{fmtDateShort(m.created_at)}</span>
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-slate-900 [overflow-wrap:anywhere]">{m.subject}</div>
+                    <div className="text-xs text-slate-400 mt-0.5">{fmtDateShort(m.created_at)}</div>
+                  </div>
+                  <button onClick={() => deleteMyMessage(m.id)} aria-label={t("common.delete")} title={t("common.delete")}
+                    className="w-11 h-11 -mt-2.5 -mr-2.5 flex items-center justify-center rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 flex-shrink-0">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
                 <div className="text-xs font-medium text-slate-500 mb-1">{t("myMessages.you")}</div>
                 <p className="text-sm text-slate-600 bg-slate-50 rounded-xl px-3 py-2.5 whitespace-pre-wrap [overflow-wrap:anywhere]">{m.message}</p>

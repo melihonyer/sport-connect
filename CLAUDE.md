@@ -689,6 +689,13 @@ kanal) → "Gönder". `POST /api/admin/contact/:id/reply`.
   onayladı). Kaynak `GET /api/users/me/messages` — bildirim değil, mesaj kaydı; silinen bildirim
   cevabı götürmez. `admin_reply` bildirimine/push'una dokununca da bu pencere açılır, o mesaja
   kaydırır. Kimin cevapladığı ve kanal kullanıcıya gönderilmez.
+- Pencere ekrana sığar, başlık sabit, liste içinde kayar: kök çentik/ana çubuk payı
+  (`env(safe-area-inset-*)`), kart `max-h-full`, liste `flex-1 min-h-0` — `min-h-0` olmadan
+  kutu ekrandan taşıp iPhone'da çentiğin altına giriyordu (28 Ekim 2026, Melih'in ekranı).
+- **Mesajı silme** (Melih): kartta çöp kutusu → onay (`moderation.confirmDeleteComment`) →
+  `DELETE /api/users/me/messages/:id`. Kayıt SİLİNMEZ, `contact_messages.user_hidden_at` yazılır:
+  kişinin listesinden çıkar, admin'de "kişi listesinden kaldırdı" görünür; panelden yeni cevap
+  verilirse `user_hidden_at` boşalır, mesaj listesine geri döner.
 - **Mesaj ↔ hesap:** giriş yapmış kişinin form mesajı `contact_messages.user_id` ile bağlanır
   (formda başka e-posta yazsa da); `user_id` yoksa (28 Ekim öncesi, misafir) e-posta eşleşmesi.
   Cevap ucu, admin listesi ve kullanıcı ucu aynı kuralı kullanır (`CONTACT_ACCOUNT_SQL`).

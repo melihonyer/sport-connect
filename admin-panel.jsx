@@ -3902,6 +3902,9 @@ export default function AdminPanel() {
                             ? <>Hesabı var: <span className="font-semibold text-slate-700">{m.account_name}</span> — cevap uygulama bildirimi + push olarak gider, "Mesajların"da da kalır.</>
                             : <>Muuvlink hesabı yok — cevap e-postayla gider.</>}
                         </p>
+                        {m.user_hidden_at && (
+                          <p className="mt-2 text-xs text-amber-700">Kişi bu mesajı kendi listesinden kaldırdı · {fmtFull(m.user_hidden_at)} (yeni cevap verilirse listesine geri döner)</p>
+                        )}
                         {/* Her cevap ayrı (contact_replies); kullanıcı aynılarını "Mesajların"da görür. */}
                         {(m.replies?.length ? m.replies : m.reply_channel ? [{ id: "last", text: m.reply_text, created_at: m.replied_at, channel: m.reply_channel }] : []).map(r => (
                           <div key={r.id} className="mt-3 bg-slate-50 rounded-xl p-3 border border-slate-100">

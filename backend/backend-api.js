@@ -7606,7 +7606,8 @@ app.post('/api/admin/contact/:id/reply', isAdmin, async (req, res) => {
     if (!cur) return res.status(404).json({ error: 'Mesaj bulunamadı.' });
     if (cur.replied_at && req.body?.again !== true) return res.status(409).json({ error: 'Bu mesaja zaten cevap verildi.' });
     const claim = await pool.query(
-      `UPDATE contact_messages SET replied_at = NOW(), replied_by = $2, reply_text = $3, reply_channel = NULL, is_read = true
+      `UPDATE contact_messages SET replied_at = NOW(), replied_by = $2, reply_text = $3, reply_channel = NULL, is_read = true,
+              user_hidden_at = NULL  -- kişi listesinden kaldırmışsa yeni cevapla geri gelir
         WHERE id = $1 AND replied_at::text IS NOT DISTINCT FROM $4`,
       [cur.id, req.user.id, text, cur.replied_raw]
     );
@@ -7670,7 +7671,8 @@ app.get('/api/users/me/messages', authenticateToken, async (req, res) => {
                           FROM contact_replies r WHERE r.message_id = cm.id), '[]'::json) AS replies
          FROM contact_messages cm
          JOIN users u ON u.id = $1
-        WHERE cm.user_id = u.id OR (cm.user_id IS NULL AND lower(cm.email) = lower(u.email))
+        WHERE (cm.user_id = u.id OR (cm.user_id IS NULL AND lower(cm.email) = lower(u.email)))
+          AND cm.user_hidden_at IS NULL
         ORDER BY cm.created_at DESC
         LIMIT 100`,
       [req.user.id]
@@ -7679,6 +7681,26 @@ app.get('/api/users/me/messages', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('My messages error:', error.message);
     res.status(500).json({ error: 'Mesajlar yüklenemedi.' });
+  }
+});
+
+// Kişi mesajını kendi listesinden kaldırır. Kayıt silinmez: admin'de "kişi listesinden kaldırdı"
+// diye görünür; panelden yeni cevap gelirse listeye geri döner.
+app.delete('/api/users/me/messages/:id', authenticateToken, async (req, res) => {
+  if (!/^\d+$/.test(req.params.id)) return res.status(404).json({ error: 'Mesaj bulunamadı.' });
+  try {
+    const r = await pool.query(
+      `UPDATE contact_messages cm SET user_hidden_at = NOW()
+         FROM users u
+        WHERE u.id = $1 AND cm.id = $2 AND cm.user_hidden_at IS NULL
+          AND (cm.user_id = u.id OR (cm.user_id IS NULL AND lower(cm.email) = lower(u.email)))`,
+      [req.user.id, req.params.id]
+    );
+    if (!r.rowCount) return res.status(404).json({ error: 'Mesaj bulunamadı.' });
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Hide my message error:', error.message);
+    res.status(500).json({ error: 'Mesaj silinemedi.' });
   }
 });
 
@@ -9446,7 +9468,8 @@ pool.query(`
 pool.query(`ALTER TABLE contact_messages
   ADD COLUMN IF NOT EXISTS reply_text TEXT, ADD COLUMN IF NOT EXISTS replied_at TIMESTAMPTZ,
   ADD COLUMN IF NOT EXISTS replied_by INT, ADD COLUMN IF NOT EXISTS reply_channel TEXT,
-  ADD COLUMN IF NOT EXISTS lang VARCHAR(5), ADD COLUMN IF NOT EXISTS user_id INT`)
+  ADD COLUMN IF NOT EXISTS lang VARCHAR(5), ADD COLUMN IF NOT EXISTS user_id INT,
+  ADD COLUMN IF NOT EXISTS user_hidden_at TIMESTAMPTZ`)
   // Her cevap ayrı satır: kullanıcının "Mesajların" penceresi ve admin geçmişi buradan okur
   // (contact_messages.reply_* yalnız son cevap). İlk kurulumda o güne kadarki cevaplar aktarılır.
   .then(() => pool.query(`CREATE TABLE IF NOT EXISTS contact_replies (
