@@ -9809,13 +9809,20 @@ Vergi Dairesi: Karşıyaka V.D. | VN: 7420957827<br/>
     }
   };
 
-  const REPORT_REASONS = [
-    { key: "inappropriate", label: { tr: "Uygunsuz içerik", en: "Inappropriate content", de: "Unangemessener Inhalt", el: "Ακατάλληλο περιεχόμενο", es: "Contenido inapropiado", fr: "Contenu inapproprié", it: "Contenuto inappropriato" } },
-    { key: "spam",          label: { tr: "Spam / reklam",    en: "Spam / advertising",    de: "Spam / Werbung",      el: "Spam / διαφήμιση", es: "Spam / publicidad", fr: "Spam / publicité", it: "Spam / pubblicità" } },
-    { key: "harassment",    label: { tr: "Taciz / zorbalık", en: "Harassment / bullying", de: "Belästigung",         el: "Παρενόχληση / εκφοβισμός", es: "Acoso / intimidación", fr: "Harcèlement", it: "Molestie / bullismo" } },
-    { key: "fake",          label: { tr: "Sahte profil",     en: "Fake profile",          de: "Falsches Profil",     el: "Ψεύτικο προφίλ", es: "Perfil falso", fr: "Faux profil", it: "Profilo falso" } },
-    { key: "other",         label: { tr: "Diğer",            en: "Other",                 de: "Sonstiges",           el: "Άλλο", es: "Otro", fr: "Autre", it: "Altro" } },
-  ];
+  // Şikayet nedenleri bildirilen şeye göre: etkinliğe "sahte profil" denmez. Kişi şikayeti yok, kişi engellenir.
+  const REPORT_REASON_LABELS = {
+    fake_event:    { tr: "Sahte ya da yanıltıcı etkinlik", en: "Fake or misleading event", de: "Gefälschte oder irreführende Veranstaltung", el: "Ψεύτικη ή παραπλανητική εκδήλωση", es: "Evento falso o engañoso", fr: "Événement faux ou trompeur", it: "Evento falso o ingannevole" },
+    spam:          { tr: "Spam / reklam",    en: "Spam / advertising",    de: "Spam / Werbung",      el: "Spam / διαφήμιση", es: "Spam / publicidad", fr: "Spam / publicité", it: "Spam / pubblicità" },
+    inappropriate: { tr: "Uygunsuz içerik", en: "Inappropriate content", de: "Unangemessener Inhalt", el: "Ακατάλληλο περιεχόμενο", es: "Contenido inapropiado", fr: "Contenu inapproprié", it: "Contenuto inappropriato" },
+    unsafe:        { tr: "Güvenlik endişesi", en: "Safety concern", de: "Sicherheitsbedenken", el: "Ανησυχία για την ασφάλεια", es: "Problema de seguridad", fr: "Problème de sécurité", it: "Problema di sicurezza" },
+    harassment:    { tr: "Taciz / zorbalık", en: "Harassment / bullying", de: "Belästigung",         el: "Παρενόχληση / εκφοβισμός", es: "Acoso / intimidación", fr: "Harcèlement", it: "Molestie / bullismo" },
+    other:         { tr: "Diğer",            en: "Other",                 de: "Sonstiges",           el: "Άλλο", es: "Otro", fr: "Autre", it: "Altro" },
+  };
+  const REPORT_REASONS_BY_TYPE = {
+    training:  ["fake_event", "spam", "inappropriate", "unsafe", "other"],
+    comment:   ["inappropriate", "spam", "harassment", "other"],
+    wall_post: ["inappropriate", "spam", "harassment", "other"],
+  };
 
   const ReportModal = () => {
     if (!reportModal) return null;
@@ -9831,11 +9838,11 @@ Vergi Dairesi: Karşıyaka V.D. | VN: 7420957827<br/>
           </div>
           <p className="text-sm text-slate-500 mb-4">{t("report.subtitle")}</p>
           <div className="space-y-2">
-            {REPORT_REASONS.map(r => (
-              <button key={r.key}
-                onClick={() => handleReport(reportModal.type, reportModal.id, r.key)}
+            {(REPORT_REASONS_BY_TYPE[reportModal.type] || REPORT_REASONS_BY_TYPE.comment).map(key => (
+              <button key={key}
+                onClick={() => handleReport(reportModal.type, reportModal.id, key)}
                 className="w-full text-left px-4 py-3 rounded-xl border border-slate-200 hover:border-red-300 hover:bg-red-50 text-sm text-slate-700 transition-colors">
-                {pickLang(r.label, lang)}
+                {pickLang(REPORT_REASON_LABELS[key], lang)}
               </button>
             ))}
           </div>

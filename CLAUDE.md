@@ -306,6 +306,10 @@ Kurallar:
   `moderation_blocks` (kim, alan, kelime; METİN SAKLANMAZ) → admin › Şikayetler üstünde "Süzgece
   takılanlar". Site: yorum/duvar kutusu reddedilince yazılan metin geri gelir. Yeni kullanıcı metni
   alanı eklenirse ona da `rejectIfObjectionable` konur.
+- **Şikayet nedenleri bildirilen şeye göre** (28 Ekim 2026, Melih): `REPORT_REASONS_BY_TYPE`. Etkinlik:
+  sahte/yanıltıcı etkinlik, spam, uygunsuz, güvenlik endişesi, diğer. Yorum/duvar: uygunsuz, spam,
+  taciz, diğer. "Sahte profil" kaldırıldı; kişi şikayeti YOK, kişi için "Engelle" yeterli (Melih).
+  Yeni neden kodu admin Şikayetler'deki etiket sözlüğüne de eklenir.
 - Degrade yok kuralı: fotoğraf üstündeki karartma katmanları (okunurluk için) ve admin'den gelen
   banner renkleri hariç. Branş adı her yerde `sportLabel()` ile görenin dilinde.
 

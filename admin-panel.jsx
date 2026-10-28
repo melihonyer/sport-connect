@@ -3832,7 +3832,7 @@ export default function AdminPanel() {
                     {!r.content_preview && (
                       <p className="text-xs text-slate-400 italic mt-1">İçerik silinmiş veya bulunamadı</p>
                     )}
-                    <p className="text-sm text-slate-600">Neden: <strong>{{ inappropriate: "Uygunsuz içerik", spam: "Spam/reklam", harassment: "Taciz/zorbalık", fake: "Sahte profil", other: "Diğer" }[r.reason] || r.reason}</strong></p>
+                    <p className="text-sm text-slate-600">Neden: <strong>{{ inappropriate: "Uygunsuz içerik", spam: "Spam/reklam", harassment: "Taciz/zorbalık", fake: "Sahte profil", fake_event: "Sahte / yanıltıcı etkinlik", unsafe: "Güvenlik endişesi", other: "Diğer" }[r.reason] || r.reason}</strong></p>
                     <p className="text-xs text-slate-400 mt-1">{new Date(r.created_at).toLocaleString("tr-TR")}</p>
                   </div>
                   <div className="flex flex-col gap-2 flex-shrink-0">
