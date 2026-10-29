@@ -9763,6 +9763,8 @@ function metaSignalsFrom(req) {
     platform: body._src || null,
     clientIp: req.ip || null,
     userAgent: req.get('user-agent') || null,
+    // iOS uygulamasında Apple takip izni (ATT) yoksa site bu başlığı ekler: olay gönderilmez.
+    noTrack: req.get('x-muuv-track') === 'off',
   };
 }
 
@@ -9772,7 +9774,7 @@ function metaSignalsFrom(req) {
  * etkilememeli.
  */
 async function sendMetaEvent(eventName, opts = {}) {
-  if (!META_ENABLED) return;
+  if (!META_ENABLED || opts.noTrack) return;
 
   const {
     eventId, userId, email, phone, firstName,

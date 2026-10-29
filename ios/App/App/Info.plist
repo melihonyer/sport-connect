@@ -34,6 +34,8 @@
 	<string>Muuvlink, yakınındaki antrenmanları göstermek için konumuna ihtiyaç duyuyor.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Muuvlink, profil fotoğrafı seçmek için fotoğraf kütüphanesine ihtiyaç duyuyor.</string>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>Muuvlink reklamlarının işe yarayıp yaramadığını ölçmek için kullanılır. İzin vermesen de uygulamanın tamamını kullanabilirsin.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

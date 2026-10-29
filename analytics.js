@@ -124,11 +124,60 @@ export function getAttribution() {
 /* Pixel                                                               */
 /* ------------------------------------------------------------------ */
 
+/*
+ * iOS uygulaması: Apple'ın takip izni (ATT, 29 Ekim 2026). İzin yoksa piksel yüklenmez ve
+ * sunucu Meta'ya olay göndermez (fetch sarmalı `X-Muuv-Track: off` ekler). İzin eklentisi
+ * yerel (`TrackingPlugin.swift`); eklentisi olmayan eski uygulama sürümünde izin yok sayılır.
+ * Web ve Android etkilenmez.
+ */
+let iosTrackingStatus = null; // authorized | denied | restricted | notDetermined | unavailable
+
+function trackingPlugin() {
+  const cap = window.Capacitor;
+  if (!cap?.isPluginAvailable?.('Tracking')) return null;
+  return cap.registerPlugin('Tracking');
+}
+
+/** Bu cihazda Meta'ya ölçüm gidebilir mi — iOS uygulamasında yalnız izin verildiyse. */
+export function metaTrackingAllowed() {
+  return getPlatform() !== 'ios' || iosTrackingStatus === 'authorized';
+}
+
+async function readIosTracking(ask) {
+  const plugin = trackingPlugin();
+  if (!plugin) { iosTrackingStatus = 'unavailable'; return; }
+  try {
+    let { status } = await plugin.getStatus();
+    if (ask && status === 'notDetermined') ({ status } = await plugin.requestPermission());
+    iosTrackingStatus = status;
+  } catch {
+    iosTrackingStatus = 'unavailable';
+  }
+  if (iosTrackingStatus === 'authorized') loadPixel();
+}
+
+/**
+ * iOS uygulamasında izin penceresini açar (karar verilmediyse). Bildirim izni penceresinden
+ * SONRA çağrılır: iki sistem penceresi üst üste gelince ATT penceresi görünmeden düşebiliyor.
+ */
+export function requestIosTracking() {
+  if (!IS_ENABLED || typeof window === 'undefined' || getPlatform() !== 'ios') return;
+  readIosTracking(true);
+}
+
 export function initAnalytics() {
   if (!IS_ENABLED || initialized || typeof window === 'undefined') return;
   initialized = true;
 
   captureAttribution();
+  if (getPlatform() === 'ios') { readIosTracking(false); return; }
+  loadPixel();
+}
+
+let pixelLoaded = false;
+function loadPixel() {
+  if (pixelLoaded) return;
+  pixelLoaded = true;
 
   /* Meta'nın resmi pixel yükleyicisi — fbq kuyruğu script inmeden de çalışır. */
   /* eslint-disable */

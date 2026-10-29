@@ -946,6 +946,22 @@ marka adı), her bölümde tek CTA, fiyat/"2 hafta"/birebir koçluk/saat markas�
   önizleme sekmesinin `localStorage.muuv_vid`'iyle `DELETE FROM training_views
   WHERE viewer = 'v:<vid>'`.
 
+## iOS takip izni (ATT, 29 Ekim 2026, Melih seçti)
+
+Meta pikseli iOS uygulamasında Apple izni olmadan çalışıyordu; Apple notunda "takip yok, ATT
+gerekmiyor" yazıyordu. Seçim: ATT penceresi (pikseli kapatmak değil).
+- `analytics.js`: iOS uygulamasında (`getPlatform() === 'ios'`) piksel yalnız izin `authorized` ise
+  yüklenir. `metaTrackingAllowed()` false iken fetch sarmalı her API isteğine `X-Muuv-Track: off`
+  ekler; backend `metaSignalsFrom` → `noTrack` → `sendMetaEvent` göndermez (CAPI de takip sayılır).
+  Web ve Android değişmedi.
+- İzin penceresi `requestIosTracking()`: bildirim izni penceresi kapandıktan SONRA (iki sistem
+  penceresi üst üste gelince ATT düşebiliyor).
+- Yerel eklenti `ios/App/App/TrackingPlugin.swift` (jsName `Tracking`), `MainViewController.swift`
+  köprüye kaydeder; `Main.storyboard` sınıfı `MainViewController`. Üçüncü taraf eklenti yok.
+  `Info.plist` `NSUserTrackingUsageDescription`.
+- Eklentisi olmayan eski uygulama sürümünde izin yok sayılır → 1.2.3 yayınlanana kadar iOS
+  uygulamasından Meta'ya hiçbir şey gitmez (JS OTA ile 29 Ekim'de yayına girdi).
+
 ## Mobil uygulama
 
 Capacitor `server.url = https://muuvlink.app?src=app` → JS deploy ile OTA gider,

@@ -6,7 +6,7 @@ import BlurReveal from "./BlurReveal.jsx";
 import { StoreButton } from "./StoreButtons.jsx";
 import { SocialIcons } from "./SocialLinks.jsx";
 import { TaSessionNote, TaDiscoverCard, TaHomeBand, TaCoachTip, TaEmptyState, TaRaceCard, TaFooterStrip, taRaceGuide } from "./TrainingAgentsPromo.jsx";
-import { MetaEvents, newEventId, getMatchSignals, getAttribution, trackPageView, umamiTrack } from "./analytics.js";
+import { MetaEvents, newEventId, getMatchSignals, getAttribution, trackPageView, umamiTrack, metaTrackingAllowed, requestIosTracking } from "./analytics.js";
 import { reportPage } from "./threshold-page.js";
 import {
   MapPin,
@@ -191,6 +191,8 @@ if (typeof window !== "undefined" && !window.__muuvLangFetch) {
       const l = document.documentElement.lang || localStorage.getItem("muuvlang") || "tr";
       const headers = new Headers(init.headers || (typeof input === "string" ? undefined : input.headers));
       if (!headers.has("X-Muuv-Lang")) headers.set("X-Muuv-Lang", l);
+      // iOS uygulamasında takip izni yoksa sunucu Meta'ya olay göndermez (ATT, analytics.js).
+      if (!metaTrackingAllowed()) headers.set("X-Muuv-Track", "off");
       // Rastgele tarayıcı kimliği: girişsiz ziyaretçi etkinlik görüntülenmesinde
       // bir kez sayılsın diye (kişisel veri değil, yalnız bu tarayıcıda durur).
       try {
@@ -2807,6 +2809,7 @@ export default function Muuvlink() {
           await PushNotifications.register();
         }
       } catch (_) {}
+      requestIosTracking(); // bildirim izni penceresi kapandıktan sonra
     };
     initPush();
   }, []);
