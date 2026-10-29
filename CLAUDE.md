@@ -962,6 +962,10 @@ gerekmiyor" yazıyordu. Seçim: ATT penceresi (pikseli kapatmak değil).
 - Eklenti uygulama ETKİN değilken (konum/bildirim penceresi açıkken) sormaz, `didBecomeActive`'i bekler;
   pencere yutulup `notDetermined` dönerse 3 kez yeniden sorar. İlk sürümde konum penceresi ATT'yi
   yutuyordu (simülatörde görüldü). 29 Ekim simülatörde: konum → bildirim → ATT sırayla çıktı.
+- **Açıklama ekranı** (`renderAttIntro`, `attIntro.*` 7 dil, Melih onayladı): bildirim izninden sonra,
+  izin henüz sorulmadıysa (`iosTrackingUndecided`) tam ekran; TEK düğme "Devam" → Apple penceresi.
+  Apple kuralı: "Şimdi değil"/kapatma/Esc YOK (closeTopOverlayRef'e bilerek eklenmedi), ödül yok,
+  Apple penceresini taklit etmez. Eski sürümde (eklenti yok) hiç görünmez.
 - Eklentisi olmayan eski uygulama sürümünde izin yok sayılır → 1.2.3 yayınlanana kadar iOS
   uygulamasından Meta'ya hiçbir şey gitmez (JS OTA ile 29 Ekim'de yayına girdi).
 

@@ -847,6 +847,12 @@ export default {
     body: "Questo evento è organizzato dalla squadra {team}. Se entri nella squadra, riceverai una notifica ogni volta che si apre un nuovo evento.",
     later: "Non ora",
   },
+  attIntro: {
+    title: "Ci aiuti a misurare le nostre pubblicità?",
+    body1: "Pubblicizziamo Muuvlink su Instagram e Facebook per farlo conoscere a più sportivi. Se lo consenti, condividiamo con Meta azioni come l'iscrizione o la partecipazione a un evento, così vediamo quali annunci funzionano.",
+    body2: "Puoi usare tutta l'app anche senza consenso. Puoi cambiare la tua scelta più tardi nelle Impostazioni dell'iPhone.",
+    cta: "Continua",
+  },
   cookie: {
     title: "Informativa cookie",
     text: "Usiamo un'archiviazione essenziale per mantenerti connesso. Funzionano anche il pixel di Meta, per misurare i risultati delle nostre pubblicità, e statistiche di visita senza cookie.",

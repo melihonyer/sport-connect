@@ -1199,6 +1199,16 @@ export const translations = {
                de: "Dieses Event organisiert das Team {team}. Wenn du beitrittst, bekommst du eine Benachrichtigung, sobald ein neues Event startet." },
     later:   { tr: "Şimdi değil",                       en: "Not now",                           de: "Jetzt nicht"                  },
   },
+  attIntro: {
+    title: { tr: "Reklamlarımızı ölçmemize yardım eder misin?", en: "Help us measure our ads?", de: "Hilfst du uns, unsere Werbung zu messen?" },
+    body1: { tr: "Muuvlink'i daha çok sporcuya ulaştırmak için Instagram ve Facebook'ta reklam veriyoruz. İzin verirsen kayıt olmak, etkinliğe katılmak gibi işlemlerini Meta'ya bildiririz; böylece hangi reklamın işe yaradığını görürüz.",
+             en: "We advertise on Instagram and Facebook to bring Muuvlink to more athletes. If you allow it, we share actions like signing up or joining an event with Meta, so we can see which ads work.",
+             de: "Wir werben auf Instagram und Facebook, damit mehr Sportler Muuvlink finden. Wenn du es erlaubst, teilen wir Aktionen wie die Registrierung oder die Teilnahme an einem Event mit Meta; so sehen wir, welche Anzeigen funktionieren." },
+    body2: { tr: "İzin vermesen de uygulamanın tamamını kullanabilirsin. Kararını sonra iPhone Ayarlar'ından değiştirebilirsin.",
+             en: "You can use the whole app either way. You can change your choice later in iPhone Settings.",
+             de: "Du kannst die ganze App auch ohne Erlaubnis nutzen. Deine Entscheidung kannst du später in den iPhone-Einstellungen ändern." },
+    cta:   { tr: "Devam", en: "Continue", de: "Weiter" },
+  },
   cookie: {
     title:          { tr: "Çerez Bildirimi",              en: "Cookie Notice",           de: "Cookie-Hinweis"          },
     text:           { tr: "Oturumunu açık tutmak için zorunlu depolama kullanıyoruz. Reklamlarımızın sonucunu ölçmek için Meta pikseli, ziyaret sayısı için çerezsiz istatistik de çalışır.",

@@ -6,7 +6,7 @@ import BlurReveal from "./BlurReveal.jsx";
 import { StoreButton } from "./StoreButtons.jsx";
 import { SocialIcons } from "./SocialLinks.jsx";
 import { TaSessionNote, TaDiscoverCard, TaHomeBand, TaCoachTip, TaEmptyState, TaRaceCard, TaFooterStrip, taRaceGuide } from "./TrainingAgentsPromo.jsx";
-import { MetaEvents, newEventId, getMatchSignals, getAttribution, trackPageView, umamiTrack, metaTrackingAllowed, requestIosTracking } from "./analytics.js";
+import { MetaEvents, newEventId, getMatchSignals, getAttribution, trackPageView, umamiTrack, metaTrackingAllowed, requestIosTracking, iosTrackingUndecided } from "./analytics.js";
 import { reportPage } from "./threshold-page.js";
 import {
   MapPin,
@@ -68,6 +68,7 @@ import {
   Timer,
   SatelliteDish,
   Route,
+  ChartColumn,
 } from "lucide-react";
 import SharedLocationPicker from "./LocationPicker";
 import RouteField from "./RouteField";
@@ -2356,6 +2357,7 @@ export default function Muuvlink() {
   // Takım dışından etkinliğe katılana bir kez takım önerisi. "Şimdi değil" denen takım
   // bu tarayıcıda bir daha önerilmez (muuv_team_suggest_off).
   const [teamSuggest, setTeamSuggest] = useState(null);
+  const [attIntro, setAttIntro] = useState(false); // iOS takip izni öncesi açıklama ekranı
   // "Etkinlik rotası" duyurusu: cihaz başına bir kez, 25 Kasım 2026'ya kadar (RouteAnnounce.jsx)
   const [routeAnnounce, setRouteAnnounce] = useState(false);
   const [showManualLocation, setShowManualLocation] = useState(false);
@@ -2809,7 +2811,8 @@ export default function Muuvlink() {
           await PushNotifications.register();
         }
       } catch (_) {}
-      requestIosTracking(); // bildirim izni penceresi kapandıktan sonra
+      // Takip izni: önce kendi açıklama ekranımız, "Devam" Apple'ın penceresini açar (bildirim izninden sonra).
+      if (await iosTrackingUndecided()) setAttIntro(true);
     };
     initPush();
   }, []);
@@ -9104,6 +9107,32 @@ export default function Muuvlink() {
     setTeamSuggest(null);
   };
 
+  // iOS takip izni (ATT) öncesi açıklama. Apple kuralı: TEK düğme ve o düğme Apple'ın penceresini
+  // açar — "Şimdi değil"/kapatma yok, Esc/geri ile kapanmaz (closeTopOverlayRef'e eklenmedi), ödül yok,
+  // Apple penceresini taklit etmez. Metin Melih onaylı (29 Ekim 2026).
+  const renderAttIntro = () => {
+    if (!attIntro) return null;
+    return (
+      <div className="fixed inset-0 bg-white flex flex-col items-center justify-center overflow-y-auto overscroll-contain px-6"
+        style={{ zIndex: 1000400, paddingTop: "env(safe-area-inset-top)", paddingBottom: "max(24px, env(safe-area-inset-bottom))" }}
+        role="dialog" aria-modal="true" aria-label={t("attIntro.title")}>
+        <div className="max-w-sm w-full my-auto">
+          <div className="w-14 h-14 rounded-2xl bg-brand-50 flex items-center justify-center">
+            <ChartColumn className="w-7 h-7 text-logo-teal" aria-hidden="true" />
+          </div>
+          <h2 className="mt-6 text-2xl font-bold text-brand-600 leading-tight">{t("attIntro.title")}</h2>
+          <p className="mt-4 text-[15px] text-slate-700 leading-relaxed">{t("attIntro.body1")}</p>
+          <p className="mt-3 text-[15px] text-slate-500 leading-relaxed">{t("attIntro.body2")}</p>
+          <button data-btn="solid"
+            onClick={() => { setAttIntro(false); requestIosTracking(); }}
+            className="mt-8 w-full py-3.5 rounded-xl font-semibold text-white bg-brand-600">
+            {t("attIntro.cta")}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   const renderTeamSuggest = () => {
     if (!teamSuggest) return null;
     const s = teamSuggest;
@@ -10255,6 +10284,7 @@ Vergi Dairesi: Karşıyaka V.D. | VN: 7420957827<br/>
       {showProfileEdit && <ProfileEditModal />}
       {(showInviteModal || inviteTrainingId) && <InviteModal />}
       {renderTeamSuggest()}
+      {renderAttIntro()}
       {routeAnnounce && (
         <RouteAnnounce
           isGuest={!user}

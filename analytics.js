@@ -156,6 +156,14 @@ async function readIosTracking(ask) {
   if (iosTrackingStatus === 'authorized') loadPixel();
 }
 
+/** iOS uygulamasında takip izni henüz sorulmadı mı — açıklama ekranı yalnız o zaman gösterilir. */
+export async function iosTrackingUndecided() {
+  if (!IS_ENABLED || typeof window === 'undefined' || getPlatform() !== 'ios') return false;
+  const plugin = trackingPlugin();
+  if (!plugin) return false;
+  try { return (await plugin.getStatus()).status === 'notDetermined'; } catch { return false; }
+}
+
 /**
  * iOS uygulamasında izin penceresini açar (karar verilmediyse). Bildirim izni penceresinden
  * SONRA çağrılır: iki sistem penceresi üst üste gelince ATT penceresi görünmeden düşebiliyor.
