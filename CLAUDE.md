@@ -975,6 +975,10 @@ gerekmiyor" yazıyordu. Seçim: ATT penceresi (pikseli kapatmak değil).
   kimliğe bağlı). Meta'ya giden alan değişirse etiket de değişir. Dikkat: mevcut türü düzenlerken
   "linked" sorusu varsayılan "No" geliyor — her adımda Yes seçildiği kontrol edilir.
 - 1.2.3 (14): "Neler yeni" tr+en, Apple notunda PRIVACY UPDATE paragrafı (eski "ATT not applicable" silindi).
+- **Yaş sınırı 18+** (29 Ekim 2026): Apple'ın yeni anketi (sosyal medya/mesajlaşma/reklam = evet) 13+
+  hesapladı; kullanım koşulları "18 yaşını doldurmuş olmak" dediği için 18+ seçildi (koşullardaki
+  alt sınırla aynı olmak zorunda). Koşullar değişirse yaş sınırı da değişir.
+- 1.2.3 incelemeye gönderildi: 29 Ekim 2026 12:06 (Waiting for Review), otomatik yayın açık.
 - Eklentisi olmayan eski uygulama sürümünde izin yok sayılır → 1.2.3 yayınlanana kadar iOS
   uygulamasından Meta'ya hiçbir şey gitmez (JS OTA ile 29 Ekim'de yayına girdi).
 
