@@ -959,6 +959,9 @@ gerekmiyor" yazıyordu. Seçim: ATT penceresi (pikseli kapatmak değil).
 - Yerel eklenti `ios/App/App/TrackingPlugin.swift` (jsName `Tracking`), `MainViewController.swift`
   köprüye kaydeder; `Main.storyboard` sınıfı `MainViewController`. Üçüncü taraf eklenti yok.
   `Info.plist` `NSUserTrackingUsageDescription`.
+- Eklenti uygulama ETKİN değilken (konum/bildirim penceresi açıkken) sormaz, `didBecomeActive`'i bekler;
+  pencere yutulup `notDetermined` dönerse 3 kez yeniden sorar. İlk sürümde konum penceresi ATT'yi
+  yutuyordu (simülatörde görüldü). 29 Ekim simülatörde: konum → bildirim → ATT sırayla çıktı.
 - Eklentisi olmayan eski uygulama sürümünde izin yok sayılır → 1.2.3 yayınlanana kadar iOS
   uygulamasından Meta'ya hiçbir şey gitmez (JS OTA ile 29 Ekim'de yayına girdi).
 

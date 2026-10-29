@@ -1,3 +1,4 @@
+import UIKit
 import Capacitor
 import AppTrackingTransparency
 
@@ -27,10 +28,28 @@ public class TrackingPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func requestPermission(_ call: CAPPluginCall) {
-        DispatchQueue.main.async {
-            ATTrackingManager.requestTrackingAuthorization { status in
-                call.resolve(["status": self.statusName(status)])
+        DispatchQueue.main.async { self.ask(call, retries: 3) }
+    }
+
+    /// Apple'ın penceresi yalnız uygulama ETKİNKEN görünür. Konum/bildirim izni penceresi açıkken
+    /// sorulursa pencere çıkmadan "notDetermined" döner — o yüzden etkinleşmeyi bekleyip yeniden sorar.
+    private func ask(_ call: CAPPluginCall, retries: Int) {
+        guard UIApplication.shared.applicationState == .active else {
+            var token: NSObjectProtocol?
+            token = NotificationCenter.default.addObserver(
+                forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main
+            ) { _ in
+                if let token = token { NotificationCenter.default.removeObserver(token) }
+                self.ask(call, retries: retries)
             }
+            return
+        }
+        ATTrackingManager.requestTrackingAuthorization { status in
+            if status == .notDetermined && retries > 0 {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) { self.ask(call, retries: retries - 1) }
+                return
+            }
+            call.resolve(["status": self.statusName(status)])
         }
     }
 }
