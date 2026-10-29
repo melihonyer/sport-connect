@@ -952,6 +952,19 @@ Capacitor `server.url = https://muuvlink.app?src=app` → JS deploy ile OTA gide
 mağaza güncellemesi gerekmez. Native tarafı değiştiyse `npm run cap:sync`.
 Tarayıcıda `?src=app` ile native kod yolu test edilebilir.
 
+## App Store inceleme hesabı (29 Ekim 2026)
+
+28 Ekim'de Apple incelemecisi Melih'in hesabıyla girip MUUVLINK'in etkinliğine (200) "sahte profil"
+şikayeti yaptı (IP AS714 Apple). Melih'in hesabı 15 takımda sahip/kaptan; inceleme gerçek kayıtlara
+dokunuyordu. Ayrı hesap açıldı:
+- **App Review** (id 446, `muuvlinkapp+review@gmail.com`, şifreyi Melih bilir), `lang = en`.
+- Gizli **App Review Demo Team** (id 77): MUUVLINK (60) sahibi (tetikleyici rolü `editor` yapar),
+  446 üye. Etkinlikler 221 "Demo Morning Run" (6 Ara 2026) ve 222 "Demo Sunset Ride" (13 Ara 2026),
+  ikisi de herkese kapalı; MUUVLINK'in bir duvar gönderisi ve 221'de bir yorumu var — incelemeci
+  şikayet/engelle'yi bunlarda dener. Doğrudan DB'ye yazıldı (Meta dönüşümü, bildirim gitmesin).
+- **Etkinlik tarihleri geçmeden** (her yeni iOS gönderiminden önce) ileri tarihe alınır.
+- Herkese açık listede, site haritasında görünmediği doğrulandı.
+
 ## Yazışma
 
 Commit mesajları ve kullanıcıya cevaplar Türkçe.
