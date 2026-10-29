@@ -970,6 +970,11 @@ gerekmiyor" yazıyordu. Seçim: ATT penceresi (pikseli kapatmak değil).
   izin henüz sorulmadıysa (`iosTrackingUndecided`) tam ekran; TEK düğme "Devam" → Apple penceresi.
   Apple kuralı: "Şimdi değil"/kapatma/Esc YOK (closeTopOverlayRef'e bilerek eklenmedi), ödül yok,
   Apple penceresini taklit etmez. Eski sürümde (eklenti yok) hiç görünmez.
+- **App Store gizlilik etiketi** (29 Ekim 2026, Melih onayladı, yayında): "Data Used to Track You" = Name,
+  Email, Phone, User ID, Coarse Location, Product Interaction (amaç: Developer's Advertising + Analytics,
+  kimliğe bağlı). Meta'ya giden alan değişirse etiket de değişir. Dikkat: mevcut türü düzenlerken
+  "linked" sorusu varsayılan "No" geliyor — her adımda Yes seçildiği kontrol edilir.
+- 1.2.3 (14): "Neler yeni" tr+en, Apple notunda PRIVACY UPDATE paragrafı (eski "ATT not applicable" silindi).
 - Eklentisi olmayan eski uygulama sürümünde izin yok sayılır → 1.2.3 yayınlanana kadar iOS
   uygulamasından Meta'ya hiçbir şey gitmez (JS OTA ile 29 Ekim'de yayına girdi).
 
@@ -994,7 +999,8 @@ dokunuyordu. Ayrı hesap açıldı:
 - App Store Connect › App Review Information (29 Ekim 2026, 1.2.2 üzerinde, Melih kaydetti): kullanıcı
   adı bu hesap, notun başında "DEMO ACCOUNT" paragrafı. **Notun sonundaki "UPDATE" paragrafı ("takip
   yok, ATT gerekmiyor") Meta pikseli yüzünden artık doğru değil** — sonraki iOS gönderiminden önce
-  Melih'le karar: paragraf düzeltilip ATT eklenir ya da uygulamada piksel kapatılır.
+  Melih'le karar: paragraf düzeltilip ATT eklenir ya da uygulamada piksel kapatılır. → ATT seçildi,
+  1.2.3'te paragraf değiştirildi (aşağıda "iOS takip izni").
 - **Sessiz hesap** (`QUIET_ACTOR_EMAILS`, backend-api.js): bu hesabın isteğinde `createNotif` ve
   `sendEmail` başka KAYITLI kişiye gitmez (kendisi ve platform adminleri hariç; kayıtsız adrese gider).
   `authenticateToken`/`optionalAuth` `quietActor.run(...)` ile açar — `enterWith` KULLANILMAZ (nginx'in
