@@ -964,6 +964,10 @@ dokunuyordu. Ayrı hesap açıldı:
   şikayet/engelle'yi bunlarda dener. Doğrudan DB'ye yazıldı (Meta dönüşümü, bildirim gitmesin).
 - **Etkinlik tarihleri geçmeden** (her yeni iOS gönderiminden önce) ileri tarihe alınır.
 - Herkese açık listede, site haritasında görünmediği doğrulandı.
+- App Store Connect › App Review Information (29 Ekim 2026, 1.2.2 üzerinde, Melih kaydetti): kullanıcı
+  adı bu hesap, notun başında "DEMO ACCOUNT" paragrafı. **Notun sonundaki "UPDATE" paragrafı ("takip
+  yok, ATT gerekmiyor") Meta pikseli yüzünden artık doğru değil** — sonraki iOS gönderiminden önce
+  Melih'le karar: paragraf düzeltilip ATT eklenir ya da uygulamada piksel kapatılır.
 - **Sessiz hesap** (`QUIET_ACTOR_EMAILS`, backend-api.js): bu hesabın isteğinde `createNotif` ve
   `sendEmail` başka KAYITLI kişiye gitmez (kendisi ve platform adminleri hariç; kayıtsız adrese gider).
   `authenticateToken`/`optionalAuth` `quietActor.run(...)` ile açar — `enterWith` KULLANILMAZ (nginx'in
