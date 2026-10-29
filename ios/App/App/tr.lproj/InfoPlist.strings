@@ -1,0 +1,6 @@
+/* Türkçe izin metinleri — Info.plist ile aynı tutulur. */
+"NSUserTrackingUsageDescription" = "Muuvlink reklamlarının işe yarayıp yaramadığını ölçmek için kullanılır. İzin vermesen de uygulamanın tamamını kullanabilirsin.";
+"NSLocationWhenInUseUsageDescription" = "Muuvlink, yakınındaki antrenmanları göstermek için konumuna ihtiyaç duyuyor.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Muuvlink, yakınındaki antrenmanları göstermek için konumuna ihtiyaç duyuyor.";
+"NSCameraUsageDescription" = "Muuvlink, profil fotoğrafı yüklemek için kameraya ihtiyaç duyuyor.";
+"NSPhotoLibraryUsageDescription" = "Muuvlink, profil fotoğrafı seçmek için fotoğraf kütüphanesine ihtiyaç duyuyor.";

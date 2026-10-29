@@ -1,0 +1,6 @@
+/* İngilizce izin metinleri (Info.plist'teki Türkçe metinlerin karşılığı). */
+"NSUserTrackingUsageDescription" = "Used to measure whether Muuvlink's ads work. You can use the whole app even if you don't allow it.";
+"NSLocationWhenInUseUsageDescription" = "Muuvlink uses your location to show events near you.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Muuvlink uses your location to show events near you.";
+"NSCameraUsageDescription" = "Muuvlink needs camera access to take a profile photo.";
+"NSPhotoLibraryUsageDescription" = "Muuvlink needs photo library access to choose a profile photo.";

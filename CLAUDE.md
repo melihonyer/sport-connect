@@ -959,6 +959,10 @@ gerekmiyor" yazıyordu. Seçim: ATT penceresi (pikseli kapatmak değil).
 - Yerel eklenti `ios/App/App/TrackingPlugin.swift` (jsName `Tracking`), `MainViewController.swift`
   köprüye kaydeder; `Main.storyboard` sınıfı `MainViewController`. Üçüncü taraf eklenti yok.
   `Info.plist` `NSUserTrackingUsageDescription`.
+- İzin cümleleri (takip, konum, kamera, fotoğraf) `en.lproj` ve `tr.lproj` `InfoPlist.strings`'te;
+  Info.plist'teki Türkçe metin `tr.lproj` ile AYNI tutulur. Başka dildeki telefonda geliştirme bölgesi
+  (tr) gösterilir. Simülatörde test: cevapsız bırakılan ATT penceresi yeniden kurulumdan sonra da
+  kendiliğinden geri gelir (eski metinle) — her denemede pencereyi cevapla.
 - Eklenti uygulama ETKİN değilken (konum/bildirim penceresi açıkken) sormaz, `didBecomeActive`'i bekler;
   pencere yutulup `notDetermined` dönerse 3 kez yeniden sorar. İlk sürümde konum penceresi ATT'yi
   yutuyordu (simülatörde görüldü). 29 Ekim simülatörde: konum → bildirim → ATT sırayla çıktı.
