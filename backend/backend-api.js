@@ -50,6 +50,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { AsyncLocalStorage } = require('async_hooks');
 const crypto = require('crypto');
 const { Pool } = require('pg');
 const { createClient } = require('@supabase/supabase-js');
@@ -897,9 +898,28 @@ const logNotif = (kind, userId, status, push = {}) =>
     [kind || 'other', userId || null, status, Math.min(push.ok || 0, 32000), Math.min(push.fail || 0, 32000)])
     .catch((e) => console.error('notif_log yazma:', e.message));
 
+// App Store inceleme hesabı (29 Ekim 2026): yaptığı işlem başka kişilere uygulama bildirimi,
+// push ya da e-posta göndermez. Kendisine ve platform adminlerine gider; kayıtlı olmayan adrese
+// (kendi e-postasına davet) gider. Kapsam isteğe bağlı: authenticateToken/optionalAuth `run` ile açar.
+const QUIET_ACTOR_EMAILS = new Set(['muuvlinkapp+review@gmail.com']);
+const quietActor = new AsyncLocalStorage();
+const isQuietUser = (user) => !!user && QUIET_ACTOR_EMAILS.has(String(user.email || '').toLowerCase());
+async function quietBlocks(recipientId, email = null) {
+  const q = quietActor.getStore();
+  if (!q) return false;
+  try {
+    const r = recipientId
+      ? await pool.query('SELECT id, is_admin FROM users WHERE id = $1', [recipientId])
+      : await pool.query('SELECT id, is_admin FROM users WHERE lower(email) = lower($1)', [email]);
+    const u = r.rows[0];
+    return !!u && u.id !== q.id && u.is_admin !== true;
+  } catch { return true; }
+}
+
 // pushBody: push'a giden kısa metin (verilmezse message). Uzun metin push sınırını aşmasın.
 async function createNotif(userId, { title, message, build = null, type, refId = null, url = null, pushBody = null }) {
   try {
+    if (await quietBlocks(userId)) return null; // inceleme hesabının işlemi
     const key = NOTIF_TYPE_TO_KEY[type];
     const u = await getUserNotifInfo(userId);
     if (key && !prefAllows(u.prefs, key, 'app')) { logNotif(type, userId, 'skipped'); return null; } // uygulama bildirimi kapalı
@@ -962,10 +982,11 @@ async function sendEmail(opts) {
   const r = await sendEmailRaw(opts);
   // Tür: açıkça verilen `kind`, yoksa tercih anahtarı (event_new, comment…).
   logEmail(opts.kind || opts.prefKey, opts.userId,
-    r?.skipped ? (r.skipReason === 'user' ? 'skip_user' : 'skip_default') : r?.mocked ? 'mocked' : r ? 'sent' : 'failed', r?.id || null);
+    r?.skipped ? (r.skipReason === 'user' ? 'skip_user' : r.skipReason === 'quiet' ? 'skip_quiet' : 'skip_default') : r?.mocked ? 'mocked' : r ? 'sent' : 'failed', r?.id || null);
   return r;
 }
 async function sendEmailRaw({ to, subject, html, build = null, fallbackLang = 'tr', prefKey = null, userId = null }) {
+  if (await quietBlocks(userId, to)) return { skipped: true, skipReason: 'quiet' };
   let recipient = null;
   if (prefKey || build) {
     try {
@@ -3033,6 +3054,7 @@ const authenticateToken = (req, res, next) => {
     }
     req.user = user;
     reportSignedIn(user, req);
+    if (isQuietUser(user)) return quietActor.run({ id: user.id }, next);
     next();
   });
 };
@@ -3044,6 +3066,7 @@ const optionalAuth = (req, res, next) => {
   if (!token) return next();
   jwt.verify(token, JWT_SECRET, (err, user) => {
     if (!err) { req.user = user; reportSignedIn(user, req); }
+    if (!err && isQuietUser(user)) return quietActor.run({ id: user.id }, next);
     next();
   });
 };

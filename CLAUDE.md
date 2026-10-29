@@ -964,6 +964,11 @@ dokunuyordu. Ayrı hesap açıldı:
   şikayet/engelle'yi bunlarda dener. Doğrudan DB'ye yazıldı (Meta dönüşümü, bildirim gitmesin).
 - **Etkinlik tarihleri geçmeden** (her yeni iOS gönderiminden önce) ileri tarihe alınır.
 - Herkese açık listede, site haritasında görünmediği doğrulandı.
+- **Sessiz hesap** (`QUIET_ACTOR_EMAILS`, backend-api.js): bu hesabın isteğinde `createNotif` ve
+  `sendEmail` başka KAYITLI kişiye gitmez (kendisi ve platform adminleri hariç; kayıtsız adrese gider).
+  `authenticateToken`/`optionalAuth` `quietActor.run(...)` ile açar — `enterWith` KULLANILMAZ (nginx'in
+  bağlantı havuzunda sonraki isteğe sızar). E-posta kaydında `skip_quiet`. Test: 112 geçici üye,
+  446 yorum → 112'ye hiçbir şey, 60'a bildirim gitti; test kayıtları silindi.
 
 ## Yazışma
 
