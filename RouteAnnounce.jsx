@@ -9,9 +9,9 @@ import { Route, Volume2, VolumeX, X } from "lucide-react";
 
 export const ROUTE_ANNOUNCE_UNTIL = Date.parse("2026-11-25T00:00:00+03:00");
 export const ROUTE_ANNOUNCE_KEY = "muuv_announce_route_v1";
-// Cadılar Bayramı penceresiyle çakışmasın diye iki gün duraklatıldı (Melih, 30 Ekim 2026):
-// bu andan önce hiç gösterilmez, sonra kaldığı yerden devam eder.
-export const ROUTE_ANNOUNCE_RESUME = Date.parse("2026-11-02T00:00:00+03:00");
+// Cadılar Bayramı penceresiyle çakışmasın diye duraklatıldı (Melih, 30 Ekim 2026): o pencere
+// 31 Ekim 21:00'de biter, rota duyurusu gece 00:00'da kaldığı yerden devam eder.
+export const ROUTE_ANNOUNCE_RESUME = Date.parse("2026-11-01T00:00:00+03:00");
 
 const TXT = {
   pill: "Yeni özellik",
