@@ -990,6 +990,16 @@ Capacitor `server.url = https://muuvlink.app?src=app` → JS deploy ile OTA gide
 mağaza güncellemesi gerekmez. Native tarafı değiştiyse `npm run cap:sync`.
 Tarayıcıda `?src=app` ile native kod yolu test edilebilir.
 
+**Android konum (30 Ekim 2026, Melih onayladı, 1.3.1 / versionCode 5):** 1.3'e kadar manifest'te konum
+izni yoktu; Android uygulamasında "Yakınımda Ara", kartlardaki mesafe ve "konumumu kullan" hiç
+çalışmıyordu (izin penceresi çıkmadan reddediliyordu). Artık yalnız `ACCESS_COARSE_LOCATION`.
+**`ACCESS_FINE_LOCATION` eklenmez**: Google Play 27 Ocak 2027'den itibaren hassas konum için ayrı
+beyan istiyor. Capacitor'ın web konum akışı iki izni birlikte istediği için Android 11 ve altında
+yaklaşık izne düşmüyordu; `MainActivity` web konum isteğini her sürümde yalnız yaklaşık izinle
+karşılar. Emülatörde (API 34) denendi: yaklaşık konum penceresi, mesafeler, reddedince sessiz geçiş.
+Konum sunucuya yalnız `/api/trainings/nearby` sorgusunda gider, saklanmaz (nginx kaydı 14 gün) —
+Play "Veri güvenliği" formunda "Yaklaşık konum" bu yüzden beyan edilir.
+
 ## App Store inceleme hesabı (29 Ekim 2026)
 
 28 Ekim'de Apple incelemecisi Melih'in hesabıyla girip MUUVLINK'in etkinliğine (200) "sahte profil"

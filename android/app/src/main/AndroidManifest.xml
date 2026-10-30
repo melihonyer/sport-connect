@@ -45,4 +45,10 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Yalnız yaklaşık konum: "Yakınımda" ve kartlardaki mesafe için yeterli.
+         ACCESS_FINE_LOCATION eklenmez — Google Play'de ayrı beyan ister (27 Ocak 2027).
+         İstek akışı MainActivity'de. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-feature android:name="android.hardware.location" android:required="false" />
 </manifest>
