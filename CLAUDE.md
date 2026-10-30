@@ -999,6 +999,12 @@ yaklaşık izne düşmüyordu; `MainActivity` web konum isteğini her sürümde 
 karşılar. Emülatörde (API 34) denendi: yaklaşık konum penceresi, mesafeler, reddedince sessiz geçiş.
 Konum sunucuya yalnız `/api/trainings/nearby` sorgusunda gider, saklanmaz (nginx kaydı 14 gün) —
 Play "Veri güvenliği" formunda "Yaklaşık konum" bu yüzden beyan edilir.
+1.3.1 30 Ekim 2026'da incelemeye gönderildi (yönetilen yayınlama kapalı → onayda kendiliğinden
+%100). Veri güvenliğine "Yaklaşık konum" eklendi: toplanıyor, paylaşılmıyor, kısa süreli değil,
+isteğe bağlı, amaç uygulama işlevselliği ("Tam konum" önceden beyanlıydı, dokunulmadı). Sürüm notu
+tr+en Melih onaylı. Play uyarıları (engellemez): paket boyutu 4 → 8,7 MB (uygulamaya kopyalanan ama
+kullanılmayan site dosyaları: duyuru videosu, hikâye fotoğrafları, rozetler) ve yerel hata ayıklama
+sembolleri yok. Play hesabı: melihonyer@gmail.com › "Salt Kreatif" (kişisel hesap), tek uygulama Muuvlink.
 
 **Android App Links (`public/.well-known/assetlinks.json`):** İKİ parmak izi durur — Play uygulama
 imzalama anahtarı (`D6:57:…:84:C0`, Play'den inen uygulama bununla imzalı) ve yükleme anahtarı
