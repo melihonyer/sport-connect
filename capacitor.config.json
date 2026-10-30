@@ -1,7 +1,7 @@
 {
   "appId": "app.muuvlink",
   "appName": "Muuvlink",
-  "webDir": "dist",
+  "webDir": "mobile-shell",
   "server": {
     "url": "https://muuvlink.app?src=app",
     "cleartext": false,

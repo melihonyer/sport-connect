@@ -990,6 +990,14 @@ Capacitor `server.url = https://muuvlink.app?src=app` → JS deploy ile OTA gide
 mağaza güncellemesi gerekmez. Native tarafı değiştiyse `npm run cap:sync`.
 Tarayıcıda `?src=app` ile native kod yolu test edilebilir.
 
+**Uygulamaya site kopyalanmaz** (30 Ekim 2026, Melih): `webDir` = `mobile-shell/` (tek `index.html`,
+canlı siteye yönlendirir). Capacitor `server.url` varken yerel dosyaları hiç sunmuyor (Android
+`WebViewLocalServer` istekleri canlıya vekâlet eder); eskiden `dist/` kopyalanıyordu, paket 8,7 MB'tı
+→ 2,4 MB AAB / 1,6 MB APK. Klasör boşaltılmaz: iOS açılışta `public/index.html` yoksa çöker.
+`cap:sync` artık yalnız `npx cap sync` (vite derlemesi ve uploads bağı sorunu yok). Emülatörde
+denendi: site açılıyor, Yakınımda çalışıyor. iOS'ta henüz derlenip açılmadı — sonraki iOS sürümünde
+simülatörde bir kez açılışa bakılır.
+
 **Android konum (30 Ekim 2026, Melih onayladı, 1.3.1 / versionCode 5):** 1.3'e kadar manifest'te konum
 izni yoktu; Android uygulamasında "Yakınımda Ara", kartlardaki mesafe ve "konumumu kullan" hiç
 çalışmıyordu (izin penceresi çıkmadan reddediliyordu). Artık yalnız `ACCESS_COARSE_LOCATION`.
@@ -1003,7 +1011,7 @@ Play "Veri güvenliği" formunda "Yaklaşık konum" bu yüzden beyan edilir.
 %100). Veri güvenliğine "Yaklaşık konum" eklendi: toplanıyor, paylaşılmıyor, kısa süreli değil,
 isteğe bağlı, amaç uygulama işlevselliği ("Tam konum" önceden beyanlıydı, dokunulmadı). Sürüm notu
 tr+en Melih onaylı. Play uyarıları (engellemez): paket boyutu 4 → 8,7 MB (uygulamaya kopyalanan ama
-kullanılmayan site dosyaları: duyuru videosu, hikâye fotoğrafları, rozetler) ve yerel hata ayıklama
+kullanılmayan site dosyaları; 1.3.1'den sonra `mobile-shell` ile giderildi) ve yerel hata ayıklama
 sembolleri yok. Play hesabı: melihonyer@gmail.com › "Salt Kreatif" (kişisel hesap), tek uygulama Muuvlink.
 
 **Android App Links (`public/.well-known/assetlinks.json`):** İKİ parmak izi durur — Play uygulama
