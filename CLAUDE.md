@@ -1007,8 +1007,12 @@ yaklaşık izne düşmüyordu; `MainActivity` web konum isteğini her sürümde 
 karşılar. Emülatörde (API 34) denendi: yaklaşık konum penceresi, mesafeler, reddedince sessiz geçiş.
 Konum sunucuya yalnız `/api/trainings/nearby` sorgusunda gider, saklanmaz (nginx kaydı 14 gün) —
 Play "Veri güvenliği" formunda "Yaklaşık konum" bu yüzden beyan edilir.
-1.3.1 30 Ekim 2026'da incelemeye gönderildi (yönetilen yayınlama kapalı → onayda kendiliğinden
-%100). Veri güvenliğine "Yaklaşık konum" eklendi: toplanıyor, paylaşılmıyor, kısa süreli değil,
+1.3.1 30 Ekim 2026'da incelemeye gönderildi, aynı gün onaylanıp yayınlandı (yönetilen yayınlama
+kapalı → onayda kendiliğinden %100).
+**Play satıcı (trader) durumu:** Google "Kasım 2026'dan itibaren zorunlu" dedi; 30 Ekim'de Console'da
+form henüz yoktu (hesap ayrıntıları, uygulama içeriği, politika durumu, geliştirici profili bakıldı).
+Satıcı seçilirse ad, adres, telefon, e-posta AB kullanıcılarına mağazada açık gösterilir; hesapta kayıtlı
+adres Melih'in ev adresi. Karar ve gönderim Melih'in. Veri güvenliğine "Yaklaşık konum" eklendi: toplanıyor, paylaşılmıyor, kısa süreli değil,
 isteğe bağlı, amaç uygulama işlevselliği ("Tam konum" önceden beyanlıydı, dokunulmadı). Sürüm notu
 tr+en Melih onaylı. Play uyarıları (engellemez): paket boyutu 4 → 8,7 MB (uygulamaya kopyalanan ama
 kullanılmayan site dosyaları; 1.3.1'den sonra `mobile-shell` ile giderildi) ve yerel hata ayıklama
