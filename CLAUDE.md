@@ -1000,6 +1000,14 @@ karşılar. Emülatörde (API 34) denendi: yaklaşık konum penceresi, mesafeler
 Konum sunucuya yalnız `/api/trainings/nearby` sorgusunda gider, saklanmaz (nginx kaydı 14 gün) —
 Play "Veri güvenliği" formunda "Yaklaşık konum" bu yüzden beyan edilir.
 
+**Android App Links (`public/.well-known/assetlinks.json`):** İKİ parmak izi durur — Play uygulama
+imzalama anahtarı (`D6:57:…:84:C0`, Play'den inen uygulama bununla imzalı) ve yükleme anahtarı
+(`A0:AD:…:9D:D7`, yerel derleme). 30 Ekim 2026'ya kadar yalnız yükleme anahtarı vardı; Play Console
+"1 derin bağlantı çalışmıyor olabilir" diyordu, muuvlink.app linkleri Play kurulumunda doğrulanmıyordu.
+Değeri Play Console › Uygulama bütünlüğü › Uygulama imzalama sayfasındaki hazır JSON'dan alınır.
+Kontrol: `digitalassetlinks.googleapis.com/v1/assetlinks:check?...sha256_fingerprint=D6:57:…` →
+`"linked": true` (Google önbelleği ~1 saat).
+
 ## App Store inceleme hesabı (29 Ekim 2026)
 
 28 Ekim'de Apple incelemecisi Melih'in hesabıyla girip MUUVLINK'in etkinliğine (200) "sahte profil"
