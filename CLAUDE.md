@@ -490,6 +490,14 @@ geçtiğini görür (Melih'in fikri; örnek: Urla'dan çıkan sürüşe Balıkl�
   bir kez (`muuv_announce_route_v1`, gösterildiği an yazılır), yalnız ana/etkinlikler/takımlar/profil
   sayfasında, başka pencere ve tur yokken. **25 Kasım 2026'da kendiliğinden kapanır**
   (`ROUTE_ANNOUNCE_UNTIL`); sonrasında dosya, çağrı yeri ve `public/announce/` silinebilir.
+  **31 Ekim–1 Kasım 2026 duraklatıldı** (`ROUTE_ANNOUNCE_RESUME` = 2 Kasım 00:00, Melih): Cadılar Bayramı
+  penceresiyle çakışmasın. Bir oturumda en çok bir duyuru penceresi (`announceShownRef`).
+- **Cadılar Bayramı penceresi** (`HalloweenAnnounce.jsx`, 30 Ekim 2026, Melih onayladı): sosyal medyadaki
+  kostümlü koşu filmi (`public/announce/cadilar-bayrami.mp4`, 720×1280, 2,2 MB) + "Hikâyende paylaş" (mobilde
+  video dosyası paylaşım menüsüne; Android uygulaması dosya paylaşamadığı için metin + link; masaüstünde indir)
+  + üyeye "Kostümlü koşu etkinliği aç" / misafire "Üye ol". Rota duyurusuyla aynı kurallar (cihaz başına bir kez,
+  liste sayfaları, tur/ATT/başka pencere yokken; tanıtım turunu bitirmemiş üyeye çıkmaz). **31 Ekim 21:00'de biter**
+  (`HALLOWEEN_UNTIL`); sonra dosya, çağrı yeri ve `public/announce/cadilar-bayrami.*` silinebilir.
 - **Yerelde backend kopyası çalıştırırken** Supabase oturum havuzu (5432, 15 istemci) canlıyla
   ortak: kopya canlının bağlantılarını yer. İşlem havuzu (6543) + `max: 2` kullanılır, zamanlanmış
   işler (hatırlatma, aktivasyon e-postası, purge) ve e-posta anahtarı kapatılır.

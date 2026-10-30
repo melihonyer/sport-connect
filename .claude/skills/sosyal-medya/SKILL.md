@@ -54,6 +54,17 @@ sağ üst/sol alttaki hesabın @muuvlink olduğunu kontrol et; değilse Melih ge
   (`parkur/video-parkur.*`). Yazı açılma animasyonunda kelime sonu kırpılmasın
   (`clip-path` payı). Prompt'tan video için `video-uretim-akisi` skill'i (Remotion).
 - Kontrol: her kareyi görüntü olarak aç, kesik kelime/taşma var mı bak; sonra Melih'e göster.
+- **Her videonun sonunda App Store + Google Play düğmeleri** (Melih, 23.10.2026). Uygulamadaki tek tip
+  düğme (`StoreButtons.jsx`: siyah, yuvarlak köşe, "Şimdi indir" + mağaza adı); Remotion karşılığı
+  `muuvlink-kimlik/src/rota/Rota.tsx` `StoreBadge`. Yeni özellik videosunda "Yeni özellik yayında" büyük
+  başlık olarak açılışta ve kapanışta (küçük etiket değil). Açılış sekansı acele etmez: başlık okunacak kadar kalır.
+- **Klip seçimi sporcu odaklı:** formalı, tempolu, yarış/antrenman havası; "gezinti" görünen (karışık
+  kıyafet, yavaş, gülümseyerek jogging) klip kullanılmaz (Melih, 23.10.2026).
+  Ama **yarış değil**: göğüs numarası, start/finiş, maraton kalabalığı olan klip konmaz — Muuvlink bireysel
+  ve takım etkinlikleri (antrenman, grup koşusu/sürüşü) içindir (Melih, 23.10.2026).
+- **Harita animasyonu (rota):** `muuvlink-kimlik/src/rota/RouteMapPlate.tsx` — MapLibre + OpenFreeMap Positron,
+  sabit plaka (kamera kıpırdamaz, CSS ile yakınlaşma), `--gl=angle --concurrency=1`. maplibre-gl 4.x'te
+  `setWorkerUrl` gerekmez (5.x .mjs işçisi 4.x'te harita karelerini kilitliyor). OSM atfı köşede + metinde.
 - **Logo kilidi filmi** (amblem sabit, etrafında nesneler vuruşta değişir; Ekim 2026):
   `APPS/GENEL/muuvlink-kimlik`. Envato maketi → `scripts/ps/mockups.mjs` (amblemli A + amblemsiz B tasarım,
   boy `fit()` ile) → `apply-all.sh` (Photoshop'u osascript ile sürer) → `locate.py` (A/B farkının en büyük
@@ -66,6 +77,8 @@ sağ üst/sol alttaki hesabın @muuvlink olduğunu kontrol et; değilse Melih ge
 ## Metin
 - Ton X/Z kuşağı, sade, "cringe" yok: "Selam!", ünlem yığını, "kanka/efsane" yok.
 - **Sayı yazılmaz** (üye/katılımcı adedi). Soru veya davetle biter ("Yoruma yaz", "sen de gel").
+- **Göreli gün yazılmaz** ("yarın", "bugün", "bu akşam"): gönderi ertesi gün de görülür, "yarın" pazar
+  sanılır (Melih, 30.10.2026). Gün adı + tarih: "Cumartesi", "31 Ekim". Videodaki yazı için de geçerli.
 - Yapı: kanca cümlesi → 1–2 cümle değer → `muuvlink.app (link profilde)` → atıflar → hashtag.
 - **Hashtag her gönderide** (Melih: "hashtagleri unutma"). Çekirdek:
   `#muuvlink #koşu #sporlabuluş #antrenman #koşutakımı`; konuya göre 3–6 ek
@@ -112,6 +125,26 @@ sağ üst/sol alttaki hesabın @muuvlink olduğunu kontrol et; değilse Melih ge
   dışına tıklayarak kapat. Gönderiler listesi kaydırınca yüklenir ve yeni kayıt geç düşer;
   arama kutusu yalnız açıklamada arar (başlıkta değil). `execCommand`/yapıştırma ile metin verme editörü çökertir, yapma.
   Klavye çalışmıyorsa Chrome'da öne çıkan sekme başka sekmedir (bekleyen "ayrıl" penceresi).
+- **Paylaşmadan önce hesabı kontrol et** (28.10.2026): aynı Chrome'da Training Agents ve Vibe to Brands
+  oturumları da açılıyor. X ve YouTube'da hesap menüsünden Muuvlink'e geçilebiliyor; Business Suite'te
+  işletme portföyü MuuvLink seçilir; TikTok web'de hesap değiştirme yok (başka hesap açıksa Melih girer,
+  başka oturumun taslağı olabileceği için çıkış yapılmaz). Threads web'de planlama: composer "…" › Planla….
+- **Planlı gönderinin saatini değiştirme** (28.10.2026, 17:00 → 15:00): Business Suite › İçerik ›
+  Planlananlar › satıra tıkla › sağ panel "…" › "Gönderiyi Yeniden Planla" (IG ve FB ayrı satır, ikisi de).
+  YouTube: Görünürlük hücresi bazen ayrıntı sayfasına atıyor → orada "Video görünürlük durumunu düzenle"
+  › saat listesinden seç › Bitti › Kaydet; doğrulama "Planlandı" üstüne gelince çıkan ipucu. X: Planlanmış
+  › gönderi › üstteki tarih satırı değil, takvim simgesi (`Gönderiyi planla`) › `form_input` › Güncelle ›
+  Planla (video yeniden "işleniyor"a girer, bekle). Threads: composer › sağ üst taslak simgesi › "…" ›
+  "Planı düzenle" › saat kutusu Backspace + rakam rakam › Güncelle. **TikTok planlı gönderiyi
+  düzenletmiyor:** aynı video+metin+kapakla yeni saate yeniden planla, listede ikisini gördükten sonra
+  eskisini "…" › Sil. Sırayı bozma: önce yenisi, sonra silme (arada boşluk kalmasın).
+- **Gönderi istatistiği (Business Suite):** Facebook "Erişim" ölçümü 31 Ekim 2026'da kalktı, yerine "Görüntüleyenler"
+  (içeriği gören benzersiz Meta hesabı sayısı; Meta'nın cevabı, Melih iletti). Rapor ve karşılaştırmada bu kullanılır;
+  31 Ekim öncesi "Erişim" sayılarıyla bire bir kıyaslanmaz.
+- **Esc'ye basma** (30.10.2026): YouTube yükleme penceresinde Esc pencereyi kapatıp videoyu taslağa atar (açıklama
+  kaybolur → Shorts listesinde "Taslağı düzenle"); X ana sayfa kutusunda "Aklındakini unutma" (sil?) penceresi açar →
+  "Devam". Öneri listesini kapatmak için boş bir yere tıkla. Yükleme `file_upload` proje klasöründen reddedilebiliyor
+  ("only files this session is allowed to read") → dosyayı önce scratchpad'e kopyala.
 - **Tarayıcıya dosya yükleme sınırı 10 MB / çağrı:** büyük videolar ffmpeg 2-geçişle ~9 MB'a
   (gerekirse 720×1280) geçici klasörde yeniden kodlanır; orijinallere dokunulmaz.
 - **Instagram'dan içerik okuma:** gönderi sayfası gerçekten açılınca `script[type=application/json]`

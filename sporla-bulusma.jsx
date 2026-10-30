@@ -72,7 +72,8 @@ import {
 } from "lucide-react";
 import SharedLocationPicker from "./LocationPicker";
 import RouteField from "./RouteField";
-import RouteAnnounce, { ROUTE_ANNOUNCE_UNTIL, ROUTE_ANNOUNCE_KEY } from "./RouteAnnounce";
+import RouteAnnounce, { ROUTE_ANNOUNCE_UNTIL, ROUTE_ANNOUNCE_KEY, ROUTE_ANNOUNCE_RESUME } from "./RouteAnnounce";
+import HalloweenAnnounce, { HALLOWEEN_UNTIL, HALLOWEEN_KEY } from "./HalloweenAnnounce";
 import { formatRouteDistance, routeToGpx } from "./gpxRoute.js";
 // Ağır kütüphaneler lazy yüklenir — ilk bundle'ı küçültür
 // Deploy sonrası eski sekme sorunu: rsync --delete-after eski parça dosyalarını
@@ -2360,6 +2361,10 @@ export default function Muuvlink() {
   const [attIntro, setAttIntro] = useState(false); // iOS takip izni öncesi açıklama ekranı
   // "Etkinlik rotası" duyurusu: cihaz başına bir kez, 25 Kasım 2026'ya kadar (RouteAnnounce.jsx)
   const [routeAnnounce, setRouteAnnounce] = useState(false);
+  // Cadılar Bayramı penceresi: cihaz başına bir kez, 31 Ekim 2026 21:00'e kadar (HalloweenAnnounce.jsx)
+  const [halloweenAnnounce, setHalloweenAnnounce] = useState(false);
+  // Bir oturumda en çok bir duyuru penceresi (ikisi art arda açılmasın)
+  const announceShownRef = useRef(false);
   const [showManualLocation, setShowManualLocation] = useState(false);
   const [gpsErrorCode, setGpsErrorCode] = useState(null); // 1=denied, 2=unavailable, 3=timeout
   const [manualLocationName, setManualLocationName] = useState("");
@@ -3383,6 +3388,7 @@ export default function Muuvlink() {
     if (inviteTrainingId)  { setInviteTrainingId(null);   return true; }
     if (teamSuggest)       { dismissTeamSuggest();        return true; }
     if (routeAnnounce)     { setRouteAnnounce(false);     return true; }
+    if (halloweenAnnounce) { setHalloweenAnnounce(false); return true; }
     if (showProfileEdit)   { setShowProfileEdit(false);   return true; }
     if (showNotifPrefs)    { setShowNotifPrefs(false);    return true; }
     if (showNotifications) { setShowNotifications(false); return true; }
@@ -3481,27 +3487,47 @@ export default function Muuvlink() {
   // İlk girişte, ana ekrana gelindiğinde bir kez başlat
   useEffect(() => {
     if (!user || user.onboarding_done !== false) return;
-    if (currentPage !== "home" || isAuthModalOpen || tourActive || routeAnnounce) return;
+    if (currentPage !== "home" || isAuthModalOpen || tourActive || routeAnnounce || halloweenAnnounce) return;
     const timer = setTimeout(() => setTourActive(true), 900);
     return () => clearTimeout(timer);
-  }, [user?.id, user?.onboarding_done, currentPage, isAuthModalOpen, routeAnnounce]); // eslint-disable-line
+  }, [user?.id, user?.onboarding_done, currentPage, isAuthModalOpen, routeAnnounce, halloweenAnnounce]); // eslint-disable-line
 
   // Rota duyurusu: liste sayfalarında, başka pencere/tur yokken 2,5 sn sonra BİR KEZ.
   // Paylaşılan bir etkinlik/takım linkinden gelen kişinin önüne çıkmaz (detay sayfaları
   // listede yok). Yeni üyede önce tur çalışır. Gösterildiği an işaretlenir: kapatmadan
   // sayfayı yenileyen de bir daha görmez. Süre bitince hiç çalışmaz.
   useEffect(() => {
-    if (Date.now() >= ROUTE_ANNOUNCE_UNTIL) return;
+    if (Date.now() >= ROUTE_ANNOUNCE_UNTIL || Date.now() < ROUTE_ANNOUNCE_RESUME) return;
+    if (announceShownRef.current || halloweenAnnounce) return;
     if (!["home", "trainings", "teams", "profile"].includes(currentPage)) return;
     if (tourActive || isAuthModalOpen || teamSuggest || storySpec || legalModal || confirmModal) return;
     if (user && user.onboarding_done === false) return;
     try { if (localStorage.getItem(ROUTE_ANNOUNCE_KEY)) return; } catch { return; }
     const timer = setTimeout(() => {
       try { localStorage.setItem(ROUTE_ANNOUNCE_KEY, String(Date.now())); } catch { /* yok say */ }
+      announceShownRef.current = true;
       setRouteAnnounce(true);
     }, 2500);
     return () => clearTimeout(timer);
-  }, [currentPage, tourActive, isAuthModalOpen, teamSuggest, storySpec, legalModal, confirmModal, user?.onboarding_done]); // eslint-disable-line
+  }, [currentPage, tourActive, isAuthModalOpen, teamSuggest, storySpec, legalModal, confirmModal, user?.onboarding_done, halloweenAnnounce]); // eslint-disable-line
+
+  // Cadılar Bayramı penceresi: rota duyurusuyla aynı kurallar (liste sayfaları, başka pencere/tur
+  // yokken, gösterildiği an işaretlenir), 31 Ekim 21:00'de kendiliğinden biter.
+  useEffect(() => {
+    if (Date.now() >= HALLOWEEN_UNTIL) return;
+    if (announceShownRef.current) return;
+    if (!["home", "trainings", "teams", "profile"].includes(currentPage)) return;
+    if (tourActive || isAuthModalOpen || teamSuggest || storySpec || legalModal || confirmModal || attIntro) return;
+    if (user && user.onboarding_done === false) return;
+    try { if (localStorage.getItem(HALLOWEEN_KEY)) return; } catch { return; }
+    const timer = setTimeout(() => {
+      if (Date.now() >= HALLOWEEN_UNTIL) return;
+      try { localStorage.setItem(HALLOWEEN_KEY, String(Date.now())); } catch { /* yok say */ }
+      announceShownRef.current = true;
+      setHalloweenAnnounce(true);
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [currentPage, tourActive, isAuthModalOpen, teamSuggest, storySpec, legalModal, confirmModal, attIntro, user?.onboarding_done]); // eslint-disable-line
 
   // Sayfa değişince en üste scroll
   useEffect(() => {
@@ -10285,6 +10311,18 @@ Vergi Dairesi: Karşıyaka V.D. | VN: 7420957827<br/>
       {(showInviteModal || inviteTrainingId) && <InviteModal />}
       {renderTeamSuggest()}
       {renderAttIntro()}
+      {halloweenAnnounce && (
+        <HalloweenAnnounce
+          isGuest={!user}
+          onClose={() => setHalloweenAnnounce(false)}
+          onCreate={() => {
+            setHalloweenAnnounce(false);
+            if (user) { setCurrentPage("create-training"); return; }
+            setAuthMode("register");
+            setIsAuthModalOpen(true);
+          }}
+        />
+      )}
       {routeAnnounce && (
         <RouteAnnounce
           isGuest={!user}
