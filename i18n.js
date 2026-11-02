@@ -185,7 +185,8 @@ export const translations = {
     heroTagline:    { tr: "Spor topluluğun seni bekliyor",    en: "Your sports community is waiting",   de: "Deine Sportgemeinschaft wartet" },
     heroCta:        { tr: "Etkinlikleri Keşfet",              en: "Explore Events",                  de: "Events entdecken"            },
     heroCtaSecondary: { tr: "Takımlara Göz At",               en: "Browse Teams",                       de: "Teams ansehen"                  },
-    statsUsers:     { tr: "Aktif Sporcu",                      en: "Active Athletes",                    de: "Aktive Sportler"                },
+    statsUsers:     { tr: "Üye",                               en: "Members",                            de: "Mitglieder"                     },
+    sportsTitle:    { tr: "Branşına göre takım bul",           en: "Find a team by sport",               de: "Finde ein Team nach Sportart"   },
     statsTrainings: { tr: "Etkinlik",                         en: "Events",                          de: "Events"                      },
     statsTeams:     { tr: "Takım",                             en: "Teams",                              de: "Teams"                          },
     statsCities:    { tr: "Şehir",                             en: "Cities",                             de: "Städte"                         },
@@ -235,9 +236,9 @@ export const translations = {
     ctaJoinCommunity:{ tr: "Topluluğa Katıl",                  en: "Join the Community",                 de: "Zur Community"                  },
     ctaLine1:       { tr: "Spor seni",                         en: "Sports is",                          de: "Sport wartet"                   },
     ctaLine2:       { tr: "bekliyor.",                         en: "waiting for you.",                   de: "auf dich."                      },
-    ctaSignupDesc:  { tr: "Ücretsiz kaydol, takımlar kur, etkinlikler planla. Binlerce sporcu seni bekliyor.",
-                      en: "Sign up free, create teams, plan events. Thousands of athletes are waiting.",
-                      de: "Kostenlos registrieren, Teams gründen, Events planen. Tausende Sportler warten." },
+    ctaSignupDesc:  { tr: "Ücretsiz kaydol, takımını bul ya da kendi takımını kur.",
+                      en: "Sign up free, find your team or start your own.",
+                      de: "Kostenlos registrieren, dein Team finden oder ein eigenes gründen." },
     startFree:      { tr: "Ücretsiz Başla",                    en: "Start Free",                         de: "Kostenlos starten"              },
     alreadyMember:  { tr: "Zaten hesabım var",                 en: "I already have an account",          de: "Ich habe bereits ein Konto"     },
     // Hero fallbacks
@@ -1184,7 +1185,7 @@ export const translations = {
   // ── GALLERY ──────────────────────────────────────────────
   gallery: {
     title:     { tr: "Galeri",                                            en: "Gallery",                                          de: "Galerie"                                             },
-    subtitle:  { tr: "Muuvlink etkinliklerinden kareler",                 en: "Moments from Muuvlink events",                     de: "Momente von Muuvlink-Events"                         },
+    subtitle:  { tr: "Sporun içinden kareler",                            en: "Snapshots from the world of sport",                de: "Momente aus dem Sport"                               },
     cta:       { tr: "Etkinlik fotoğraflarınızın bu alanda yer almasını ister misiniz?",
                  en: "Want your event photos featured in the Muuvlink gallery?",
                  de: "Möchten Sie Ihre Event-Fotos in der Muuvlink-Galerie sehen?" },

@@ -1119,15 +1119,10 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                       <h1 className="bn-title font-display" style={{fontSize:"clamp(2.8rem,5.8vw,4.8rem)", lineHeight:1.15, fontWeight:700, letterSpacing:"-0.02em", color: banner?.title_color || "#ffffff", paddingBottom:"0.05em"}}>
                         {(lang === "tr" ? banner?.title : null) || (t ? t("home.heroTitleFallback") : "Connect Through Sport,")}
                       </h1>
-                      <h1 className="bn-title bn-motto">
-                        {isActive
-                          ? <MottoReveal
-                              mottos={(banner?.mottos?.length > 0 && lang === "tr") ? banner.mottos : (DEFAULT_MOTTOS[lang] || DEFAULT_MOTTOS.en)}
-                              color1={banner?.motto_color_1 || "#114956"}
-                              color2={banner?.motto_color_2 || "#643e87"}
-                            />
-                          : <span>&nbsp;</span>
-                        }
+                      {/* Slogan sabit (2 Kasım 2026, Melih): harf harf yazılıp silinen slogan zamanın yarısında
+                          boş görünüyordu. Slaytlar 14 sn'de bir zaten değişiyor; her slaytta ilk slogan. */}
+                      <h1 className="bn-title bn-motto" style={{color: banner?.motto_color_1 || "#114956"}}>
+                        {((banner?.mottos?.length > 0 && lang === "tr") ? banner.mottos : (DEFAULT_MOTTOS[lang] || DEFAULT_MOTTOS.en))[0]}
                       </h1>
                       <p className="mt-5 text-lg leading-relaxed max-w-md font-light" style={{color: banner?.subtitle_color || "rgba(186,230,253,0.75)"}}>
                         {(lang === "tr" ? banner?.subtitle : null) || (t ? t("home.heroSubtitleFallback") : "")}
@@ -1169,7 +1164,8 @@ function HeroSection({ banners, bannersLoaded, user, setCurrentPage, setAuthMode
                     </div>
 
                     <div className="bn-stats flex items-stretch gap-0 pt-2">
-                      {stats.slice(0,2).map((s, si) => {
+                      {/* Üye · takım · etkinlik — toplam sayılar, "aktif" denmez (2 Kasım 2026) */}
+                      {[stats[0], stats[2], stats[1]].map((s, si) => {
                         const Icon = s.icon;
                         return (
                           <React.Fragment key={si}>
@@ -2319,6 +2315,7 @@ export default function Muuvlink() {
   const [searchQuery, setSearchQuery] = useState("");
   // 404 aramasından takımlar sayfasına giden sorgu (TeamsPage aramasını kendi tutuyor).
   const teamSearchSeedRef = useRef("");
+  const teamSportSeedRef = useRef(""); // ana sayfa branş şeridinden Takımlar'a gelen branş
   const [sportFilter, setSportFilter] = useState("");
   const [levelFilter, setLevelFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
@@ -3358,7 +3355,7 @@ export default function Muuvlink() {
 
   // 404 sayfasından çıkınca "hangi detay bulunamadı" bilgisi sıfırlanır.
   useEffect(() => { if (currentPage !== "not-found") setMissingDetail(null); }, [currentPage]);
-  useEffect(() => { if (currentPage !== "teams") teamSearchSeedRef.current = ""; }, [currentPage]);
+  useEffect(() => { if (currentPage !== "teams") { teamSearchSeedRef.current = ""; teamSportSeedRef.current = ""; } }, [currentPage]);
 
   // Tarayıcı geri/ileri tuşu
   useEffect(() => {
@@ -5000,7 +4997,6 @@ export default function Muuvlink() {
       {
         num:"01", icon: MapPin, accent:"#0b2f38",
         bg:"#e6f7f5",
-        image: "/uploads/feature-01.webp",
         sub:   t("home.ef1Sub"),
         title: t("home.ef1Title"),
         desc:  t("home.ef1Desc"),
@@ -5009,7 +5005,6 @@ export default function Muuvlink() {
       {
         num:"02", icon: Users, accent:"#0b2f38",
         bg:"#c2ede9",
-        image: "/uploads/feature-02.webp",
         sub:   t("home.ef2Sub"),
         title: t("home.ef2Title"),
         desc:  t("home.ef2Desc"),
@@ -5018,7 +5013,6 @@ export default function Muuvlink() {
       {
         num:"03", icon: Trophy, accent:"#0b2f38",
         bg:"#8fdcd5",
-        image: "/uploads/feature-03.webp",
         sub:   t("home.ef3Sub"),
         title: t("home.ef3Title"),
         desc:  t("home.ef3Desc"),
@@ -5029,13 +5023,13 @@ export default function Muuvlink() {
     return (
       <div className="bg-white overflow-hidden">
         {/* Section header */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 pt-24 pb-12">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 pt-16 pb-10">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
             <div>
               <span className="text-[11px] font-bold tracking-[0.4em] uppercase block mb-5"
                 style={{color:"#0b2f38"}}>{t("home.platform")}</span>
               <h2 className="font-display font-bold tracking-tight leading-[0.88]"
-                style={{fontSize:"clamp(3.6rem,8vw,6.5rem)"}}>
+                style={{fontSize:"clamp(2.4rem,5vw,3.8rem)"}}>
                 <span className="text-slate-900 block">{t("home.whyNeden")}</span>
                 <span style={{
                   background:"#114956",
@@ -5052,68 +5046,28 @@ export default function Muuvlink() {
           </div>
         </div>
 
-        {/* Alternating editorial rows */}
-        {editorialFeatures.map((f, i) => (
-          <div key={i} className={`flex flex-col ${i % 2 === 0 ? "md:flex-row" : "md:flex-row-reverse"}`}
-            style={{borderTop:"1px solid #f1f5f9", minHeight:"360px"}}>
-            {/* Görsel ya da renkli panel */}
-            <div className="md:w-5/12 relative overflow-hidden flex-shrink-0"
-              style={{minHeight:"360px", background: f.image ? "#0a0a0a" : f.bg}}>
-              {f.image ? (
-                <>
-                  {/* Fotoğraf — cover */}
-                  <img loading="lazy" decoding="async" src={f.image} alt={f.sub}
-                    className="absolute inset-0 w-full h-full object-cover select-none"
-                    style={{opacity:0.88}}/>
-                  {/* Alt gradient overlay */}
-                  <div className="absolute inset-0"
-                    style={{background:"linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.1) 50%, transparent 100%)"}}/>
-
-                </>
-              ) : (
-                <>
-                  {/* Büyük numara — dekoratif */}
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden"
-                    style={{fontSize:"clamp(140px,20vw,240px)", fontWeight:800, color:`${f.accent}12`, lineHeight:1, letterSpacing:"-0.06em"}}>
-                    {f.num}
-                  </div>
-                  <div className="relative h-full flex items-center justify-center py-16 px-10">
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
-                        style={{background:`${f.accent}18`, border:`1.5px solid ${f.accent}30`}}>
-                        <f.icon className="w-8 h-8" style={{color: f.accent}}/>
-                      </div>
-                      <div className="font-black leading-none" style={{fontSize:"5rem", color: f.accent, letterSpacing:"-0.04em", opacity:0.85}}>
-                        {f.num}
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-            {/* Metin paneli */}
-            <div className="md:w-7/12 flex items-center px-8 md:px-16 py-14 bg-white">
-              <div className="max-w-lg">
-                <div className="text-[11px] font-bold tracking-[0.35em] uppercase mb-5"
-                  style={{color: f.accent}}>{f.sub}</div>
-                <h3 className="font-display font-bold text-slate-900 mb-4 leading-tight"
-                  style={{fontSize:"clamp(1.8rem,3.2vw,2.4rem)", letterSpacing:"-0.01em"}}>{f.title}</h3>
-                <p className="text-slate-500 leading-relaxed mb-8" style={{fontSize:"0.95rem"}}>{f.desc}</p>
-                <ul className="space-y-3">
-                  {f.points.map((p, j) => (
-                    <li key={j} className="flex items-center gap-3 text-slate-700 font-semibold text-sm">
-                      <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-                        style={{background:`${f.accent}18`}}>
-                        <div className="w-2 h-2 rounded-full" style={{background: f.accent}}/>
-                      </div>
-                      {p}
-                    </li>
-                  ))}
-                </ul>
+        {/* Üç kısa kart (2 Kasım 2026, Melih): eskiden fotoğraflı dev satırlardı; telefonda ilk
+            etkinliğe ulaşmak için ~4 ekran kaydırılıyordu. Metinler aynı (home.ef*). */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 pb-16 grid md:grid-cols-3 gap-5">
+          {editorialFeatures.map((f, i) => (
+            <div key={i} className="rounded-2xl border border-slate-100 bg-slate-50/60 p-6 md:p-7">
+              <div className="w-11 h-11 rounded-xl bg-brand-50 flex items-center justify-center mb-5">
+                <f.icon className="w-5 h-5 text-logo-teal" aria-hidden="true" />
               </div>
+              <div className="text-[11px] font-bold tracking-[0.3em] uppercase mb-2 text-brand-800">{f.sub}</div>
+              <h3 className="font-display font-bold text-slate-900 text-xl leading-snug mb-3">{f.title}</h3>
+              <p className="text-slate-500 text-sm leading-relaxed mb-5">{f.desc}</p>
+              <ul className="space-y-2">
+                {f.points.map((pt, j) => (
+                  <li key={j} className="flex items-center gap-2.5 text-slate-700 font-medium text-sm">
+                    <span className="w-1.5 h-1.5 rounded-full bg-logo-teal flex-shrink-0" />
+                    {pt}
+                  </li>
+                ))}
+              </ul>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     );
   };
@@ -5620,6 +5574,71 @@ export default function Muuvlink() {
     );
   };
 
+  // Ana sayfa: öne çıkan takımlar (Takımlar sayfasıyla aynı seçim, admin › Takımlar). Seçili yoksa çıkmaz.
+  const HomeFeaturedTeams = () => {
+    const list = teams.filter((tm) => tm.featured && !tm.is_private).slice(0, 6);
+    if (!list.length) return null;
+    return (
+      <div className="py-14 bg-slate-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8">
+          <div className="flex items-end justify-between gap-4 mb-6">
+            <div>
+              <span className="text-xs font-semibold tracking-[0.3em] text-brand-800 uppercase block mb-3">{t("home.discover")}</span>
+              <h2 className="font-display font-bold text-slate-900 leading-snug"
+                style={{fontSize:"clamp(1.6rem,3vw,2rem)", letterSpacing:"-0.01em"}}>{t("teams.featuredTitle")}</h2>
+            </div>
+            <button data-btn="solid" onClick={() => setCurrentPage("teams")}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium transition-all hover:shadow-md flex-shrink-0"
+              style={{background:"#114956", color:"#fff"}}>
+              {t("home.viewAll")}
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+            </button>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {list.map((team) => <TeamCard key={team.id} team={team} onClick={fetchTeamDetails} />)}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Ana sayfa: branş şeridi — takımı olan branşlar, en çok takımı olan önce. Tıklayınca Takımlar
+  // sayfası o branşla süzülmüş açılır (teamSportSeedRef). Renk/ikon sportStyle.jsx'ten; sayı yazılmaz.
+  const HomeSportsStrip = () => {
+    const count = {};
+    teams.filter((tm) => !tm.is_private).forEach((tm) => {
+      const list = (Array.isArray(tm.sports) && tm.sports.length) ? tm.sports : [tm.sport];
+      list.filter(Boolean).forEach((sp) => { if (SPORT_TYPES.includes(sp) && sp !== "Diğer") count[sp] = (count[sp] || 0) + 1; });
+    });
+    const sports = Object.keys(count).sort((a, b) => count[b] - count[a] || sportLabel(a).localeCompare(sportLabel(b), lang));
+    if (sports.length < 3) return null;
+    return (
+      <div className="py-14 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8">
+          <span className="text-xs font-semibold tracking-[0.3em] text-brand-800 uppercase block mb-3">{t("home.discover")}</span>
+          <h2 className="font-display font-bold text-slate-900 leading-snug mb-6"
+            style={{fontSize:"clamp(1.6rem,3vw,2rem)", letterSpacing:"-0.01em"}}>{t("home.sportsTitle")}</h2>
+          {/* Telefonda yana kayan tek satır (7 satırlık ızgara çok yer tutuyordu), sm ve üstünde ızgara */}
+          <div className="flex overflow-x-auto overscroll-x-contain gap-3 -mx-4 px-4 pb-2 snap-x sm:mx-0 sm:px-0 sm:pb-0 sm:grid sm:grid-cols-3 lg:grid-cols-6 sm:overflow-visible">
+            {sports.map((sp) => {
+              const st = sportStyle(sp);
+              return (
+                <button key={sp} data-hover="own"
+                  onClick={() => { teamSportSeedRef.current = sp; setCurrentPage("teams"); window.scrollTo(0, 0); }}
+                  className="flex items-center gap-3 p-3 rounded-2xl border border-slate-100 bg-white text-left hover:border-slate-300 hover:shadow-md transition-[box-shadow,border-color] flex-shrink-0 w-40 sm:w-auto snap-start">
+                  <span className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{background: st.color}}>
+                    <st.Icon className="w-5 h-5" style={{color: st.text}} aria-hidden="true" />
+                  </span>
+                  <span className="text-sm font-semibold text-slate-800 truncate">{sportLabel(sp)}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const HomePage = () => (
     <>
       <HeroSection
@@ -5636,7 +5655,6 @@ export default function Muuvlink() {
         lang={lang}
       />
       <StarterChecklist />
-      <FeaturesSection />
 
       {/* ── GPS SEARCH + UPCOMING TRAININGS — yan yana ── */}
       <div className="py-16 bg-white">
@@ -5743,11 +5761,17 @@ export default function Muuvlink() {
         </div>
       </div>
 
-      {/* Training Agents: dost uygulama — haberlerin üstünde (Melih, 8 Ekim 2026) */}
-      <TaHomeBand t={t} lang={lang} isNative={isNative} />
+      {/* Sıra (2 Kasım 2026, Melih): etkinlikler → öne çıkan takımlar → branşlar → neden Muuvlink →
+          haberler/galeri → Training Agents → SSS. Önceden tanıtım en üstteydi, takım hiç yoktu. */}
+      <HomeFeaturedTeams />
+      <HomeSportsStrip />
+      <FeaturesSection />
 
       <NewsSection items={homeNews} t={t} setCurrentPage={setCurrentPage} />
       <GallerySection items={homeGallery} t={t} setCurrentPage={setCurrentPage} />
+
+      {/* Training Agents: dost uygulama — Muuvlink'in kendi içeriğinin altında (2 Kasım 2026, Melih) */}
+      <TaHomeBand t={t} lang={lang} isNative={isNative} />
 
       <FaqSection t={t} />
 
@@ -6556,7 +6580,7 @@ export default function Muuvlink() {
   const TeamsPage = () => {
     const sports = SPORT_TYPES; // tek kaynak: yukarıdaki SPORT_TYPES
     const [teamSearch, setTeamSearch] = useState(() => teamSearchSeedRef.current);
-    const [teamSport, setTeamSport] = useState("");
+    const [teamSport, setTeamSport] = useState(() => teamSportSeedRef.current);
 
     // Takımın konumu = son etkinliklerinin ortalaması (sunucu lat/lng verir; etkinliği yoksa aynı
     // şehri yazan takımlardan yaklaşık, `approx` — sıralamaya girer, kartta km yazılmaz). Konum
@@ -10101,7 +10125,7 @@ Vergi Dairesi: Karşıyaka V.D. | VN: 7420957827<br/>
     ));
 
     return (
-      <footer className="bg-brand-700 text-white mt-16">
+      <footer className={`bg-brand-700 text-white ${currentPage === "home" && !user ? "" : "mt-16"}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
 

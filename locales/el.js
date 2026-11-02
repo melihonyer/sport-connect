@@ -135,7 +135,8 @@ export default {
     heroTagline: "Η αθλητική σου κοινότητα σε περιμένει",
     heroCta: "Εξερεύνησε εκδηλώσεις",
     heroCtaSecondary: "Δες τις ομάδες",
-    statsUsers: "Ενεργοί αθλητές",
+    statsUsers: "Μέλη",
+    sportsTitle: "Βρες ομάδα ανά άθλημα",
     statsTrainings: "Εκδηλώσεις",
     statsTeams: "Ομάδες",
     statsCities: "Πόλεις",
@@ -168,7 +169,7 @@ export default {
     ctaJoinCommunity: "Γίνε μέλος της κοινότητας",
     ctaLine1: "Ο αθλητισμός",
     ctaLine2: "σε περιμένει.",
-    ctaSignupDesc: "Κάνε δωρεάν εγγραφή, φτιάξε ομάδες, οργάνωσε εκδηλώσεις. Χιλιάδες αθλητές σε περιμένουν.",
+    ctaSignupDesc: "Κάνε δωρεάν εγγραφή, βρες την ομάδα σου ή φτιάξε τη δική σου.",
     startFree: "Ξεκίνα δωρεάν",
     alreadyMember: "Έχω ήδη λογαριασμό",
     loginBtn: "Σύνδεση",
@@ -839,7 +840,7 @@ export default {
 
   gallery: {
     title: "Φωτογραφίες",
-    subtitle: "Στιγμές από εκδηλώσεις του Muuvlink",
+    subtitle: "Στιγμές από τον κόσμο του αθλητισμού",
     cta: "Θέλεις να εμφανιστούν εδώ οι φωτογραφίες της εκδήλωσής σου;",
     ctaBtn: "Επικοινώνησε μαζί μας",
   },

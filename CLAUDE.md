@@ -448,6 +448,21 @@ Hook'lar bu sabit fiber'a bağlanır, closure'lar her render tazelenir.
   BottomNav. Kalanlar tek tek geçirilebilir; her birinde `useState` başlangıç
   değerinin "her render'da tazelensin" varsayımına dayanıp dayanmadığı kontrol edilir.
 
+## Web ana sayfası (2 Kasım 2026, Melih onayladı)
+
+Sıra: üst bölüm (banner) → Yakınımda + öne çıkan/yaklaşan etkinlikler → öne çıkan takımlar
+(`HomeFeaturedTeams`, Takımlar sayfasıyla aynı seçim) → "Branşına göre takım bul" (`HomeSportsStrip`:
+takımı olan branşlar, tıklayınca Takımlar o branşla süzülü açılır — `teamSportSeedRef`; telefonda yana
+kayar) → Neden Muuvlink (3 kısa kart, fotoğraf yok) → haberler → galeri → Training Agents bandı → SSS →
+kayıt çağrısı. Önceden tanıtım en üstteydi (telefonda ilk etkinlik 3.600 px aşağıdaydı), takım yoktu.
+- Banner sloganı SABİT (her slaytta ilk slogan; harf harf yazılıp silinen hali yarı zamanda boştu).
+  Telefon uygulamasının ana sayfası (`MobileHomePage`) hâlâ `MottoReveal` kullanır, ona dokunulmadı.
+- Sayaçlar: Üye · Takım · Etkinlik (toplam sayılar; "aktif" denmez). Kayıt çağrısında "binlerce" yok.
+- Galeri fotoğrafları stok → alt başlık "Sporun içinden kareler". Gerçek etkinlik fotoğrafı gelirse eski
+  başlık ("Muuvlink etkinliklerinden kareler") geri alınabilir.
+- Banner metinleri admin'den (DB `banners`); "antrenman" → "etkinlik" düzeltildi, düğme adresi
+  `/etkinlikler` (tam adres `https://…` yazılırsa kod yeni sekmede açar).
+
 ## Öne çıkan takımlar, sıralama (2 Kasım 2026, Melih)
 
 Osman Yıldız'ın "yerel ekip liderlerini afişe edin" önerisinden. Takımlar sayfasında önce öne çıkanlar,

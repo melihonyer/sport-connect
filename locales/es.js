@@ -134,7 +134,8 @@ export default {
     heroTagline: "Tu comunidad deportiva te espera",
     heroCta: "Explorar eventos",
     heroCtaSecondary: "Ver equipos",
-    statsUsers: "Deportistas activos",
+    statsUsers: "Miembros",
+    sportsTitle: "Encuentra un equipo por deporte",
     statsTrainings: "Eventos",
     statsTeams: "Equipos",
     statsCities: "Ciudades",
@@ -167,7 +168,7 @@ export default {
     ctaJoinCommunity: "Únete a la comunidad",
     ctaLine1: "El deporte",
     ctaLine2: "te espera.",
-    ctaSignupDesc: "Regístrate gratis, crea equipos, organiza eventos. Miles de deportistas te esperan.",
+    ctaSignupDesc: "Regístrate gratis, encuentra tu equipo o crea el tuyo.",
     startFree: "Empieza gratis",
     alreadyMember: "Ya tengo cuenta",
     loginBtn: "Iniciar sesión",
@@ -838,7 +839,7 @@ export default {
 
   gallery: {
     title: "Galería",
-    subtitle: "Momentos de los eventos de Muuvlink",
+    subtitle: "Momentos del mundo del deporte",
     cta: "¿Quieres que las fotos de tu evento aparezcan aquí?",
     ctaBtn: "Contáctanos",
   },
