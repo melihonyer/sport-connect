@@ -444,7 +444,7 @@ Hook'lar bu sabit fiber'a bağlanır, closure'lar her render tazelenir.
   olmamalı — koşul çağrı yerine taşınır.
 - Detay sayfalarının key'i kaydın id'sini taşır (`training-detail-${id}`), yoksa
   başka kayda geçince form eski veriyle kalır.
-- Uygulandı: team-detail, training-detail, create-training, Navigation, Footer,
+- Uygulandı: home (web), team-detail, training-detail, create-training, Navigation, Footer,
   BottomNav. Kalanlar tek tek geçirilebilir; her birinde `useState` başlangıç
   değerinin "her render'da tazelensin" varsayımına dayanıp dayanmadığı kontrol edilir.
 
@@ -455,6 +455,10 @@ Sıra: üst bölüm (banner) → Yakınımda + öne çıkan/yaklaşan etkinlikle
 takımı olan branşlar, tıklayınca Takımlar o branşla süzülü açılır — `teamSportSeedRef`; telefonda yana
 kayar) → Neden Muuvlink (3 kısa kart, fotoğraf yok) → haberler → galeri → Training Agents bandı → SSS →
 kayıt çağrısı. Önceden tanıtım en üstteydi (telefonda ilk etkinlik 3.600 px aşağıdaydı), takım yoktu.
+- **Yakınımda sütunu** (masaüstü): `lg:w-80`, kaydırırken sabit (`lg:sticky`), km düğmeleri 4'lü ızgara (iki
+  satıra kayıyordu), altında küçük harita (`TrainingsMapViewLazy`, 300 px). Harita yalnız masaüstünde ve
+  `MountWhenVisible` ile ekrana gelince yüklenir (maplibre ~800 KB; telefonda hiç inmez).
+- Ana sayfa `PageHost key="home"` içinde (harita ve banner slaytı her üst-render'da sökülmesin).
 - Banner sloganı SABİT (her slaytta ilk slogan; harf harf yazılıp silinen hali yarı zamanda boştu).
   Telefon uygulamasının ana sayfası (`MobileHomePage`) hâlâ `MottoReveal` kullanır, ona dokunulmadı.
 - Sayaçlar: Üye · Takım · Etkinlik (toplam sayılar; "aktif" denmez). Kayıt çağrısında "binlerce" yok.

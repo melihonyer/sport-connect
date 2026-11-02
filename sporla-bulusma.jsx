@@ -108,6 +108,23 @@ const buildTeamEditForm = (team) => ({
 // koşullu return bulunmamalı (hook sırası bozulur) — koşul çağrı yerinde olur.
 const PageHost = ({ render }) => render();
 
+// Ekrana yaklaşınca çocukları kurar: ağır parçalar (harita) sayfa açılışını yavaşlatmasın.
+// display:none içindeyse hiç kurulmaz (kesişim olmaz).
+function MountWhenVisible({ minHeight, children }) {
+  const ref = useRef(null);
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    if (on || !ref.current) return;
+    if (!("IntersectionObserver" in window)) { setOn(true); return; }
+    const io = new IntersectionObserver((es) => {
+      if (es.some((e) => e.isIntersecting)) { setOn(true); io.disconnect(); }
+    }, { rootMargin: "200px" });
+    io.observe(ref.current);
+    return () => io.disconnect();
+  }, [on]);
+  return <div ref={ref} style={{ minHeight }}>{on ? children : null}</div>;
+}
+
 // Cihazın push jetonunu kullanıcıya bağlar (authToken varsa) ya da bağını
 // koparır (authToken null). Jeton yalnızca uygulama açılışında geliyordu; kişi
 // o an giriş yapmamışsa sonradan giriş yapsa bile cihaz kimseye bağlanmıyor ve
@@ -5661,8 +5678,9 @@ export default function Muuvlink() {
         <div className="max-w-7xl mx-auto px-4 sm:px-8">
           <div className="flex flex-col lg:flex-row gap-12">
 
-            {/* Sol: GPS arama */}
-            <div className="lg:w-72 flex-shrink-0">
+            {/* Sol: GPS arama — masaüstünde kaydırırken sabit, altında küçük harita (2 Kasım 2026, Melih:
+                sağdaki uzun listenin yanında boşluk kalıyordu, km düğmeleri iki satıra kayıyordu) */}
+            <div className="lg:w-80 flex-shrink-0 lg:sticky lg:top-24 lg:self-start">
               <span className="text-xs font-semibold tracking-[0.3em] text-brand-800 uppercase block mb-3">{t("home.gpsLabel")}</span>
               <h2 className="font-display font-bold text-slate-900 leading-snug mb-3"
                 style={{fontSize:"clamp(1.6rem,3vw,2rem)", letterSpacing:"-0.01em"}}>
@@ -5671,12 +5689,12 @@ export default function Muuvlink() {
               <p className="text-slate-500 text-sm leading-relaxed mb-6">
                 {t("home.gpsDesc")}
               </p>
-              <div className="flex flex-wrap gap-2 mb-4">
+              <div className="grid grid-cols-4 gap-2 mb-4">
                 {[5, 10, 25, 50].map((km) => (
                   <button data-hover="own"
                     key={km}
                     onClick={() => setNearbyDistance(km)}
-                    className="px-4 py-2 rounded-xl text-xs font-medium transition-all duration-300 hover:scale-105 hover:shadow-md"
+                    className="py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all duration-300 hover:scale-105 hover:shadow-md"
                     style={nearbyDistance === km
                       ? {background:"#114956", color:"#fff", boxShadow:"0 2px 8px rgba(17,73,86,0.18)"}
                       : {background:"#e6f7f5", color:"#0b2f38", border:"1px solid #c2ede9", boxShadow:"0 2px 8px rgba(17,73,86,0.0)"}}
@@ -5690,13 +5708,26 @@ export default function Muuvlink() {
               <button data-btn="solid"
                 onClick={() => handleNearbySearch()}
                 disabled={locationLoading}
-                className="flex items-center gap-2 px-6 py-3 rounded-xl font-medium text-white text-sm transition-all duration-300 hover:opacity-90 hover:scale-105 disabled:opacity-50 disabled:scale-100"
+                className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-medium text-white text-sm transition-all duration-300 hover:opacity-90 hover:scale-[1.02] disabled:opacity-50 disabled:scale-100"
                 style={{background:"#114956", boxShadow:"0 2px 8px rgba(17,73,86,0.18)"}}
               >
                 {locationLoading
                   ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/> {t("home.gettingLocation")}</>
                   : <><MapPin className="w-4 h-4"/> {t("home.searchNearby")}</>}
               </button>
+
+              {/* Küçük harita: yaklaşan etkinlikler. Yalnız masaüstü (telefonda listeyi aşağı itiyordu);
+                  ekrana gelince yüklenir. İşaretçiye dokununca etkinlik açılır. */}
+              <div className="hidden lg:block mt-6">
+                <MountWhenVisible minHeight={300}>
+                  <ErrorBoundary key="home-map-boundary">
+                    <React.Suspense fallback={<div className="h-[300px] rounded-2xl bg-slate-50" />}>
+                      <TrainingsMapViewLazy trainings={trainings} onSelectTraining={fetchTrainingDetails} t={t}
+                        containerStyle={{ height: "300px" }} />
+                    </React.Suspense>
+                  </ErrorBoundary>
+                </MountWhenVisible>
+              </div>
             </div>
 
             {/* Dikey ayraç */}
@@ -10412,7 +10443,7 @@ Vergi Dairesi: Karşıyaka V.D. | VN: 7420957827<br/>
       )}
 
       <div style={isNative ? {paddingBottom:"calc(env(safe-area-inset-bottom) + 60px)"} : {}}>
-      {currentPage === "home" && (isNative ? <MobileHomePage /> : <HomePage />)}
+      {currentPage === "home" && (isNative ? <MobileHomePage /> : <PageHost key="home" render={HomePage} />)}
       {currentPage === "profile" && <ProfilePage />}
       {currentPage === "trainings" && <TrainingsPage />}
       {currentPage === "teams" && <TeamsPage />}
