@@ -5533,14 +5533,6 @@ export default function Muuvlink() {
 
         <StarterChecklist />
 
-        {/* Yakınımda (2 Kasım 2026, Melih: "uygulamaya da ekle") — web ana sayfasıyla aynı düğmeler ve harita.
-            Uygulama açılışta konumu aldığı için radar dairesi hemen görünür. */}
-        <div className="pt-8 bg-white px-4">
-          <SectionHeading icon={MapPin} title={t("home.findNearby")} className="!mb-3" />
-          {renderNearbyControls()}
-          <div className="mt-4">{renderNearbyMap("h-[220px]")}</div>
-        </div>
-
         {/* Öne çıkan etkinlikler — uygulama bu ekranla açıldığı için burada da en üstte.
             Kural Etkinlikler sayfasıyla aynı: admin panelinden işaretlenenler. */}
         {trainings.some((tr) => tr.is_featured) && (
@@ -5577,6 +5569,14 @@ export default function Muuvlink() {
               </button>
             </div>
           )}
+        </div>
+
+        {/* Yakınımda — etkinliklerin altında (Melih, 2 Kasım 2026); web ana sayfasıyla aynı düğmeler ve harita.
+            Uygulama açılışta konumu aldığı için radar dairesi hemen görünür. */}
+        <div className="pb-8 bg-white px-4">
+          <SectionHeading icon={MapPin} title={t("home.findNearby")} className="!mb-3" />
+          {renderNearbyControls()}
+          <div className="mt-4">{renderNearbyMap("h-[220px]")}</div>
         </div>
 
         {/* Training Agents: uygulamada da haberlerin üstünde; rozet cihazın mağazasına gider */}
@@ -5735,7 +5735,8 @@ export default function Muuvlink() {
 
             {/* Sol: GPS arama — masaüstünde kaydırırken sabit, altında küçük harita (2 Kasım 2026, Melih:
                 sağdaki uzun listenin yanında boşluk kalıyordu, km düğmeleri iki satıra kayıyordu) */}
-            <div className="lg:w-80 flex-shrink-0 lg:sticky lg:top-24 lg:self-start">
+            {/* Telefonda etkinliklerin ALTINDA (order-2), masaüstünde solda (Melih, 2 Kasım 2026) */}
+            <div className="order-2 lg:order-none lg:w-80 flex-shrink-0 lg:sticky lg:top-24 lg:self-start">
               <span className="text-xs font-semibold tracking-[0.3em] text-brand-800 uppercase block mb-3">{t("home.gpsLabel")}</span>
               <h2 className="font-display font-bold text-slate-900 leading-snug mb-3"
                 style={{fontSize:"clamp(1.6rem,3vw,2rem)", letterSpacing:"-0.01em"}}>
@@ -5752,7 +5753,7 @@ export default function Muuvlink() {
             <div className="hidden lg:block w-px bg-slate-100 self-stretch"/>
 
             {/* Sağ: Etkinlik listesi */}
-            <div className="flex-1 min-w-0">
+            <div className="order-1 lg:order-none flex-1 min-w-0">
               <div className="flex items-center justify-between mb-2">
                 <div>
                   <span className="text-xs font-semibold tracking-[0.3em] text-brand-800 uppercase block mb-3">{t("home.discover")}</span>
