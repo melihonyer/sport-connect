@@ -264,8 +264,12 @@ Kurallar:
   söylesin"): `sportStyle.jsx` `SPORT_STYLE` her branşa düz bir renk + ikon verir (lucide; basketbol,
   tenis, futbol, padel, koşu, kürek için aynı çizgi stilinde elle çizilmiş). TEK kaynak orası; JSX'e branş
   rengi yazılmaz. Takım kartının üst bandı (h-11): ikon + branş adı (büyük harf) + "+n" (çok branşlı) +
-  sağda büyük soluk ikon. Renkler beyaz yazı okunacak koyulukta; "Diğer" = Deep Teal. Yeni branş
-  `SPORT_TYPES`'a eklenirse buraya da renk + ikon eklenir (yoksa "Diğer" görünür).
+  sağda büyük soluk ikon. Etkinlik kartında takvimin ay şeridi + başlığın üstünde branş rozeti (ikon +
+  ad). **Tonlar griye kayan, soluk** (Melih: canlı hali "çok renkli"; üç seçenekten "daha gri"yi seçti):
+  OKLCH doygunluk ~0.06 + hafif mavi-gri; en çok kullanılan Triatlon/Koşu/Bisiklet/Yüzme çarkta en
+  uzak (mor, gül kurusu, haki, mavi). Beyaz yazı ≥ 4.5:1; yazı rengi `text` kontrasta göre seçilir.
+  "Diğer" = Deep Teal. Yeni branş `SPORT_TYPES`'a eklenirse buraya da aynı doygunlukta renk + ikon
+  eklenir (yoksa "Diğer" görünür).
 - Birincil butonlar `data-btn="solid"` taşır → hover'da sarı zemin + deep teal metin.
   Sarı butonlar `data-btn="pop"` taşır → hover'da deep teal zemin + beyaz metin.
 - Hover kuralları `@media (hover: hover) and (pointer: fine)` içindedir.

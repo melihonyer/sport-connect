@@ -1,7 +1,7 @@
-// Branş rengi + ikonu — takım kartının üst bandı (2 Kasım 2026, Melih: "bakıldığında ne takım
-// olduğu hızlıca anlaşılsın"). Branş renkleri kurumsal paletin DIŞINDA bilinçli bir istisna ve
-// TEK kaynak burası: JSX'e branş rengi yazılmaz. Hepsi düz renk (degrade yok), üzerinde beyaz
-// yazı/ikon okunur koyulukta. Lucide'de olmayan branşlar için aynı çizgi stilinde küçük ikonlar.
+// Branş rengi + ikonu — takım kartının üst bandı ve etkinlik kartının takvim şeridi/rozeti
+// (2 Kasım 2026, Melih: "bakıldığında ne takım olduğu hızlıca anlaşılsın"). Branş renkleri
+// kurumsal paletin DIŞINDA bilinçli bir istisna ve TEK kaynak burası: JSX'e branş rengi yazılmaz.
+// Hepsi düz renk (degrade yok). Lucide'de olmayan branşlar için aynı çizgi stilinde küçük ikonlar.
 import {
   Activity, Bike, Dumbbell, Flower2, Footprints, Kayak, Medal, Mountain,
   PawPrint, PersonStanding, Volleyball, Waves,
@@ -47,27 +47,45 @@ const Oars = lucideLike(<>
   <path d="M15 4.5l4.5 4.5-2.5 1.5-3.5-3.5zM9 4.5L4.5 9 7 10.5l3.5-3.5z" />
 </>);
 
-export const SPORT_STYLE = {
-  Basketbol:      { color: "#C2410C", Icon: Basketball },
-  Bikejoring:     { color: "#A16207", Icon: PawPrint },
-  Bisiklet:       { color: "#DC2626", Icon: Bike },
-  Canicross:      { color: "#92400E", Icon: PawPrint },
-  Crossfit:       { color: "#475569", Icon: Dumbbell },
-  "Dog Triatlon": { color: "#9A3412", Icon: PawPrint },
-  Futbol:         { color: "#15803D", Icon: SoccerBall },
-  Kano:           { color: "#0E7490", Icon: Kayak },
-  Koşu:           { color: "#E11D48", Icon: Runner },
-  Kürek:          { color: "#1E40AF", Icon: Oars },
-  Padel:          { color: "#0F766E", Icon: PadelRacket },
-  Pilates:        { color: "#BE185D", Icon: PersonStanding },
-  Tenis:          { color: "#4D7C0F", Icon: TennisBall },
-  Trekking:       { color: "#57534E", Icon: Mountain },
-  Triatlon:       { color: "#4338CA", Icon: Medal },
-  Voleybol:       { color: "#A21CAF", Icon: Volleyball },
-  Yoga:           { color: "#7E22CE", Icon: Flower2 },
-  Yürüyüş:        { color: "#047857", Icon: Footprints },
-  Yüzme:          { color: "#0284C7", Icon: Waves },
-  Diğer:          { color: "#114956", Icon: Activity }, // brand-600
+// Griye kayan soluk tonlar (Melih, 2 Kasım 2026: canlı hali "çok renkli", üç seçenekten "daha
+// gri"yi seçti). OKLCH'de düşük doygunluk (C 0.06) + hafif mavi-gri ton; tonlar çarkta dağıtıldı,
+// en çok kullanılan dört branş (Triatlon, Koşu, Bisiklet, Yüzme) birbirinden en uzak: mor, gül
+// kurusu, haki, mavi. Hepsinde beyaz yazı ≥ 4.5:1; yazı rengi yine de kontrasta göre seçilir
+// (ileride açık bir renk eklenirse koyu yazı). Yeni renk de bu doygunlukta seçilir.
+const RAW = {
+  Triatlon:       ["#5A507D", Medal],
+  Koşu:           ["#8F6870", Runner],
+  Bisiklet:       ["#7D7256", Bike],
+  Yüzme:          ["#426D93", Waves],
+  Tenis:          ["#5E7A5F", TennisBall],
+  Basketbol:      ["#74554A", Basketball],
+  Padel:          ["#367C85", PadelRacket],
+  Yürüyüş:        ["#30665A", Footprints],
+  Trekking:       ["#6C6868", Mountain],
+  Voleybol:       ["#8C6985", Volleyball],
+  Futbol:         ["#29513E", SoccerBall],
+  Kano:           ["#10556D", Kayak],
+  Kürek:          ["#293B65", Oars],
+  Crossfit:       ["#3A495C", Dumbbell],
+  Pilates:        ["#69465B", PersonStanding],
+  Yoga:           ["#80668D", Flower2],
+  Canicross:      ["#66553D", PawPrint],
+  Bikejoring:     ["#5C4133", PawPrint],
+  "Dog Triatlon": ["#4E2E2D", PawPrint],
+  Diğer:          ["#114956", Activity], // brand-600
 };
+
+// WCAG göreli parlaklık → beyaz mı koyu (Carbon) mı daha okunur
+const INK = "#1F2121";
+const lum = (hex) => {
+  const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+    .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+};
+const textOn = (hex) => (1.05 / (lum(hex) + 0.05) >= (lum(hex) + 0.05) / (lum(INK) + 0.05) ? "#FFFFFF" : INK);
+
+export const SPORT_STYLE = Object.fromEntries(
+  Object.entries(RAW).map(([k, [color, Icon]]) => [k, { color, text: textOn(color), Icon }])
+);
 
 export const sportStyle = (sport) => SPORT_STYLE[sport] || SPORT_STYLE.Diğer;

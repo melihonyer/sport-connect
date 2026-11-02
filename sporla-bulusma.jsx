@@ -381,28 +381,6 @@ const trainingAccentColor = (id) => {
   return TRAINING_ACCENT_COLORS[hash % TRAINING_ACCENT_COLORS.length];
 };
 
-// Etkinlik takvim ikonunun üst şerit rengi — bu paletten seçilir. Etkinlik id'sine
-// göre "rastgele ama sabit" (yeniden render'da titremesin diye deterministik).
-const CAL_BAND_COLORS = [
-  "#FAFFA3", "#C6E772", "#66D47E", "#073835",
-  "#FFEED0", "#F4C180", "#00A79D", "#007064",
-  "#9765C8", "#099A97", "#15CDA9", "#F0E4E4",
-];
-const calBandColor = (id) => CAL_BAND_COLORS[((((id || 0) * 2654435761) >>> 0) + 7) % CAL_BAND_COLORS.length];
-// Şerit metni: beyaz ile koyudan WCAG kontrastı yüksek olanı. Eski parlaklık eşiği
-// #15CDA9/#00A79D gibi orta tonlarda beyaz seçip 2:1–3:1 kontrast veriyordu.
-const _relLum = (hex) => {
-  const h = hex.replace("#", "");
-  const c = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16) / 255)
-    .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
-  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
-};
-const calBandTextColor = (hex) => {
-  const L = _relLum(hex);
-  const vsWhite = 1.05 / (L + 0.05), vsInk = (L + 0.05) / (_relLum("#1f2937") + 0.05);
-  return vsWhite >= vsInk ? "#ffffff" : "#1f2937";
-};
-
 const DEFAULT_MOTTOS = {
   tr: ["Birlikte Hareket Et!", "Yeni Dostlar Edin!", "Limitlerini Aş!", "En İyini Keşfet!"],
   en: ["Move Together!", "Make New Friends!", "Push Your Limits!", "Discover Your Best!"],
@@ -5168,6 +5146,9 @@ export default function Muuvlink() {
   const isOrg  = !!training.is_organizer_event || !!training.is_paid;
   const isPaid = !!training.is_paid;
   const subtitleName = isOrg ? training.organizer : (training.team_name || training.creator_display);
+  // Branş: etkinliğin kendi dalı, eski takım etkinliklerinde takımın dalı (sportStyle.jsx — takım kartıyla aynı renk)
+  const sportKey = training.sport || training.team_sport;
+  const sp = sportStyle(sportKey);
 
   return (
     <a
@@ -5175,15 +5156,13 @@ export default function Muuvlink() {
       onClick={(e) => openCardLink(e, () => onClick(training.id))}
       className="group flex items-stretch gap-0 bg-white border-b border-dashed border-slate-100 cursor-pointer transition-colors duration-150 py-6 px-2 hover:bg-slate-50/80 hover:border-slate-200 active:bg-slate-50 no-underline text-inherit"
     >
-      {/* Sol: Takvim ikonu (üst şerit rengi paletten rastgele) */}
+      {/* Sol: Takvim ikonu — ay şeridi branşın renginde (takım kartının bandıyla aynı) */}
       <div className="flex items-center justify-center w-20 flex-shrink-0 pr-5">
         {(() => {
-          const band = calBandColor(training.id);
-          const bandText = calBandTextColor(band);
           return (
             <div className="w-[64px] aspect-square rounded-2xl overflow-hidden bg-slate-50 border border-slate-200 flex flex-col">
               <div className="text-center uppercase font-bold tracking-[0.1em] text-[11px] leading-none pt-[7px] pb-[6px]"
-                style={{ background: band, color: bandText }}>
+                style={{ background: sp.color, color: sp.text }}>
                 {month}
               </div>
               <div className="flex-1 flex items-center justify-center bg-slate-50">
@@ -5201,9 +5180,14 @@ export default function Muuvlink() {
       {/* Sağ: İçerik */}
       <div className="flex-1 pl-5 flex flex-col justify-center gap-1 min-w-0">
         {/* Rozetler kendi satırında: başlıkla aynı satırdayken telefonda başlık
-            "Ölüdeniz Op…" diye kesiliyordu. */}
-        {(isOrg || training.registration_url) && (
+            "Ölüdeniz Op…" diye kesiliyordu. İlk rozet branş (ikon + ad, branşın renginde). */}
         <div className="flex flex-wrap items-center gap-1.5">
+          {sportKey && (
+            <span className="flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold"
+              style={{ background: `${sp.color}14`, color: sp.color }}>
+              <sp.Icon className="w-3 h-3" aria-hidden="true"/> {sportLabel(sportKey)}
+            </span>
+          )}
           {isOrg && (
             <span className={`flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold ${isPaid ? "bg-pop-400 text-ink-900" : "bg-brand-100 text-brand-700"}`}>
               <Ticket className="w-3 h-3"/> {t(isPaid ? "trainings.paidBadge" : "trainings.freeBadge")}
@@ -5219,7 +5203,6 @@ export default function Muuvlink() {
             </span>
           )}
         </div>
-        )}
         <h3 className="font-display font-bold text-slate-900 group-hover:text-brand-700 transition-colors line-clamp-2 leading-snug [overflow-wrap:anywhere]"
           style={{fontSize:"1.05rem", letterSpacing:"-0.01em"}}>
           {training.title}
@@ -5268,11 +5251,11 @@ export default function Muuvlink() {
         const sp = sportStyle(team.sport);
         const extra = Array.isArray(team.sports) ? team.sports.filter((x) => x && x !== team.sport).length : 0;
         return (
-          <div className="relative h-11 px-5 flex items-center gap-2 overflow-hidden" style={{ background: sp.color }}>
-            <sp.Icon className="w-[18px] h-[18px] text-white flex-shrink-0" aria-hidden="true" />
-            <span className="text-white text-xs font-semibold tracking-[0.14em] uppercase truncate">{sportLabel(team.sport)}</span>
-            {extra > 0 && <span className="text-white/80 text-xs font-semibold flex-shrink-0">+{extra}</span>}
-            <sp.Icon className="absolute -right-3 -bottom-5 w-20 h-20 text-white/15 -rotate-12 pointer-events-none" strokeWidth={1.5} aria-hidden="true" />
+          <div className="relative h-11 px-5 flex items-center gap-2 overflow-hidden" style={{ background: sp.color, color: sp.text }}>
+            <sp.Icon className="w-[18px] h-[18px] flex-shrink-0" aria-hidden="true" />
+            <span className="text-xs font-semibold tracking-[0.14em] uppercase truncate">{sportLabel(team.sport)}</span>
+            {extra > 0 && <span className="opacity-80 text-xs font-semibold flex-shrink-0">+{extra}</span>}
+            <sp.Icon className="absolute -right-3 -bottom-5 w-20 h-20 opacity-15 -rotate-12 pointer-events-none" strokeWidth={1.5} aria-hidden="true" />
           </div>
         );
       })()}
