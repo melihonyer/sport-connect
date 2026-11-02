@@ -5388,6 +5388,51 @@ export default function Muuvlink() {
   // PAGES
   // =====================================================
 
+  // Yakınımda: km düğmeleri + "Yakınımda Ara" ve küçük harita — web ana sayfası ve uygulama ana sayfası
+  // ortak kullanır (2 Kasım 2026). Harita ekrana gelince yüklenir; konum biliniyorsa radar dairesi.
+  const renderNearbyControls = () => (
+    <>
+      <div className="grid grid-cols-4 gap-2 mb-4">
+        {NEARBY_KM.map((km) => (
+          <button data-hover="own"
+            key={km}
+            // Konum bilinmiyorsa izin istenir: haritada konum + yarıçap (radar) görünsün
+            onClick={() => { setNearbyDistance(km); if (!userLocation) requestSortLocation(); }}
+            className="py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all duration-300 hover:scale-105 hover:shadow-md"
+            style={nearbyDistance === km
+              ? {background:"#114956", color:"#fff", boxShadow:"0 2px 8px rgba(17,73,86,0.18)"}
+              : {background:"#e6f7f5", color:"#0b2f38", border:"1px solid #c2ede9", boxShadow:"0 2px 8px rgba(17,73,86,0.0)"}}
+            onPointerEnter={e => { if (e.pointerType !== "mouse") return; if(nearbyDistance !== km) e.currentTarget.style.boxShadow="0 4px 16px rgba(17,73,86,0.25)"; }}
+            onPointerLeave={e => { if (e.pointerType !== "mouse") return; if(nearbyDistance !== km) e.currentTarget.style.boxShadow="0 2px 8px rgba(17,73,86,0.0)"; }}
+          >
+            {km} km
+          </button>
+        ))}
+      </div>
+      <button data-btn="solid"
+        onClick={() => handleNearbySearch()}
+        disabled={locationLoading}
+        className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-medium text-white text-sm transition-all duration-300 hover:opacity-90 hover:scale-[1.02] disabled:opacity-50 disabled:scale-100"
+        style={{background:"#114956", boxShadow:"0 2px 8px rgba(17,73,86,0.18)"}}
+      >
+        {locationLoading
+          ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/> {t("home.gettingLocation")}</>
+          : <><MapPin className="w-4 h-4"/> {t("home.searchNearby")}</>}
+      </button>
+    </>
+  );
+  const renderNearbyMap = (heightCls) => (
+    <MountWhenVisible className={`muuv-mini-map ${heightCls}`}>
+      <ErrorBoundary key="home-map-boundary">
+        <React.Suspense fallback={<div className="h-full rounded-2xl bg-slate-50" />}>
+          <TrainingsMapViewLazy trainings={trainings} onSelectTraining={fetchTrainingDetails} t={t}
+            containerStyle={{ height: "100%" }}
+            me={userLocation} radiusKm={userLocation ? nearbyDistance : null} />
+        </React.Suspense>
+      </ErrorBoundary>
+    </MountWhenVisible>
+  );
+
   const MobileHomePage = () => {
     const [bannerIdx, setBannerIdx] = React.useState(0);
     React.useEffect(() => {
@@ -5487,6 +5532,14 @@ export default function Muuvlink() {
         </div>
 
         <StarterChecklist />
+
+        {/* Yakınımda (2 Kasım 2026, Melih: "uygulamaya da ekle") — web ana sayfasıyla aynı düğmeler ve harita.
+            Uygulama açılışta konumu aldığı için radar dairesi hemen görünür. */}
+        <div className="pt-8 bg-white px-4">
+          <SectionHeading icon={MapPin} title={t("home.findNearby")} className="!mb-3" />
+          {renderNearbyControls()}
+          <div className="mt-4">{renderNearbyMap("h-[220px]")}</div>
+        </div>
 
         {/* Öne çıkan etkinlikler — uygulama bu ekranla açıldığı için burada da en üstte.
             Kural Etkinlikler sayfasıyla aynı: admin panelinden işaretlenenler. */}
@@ -5691,47 +5744,8 @@ export default function Muuvlink() {
               <p className="text-slate-500 text-sm leading-relaxed mb-6">
                 {t("home.gpsDesc")}
               </p>
-              <div className="grid grid-cols-4 gap-2 mb-4">
-                {NEARBY_KM.map((km) => (
-                  <button data-hover="own"
-                    key={km}
-                    // Konum bilinmiyorsa izin istenir: haritada konum + yarıçap (radar) görünsün
-                    onClick={() => { setNearbyDistance(km); if (!userLocation) requestSortLocation(); }}
-                    className="py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all duration-300 hover:scale-105 hover:shadow-md"
-                    style={nearbyDistance === km
-                      ? {background:"#114956", color:"#fff", boxShadow:"0 2px 8px rgba(17,73,86,0.18)"}
-                      : {background:"#e6f7f5", color:"#0b2f38", border:"1px solid #c2ede9", boxShadow:"0 2px 8px rgba(17,73,86,0.0)"}}
-                    onPointerEnter={e => { if (e.pointerType !== "mouse") return; if(nearbyDistance !== km) e.currentTarget.style.boxShadow="0 4px 16px rgba(17,73,86,0.25)"; }}
-                    onPointerLeave={e => { if (e.pointerType !== "mouse") return; if(nearbyDistance !== km) e.currentTarget.style.boxShadow="0 2px 8px rgba(17,73,86,0.0)"; }}
-                  >
-                    {km} km
-                  </button>
-                ))}
-              </div>
-              <button data-btn="solid"
-                onClick={() => handleNearbySearch()}
-                disabled={locationLoading}
-                className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-medium text-white text-sm transition-all duration-300 hover:opacity-90 hover:scale-[1.02] disabled:opacity-50 disabled:scale-100"
-                style={{background:"#114956", boxShadow:"0 2px 8px rgba(17,73,86,0.18)"}}
-              >
-                {locationLoading
-                  ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/> {t("home.gettingLocation")}</>
-                  : <><MapPin className="w-4 h-4"/> {t("home.searchNearby")}</>}
-              </button>
-
-              {/* Küçük harita: yaklaşan etkinlikler + konum biliniyorsa kullanıcı ve seçili km dairesi (radar).
-                  Telefonda da var (Melih); ekrana gelince yüklenir. İşaretçiye dokununca etkinlik açılır. */}
-              <div className="mt-6">
-                <MountWhenVisible className="muuv-mini-map h-[220px] lg:h-[300px]">
-                  <ErrorBoundary key="home-map-boundary">
-                    <React.Suspense fallback={<div className="h-full rounded-2xl bg-slate-50" />}>
-                      <TrainingsMapViewLazy trainings={trainings} onSelectTraining={fetchTrainingDetails} t={t}
-                        containerStyle={{ height: "100%" }}
-                        me={userLocation} radiusKm={userLocation ? nearbyDistance : null} />
-                    </React.Suspense>
-                  </ErrorBoundary>
-                </MountWhenVisible>
-              </div>
+              {renderNearbyControls()}
+              <div className="mt-6">{renderNearbyMap("h-[220px] lg:h-[300px]")}</div>
             </div>
 
             {/* Dikey ayraç */}
@@ -10447,7 +10461,7 @@ Vergi Dairesi: Karşıyaka V.D. | VN: 7420957827<br/>
       )}
 
       <div style={isNative ? {paddingBottom:"calc(env(safe-area-inset-bottom) + 60px)"} : {}}>
-      {currentPage === "home" && (isNative ? <MobileHomePage /> : <PageHost key="home" render={HomePage} />)}
+      {currentPage === "home" && (isNative ? <PageHost key="home-app" render={MobileHomePage} /> : <PageHost key="home" render={HomePage} />)}
       {currentPage === "profile" && <ProfilePage />}
       {currentPage === "trainings" && <TrainingsPage />}
       {currentPage === "teams" && <TeamsPage />}

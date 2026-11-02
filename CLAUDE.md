@@ -461,6 +461,9 @@ kayıt çağrısı. Önceden tanıtım en üstteydi (telefonda ilk etkinlik 3.60
   atan nokta + seçili km dairesi (`me`/`radiusKm` → `MeRadar`): km değişince daire büyür, harita daireye
   sığar, içten dışa radar halkası döner (hareket azaltmada yok). Konum yoksa km düğmesi izin ister.
   Küçük haritada atıf yazısı küçük (`.muuv-mini-map`, index.css) — atıf kaldırılmaz.
+  Düğmeler + harita ortak parçalar: `renderNearbyControls()` / `renderNearbyMap(yükseklik)`; web ana sayfası
+  ve **uygulama ana sayfası** (`MobileHomePage`, banner'ın altında, öne çıkanların üstünde, 2 Kasım 2026)
+  ikisi de kullanır. Uygulama ana sayfası da `PageHost key="home-app"` içinde.
 - **Yarıçaplar `NEARBY_KM` = 10, 25, 50, 100** (2 Kasım 2026, Melih: 5 kalktı, 100 eklendi). Ana sayfa ve
   Etkinlikler aynı listeyi kullanır; metinlerde (SSS a3, `ef1p1`, `eventsSub`) "10–100 km". Sunucuda üst sınır yok.
 - Ana sayfa `PageHost key="home"` içinde (harita ve banner slaytı her üst-render'da sökülmesin).
