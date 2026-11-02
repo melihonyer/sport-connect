@@ -5244,18 +5244,19 @@ export default function Muuvlink() {
       onClick={(e) => openCardLink(e, () => onClick(team.id))}
       className="group block bg-white rounded-2xl border border-slate-100 hover:border-brand-200 hover:shadow-xl hover:-translate-y-0.5 active:bg-slate-50 transition-[transform,box-shadow,border-color] duration-200 ease-out cursor-pointer overflow-hidden no-underline text-inherit"
     >
-      {/* Başlık açık gri, branşı sağdaki renkli ikon kutusu söyler (sportStyle.jsx; Melih: "başlık açık
-          gri, ikonlar renkli"). Birden çok branşı olan takımda "+n". Düz renk, degrade yok. */}
+      {/* Başlık açık gri, branşı soldaki renkli ikon kutusu söyler, branş adı sağda (sportStyle.jsx; Melih:
+          "başlık açık gri, ikonlar renkli", "ikonlar sola başlık sağa", ikon avatar hizasında). Çok branşlıda "+n". */}
       {(() => {
         const sp = sportStyle(team.sport);
         const extra = Array.isArray(team.sports) ? team.sports.filter((x) => x && x !== team.sport).length : 0;
         return (
-          <div className="relative h-11 pl-5 pr-16 flex items-center gap-2 bg-slate-100">
-            <span className="text-slate-600 text-xs font-semibold tracking-[0.14em] uppercase truncate">{sportLabel(team.sport)}</span>
-            {extra > 0 && <span className="text-slate-400 text-xs font-semibold flex-shrink-0">+{extra}</span>}
-            <span className="absolute right-0 inset-y-0 w-14 flex items-center justify-center" style={{ background: sp.color, color: sp.text }}>
+          <div className="relative h-11 pl-20 pr-5 flex items-center justify-end gap-2 bg-slate-100">
+            {/* Takım avatarıyla aynı sütun: gövdenin p-5 boşluğu + avatarın w-12 genişliği */}
+            <span className="absolute left-5 inset-y-0 w-12 flex items-center justify-center" style={{ background: sp.color, color: sp.text }}>
               <sp.Icon className="w-6 h-6" aria-hidden="true" />
             </span>
+            <span className="min-w-0 text-slate-600 text-xs font-semibold tracking-[0.14em] uppercase truncate">{sportLabel(team.sport)}</span>
+            {extra > 0 && <span className="text-slate-400 text-xs font-semibold flex-shrink-0">+{extra}</span>}
           </div>
         );
       })()}

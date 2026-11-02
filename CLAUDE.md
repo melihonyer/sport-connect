@@ -264,8 +264,9 @@ Kurallar:
   söylesin"): `sportStyle.jsx` `SPORT_STYLE` her branşa düz bir renk + ikon verir (lucide; basketbol,
   tenis, futbol, padel, koşu, kürek için aynı çizgi stilinde elle çizilmiş). TEK kaynak orası; JSX'e branş
   rengi yazılmaz. **Kartta renk yalnız ikonda** (Melih: "başlık açık gri, ikonlar renkli"): takım
-  kartının başlığı (h-11) `bg-slate-100` + gri branş adı (büyük harf) + "+n" (çok branşlı), sağda
-  branş renginde ikon kutusu (w-14). Etkinlik kartında takvimin ay şeridi açık gri, başlığın üstündeki
+  kartının başlığı (h-11) `bg-slate-100`: solda branş renginde ikon kutusu takım avatarının hizasında
+  ve genişliğinde (`left-5 w-12`; gövde `p-5`, avatar `w-12` değişirse bu da değişir), sağda gri
+  branş adı (büyük harf) + "+n" (çok branşlı) — Melih: "ikonlar sola başlık sağa". Etkinlik kartında takvimin ay şeridi açık gri, başlığın üstündeki
   branş rozeti (ikon + ad) branş renginde. Renkler ilk palet (Tailwind 600–700 tonları); birbirine
   benzeyenler ayrıldı (Bisiklet hardal — Koşu ile karışıyordu; Padel mor — Yürüyüş ile). Denenip
   bırakılanlar: bandın tamamı branş renginde (canlı da soluk-gri de "olmadı"). "Diğer" = Deep Teal.
