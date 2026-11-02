@@ -75,6 +75,7 @@ import {
 } from "lucide-react";
 import SharedLocationPicker from "./LocationPicker";
 import RouteField from "./RouteField";
+import { sportStyle } from "./sportStyle";
 import RouteAnnounce, { ROUTE_ANNOUNCE_UNTIL, ROUTE_ANNOUNCE_KEY, ROUTE_ANNOUNCE_RESUME } from "./RouteAnnounce";
 import { formatRouteDistance, routeToGpx } from "./gpxRoute.js";
 // Ağır kütüphaneler lazy yüklenir — ilk bundle'ı küçültür
@@ -5261,8 +5262,20 @@ export default function Muuvlink() {
       onClick={(e) => openCardLink(e, () => onClick(team.id))}
       className="group block bg-white rounded-2xl border border-slate-100 hover:border-brand-200 hover:shadow-xl hover:-translate-y-0.5 active:bg-slate-50 transition-[transform,box-shadow,border-color] duration-200 ease-out cursor-pointer overflow-hidden no-underline text-inherit"
     >
-      {/* Üst şerit — düz Ana1 (kurumsal: degrade yok) */}
-      <div className="h-1.5 w-full bg-logo-teal"/>
+      {/* Üst bant — branşın rengi ve ikonu: kart bir bakışta hangi branş olduğunu söylesin (sportStyle.jsx).
+          Sağda aynı ikon büyük ve soluk; birden çok branşı olan takımda "+n". Düz renk, degrade yok. */}
+      {(() => {
+        const sp = sportStyle(team.sport);
+        const extra = Array.isArray(team.sports) ? team.sports.filter((x) => x && x !== team.sport).length : 0;
+        return (
+          <div className="relative h-11 px-5 flex items-center gap-2 overflow-hidden" style={{ background: sp.color }}>
+            <sp.Icon className="w-[18px] h-[18px] text-white flex-shrink-0" aria-hidden="true" />
+            <span className="text-white text-xs font-semibold tracking-[0.14em] uppercase truncate">{sportLabel(team.sport)}</span>
+            {extra > 0 && <span className="text-white/80 text-xs font-semibold flex-shrink-0">+{extra}</span>}
+            <sp.Icon className="absolute -right-3 -bottom-5 w-20 h-20 text-white/15 -rotate-12 pointer-events-none" strokeWidth={1.5} aria-hidden="true" />
+          </div>
+        );
+      })()}
       <div className="p-5">
         <div className="flex items-start justify-between mb-3 gap-2">
           <div className="flex items-center gap-3 min-w-0">
@@ -5274,10 +5287,11 @@ export default function Muuvlink() {
             </div>
             <div className="min-w-0">
               <h3 className="font-medium text-slate-900 truncate group-hover:text-brand-700 transition-colors">{team.name}</h3>
-              <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
-                <span className="px-2 py-0.5 bg-brand-50 text-brand-600 rounded-md text-xs font-semibold flex-shrink-0 whitespace-nowrap">{sportLabel(team.sport)}</span>
-                {team.location && <span className="text-slate-500 text-xs flex items-center gap-1 min-w-0"><MapPin className="w-3 h-3 flex-shrink-0"/><span className="truncate">{team.location}</span></span>}
-              </div>
+              {team.location && (
+                <div className="flex items-center gap-1 mt-0.5 min-w-0 text-slate-500 text-xs">
+                  <MapPin className="w-3 h-3 flex-shrink-0"/><span className="truncate">{team.location}</span>
+                </div>
+              )}
             </div>
           </div>
           {team.is_private && (

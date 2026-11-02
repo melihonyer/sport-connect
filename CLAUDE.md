@@ -260,6 +260,12 @@ Kurallar:
 - `brand` rampasının açık ucu (50–500) Ana1 tealinden türer, koyu ucu (600–950)
   Deep Teal'dir. Açık tonları koyudan türetme — griye kaçar.
 - Degrade kullanılmaz; yüzeyler düz renktir.
+- **Branş renkleri — bilinçli istisna** (2 Kasım 2026, Melih: "kart bir bakışta hangi branş olduğunu
+  söylesin"): `sportStyle.jsx` `SPORT_STYLE` her branşa düz bir renk + ikon verir (lucide; basketbol,
+  tenis, futbol, padel, koşu, kürek için aynı çizgi stilinde elle çizilmiş). TEK kaynak orası; JSX'e branş
+  rengi yazılmaz. Takım kartının üst bandı (h-11): ikon + branş adı (büyük harf) + "+n" (çok branşlı) +
+  sağda büyük soluk ikon. Renkler beyaz yazı okunacak koyulukta; "Diğer" = Deep Teal. Yeni branş
+  `SPORT_TYPES`'a eklenirse buraya da renk + ikon eklenir (yoksa "Diğer" görünür).
 - Birincil butonlar `data-btn="solid"` taşır → hover'da sarı zemin + deep teal metin.
   Sarı butonlar `data-btn="pop"` taşır → hover'da deep teal zemin + beyaz metin.
 - Hover kuralları `@media (hover: hover) and (pointer: fine)` içindedir.
