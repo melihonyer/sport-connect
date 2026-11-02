@@ -744,8 +744,31 @@ seçilebilir link kutusu, WhatsApp/Telegram/e-posta butonları, hazır davet mes
 
 ## Admin › Mesajlar: panelden cevap (28 Ekim 2026, Melih)
 
-İletişim formuna gelen mesaja "Yanıtla" → cevap kutusu → "Önizle" (alıcının göreceği hal +
+İletişim formuna gelen mesaja cevap kutusu → "Önizle" (alıcının göreceği hal +
 kanal) → "Gönder". `POST /api/admin/contact/:id/reply`.
+- **Gelen kutusu düzeni** (2 Kasım 2026, Melih: "yazdıkça uzuyor"): solda yazışma listesi
+  (okunmamış noktası, kısa zaman, son cümle + son cevabın durum ikonu), sağda seçili yazışma
+  balonlarla, cevap kutusu altta SABİT; yazışma kendi alanında kayar, açılınca en sona iner
+  (`AutoScrollBottom`, yalnız yazışma değişince/yeni cevapta). Süzgeç: Tümü · Okunmamış ·
+  Cevap bekliyor (son söz kişide ya da hiç cevap yok). Açık yazışma süzgece uymasa da listede
+  kalır. Yazışmayı açmak onu okundu yapar. Telefonda liste → yazışma (geri oku), yazışma
+  açıkken süzgeç gizli. Başka yazışmaya geçerken yazılmış cevap varsa onay sorar.
+- **Admin iskeleti masaüstünde ekran boyu** (`md:h-screen md:overflow-hidden`): menü ve içerik
+  ayrı kayar. Önceden gruplu menü uzayınca bütün sayfayı uzatıyordu. Kayan bir listede
+  `sr-only` metin varsa satıra `relative` verilir — yoksa belgeye taşıp sayfayı kaydırır.
+- **Cevap durumu: Gönderildi → Ulaştı → Okundu** (`contactReplyStatus`, admin). Her ekip
+  cevabına bağlı: `contact_replies.notif_id` (uygulama bildirimi), `push_ok/push_fail`
+  (`createNotif` `onPush` ile, satır yazıldıktan sonra), `resend_id` + `email_event`
+  (Resend'den, admin listesi açılırken `refreshContactEmailEvents`, en çok 8 sorgu, satıra
+  yazılır), `seen_at`. **"Okundu" YALNIZ `seen_at`**: kişi "Muuvlink'e mesajların" penceresini
+  cevaptan sonra açtı (`GET /api/users/me/messages` yalnız pencere açılınca çağrılır — bu uç
+  arka planda çağrılmaya başlarsa "okundu" yalan söyler). Bildirimin okundu işareti "Tümünü
+  okundu işaretle" ile de konduğu için okundu sayılmaz, ulaştı sayılır. Ulaştı = push ≥1 cihaza
+  gitti / e-posta teslim / bildirim okundu işaretli ya da silindi. Ulaşmadı = yalnız e-postayla
+  gitti ve geri döndü. **Resend'de açılma takibi kapalı** → e-posta en fazla "teslim edildi".
+  Durum alanları yalnız admin uçlarında (`CONTACT_REPLIES_SQL`); kişinin penceresine gitmez
+  (`MY_CONTACT_SELECT`). 2 Kasım öncesi 3 cevap kayıtlarla eşleştirildi (bildirim, push 1/0,
+  e-posta teslim); onların `seen_at`'ı bilinmiyor, "Ulaştı" görünürler.
 - Mesajı yazanın hesabı e-posta eşleşmesiyle bulunur (form giriş istemiyor). Hesap varsa
   uygulama bildirimi `admin_reply` + push (push metni ilk 180 karakter; `createNotif` `pushBody`),
   isteğe bağlı e-posta kopyası; hesap yoksa e-posta (`contact_answer`, mesajın dilinde —

@@ -917,7 +917,7 @@ async function quietBlocks(recipientId, email = null) {
 }
 
 // pushBody: push'a giden kısa metin (verilmezse message). Uzun metin push sınırını aşmasın.
-async function createNotif(userId, { title, message, build = null, type, refId = null, url = null, pushBody = null }) {
+async function createNotif(userId, { title, message, build = null, type, refId = null, url = null, pushBody = null, onPush = null }) {
   try {
     if (await quietBlocks(userId)) return null; // inceleme hesabının işlemi
     const key = NOTIF_TYPE_TO_KEY[type];
@@ -932,7 +932,7 @@ async function createNotif(userId, { title, message, build = null, type, refId =
     pushToUser(userId, { event: 'notification', data: r.rows[0] });
     const unread = await getUnreadCount(userId);
     sendPushToUser(userId, { title, body: pushBody || message, data: { type, refId, url }, badge: unread })
-      .then((push) => logNotif(type, userId, 'created', push)).catch(() => {});
+      .then((push) => { logNotif(type, userId, 'created', push); onPush?.(push || {}); }).catch(() => {});
     return r.rows[0];
   } catch (e) {
     console.error('createNotif error:', e.message);
@@ -7702,8 +7702,44 @@ const CONTACT_ACCOUNT_SQL = `SELECT id, name FROM users u
   WHERE u.deleted_at IS NULL AND (u.id = $1 OR ($1::int IS NULL AND lower(u.email) = lower($2)))
   ORDER BY id LIMIT 1`;
 const contactAccount = async (cm) => (await pool.query(CONTACT_ACCOUNT_SQL, [cm.user_id || null, cm.email])).rows[0] || null;
-const CONTACT_REPLIES_SQL = (alias) => `COALESCE((SELECT json_agg(json_build_object('id', r.id, 'text', r.text, 'channel', r.channel, 'from_user', r.from_user, 'created_at', r.created_at) ORDER BY r.created_at, r.id)
-  FROM contact_replies r WHERE r.message_id = ${alias}.id), '[]'::json)`;
+// Yalnız admin uçları kullanır — durum alanları kullanıcıya gitmez (kişinin kendi
+// penceresi MY_CONTACT_SELECT'ten beslenir).
+const CONTACT_REPLIES_SQL = (alias) => `COALESCE((SELECT json_agg(json_build_object(
+    'id', r.id, 'text', r.text, 'channel', r.channel, 'from_user', r.from_user, 'created_at', r.created_at,
+    'push_ok', r.push_ok, 'push_fail', r.push_fail, 'email_event', r.email_event, 'has_email_id', r.resend_id IS NOT NULL,
+    'seen_at', r.seen_at,
+    'notif_read', n.is_read, 'notif_gone', (r.notif_id IS NOT NULL AND n.id IS NULL)
+  ) ORDER BY r.created_at, r.id)
+  FROM contact_replies r LEFT JOIN notifications n ON n.id = r.notif_id
+  WHERE r.message_id = ${alias}.id), '[]'::json)`;
+
+// E-posta teslim durumu Resend'den, cevap satırına yazılır (her açılışta sorulmasın).
+// Açılma takibi kapalı olduğu için olaylar pratikte delivered / bounced.
+// Kesinleşmemiş olanlar 2 dk'da bir, "delivered" 3 gün boyunca 30 dk'da bir (sonradan
+// spam şikayeti gelebilir) yeniden sorulur. İstek başına en çok 8 sorgu.
+const CONTACT_EMAIL_FINAL = ['bounced', 'complained', 'opened', 'clicked'];
+async function refreshContactEmailEvents() {
+  if (!process.env.RESEND_API_KEY) return;
+  const due = (await pool.query(
+    `SELECT id, resend_id FROM contact_replies
+      WHERE resend_id IS NOT NULL AND NOT (COALESCE(email_event, '') = ANY($1))
+        AND (email_checked_at IS NULL
+             OR (COALESCE(email_event, '') <> 'delivered' AND email_checked_at < NOW() - interval '2 minutes')
+             OR (email_event = 'delivered' AND created_at > NOW() - interval '3 days' AND email_checked_at < NOW() - interval '30 minutes'))
+      ORDER BY created_at DESC LIMIT 8`, [CONTACT_EMAIL_FINAL])).rows;
+  await Promise.all(due.map(async (row) => {
+    try {
+      const r = await fetch(`https://api.resend.com/emails/${row.resend_id}`, {
+        headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` },
+        signal: AbortSignal.timeout(3000),
+      });
+      if (!r.ok) return;
+      const j = await r.json();
+      await pool.query('UPDATE contact_replies SET email_event = $2, email_checked_at = NOW() WHERE id = $1',
+        [row.id, String(j.last_event || 'sent').slice(0, 20)]);
+    } catch { /* bir sonraki açılışta yine denenir */ }
+  }));
+}
 // Yazışmanın son hareketi (mesaj ya da son cevap/karşılık) — listeler buna göre sıralanır.
 const CONTACT_LAST_ACTIVITY_SQL = (alias) => `COALESCE((SELECT MAX(r.created_at) FROM contact_replies r WHERE r.message_id = ${alias}.id), ${alias}.created_at)`;
 // Kullanıcının kendi mesajları: user_id ya da (user_id yoksa) e-posta eşleşmesi. $1 = kullanıcı id.
@@ -7716,6 +7752,7 @@ const escMail = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt
 
 app.get('/api/admin/contact', isAdmin, async (req, res) => {
   try {
+    await refreshContactEmailEvents().catch((e) => console.error('contact email events:', e.message));
     const result = await pool.query(
       `SELECT cm.*, mu.id AS account_id, mu.name AS account_name, ${CONTACT_REPLIES_SQL('cm')} AS replies
          FROM contact_messages cm
@@ -7756,7 +7793,8 @@ async function sendContactAnswerEmail(cm, text, acc) {
       `, L),
     }),
   });
-  return !!(r && !r.skipped);
+  if (!r || r.skipped) return null;
+  return r.id || true; // Resend kimliği (teslim durumu için); sahte gönderimde true
 }
 
 // Panelden cevap. Hesabı olana uygulama bildirimi + push (alsoEmail ile e-posta da),
@@ -7785,16 +7823,21 @@ app.post('/api/admin/contact/:id/reply', isAdmin, async (req, res) => {
 
     const acc = await contactAccount(cur);
     const channels = [];
+    // Push sonucu bildirimden sonra gelir; cevap satırı o anda henüz yazılmamış olabilir.
+    let pushResolve; const pushDone = new Promise((r) => { pushResolve = r; });
+    let notifId = null, resendId = null;
     if (acc) {
       const n = await createNotif(acc.id, {
         type: 'admin_reply', refId: cur.id,
         pushBody: text.length > 180 ? `${text.slice(0, 179)}…` : text,
         build: (L) => ({ title: tm(L, 'replyNotifTitle'), message: text }),
+        onPush: pushResolve,
       });
-      if (n) channels.push('app');
+      if (n) { channels.push('app'); notifId = n.id; }
     }
     if (!acc || req.body?.alsoEmail === true) {
-      if (await sendContactAnswerEmail(cur, text, acc)) channels.push('email');
+      const em = await sendContactAnswerEmail(cur, text, acc);
+      if (em) { channels.push('email'); if (typeof em === 'string') resendId = em; }
     }
 
     if (!channels.length) {
@@ -7804,8 +7847,12 @@ app.post('/api/admin/contact/:id/reply', isAdmin, async (req, res) => {
       );
       return res.status(502).json({ error: 'Cevap gönderilemedi.' });
     }
-    await pool.query(`INSERT INTO contact_replies (message_id, text, replied_by, channel) VALUES ($1, $2, $3, $4)`,
-      [cur.id, text, req.user.id, channels.join('+')]);
+    const ins = await pool.query(
+      `INSERT INTO contact_replies (message_id, text, replied_by, channel, notif_id, resend_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+      [cur.id, text, req.user.id, channels.join('+'), notifId, resendId]);
+    const replyId = ins.rows[0].id;
+    pushDone.then((push) => pool.query('UPDATE contact_replies SET push_ok = $2, push_fail = $3 WHERE id = $1',
+      [replyId, Math.min(push.ok || 0, 32000), Math.min(push.fail || 0, 32000)])).catch(() => {});
     const row = (await pool.query(
       `UPDATE contact_messages cm SET reply_channel = $2 WHERE id = $1 RETURNING *, ${CONTACT_REPLIES_SQL('cm')} AS replies`, [cur.id, channels.join('+')]
     )).rows[0];
@@ -7827,6 +7874,13 @@ app.get('/api/users/me/messages', authenticateToken, async (req, res) => {
         LIMIT 100`,
       [req.user.id]
     );
+    // Bu liste yalnız kişi "Muuvlink'e mesajların" penceresini açınca çekilir (bildirime/push'a
+    // dokunma, profil düğmesi, Ayarlar satırı) — arka planda çağrılmaz. Panelde "Okundu" buradan.
+    const ids = r.rows.map((m) => m.id);
+    if (ids.length) {
+      pool.query('UPDATE contact_replies SET seen_at = NOW() WHERE seen_at IS NULL AND NOT from_user AND message_id = ANY($1)', [ids])
+        .catch((e) => console.error('contact seen_at:', e.message));
+    }
     res.json({ messages: r.rows });
   } catch (error) {
     console.error('My messages error:', error.message);
@@ -7852,7 +7906,8 @@ app.post('/api/admin/contact/:id/replies/:replyId/email', isAdmin, async (req, r
       return res.status(502).json({ error: 'E-posta gönderilemedi.' });
     }
     const channel = rp.channel ? `${rp.channel}+email` : 'email';
-    await pool.query('UPDATE contact_replies SET channel = $2 WHERE id = $1', [rp.id, channel]);
+    await pool.query('UPDATE contact_replies SET channel = $2, resend_id = $3, email_event = NULL, email_checked_at = NULL WHERE id = $1',
+      [rp.id, channel, typeof ok === 'string' ? ok : null]);
     // Son cevapsa özet satır da güncellensin
     await pool.query(`UPDATE contact_messages SET reply_channel = $2 WHERE id = $1
       AND NOT EXISTS (SELECT 1 FROM contact_replies r WHERE r.message_id = $1 AND NOT r.from_user AND r.id > $3)`, [cm.id, channel, rp.id]);
@@ -9706,6 +9761,44 @@ pool.query(`ALTER TABLE contact_messages
   .then(() => pool.query('CREATE INDEX IF NOT EXISTS contact_replies_message ON contact_replies (message_id)'))
   // from_user: kişinin "Mesajların"dan yazdığı karşılık (28 Ekim 2026); false = Muuvlink ekibinin cevabı
   .then(() => pool.query('ALTER TABLE contact_replies ADD COLUMN IF NOT EXISTS from_user BOOLEAN NOT NULL DEFAULT false'))
+  // Ekip cevabının kişiye ulaşıp ulaşmadığı / okunup okunmadığı (2 Kasım 2026, Melih):
+  // notif_id → uygulama bildirimi (okundu işareti), push_ok/fail → cihaza gitti mi,
+  // resend_id/email_event → e-posta teslimi (Resend'de açılma takibi KAPALI: en fazla
+  // "delivered"), seen_at → kişi "Muuvlink'e mesajların" penceresini cevaptan sonra açtı.
+  .then(() => pool.query(`ALTER TABLE contact_replies
+      ADD COLUMN IF NOT EXISTS notif_id INT,
+      ADD COLUMN IF NOT EXISTS push_ok SMALLINT,
+      ADD COLUMN IF NOT EXISTS push_fail SMALLINT,
+      ADD COLUMN IF NOT EXISTS resend_id VARCHAR(64),
+      ADD COLUMN IF NOT EXISTS email_event VARCHAR(20),
+      ADD COLUMN IF NOT EXISTS email_checked_at TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS seen_at TIMESTAMPTZ`))
+  // Bu sütunlardan önceki cevaplar: bildirim/push/e-posta kayıtlarıyla zaman penceresinden
+  // eşleştirilir (yalnız boş olanlar; tekrar çalışınca bir şey değiştirmez). seen_at
+  // geçmiş için bilinmiyor — o kayıt hiç tutulmadı.
+  .then(() => pool.query(`UPDATE contact_replies r SET notif_id = (
+        SELECT id FROM notifications
+         WHERE notification_type = 'admin_reply' AND reference_id = r.message_id
+           AND created_at BETWEEN r.created_at - interval '2 minutes' AND r.created_at + interval '2 minutes'
+         ORDER BY abs(extract(epoch FROM created_at - r.created_at)) LIMIT 1)
+     WHERE NOT r.from_user AND r.notif_id IS NULL AND r.channel LIKE '%app%'`).catch((e) => console.error('contact_replies eşleştirme:', e.message)))
+  .then(() => pool.query(`UPDATE contact_replies r SET (push_ok, push_fail) = (
+        SELECT nl.push_ok, nl.push_fail FROM notif_log nl JOIN notifications n ON n.id = r.notif_id
+         WHERE nl.kind = 'admin_reply' AND nl.user_id = n.user_id
+           AND nl.sent_at BETWEEN r.created_at - interval '2 minutes' AND r.created_at + interval '2 minutes'
+         ORDER BY abs(extract(epoch FROM nl.sent_at - r.created_at)) LIMIT 1)
+     WHERE NOT r.from_user AND r.push_ok IS NULL AND r.notif_id IS NOT NULL`).catch((e) => console.error('contact_replies eşleştirme:', e.message)))
+  .then(() => pool.query(`UPDATE contact_replies r SET resend_id = (
+        SELECT e.resend_id FROM email_log e
+         WHERE e.kind = 'contact_answer' AND e.status = 'sent' AND e.resend_id IS NOT NULL
+           AND e.sent_at >= r.created_at - interval '2 minutes'
+           AND e.sent_at < COALESCE((SELECT MIN(r2.created_at) FROM contact_replies r2
+                                      WHERE r2.message_id = r.message_id AND NOT r2.from_user AND r2.created_at > r.created_at),
+                                    r.created_at + interval '7 days')
+           AND e.user_id IS NOT DISTINCT FROM (SELECT n.user_id FROM notifications n WHERE n.id = r.notif_id)
+           AND NOT EXISTS (SELECT 1 FROM contact_replies x WHERE x.resend_id = e.resend_id)
+         ORDER BY e.sent_at LIMIT 1)
+     WHERE NOT r.from_user AND r.resend_id IS NULL AND r.channel LIKE '%email%'`).catch((e) => console.error('contact_replies eşleştirme:', e.message)))
   .then(() => pool.query(`INSERT INTO contact_replies (message_id, text, replied_by, channel, created_at)
     SELECT cm.id, cm.reply_text, cm.replied_by, cm.reply_channel, cm.replied_at FROM contact_messages cm
      WHERE cm.reply_text IS NOT NULL AND cm.reply_channel IS NOT NULL

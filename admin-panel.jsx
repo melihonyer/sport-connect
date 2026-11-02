@@ -8,7 +8,7 @@ import {
   Trophy, User, ClipboardList, CheckCircle2, DoorOpen, UserMinus, Sparkles, Target, Flag,
   Ticket, MapPin, ExternalLink, MousePointerClick,
   Radar, ScanSearch, RefreshCw, Loader2, XCircle, ListChecks, Star, Zap, Bell,
-  CalendarDays, ScrollText, Send,
+  CalendarDays, ScrollText, Send, Check, ArrowLeft,
 } from "lucide-react";
 import LocationPicker from "./LocationPicker";
 import FreshBuildWatcher from "./FreshBuildWatcher.jsx";
@@ -1600,6 +1600,73 @@ function LiveTab({ api, showToast }) {
 // ─── Yardımcı: tarih formatı ───────────────────────────────
 const fmt = (d) => d ? new Date(d).toLocaleDateString("tr-TR", { day:"numeric", month:"short", year:"numeric" }) : "—";
 const fmtFull = (d) => d ? new Date(d).toLocaleString("tr-TR") : "—";
+// Liste satırı için kısa zaman: bugün "14:05", dün "Dün", bu yıl "2 Kas", eskisi "2 Kas 2025"
+const fmtShort = (d) => {
+  if (!d) return "";
+  const t = new Date(d), now = new Date();
+  const day = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const diff = Math.round((day(now) - day(t)) / 86400000);
+  if (diff === 0) return t.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+  if (diff === 1) return "Dün";
+  return t.toLocaleDateString("tr-TR", t.getFullYear() === now.getFullYear()
+    ? { day: "numeric", month: "short" } : { day: "numeric", month: "short", year: "numeric" });
+};
+
+// ─── İletişim cevabının durumu: gönderildi → ulaştı → okundu ──────────────
+// "Okundu" YALNIZ kişi "Muuvlink'e mesajların" penceresini cevaptan sonra açtıysa
+// (seen_at). Bildirimin okundu işareti "Tümünü okundu işaretle" ile de konabildiği
+// için okundu sayılmaz, ulaştı sayılır. E-postada Resend açılma takibi kapalı:
+// en fazla "teslim edildi".
+function contactReplyStatus(r) {
+  const ch = String(r.channel || "");
+  const hasApp = ch.includes("app"), hasEmail = ch.includes("email");
+  const emailOk = ["delivered", "opened", "clicked"].includes(r.email_event);
+  const emailBad = ["bounced", "complained"].includes(r.email_event);
+  const parts = [];
+  if (hasApp) {
+    let p = "Uygulama bildirimi";
+    if (r.push_ok > 0) p += ` · push ${r.push_ok} cihaza ulaştı`;
+    else if (r.push_fail > 0) p += " · push ulaşmadı";
+    else if (r.push_ok === 0) p += " · push gidecek cihaz yok";
+    if (r.notif_read) p += " · bildirim okundu işaretli";
+    else if (r.notif_gone) p += " · bildirimi sildi";
+    parts.push(p);
+  }
+  if (hasEmail) {
+    parts.push(r.email_event === "bounced" ? "E-posta geri döndü"
+      : r.email_event === "complained" ? "E-posta spam bildirildi"
+      : emailOk ? "E-posta teslim edildi"
+      : "E-posta gönderildi");
+  }
+  const delivered = r.push_ok > 0 || emailOk || r.notif_read || r.notif_gone || !!r.seen_at;
+  const level = r.seen_at ? "read" : delivered ? "delivered" : (hasEmail && emailBad && !hasApp) ? "failed" : "sent";
+  return { level, detail: parts.join(" · ") };
+}
+const REPLY_LEVEL = {
+  read:      { label: "Okundu",     cls: "text-brand-500", Icon: CheckCheck },
+  delivered: { label: "Ulaştı",     cls: "text-slate-500", Icon: CheckCheck },
+  sent:      { label: "Gönderildi", cls: "text-slate-400", Icon: Check },
+  failed:    { label: "Ulaşmadı",   cls: "text-red-600",   Icon: AlertTriangle },
+};
+// Yazışma açılınca ya da yeni cevap gelince en alta kayar; 30 sn'lik sessiz tazelemede
+// (cevap sayısı değişmediyse) okuduğun yerden oynatmaz.
+function AutoScrollBottom({ watch, className, children }) {
+  const ref = useRef(null);
+  useEffect(() => { if (ref.current) ref.current.scrollTop = ref.current.scrollHeight; }, [watch]);
+  return <div ref={ref} className={className}>{children}</div>;
+}
+
+function ReplyStatusMark({ r, withLabel = true }) {
+  const st = contactReplyStatus(r);
+  const L = REPLY_LEVEL[st.level];
+  const when = st.level === "read" && r.seen_at ? ` · ${fmtFull(r.seen_at)}` : "";
+  return (
+    <span className={`inline-flex items-center gap-1 ${L.cls}`} title={`${L.label}${when}${st.detail ? ` — ${st.detail}` : ""}`}>
+      <L.Icon className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
+      {withLabel ? <span className="font-semibold">{L.label}{when}</span> : <span className="sr-only">{L.label}</span>}
+    </span>
+  );
+}
 
 // Hesabını silmiş kullanıcı. Kayıt 30 gün durur (giriş yaparsa geri gelir),
 // sonra purge kalıcı siler ve listeden düşer.
@@ -1973,6 +2040,9 @@ export default function AdminPanel() {
   const [featuredCfg, setFeaturedCfg] = useState(null);
   // Panelden cevap: tek açık kutu. step "write" → "preview" (alıcının göreceği hali) → gönder.
   const [replyDraft, setReplyDraft] = useState(null); // { id, text, alsoEmail, step, sending }
+  // Mesajlar: gelen kutusu düzeni. null = telefonda liste görünür; masaüstünde ilk yazışma açılır.
+  const [selectedMsgId, setSelectedMsgId] = useState(null);
+  const [msgFilter, setMsgFilter] = useState("all"); // all | unread | waiting
   const [banners, setBanners]   = useState([]);
   const [homeNews, setHomeNews] = useState([]);
   const [homeGallery, setHomeGallery] = useState([]);
@@ -2817,7 +2887,9 @@ export default function AdminPanel() {
   const filteredMessages  = messages.filter(m => !q || m.name?.toLowerCase().includes(q) || m.subject?.toLowerCase().includes(q));
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans">
+    <div className="flex min-h-screen md:h-screen md:overflow-hidden bg-slate-50 font-sans">
+      {/* Masaüstünde iskelet ekran yüksekliğinde: yan menü kendi içinde, içerik (main) kendi
+          içinde kayar. Önceden menü gruplarla uzayınca bütün sayfayı uzatıyordu. */}
       <AdminToast toasts={toasts}/>
       {/* Yeni sürüm: sekmeye dönünce kendiliğinden yenilenir; açık form ya da
           yazılmış alan varsa yalnız şerit çıkar. */}
@@ -3964,146 +4036,216 @@ export default function AdminPanel() {
           )}
 
           {/* ── MESSAGES ─────────────────────────────────── */}
-          {!loading && tab === "messages" && (
-            <div className="space-y-4">
-              {filteredMessages.length === 0 && (
-                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-16 text-center text-slate-400">
-                  <MessageSquare className="w-12 h-12 mx-auto mb-3 text-slate-200" />
-                  <p className="font-semibold">Henüz mesaj yok</p>
-                </div>
-              )}
-              {filteredMessages.map(m => (
-                <div key={m.id} className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition-all ${m.is_read ? "border-slate-100" : "border-brand-200"}`}>
-                  {!m.is_read && <div className="h-1" style={{ background: "linear-gradient(90deg,#114956,#0e3c47)" }} />}
-                  <div className="p-4 md:p-6">
-                    <div className="flex items-start justify-between gap-3 flex-wrap md:flex-nowrap">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap mb-1">
-                          {!m.is_read && (
-                            <span className="px-2 py-0.5 bg-brand-100 text-brand-700 rounded-lg text-xs font-medium">Yeni</span>
-                          )}
-                          <span className="font-medium text-slate-900">{m.name}</span>
-                          <span className="text-slate-300 text-sm">·</span>
-                          <a href={`mailto:${m.email}`} className="text-brand-600 text-sm hover:underline">{m.email}</a>
-                          <span className="text-slate-400 text-xs ml-auto">{fmtFull(m.created_at)}</span>
-                        </div>
-                        <div className="flex items-center gap-2 mb-3">
-                          <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                          <span className="font-semibold text-slate-700 text-sm">{m.subject}</span>
-                        </div>
-                        <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-wrap border-l-2 border-brand-200 pl-4">
-                          {m.message}
-                        </p>
-                        <p className="mt-3 text-xs text-slate-500">
-                          {m.account_id
-                            ? <>Hesabı var: <span className="font-semibold text-slate-700">{m.account_name}</span> — cevap uygulama bildirimi + push olarak gider, "Mesajların"da da kalır.</>
-                            : <>Muuvlink hesabı yok — cevap e-postayla gider.</>}
-                        </p>
-                        {m.user_hidden_at && (
-                          <p className="mt-2 text-xs text-amber-700">Kişi bu mesajı kendi listesinden kaldırdı · {fmtFull(m.user_hidden_at)} (yeni cevap verilirse listesine geri döner)</p>
-                        )}
-                        {/* Her cevap ayrı (contact_replies); kullanıcı aynılarını "Mesajların"da görür. */}
-                        {(m.replies?.length ? m.replies : m.reply_channel ? [{ id: "last", text: m.reply_text, created_at: m.replied_at, channel: m.reply_channel }] : []).map(r => r.from_user ? (
-                          <div key={r.id} className="mt-3 rounded-xl p-3 border border-brand-200 bg-white">
-                            <div className="text-xs text-slate-500 mb-1.5 flex items-center gap-1.5 flex-wrap">
-                              <MessageSquare className="w-3.5 h-3.5 text-brand-600" />
-                              <span className="font-semibold text-brand-700">Kişinin cevabı</span>
-                              <span>· {fmtFull(r.created_at)}</span>
-                            </div>
-                            <p className="text-sm text-slate-700 whitespace-pre-wrap">{r.text}</p>
-                          </div>
-                        ) : (
-                          <div key={r.id} className="mt-3 bg-slate-50 rounded-xl p-3 border border-slate-100">
-                            <div className="text-xs text-slate-500 mb-1.5 flex items-center gap-1.5 flex-wrap">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
-                              <span className="font-semibold text-green-700">Cevaplandı</span>
-                              <span>· {fmtFull(r.created_at)}{r.channel ? ` · ${REPLY_CHANNEL_TR[r.channel] || r.channel}` : ""}</span>
-                            </div>
-                            <p className="text-sm text-slate-700 whitespace-pre-wrap">{r.text}</p>
-                            {r.id !== "last" && !String(r.channel || "").includes("email") && (
-                              <button onClick={() => emailReply(m, r)}
-                                className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-brand-700 bg-white border border-brand-200 hover:bg-brand-50 transition">
-                                <Mail className="w-3.5 h-3.5" /> E-postayla da gönder
-                              </button>
-                            )}
-                          </div>
-                        ))}
-                        {replyDraft?.id === m.id && (
-                          <div data-admin-form className="mt-4 bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
-                            {replyDraft.step === "write" ? (
-                              <>
-                                <textarea value={replyDraft.text} maxLength={2000} rows={8} autoFocus
-                                  onChange={(e) => setReplyDraft({ ...replyDraft, text: e.target.value })}
-                                  placeholder="Cevabını yaz…"
-                                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-brand-200 bg-white" />
-                                <div className="flex items-center gap-3 flex-wrap">
-                                  {m.account_id && (
-                                    <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
-                                      <input type="checkbox" checked={!!replyDraft.alsoEmail}
-                                        onChange={(e) => setReplyDraft({ ...replyDraft, alsoEmail: e.target.checked })} />
-                                      E-posta olarak da gönder
-                                    </label>
-                                  )}
-                                  <span className="text-xs text-slate-400 ml-auto">{replyDraft.text.length}/2000</span>
-                                </div>
-                                <div className="flex gap-2 justify-end">
-                                  <button onClick={() => setReplyDraft(null)}
-                                    className="px-3 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-xs font-medium hover:bg-slate-100 transition">Vazgeç</button>
-                                  <button disabled={!replyDraft.text.trim()} onClick={() => setReplyDraft({ ...replyDraft, step: "preview" })}
-                                    className="flex items-center gap-1.5 px-3 py-2 bg-brand-600 text-white rounded-xl text-xs font-semibold hover:bg-brand-700 transition disabled:opacity-50">
-                                    <Eye className="w-3.5 h-3.5" /> Önizle
-                                  </button>
-                                </div>
-                              </>
-                            ) : (
-                              <>
-                                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Önizleme — {m.account_id ? m.account_name : m.email} şunu görecek</p>
-                                <div className="bg-white rounded-xl border border-slate-200 p-4">
-                                  <p className="text-xs text-slate-400 mb-1">{m.account_id ? "Bildirim başlığı" : "E-posta konusu"}</p>
-                                  <p className="font-semibold text-slate-900 mb-3">{m.account_id ? "Muuvlink ekibinden cevap" : "Mesajına cevap verdik — Muuvlink"}</p>
-                                  <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{replyDraft.text.trim()}</p>
-                                </div>
-                                <p className="text-xs text-slate-500">
-                                  Gidecek: <span className="font-semibold text-slate-700">
-                                    {m.account_id ? (replyDraft.alsoEmail ? REPLY_CHANNEL_TR["app+email"] : REPLY_CHANNEL_TR.app) : `E-posta (${m.email})`}
-                                  </span>. Push ve e-posta geri alınamaz.
-                                </p>
-                                <div className="flex gap-2 justify-end">
-                                  <button disabled={replyDraft.sending} onClick={() => setReplyDraft({ ...replyDraft, step: "write" })}
-                                    className="px-3 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-xs font-medium hover:bg-slate-100 transition">Düzenle</button>
-                                  <button disabled={replyDraft.sending} onClick={() => sendReply(m)}
-                                    className="flex items-center gap-1.5 px-3 py-2 bg-brand-600 text-white rounded-xl text-xs font-semibold hover:bg-brand-700 transition disabled:opacity-60">
-                                    {replyDraft.sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />} Gönder
-                                  </button>
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        )}
-                      </div>
+          {!loading && tab === "messages" && (() => {
+            // Gelen kutusu: solda yazışmalar, sağda seçili yazışma. Eskiden her mesaj tüm
+            // cevaplarıyla alt alta açılıyordu, yazışma uzadıkça sayfa da uzuyordu (Melih).
+            const waiting = (m) => { const rs = m.replies || []; return rs.length ? rs[rs.length - 1].from_user : !m.replied_at; };
+            const counts = {
+              all: filteredMessages.length,
+              unread: filteredMessages.filter(m => !m.is_read).length,
+              waiting: filteredMessages.filter(waiting).length,
+            };
+            // Açık yazışma süzgece artık uymasa da listede kalır (okununca "Okunmamış"tan düşüp kaybolmasın)
+            const list = filteredMessages.filter(m => m.id === selectedMsgId
+              || (msgFilter === "unread" ? !m.is_read : msgFilter === "waiting" ? waiting(m) : true));
+            const active = list.find(m => m.id === selectedMsgId) || null;
+            const shown = active || list[0] || null;
+            const thread = (m) => m.replies?.length ? m.replies
+              : m.reply_channel ? [{ id: "last", text: m.reply_text, created_at: m.replied_at, channel: m.reply_channel }] : [];
+            const firstName = (n) => String(n || "").trim().split(/\s+/)[0] || "Kişi";
+            const openMsg = (m) => {
+              if (replyDraft && replyDraft.id !== m.id && replyDraft.text?.trim()
+                && !window.confirm("Yazdığın cevap silinecek. Başka yazışmaya geçilsin mi?")) return;
+              if (replyDraft && replyDraft.id !== m.id) setReplyDraft(null);
+              setSelectedMsgId(m.id);
+              if (!m.is_read) markRead(m.id);
+            };
+            const draft = shown && replyDraft?.id === shown.id ? replyDraft : null;
+            const setDraft = (patch) => setReplyDraft(d => (d && d.id === shown.id)
+              ? { ...d, ...patch }
+              : { id: shown.id, text: "", alsoEmail: false, step: "write", sending: false, ...patch });
 
-                      <div className="flex flex-row md:flex-col gap-2 flex-shrink-0 flex-wrap">
-                        {!m.is_read && (
-                          <button onClick={() => markRead(m.id)}
-                            className="flex items-center gap-1.5 px-3 py-2 bg-brand-50 text-brand-700 rounded-xl text-xs font-medium hover:bg-brand-100 transition whitespace-nowrap">
-                            <CheckCheck className="w-3.5 h-3.5" /> Okundu
+            return (
+              <div className="space-y-3">
+                {/* Telefonda yazışma açıkken süzgeç gizli (yer yazışmaya kalsın); düğmeler tek satır */}
+                <div className={`${active ? "hidden lg:flex" : "flex"} gap-1.5 sm:gap-2 overflow-x-auto`} role="group" aria-label="Mesaj süzgeci">
+                  {[["all", "Tümü"], ["unread", "Okunmamış"], ["waiting", "Cevap bekliyor"]].map(([k, label]) => (
+                    <button key={k} onClick={() => setMsgFilter(k)} aria-pressed={msgFilter === k}
+                      className={`flex-shrink-0 whitespace-nowrap px-2.5 sm:px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-medium border transition-colors ${msgFilter === k
+                        ? "bg-brand-600 text-white border-brand-600"
+                        : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"}`}>
+                      {label}{counts[k] ? <span className="tabular-nums"> ({counts[k]})</span> : null}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex h-[calc(100dvh-10.5rem)] md:h-[calc(100dvh-13rem)] min-h-[460px]">
+                  {/* ── Yazışma listesi ── */}
+                  <div className={`${active ? "hidden lg:flex" : "flex"} w-full lg:w-80 xl:w-96 flex-shrink-0 flex-col border-r border-slate-100`}>
+                    <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
+                      {list.length === 0 && (
+                        <div className="p-10 text-center text-slate-400">
+                          <MessageSquare className="w-10 h-10 mx-auto mb-3 text-slate-200" />
+                          <p className="text-sm font-semibold">{messages.length ? "Bu süzgeçte mesaj yok" : "Henüz mesaj yok"}</p>
+                        </div>
+                      )}
+                      {list.map(m => {
+                        const rs = thread(m);
+                        const last = rs[rs.length - 1];
+                        const isShown = shown?.id === m.id;
+                        return (
+                          <button key={m.id} onClick={() => openMsg(m)} aria-current={isShown ? "true" : undefined}
+                            className={`relative w-full text-left px-4 py-3 flex gap-3 transition-colors ${isShown ? "lg:bg-brand-50" : "hover:bg-slate-50"}`}>
+                            <span className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${m.is_read ? "bg-transparent" : "bg-red-500"}`}
+                              aria-label={m.is_read ? undefined : "Okunmamış"} />
+                            <span className="min-w-0 flex-1">
+                              <span className="flex items-baseline gap-2">
+                                <span className={`truncate text-sm ${m.is_read ? "font-medium text-slate-700" : "font-semibold text-ink-900"}`}>{m.name}</span>
+                                <span className="ml-auto text-[11px] text-slate-400 flex-shrink-0 tabular-nums">{fmtShort(last?.created_at || m.created_at)}</span>
+                              </span>
+                              <span className="block truncate text-xs font-semibold text-slate-600 mt-0.5">{m.subject}</span>
+                              <span className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-400 min-w-0">
+                                {last && !last.from_user && <ReplyStatusMark r={last} withLabel={false} />}
+                                <span className="truncate">{last ? `${last.from_user ? firstName(m.name) : "Sen"}: ${last.text}` : m.message}</span>
+                              </span>
+                            </span>
                           </button>
-                        )}
-                        <button onClick={() => setReplyDraft(replyDraft?.id === m.id ? null : { id: m.id, text: "", alsoEmail: false, step: "write", sending: false })}
-                          className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-medium hover:bg-slate-200 transition whitespace-nowrap">
-                          <Mail className="w-3.5 h-3.5" /> {lastWordIsOurs(m) ? "Tekrar yanıtla" : "Yanıtla"}
-                        </button>
-                        <button onClick={() => del(`/admin/contact/${m.id}`, m.subject, "messages")}
-                          className="flex items-center gap-1.5 px-3 py-2 bg-red-50 text-red-500 rounded-xl text-xs font-medium hover:bg-red-100 transition whitespace-nowrap">
-                          <Trash2 className="w-3.5 h-3.5" /> Sil
-                        </button>
-                      </div>
+                        );
+                      })}
                     </div>
                   </div>
+
+                  {/* ── Seçili yazışma ── */}
+                  <div className={`${active ? "flex" : "hidden lg:flex"} flex-1 min-w-0 flex-col`}>
+                    {!shown ? (
+                      <div className="flex-1 flex items-center justify-center text-sm text-slate-400">Bir yazışma seç</div>
+                    ) : (<>
+                      <div className="px-4 md:px-6 py-3 border-b border-slate-100 flex items-start gap-2">
+                        <button onClick={() => setSelectedMsgId(null)} aria-label="Mesaj listesine dön"
+                          className="lg:hidden -ml-2 p-2 rounded-lg text-slate-500 hover:bg-slate-100">
+                          <ArrowLeft className="w-5 h-5" />
+                        </button>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-semibold text-ink-900 truncate">{shown.subject}</div>
+                          <div className="text-xs text-slate-500 flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5">
+                            <span className="font-medium text-slate-700">{shown.name}</span>
+                            <a href={`mailto:${shown.email}`} className="text-brand-600 hover:underline break-all">{shown.email}</a>
+                            <span className="text-slate-400">{shown.account_id ? `Hesabı var · ${shown.account_name}` : "Hesabı yok · cevap e-postayla gider"}</span>
+                          </div>
+                        </div>
+                        <div className="flex gap-1.5 flex-shrink-0">
+                          {!shown.is_read && (
+                            <button onClick={() => markRead(shown.id)}
+                              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-brand-50 text-brand-700 rounded-lg text-xs font-medium hover:bg-brand-100 transition">
+                              <CheckCheck className="w-3.5 h-3.5" /> Okundu
+                            </button>
+                          )}
+                          <button onClick={() => del(`/admin/contact/${shown.id}`, shown.subject, "messages")} aria-label="Yazışmayı sil"
+                            className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <AutoScrollBottom watch={`${shown.id}:${thread(shown).length}`}
+                        className="flex-1 min-h-0 overflow-y-auto px-4 md:px-6 py-4 space-y-3 bg-slate-50">
+                        <div className="flex justify-start">
+                          <div className="max-w-[85%] rounded-2xl rounded-tl-md bg-white border border-slate-200 px-4 py-2.5">
+                            <div className="text-[11px] text-slate-400 mb-1"><span className="font-semibold text-slate-600">{shown.name}</span> · {fmtFull(shown.created_at)}</div>
+                            <p className="text-sm text-slate-700 whitespace-pre-wrap break-words leading-relaxed">{shown.message}</p>
+                          </div>
+                        </div>
+                        {thread(shown).map(r => r.from_user ? (
+                          <div key={r.id} className="flex justify-start">
+                            <div className="max-w-[85%] rounded-2xl rounded-tl-md bg-white border border-slate-200 px-4 py-2.5">
+                              <div className="text-[11px] text-slate-400 mb-1"><span className="font-semibold text-slate-600">{firstName(shown.name)}</span> · {fmtFull(r.created_at)}</div>
+                              <p className="text-sm text-slate-700 whitespace-pre-wrap break-words leading-relaxed">{r.text}</p>
+                            </div>
+                          </div>
+                        ) : (
+                          <div key={r.id} className="flex justify-end">
+                            <div className="max-w-[85%] rounded-2xl rounded-tr-md bg-brand-50 border border-brand-100 px-4 py-2.5">
+                              <div className="text-[11px] text-slate-400 mb-1 text-right">Muuvlink · {fmtFull(r.created_at)}</div>
+                              <p className="text-sm text-ink-900 whitespace-pre-wrap break-words leading-relaxed">{r.text}</p>
+                              <div className="mt-2 text-[11px] text-right">
+                                <ReplyStatusMark r={r} />
+                                {contactReplyStatus(r).detail && <div className="text-slate-400 mt-0.5">{contactReplyStatus(r).detail}</div>}
+                              </div>
+                              {/* Kutu işaretlenmeyi unutulduysa. Uzun yazışmada her balonda tekrar ettiği için
+                                  düğme değil sade bağlantı. */}
+                              {r.id !== "last" && !String(r.channel || "").includes("email") && (
+                                <div className="text-right">
+                                  <button onClick={() => emailReply(shown, r)}
+                                    className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-brand-600 hover:underline">
+                                    <Mail className="w-3 h-3" /> E-postayla da gönder
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                        {shown.user_hidden_at && (
+                          <p className="text-center text-[11px] text-amber-700">
+                            Kişi bu yazışmayı kendi listesinden kaldırdı · {fmtFull(shown.user_hidden_at)} — yeni cevap verilirse listesine geri döner
+                          </p>
+                        )}
+                      </AutoScrollBottom>
+
+                      {/* Cevap kutusu: altta sabit; yazışma ne kadar uzarsa uzasın yeri değişmez */}
+                      <div className="border-t border-slate-100 p-3 md:p-4 bg-white" {...(draft?.step === "preview" ? { "data-admin-form": "" } : {})}>
+                        {draft?.step === "preview" ? (
+                          <div className="space-y-3">
+                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Önizleme — {shown.account_id ? shown.account_name : shown.email} şunu görecek</p>
+                            <div className="bg-slate-50 rounded-xl border border-slate-200 p-3 max-h-48 overflow-y-auto">
+                              <p className="text-xs text-slate-400 mb-1">{shown.account_id ? "Bildirim başlığı" : "E-posta konusu"}</p>
+                              <p className="font-semibold text-slate-900 mb-2 text-sm">{shown.account_id ? "Muuvlink ekibinden cevap" : "Mesajına cevap verdik — Muuvlink"}</p>
+                              <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{draft.text.trim()}</p>
+                            </div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="text-xs text-slate-500 flex-1 min-w-[200px]">
+                                Gidecek: <span className="font-semibold text-slate-700">
+                                  {shown.account_id ? (draft.alsoEmail ? REPLY_CHANNEL_TR["app+email"] : REPLY_CHANNEL_TR.app) : `E-posta (${shown.email})`}
+                                </span>. Push ve e-posta geri alınamaz.
+                              </p>
+                              <button disabled={draft.sending} onClick={() => setDraft({ step: "write" })}
+                                className="px-3 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-xs font-medium hover:bg-slate-100 transition">Düzenle</button>
+                              <button disabled={draft.sending} onClick={() => sendReply(shown)}
+                                className="flex items-center gap-1.5 px-3 py-2 bg-brand-600 text-white rounded-xl text-xs font-semibold hover:bg-brand-700 transition disabled:opacity-60">
+                                {draft.sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />} Gönder
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <textarea value={draft?.text || ""} maxLength={2000} rows={3}
+                              onChange={(e) => setDraft({ text: e.target.value })}
+                              placeholder={`${firstName(shown.name)} kişisine cevap yaz…`}
+                              aria-label="Cevap"
+                              className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm leading-relaxed resize-y min-h-[76px] max-h-60 focus:outline-none focus:ring-2 focus:ring-brand-200 bg-white" />
+                            <div className="flex items-center gap-3 flex-wrap mt-2">
+                              {shown.account_id ? (
+                                <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
+                                  <input type="checkbox" checked={!!draft?.alsoEmail} onChange={(e) => setDraft({ alsoEmail: e.target.checked })} />
+                                  E-posta olarak da gönder
+                                </label>
+                              ) : (
+                                <span className="text-xs text-slate-500">Hesabı yok — cevap e-postayla gider.</span>
+                              )}
+                              <span className="text-xs text-slate-400 ml-auto tabular-nums">{(draft?.text || "").length}/2000</span>
+                              <button disabled={!draft?.text?.trim()} onClick={() => setDraft({ step: "preview" })}
+                                className="flex items-center gap-1.5 px-3 py-2 bg-brand-600 text-white rounded-xl text-xs font-semibold hover:bg-brand-700 transition disabled:opacity-50">
+                                <Eye className="w-3.5 h-3.5" /> Önizle
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </>)}
+                  </div>
                 </div>
-              ))}
-            </div>
-          )}
+              </div>
+            );
+          })()}
         </div>
       </main>
     </div>
