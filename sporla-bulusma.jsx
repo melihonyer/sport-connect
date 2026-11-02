@@ -5156,12 +5156,13 @@ export default function Muuvlink() {
       onClick={(e) => openCardLink(e, () => onClick(training.id))}
       className="group flex items-stretch gap-0 bg-white border-b border-dashed border-slate-100 cursor-pointer transition-colors duration-150 py-6 px-2 hover:bg-slate-50/80 hover:border-slate-200 active:bg-slate-50 no-underline text-inherit"
     >
-      {/* Sol: Takvim ikonu — ay şeridi açık gri; branş rengi yanındaki rozette (takım kartıyla aynı dil) */}
+      {/* Sol: Takvim ikonu — ay şeridi branşın renginde (sportStyle.jsx; takım kartındaki ikon kutusuyla aynı renk) */}
       <div className="flex items-center justify-center w-20 flex-shrink-0 pr-5">
         {(() => {
           return (
             <div className="w-[64px] aspect-square rounded-2xl overflow-hidden bg-slate-50 border border-slate-200 flex flex-col">
-              <div className="text-center uppercase font-bold tracking-[0.1em] text-[11px] leading-none pt-[7px] pb-[6px] bg-slate-200 text-slate-600">
+              <div className="text-center uppercase font-bold tracking-[0.1em] text-[11px] leading-none pt-[7px] pb-[6px]"
+                style={{ background: sp.color, color: sp.text }}>
                 {month}
               </div>
               <div className="flex-1 flex items-center justify-center bg-slate-50">

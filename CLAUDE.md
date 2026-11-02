@@ -266,8 +266,8 @@ Kurallar:
   rengi yazılmaz. **Kartta renk yalnız ikonda** (Melih: "başlık açık gri, ikonlar renkli"): takım
   kartının başlığı (h-11) `bg-slate-100`: solda branş renginde ikon kutusu takım avatarının hizasında
   ve genişliğinde (`left-5 w-12`; gövde `p-5`, avatar `w-12` değişirse bu da değişir), sağda gri
-  branş adı (büyük harf) + "+n" (çok branşlı) — Melih: "ikonlar sola başlık sağa". Etkinlik kartında takvimin ay şeridi açık gri, başlığın üstündeki
-  branş rozeti (ikon + ad) branş renginde. Renkler ilk palet (Tailwind 600–700 tonları); birbirine
+  branş adı (büyük harf) + "+n" (çok branşlı) — Melih: "ikonlar sola başlık sağa". Etkinlik kartında takvimin ay şeridi ve başlığın üstündeki
+  branş rozeti (ikon + ad) branş renginde (Melih: gri şeritte "tarihlerdeki renk gitmiş"). Renkler ilk palet (Tailwind 600–700 tonları); birbirine
   benzeyenler ayrıldı (Bisiklet hardal — Koşu ile karışıyordu; Padel mor — Yürüyüş ile). Denenip
   bırakılanlar: bandın tamamı branş renginde (canlı da soluk-gri de "olmadı"). "Diğer" = Deep Teal.
   Yeni branş `SPORT_TYPES`'a eklenirse buraya da renk + ikon eklenir (yoksa "Diğer" görünür).
