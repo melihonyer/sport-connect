@@ -364,3 +364,7 @@ input:focus, select:focus, textarea:focus {
 /* ── Harita altlığı ─────────────────────────────────────────
    Altlık OpenFreeMap "Positron" (vektör, MapLibre) — zaten sakin,
    soluklaştırma gerekmiyor. Bkz. VectorBasemap.jsx */
+
+/* Ana sayfadaki küçük harita: atıf zorunlu ama dar haritada 3 satıra yayılıp alanın üçte birini
+   kaplıyordu (2 Kasım 2026) — küçük yazı, tek satıra yakın. */
+.muuv-mini-map .leaflet-control-attribution { font-size: 8.5px; line-height: 1.25; padding: 1px 4px; }

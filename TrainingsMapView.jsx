@@ -126,7 +126,7 @@ const boundsKey = (trainings) =>
 // yakınlığı üst sınıra (13) çekiyor, sonra kutu büyüse de harita orada kalıyor ve
 // işaretçiler ekran dışında kalıyordu (Ekim 2026: "6 etkinlik" yazıyor, harita boş).
 // Bu yüzden kutu boyut değiştirdikçe, kullanıcı haritayı elle oynatana kadar yeniden sığdırılır.
-const FitBoundsToTrainings = ({ trainings }) => {
+const FitBoundsToTrainings = ({ trainings, disabled = false }) => {
   const map = useMap();
   const key = boundsKey(trainings);
   const userMovedRef = useRef(false);
@@ -138,7 +138,7 @@ const FitBoundsToTrainings = ({ trainings }) => {
     return () => { el.removeEventListener("pointerdown", mark); el.removeEventListener("wheel", mark); };
   }, [map]);
   useEffect(() => {
-    if (!trainings.length) return;
+    if (!trainings.length || disabled) return;
     userMovedRef.current = false;
     const bounds = L.latLngBounds(trainings.map(t => [parseFloat(t.location_lat), parseFloat(t.location_lng)]));
     const fit = () => {
@@ -157,7 +157,69 @@ const FitBoundsToTrainings = ({ trainings }) => {
     });
     ro.observe(map.getContainer());
     return () => ro.disconnect();
-  }, [key, map]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [key, map, disabled]); // eslint-disable-line react-hooks/exhaustive-deps
+  return null;
+};
+
+// ── Benim konumum + radar (ana sayfa, 2 Kasım 2026, Melih) ─────────────────
+// Konum biliniyorsa nabız atan nokta; seçilen km kadar yarıçaplı daire. Mesafe değişince
+// daire eski yarıçaptan yenisine büyür/küçülür, harita daireye sığar; ardından içten dışa
+// yayılan bir halka (radar) döner. Hareket azaltma açıksa halka yok, büyüme anlık.
+const ME_STYLE_ID = "muuv-me-style";
+const ensureMeStyle = () => {
+  if (typeof document === "undefined" || document.getElementById(ME_STYLE_ID)) return;
+  const st = document.createElement("style");
+  st.id = ME_STYLE_ID;
+  st.textContent = `.muuv-me{position:relative;width:18px;height:18px}
+.muuv-me i{position:absolute;inset:0;border-radius:50%;background:#00a499;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.muuv-me b{position:absolute;inset:-8px;border-radius:50%;background:rgba(0,164,153,.35);animation:muuvMe 2s ease-out infinite}
+@keyframes muuvMe{from{transform:scale(.4);opacity:1}to{transform:scale(1.6);opacity:0}}
+@media (prefers-reduced-motion: reduce){.muuv-me b{animation:none;opacity:0}}`;
+  document.head.appendChild(st);
+};
+const MeRadar = ({ me, radiusKm }) => {
+  const map = useMap();
+  const layersRef = useRef(null);
+  const radiusRef = useRef(0);
+  useEffect(() => {
+    ensureMeStyle();
+    const icon = L.divIcon({ className: "", html: '<div class="muuv-me"><b></b><i></i></div>', iconSize: [18, 18], iconAnchor: [9, 9] });
+    const marker = L.marker([me.lat, me.lng], { icon, interactive: false, keyboard: false, zIndexOffset: 1000 }).addTo(map);
+    const area = L.circle([me.lat, me.lng], { radius: 1, color: "#00a499", weight: 1.5, opacity: 0.7, fillColor: "#00a499", fillOpacity: 0.08, interactive: false }).addTo(map);
+    const pulse = L.circle([me.lat, me.lng], { radius: 1, color: "#00a499", weight: 2, opacity: 0, fill: false, interactive: false }).addTo(map);
+    layersRef.current = { marker, area, pulse };
+    return () => { marker.remove(); area.remove(); pulse.remove(); layersRef.current = null; };
+  }, [map, me.lat, me.lng]);
+  useEffect(() => {
+    const ly = layersRef.current;
+    if (!ly) return;
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    const target = radiusKm * 1000;
+    const from = radiusRef.current || target * 0.3;
+    radiusRef.current = target;
+    map.flyToBounds(L.latLng(me.lat, me.lng).toBounds(target * 2), { padding: [16, 16], duration: reduce ? 0 : 0.6 });
+    let raf = 0;
+    let loop = 0;
+    const t0 = performance.now();
+    const grow = (now) => {
+      const k = reduce ? 1 : Math.min(1, (now - t0) / 650);
+      ly.area.setRadius(from + (target - from) * (1 - (1 - k) ** 3));
+      if (k < 1) raf = requestAnimationFrame(grow);
+    };
+    raf = requestAnimationFrame(grow);
+    const sweep = () => {
+      const s0 = performance.now();
+      const step = (now) => {
+        const k = Math.min(1, (now - s0) / 1800);
+        ly.pulse.setRadius(Math.max(1, target * k));
+        ly.pulse.setStyle({ opacity: 0.6 * (1 - k) });
+        if (k < 1) raf = requestAnimationFrame(step);
+      };
+      raf = requestAnimationFrame(step);
+    };
+    if (!reduce) { const first = setTimeout(sweep, 700); loop = setInterval(sweep, 3200); return () => { clearTimeout(first); clearInterval(loop); cancelAnimationFrame(raf); }; }
+    return () => cancelAnimationFrame(raf);
+  }, [map, me.lat, me.lng, radiusKm]);
   return null;
 };
 
@@ -343,7 +405,9 @@ const ClusteredMarkers = ({ points, renderMarker }) => {
 
 const API_URL = import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? "http://localhost:3000/api" : "/api");
 
-const TrainingsMapView = ({ trainings, onSelectTraining, t, containerStyle }) => {
+// me + radiusKm verilirse (ana sayfa): kullanıcının konumu ve yarıçap dairesi; harita etkinliklere
+// değil daireye sığar. Verilmezse eskisi gibi.
+const TrainingsMapView = ({ trainings, onSelectTraining, t, containerStyle, me = null, radiusKm = null }) => {
   const [active, setActive] = useState(null);
   // Seçili etkinliğin rotası (GPX). Liste yalnız has_route bayrağını taşır;
   // noktalar tıklanınca ayrı uçtan gelir (detay ucu görüntülenme sayardı).
@@ -403,7 +467,8 @@ const TrainingsMapView = ({ trainings, onSelectTraining, t, containerStyle }) =>
         <MapContainer center={[39.0, 35.0]} zoom={6} maxZoom={MAP_MAX_ZOOM} style={{ height:"100%", width:"100%" }} zoomControl={true} className="muuv-map">
           <VectorBasemap/>
           <MapSizeFixer/>
-          <FitBoundsToTrainings trainings={mapped}/>
+          <FitBoundsToTrainings trainings={mapped} disabled={!!(me && radiusKm)}/>
+          {me && radiusKm && <MeRadar me={me} radiusKm={radiusKm}/>}
           {active && routes[active] && <RouteLine points={routes[active]}/>}
           <ClusteredMarkers points={mapped} renderMarker={(tr, position) => {
             // Organizatör etkinliği (ücretli ya da ücretsiz): adı yazan özel pin.

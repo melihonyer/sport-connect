@@ -110,7 +110,7 @@ const PageHost = ({ render }) => render();
 
 // Ekrana yaklaşınca çocukları kurar: ağır parçalar (harita) sayfa açılışını yavaşlatmasın.
 // display:none içindeyse hiç kurulmaz (kesişim olmaz).
-function MountWhenVisible({ minHeight, children }) {
+function MountWhenVisible({ minHeight, className, children }) {
   const ref = useRef(null);
   const [on, setOn] = useState(false);
   useEffect(() => {
@@ -122,7 +122,7 @@ function MountWhenVisible({ minHeight, children }) {
     io.observe(ref.current);
     return () => io.disconnect();
   }, [on]);
-  return <div ref={ref} style={{ minHeight }}>{on ? children : null}</div>;
+  return <div ref={ref} className={className} style={minHeight ? { minHeight } : undefined}>{on ? children : null}</div>;
 }
 
 // Cihazın push jetonunu kullanıcıya bağlar (authToken varsa) ya da bağını
@@ -315,6 +315,8 @@ const LevelSelect = ({ value, onChange, t }) => (
 );
 
 // ── Spor dalları ────────────────────────────────────────────────────────────
+// Yakınımda arama yarıçapları (km). 2 Kasım 2026, Melih: 5 kalktı, 100 eklendi. Metinlerde "10–100 km".
+const NEARBY_KM = [10, 25, 50, 100];
 const SPORT_TYPES = ["Basketbol","Bikejoring","Bisiklet","Canicross","Crossfit","Dog Triatlon","Futbol","Kano","Koşu","Kürek","Padel","Pilates","Tenis","Trekking","Triatlon","Voleybol","Yoga","Yürüyüş","Yüzme","Diğer"];
 
 // Bildirim tercihi satırları (backend NOTIF_TYPE_TO_KEY ile hizalı). email:false → sadece uygulama.
@@ -5690,10 +5692,11 @@ export default function Muuvlink() {
                 {t("home.gpsDesc")}
               </p>
               <div className="grid grid-cols-4 gap-2 mb-4">
-                {[5, 10, 25, 50].map((km) => (
+                {NEARBY_KM.map((km) => (
                   <button data-hover="own"
                     key={km}
-                    onClick={() => setNearbyDistance(km)}
+                    // Konum bilinmiyorsa izin istenir: haritada konum + yarıçap (radar) görünsün
+                    onClick={() => { setNearbyDistance(km); if (!userLocation) requestSortLocation(); }}
                     className="py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all duration-300 hover:scale-105 hover:shadow-md"
                     style={nearbyDistance === km
                       ? {background:"#114956", color:"#fff", boxShadow:"0 2px 8px rgba(17,73,86,0.18)"}
@@ -5716,14 +5719,15 @@ export default function Muuvlink() {
                   : <><MapPin className="w-4 h-4"/> {t("home.searchNearby")}</>}
               </button>
 
-              {/* Küçük harita: yaklaşan etkinlikler. Yalnız masaüstü (telefonda listeyi aşağı itiyordu);
-                  ekrana gelince yüklenir. İşaretçiye dokununca etkinlik açılır. */}
-              <div className="hidden lg:block mt-6">
-                <MountWhenVisible minHeight={300}>
+              {/* Küçük harita: yaklaşan etkinlikler + konum biliniyorsa kullanıcı ve seçili km dairesi (radar).
+                  Telefonda da var (Melih); ekrana gelince yüklenir. İşaretçiye dokununca etkinlik açılır. */}
+              <div className="mt-6">
+                <MountWhenVisible className="muuv-mini-map h-[220px] lg:h-[300px]">
                   <ErrorBoundary key="home-map-boundary">
-                    <React.Suspense fallback={<div className="h-[300px] rounded-2xl bg-slate-50" />}>
+                    <React.Suspense fallback={<div className="h-full rounded-2xl bg-slate-50" />}>
                       <TrainingsMapViewLazy trainings={trainings} onSelectTraining={fetchTrainingDetails} t={t}
-                        containerStyle={{ height: "300px" }} />
+                        containerStyle={{ height: "100%" }}
+                        me={userLocation} radiusKm={userLocation ? nearbyDistance : null} />
                     </React.Suspense>
                   </ErrorBoundary>
                 </MountWhenVisible>
@@ -6489,7 +6493,7 @@ export default function Muuvlink() {
             {/* Satır 4: Mesafe pilleri (GPS aktifken) */}
             {nearbyMode && (
               <div className="flex items-center gap-2 flex-wrap">
-                {[5,10,25,50].map(km => (
+                {NEARBY_KM.map(km => (
                   <button key={km} onClick={() => handleDistanceChange(km)} disabled={nearbyLoading}
                     className="px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all disabled:opacity-50"
                     style={nearbyDistance === km
@@ -6576,7 +6580,7 @@ export default function Muuvlink() {
                   <p className="text-slate-800 font-semibold text-xl mb-2">{t("trainings.noNearby").replace("{n}", nearbyDistance)}</p>
                   <p className="text-slate-500 text-sm mb-7 max-w-sm mx-auto">{t("trainings.nearbyGpsNote")}</p>
                   <div className="flex flex-wrap justify-center gap-3">
-                    {[10,25,50].filter(k => k > nearbyDistance).map(k => (
+                    {NEARBY_KM.filter(k => k > nearbyDistance).map(k => (
                       <button key={k} onClick={() => handleDistanceChange(k)}
                         className="px-5 py-2.5 rounded-xl text-sm font-medium border border-slate-200 text-slate-600 hover:border-brand-300 hover:text-brand-700 transition">
                         {t("trainings.expandTo").replace("{n}", k)}

@@ -455,9 +455,14 @@ Sıra: üst bölüm (banner) → Yakınımda + öne çıkan/yaklaşan etkinlikle
 takımı olan branşlar, tıklayınca Takımlar o branşla süzülü açılır — `teamSportSeedRef`; telefonda yana
 kayar) → Neden Muuvlink (3 kısa kart, fotoğraf yok) → haberler → galeri → Training Agents bandı → SSS →
 kayıt çağrısı. Önceden tanıtım en üstteydi (telefonda ilk etkinlik 3.600 px aşağıdaydı), takım yoktu.
-- **Yakınımda sütunu** (masaüstü): `lg:w-80`, kaydırırken sabit (`lg:sticky`), km düğmeleri 4'lü ızgara (iki
-  satıra kayıyordu), altında küçük harita (`TrainingsMapViewLazy`, 300 px). Harita yalnız masaüstünde ve
-  `MountWhenVisible` ile ekrana gelince yüklenir (maplibre ~800 KB; telefonda hiç inmez).
+- **Yakınımda sütunu:** masaüstünde `lg:w-80`, kaydırırken sabit (`lg:sticky`); km düğmeleri 4'lü ızgara.
+  Altında küçük harita (`TrainingsMapViewLazy`; telefonda 220, masaüstünde 300 px), `MountWhenVisible` ile
+  ekrana gelince yüklenir (maplibre ~800 KB). Konum biliniyorsa (kayıtlı `userLocation`) haritada nabız
+  atan nokta + seçili km dairesi (`me`/`radiusKm` → `MeRadar`): km değişince daire büyür, harita daireye
+  sığar, içten dışa radar halkası döner (hareket azaltmada yok). Konum yoksa km düğmesi izin ister.
+  Küçük haritada atıf yazısı küçük (`.muuv-mini-map`, index.css) — atıf kaldırılmaz.
+- **Yarıçaplar `NEARBY_KM` = 10, 25, 50, 100** (2 Kasım 2026, Melih: 5 kalktı, 100 eklendi). Ana sayfa ve
+  Etkinlikler aynı listeyi kullanır; metinlerde (SSS a3, `ef1p1`, `eventsSub`) "10–100 km". Sunucuda üst sınır yok.
 - Ana sayfa `PageHost key="home"` içinde (harita ve banner slaytı her üst-render'da sökülmesin).
 - Banner sloganı SABİT (her slaytta ilk slogan; harf harf yazılıp silinen hali yarı zamanda boştu).
   Telefon uygulamasının ana sayfası (`MobileHomePage`) hâlâ `MottoReveal` kullanır, ona dokunulmadı.
