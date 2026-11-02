@@ -497,9 +497,9 @@ geçtiğini görür (Melih'in fikri; örnek: Urla'dan çıkan sürüşe Balıkl�
   video dosyası paylaşım menüsüne; Android uygulaması dosya paylaşamadığı için metin + link; masaüstünde indir)
   + üyeye "Kostümlü koşu etkinliği aç" / misafire "Üye ol". Rota duyurusuyla aynı kurallar (cihaz başına bir kez,
   liste sayfaları, tur/ATT/başka pencere yokken; tanıtım turunu bitirmemiş üyeye çıkmaz). **31 Ekim 21:00'de biter**
-  (`HALLOWEEN_UNTIL`). **Silme onaylı** (Melih, 30 Ekim 2026): 31 Ekim 21:00'den sonra ilk fırsatta
-  `HalloweenAnnounce.jsx`, sporla-bulusma.jsx'teki çağrı/state/efekt ve `public/announce/cadilar-bayrami.*`
-  silinip deploy edilir; tekrar sorulmaz. `ROUTE_ANNOUNCE_RESUME` ve `announceShownRef` rota için kalabilir.
+  (`HALLOWEEN_UNTIL`). **2 Kasım 2026'da silindi** (Melih'in 30 Ekim onayıyla): bileşen, çağrı/state/efekt,
+  `public/announce/cadilar-bayrami.*` ve sunucudaki `dist/announce/cadilar-bayrami.*`. `ROUTE_ANNOUNCE_RESUME`
+  ve `announceShownRef` rota için kaldı.
 - **Yerelde backend kopyası çalıştırırken** Supabase oturum havuzu (5432, 15 istemci) canlıyla
   ortak: kopya canlının bağlantılarını yer. İşlem havuzu (6543) + `max: 2` kullanılır, zamanlanmış
   işler (hatırlatma, aktivasyon e-postası, purge) ve e-posta anahtarı kapatılır.
