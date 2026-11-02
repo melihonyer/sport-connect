@@ -75,7 +75,7 @@ import {
 } from "lucide-react";
 import SharedLocationPicker from "./LocationPicker";
 import RouteField from "./RouteField";
-import { sportStyle } from "./sportStyle";
+import { sportStyle, SPORT_HEAD_BG } from "./sportStyle";
 import RouteAnnounce, { ROUTE_ANNOUNCE_UNTIL, ROUTE_ANNOUNCE_KEY, ROUTE_ANNOUNCE_RESUME } from "./RouteAnnounce";
 import { formatRouteDistance, routeToGpx } from "./gpxRoute.js";
 // Ağır kütüphaneler lazy yüklenir — ilk bundle'ı küçültür
@@ -5251,13 +5251,13 @@ export default function Muuvlink() {
         const sp = sportStyle(team.sport);
         const extra = Array.isArray(team.sports) ? team.sports.filter((x) => x && x !== team.sport).length : 0;
         return (
-          <div className="relative h-11 pl-20 pr-5 flex items-center justify-end gap-2 bg-slate-100">
+          <div className="relative h-11 pl-20 pr-5 flex items-center justify-end gap-2" style={{ background: SPORT_HEAD_BG }}>
             {/* Takım avatarıyla aynı sütun: gövdenin p-5 boşluğu + avatarın w-12 genişliği */}
             <span className="absolute left-5 inset-y-0 w-12 flex items-center justify-center" style={{ background: sp.color, color: sp.text }}>
               <sp.Icon className="w-6 h-6" aria-hidden="true" />
             </span>
             <span className="min-w-0 text-slate-600 text-xs font-semibold tracking-[0.14em] uppercase truncate">{sportLabel(team.sport)}</span>
-            {extra > 0 && <span className="text-slate-400 text-xs font-semibold flex-shrink-0">+{extra}</span>}
+            {extra > 0 && <span className="text-slate-500 text-xs font-semibold flex-shrink-0">+{extra}</span>}
           </div>
         );
       })()}

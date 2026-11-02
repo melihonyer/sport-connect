@@ -88,3 +88,7 @@ export const SPORT_STYLE = Object.fromEntries(
 );
 
 export const sportStyle = (sport) => SPORT_STYLE[sport] || SPORT_STYLE.Diğer;
+
+// Takım kartı başlığının gri zemini: slate-100'ün (#F1F5F9) %15 koyusu (Melih, 2 Kasım 2026).
+// Üstündeki branş adı slate-600 (4.9:1), "+n" slate-500.
+export const SPORT_HEAD_BG = "#CDD0D4";
