@@ -313,8 +313,7 @@ Kurallar:
 - **Bölüm başlığı `SectionHeading`** (sporla-bulusma.jsx, modül düzeyinde; 2 Kasım 2026, Melih: öne çıkan
   etkinlik/takım başlıkları farklıydı): açık teal kutuda ikon + `text-xl sm:text-2xl font-semibold
   text-brand-900` başlık + sağda isteğe bağlı eylem. Etkinlikler, Takımlar ve uygulama ana sayfası bunu
-  kullanır. İkonlar: öne çıkan = `Sparkles`, tüm liste = `LayoutGrid`, en yakın = `MapPin`, yaklaşan =
-  `CalendarDays`. Yeni liste bölümü de bununla yazılır. Web ana sayfasının büyük "Keşfet" başlığı bilerek ayrı.
+  kullanır. İkonlar: öne çıkan = `Sparkles`, tüm liste = `LayoutGrid`, yaklaşan = `CalendarDays`. Yeni liste bölümü de bununla yazılır. Web ana sayfasının büyük "Keşfet" başlığı bilerek ayrı.
 - Degrade yok kuralı: fotoğraf üstündeki karartma katmanları (okunurluk için) ve admin'den gelen
   banner renkleri hariç. Branş adı her yerde `sportLabel()` ile görenin dilinde.
 
@@ -438,10 +437,10 @@ Hook'lar bu sabit fiber'a bağlanır, closure'lar her render tazelenir.
   BottomNav. Kalanlar tek tek geçirilebilir; her birinde `useState` başlangıç
   değerinin "her render'da tazelensin" varsayımına dayanıp dayanmadığı kontrol edilir.
 
-## Öne çıkan takımlar ve en yakın takımlar (2 Kasım 2026, Melih)
+## Öne çıkan takımlar, sıralama (2 Kasım 2026, Melih)
 
 Osman Yıldız'ın "yerel ekip liderlerini afişe edin" önerisinden. Takımlar sayfasında önce öne çıkanlar,
-altında takımlar konuma göre en yakından uzağa.
+altında "Tüm takımlar" kullanıcının seçtiği sıralamayla.
 - **Admin › Takımlar** üstündeki panel: "Elle seç" (satırdaki yıldız → `teams.featured`) ya da
   "Rastgele · 3 günde bir" (1–6 takım; "Şimdi değiştir"). Ayar `app_settings` 'featured_teams'
   (`mode`, `count`, `picked`, `picked_at`). Rastgele havuz: son 60 günde etkinlik açmış ya da ileride
@@ -452,10 +451,16 @@ altında takımlar konuma göre en yakından uzağa.
   ortalaması (3 hane). Etkinliği yoksa aynı yeri yazan (`location`, "/" ve "," ile bölünür) konumlu
   takımların ortalaması, `approx: true` — sıralamaya girer, kartta km yazılmaz. Dış adres çözümlemesi
   yapılmaz. 2 Kasım: 34 açık takımdan 24 etkinlikten, 7 yaklaşık, 3 konumsuz (listenin sonunda).
-- **Sayfa:** konum biliniyorsa "Sana en yakın takımlar" + kartta "x km uzakta" (`trainings.away`);
-  bilinmiyorsa "Tüm takımlar" + "Yakınımdaki takımları göster" (web'de izin ister, uygulamada açılışta
-  alınmış olur). Arama/branş süzgecinde öne çıkanlar ayrılmaz, tek liste mesafeye göre. Metinler
-  `teams.featuredTitle/nearestTitle/allTitle/showNearby` (7 dil, Melih onayladı).
+- **Sayfa:** başlık her zaman "Tüm takımlar" (Melih: "Sana en yakın" yanıltıcı — Van'daki takım da
+  listede). Kartta konum biliniyorsa "x km uzakta" (`trainings.away`). Arama/branş süzgecinde öne
+  çıkanlar ayrılmaz. Metinler `teams.featuredTitle/allTitle` (7 dil, Melih onayladı).
+- **Sıralama menüsü `SortSelect`** (modül düzeyinde, Takımlar + Etkinlikler aynı; `sort.*` 7 dil, Melih
+  onayladı). Takımlar: Yakınlığa göre (konum varsa varsayılan) · Yeni kurulanlar (konum yoksa varsayılan)
+  · Üye sayısına göre · Ada göre (A–Z). Etkinlikler: Tarihe göre (varsayılan) · Yakınlığa göre · Yeni
+  eklenenler; "Yakınımda Ara" yarıçap süzgeci olarak ayrı durur. "Yakınlığa göre" konum yoksa izin ister
+  (`requestSortLocation`), reddedilirse varsayılana döner. Seçim üst düzey state'te (`teamSort`,
+  `trainingSort`): satır içi sayfa bileşenleri her çizimde sıfırlanıyor. Öne çıkanlar sıralamadan
+  etkilenmez. Telefonda Etkinlikler menüsü kendi satırında (yoksa taşıyordu).
 
 ## Konum seçici
 

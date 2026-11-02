@@ -664,9 +664,7 @@ export const translations = {
   // ── TEAMS PAGE ───────────────────────────────────────────
   teams: {
     featuredTitle:  { tr: "Öne çıkan takımlar", en: "Featured teams", de: "Empfohlene Teams" },
-    nearestTitle:   { tr: "Sana en yakın takımlar", en: "Teams closest to you", de: "Teams in deiner Nähe" },
     allTitle:       { tr: "Tüm takımlar", en: "All teams", de: "Alle Teams" },
-    showNearby:     { tr: "Yakınımdaki takımları göster", en: "Show teams near me", de: "Teams in meiner Nähe zeigen" },
     pageTitle:      { tr: "Takımlar",                     en: "Teams",                   de: "Teams"                   },
     pageSubtitle:   { tr: "Spor takımlarını keşfet veya kendi takımını kur.",
                       en: "Discover sports teams or create your own.",
@@ -852,6 +850,17 @@ export const translations = {
     write:      { tr: "Bize yaz", en: "Write to us", de: "Schreib uns" },
     loadError:  { tr: "Mesajlar yüklenemedi. Biraz sonra tekrar dene.", en: "Couldn't load your messages. Please try again shortly.", de: "Nachrichten konnten nicht geladen werden. Versuch es gleich noch einmal." },
     reply:     { tr: "Cevap yaz", en: "Reply", de: "Antworten" },
+  },
+
+  // ── SIRALAMA (Takımlar + Etkinlikler) ───────────────────
+  sort: {
+    label:      { tr: "Sırala", en: "Sort", de: "Sortieren" },
+    date:       { tr: "Tarihe göre", en: "By date", de: "Nach Datum" },
+    distance:   { tr: "Yakınlığa göre", en: "By distance", de: "Nach Entfernung" },
+    newEvents:  { tr: "Yeni eklenenler", en: "Newest added", de: "Neu hinzugefügt" },
+    newTeams:   { tr: "Yeni kurulanlar", en: "Newest teams", de: "Neueste Teams" },
+    members:    { tr: "Üye sayısına göre", en: "Most members", de: "Meiste Mitglieder" },
+    name:       { tr: "Ada göre (A–Z)", en: "By name (A–Z)", de: "Nach Name (A–Z)" },
   },
 
   // ── NOTIFICATION PREFERENCES ────────────────────────────

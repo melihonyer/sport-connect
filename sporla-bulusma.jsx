@@ -34,9 +34,9 @@ import {
   ChevronDown,
   Check,
   Navigation2,
-  LocateFixed,
   LayoutGrid,
   CalendarDays,
+  ArrowUpDown,
   Loader2,
   Download,
   ChevronRight,
@@ -522,6 +522,20 @@ const SectionHeading = ({ icon: Icon, title, action = null, className = "" }) =>
     </h2>
     {action}
   </div>
+);
+
+// Sıralama menüsü — Takımlar ve Etkinlikler aynı görünüm (2 Kasım 2026, Melih). options: [[değer, etiket]].
+const SortSelect = ({ value, onChange, options, label, busy = false, full = false }) => (
+  <label className={`relative flex items-center flex-shrink-0 ${full ? "w-full sm:w-auto" : ""}`}>
+    <span className="sr-only">{label}</span>
+    {busy
+      ? <span className="absolute left-3 w-4 h-4 border-2 border-brand-200 border-t-brand-600 rounded-full animate-spin pointer-events-none" aria-hidden="true" />
+      : <ArrowUpDown className="absolute left-3 w-4 h-4 text-logo-teal pointer-events-none" aria-hidden="true" />}
+    <select value={value} onChange={(e) => onChange(e.target.value)} title={label}
+      className={`pl-9 pr-3 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-800 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400 transition-colors appearance-none cursor-pointer ${full ? "w-full sm:w-auto" : ""}`}>
+      {options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+    </select>
+  </label>
 );
 
 const LinkText = ({ text, linkClassName = "" }) => {
@@ -2366,7 +2380,11 @@ export default function Muuvlink() {
   const [trainingsViewMode, setTrainingsViewMode] = useState("list"); // "list" | "map" 
   const [nearbyTrainings, setNearbyTrainings] = useState([]);
   const [userLocation, setUserLocation] = useState(null);
-  const [teamsLocLoading, setTeamsLocLoading] = useState(false); // Takımlar › "Yakınımdaki takımları göster"
+  const [teamsLocLoading, setTeamsLocLoading] = useState(false); // "Yakınlığa göre" seçilince konum isteniyor
+  // Sıralama (sayfa yeniden çizilince sıfırlanmasın diye üst düzeyde). teamSort boşsa: konum varsa
+  // yakınlık, yoksa yeni kurulan. Etkinlikler varsayılan tarih (sunucu da tarih sırasıyla verir).
+  const [teamSort, setTeamSort] = useState("");
+  const [trainingSort, setTrainingSort] = useState("date");
   const [locationLoading, setLocationLoading] = useState(false);
   const [nearbyLoading, setNearbyLoading] = useState(false);
   const [toast, setToast] = useState(null);
@@ -3878,6 +3896,26 @@ export default function Muuvlink() {
       },
       (err) => failWith(err?.code ?? 2), // 1=denied, 2=unavailable, 3=timeout
       { timeout: 15000, enableHighAccuracy: false }
+    );
+  };
+
+  // "Yakınlığa göre" sıralama için konum (Takımlar + Etkinlikler). İzin yoksa onFail.
+  const requestSortLocation = (onFail) => {
+    if (!navigator.geolocation) { showToast(t("trainings.locationError"), "error"); onFail?.(); return; }
+    setTeamsLocLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setUserLocation(loc);
+        try { localStorage.setItem("userLocation", JSON.stringify(loc)); } catch { /* yok say */ }
+        setTeamsLocLoading(false);
+      },
+      (err) => {
+        setTeamsLocLoading(false);
+        showToast(t(err?.code === 1 ? "trainings.locationDenied" : "trainings.locationError"), "error");
+        onFail?.();
+      },
+      { timeout: 15000, enableHighAccuracy: false, maximumAge: 300000 }
     );
   };
 
@@ -6222,7 +6260,26 @@ export default function Muuvlink() {
       const matchesDifficulty = !levelFilter || t.difficulty === levelFilter || t.difficulty === "Her Seviye";
       return matchesSearch && matchesSport && matchesDifficulty;
     };
-    const displayedTrainings = baseTrainings.filter(matchesFilters);
+    // Sıralama: tarih (varsayılan) · yakınlık (konum gerekir; konumsuz etkinlikler sona) · yeni eklenen.
+    // Öne çıkanlar ayrı bölümde, sıralamadan etkilenmez.
+    const trainingWhen = (tr) => Date.parse(tr.training_datetime_utc || `${String(tr.training_date || "").slice(0, 10)}T${tr.training_time || "00:00"}`) || 0;
+    const trainingDist = (tr) => tr.distance != null ? Number(tr.distance)
+      : (userLocation && tr.location_lat && tr.location_lng) ? haversineKm(userLocation.lat, userLocation.lng, Number(tr.location_lat), Number(tr.location_lng)) : null;
+    const sortTrainings = (list) => {
+      if (trainingSort === "distance" && !userLocation && !nearbyMode) return list;
+      const rows = list.map((tr, i) => ({ tr, i, d: trainingSort === "distance" ? trainingDist(tr) : null }));
+      const cmp = {
+        date: (a, b) => trainingWhen(a.tr) - trainingWhen(b.tr) || a.i - b.i,
+        distance: (a, b) => (a.d == null) - (b.d == null) || (a.d ?? 0) - (b.d ?? 0) || a.i - b.i,
+        new: (a, b) => new Date(b.tr.created_at) - new Date(a.tr.created_at) || a.i - b.i,
+      }[trainingSort] || (() => 0);
+      return rows.sort(cmp).map((x) => x.tr);
+    };
+    const onTrainingSort = (v) => {
+      setTrainingSort(v);
+      if (v === "distance" && !userLocation) requestSortLocation(() => setTrainingSort("date"));
+    };
+    const displayedTrainings = sortTrainings(baseTrainings.filter(matchesFilters));
     // Harita öne çıkanları DA gösterir. displayedTrainings öne çıkanları hariç tutuyor (listede
     // ayrı bölümdeler); haritaya o liste verildiği için öne çıkarılan etkinlikler haritadan
     // düşmüştü (14 Eylül 2026). "Yakınımda" modunda yalnız yakındaki öne çıkanlar — yoksa
@@ -6344,8 +6401,8 @@ export default function Muuvlink() {
               )}
             </div>
 
-            {/* Satır 3: GPS toggle */}
-            <div className="flex items-center gap-2">
+            {/* Satır 3: GPS toggle + sıralama (dar ekranda sıralama kendi satırında) */}
+            <div className="flex flex-wrap items-center gap-2">
               <button onClick={handleExitNearby}
                 className="px-4 py-2 text-xs font-semibold rounded-xl transition-all border shadow-sm"
                 style={!nearbyMode
@@ -6355,7 +6412,7 @@ export default function Muuvlink() {
               </button>
               <button onClick={() => handleNearbySearch()} disabled={locationLoading}
                 data-tour="nearby"
-                className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-xl transition-all border shadow-sm disabled:opacity-50"
+                className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-xl transition-all border shadow-sm disabled:opacity-50 whitespace-nowrap"
                 style={nearbyMode
                   ? {background:"#114956", color:"#fff", borderColor:"transparent", boxShadow:"0 1px 8px rgba(17,73,86,0.25)"}
                   : {background:"#fff", color:"#64748b", borderColor:"#e2e8f0"}}>
@@ -6364,12 +6421,16 @@ export default function Muuvlink() {
                   : <MapPin className="w-3 h-3"/>}
                 {t("trainings.nearbySearch")}
               </button>
-              {nearbyMode && userLocation && !nearbyLoading && (
-                <span className="ml-auto text-xs font-semibold text-brand-600 flex items-center gap-1">
-                  <MapPin className="w-3 h-3"/> {t("trainings.nearbyResults").replace("{n}", nearbyTrainings.length)}
-                </span>
-              )}
+              <div className="w-full sm:w-auto sm:ml-auto">
+                <SortSelect full label={t("sort.label")} value={trainingSort} onChange={onTrainingSort} busy={teamsLocLoading}
+                  options={[["date", t("sort.date")], ["distance", t("sort.distance")], ["new", t("sort.newEvents")]]} />
+              </div>
             </div>
+            {nearbyMode && userLocation && !nearbyLoading && (
+              <div className="text-xs font-semibold text-brand-600 flex items-center gap-1">
+                <MapPin className="w-3 h-3"/> {t("trainings.nearbyResults").replace("{n}", nearbyTrainings.length)}
+              </div>
+            )}
 
             {/* Satır 4: Mesafe pilleri (GPS aktifken) */}
             {nearbyMode && (
@@ -6503,12 +6564,24 @@ export default function Muuvlink() {
     // biliniyorsa en yakın önce; konumu olmayan takımlar sona, kendi sırasıyla (yeniden eskiye).
     const teamDistance = (tm) => (userLocation && tm.lat != null && tm.lng != null)
       ? haversineKm(userLocation.lat, userLocation.lng, Number(tm.lat), Number(tm.lng)) : null;
-    const byDistance = (list) => !userLocation ? list : list
-      .map((tm, i) => ({ tm, i, d: teamDistance(tm) }))
-      .sort((a, b) => (a.d == null) - (b.d == null) || (a.d ?? 0) - (b.d ?? 0) || a.i - b.i)
-      .map((x) => x.tm);
+    // Sıralama: yakınlık (konum gerekir; konumu olmayan takımlar sona) · yeni kurulan · üye sayısı · ad
+    const sortKey = teamSort || (userLocation ? "distance" : "new");
+    const sortTeams = (list) => {
+      const rows = list.map((tm, i) => ({ tm, i, d: teamDistance(tm) }));
+      const cmp = {
+        distance: (a, b) => (a.d == null) - (b.d == null) || (a.d ?? 0) - (b.d ?? 0) || a.i - b.i,
+        new: (a, b) => new Date(b.tm.created_at) - new Date(a.tm.created_at) || a.i - b.i,
+        members: (a, b) => Number(b.tm.member_count || 0) - Number(a.tm.member_count || 0) || a.i - b.i,
+        name: (a, b) => String(a.tm.name || "").trim().localeCompare(String(b.tm.name || "").trim(), lang, { sensitivity: "base" }),
+      }[sortKey];
+      return (sortKey === "distance" && !userLocation) ? list : rows.sort(cmp).map((x) => x.tm);
+    };
+    const onTeamSort = (v) => {
+      setTeamSort(v);
+      if (v === "distance" && !userLocation) requestSortLocation(() => setTeamSort("new"));
+    };
 
-    const filteredTeams = byDistance(teams.filter((t) => {
+    const filteredTeams = sortTeams(teams.filter((t) => {
       const q = teamSearch.toLowerCase();
       const matchesSearch = !q || t.name?.toLowerCase().includes(q) || t.description?.toLowerCase().includes(q) || t.location?.toLowerCase().includes(q);
       const matchesSport = !teamSport || t.sport === teamSport || (Array.isArray(t.sports) && t.sports.includes(teamSport));
@@ -6518,24 +6591,6 @@ export default function Muuvlink() {
     const filtering = !!(teamSearch || teamSport);
     const featuredTeams = filtering ? [] : filteredTeams.filter((tm) => tm.featured);
     const restTeams = filtering ? filteredTeams : filteredTeams.filter((tm) => !tm.featured);
-
-    const requestTeamsLocation = () => {
-      if (!navigator.geolocation) { showToast(t("trainings.locationError"), "error"); return; }
-      setTeamsLocLoading(true);
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-          setUserLocation(loc);
-          try { localStorage.setItem("userLocation", JSON.stringify(loc)); } catch { /* yok say */ }
-          setTeamsLocLoading(false);
-        },
-        (err) => {
-          setTeamsLocLoading(false);
-          showToast(t(err?.code === 1 ? "trainings.locationDenied" : "trainings.locationError"), "error");
-        },
-        { timeout: 15000, enableHighAccuracy: false, maximumAge: 300000 }
-      );
-    };
 
     return (
       <div className="min-h-screen min-h-svh bg-slate-50">
@@ -6581,6 +6636,8 @@ export default function Muuvlink() {
                 <option value="">{t("trainings.filterSport")}</option>
                 {sports.map((s) => <option key={s} value={s}>{t(`sports.${s}`)}</option>)}
               </select>
+              <SortSelect label={t("sort.label")} value={sortKey} onChange={onTeamSort} busy={teamsLocLoading}
+                options={[["distance", t("sort.distance")], ["new", t("sort.newTeams")], ["members", t("sort.members")], ["name", t("sort.name")]]} />
               {(teamSearch || teamSport) && (
                 <button onClick={() => { setTeamSearch(""); setTeamSport(""); }}
                   className="flex items-center gap-1 px-3 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-medium text-slate-600 transition">
@@ -6609,17 +6666,7 @@ export default function Muuvlink() {
               {restTeams.length > 0 && (
                 <section>
                   {!filtering && (
-                    <SectionHeading
-                      icon={userLocation ? MapPin : LayoutGrid}
-                      title={userLocation ? t("teams.nearestTitle") : t("teams.allTitle")}
-                      action={!userLocation && (
-                        <button onClick={requestTeamsLocation} disabled={teamsLocLoading}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold text-brand-600 border border-brand-200 bg-white disabled:opacity-60">
-                          {teamsLocLoading ? <Loader2 className="w-4 h-4 animate-spin"/> : <LocateFixed className="w-4 h-4"/>}
-                          {t("teams.showNearby")}
-                        </button>
-                      )}
-                    />
+                    <SectionHeading icon={LayoutGrid} title={t("teams.allTitle")} />
                   )}
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5" data-tour="teams-list">
                     {restTeams.map((team) => (

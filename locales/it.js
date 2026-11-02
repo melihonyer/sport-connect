@@ -465,9 +465,7 @@ export default {
 
   teams: {
     featuredTitle: "Squadre in evidenza",
-    nearestTitle: "Le squadre più vicine a te",
     allTitle: "Tutte le squadre",
-    showNearby: "Mostra le squadre vicino a me",
     pageTitle: "Squadre",
     pageSubtitle: "Scopri squadre sportive o crea la tua.",
     create: "Crea squadra",
@@ -633,6 +631,16 @@ export default {
     write: "Scrivici",
     loadError: "Impossibile caricare i messaggi. Riprova tra poco.",
     reply: "Rispondi",
+  },
+
+  sort: {
+    label: "Ordina",
+    date: "Per data",
+    distance: "Per distanza",
+    newEvents: "Aggiunti di recente",
+    newTeams: "Squadre più recenti",
+    members: "Più membri",
+    name: "Per nome (A–Z)",
   },
 
   notifPrefs: {
