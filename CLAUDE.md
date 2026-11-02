@@ -310,6 +310,11 @@ Kurallar:
   sahte/yanıltıcı etkinlik, spam, uygunsuz, güvenlik endişesi, diğer. Yorum/duvar: uygunsuz, spam,
   taciz, diğer. "Sahte profil" kaldırıldı; kişi şikayeti YOK, kişi için "Engelle" yeterli (Melih).
   Yeni neden kodu admin Şikayetler'deki etiket sözlüğüne de eklenir.
+- **Bölüm başlığı `SectionHeading`** (sporla-bulusma.jsx, modül düzeyinde; 2 Kasım 2026, Melih: öne çıkan
+  etkinlik/takım başlıkları farklıydı): açık teal kutuda ikon + `text-xl sm:text-2xl font-semibold
+  text-brand-900` başlık + sağda isteğe bağlı eylem. Etkinlikler, Takımlar ve uygulama ana sayfası bunu
+  kullanır. İkonlar: öne çıkan = `Sparkles`, tüm liste = `LayoutGrid`, en yakın = `MapPin`, yaklaşan =
+  `CalendarDays`. Yeni liste bölümü de bununla yazılır. Web ana sayfasının büyük "Keşfet" başlığı bilerek ayrı.
 - Degrade yok kuralı: fotoğraf üstündeki karartma katmanları (okunurluk için) ve admin'den gelen
   banner renkleri hariç. Branş adı her yerde `sportLabel()` ile görenin dilinde.
 

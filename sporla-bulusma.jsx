@@ -34,8 +34,9 @@ import {
   ChevronDown,
   Check,
   Navigation2,
-  Star,
   LocateFixed,
+  LayoutGrid,
+  CalendarDays,
   Loader2,
   Download,
   ChevronRight,
@@ -506,6 +507,23 @@ const splitLink = (raw) => {
   }
   return [url, tail];
 };
+// Bölüm başlığı — Etkinlikler, Takımlar ve uygulama ana sayfasında TEK görünüm (2 Kasım 2026, Melih:
+// öne çıkan etkinlik/takım başlıkları farklıydı). Solda açık teal kutuda ikon, yanında başlık, sağda
+// isteğe bağlı eylem. Öne çıkan bölümler hep Sparkles; "tüm" listeler LayoutGrid; yakınlık MapPin.
+const SectionHeading = ({ icon: Icon, title, action = null, className = "" }) => (
+  <div className={`flex flex-wrap items-center justify-between gap-x-3 gap-y-2 mb-4 ${className}`}>
+    <h2 className="flex items-center gap-2.5 min-w-0 text-xl sm:text-2xl font-semibold text-brand-900 tracking-tight">
+      {Icon && (
+        <span className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+          <Icon className="w-[18px] h-[18px] text-logo-teal" />
+        </span>
+      )}
+      <span className="min-w-0">{title}</span>
+    </h2>
+    {action}
+  </div>
+);
+
 const LinkText = ({ text, linkClassName = "" }) => {
   if (!text) return null;
   const parts = String(text).split(LINK_RE);
@@ -5464,9 +5482,7 @@ export default function Muuvlink() {
             Kural Etkinlikler sayfasıyla aynı: admin panelinden işaretlenenler. */}
         {trainings.some((tr) => tr.is_featured) && (
           <div className="pt-8 bg-white px-4">
-            <h2 className="flex items-center gap-2 font-display font-bold text-slate-900 text-xl mb-2">
-              <Sparkles className="w-5 h-5 text-logo-teal flex-shrink-0" /> {t("trainings.featuredTitle")}
-            </h2>
+            <SectionHeading icon={Sparkles} title={t("trainings.featuredTitle")} className="!mb-2" />
             <div>
               {trainings.filter((tr) => tr.is_featured).map((training) => (
                 <TrainingCard key={training.id} training={training} onClick={fetchTrainingDetails} />
@@ -5477,15 +5493,12 @@ export default function Muuvlink() {
 
         {/* Yaklaşan etkinlikler — öne çıkanlar yukarıda, burada tekrar edilmez */}
         <div className="py-8 bg-white px-4">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display font-bold text-slate-900 text-xl">{t("home.upcoming")}</h2>
-            <button
-              onClick={() => setCurrentPage("trainings")}
-              className="text-xs font-semibold text-brand-600"
-            >
-              {t("home.viewAll")} →
-            </button>
-          </div>
+          <SectionHeading icon={CalendarDays} title={t("home.upcoming")}
+            action={(
+              <button onClick={() => setCurrentPage("trainings")} className="text-xs font-semibold text-brand-600 py-2">
+                {t("home.viewAll")} →
+              </button>
+            )} />
           {trainings.some((tr) => !tr.is_featured) ? (
             <div>
               {trainings.filter((tr) => !tr.is_featured).slice(0, 6).map((training) => (
@@ -6405,9 +6418,7 @@ export default function Muuvlink() {
           {/* ── Öne çıkan etkinlikler (yalnız liste görünümünde, süzgeçten bağımsız) ── */}
           {viewMode === "list" && featuredTrainings.length > 0 && (
             <section className="mb-10">
-              <h2 className="flex items-center gap-2 text-xl sm:text-2xl font-semibold text-brand-900 tracking-tight mb-4">
-                <Sparkles className="w-5 h-5 text-logo-teal flex-shrink-0" /> {t("trainings.featuredTitle")}
-              </h2>
+              <SectionHeading icon={Sparkles} title={t("trainings.featuredTitle")} />
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {featuredTrainings.map((training) => (
                   <TrainingCard key={training.id} training={training} onClick={fetchTrainingDetails} />
@@ -6422,7 +6433,7 @@ export default function Muuvlink() {
             <div className="grid mb-10"><TaDiscoverCard t={t} lang={lang} isNative={isNative} /></div>
           )}
           {viewMode === "list" && featuredTrainings.length > 0 && (
-            <h2 className="text-xl sm:text-2xl font-semibold text-brand-900 tracking-tight mb-4">{t("trainings.allTitle")}</h2>
+            <SectionHeading icon={LayoutGrid} title={t("trainings.allTitle")} />
           )}
 
           {/* ── Liste görünümü ── */}
@@ -6587,9 +6598,7 @@ export default function Muuvlink() {
             <>
               {featuredTeams.length > 0 && (
                 <section className="mb-10">
-                  <h2 className="flex items-center gap-2 text-xs font-semibold tracking-[0.25em] text-slate-500 uppercase mb-4">
-                    <Star className="w-4 h-4 text-logo-teal" fill="currentColor"/> {t("teams.featuredTitle")}
-                  </h2>
+                  <SectionHeading icon={Sparkles} title={t("teams.featuredTitle")} />
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
                     {featuredTeams.map((team) => (
                       <TeamCard key={team.id} team={team} onClick={fetchTeamDetails} distanceKm={team.approx ? null : teamDistance(team)} />
@@ -6600,18 +6609,17 @@ export default function Muuvlink() {
               {restTeams.length > 0 && (
                 <section>
                   {!filtering && (
-                    <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                      <h2 className="text-xs font-semibold tracking-[0.25em] text-slate-500 uppercase">
-                        {userLocation ? t("teams.nearestTitle") : t("teams.allTitle")}
-                      </h2>
-                      {!userLocation && (
+                    <SectionHeading
+                      icon={userLocation ? MapPin : LayoutGrid}
+                      title={userLocation ? t("teams.nearestTitle") : t("teams.allTitle")}
+                      action={!userLocation && (
                         <button onClick={requestTeamsLocation} disabled={teamsLocLoading}
                           className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold text-brand-600 border border-brand-200 bg-white disabled:opacity-60">
                           {teamsLocLoading ? <Loader2 className="w-4 h-4 animate-spin"/> : <LocateFixed className="w-4 h-4"/>}
                           {t("teams.showNearby")}
                         </button>
                       )}
-                    </div>
+                    />
                   )}
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5" data-tour="teams-list">
                     {restTeams.map((team) => (
