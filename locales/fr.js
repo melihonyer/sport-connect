@@ -464,6 +464,10 @@ export default {
   },
 
   teams: {
+    featuredTitle: "Équipes à la une",
+    nearestTitle: "Les équipes les plus proches de toi",
+    allTitle: "Toutes les équipes",
+    showNearby: "Afficher les équipes près de moi",
     pageTitle: "Équipes",
     pageSubtitle: "Découvre des équipes sportives ou crée la tienne.",
     create: "Créer une équipe",

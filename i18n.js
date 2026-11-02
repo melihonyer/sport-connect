@@ -663,6 +663,10 @@ export const translations = {
 
   // ── TEAMS PAGE ───────────────────────────────────────────
   teams: {
+    featuredTitle:  { tr: "Öne çıkan takımlar", en: "Featured teams", de: "Empfohlene Teams" },
+    nearestTitle:   { tr: "Sana en yakın takımlar", en: "Teams closest to you", de: "Teams in deiner Nähe" },
+    allTitle:       { tr: "Tüm takımlar", en: "All teams", de: "Alle Teams" },
+    showNearby:     { tr: "Yakınımdaki takımları göster", en: "Show teams near me", de: "Teams in meiner Nähe zeigen" },
     pageTitle:      { tr: "Takımlar",                     en: "Teams",                   de: "Teams"                   },
     pageSubtitle:   { tr: "Spor takımlarını keşfet veya kendi takımını kur.",
                       en: "Discover sports teams or create your own.",

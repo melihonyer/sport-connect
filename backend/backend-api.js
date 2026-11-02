@@ -4517,6 +4517,52 @@ app.post('/api/teams', authenticateToken, async (req, res) => {
   }
 });
 
+// ─── Öne çıkan takımlar (2 Kasım 2026, Melih) ─────────────────
+// Admin iki yoldan birini seçer: "manual" = yıldızladığı takımlar (teams.featured),
+// "random" = etkin herkese açık takımlardan `count` tanesi, 3 günde bir yenilenir. Yenileme
+// istek anında yapılır (zamanlanmış iş yok), seçim app_settings 'featured_teams'te durur.
+// Etkin = son 60 günde etkinlik açmış ya da ileride etkinliği olan herkese açık takım.
+const FEATURED_ROTATE_MS = 3 * 24 * 3600 * 1000;
+const FEATURED_DEFAULT = { mode: 'manual', count: 3, picked: [], picked_at: null };
+async function getSetting(key, fallback) {
+  const r = await pool.query('SELECT value FROM app_settings WHERE key = $1', [key]);
+  return r.rows[0]?.value ?? fallback;
+}
+async function setSetting(key, value) {
+  await pool.query(`INSERT INTO app_settings (key, value, updated_at) VALUES ($1, $2, NOW())
+    ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`, [key, JSON.stringify(value)]);
+}
+const shuffled = (arr) => { const a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+let featuredCache = { at: 0, ids: [] };
+async function featuredTeamState({ reshuffle = false } = {}) {
+  const st = { ...FEATURED_DEFAULT, ...(await getSetting('featured_teams', {})) };
+  if (st.mode !== 'random') {
+    const ids = (await pool.query('SELECT id FROM teams WHERE featured AND NOT is_private ORDER BY id')).rows.map((r) => r.id);
+    return { ...st, ids };
+  }
+  const eligible = (await pool.query(
+    `SELECT t.id FROM teams t WHERE NOT t.is_private AND EXISTS (
+       SELECT 1 FROM trainings tr WHERE tr.team_id = t.id
+          AND (tr.created_at > NOW() - INTERVAL '60 days' OR tr.training_datetime_utc >= NOW()))`
+  )).rows.map((r) => r.id);
+  const prev = Array.isArray(st.picked) ? st.picked : [];
+  const want = Math.min(st.count, eligible.length);
+  const stillOk = prev.filter((id) => eligible.includes(id));
+  const due = reshuffle || !st.picked_at || Date.now() - new Date(st.picked_at).getTime() >= FEATURED_ROTATE_MS || stillOk.length < want;
+  if (!due) return { ...st, ids: stillOk };
+  // Önce son seçimde olmayanlardan: her turda başka takımlar görünsün
+  const ids = [...shuffled(eligible.filter((id) => !prev.includes(id))), ...shuffled(eligible.filter((id) => prev.includes(id)))].slice(0, want);
+  const next = { ...st, picked: ids, picked_at: new Date().toISOString() };
+  await setSetting('featured_teams', next);
+  return { ...next, ids };
+}
+async function featuredTeamIds() {
+  if (Date.now() - featuredCache.at < 60000) return featuredCache.ids;
+  const { ids } = await featuredTeamState();
+  featuredCache = { at: Date.now(), ids };
+  return ids;
+}
+
 app.get('/api/teams', optionalAuth, async (req, res) => {
   try {
     const { sport, search, member_only, can_create_training } = req.query;
@@ -4536,15 +4582,24 @@ app.get('/api/teams', optionalAuth, async (req, res) => {
       whereClause = `(t.is_private = false OR t.id IN (SELECT team_id FROM team_members WHERE user_id = $1))`;
     }
 
+    // lat/lng: takımın son 10 etkinliğinin konum ortalaması (takımın kendi koordinatı yok);
+    // "sana en yakın takımlar" sıralaması bunu kullanır. Etkinlik konumları zaten herkese açık.
     let query = `
       SELECT t.*,
              u.name as owner_name,
              COUNT(DISTINCT tm.user_id) as member_count,
-             my_role.role as my_role
+             my_role.role as my_role,
+             loc.lat, loc.lng
       FROM teams t
       LEFT JOIN users u ON t.owner_id = u.id
       LEFT JOIN team_members tm ON t.id = tm.team_id
       LEFT JOIN team_members my_role ON my_role.team_id = t.id AND my_role.user_id = $1
+      LEFT JOIN LATERAL (
+        SELECT ROUND(AVG(x.location_lat)::numeric, 3)::float AS lat, ROUND(AVG(x.location_lng)::numeric, 3)::float AS lng
+          FROM (SELECT location_lat, location_lng FROM trainings tr
+                 WHERE tr.team_id = t.id AND tr.location_lat IS NOT NULL AND tr.location_lng IS NOT NULL
+                 ORDER BY tr.training_datetime_utc DESC NULLS LAST LIMIT 10) x
+      ) loc ON true
       WHERE ${whereClause}
     `;
 
@@ -4564,12 +4619,36 @@ app.get('/api/teams', optionalAuth, async (req, res) => {
       params.push(`%${search}%`);
     }
 
-    query += ' GROUP BY t.id, u.name, my_role.role ORDER BY t.created_at DESC';
+    query += ' GROUP BY t.id, u.name, my_role.role, loc.lat, loc.lng ORDER BY t.created_at DESC';
 
-    const result = await pool.query(query, params);
+    const [result, featIds] = await Promise.all([pool.query(query, params), featuredTeamIds().catch(() => [])]);
+
+    // Konumlu etkinliği olmayan takım: aynı yeri yazan (ör. "Antalya") konumlu takımların ortalaması,
+    // `approx: true` — sıralamaya girer, kartta km yazılmaz. Dış hizmetle adres çözümlemesi YAPILMAZ.
+    const placeParts = (txt) => String(txt || '').split(/[\/,]/).map((x) => x.trim().toLocaleLowerCase('tr')).filter((x) => x.length >= 3);
+    const byPlace = new Map();
+    for (const t of result.rows) {
+      if (t.lat == null || t.lng == null) continue;
+      for (const k of placeParts(t.location)) { const a = byPlace.get(k) || []; a.push([t.lat, t.lng]); byPlace.set(k, a); }
+    }
+    const approxFor = (t) => {
+      for (const k of placeParts(t.location)) {
+        const a = byPlace.get(k);
+        if (a?.length) return [Math.round(a.reduce((s, c) => s + c[0], 0) / a.length * 1000) / 1000, Math.round(a.reduce((s, c) => s + c[1], 0) / a.length * 1000) / 1000];
+      }
+      return null;
+    };
 
     // Üyesi olmadığı takımda sahibin adı da maskeli (bkz. GET /api/teams/:id).
-    const teams = result.rows.map((t) => (t.my_role ? t : { ...t, owner_name: maskPersonName(t.owner_name) }));
+    // featured: o an öne çıkan (elle ya da rastgele); sütunun kendisi yalnız elle seçimi tutar.
+    const teams = result.rows.map((t) => {
+      const ap = t.lat == null ? approxFor(t) : null;
+      return {
+        ...(t.my_role ? t : { ...t, owner_name: maskPersonName(t.owner_name) }),
+        ...(ap ? { lat: ap[0], lng: ap[1], approx: true } : {}),
+        featured: !t.is_private && featIds.includes(t.id),
+      };
+    });
 
     res.json({ teams });
   } catch (error) {
@@ -7548,6 +7627,38 @@ app.delete('/api/admin/trainings/:id', isAdmin, async (req, res) => {
 });
 
 // ─── ADMIN TEAMS ────────────────────────────────────
+// Öne çıkan takımlar ayarı: yol (elle/rastgele), rastgelede kaç takım, şu anki seçim ve sonraki değişim.
+const featuredTeamsPayload = (st) => ({
+  mode: st.mode, count: st.count, ids: st.ids,
+  picked_at: st.mode === 'random' ? st.picked_at : null,
+  next_change_at: st.mode === 'random' && st.picked_at ? new Date(new Date(st.picked_at).getTime() + FEATURED_ROTATE_MS).toISOString() : null,
+});
+app.get('/api/admin/featured-teams', isAdmin, async (req, res) => {
+  try { res.json(featuredTeamsPayload(await featuredTeamState())); }
+  catch (e) { console.error('featured-teams get:', e.message); res.status(500).json({ error: 'Okunamadı.' }); }
+});
+app.put('/api/admin/featured-teams', isAdmin, async (req, res) => {
+  try {
+    const cur = { ...FEATURED_DEFAULT, ...(await getSetting('featured_teams', {})) };
+    const mode = req.body?.mode === 'random' ? 'random' : req.body?.mode === 'manual' ? 'manual' : cur.mode;
+    const count = Math.min(6, Math.max(1, parseInt(req.body?.count ?? cur.count, 10) || 3));
+    // Rastgeleye geçince ya da sayı değişince hemen yeni seçim
+    const reshuffle = req.body?.reshuffle === true || (mode === 'random' && (cur.mode !== 'random' || count !== cur.count));
+    await setSetting('featured_teams', { ...cur, mode, count });
+    const st = await featuredTeamState({ reshuffle });
+    featuredCache = { at: 0, ids: [] };
+    res.json(featuredTeamsPayload(st));
+  } catch (e) { console.error('featured-teams put:', e.message); res.status(500).json({ error: 'Kaydedilemedi.' }); }
+});
+app.put('/api/admin/teams/:id/feature', isAdmin, async (req, res) => {
+  try {
+    const r = await pool.query('UPDATE teams SET featured = NOT featured WHERE id = $1 RETURNING id, featured, is_private', [req.params.id]);
+    if (!r.rows.length) return res.status(404).json({ error: 'Takım bulunamadı.' });
+    featuredCache = { at: 0, ids: [] };
+    res.json(r.rows[0]);
+  } catch (e) { res.status(500).json({ error: 'Öne çıkarma değiştirilemedi.' }); }
+});
+
 app.get('/api/admin/teams', isAdmin, async (req, res) => {
   try {
     const result = await pool.query(`
@@ -9644,6 +9755,13 @@ pool.query(`ALTER TABLE trainings ADD COLUMN IF NOT EXISTS is_featured BOOLEAN N
 pool.query(`ALTER TABLE trainings ADD COLUMN IF NOT EXISTS featured_at TIMESTAMPTZ`).catch(() => {});
 // Takımın spor dalları (çoklu). Eski takımlar için tekil sport'tan doldur.
 pool.query(`ALTER TABLE teams ADD COLUMN IF NOT EXISTS sports TEXT[]`).catch(() => {});
+// Öne çıkan takımlar (2 Kasım 2026): elle seçim bu sütunda; rastgele seçim app_settings'te
+pool.query(`ALTER TABLE teams ADD COLUMN IF NOT EXISTS featured BOOLEAN NOT NULL DEFAULT false`).catch(() => {});
+pool.query(`CREATE TABLE IF NOT EXISTS app_settings (
+    key TEXT PRIMARY KEY,
+    value JSONB NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`).catch(() => {});
 pool.query(`UPDATE teams SET sports = ARRAY[sport] WHERE (sports IS NULL OR array_length(sports,1) IS NULL) AND sport IS NOT NULL`).catch(() => {});
 
 // Hesap silme = soft-delete. deleted_at doluysa hesap "silinmeye zamanlanmış"tır;

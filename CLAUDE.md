@@ -433,6 +433,25 @@ Hook'lar bu sabit fiber'a bağlanır, closure'lar her render tazelenir.
   BottomNav. Kalanlar tek tek geçirilebilir; her birinde `useState` başlangıç
   değerinin "her render'da tazelensin" varsayımına dayanıp dayanmadığı kontrol edilir.
 
+## Öne çıkan takımlar ve en yakın takımlar (2 Kasım 2026, Melih)
+
+Osman Yıldız'ın "yerel ekip liderlerini afişe edin" önerisinden. Takımlar sayfasında önce öne çıkanlar,
+altında takımlar konuma göre en yakından uzağa.
+- **Admin › Takımlar** üstündeki panel: "Elle seç" (satırdaki yıldız → `teams.featured`) ya da
+  "Rastgele · 3 günde bir" (1–6 takım; "Şimdi değiştir"). Ayar `app_settings` 'featured_teams'
+  (`mode`, `count`, `picked`, `picked_at`). Rastgele havuz: son 60 günde etkinlik açmış ya da ileride
+  etkinliği olan HERKESE AÇIK takımlar; yeni turda önce son turda olmayanlar. Yenileme istek anında
+  (`featuredTeamState`, zamanlanmış iş yok), `/api/teams` 60 sn önbellekli. Gizli takım hiç öne çıkmaz.
+  Varsayılan: elle, seçili yok (bölüm görünmez). Yayından sonra modu Melih seçecek.
+- **Takımın konumu:** takımlarda koordinat YOK. `/api/teams` `lat/lng` = son 10 konumlu etkinliğin
+  ortalaması (3 hane). Etkinliği yoksa aynı yeri yazan (`location`, "/" ve "," ile bölünür) konumlu
+  takımların ortalaması, `approx: true` — sıralamaya girer, kartta km yazılmaz. Dış adres çözümlemesi
+  yapılmaz. 2 Kasım: 34 açık takımdan 24 etkinlikten, 7 yaklaşık, 3 konumsuz (listenin sonunda).
+- **Sayfa:** konum biliniyorsa "Sana en yakın takımlar" + kartta "x km uzakta" (`trainings.away`);
+  bilinmiyorsa "Tüm takımlar" + "Yakınımdaki takımları göster" (web'de izin ister, uygulamada açılışta
+  alınmış olur). Arama/branş süzgecinde öne çıkanlar ayrılmaz, tek liste mesafeye göre. Metinler
+  `teams.featuredTitle/nearestTitle/allTitle/showNearby` (7 dil, Melih onayladı).
+
 ## Konum seçici
 
 Konumu yazıp listeden SEÇMEYEN kullanıcı koordinatsız etkinlik yaratıyordu;

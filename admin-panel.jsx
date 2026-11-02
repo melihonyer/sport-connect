@@ -1969,6 +1969,8 @@ export default function AdminPanel() {
   const [teamFilter, setTeamFilter] = useState("all"); // all | deleted
   const [teams, setTeams]       = useState([]);
   const [messages, setMessages] = useState([]);
+  // Öne çıkan takımlar ayarı: { mode: "manual"|"random", count, ids, next_change_at }
+  const [featuredCfg, setFeaturedCfg] = useState(null);
   // Panelden cevap: tek açık kutu. step "write" → "preview" (alıcının göreceği hali) → gönder.
   const [replyDraft, setReplyDraft] = useState(null); // { id, text, alsoEmail, step, sending }
   const [banners, setBanners]   = useState([]);
@@ -2026,6 +2028,38 @@ export default function AdminPanel() {
   };
 
   const growSent = (setter) => (id, last) => setter(prev => prev.map(x => x.id === id ? { ...x, last_grow_email: last } : x));
+
+  // Öne çıkan takımlar: yol/sayı değişimi, rastgelede "şimdi değiştir", elle yıldız
+  const saveFeaturedCfg = async (body) => {
+    try {
+      const r = await api("/admin/featured-teams", { method: "PUT", body: JSON.stringify(body) });
+      if (r) { setFeaturedCfg(r); showToast(body.reshuffle ? "Yeni takımlar seçildi." : "Kaydedildi.", "success"); }
+    } catch (err) { showToast(err.message || "Kaydedilemedi.", "error"); }
+  };
+  const toggleTeamFeatured = async (tm) => {
+    try {
+      const r = await api(`/admin/teams/${tm.id}/feature`, { method: "PUT" });
+      if (!r) return;
+      setTeams(prev => prev.map(x => x.id === tm.id ? { ...x, featured: r.featured } : x));
+      setFeaturedCfg(prev => prev && prev.mode === "manual"
+        ? { ...prev, ids: r.featured && !r.is_private ? [...prev.ids, tm.id] : prev.ids.filter(id => id !== tm.id) } : prev);
+      showToast(r.featured ? (r.is_private ? "İşaretlendi; gizli takım olduğu için sitede görünmez." : "Takım öne çıkarıldı.") : "Öne çıkarma kaldırıldı.", "success");
+    } catch (err) { showToast(err.message || "Değiştirilemedi.", "error"); }
+  };
+  // Takım şu an sitede öne çıkıyor mu (elle: yıldız, rastgele: o turun seçimi)
+  const isTeamFeaturedNow = (tm) => !!featuredCfg?.ids?.includes(tm.id);
+  // Yıldız: elle modda tıklanır; rastgelede yalnız o turun seçimini gösterir
+  const FeaturedTeamStar = ({ t: tm }) => {
+    const random = featuredCfg?.mode === "random";
+    const on = random ? isTeamFeaturedNow(tm) : !!tm.featured;
+    const label = random ? (on ? "Bu turda rastgele öne çıkıyor" : "Rastgele modda elle seçilmez") : (on ? "Öne çıkarmayı kaldır" : "Öne çıkar");
+    return (
+      <button onClick={() => !random && toggleTeamFeatured(tm)} disabled={random} title={label} aria-label={label} aria-pressed={on}
+        className={`p-1.5 rounded-lg transition-colors flex-shrink-0 ${on ? "text-amber-500 bg-amber-50" : "text-slate-300"} ${random ? "cursor-default" : on ? "hover:bg-amber-100" : "hover:text-amber-500 hover:bg-amber-50"}`}>
+        <Star className="w-4 h-4" fill={on ? "currentColor" : "none"} />
+      </button>
+    );
+  };
 
   const toggleFeatured = async (tr) => {
     try {
@@ -2091,7 +2125,10 @@ export default function AdminPanel() {
         api("/admin/deletions").then(d => { if (reqId === loadReqRef.current && d) setDeletions(d); }).catch(() => {});
       }
       if (t === "trainings") { const d = await api("/admin/trainings"); if (reqId === loadReqRef.current) setTrainings(d || []); }
-      else if (t === "teams") { const d = await api("/admin/teams"); if (reqId === loadReqRef.current) setTeams(d || []); }
+      else if (t === "teams") {
+        const [d, fc] = await Promise.all([api("/admin/teams"), api("/admin/featured-teams").catch(() => null)]);
+        if (reqId === loadReqRef.current) { setTeams(d || []); if (fc) setFeaturedCfg(fc); }
+      }
       else if (t === "messages") { const d = await api("/admin/contact"); if (reqId === loadReqRef.current) setMessages(d || []); }
       else if (t === "banners") { const d = await api("/admin/banners"); if (reqId === loadReqRef.current) setBanners(d || []); }
       else if (t === "home-news") { const d = await api("/admin/home-news"); if (reqId === loadReqRef.current) setHomeNews(d || []); }
@@ -2127,8 +2164,9 @@ export default function AdminPanel() {
         if (d && same()) { setUsers(d); if (dep) setDepartures(dep); }
       }
       else if (t === "trainings" || t === "teams") {
-        const [d, delData] = await Promise.all([api(`/admin/${t}`), api("/admin/deletions").catch(() => null)]);
-        if (d && same()) { (t === "teams" ? setTeams : setTrainings)(d); if (delData) setDeletions(delData); }
+        const [d, delData, fc] = await Promise.all([api(`/admin/${t}`), api("/admin/deletions").catch(() => null),
+          t === "teams" ? api("/admin/featured-teams").catch(() => null) : null]);
+        if (d && same()) { (t === "teams" ? setTeams : setTrainings)(d); if (delData) setDeletions(delData); if (fc) setFeaturedCfg(fc); }
       }
       else if (t === "messages") { const d = await api("/admin/contact"); if (d && same()) setMessages(d); }
       else if (t === "reports") { const d = await api("/admin/flags"); if (d && same()) setReports(d); }
@@ -3294,6 +3332,48 @@ export default function AdminPanel() {
               </div>
               {teamFilter === "deleted" && <DeletedList data={deletions} kind="team" />}
 
+              {/* Öne çıkan takımlar: elle (yıldız) ya da rastgele (3 günde bir değişir) */}
+              {teamFilter === "all" && featuredCfg && (
+                <div className="px-4 md:px-6 py-4 border-b border-slate-100 bg-amber-50/40">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-2 font-medium text-slate-900 text-sm">
+                      <Star className="w-4 h-4 text-amber-500" fill="currentColor" /> Öne çıkan takımlar
+                    </div>
+                    <div className="flex gap-1.5">
+                      {[["manual", "Elle seç"], ["random", "Rastgele · 3 günde bir"]].map(([k, label]) => (
+                        <button key={k} onClick={() => featuredCfg.mode !== k && saveFeaturedCfg({ mode: k })}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${featuredCfg.mode === k ? "bg-brand-600 text-white border-brand-600" : "bg-white text-slate-600 border-slate-200 hover:border-brand-300"}`}>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                    {featuredCfg.mode === "random" && (
+                      <>
+                        <label className="flex items-center gap-1.5 text-xs text-slate-600">
+                          Kaç takım
+                          <select value={featuredCfg.count} onChange={(e) => saveFeaturedCfg({ count: Number(e.target.value) })}
+                            className="px-2 py-1 border border-slate-200 rounded-lg text-xs bg-white">
+                            {[1, 2, 3, 4, 5, 6].map(n => <option key={n} value={n}>{n}</option>)}
+                          </select>
+                        </label>
+                        <button onClick={() => saveFeaturedCfg({ reshuffle: true })}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-white border border-slate-200 text-slate-600 hover:border-brand-300">
+                          <RefreshCw className="w-3.5 h-3.5" /> Şimdi değiştir
+                        </button>
+                      </>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-500 mt-2">
+                    {featuredCfg.mode === "manual"
+                      ? "Listede yıldızladığın herkese açık takımlar, Takımlar sayfasının en üstünde görünür."
+                      : `Son 60 günde etkinlik açmış ya da ileride etkinliği olan herkese açık takımlardan seçilir.${featuredCfg.next_change_at ? ` Sonraki değişim: ${fmtFull(featuredCfg.next_change_at)}.` : ""}`}
+                    {" "}Şu an öne çıkan: {featuredCfg.ids.length
+                      ? featuredCfg.ids.map(id => teams.find(x => x.id === id)?.name || `#${id}`).join(", ")
+                      : "yok"}.
+                  </p>
+                </div>
+              )}
+
               {/* Mobil kart listesi */}
               <div className="sm:hidden divide-y divide-slate-50">
                 {filteredTeams.length === 0 && (
@@ -3320,6 +3400,7 @@ export default function AdminPanel() {
                           {t.last_auto_email && <><span>·</span><AutoEmailInfo auto={t.last_auto_email} compact /></>}
                       </div>
                     </div>
+                    <FeaturedTeamStar t={t} />
                     <GrowEmailButton kind="team" item={t} api={api} showToast={showToast} onSent={growSent(setTeams)} compact />
                     <button onClick={() => del(`/admin/teams/${t.id}`, t.name, "teams")}
                       className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0">
@@ -3370,6 +3451,7 @@ export default function AdminPanel() {
                         <td className="px-4 py-3.5"><EmailLog item={t} /></td>
                         <td className="px-4 py-3.5">
                           <div className="flex items-center gap-1 justify-end">
+                            <FeaturedTeamStar t={t} />
                             <GrowEmailButton kind="team" item={t} api={api} showToast={showToast} onSent={growSent(setTeams)} />
                             <button onClick={() => del(`/admin/teams/${t.id}`, t.name, "teams")}
                               className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">

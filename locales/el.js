@@ -465,6 +465,10 @@ export default {
   },
 
   teams: {
+    featuredTitle: "Προτεινόμενες ομάδες",
+    nearestTitle: "Οι πιο κοντινές ομάδες σε σένα",
+    allTitle: "Όλες οι ομάδες",
+    showNearby: "Δείξε ομάδες κοντά μου",
     pageTitle: "Ομάδες",
     pageSubtitle: "Ανακάλυψε αθλητικές ομάδες ή φτιάξε τη δική σου.",
     create: "Φτιάξε ομάδα",

@@ -34,6 +34,8 @@ import {
   ChevronDown,
   Check,
   Navigation2,
+  Star,
+  LocateFixed,
   Loader2,
   Download,
   ChevronRight,
@@ -2346,6 +2348,7 @@ export default function Muuvlink() {
   const [trainingsViewMode, setTrainingsViewMode] = useState("list"); // "list" | "map" 
   const [nearbyTrainings, setNearbyTrainings] = useState([]);
   const [userLocation, setUserLocation] = useState(null);
+  const [teamsLocLoading, setTeamsLocLoading] = useState(false); // Takımlar › "Yakınımdaki takımları göster"
   const [locationLoading, setLocationLoading] = useState(false);
   const [nearbyLoading, setNearbyLoading] = useState(false);
   const [toast, setToast] = useState(null);
@@ -5196,7 +5199,7 @@ export default function Muuvlink() {
   );
 };
 
-  const TeamCard = ({ team, onClick }) => (
+  const TeamCard = ({ team, onClick, distanceKm = null }) => (
     <a
       href={teamPath(team)}
       onClick={(e) => openCardLink(e, () => onClick(team.id))}
@@ -5237,6 +5240,12 @@ export default function Muuvlink() {
             <Users className="w-4 h-4"/>
             <span className="font-semibold text-slate-700">{team.member_count || 0}</span>
             <span>{t("teams.members")}</span>
+            {distanceKm != null && (
+              <span className="flex items-center gap-1 ml-1.5 text-xs text-slate-500 whitespace-nowrap">
+                <MapPin className="w-3.5 h-3.5 text-logo-teal"/>
+                {distanceKm < 1 ? `${Math.round(distanceKm * 1000)} m` : `${distanceKm.toFixed(distanceKm < 10 ? 1 : 0)} km`} {t("trainings.away")}
+              </span>
+            )}
           </div>
           {team.my_role && (
             user?.is_admin ? (
@@ -6478,12 +6487,44 @@ export default function Muuvlink() {
     const [teamSearch, setTeamSearch] = useState(() => teamSearchSeedRef.current);
     const [teamSport, setTeamSport] = useState("");
 
-    const filteredTeams = teams.filter((t) => {
+    // Takımın konumu = son etkinliklerinin ortalaması (sunucu lat/lng verir; etkinliği yoksa aynı
+    // şehri yazan takımlardan yaklaşık, `approx` — sıralamaya girer, kartta km yazılmaz). Konum
+    // biliniyorsa en yakın önce; konumu olmayan takımlar sona, kendi sırasıyla (yeniden eskiye).
+    const teamDistance = (tm) => (userLocation && tm.lat != null && tm.lng != null)
+      ? haversineKm(userLocation.lat, userLocation.lng, Number(tm.lat), Number(tm.lng)) : null;
+    const byDistance = (list) => !userLocation ? list : list
+      .map((tm, i) => ({ tm, i, d: teamDistance(tm) }))
+      .sort((a, b) => (a.d == null) - (b.d == null) || (a.d ?? 0) - (b.d ?? 0) || a.i - b.i)
+      .map((x) => x.tm);
+
+    const filteredTeams = byDistance(teams.filter((t) => {
       const q = teamSearch.toLowerCase();
       const matchesSearch = !q || t.name?.toLowerCase().includes(q) || t.description?.toLowerCase().includes(q) || t.location?.toLowerCase().includes(q);
-      const matchesSport = !teamSport || t.sport === teamSport;
+      const matchesSport = !teamSport || t.sport === teamSport || (Array.isArray(t.sports) && t.sports.includes(teamSport));
       return matchesSearch && matchesSport;
-    });
+    }));
+    // Arama/süzgeç yokken: önce öne çıkanlar (admin seçer), altında kalanlar
+    const filtering = !!(teamSearch || teamSport);
+    const featuredTeams = filtering ? [] : filteredTeams.filter((tm) => tm.featured);
+    const restTeams = filtering ? filteredTeams : filteredTeams.filter((tm) => !tm.featured);
+
+    const requestTeamsLocation = () => {
+      if (!navigator.geolocation) { showToast(t("trainings.locationError"), "error"); return; }
+      setTeamsLocLoading(true);
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          setUserLocation(loc);
+          try { localStorage.setItem("userLocation", JSON.stringify(loc)); } catch { /* yok say */ }
+          setTeamsLocLoading(false);
+        },
+        (err) => {
+          setTeamsLocLoading(false);
+          showToast(t(err?.code === 1 ? "trainings.locationDenied" : "trainings.locationError"), "error");
+        },
+        { timeout: 15000, enableHighAccuracy: false, maximumAge: 300000 }
+      );
+    };
 
     return (
       <div className="min-h-screen min-h-svh bg-slate-50">
@@ -6543,11 +6584,43 @@ export default function Muuvlink() {
         {/* ── Content ── */}
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-10">
           {filteredTeams.length > 0 ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5" data-tour="teams-list">
-              {filteredTeams.map((team) => (
-                <TeamCard key={team.id} team={team} onClick={fetchTeamDetails} />
-              ))}
-            </div>
+            <>
+              {featuredTeams.length > 0 && (
+                <section className="mb-10">
+                  <h2 className="flex items-center gap-2 text-xs font-semibold tracking-[0.25em] text-slate-500 uppercase mb-4">
+                    <Star className="w-4 h-4 text-logo-teal" fill="currentColor"/> {t("teams.featuredTitle")}
+                  </h2>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {featuredTeams.map((team) => (
+                      <TeamCard key={team.id} team={team} onClick={fetchTeamDetails} distanceKm={team.approx ? null : teamDistance(team)} />
+                    ))}
+                  </div>
+                </section>
+              )}
+              {restTeams.length > 0 && (
+                <section>
+                  {!filtering && (
+                    <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                      <h2 className="text-xs font-semibold tracking-[0.25em] text-slate-500 uppercase">
+                        {userLocation ? t("teams.nearestTitle") : t("teams.allTitle")}
+                      </h2>
+                      {!userLocation && (
+                        <button onClick={requestTeamsLocation} disabled={teamsLocLoading}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold text-brand-600 border border-brand-200 bg-white disabled:opacity-60">
+                          {teamsLocLoading ? <Loader2 className="w-4 h-4 animate-spin"/> : <LocateFixed className="w-4 h-4"/>}
+                          {t("teams.showNearby")}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5" data-tour="teams-list">
+                    {restTeams.map((team) => (
+                      <TeamCard key={team.id} team={team} onClick={fetchTeamDetails} distanceKm={team.approx ? null : teamDistance(team)} />
+                    ))}
+                  </div>
+                </section>
+              )}
+            </>
           ) : (
             <div className="text-center py-28">
               <div className="w-20 h-20 rounded-3xl mx-auto mb-5 flex items-center justify-center"
