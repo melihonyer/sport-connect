@@ -5156,13 +5156,12 @@ export default function Muuvlink() {
       onClick={(e) => openCardLink(e, () => onClick(training.id))}
       className="group flex items-stretch gap-0 bg-white border-b border-dashed border-slate-100 cursor-pointer transition-colors duration-150 py-6 px-2 hover:bg-slate-50/80 hover:border-slate-200 active:bg-slate-50 no-underline text-inherit"
     >
-      {/* Sol: Takvim ikonu — ay şeridi branşın renginde (takım kartının bandıyla aynı) */}
+      {/* Sol: Takvim ikonu — ay şeridi açık gri; branş rengi yanındaki rozette (takım kartıyla aynı dil) */}
       <div className="flex items-center justify-center w-20 flex-shrink-0 pr-5">
         {(() => {
           return (
             <div className="w-[64px] aspect-square rounded-2xl overflow-hidden bg-slate-50 border border-slate-200 flex flex-col">
-              <div className="text-center uppercase font-bold tracking-[0.1em] text-[11px] leading-none pt-[7px] pb-[6px]"
-                style={{ background: sp.color, color: sp.text }}>
+              <div className="text-center uppercase font-bold tracking-[0.1em] text-[11px] leading-none pt-[7px] pb-[6px] bg-slate-200 text-slate-600">
                 {month}
               </div>
               <div className="flex-1 flex items-center justify-center bg-slate-50">
@@ -5245,17 +5244,18 @@ export default function Muuvlink() {
       onClick={(e) => openCardLink(e, () => onClick(team.id))}
       className="group block bg-white rounded-2xl border border-slate-100 hover:border-brand-200 hover:shadow-xl hover:-translate-y-0.5 active:bg-slate-50 transition-[transform,box-shadow,border-color] duration-200 ease-out cursor-pointer overflow-hidden no-underline text-inherit"
     >
-      {/* Üst bant — branşın rengi ve ikonu: kart bir bakışta hangi branş olduğunu söylesin (sportStyle.jsx).
-          Sağda aynı ikon büyük ve soluk; birden çok branşı olan takımda "+n". Düz renk, degrade yok. */}
+      {/* Başlık açık gri, branşı sağdaki renkli ikon kutusu söyler (sportStyle.jsx; Melih: "başlık açık
+          gri, ikonlar renkli"). Birden çok branşı olan takımda "+n". Düz renk, degrade yok. */}
       {(() => {
         const sp = sportStyle(team.sport);
         const extra = Array.isArray(team.sports) ? team.sports.filter((x) => x && x !== team.sport).length : 0;
         return (
-          <div className="relative h-11 px-5 flex items-center gap-2 overflow-hidden" style={{ background: sp.color, color: sp.text }}>
-            <sp.Icon className="w-[18px] h-[18px] flex-shrink-0" aria-hidden="true" />
-            <span className="text-xs font-semibold tracking-[0.14em] uppercase truncate">{sportLabel(team.sport)}</span>
-            {extra > 0 && <span className="opacity-80 text-xs font-semibold flex-shrink-0">+{extra}</span>}
-            <sp.Icon className="absolute -right-3 -bottom-5 w-20 h-20 opacity-15 -rotate-12 pointer-events-none" strokeWidth={1.5} aria-hidden="true" />
+          <div className="relative h-11 pl-5 pr-16 flex items-center gap-2 bg-slate-100">
+            <span className="text-slate-600 text-xs font-semibold tracking-[0.14em] uppercase truncate">{sportLabel(team.sport)}</span>
+            {extra > 0 && <span className="text-slate-400 text-xs font-semibold flex-shrink-0">+{extra}</span>}
+            <span className="absolute right-0 inset-y-0 w-14 flex items-center justify-center" style={{ background: sp.color, color: sp.text }}>
+              <sp.Icon className="w-6 h-6" aria-hidden="true" />
+            </span>
           </div>
         );
       })()}

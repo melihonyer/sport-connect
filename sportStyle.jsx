@@ -1,4 +1,4 @@
-// Branş rengi + ikonu — takım kartının üst bandı ve etkinlik kartının takvim şeridi/rozeti
+// Branş rengi + ikonu — takım kartı başlığındaki ikon kutusu ve etkinlik kartının branş rozeti
 // (2 Kasım 2026, Melih: "bakıldığında ne takım olduğu hızlıca anlaşılsın"). Branş renkleri
 // kurumsal paletin DIŞINDA bilinçli bir istisna ve TEK kaynak burası: JSX'e branş rengi yazılmaz.
 // Hepsi düz renk (degrade yok). Lucide'de olmayan branşlar için aynı çizgi stilinde küçük ikonlar.
@@ -47,31 +47,30 @@ const Oars = lucideLike(<>
   <path d="M15 4.5l4.5 4.5-2.5 1.5-3.5-3.5zM9 4.5L4.5 9 7 10.5l3.5-3.5z" />
 </>);
 
-// Griye kayan soluk tonlar (Melih, 2 Kasım 2026: canlı hali "çok renkli", üç seçenekten "daha
-// gri"yi seçti). OKLCH'de düşük doygunluk (C 0.06) + hafif mavi-gri ton; tonlar çarkta dağıtıldı,
-// en çok kullanılan dört branş (Triatlon, Koşu, Bisiklet, Yüzme) birbirinden en uzak: mor, gül
-// kurusu, haki, mavi. Hepsinde beyaz yazı ≥ 4.5:1; yazı rengi yine de kontrasta göre seçilir
-// (ileride açık bir renk eklenirse koyu yazı). Yeni renk de bu doygunlukta seçilir.
+// İlk palet (2 Kasım 2026) — Melih soluk/gri denemelerden sonra buna döndü. Birbirine benzeyenler
+// ayrıldı: Bisiklet kırmızıdan hardala (Koşu ile karışıyordu), Padel yeşilden mora (Yürüyüş ile).
+// Kartta renk yalnız ikon kutusunda ve rozette; başlık açık gri (Melih: "başlık açık gri, ikonlar
+// renkli"). İkon rengi kontrasta göre beyaz ya da koyu.
 const RAW = {
-  Triatlon:       ["#5A507D", Medal],
-  Koşu:           ["#8F6870", Runner],
-  Bisiklet:       ["#7D7256", Bike],
-  Yüzme:          ["#426D93", Waves],
-  Tenis:          ["#5E7A5F", TennisBall],
-  Basketbol:      ["#74554A", Basketball],
-  Padel:          ["#367C85", PadelRacket],
-  Yürüyüş:        ["#30665A", Footprints],
-  Trekking:       ["#6C6868", Mountain],
-  Voleybol:       ["#8C6985", Volleyball],
-  Futbol:         ["#29513E", SoccerBall],
-  Kano:           ["#10556D", Kayak],
-  Kürek:          ["#293B65", Oars],
-  Crossfit:       ["#3A495C", Dumbbell],
-  Pilates:        ["#69465B", PersonStanding],
-  Yoga:           ["#80668D", Flower2],
-  Canicross:      ["#66553D", PawPrint],
-  Bikejoring:     ["#5C4133", PawPrint],
-  "Dog Triatlon": ["#4E2E2D", PawPrint],
+  Triatlon:       ["#4338CA", Medal],
+  Koşu:           ["#E11D48", Runner],
+  Bisiklet:       ["#A16207", Bike],
+  Yüzme:          ["#0284C7", Waves],
+  Tenis:          ["#4D7C0F", TennisBall],
+  Basketbol:      ["#C2410C", Basketball],
+  Padel:          ["#7C3AED", PadelRacket],
+  Yürüyüş:        ["#047857", Footprints],
+  Trekking:       ["#57534E", Mountain],
+  Voleybol:       ["#A21CAF", Volleyball],
+  Futbol:         ["#15803D", SoccerBall],
+  Kano:           ["#0E7490", Kayak],
+  Kürek:          ["#1E40AF", Oars],
+  Crossfit:       ["#475569", Dumbbell],
+  Pilates:        ["#BE185D", PersonStanding],
+  Yoga:           ["#DB2777", Flower2],
+  Canicross:      ["#92400E", PawPrint],
+  Bikejoring:     ["#78350F", PawPrint],
+  "Dog Triatlon": ["#9A3412", PawPrint],
   Diğer:          ["#114956", Activity], // brand-600
 };
 
