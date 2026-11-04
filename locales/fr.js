@@ -154,7 +154,7 @@ export default {
     ctaBtn: "Commencer gratuitement",
     ctaBtnSecondary: "Découvrir les événements",
     heroTitleFallback: "Bouge avec d'autres,",
-    heroSubtitleFallback: "Trouve des gens qui font du sport près de chez toi, crée ton équipe et organise des événements. Découvre en quelques secondes les événements les plus proches grâce au GPS.",
+    heroSubtitleFallback: "Trouve des sportifs près de chez toi, crée ton équipe et organise des événements. Découvre en quelques secondes les événements proches grâce au GPS.",
     gpsLabel: "Recherche GPS",
     findNearby: "Trouve des événements près de toi",
     gpsDesc: "Ta position n'est jamais partagée : elle sert uniquement à trouver des événements autour de toi.",
@@ -734,6 +734,7 @@ export default {
     eyebrow: "Guide",
     title: "Comment utiliser Muuvlink",
     metaTitle: "Comment utiliser Muuvlink : le guide pas à pas",
+    metaDesc: "Trouver un événement, y participer, créer une équipe et organiser un événement sur Muuvlink, pas à pas. Gratuit sur le web et dans l'app iOS/Android.",
     lead: "Sur Muuvlink, trouver un événement sportif, y participer, créer une équipe et créer un événement, c'est gratuit. Tu l'utilises sur le web à l'adresse muuvlink.app ou sur ton téléphone avec l'appli iOS et Android. Les guides ci-dessous expliquent pas à pas les six actions les plus courantes.",
     g1: {
       title: "Trouver des événements sportifs près de chez toi",
@@ -1037,6 +1038,7 @@ export default {
   },
 
   seo: {
+    homeTitle: "Muuvlink — Trouve des partenaires de sport, crée une équipe",
     homeH1: "Muuvlink — trouve des partenaires de sport, crée une équipe, participe à des événements",
     navEvents: "Événements",
     navTeams: "Équipes",

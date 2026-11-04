@@ -185,6 +185,7 @@
   },
   "seo": {
     "de": {
+      "homeTitle": "Muuvlink — Trainingspartner finden, Team gründen",
       "homeH1": "Muuvlink — Trainingspartner finden, Team gründen, an Events teilnehmen",
       "navEvents": "Events",
       "navTeams": "Teams",
@@ -211,9 +212,11 @@
       "contactDesc": "Kontaktiere Muuvlink: Mitgliedschaft, Teamgründung, Eventfragen, technische Probleme, Zusammenarbeit und Feedback.",
       "faqTitle": "Häufige Fragen",
       "navGuide": "So funktioniert's",
-      "contactFaqTitle": "Häufige Fragen"
+      "contactFaqTitle": "Häufige Fragen",
+      "homeDesc": "Finde Sportler in deiner Nähe, bau dein Team auf und plane Events. Entdecke die nächsten Events per GPS in Sekunden."
     },
     "el": {
+      "homeTitle": "Muuvlink — Βρες παρέα για άθληση, φτιάξε ομάδα",
       "homeH1": "Muuvlink — βρες παρέα για άθληση, φτιάξε ομάδα, πάρε μέρος σε εκδηλώσεις",
       "navEvents": "Εκδηλώσεις",
       "navTeams": "Ομάδες",
@@ -240,9 +243,11 @@
       "contactDesc": "Επικοινώνησε με το Muuvlink: λογαριασμός, δημιουργία ομάδας, ερωτήσεις για εκδηλώσεις, τεχνικά προβλήματα, συνεργασίες και σχόλια.",
       "faqTitle": "Συχνές ερωτήσεις",
       "navGuide": "Πώς λειτουργεί",
-      "contactFaqTitle": "Συχνές ερωτήσεις"
+      "contactFaqTitle": "Συχνές ερωτήσεις",
+      "homeDesc": "Βρες ανθρώπους που αθλούνται κοντά σου, φτιάξε την ομάδα σου και οργάνωσε εκδηλώσεις. Ανακάλυψε μέσα σε δευτερόλεπτα τις πιο κοντινές εκδηλώσεις με GPS."
     },
     "en": {
+      "homeTitle": "Muuvlink — Find a Training Partner, Start a Team",
       "homeH1": "Muuvlink — find a training partner, start a team, join an event",
       "navEvents": "Events",
       "navTeams": "Teams",
@@ -269,9 +274,11 @@
       "contactDesc": "Get in touch with Muuvlink: membership, starting a team, event questions, technical issues, collaboration and feedback.",
       "faqTitle": "Frequently asked questions",
       "navGuide": "How it works",
-      "contactFaqTitle": "FAQ"
+      "contactFaqTitle": "FAQ",
+      "homeDesc": "Find people who play sports near you, build your team, and plan events. Discover the closest events in seconds with GPS."
     },
     "es": {
+      "homeTitle": "Muuvlink — Encuentra compañeros de deporte, crea un equipo",
       "homeH1": "Muuvlink — encuentra compañeros para hacer deporte, crea un equipo, apúntate a eventos",
       "navEvents": "Eventos",
       "navTeams": "Equipos",
@@ -298,9 +305,11 @@
       "contactDesc": "Contacta con Muuvlink: cuenta, crear un equipo, preguntas sobre eventos, problemas técnicos, colaboraciones y sugerencias.",
       "faqTitle": "Preguntas frecuentes",
       "navGuide": "Cómo funciona",
-      "contactFaqTitle": "Preguntas frecuentes"
+      "contactFaqTitle": "Preguntas frecuentes",
+      "homeDesc": "Encuentra gente que hace deporte cerca de ti, crea tu equipo y organiza eventos. Descubre en segundos los eventos más cercanos con GPS."
     },
     "fr": {
+      "homeTitle": "Muuvlink — Trouve des partenaires de sport, crée une équipe",
       "homeH1": "Muuvlink — trouve des partenaires de sport, crée une équipe, participe à des événements",
       "navEvents": "Événements",
       "navTeams": "Équipes",
@@ -327,9 +336,11 @@
       "contactDesc": "Contacte Muuvlink : compte, création d'équipe, questions sur les événements, problèmes techniques, partenariats et suggestions.",
       "faqTitle": "Questions fréquentes",
       "navGuide": "Comment ça marche",
-      "contactFaqTitle": "Questions fréquentes"
+      "contactFaqTitle": "Questions fréquentes",
+      "homeDesc": "Trouve des sportifs près de chez toi, crée ton équipe et organise des événements. Découvre en quelques secondes les événements proches grâce au GPS."
     },
     "it": {
+      "homeTitle": "Muuvlink — Trova compagni per fare sport, crea una squadra",
       "homeH1": "Muuvlink — trova compagni per fare sport, crea una squadra, partecipa agli eventi",
       "navEvents": "Eventi",
       "navTeams": "Squadre",
@@ -356,9 +367,11 @@
       "contactDesc": "Contatta Muuvlink: account, creazione di una squadra, domande sugli eventi, problemi tecnici, collaborazioni e suggerimenti.",
       "faqTitle": "Domande frequenti",
       "navGuide": "Come funziona",
-      "contactFaqTitle": "Domande frequenti"
+      "contactFaqTitle": "Domande frequenti",
+      "homeDesc": "Trova persone che fanno sport vicino a te, crea la tua squadra e organizza eventi. Scopri in pochi secondi gli eventi più vicini con il GPS."
     },
     "tr": {
+      "homeTitle": "Muuvlink — Spor Arkadaşı Bul, Takım Kur",
       "homeH1": "Muuvlink — spor arkadaşı bul, takım kur, etkinliğe katıl",
       "navEvents": "Etkinlikler",
       "navTeams": "Takımlar",
@@ -385,7 +398,8 @@
       "contactDesc": "Muuvlink ile iletişime geçin: üyelik, takım kurma, etkinlik soruları, teknik sorun, iş birliği ve geri bildirim.",
       "faqTitle": "Sık sorulan sorular",
       "navGuide": "Nasıl kullanılır?",
-      "contactFaqTitle": "Sık Sorulan Sorular"
+      "contactFaqTitle": "Sık Sorulan Sorular",
+      "homeDesc": "Çevrende spor yapan insanları bul, kendi takımını kur, etkinlikler planla. GPS ile en yakın etkinlikleri saniyeler içinde keşfet."
     }
   },
   "sports": {
@@ -549,6 +563,7 @@
       "nav": "So funktioniert's",
       "title": "So funktioniert Muuvlink",
       "metaTitle": "So funktioniert Muuvlink: Anleitung Schritt für Schritt",
+      "metaDesc": "Events finden, mitmachen, ein Team gründen und Events erstellen auf Muuvlink – Schritt für Schritt. Kostenlos im Web und in der iOS/Android-App.",
       "lead": "Auf Muuvlink Sportevents zu finden, mitzumachen, ein Team zu gründen und Events anzulegen ist kostenlos. Du nutzt es im Web unter muuvlink.app oder auf dem Handy mit der App für iOS und Android. Die folgenden Anleitungen erklären die sechs häufigsten Aufgaben Schritt für Schritt.",
       "guides": [
         {
@@ -628,6 +643,7 @@
       "nav": "Πώς λειτουργεί",
       "title": "Πώς χρησιμοποιείται το Muuvlink",
       "metaTitle": "Πώς χρησιμοποιείται το Muuvlink: οδηγός βήμα βήμα",
+      "metaDesc": "Βρες εκδηλώσεις, πάρε μέρος, φτιάξε ομάδα και άνοιξε εκδήλωση στο Muuvlink, βήμα βήμα. Δωρεάν στο web και στην εφαρμογή iOS/Android.",
       "lead": "Στο Muuvlink η αναζήτηση αθλητικών εκδηλώσεων, η συμμετοχή, η δημιουργία ομάδας και η δημιουργία εκδήλωσης είναι δωρεάν. Το χρησιμοποιείς στο web στη διεύθυνση muuvlink.app ή στο κινητό με την εφαρμογή για iOS και Android. Οι παρακάτω οδηγοί εξηγούν βήμα βήμα τις έξι πιο συχνές ενέργειες.",
       "guides": [
         {
@@ -707,6 +723,7 @@
       "nav": "How it works",
       "title": "How to use Muuvlink",
       "metaTitle": "How to use Muuvlink: a step-by-step guide",
+      "metaDesc": "Finding and joining events, starting a team and creating events on Muuvlink, step by step. Free on the web and in the iOS/Android app.",
       "lead": "Finding a sports event, joining one, starting a team and creating an event on Muuvlink are all free. Use it on the web at muuvlink.app or on your phone with the iOS and Android app. The guides below walk you through the six most common tasks step by step.",
       "guides": [
         {
@@ -786,6 +803,7 @@
       "nav": "Cómo funciona",
       "title": "Cómo usar Muuvlink",
       "metaTitle": "Cómo usar Muuvlink: guía paso a paso",
+      "metaDesc": "Encontrar eventos, apuntarte, crear un equipo y abrir un evento en Muuvlink, paso a paso. Gratis en la web y en la app de iOS/Android.",
       "lead": "En Muuvlink, buscar eventos deportivos, apuntarte, crear un equipo y crear un evento es gratis. Puedes usarlo en la web en muuvlink.app o en el móvil con la app para iOS y Android. Estas guías explican paso a paso las seis cosas que más se hacen.",
       "guides": [
         {
@@ -865,6 +883,7 @@
       "nav": "Comment ça marche",
       "title": "Comment utiliser Muuvlink",
       "metaTitle": "Comment utiliser Muuvlink : le guide pas à pas",
+      "metaDesc": "Trouver un événement, y participer, créer une équipe et organiser un événement sur Muuvlink, pas à pas. Gratuit sur le web et dans l'app iOS/Android.",
       "lead": "Sur Muuvlink, trouver un événement sportif, y participer, créer une équipe et créer un événement, c'est gratuit. Tu l'utilises sur le web à l'adresse muuvlink.app ou sur ton téléphone avec l'appli iOS et Android. Les guides ci-dessous expliquent pas à pas les six actions les plus courantes.",
       "guides": [
         {
@@ -944,6 +963,7 @@
       "nav": "Come funziona",
       "title": "Come si usa Muuvlink",
       "metaTitle": "Come si usa Muuvlink: guida passo passo",
+      "metaDesc": "Trovare eventi, partecipare, creare una squadra e organizzare un evento su Muuvlink, passo passo. Gratis sul web e nell'app iOS/Android.",
       "lead": "Su Muuvlink trovare eventi sportivi, partecipare, creare una squadra e creare un evento è gratis. Lo usi sul web all'indirizzo muuvlink.app o sul telefono con l'app per iOS e Android. Le guide qui sotto spiegano passo passo le sei cose che si fanno più spesso.",
       "guides": [
         {
@@ -1023,6 +1043,7 @@
       "nav": "Nasıl kullanılır?",
       "title": "Muuvlink nasıl kullanılır?",
       "metaTitle": "Muuvlink nasıl kullanılır? Adım adım rehber",
+      "metaDesc": "Muuvlink'te etkinlik bulmak, katılmak, takım kurmak ve etkinlik açmak adım adım. Web'de ve iOS/Android uygulamasında ücretsiz.",
       "lead": "Muuvlink'te spor etkinliği bulmak, etkinliğe katılmak, takım kurmak ve etkinlik açmak ücretsizdir. Web'de muuvlink.app adresinden, telefonda iOS ve Android uygulamasından kullanılır. Aşağıdaki rehberler en sık yapılan altı işi adım adım anlatıyor.",
       "guides": [
         {

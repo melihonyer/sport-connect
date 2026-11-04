@@ -2283,7 +2283,7 @@ export default function Muuvlink() {
     trainings:         { title:`${t("trainings.pageTitle")} — Muuvlink`,          desc: t("trainings.pageSubtitle")     },
     teams:             { title:`${t("teams.pageTitle")} — Muuvlink`,              desc: t("teams.pageSubtitle")         },
     contact:           { title:`${t("contact.pageTitle")} — Muuvlink`,            desc: t("contact.pageSubtitle")       },
-    guide:             { title:`${t("guide.metaTitle")} — Muuvlink`,              desc: t("guide.lead")                 },
+    guide:             { title:`${t("guide.metaTitle")} — Muuvlink`,              desc: t("guide.metaDesc")             },
     profile:           { title:`${t("profile.pageTitle")} — Muuvlink`,            desc: t("profile.pageTitle")          },
     "create-training": { title:`${t("createTraining.pageTitle")} — Muuvlink`,     desc: t("createTraining.pageSubtitle")},
     "create-team":     { title:`${t("createTeam.pageTitle")} — Muuvlink`,         desc: t("createTeam.pageSubtitle")    },

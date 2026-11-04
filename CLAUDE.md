@@ -180,6 +180,10 @@ JavaScript ÇALIŞTIRMAZ. Bu yüzden metin sunucudan basılır.
   (seo-content.json `guide`); llms.txt'te tr+en. Bağlantı: alt bilgi + ana sayfa SSS'nin altı. Rehber
   ürün davranışını anlatır — davranış değişirse (katılım, roller, yorum kuralı) metin de değişir.
   Rol adları arayüzdeki gibi (`teamDetail.roles`: Editör, Antrenör, Kaptan; "yönetici" değil).
+- **Başlık ≤70, meta açıklama 50–160 karakter** (4 Kasım 2026; bot sayfalarının 35'i de kontrol edildi). Ana sayfa
+  başlığı `seo.homeTitle` (H1 ayrı: `seo.homeH1`), açıklaması uygulamanınkiyle aynı `home.heroSubtitleFallback`;
+  rehber `guide.metaDesc`. Türkçe statik `index.html` `<title>`/açıklaması da `seo-static.mjs`'ten yazılır.
+  Metni `.slice()` ile kesip açıklama yapılmaz (cümle yarıda kalıyordu); yeni dil eklenirken uzunluk ölçülür.
 - **Güncelleme tarihi (`dateModified`, 4 Kasım 2026; VIBE TO GEO "İçerik güncelliği" 0/9'du):** derleme günü
   YAZILMAZ (her deploy'da "güncellendi" yalan olur). Ana sayfa / iletişim / rehber: metin gerçekten değiştiği gün —
   `seo-static.mjs` her sayfa+dil metninin özetini `scripts/seo-dates.json`'da tutar, özet değişince tarih bugüne

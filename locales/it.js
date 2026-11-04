@@ -734,6 +734,7 @@ export default {
     eyebrow: "Guida",
     title: "Come si usa Muuvlink",
     metaTitle: "Come si usa Muuvlink: guida passo passo",
+    metaDesc: "Trovare eventi, partecipare, creare una squadra e organizzare un evento su Muuvlink, passo passo. Gratis sul web e nell'app iOS/Android.",
     lead: "Su Muuvlink trovare eventi sportivi, partecipare, creare una squadra e creare un evento è gratis. Lo usi sul web all'indirizzo muuvlink.app o sul telefono con l'app per iOS e Android. Le guide qui sotto spiegano passo passo le sei cose che si fanno più spesso.",
     g1: {
       title: "Trovare eventi sportivi vicino a te",
@@ -1037,6 +1038,7 @@ export default {
   },
 
   seo: {
+    homeTitle: "Muuvlink — Trova compagni per fare sport, crea una squadra",
     homeH1: "Muuvlink — trova compagni per fare sport, crea una squadra, partecipa agli eventi",
     navEvents: "Eventi",
     navTeams: "Squadre",

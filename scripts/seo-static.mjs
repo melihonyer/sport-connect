@@ -48,7 +48,7 @@ const content = { faq: {}, seo: {}, sports: {}, guide: {} };
 // Rehber (i18n.js `guide`): g1…g6, adımlar s1…sN, isteğe bağlı note. Sayfa (GuidePage.jsx) ve
 // backend seoGuideText aynı metni okur.
 const guideOf = (l) => ({
-  nav: pick('guide.nav', l), title: pick('guide.title', l), metaTitle: pick('guide.metaTitle', l), lead: pick('guide.lead', l),
+  nav: pick('guide.nav', l), title: pick('guide.title', l), metaTitle: pick('guide.metaTitle', l), metaDesc: pick('guide.metaDesc', l), lead: pick('guide.lead', l),
   guides: [1, 2, 3, 4, 5, 6].map((n) => {
     const g = translations.guide[`g${n}`];
     const steps = [];
@@ -66,6 +66,8 @@ for (const l of LANGS) {
   content.guide[l] = guideOf(l);
   content.seo[l].navGuide = content.guide[l].nav;
   content.seo[l].contactFaqTitle = pick('contact.faqTitle', l); // iletişim sayfasındaki SSS başlığı
+  // Ana sayfa meta açıklaması: uygulamanın kendi ana sayfasıyla aynı metin (PAGE_META home).
+  content.seo[l].homeDesc = pick('home.heroSubtitleFallback', l);
 }
 
 // ── Güncelleme tarihleri (şemada dateModified) ─────────────────────────────
@@ -221,6 +223,9 @@ let html = fs.readFileSync(FILE, 'utf8');
 html = replaceRegion(html, 'SEO-HREFLANG', hreflangBlock);
 html = replaceRegion(html, 'SEO-SCHEMA', schemaBlock);
 html = replaceRegion(html, 'SEO-TEXT', textBlock);
+// Türkçe ana sayfanın <title> ve açıklaması da aynı kaynaktan (botlara giden dil sayfalarıyla eş).
+html = html.replace(/<title>[^<]*<\/title>/, `<title>${esc(tr('seo.homeTitle'))}</title>`)
+  .replace(/(<meta name="description" content=")[^"]*(">)/, (_, a, b) => `${a}${esc(tr('home.heroSubtitleFallback'))}${b}`);
 fs.writeFileSync(FILE, html);
 
 const words = faq.map((f) => `${f.q} ${f.a}`).join(' ').split(/\s+/).length;

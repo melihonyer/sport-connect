@@ -4083,7 +4083,7 @@ ${seoFooterLinks(lang, L, true)}
   return {
     page: 'guide', lang, text,
     title: `${G.metaTitle} — Muuvlink`,
-    description: G.lead.slice(0, 200),
+    description: G.metaDesc || G.lead.slice(0, 160),
     schema: {
       '@context': 'https://schema.org',
       '@graph': [
@@ -4123,8 +4123,9 @@ ${faq.map((f) => `      <h3 style="font-size:1rem;font-weight:600;color:#1F2121;
     </div>`;
   return {
     page: 'home', lang, text,
-    title: `Muuvlink — ${L.homeH1.replace(/^Muuvlink — /, '')}`,
-    description: faq[0].a.slice(0, 200),
+    // Başlık ≤70, açıklama ≤160 karakter (i18n seo.homeTitle / home.heroSubtitleFallback).
+    title: L.homeTitle || `Muuvlink — ${L.homeH1.replace(/^Muuvlink — /, '')}`,
+    description: L.homeDesc || faq[0].a.slice(0, 160),
     schema: {
       '@context': 'https://schema.org',
       '@graph': [

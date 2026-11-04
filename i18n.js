@@ -1371,6 +1371,10 @@ export const translations = {
   // Backend'e dist/seo-content.json olarak üretilir — orada elle metin yok.
   // {n} yer tutucusu çalışma anında sayıyla değiştirilir.
   seo: {
+    // Ana sayfa <title> (botlar; ≤70 karakter). H1 ayrı: homeH1.
+    homeTitle:   { tr: "Muuvlink — Spor Arkadaşı Bul, Takım Kur",
+                   en: "Muuvlink — Find a Training Partner, Start a Team",
+                   de: "Muuvlink — Trainingspartner finden, Team gründen" },
     homeH1:      { tr: "Muuvlink — spor arkadaşı bul, takım kur, etkinliğe katıl",
                    en: "Muuvlink — find a training partner, start a team, join an event",
                    de: "Muuvlink — Trainingspartner finden, Team gründen, an Events teilnehmen" },
@@ -1448,6 +1452,10 @@ export const translations = {
     metaTitle: { tr: "Muuvlink nasıl kullanılır? Adım adım rehber",
       en: "How to use Muuvlink: a step-by-step guide",
       de: "So funktioniert Muuvlink: Anleitung Schritt für Schritt" },
+    // Meta açıklama (50–160 karakter; Melih onayladı 4 Kasım 2026).
+    metaDesc:  { tr: "Muuvlink'te etkinlik bulmak, katılmak, takım kurmak ve etkinlik açmak adım adım. Web'de ve iOS/Android uygulamasında ücretsiz.",
+                 en: "Finding and joining events, starting a team and creating events on Muuvlink, step by step. Free on the web and in the iOS/Android app.",
+                 de: "Events finden, mitmachen, ein Team gründen und Events erstellen auf Muuvlink – Schritt für Schritt. Kostenlos im Web und in der iOS/Android-App." },
     lead: { tr: "Muuvlink'te spor etkinliği bulmak, etkinliğe katılmak, takım kurmak ve etkinlik açmak ücretsizdir. Web'de muuvlink.app adresinden, telefonda iOS ve Android uygulamasından kullanılır. Aşağıdaki rehberler en sık yapılan altı işi adım adım anlatıyor.",
       en: "Finding a sports event, joining one, starting a team and creating an event on Muuvlink are all free. Use it on the web at muuvlink.app or on your phone with the iOS and Android app. The guides below walk you through the six most common tasks step by step.",
       de: "Auf Muuvlink Sportevents zu finden, mitzumachen, ein Team zu gründen und Events anzulegen ist kostenlos. Du nutzt es im Web unter muuvlink.app oder auf dem Handy mit der App für iOS und Android. Die folgenden Anleitungen erklären die sechs häufigsten Aufgaben Schritt für Schritt." },
