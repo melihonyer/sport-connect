@@ -210,7 +210,8 @@
       "contactTitle": "Kontakt — Muuvlink",
       "contactDesc": "Kontaktiere Muuvlink: Mitgliedschaft, Teamgründung, Eventfragen, technische Probleme, Zusammenarbeit und Feedback.",
       "faqTitle": "Häufige Fragen",
-      "navGuide": "So funktioniert's"
+      "navGuide": "So funktioniert's",
+      "contactFaqTitle": "Häufige Fragen"
     },
     "el": {
       "homeH1": "Muuvlink — βρες παρέα για άθληση, φτιάξε ομάδα, πάρε μέρος σε εκδηλώσεις",
@@ -238,7 +239,8 @@
       "contactTitle": "Επικοινωνία — Muuvlink",
       "contactDesc": "Επικοινώνησε με το Muuvlink: λογαριασμός, δημιουργία ομάδας, ερωτήσεις για εκδηλώσεις, τεχνικά προβλήματα, συνεργασίες και σχόλια.",
       "faqTitle": "Συχνές ερωτήσεις",
-      "navGuide": "Πώς λειτουργεί"
+      "navGuide": "Πώς λειτουργεί",
+      "contactFaqTitle": "Συχνές ερωτήσεις"
     },
     "en": {
       "homeH1": "Muuvlink — find a training partner, start a team, join an event",
@@ -266,7 +268,8 @@
       "contactTitle": "Contact — Muuvlink",
       "contactDesc": "Get in touch with Muuvlink: membership, starting a team, event questions, technical issues, collaboration and feedback.",
       "faqTitle": "Frequently asked questions",
-      "navGuide": "How it works"
+      "navGuide": "How it works",
+      "contactFaqTitle": "FAQ"
     },
     "es": {
       "homeH1": "Muuvlink — encuentra compañeros para hacer deporte, crea un equipo, apúntate a eventos",
@@ -294,7 +297,8 @@
       "contactTitle": "Contacto — Muuvlink",
       "contactDesc": "Contacta con Muuvlink: cuenta, crear un equipo, preguntas sobre eventos, problemas técnicos, colaboraciones y sugerencias.",
       "faqTitle": "Preguntas frecuentes",
-      "navGuide": "Cómo funciona"
+      "navGuide": "Cómo funciona",
+      "contactFaqTitle": "Preguntas frecuentes"
     },
     "fr": {
       "homeH1": "Muuvlink — trouve des partenaires de sport, crée une équipe, participe à des événements",
@@ -322,7 +326,8 @@
       "contactTitle": "Contact — Muuvlink",
       "contactDesc": "Contacte Muuvlink : compte, création d'équipe, questions sur les événements, problèmes techniques, partenariats et suggestions.",
       "faqTitle": "Questions fréquentes",
-      "navGuide": "Comment ça marche"
+      "navGuide": "Comment ça marche",
+      "contactFaqTitle": "Questions fréquentes"
     },
     "it": {
       "homeH1": "Muuvlink — trova compagni per fare sport, crea una squadra, partecipa agli eventi",
@@ -350,7 +355,8 @@
       "contactTitle": "Contatti — Muuvlink",
       "contactDesc": "Contatta Muuvlink: account, creazione di una squadra, domande sugli eventi, problemi tecnici, collaborazioni e suggerimenti.",
       "faqTitle": "Domande frequenti",
-      "navGuide": "Come funziona"
+      "navGuide": "Come funziona",
+      "contactFaqTitle": "Domande frequenti"
     },
     "tr": {
       "homeH1": "Muuvlink — spor arkadaşı bul, takım kur, etkinliğe katıl",
@@ -378,7 +384,8 @@
       "contactTitle": "İletişim — Muuvlink",
       "contactDesc": "Muuvlink ile iletişime geçin: üyelik, takım kurma, etkinlik soruları, teknik sorun, iş birliği ve geri bildirim.",
       "faqTitle": "Sık sorulan sorular",
-      "navGuide": "Nasıl kullanılır?"
+      "navGuide": "Nasıl kullanılır?",
+      "contactFaqTitle": "Sık Sorulan Sorular"
     }
   },
   "sports": {
@@ -1090,6 +1097,35 @@
           "note": null
         }
       ]
+    }
+  },
+  "dates": {
+    "home": {
+      "de": "2026-11-04",
+      "el": "2026-11-04",
+      "en": "2026-11-04",
+      "es": "2026-11-04",
+      "fr": "2026-11-04",
+      "it": "2026-11-04",
+      "tr": "2026-11-04"
+    },
+    "contact": {
+      "de": "2026-11-04",
+      "el": "2026-11-04",
+      "en": "2026-11-04",
+      "es": "2026-11-04",
+      "fr": "2026-11-04",
+      "it": "2026-11-04",
+      "tr": "2026-11-04"
+    },
+    "guide": {
+      "de": "2026-11-04",
+      "el": "2026-11-04",
+      "en": "2026-11-04",
+      "es": "2026-11-04",
+      "fr": "2026-11-04",
+      "it": "2026-11-04",
+      "tr": "2026-11-04"
     }
   }
 }

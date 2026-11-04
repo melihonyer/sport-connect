@@ -1,0 +1,86 @@
+{
+  "home.de": {
+    "hash": "8906badc0a10e754",
+    "date": "2026-11-04"
+  },
+  "home.el": {
+    "hash": "625a93e27d430096",
+    "date": "2026-11-04"
+  },
+  "home.en": {
+    "hash": "2861e9cf44a25a49",
+    "date": "2026-11-04"
+  },
+  "home.es": {
+    "hash": "10d33539e8cb2650",
+    "date": "2026-11-04"
+  },
+  "home.fr": {
+    "hash": "6cb15bdeed3d9d4d",
+    "date": "2026-11-04"
+  },
+  "home.it": {
+    "hash": "492b86a5e6b7f04c",
+    "date": "2026-11-04"
+  },
+  "home.tr": {
+    "hash": "e4fd9028202d3297",
+    "date": "2026-11-04"
+  },
+  "contact.de": {
+    "hash": "16e42923469ee2bc",
+    "date": "2026-11-04"
+  },
+  "contact.el": {
+    "hash": "9a608194a8c076ea",
+    "date": "2026-11-04"
+  },
+  "contact.en": {
+    "hash": "658b7ffb8832c0b6",
+    "date": "2026-11-04"
+  },
+  "contact.es": {
+    "hash": "414b25d639041921",
+    "date": "2026-11-04"
+  },
+  "contact.fr": {
+    "hash": "d8b23993e7938e8e",
+    "date": "2026-11-04"
+  },
+  "contact.it": {
+    "hash": "255eccfb4e483171",
+    "date": "2026-11-04"
+  },
+  "contact.tr": {
+    "hash": "561687491bf963b6",
+    "date": "2026-11-04"
+  },
+  "guide.de": {
+    "hash": "3a8bbda3c16f1cf4",
+    "date": "2026-11-04"
+  },
+  "guide.el": {
+    "hash": "c026e220a6b44543",
+    "date": "2026-11-04"
+  },
+  "guide.en": {
+    "hash": "722c20b3b9ea3d57",
+    "date": "2026-11-04"
+  },
+  "guide.es": {
+    "hash": "a8bb474ca1dc95ec",
+    "date": "2026-11-04"
+  },
+  "guide.fr": {
+    "hash": "b5cbd0dde488ffb6",
+    "date": "2026-11-04"
+  },
+  "guide.it": {
+    "hash": "b4c129f8d3456891",
+    "date": "2026-11-04"
+  },
+  "guide.tr": {
+    "hash": "50ae711557be0ad7",
+    "date": "2026-11-04"
+  }
+}

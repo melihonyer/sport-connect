@@ -15,6 +15,7 @@
 // Metni değiştirmek için i18n.js içindeki `faq` bloğunu düzenle, burayı değil.
 // ───────────────────────────────────────────────────────────────────────────
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { translations, LANGUAGES } from '../i18n.js';
@@ -64,6 +65,38 @@ for (const l of LANGS) {
   content.seo[l].faqTitle = pick('faq.title', l);
   content.guide[l] = guideOf(l);
   content.seo[l].navGuide = content.guide[l].nav;
+  content.seo[l].contactFaqTitle = pick('contact.faqTitle', l); // iletişim sayfasındaki SSS başlığı
+}
+
+// ── Güncelleme tarihleri (şemada dateModified) ─────────────────────────────
+// Derleme günü DEĞİL: metin gerçekten değiştiği gün. Her sayfa+dil için metnin
+// özeti scripts/seo-dates.json'da tutulur; özet değişirse tarih bugüne (İstanbul)
+// çekilir. Dosya repoya girer — build sonrası değiştiyse commit'lenir.
+// Liste sayfalarının (etkinlikler, takımlar) tarihi backend'de, kayıtlardan gelir.
+{
+  const DATES_FILE = path.join(ROOT, 'scripts', 'seo-dates.json');
+  const prev = fs.existsSync(DATES_FILE) ? JSON.parse(fs.readFileSync(DATES_FILE, 'utf8')) : {};
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Istanbul' }).format(new Date());
+  const hash = (x) => crypto.createHash('sha1').update(JSON.stringify(x)).digest('hex').slice(0, 16);
+  const S0 = (l) => content.seo[l];
+  const parts = {
+    home: (l) => [content.faq[l], content.faq[l].title, S0(l).homeH1],
+    contact: (l) => [S0(l).contactH1, S0(l).contactLead, S0(l).contactSub, S0(l).contactTopics,
+      S0(l).contactTitle, S0(l).contactDesc, S0(l).contactFaqTitle, content.faq[l]],
+    guide: (l) => [content.guide[l]],
+  };
+  const next = {};
+  content.dates = {};
+  for (const [page, fn] of Object.entries(parts)) {
+    content.dates[page] = {};
+    for (const l of LANGS) {
+      const key = `${page}.${l}`;
+      const h = hash(fn(l));
+      next[key] = prev[key]?.hash === h ? prev[key] : { hash: h, date: today };
+      content.dates[page][l] = next[key].date;
+    }
+  }
+  if (JSON.stringify(next) !== JSON.stringify(prev)) fs.writeFileSync(DATES_FILE, JSON.stringify(next, null, 2) + '\n');
 }
 fs.writeFileSync(path.join(ROOT, 'public', 'seo-content.json'), JSON.stringify(content, null, 2));
 
@@ -155,6 +188,7 @@ const jsonLd = {
       '@type': 'FAQPage',
       '@id': `${ORIGIN}/#faq`,
       inLanguage: 'tr',
+      dateModified: content.dates.home.tr,
       mainEntity: faq.map((f) => ({
         '@type': 'Question',
         name: f.q,

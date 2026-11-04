@@ -180,6 +180,13 @@ JavaScript ÇALIŞTIRMAZ. Bu yüzden metin sunucudan basılır.
   (seo-content.json `guide`); llms.txt'te tr+en. Bağlantı: alt bilgi + ana sayfa SSS'nin altı. Rehber
   ürün davranışını anlatır — davranış değişirse (katılım, roller, yorum kuralı) metin de değişir.
   Rol adları arayüzdeki gibi (`teamDetail.roles`: Editör, Antrenör, Kaptan; "yönetici" değil).
+- **Güncelleme tarihi (`dateModified`, 4 Kasım 2026; VIBE TO GEO "İçerik güncelliği" 0/9'du):** derleme günü
+  YAZILMAZ (her deploy'da "güncellendi" yalan olur). Ana sayfa / iletişim / rehber: metin gerçekten değiştiği gün —
+  `seo-static.mjs` her sayfa+dil metninin özetini `scripts/seo-dates.json`'da tutar, özet değişince tarih bugüne
+  (İstanbul) çekilir; **build sonrası bu dosya değiştiyse commit'lenir.** Etkinlikler/Takımlar: listedeki kayıtların
+  en son eklenen/düzenleneni (`seoLastChanged`, created_at/updated_at). İletişim konuları backend'de sabit,
+  özete girmez. İletişim sayfasının bot sürümünde de uygulamadaki 6 soruluk SSS var (başlık
+  `contact.faqTitle`); FAQPage şeması yalnız ana sayfada (aynı soru iki sayfada şemalanmaz).
 - **`llms.txt`** `scripts/seo-static.mjs` build'de üretir (`public/llms.txt`): SSS tr+en ve ana sayfalar,
   metin `i18n.js`'ten. Elle düzenlenmez.
 - **IndexNow anahtar dosyası `public/<key>.txt` silinmemeli** — her bildirimde

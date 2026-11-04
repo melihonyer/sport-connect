@@ -3947,7 +3947,8 @@ const seoTrainingsText = async (lang) => {
   if (!L) throw new Error('seo-content.json yok');
   const r = await pool.query(
     `SELECT t.id, t.title, t.sport, t.training_date, t.training_time,
-            t.location_name, t.location_address, t.is_paid, teams.name AS team_name
+            t.location_name, t.location_address, t.is_paid, teams.name AS team_name,
+            GREATEST(t.created_at, COALESCE(t.updated_at, t.created_at)) AS changed_at
        FROM trainings t
        LEFT JOIN teams ON t.team_id = teams.id
       WHERE t.is_public = true AND ${trainingUtcExpr('t')} >= NOW()
@@ -3977,7 +3978,8 @@ const seoTrainingsText = async (lang) => {
       items, empty: L.eventsEmpty, count: rows.length, L,
     }),
     schema: seoCollectionSchema(L.eventsH1, `${SITE_ORIGIN}${SEO_LOCALIZED_PATHS[lang].trainings}`, lang,
-      rows.map((e) => ({ name: e.title, url: `${SITE_ORIGIN}/etkinlik/${slugify(e.title)}-${e.id}` }))),
+      rows.map((e) => ({ name: e.title, url: `${SITE_ORIGIN}/etkinlik/${slugify(e.title)}-${e.id}` })),
+      seoLastChanged(rows)),
   };
 };
 
@@ -3985,7 +3987,8 @@ const seoTeamsText = async (lang) => {
   const L = getSeoContent()?.seo?.[lang];
   if (!L) throw new Error('seo-content.json yok');
   const r = await pool.query(
-    `SELECT t.id, t.name, t.sport, t.location, COUNT(tm.user_id)::int AS member_count
+    `SELECT t.id, t.name, t.sport, t.location, COUNT(tm.user_id)::int AS member_count,
+            GREATEST(t.created_at, COALESCE(t.updated_at, t.created_at)) AS changed_at
        FROM teams t LEFT JOIN team_members tm ON tm.team_id = t.id
       WHERE t.is_private = false
       GROUP BY t.id
@@ -4012,12 +4015,15 @@ const seoTeamsText = async (lang) => {
       items, empty: L.teamsEmpty, count: rows.length, L,
     }),
     schema: seoCollectionSchema(L.teamsH1, `${SITE_ORIGIN}${SEO_LOCALIZED_PATHS[lang].teams}`, lang,
-      rows.map((t) => ({ name: t.name, url: `${SITE_ORIGIN}/takim/${slugify(t.name)}-${t.id}` }))),
+      rows.map((t) => ({ name: t.name, url: `${SITE_ORIGIN}/takim/${slugify(t.name)}-${t.id}` })),
+      seoLastChanged(rows)),
   };
 };
 
 const seoContactText = async (lang) => {
-  const L = getSeoContent()?.seo?.[lang];
+  const c = getSeoContent();
+  const L = c?.seo?.[lang];
+  const faq = c?.faq?.[lang] || [];
   if (!L) throw new Error('seo-content.json yok');
   const topics = {
     tr: ['Üyelik ve hesap', 'Takım kurma', 'Etkinlik soruları', 'Teknik sorun', 'İş birliği ve sponsorluk', 'Öneri ve geri bildirim'],
@@ -4038,15 +4044,19 @@ const seoContactText = async (lang) => {
 ${topics.map((x) => `        <li>${htmlAttrEscape(x)}</li>`).join('\n')}
       </ul>
       <p style="margin:0">${MUUV_SOCIAL.map((x) => `<a href="${x.href}" style="${SEO_LINK_STYLE}">${x.label}</a>`).join(' · ')}</p>
+${faq.length ? `      <h2 style="font-size:1.2rem;color:#114956;margin:34px 0 4px">${htmlAttrEscape(L.contactFaqTitle || L.faqTitle)}</h2>
+${faq.map((f) => `      <h3 style="font-size:1rem;font-weight:600;color:#1F2121;margin:20px 0 6px">${htmlAttrEscape(f.q)}</h3>\n      <p style="margin:0;font-size:.95rem">${htmlAttrEscape(f.a)}</p>`).join('\n')}` : ''}
 ${seoFooterLinks(lang, L)}
     </div>`;
   return {
     page: 'contact', lang, text,
     title: L.contactTitle,
     description: L.contactDesc,
+    // SSS şeması burada YOK: aynı 6 soru ana sayfanın FAQPage'inde; sayfada soru başlıkları yeter.
     schema: {
       '@context': 'https://schema.org', '@type': 'ContactPage',
       name: L.contactTitle, url: `${SITE_ORIGIN}${SEO_LOCALIZED_PATHS[lang].contact}`, inLanguage: lang,
+      ...(c.dates?.contact?.[lang] ? { dateModified: c.dates.contact[lang] } : {}),
     },
   };
 };
@@ -4078,6 +4088,7 @@ ${seoFooterLinks(lang, L, true)}
       '@context': 'https://schema.org',
       '@graph': [
         { '@type': 'WebPage', '@id': url, url, name: G.title, description: G.lead, inLanguage: lang,
+          ...(c.dates?.guide?.[lang] ? { dateModified: c.dates.guide[lang] } : {}),
           publisher: { '@id': `${SITE_ORIGIN}/#organization` },
           hasPart: G.guides.map((g, i) => ({ '@id': `${url}#g${i + 1}` })) },
         ...G.guides.map((g, i) => ({
@@ -4122,6 +4133,7 @@ ${faq.map((f) => `      <h3 style="font-size:1rem;font-weight:600;color:#1F2121;
           sameAs: ['https://apps.apple.com/app/id6781591672', 'https://play.google.com/store/apps/details?id=app.muuvlink',
             ...MUUV_SOCIAL.map((x) => x.href)] },
         { '@type': 'FAQPage', '@id': `${SITE_ORIGIN}${SEO_LOCALIZED_PATHS[lang].home}#faq`, inLanguage: lang,
+          ...(c.dates?.home?.[lang] ? { dateModified: c.dates.home[lang] } : {}),
           mainEntity: faq.map((f) => ({ '@type': 'Question', name: f.q,
             acceptedAnswer: { '@type': 'Answer', text: f.a } })) },
       ],
@@ -4159,10 +4171,17 @@ ${count ? `      <ul style="list-style:none;padding:0;margin:0">\n${items}\n    
 ${seoFooterLinks(lang, L)}
     </div>`;
 
-const seoCollectionSchema = (name, url, lang, list) => ({
+// Listenin güncellenme zamanı: listedeki kayıtların en son eklenen/düzenleneni (changed_at).
+const seoLastChanged = (rows) => {
+  const t = Math.max(0, ...rows.map((r) => (r.changed_at ? new Date(r.changed_at).getTime() : 0)));
+  return t ? new Date(t).toISOString() : null;
+};
+
+const seoCollectionSchema = (name, url, lang, list, dateModified = null) => ({
   '@context': 'https://schema.org',
   '@type': 'CollectionPage',
   name, url, inLanguage: lang,
+  ...(dateModified ? { dateModified } : {}),
   mainEntity: {
     '@type': 'ItemList',
     numberOfItems: list.length,
