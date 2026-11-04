@@ -261,6 +261,7 @@ const LIVE_AGENTS = [
   [/playstore-google|google-play/i,          'Google Play (mağaza kontrolü)', 'monitor'],
   [/let's encrypt|letsencrypt|certbot/i,     "Let's Encrypt", 'monitor'],
   // SEO araçları
+  [/vibetogeobot/i,                          'VibeToGeoBot (VIBE TO GEO site denetimi)', 'seo'],
   [/semrushbot/i,                            'SemrushBot', 'seo'],
   [/ahrefsbot/i,                             'AhrefsBot', 'seo'],
   [/mj12bot|dotbot|dataforseobot|blexbot|barkrowler|serpstatbot|screaming frog|siteauditbot|seokicks|seznam/i, 'SEO tarayıcı', 'seo'],

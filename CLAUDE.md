@@ -67,7 +67,10 @@ JavaScript ÇALIŞTIRMAZ. Bu yüzden metin sunucudan basılır.
   `dist/` içinden okur, yani **frontend deploy'u içeriği de taşır.**
 - **Bot yönlendirmesi nginx'te.** `map $http_user_agent $muuv_og_bot` sosyal ve
   yapay zeka botlarını backend'e düşürür; insanlar statik `index.html`'i
-  nginx'ten alır. Node insan trafiğinin yolunda değildir.
+  nginx'ten alır. Node insan trafiğinin yolunda değildir. Listede `VibeToGeoBot` da var: VIBE TO GEO'nun
+  site denetimi yapay zeka botlarının gördüğünü görsün, yoksa her adreste ana sayfayı görüp sayfaları
+  kopya sayıyordu (4 Kasım 2026). Repodaki `nginx.conf` sunucudaki `sites-enabled/muuvlink`'in BİREBİR
+  kopyasıdır; sunucuda değişen kural repoya da yazılır (4 Kasım'a kadar 59 satır ayrışmıştı).
 - **`faq` bloğu tek:** ana sayfa SSS'si, iletişim sayfası SSS'si ve SEO metni aynı 6 soru
   (`faq.q1–q6`). 27 Ağustos'ta eklenen SEO bloğu eski 13 soruluk iletişim SSS'sini aynı adla
   ezmişti, sayfada "faq.q7" gibi ham anahtarlar çıkıyordu (8 Ekim 2026'da düzeltildi; eski
