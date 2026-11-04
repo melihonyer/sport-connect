@@ -74,8 +74,9 @@ JavaScript ÇALIŞTIRMAZ. Bu yüzden metin sunucudan basılır.
   metinler `faqLegacy`). i18n.js'e aynı adla ikinci bir üst anahtar YAZILMAZ — sessizce ezer.
 - **Şema görünür metni işaretler, yerine geçmez.** Bir sayfada FAQPage şeması
   varsa aynı metin sayfada da olmalı; olmayan sayfalarda şema kaldırılır.
-- **Çok dillilik yalnız dört sabit sayfada**: ana sayfa, etkinlikler, takımlar,
-  iletişim. Türkçe kökte (`/takimlar`), diğer diller önekli (`/en/teams`,
+- **Çok dillilik yalnız beş sabit sayfada**: ana sayfa, etkinlikler, takımlar,
+  iletişim, rehber (`/rehber`, `/en/guide`, `/de/anleitung`, `/el/guide`, `/es/guia`,
+  `/fr/guide`, `/it/guida`; 4 Kasım 2026). Türkçe kökte (`/takimlar`), diğer diller önekli (`/en/teams`,
   `/de/teams`, `/el/teams`; önekler Latin harfli). Yol tablosu İKİ yerde:
   `sporla-bulusma.jsx` `LOCALIZED_PAGE_PATHS` ve `backend-api.js`
   `SEO_LOCALIZED_PATHS` — **birebir aynı kalmalı** — ve nginx'teki liste
@@ -169,6 +170,13 @@ JavaScript ÇALIŞTIRMAZ. Bu yüzden metin sunucudan basılır.
   takım/organizatör; ücretsizse Offer 0), takımda `SportsTeam` + ikisinde `BreadcrumbList` ve Organization basar.
   Kişi adı/fotoğrafı şemaya GİRMEZ. Emoji avatar logo sayılmaz (yalnız http adresi). Gizli/herkese kapalı
   kayıt şema almaz (varsayılan kart).
+- **Rehber sayfası** (4 Kasım 2026, Melih onayladı): "Muuvlink nasıl kullanılır?", 6 adım adım
+  rehber (bulmak, katılmak, spor arkadaşı, takım kurmak, etkinlik açmak, paylaşmak). Metin `i18n.js`
+  `guide` (g1–g6; adımlar s1…sN, isteğe bağlı note — adım sayısı metinden okunur). Sayfa
+  `GuidePage.jsx` (modül düzeyinde); bot metni + her rehbere `HowTo` şeması backend `seoGuideText`
+  (seo-content.json `guide`); llms.txt'te tr+en. Bağlantı: alt bilgi + ana sayfa SSS'nin altı. Rehber
+  ürün davranışını anlatır — davranış değişirse (katılım, roller, yorum kuralı) metin de değişir.
+  Rol adları arayüzdeki gibi (`teamDetail.roles`: Editör, Antrenör, Kaptan; "yönetici" değil).
 - **`llms.txt`** `scripts/seo-static.mjs` build'de üretir (`public/llms.txt`): SSS tr+en ve ana sayfalar,
   metin `i18n.js`'ten. Elle düzenlenmez.
 - **IndexNow anahtar dosyası `public/<key>.txt` silinmemeli** — her bildirimde
@@ -636,6 +644,10 @@ Ekranda gizlemek yetmez — tam isim API cevabında durursa tarayıcıdan görü
   | `GET /api/admin/users` | yalnız admin |
 
   Yeni bir sorguya `u.avatar` eklenirse bu tabloya da eklenir.
+- **Gizli takıma yalnız davetle girilir** (4 Kasım 2026): `POST /api/teams/:id/join` gizli takımda
+  bekleyen davet (`team_invitations`, e-posta eşleşmesi; kullanılınca silinir) ya da platform admini
+  ister, yoksa 403. Önceden takım numarasını bilen herkes katılıp üye adlarını ve duvarı görebiliyordu
+  (kayıtlarda kullanan çıkmadı). Davet akışı `accept-invite` ayrı ve değişmedi.
 - Kontrol her istekte yeniden yapılır: takımdan/etkinlikten çıkan kişi bir
   sonraki yüklemede yine maskeli görür.
 - Yeni bir uç isim, fotoğraf ya da beğenen listesi döndürüyorsa aynı kurala
