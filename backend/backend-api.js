@@ -3222,6 +3222,7 @@ const SERVER_MSG = {
   'Bu işlem için yetkiniz yok.': { en: "You don't have permission to do this.", de: 'Dazu hast du keine Berechtigung.', el: 'Δεν έχεις δικαίωμα για αυτή την ενέργεια.', es: 'No tienes permiso para hacer esto.', fr: 'Tu n\'as pas l\'autorisation de faire ça.', it: 'Non hai il permesso di farlo.' },
   'Takım fotoğrafı güncellendi': { en: 'Team photo updated', de: 'Teamfoto aktualisiert', el: 'Η φωτογραφία της ομάδας ενημερώθηκε', es: 'Foto del equipo actualizada', fr: 'Photo de l\'équipe mise à jour', it: 'Foto della squadra aggiornata' },
   'Bu kullanıcı zaten takım üyesi.': { en: 'This user is already a team member.', de: 'Diese Person ist bereits Teammitglied.', el: 'Αυτός ο χρήστης είναι ήδη μέλος της ομάδας.', es: 'Esta persona ya es miembro del equipo.', fr: 'Cette personne est déjà membre de l\'équipe.', it: 'Questa persona fa già parte della squadra.' },
+  'Bu takım gizli; yalnız davetle katılınabilir.': { en: 'This team is private; you can only join by invitation.', de: 'Dieses Team ist privat; Beitritt nur mit Einladung.', el: 'Αυτή η ομάδα είναι ιδιωτική· η συμμετοχή γίνεται μόνο με πρόσκληση.', es: 'Este equipo es privado; solo puedes unirte con invitación.', fr: 'Cette équipe est privée ; on ne peut la rejoindre que sur invitation.', it: 'Questa squadra è privata; puoi entrare solo su invito.' },
   'Bekleyen davet bulunamadı.': { en: 'No pending invitation found.', de: 'Keine offene Einladung gefunden.', el: 'Δεν βρέθηκε εκκρεμής πρόσκληση.', es: 'No hay ninguna invitación pendiente.', fr: 'Aucune invitation en attente.', it: 'Nessun invito in attesa.' },
   'Takıma başarıyla katıldınız!': { en: 'You joined the team!', de: 'Du bist dem Team beigetreten!', el: 'Έγινες μέλος της ομάδας!', es: '¡Te has unido al equipo!', fr: 'Tu as rejoint l\'équipe !', it: 'Sei entrato nella squadra!' },
   'Geçersiz rol. İzin verilenler: member, coach, captain, editor, owner': { en: 'Invalid role. Allowed: member, coach, captain, editor, owner', de: 'Ungültige Rolle. Erlaubt: member, coach, captain, editor, owner', el: 'Μη έγκυρος ρόλος. Επιτρέπονται: member, coach, captain, editor, owner', es: 'Rol no válido. Permitidos: member, coach, captain, editor, owner', fr: 'Rôle non valide. Autorisés : member, coach, captain, editor, owner', it: 'Ruolo non valido. Consentiti: member, coach, captain, editor, owner' },
@@ -4840,6 +4841,19 @@ app.post('/api/teams/:id/join', authenticateToken, async (req, res) => {
 
     if (memberCheck.rows.length > 0) {
       return res.status(409).json({ error: 'Already a member of this team' });
+    }
+
+    // Gizli takıma yalnız davetle girilir (accept-invite). Bu kontrol yokken takım
+    // numarasını bilen herkes gizli takıma üye olup üye adlarını ve duvarı görebiliyordu.
+    if (team.is_private && !(await isPlatformAdmin(req.user.id))) {
+      const inv = await pool.query(
+        'SELECT id FROM team_invitations WHERE team_id = $1 AND lower(invitee_email) = lower($2)',
+        [teamId, req.user.email || '']
+      );
+      if (!inv.rows.length) {
+        return res.status(403).json({ error: 'Bu takım gizli; yalnız davetle katılınabilir.' });
+      }
+      await pool.query('DELETE FROM team_invitations WHERE id = $1', [inv.rows[0].id]);
     }
 
     await pool.query(
