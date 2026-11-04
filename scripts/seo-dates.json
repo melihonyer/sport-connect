@@ -82,5 +82,33 @@
   "guide.tr": {
     "hash": "6cd6d1bb441c5aa0",
     "date": "2026-11-04"
+  },
+  "about.de": {
+    "hash": "78d0c16297020634",
+    "date": "2026-11-04"
+  },
+  "about.el": {
+    "hash": "b85be66f0b76a4fc",
+    "date": "2026-11-04"
+  },
+  "about.en": {
+    "hash": "7b0cc3aa26fea987",
+    "date": "2026-11-04"
+  },
+  "about.es": {
+    "hash": "51f5e73d8386f510",
+    "date": "2026-11-04"
+  },
+  "about.fr": {
+    "hash": "e0d0511faf2d9758",
+    "date": "2026-11-04"
+  },
+  "about.it": {
+    "hash": "1e97a495c7fa9414",
+    "date": "2026-11-04"
+  },
+  "about.tr": {
+    "hash": "3c5cbc58e5334d70",
+    "date": "2026-11-04"
   }
 }

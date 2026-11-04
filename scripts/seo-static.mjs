@@ -18,7 +18,7 @@ import fs from 'node:fs';
 import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { translations, LANGUAGES } from '../i18n.js';
+import { translations, LANGUAGES, COMPANY, companyLine } from '../i18n.js';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FILE = path.join(ROOT, 'index.html');
@@ -44,7 +44,16 @@ const pick = (key, lang) => {
   if (!node || !node[lang]) throw new Error(`i18n anahtarı yok: ${key}.${lang}`);
   return node[lang];
 };
-const content = { faq: {}, seo: {}, sports: {}, guide: {} };
+const content = { faq: {}, seo: {}, sports: {}, guide: {}, about: {}, company: { ...COMPANY, line: companyLine() } };
+// Hakkımızda (i18n.js `about`): sayfa AboutPage.jsx, bot metni backend seoAboutText.
+const aboutOf = (l) => ({
+  nav: pick('about.nav', l), title: pick('about.title', l), lead: pick('about.lead', l), metaDesc: pick('about.metaDesc', l),
+  who: { title: pick('about.who.title', l), body: pick('about.who.body', l) },
+  why: { title: pick('about.why.title', l), body: pick('about.why.body', l) },
+  what: { title: pick('about.what.title', l), items: [1, 2, 3, 4, 5].map((n) => pick(`about.what.i${n}`, l)), after: pick('about.what.after', l) },
+  care: { title: pick('about.care.title', l), items: [1, 2, 3, 4].map((n) => ({ label: pick(`about.care.p${n}.label`, l), text: pick(`about.care.p${n}.text`, l) })) },
+  contact: { title: pick('about.contact.title', l), body: pick('about.contact.body', l) },
+});
 // Rehber (i18n.js `guide`): g1…g6, adımlar s1…sN, isteğe bağlı note. Sayfa (GuidePage.jsx) ve
 // backend seoGuideText aynı metni okur.
 const guideOf = (l) => ({
@@ -65,6 +74,8 @@ for (const l of LANGS) {
   content.seo[l].faqTitle = pick('faq.title', l);
   content.guide[l] = guideOf(l);
   content.seo[l].navGuide = content.guide[l].nav;
+  content.about[l] = aboutOf(l);
+  content.seo[l].navAbout = content.about[l].nav;
   content.seo[l].contactFaqTitle = pick('contact.faqTitle', l); // iletişim sayfasındaki SSS başlığı
   // Ana sayfa meta açıklaması: uygulamanın kendi ana sayfasıyla aynı metin (PAGE_META home).
   content.seo[l].homeDesc = pick('home.heroSubtitleFallback', l);
@@ -86,6 +97,7 @@ for (const l of LANGS) {
     contact: (l) => [S0(l).contactH1, S0(l).contactLead, S0(l).contactSub, S0(l).contactTopics,
       S0(l).contactTitle, S0(l).contactDesc, S0(l).contactFaqTitle, content.faq[l]],
     guide: (l) => [content.guide[l]],
+    about: (l) => [content.about[l], content.company],
   };
   const next = {};
   content.dates = {};
@@ -118,6 +130,8 @@ fs.writeFileSync(path.join(ROOT, 'public', 'seo-content.json'), JSON.stringify(c
     `- [${pick('seo.navContact', 'tr')}](${ORIGIN}/iletisim)`,
     `- [${pick('guide.title', 'tr')}](${ORIGIN}/rehber)`,
     `- [${pick('guide.title', 'en')}](${ORIGIN}/en/guide)`,
+    `- [${pick('about.title', 'tr')}](${ORIGIN}/hakkimizda)`,
+    `- [${pick('about.title', 'en')}](${ORIGIN}/en/about)`,
     ...LANGUAGES.filter((l) => l.code !== 'tr').map((l) => `- [Muuvlink · ${l.label || l.name || l.code}](${ORIGIN}/${l.code})`),
     `- [Sitemap](${ORIGIN}/sitemap.xml)`, '',
   ];
@@ -157,6 +171,7 @@ const textBlock = `
         <li><a style="${S.a}" href="${ORIGIN}/etkinlikler">Etkinlikler</a></li>
         <li><a style="${S.a}" href="${ORIGIN}/takimlar">Takımlar</a></li>
         <li><a style="${S.a}" href="${ORIGIN}/rehber">${esc(tr('guide.nav'))}</a></li>
+        <li><a style="${S.a}" href="${ORIGIN}/hakkimizda">${esc(tr('about.nav'))}</a></li>
         <li><a style="${S.a}" href="${ORIGIN}/iletisim">İletişim</a></li>
       </ul>
       <h2 style="${S.h2}">${esc(tr('faq.title'))}</h2>

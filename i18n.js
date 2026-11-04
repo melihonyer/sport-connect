@@ -10,6 +10,18 @@ import es from "./locales/es.js";
 import fr from "./locales/fr.js";
 import it from "./locales/it.js";
 
+// Şirket bilgisi (Hakkımızda sayfası + Organization şeması). KVKK metnindeki veri sorumlusuyla aynı;
+// adres değişirse orası da değişir. Vergi numarası bilerek yok.
+export const COMPANY = {
+  legalName: "SALT KREATİF REKLAM TİC. LTD. ŞTİ.",
+  street: "Çınarlı Mah. 1572 Sk. No:33",
+  postalCode: "35170",
+  district: "Konak",
+  city: "İzmir",
+  country: "TR",
+};
+export const companyLine = (c = COMPANY) => `${c.legalName} · ${c.street}, ${c.postalCode} ${c.district}/${c.city}`;
+
 export const translations = {
 
   // ── NAV ─────────────────────────────────────────────────
@@ -1439,6 +1451,106 @@ export const translations = {
   // Metni değiştirirsen index.html'deki karşılığını da güncelle.
   // Rehber sayfası (/rehber, /en/guide …) — "Nasıl yapılır" adımları. Bot metni ve şema da buradan
   // (scripts/seo-static.mjs → seo-content.json → backend seoGuideText). Melih onayladı, 4 Kasım 2026.
+  // Hakkımızda sayfası (/hakkimizda, /en/about …; 4 Kasım 2026, TR metin Melih onayladı). Sayfa AboutPage.jsx,
+  // bot metni + AboutPage şeması backend seoAboutText. Şirket bilgisi COMPANY (dosyanın başı).
+  about: {
+    nav: { tr: "Hakkımızda",
+      en: "About us",
+      de: "Über uns" },
+    title: { tr: "Hakkımızda",
+      en: "About us",
+      de: "Über uns" },
+    lead: { tr: "Muuvlink, çevrende spor yapan insanları, takımları ve etkinlikleri bir araya getiren ücretsiz bir spor topluluğu uygulaması. Amacımız basit: spor yapmak isteyen kimse, birlikte yapacak birini bulamadığı için evde kalmasın.",
+      en: "Muuvlink is a free sports community app that brings together people who play sports near you, teams and events. Our goal is simple: nobody who wants to play sports should stay home because they can't find someone to do it with.",
+      de: "Muuvlink ist eine kostenlose Sport-Community-App, die Menschen, die in deiner Nähe Sport treiben, Teams und Events zusammenbringt. Unser Ziel ist einfach: Niemand, der Sport machen möchte, soll zu Hause bleiben, weil er niemanden findet, mit dem er trainieren kann." },
+    metaDesc: { tr: "Muuvlink, çevrende spor yapan insanları, takımları ve etkinlikleri bir araya getiren ücretsiz bir spor topluluğu uygulaması.",
+      en: "Muuvlink is a free sports community app that brings together people who play sports near you, teams and events.",
+      de: "Muuvlink ist eine kostenlose Sport-Community-App, die Menschen, die in deiner Nähe Sport treiben, Teams und Events zusammenbringt." },
+    who: {
+      title: { tr: "Muuvlink'i kim geliştiriyor?",
+        en: "Who builds Muuvlink?",
+        de: "Wer entwickelt Muuvlink?" },
+      body: { tr: "Muuvlink'i İzmir'de kurulu SALT KREATİF REKLAM TİC. LTD. ŞTİ. geliştiriyor ve yayınlıyor. Uygulamanın tasarımı, yazılımı ve topluluk desteği aynı ekipten çıkıyor.",
+        en: "Muuvlink is built and published by SALT KREATİF REKLAM TİC. LTD. ŞTİ., a company based in İzmir, Türkiye. The app's design, software and community support all come from the same team.",
+        de: "Muuvlink wird von SALT KREATİF REKLAM TİC. LTD. ŞTİ. mit Sitz in İzmir, Türkei, entwickelt und veröffentlicht. Design, Software und Community-Support der App kommen aus demselben Team." },
+    },
+    why: {
+      title: { tr: "Muuvlink neden var?",
+        en: "Why does Muuvlink exist?",
+        de: "Warum gibt es Muuvlink?" },
+      body: { tr: "Spor yapmak isteyenlerin önündeki en büyük engel çoğu zaman antrenmanın kendisi değil, birlikte yapacak birini bulmak. Etkinlikler mesajlaşma gruplarına, takımlar arkadaş çevrelerine dağılmış durumda; yeni gelen kişi nereye katılacağını bilemiyor. Muuvlink bu dağınıklığı tek bir yerde topluyor: yakınındaki etkinliği haritada görüyorsun, tek dokunuşla katılıyorsun, istersen kendi takımını kuruyorsun.",
+        en: "For people who want to play sports, the biggest obstacle is often not the training itself but finding someone to do it with. Events are scattered across messaging groups and teams across circles of friends, so newcomers don't know where to join. Muuvlink brings all of this into one place: you see nearby events on a map, join with a single tap and, if you like, start your own team.",
+        de: "Das größte Hindernis für Menschen, die Sport machen wollen, ist oft nicht das Training selbst, sondern jemanden zu finden, mit dem man es macht. Events sind über Messenger-Gruppen verstreut, Teams über Freundeskreise; wer neu dazukommt, weiß nicht, wo er mitmachen kann. Muuvlink bringt das an einem Ort zusammen: Du siehst Events in deiner Nähe auf der Karte, nimmst mit einem Tipp teil und gründest, wenn du willst, dein eigenes Team." },
+    },
+    what: {
+      title: { tr: "Muuvlink'te neler yapabilirsin?",
+        en: "What can you do on Muuvlink?",
+        de: "Was kannst du auf Muuvlink machen?" },
+      i1: { tr: "Konumuna göre 10–100 km içindeki herkese açık etkinlikleri bulmak",
+        en: "Find public events within 10–100 km of your location",
+        de: "Öffentliche Events im Umkreis von 10–100 km um deinen Standort finden" },
+      i2: { tr: "Onay beklemeden etkinliğe katılmak, yorumlarla düzenleyene soru sormak",
+        en: "Join an event without waiting for approval and ask the organizer questions in the comments",
+        de: "Ohne Bestätigung an Events teilnehmen und dem Veranstalter in den Kommentaren Fragen stellen" },
+      i3: { tr: "Kendi takımını kurmak, üyelerine etkinlik duyurmak",
+        en: "Start your own team and announce events to your members",
+        de: "Dein eigenes Team gründen und deinen Mitgliedern Events ankündigen" },
+      i4: { tr: "Koşu ve bisiklet gibi etkinliklere GPX rotası eklemek",
+        en: "Add a GPX route to events such as runs and bike rides",
+        de: "Events wie Läufen und Radtouren eine GPX-Route hinzufügen" },
+      i5: { tr: "Etkinliği WhatsApp, Telegram ya da Instagram hikâyesiyle paylaşmak",
+        en: "Share an event via WhatsApp, Telegram or an Instagram story",
+        de: "Events per WhatsApp, Telegram oder Instagram-Story teilen" },
+      after: { tr: "Basketboldan yüzmeye on beşten fazla spor dalında etkinlik açılabiliyor. Muuvlink web'de, iOS'ta ve Android'de, yedi dilde kullanılıyor.",
+        en: "Events can be created in more than fifteen sports, from basketball to swimming. Muuvlink is available on the web, on iOS and on Android, in seven languages.",
+        de: "Events lassen sich in mehr als fünfzehn Sportarten anlegen, von Basketball bis Schwimmen. Muuvlink gibt es im Web, für iOS und für Android, in sieben Sprachen." },
+    },
+    care: {
+      title: { tr: "Nelere dikkat ediyoruz?",
+        en: "What do we care about?",
+        de: "Worauf achten wir?" },
+      p1: {
+        label: { tr: "Ücretsiz",
+          en: "Free",
+          de: "Kostenlos" },
+        text: { tr: "Hesap açmak, takım kurmak ve etkinliğe katılmak için ödeme yapılmaz. \"Ücretli\" rozetli organizasyonlar dış kuruluşlara aittir, Muuvlink bu ücretlerden pay almaz.",
+          en: "Creating an account, starting a team and joining events cost nothing. Organizations with a \"Paid\" badge belong to outside organizers, and Muuvlink takes no share of those fees.",
+          de: "Ein Konto erstellen, ein Team gründen und an Events teilnehmen kostet nichts. Veranstaltungen mit dem Abzeichen „Kostenpflichtig“ gehören externen Veranstaltern, Muuvlink erhält keinen Anteil an diesen Gebühren." },
+      },
+      p2: {
+        label: { tr: "Gizlilik",
+          en: "Privacy",
+          de: "Privatsphäre" },
+        text: { tr: "Takımın ya da etkinliğin parçası olmayan biri, üyelerin tam adını ve fotoğrafını görmez. Etkinlik yorumlarını yalnız katılanlar ve takım üyeleri okur.",
+          en: "Someone who isn't part of a team or event can't see members' full names or photos. Event comments are read only by participants and team members.",
+          de: "Wer nicht zum Team oder Event gehört, sieht weder die vollständigen Namen noch die Fotos der Mitglieder. Event-Kommentare lesen nur Teilnehmende und Teammitglieder." },
+      },
+      p3: {
+        label: { tr: "Güvenli topluluk",
+          en: "A safe community",
+          de: "Sichere Community" },
+        text: { tr: "Uygunsuz ifadeler yayınlanmadan önce süzülür. Her etkinlik ve yorum şikâyet edilebilir, istemediğin kişiyi engelleyebilirsin.",
+          en: "Inappropriate wording is filtered before it's published. Every event and comment can be reported, and you can block anyone you don't want to hear from.",
+          de: "Unangemessene Ausdrücke werden vor der Veröffentlichung gefiltert. Jedes Event und jeder Kommentar kann gemeldet werden, und du kannst Personen blockieren, von denen du nichts hören willst." },
+      },
+      p4: {
+        label: { tr: "Hesabın senin",
+          en: "Your account is yours",
+          de: "Dein Konto gehört dir" },
+        text: { tr: "Hesabını istediğin an ayarlardan silebilirsin; verilerin 30 gün içinde kalıcı olarak silinir.",
+          en: "You can delete your account in settings at any time; your data is permanently deleted within 30 days.",
+          de: "Du kannst dein Konto jederzeit in den Einstellungen löschen; deine Daten werden innerhalb von 30 Tagen endgültig gelöscht." },
+      },
+    },
+    contact: {
+      title: { tr: "Bize nasıl ulaşırsın?",
+        en: "How can you reach us?",
+        de: "Wie erreichst du uns?" },
+      body: { tr: "İletişim sayfasındaki formdan ya da Instagram'dan (@muuvlinkapp) yazabilirsin.",
+        en: "Write to us through the form on the contact page or on Instagram (@muuvlinkapp).",
+        de: "Schreib uns über das Formular auf der Kontaktseite oder auf Instagram (@muuvlinkapp)." },
+    },
+  },
   guide: {
     nav: { tr: "Nasıl kullanılır?",
       en: "How it works",

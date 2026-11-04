@@ -79,7 +79,8 @@ JavaScript ÇALIŞTIRMAZ. Bu yüzden metin sunucudan basılır.
   varsa aynı metin sayfada da olmalı; olmayan sayfalarda şema kaldırılır.
 - **Çok dillilik yalnız beş sabit sayfada**: ana sayfa, etkinlikler, takımlar,
   iletişim, rehber (`/rehber`, `/en/guide`, `/de/anleitung`, `/el/guide`, `/es/guia`,
-  `/fr/guide`, `/it/guida`; 4 Kasım 2026). Türkçe kökte (`/takimlar`), diğer diller önekli (`/en/teams`,
+  `/fr/guide`, `/it/guida`; 4 Kasım 2026), hakkımızda (`/hakkimizda`, `/en/about`, `/de/ueber-uns`,
+  `/el/about`, `/es/sobre-nosotros`, `/fr/a-propos`, `/it/chi-siamo`; 4 Kasım 2026). Türkçe kökte (`/takimlar`), diğer diller önekli (`/en/teams`,
   `/de/teams`, `/el/teams`; önekler Latin harfli). Yol tablosu İKİ yerde:
   `sporla-bulusma.jsx` `LOCALIZED_PAGE_PATHS` ve `backend-api.js`
   `SEO_LOCALIZED_PATHS` — **birebir aynı kalmalı** — ve nginx'teki liste
@@ -191,6 +192,13 @@ JavaScript ÇALIŞTIRMAZ. Bu yüzden metin sunucudan basılır.
   en son eklenen/düzenleneni (`seoLastChanged`, created_at/updated_at). İletişim konuları backend'de sabit,
   özete girmez. İletişim sayfasının bot sürümünde de uygulamadaki 6 soruluk SSS var (başlık
   `contact.faqTitle`); FAQPage şeması yalnız ana sayfada (aynı soru iki sayfada şemalanmaz).
+- **Hakkımızda sayfası** (4 Kasım 2026, Melih onayladı; VIBE TO GEO "Hakkımızda yok" maddesi): bağlantı YALNIZ
+  alt bilgide (Uygulama sütunu, "Nasıl kullanılır?" ile "İletişim" arası) + bot sayfalarının alt satırında; uygulamada
+  Ayarlar'a konmadı (Melih). Metin `i18n.js` `about` (kim, neden, neler, ilkeler p1–p4, iletişim; TR Melih'in onayladığı
+  hal), sayfa `AboutPage.jsx`, bot metni + `AboutPage` şeması + adresli Organization backend `seoAboutText`. Şirket
+  bilgisi TEK yerde: `i18n.js` `COMPANY` (KVKK metnindeki veri sorumlusuyla aynı; vergi no bilerek yok, kurucu adı
+  yazılmadı). İlkeler ürün davranışını anlatır (isim maskeleme, yorum görünürlüğü, süzgeç, şikâyet/engelle, 30 gün
+  silme) — davranış değişirse metin de değişir.
 - **`llms.txt`** `scripts/seo-static.mjs` build'de üretir (`public/llms.txt`): SSS tr+en ve ana sayfalar,
   metin `i18n.js`'ten. Elle düzenlenmez.
 - **IndexNow anahtar dosyası `public/<key>.txt` silinmemeli** — her bildirimde

@@ -3514,8 +3514,8 @@ app.get('/api/sitemap.xml', async (req, res) => {
       if (page === 'home' && lang === 'tr') continue; // zaten yukarıda
       urls.push({
         loc: `${SITE_ORIGIN}${p}`,
-        changefreq: page === 'contact' || page === 'guide' ? 'monthly' : 'hourly',
-        priority: page === 'home' ? '0.9' : page === 'contact' ? '0.5' : page === 'guide' ? '0.7' : '0.8',
+        changefreq: page === 'contact' || page === 'guide' || page === 'about' ? 'monthly' : 'hourly',
+        priority: page === 'home' ? '0.9' : page === 'contact' || page === 'about' ? '0.5' : page === 'guide' ? '0.7' : '0.8',
         lastmod: today,
       });
     }
@@ -3679,13 +3679,13 @@ const getSeoContent = () => {
 // sporla-bulusma.jsx içindeki LOCALIZED_PAGE_PATHS ile BİREBİR aynı olmalı
 // (ve nginx'teki liste sayfaları konumu da bu yolları içermeli).
 const SEO_LOCALIZED_PATHS = {
-  tr: { home: '/',   trainings: '/etkinlikler', teams: '/takimlar', contact: '/iletisim',   guide: '/rehber' },
-  en: { home: '/en', trainings: '/en/events',   teams: '/en/teams', contact: '/en/contact', guide: '/en/guide' },
-  de: { home: '/de', trainings: '/de/events',   teams: '/de/teams', contact: '/de/kontakt', guide: '/de/anleitung' },
-  el: { home: '/el', trainings: '/el/events',   teams: '/el/teams', contact: '/el/contact', guide: '/el/guide' },
-  es: { home: '/es', trainings: '/es/eventos',  teams: '/es/equipos', contact: '/es/contacto', guide: '/es/guia' },
-  fr: { home: '/fr', trainings: '/fr/evenements', teams: '/fr/equipes', contact: '/fr/contact', guide: '/fr/guide' },
-  it: { home: '/it', trainings: '/it/eventi',   teams: '/it/squadre', contact: '/it/contatti', guide: '/it/guida' },
+  tr: { home: '/',   trainings: '/etkinlikler', teams: '/takimlar', contact: '/iletisim',   guide: '/rehber', about: '/hakkimizda' },
+  en: { home: '/en', trainings: '/en/events',   teams: '/en/teams', contact: '/en/contact', guide: '/en/guide', about: '/en/about' },
+  de: { home: '/de', trainings: '/de/events',   teams: '/de/teams', contact: '/de/kontakt', guide: '/de/anleitung', about: '/de/ueber-uns' },
+  el: { home: '/el', trainings: '/el/events',   teams: '/el/teams', contact: '/el/contact', guide: '/el/guide', about: '/el/about' },
+  es: { home: '/es', trainings: '/es/eventos',  teams: '/es/equipos', contact: '/es/contacto', guide: '/es/guia', about: '/es/sobre-nosotros' },
+  fr: { home: '/fr', trainings: '/fr/evenements', teams: '/fr/equipes', contact: '/fr/contact', guide: '/fr/guide', about: '/fr/a-propos' },
+  it: { home: '/it', trainings: '/it/eventi',   teams: '/it/squadre', contact: '/it/contatti', guide: '/it/guida', about: '/it/chi-siamo' },
 };
 const SEO_PATH_LOOKUP = Object.fromEntries(
   Object.entries(SEO_LOCALIZED_PATHS).flatMap(([lang, pages]) =>
@@ -4106,6 +4106,63 @@ ${seoFooterLinks(lang, L, true)}
   };
 };
 
+// Hakkımızda (/hakkimizda, /en/about …). Metin i18n.js `about`, şirket bilgisi i18n.js COMPANY
+// (seo-content.json `about` + `company`); sayfadaki görünür metinle birebir aynı.
+const seoAboutText = async (lang) => {
+  const c = getSeoContent();
+  const L = c?.seo?.[lang];
+  const A = c?.about?.[lang];
+  const C = c?.company;
+  if (!L || !A || !C) throw new Error('seo-content.json yok');
+  const url = `${SITE_ORIGIN}${SEO_LOCALIZED_PATHS[lang].about}`;
+  const H2 = 'font-size:1.35rem;color:#114956;margin:34px 0 8px';
+  const text = `
+    <div style="${SEO_WRAP_STYLE}">
+      <h1 style="${SEO_H1_STYLE}">${htmlAttrEscape(A.title)}</h1>
+      <p style="margin:0 0 10px">${htmlAttrEscape(A.lead)}</p>
+      <h2 style="${H2}">${htmlAttrEscape(A.who.title)}</h2>
+      <p style="margin:0">${htmlAttrEscape(A.who.body)}</p>
+      <h2 style="${H2}">${htmlAttrEscape(A.why.title)}</h2>
+      <p style="margin:0">${htmlAttrEscape(A.why.body)}</p>
+      <h2 style="${H2}">${htmlAttrEscape(A.what.title)}</h2>
+      <ul style="margin:0 0 12px;padding-left:22px">
+${A.what.items.map((x) => `        <li style="margin:0 0 6px">${htmlAttrEscape(x)}</li>`).join('\n')}
+      </ul>
+      <p style="margin:0">${htmlAttrEscape(A.what.after)}</p>
+      <h2 style="${H2}">${htmlAttrEscape(A.care.title)}</h2>
+${A.care.items.map((x) => `      <h3 style="font-size:1rem;font-weight:600;color:#1F2121;margin:18px 0 4px">${htmlAttrEscape(x.label)}</h3>\n      <p style="margin:0">${htmlAttrEscape(x.text)}</p>`).join('\n')}
+      <h2 style="${H2}">${htmlAttrEscape(A.contact.title)}</h2>
+      <p style="margin:0 0 8px">${htmlAttrEscape(A.contact.body)}</p>
+      <p style="margin:0;color:#66757A;font-size:.95rem">${htmlAttrEscape(C.line)}</p>
+${seoFooterLinks(lang, L, true)}
+    </div>`;
+  const org = `${SITE_ORIGIN}/#organization`;
+  return {
+    page: 'about', lang, text,
+    title: `${A.title} — Muuvlink`,
+    description: A.metaDesc,
+    schema: {
+      '@context': 'https://schema.org',
+      '@graph': [
+        { '@type': 'AboutPage', '@id': url, url, name: A.title, description: A.metaDesc, inLanguage: lang,
+          ...(c.dates?.about?.[lang] ? { dateModified: c.dates.about[lang] } : {}),
+          about: { '@id': org }, mainEntity: { '@id': org }, publisher: { '@id': org } },
+        { '@type': 'Organization', '@id': org, name: 'Muuvlink', legalName: C.legalName, url: SITE_ORIGIN,
+          logo: `${SITE_ORIGIN}/icons/favicon.png`, description: A.metaDesc,
+          address: { '@type': 'PostalAddress', streetAddress: C.street, postalCode: C.postalCode,
+            addressLocality: C.district, addressRegion: C.city, addressCountry: C.country },
+          contactPoint: { '@type': 'ContactPoint', contactType: 'customer support',
+            url: `${SITE_ORIGIN}${SEO_LOCALIZED_PATHS[lang].contact}` },
+          sameAs: MUUV_SOCIAL.map((x) => x.href) },
+        { '@type': 'BreadcrumbList', itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Muuvlink', item: `${SITE_ORIGIN}${SEO_LOCALIZED_PATHS[lang].home}` },
+          { '@type': 'ListItem', position: 2, name: A.title, item: url },
+        ] },
+      ],
+    },
+  };
+};
+
 // Ana sayfanın İngilizce/Almanca karşılığı. Türkçe ana sayfa statik
 // index.html'den gelir (nginx), Node yolun dışında kalsın diye.
 const seoHomeText = async (lang) => {
@@ -4159,6 +4216,7 @@ const seoFooterLinks = (lang, L, skipHome = false) => {
       : `<a href="${SITE_ORIGIN}${P.home}" style="${SEO_LINK_STYLE}">${htmlAttrEscape(L.navHome)}</a>`,
   ];
   if (L.navGuide) parts.push(`<a href="${SITE_ORIGIN}${P.guide}" style="${SEO_LINK_STYLE}">${htmlAttrEscape(L.navGuide)}</a>`);
+  if (L.navAbout && P.about) parts.push(`<a href="${SITE_ORIGIN}${P.about}" style="${SEO_LINK_STYLE}">${htmlAttrEscape(L.navAbout)}</a>`);
   return `      <p style="margin:30px 0 0">${parts.join(' · ')}</p>`;
 };
 
@@ -4190,7 +4248,7 @@ const seoCollectionSchema = (name, url, lang, list, dateModified = null) => ({
   },
 });
 
-const SEO_PAGE_BUILDERS = { home: seoHomeText, trainings: seoTrainingsText, teams: seoTeamsText, contact: seoContactText, guide: seoGuideText };
+const SEO_PAGE_BUILDERS = { home: seoHomeText, trainings: seoTrainingsText, teams: seoTeamsText, contact: seoContactText, guide: seoGuideText, about: seoAboutText };
 
 // Bot'a açılan yollar: Türkçe ana sayfa HARİÇ (o statik index.html'den gelir,
 // Node insan trafiğinin yolunda kalmasın diye) + eski /antrenmanlar.

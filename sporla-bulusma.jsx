@@ -4,6 +4,7 @@ import Tour from "./Tour.jsx";
 import FreshBuildWatcher from "./FreshBuildWatcher.jsx";
 import BlurReveal from "./BlurReveal.jsx";
 import GuidePage from "./GuidePage.jsx";
+import AboutPage from "./AboutPage.jsx";
 import { StoreButton } from "./StoreButtons.jsx";
 import { SocialIcons } from "./SocialLinks.jsx";
 import { TaSessionNote, TaDiscoverCard, TaHomeBand, TaCoachTip, TaEmptyState, TaRaceCard, TaFooterStrip, taRaceGuide } from "./TrainingAgentsPromo.jsx";
@@ -2177,13 +2178,13 @@ const parseDetailPath = (pathname) => {
 // Detay sayfaları (/takim/, /etkinlik/) bilerek tek adreste bırakıldı:
 // içeriği kullanıcı Türkçe yazıyor, çevirisi yok — üç adres kopya olurdu.
 const LOCALIZED_PAGE_PATHS = {
-  tr: { home: "/",    trainings: "/etkinlikler", teams: "/takimlar",  contact: "/iletisim",   guide: "/rehber" },
-  en: { home: "/en",  trainings: "/en/events",   teams: "/en/teams",  contact: "/en/contact", guide: "/en/guide" },
-  de: { home: "/de",  trainings: "/de/events",   teams: "/de/teams",  contact: "/de/kontakt", guide: "/de/anleitung" },
-  el: { home: "/el",  trainings: "/el/events",   teams: "/el/teams",  contact: "/el/contact", guide: "/el/guide" },
-  es: { home: "/es",  trainings: "/es/eventos",  teams: "/es/equipos", contact: "/es/contacto", guide: "/es/guia" },
-  fr: { home: "/fr",  trainings: "/fr/evenements", teams: "/fr/equipes", contact: "/fr/contact", guide: "/fr/guide" },
-  it: { home: "/it",  trainings: "/it/eventi",   teams: "/it/squadre", contact: "/it/contatti", guide: "/it/guida" },
+  tr: { home: "/",    trainings: "/etkinlikler", teams: "/takimlar",  contact: "/iletisim",   guide: "/rehber", about: "/hakkimizda" },
+  en: { home: "/en",  trainings: "/en/events",   teams: "/en/teams",  contact: "/en/contact", guide: "/en/guide", about: "/en/about" },
+  de: { home: "/de",  trainings: "/de/events",   teams: "/de/teams",  contact: "/de/kontakt", guide: "/de/anleitung", about: "/de/ueber-uns" },
+  el: { home: "/el",  trainings: "/el/events",   teams: "/el/teams",  contact: "/el/contact", guide: "/el/guide", about: "/el/about" },
+  es: { home: "/es",  trainings: "/es/eventos",  teams: "/es/equipos", contact: "/es/contacto", guide: "/es/guia", about: "/es/sobre-nosotros" },
+  fr: { home: "/fr",  trainings: "/fr/evenements", teams: "/fr/equipes", contact: "/fr/contact", guide: "/fr/guide", about: "/fr/a-propos" },
+  it: { home: "/it",  trainings: "/it/eventi",   teams: "/it/squadre", contact: "/it/contatti", guide: "/it/guida", about: "/it/chi-siamo" },
 };
 // Ters tablo: yol → { lang, page }
 const LOCALIZED_PATH_LOOKUP = Object.fromEntries(
@@ -2208,6 +2209,7 @@ export default function Muuvlink() {
     teams:             "/takimlar",
     contact:           "/iletisim",
     guide:             "/rehber",
+    about:             "/hakkimizda",
     profile:           "/profil",
     "create-training": "/etkinlik-ekle",
     "create-team":     "/takim-kur",
@@ -2284,6 +2286,7 @@ export default function Muuvlink() {
     teams:             { title:`${t("teams.pageTitle")} — Muuvlink`,              desc: t("teams.pageSubtitle")         },
     contact:           { title:`${t("contact.pageTitle")} — Muuvlink`,            desc: t("contact.pageSubtitle")       },
     guide:             { title:`${t("guide.metaTitle")} — Muuvlink`,              desc: t("guide.metaDesc")             },
+    about:             { title:`${t("about.title")} — Muuvlink`,                  desc: t("about.metaDesc")             },
     profile:           { title:`${t("profile.pageTitle")} — Muuvlink`,            desc: t("profile.pageTitle")          },
     "create-training": { title:`${t("createTraining.pageTitle")} — Muuvlink`,     desc: t("createTraining.pageSubtitle")},
     "create-team":     { title:`${t("createTeam.pageTitle")} — Muuvlink`,         desc: t("createTeam.pageSubtitle")    },
@@ -10220,6 +10223,7 @@ Vergi Dairesi: Karşıyaka V.D. | VN: 7420957827<br/>
                   { label: t("nav.teams"),     action: () => setCurrentPage("teams") },
                   { label: t("footer.badges"), action: () => setCurrentPage("badges") },
                   { label: t("guide.nav"),     action: () => setCurrentPage("guide") },
+                  { label: t("about.nav"),     action: () => setCurrentPage("about") },
                   { label: t("nav.contact"),   action: () => setCurrentPage("contact") },
                 ])}
               </ul>
@@ -10494,6 +10498,7 @@ Vergi Dairesi: Karşıyaka V.D. | VN: 7420957827<br/>
       {currentPage === "create-team" && <CreateTeamPage />}
       {currentPage === "contact" && <ContactPage />}
       {currentPage === "guide" && <GuidePage t={t} onNavigate={openFromGuide} />}
+      {currentPage === "about" && <AboutPage t={t} onNavigate={setCurrentPage} />}
       {currentPage === "reset-password" && <ResetPasswordPage />}
       {currentPage === "not-found" && <PageHost key="not-found" render={NotFoundPage} />}
 

@@ -10,6 +10,8 @@
 - [İletişim](https://muuvlink.app/iletisim)
 - [Muuvlink nasıl kullanılır?](https://muuvlink.app/rehber)
 - [How to use Muuvlink](https://muuvlink.app/en/guide)
+- [Hakkımızda](https://muuvlink.app/hakkimizda)
+- [About us](https://muuvlink.app/en/about)
 - [Muuvlink · Deutsch](https://muuvlink.app/de)
 - [Muuvlink · Ελληνικά](https://muuvlink.app/el)
 - [Muuvlink · English](https://muuvlink.app/en)

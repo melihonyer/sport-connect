@@ -212,6 +212,7 @@
       "contactDesc": "Kontaktiere Muuvlink: Mitgliedschaft, Teamgründung, Eventfragen, technische Probleme, Zusammenarbeit und Feedback.",
       "faqTitle": "Häufige Fragen",
       "navGuide": "So funktioniert's",
+      "navAbout": "Über uns",
       "contactFaqTitle": "Häufige Fragen",
       "homeDesc": "Finde Sportler in deiner Nähe, bau dein Team auf und plane Events. Entdecke die nächsten Events per GPS in Sekunden."
     },
@@ -243,6 +244,7 @@
       "contactDesc": "Επικοινώνησε με το Muuvlink: λογαριασμός, δημιουργία ομάδας, ερωτήσεις για εκδηλώσεις, τεχνικά προβλήματα, συνεργασίες και σχόλια.",
       "faqTitle": "Συχνές ερωτήσεις",
       "navGuide": "Πώς λειτουργεί",
+      "navAbout": "Σχετικά με εμάς",
       "contactFaqTitle": "Συχνές ερωτήσεις",
       "homeDesc": "Βρες ανθρώπους που αθλούνται κοντά σου, φτιάξε την ομάδα σου και οργάνωσε εκδηλώσεις. Ανακάλυψε μέσα σε δευτερόλεπτα τις πιο κοντινές εκδηλώσεις με GPS."
     },
@@ -274,6 +276,7 @@
       "contactDesc": "Get in touch with Muuvlink: membership, starting a team, event questions, technical issues, collaboration and feedback.",
       "faqTitle": "Frequently asked questions",
       "navGuide": "How it works",
+      "navAbout": "About us",
       "contactFaqTitle": "FAQ",
       "homeDesc": "Find people who play sports near you, build your team, and plan events. Discover the closest events in seconds with GPS."
     },
@@ -305,6 +308,7 @@
       "contactDesc": "Contacta con Muuvlink: cuenta, crear un equipo, preguntas sobre eventos, problemas técnicos, colaboraciones y sugerencias.",
       "faqTitle": "Preguntas frecuentes",
       "navGuide": "Cómo funciona",
+      "navAbout": "Sobre nosotros",
       "contactFaqTitle": "Preguntas frecuentes",
       "homeDesc": "Encuentra gente que hace deporte cerca de ti, crea tu equipo y organiza eventos. Descubre en segundos los eventos más cercanos con GPS."
     },
@@ -336,6 +340,7 @@
       "contactDesc": "Contacte Muuvlink : compte, création d'équipe, questions sur les événements, problèmes techniques, partenariats et suggestions.",
       "faqTitle": "Questions fréquentes",
       "navGuide": "Comment ça marche",
+      "navAbout": "À propos",
       "contactFaqTitle": "Questions fréquentes",
       "homeDesc": "Trouve des sportifs près de chez toi, crée ton équipe et organise des événements. Découvre en quelques secondes les événements proches grâce au GPS."
     },
@@ -367,6 +372,7 @@
       "contactDesc": "Contatta Muuvlink: account, creazione di una squadra, domande sugli eventi, problemi tecnici, collaborazioni e suggerimenti.",
       "faqTitle": "Domande frequenti",
       "navGuide": "Come funziona",
+      "navAbout": "Chi siamo",
       "contactFaqTitle": "Domande frequenti",
       "homeDesc": "Trova persone che fanno sport vicino a te, crea la tua squadra e organizza eventi. Scopri in pochi secondi gli eventi più vicini con il GPS."
     },
@@ -398,6 +404,7 @@
       "contactDesc": "Muuvlink ile iletişime geçin: üyelik, takım kurma, etkinlik soruları, teknik sorun, iş birliği ve geri bildirim.",
       "faqTitle": "Sık sorulan sorular",
       "navGuide": "Nasıl kullanılır?",
+      "navAbout": "Hakkımızda",
       "contactFaqTitle": "Sık Sorulan Sorular",
       "homeDesc": "Çevrende spor yapan insanları bul, kendi takımını kur, etkinlikler planla. GPS ile en yakın etkinlikleri saniyeler içinde keşfet."
     }
@@ -1120,6 +1127,367 @@
       ]
     }
   },
+  "about": {
+    "de": {
+      "nav": "Über uns",
+      "title": "Über uns",
+      "lead": "Muuvlink ist eine kostenlose Sport-Community-App, die Menschen, die in deiner Nähe Sport treiben, Teams und Events zusammenbringt. Unser Ziel ist einfach: Niemand, der Sport machen möchte, soll zu Hause bleiben, weil er niemanden findet, mit dem er trainieren kann.",
+      "metaDesc": "Muuvlink ist eine kostenlose Sport-Community-App, die Menschen, die in deiner Nähe Sport treiben, Teams und Events zusammenbringt.",
+      "who": {
+        "title": "Wer entwickelt Muuvlink?",
+        "body": "Muuvlink wird von SALT KREATİF REKLAM TİC. LTD. ŞTİ. mit Sitz in İzmir, Türkei, entwickelt und veröffentlicht. Design, Software und Community-Support der App kommen aus demselben Team."
+      },
+      "why": {
+        "title": "Warum gibt es Muuvlink?",
+        "body": "Das größte Hindernis für Menschen, die Sport machen wollen, ist oft nicht das Training selbst, sondern jemanden zu finden, mit dem man es macht. Events sind über Messenger-Gruppen verstreut, Teams über Freundeskreise; wer neu dazukommt, weiß nicht, wo er mitmachen kann. Muuvlink bringt das an einem Ort zusammen: Du siehst Events in deiner Nähe auf der Karte, nimmst mit einem Tipp teil und gründest, wenn du willst, dein eigenes Team."
+      },
+      "what": {
+        "title": "Was kannst du auf Muuvlink machen?",
+        "items": [
+          "Öffentliche Events im Umkreis von 10–100 km um deinen Standort finden",
+          "Ohne Bestätigung an Events teilnehmen und dem Veranstalter in den Kommentaren Fragen stellen",
+          "Dein eigenes Team gründen und deinen Mitgliedern Events ankündigen",
+          "Events wie Läufen und Radtouren eine GPX-Route hinzufügen",
+          "Events per WhatsApp, Telegram oder Instagram-Story teilen"
+        ],
+        "after": "Events lassen sich in mehr als fünfzehn Sportarten anlegen, von Basketball bis Schwimmen. Muuvlink gibt es im Web, für iOS und für Android, in sieben Sprachen."
+      },
+      "care": {
+        "title": "Worauf achten wir?",
+        "items": [
+          {
+            "label": "Kostenlos",
+            "text": "Ein Konto erstellen, ein Team gründen und an Events teilnehmen kostet nichts. Veranstaltungen mit dem Abzeichen „Kostenpflichtig“ gehören externen Veranstaltern, Muuvlink erhält keinen Anteil an diesen Gebühren."
+          },
+          {
+            "label": "Privatsphäre",
+            "text": "Wer nicht zum Team oder Event gehört, sieht weder die vollständigen Namen noch die Fotos der Mitglieder. Event-Kommentare lesen nur Teilnehmende und Teammitglieder."
+          },
+          {
+            "label": "Sichere Community",
+            "text": "Unangemessene Ausdrücke werden vor der Veröffentlichung gefiltert. Jedes Event und jeder Kommentar kann gemeldet werden, und du kannst Personen blockieren, von denen du nichts hören willst."
+          },
+          {
+            "label": "Dein Konto gehört dir",
+            "text": "Du kannst dein Konto jederzeit in den Einstellungen löschen; deine Daten werden innerhalb von 30 Tagen endgültig gelöscht."
+          }
+        ]
+      },
+      "contact": {
+        "title": "Wie erreichst du uns?",
+        "body": "Schreib uns über das Formular auf der Kontaktseite oder auf Instagram (@muuvlinkapp)."
+      }
+    },
+    "el": {
+      "nav": "Σχετικά με εμάς",
+      "title": "Σχετικά με εμάς",
+      "lead": "Το Muuvlink είναι μια δωρεάν εφαρμογή αθλητικής κοινότητας που φέρνει κοντά ανθρώπους που αθλούνται γύρω σου, ομάδες και εκδηλώσεις. Ο στόχος μας είναι απλός: κανείς που θέλει να αθληθεί να μη μένει σπίτι επειδή δεν βρίσκει παρέα.",
+      "metaDesc": "Το Muuvlink είναι μια δωρεάν εφαρμογή αθλητικής κοινότητας που φέρνει κοντά ανθρώπους που αθλούνται γύρω σου, ομάδες και εκδηλώσεις.",
+      "who": {
+        "title": "Ποιος αναπτύσσει το Muuvlink;",
+        "body": "Το Muuvlink αναπτύσσεται και δημοσιεύεται από την SALT KREATİF REKLAM TİC. LTD. ŞTİ., εταιρεία με έδρα τη Σμύρνη (İzmir) της Τουρκίας. Ο σχεδιασμός, το λογισμικό και η υποστήριξη της κοινότητας προέρχονται από την ίδια ομάδα."
+      },
+      "why": {
+        "title": "Γιατί υπάρχει το Muuvlink;",
+        "body": "Για όσους θέλουν να αθληθούν, το μεγαλύτερο εμπόδιο συχνά δεν είναι η ίδια η προπόνηση αλλά το να βρουν κάποιον να την κάνουν μαζί. Οι εκδηλώσεις είναι σκορπισμένες σε ομάδες συνομιλίας και οι ομάδες σε παρέες φίλων· όποιος έρχεται πρώτη φορά δεν ξέρει πού να συμμετάσχει. Το Muuvlink τα συγκεντρώνει όλα σε ένα μέρος: βλέπεις τις κοντινές εκδηλώσεις στον χάρτη, συμμετέχεις με ένα πάτημα και, αν θέλεις, φτιάχνεις τη δική σου ομάδα."
+      },
+      "what": {
+        "title": "Τι μπορείς να κάνεις στο Muuvlink;",
+        "items": [
+          "Να βρίσκεις δημόσιες εκδηλώσεις σε ακτίνα 10–100 km από την τοποθεσία σου",
+          "Να συμμετέχεις σε εκδηλώσεις χωρίς να περιμένεις έγκριση και να κάνεις ερωτήσεις στον διοργανωτή στα σχόλια",
+          "Να φτιάχνεις τη δική σου ομάδα και να ανακοινώνεις εκδηλώσεις στα μέλη σου",
+          "Να προσθέτεις διαδρομή GPX σε εκδηλώσεις όπως τρέξιμο και ποδήλατο",
+          "Να μοιράζεσαι μια εκδήλωση μέσω WhatsApp, Telegram ή Instagram story"
+        ],
+        "after": "Μπορούν να δημιουργηθούν εκδηλώσεις σε περισσότερα από δεκαπέντε αθλήματα, από μπάσκετ μέχρι κολύμβηση. Το Muuvlink λειτουργεί στο web, σε iOS και σε Android, σε επτά γλώσσες."
+      },
+      "care": {
+        "title": "Σε τι δίνουμε σημασία;",
+        "items": [
+          {
+            "label": "Δωρεάν",
+            "text": "Η δημιουργία λογαριασμού, η δημιουργία ομάδας και η συμμετοχή σε εκδηλώσεις δεν κοστίζουν τίποτα. Οι διοργανώσεις με το σήμα «Με πληρωμή» ανήκουν σε εξωτερικούς φορείς και το Muuvlink δεν παίρνει μερίδιο από αυτά τα τέλη."
+          },
+          {
+            "label": "Ιδιωτικότητα",
+            "text": "Όποιος δεν ανήκει στην ομάδα ή στην εκδήλωση δεν βλέπει τα πλήρη ονόματα ούτε τις φωτογραφίες των μελών. Τα σχόλια μιας εκδήλωσης τα διαβάζουν μόνο οι συμμετέχοντες και τα μέλη της ομάδας."
+          },
+          {
+            "label": "Ασφαλής κοινότητα",
+            "text": "Οι ακατάλληλες εκφράσεις φιλτράρονται πριν δημοσιευτούν. Κάθε εκδήλωση και κάθε σχόλιο μπορεί να αναφερθεί, και μπορείς να αποκλείσεις όποιον δεν θέλεις."
+          },
+          {
+            "label": "Ο λογαριασμός είναι δικός σου",
+            "text": "Μπορείς να διαγράψεις τον λογαριασμό σου από τις ρυθμίσεις όποτε θέλεις· τα δεδομένα σου διαγράφονται οριστικά μέσα σε 30 ημέρες."
+          }
+        ]
+      },
+      "contact": {
+        "title": "Πώς μπορείς να επικοινωνήσεις μαζί μας;",
+        "body": "Γράψε μας μέσα από τη φόρμα της σελίδας επικοινωνίας ή στο Instagram (@muuvlinkapp)."
+      }
+    },
+    "en": {
+      "nav": "About us",
+      "title": "About us",
+      "lead": "Muuvlink is a free sports community app that brings together people who play sports near you, teams and events. Our goal is simple: nobody who wants to play sports should stay home because they can't find someone to do it with.",
+      "metaDesc": "Muuvlink is a free sports community app that brings together people who play sports near you, teams and events.",
+      "who": {
+        "title": "Who builds Muuvlink?",
+        "body": "Muuvlink is built and published by SALT KREATİF REKLAM TİC. LTD. ŞTİ., a company based in İzmir, Türkiye. The app's design, software and community support all come from the same team."
+      },
+      "why": {
+        "title": "Why does Muuvlink exist?",
+        "body": "For people who want to play sports, the biggest obstacle is often not the training itself but finding someone to do it with. Events are scattered across messaging groups and teams across circles of friends, so newcomers don't know where to join. Muuvlink brings all of this into one place: you see nearby events on a map, join with a single tap and, if you like, start your own team."
+      },
+      "what": {
+        "title": "What can you do on Muuvlink?",
+        "items": [
+          "Find public events within 10–100 km of your location",
+          "Join an event without waiting for approval and ask the organizer questions in the comments",
+          "Start your own team and announce events to your members",
+          "Add a GPX route to events such as runs and bike rides",
+          "Share an event via WhatsApp, Telegram or an Instagram story"
+        ],
+        "after": "Events can be created in more than fifteen sports, from basketball to swimming. Muuvlink is available on the web, on iOS and on Android, in seven languages."
+      },
+      "care": {
+        "title": "What do we care about?",
+        "items": [
+          {
+            "label": "Free",
+            "text": "Creating an account, starting a team and joining events cost nothing. Organizations with a \"Paid\" badge belong to outside organizers, and Muuvlink takes no share of those fees."
+          },
+          {
+            "label": "Privacy",
+            "text": "Someone who isn't part of a team or event can't see members' full names or photos. Event comments are read only by participants and team members."
+          },
+          {
+            "label": "A safe community",
+            "text": "Inappropriate wording is filtered before it's published. Every event and comment can be reported, and you can block anyone you don't want to hear from."
+          },
+          {
+            "label": "Your account is yours",
+            "text": "You can delete your account in settings at any time; your data is permanently deleted within 30 days."
+          }
+        ]
+      },
+      "contact": {
+        "title": "How can you reach us?",
+        "body": "Write to us through the form on the contact page or on Instagram (@muuvlinkapp)."
+      }
+    },
+    "es": {
+      "nav": "Sobre nosotros",
+      "title": "Sobre nosotros",
+      "lead": "Muuvlink es una app gratuita de comunidad deportiva que reúne a las personas que hacen deporte cerca de ti, a los equipos y a los eventos. Nuestro objetivo es sencillo: que nadie que quiera hacer deporte se quede en casa por no encontrar con quién hacerlo.",
+      "metaDesc": "Muuvlink es una app gratuita de comunidad deportiva que reúne a las personas que hacen deporte cerca de ti, a los equipos y a los eventos.",
+      "who": {
+        "title": "¿Quién desarrolla Muuvlink?",
+        "body": "Muuvlink lo desarrolla y publica SALT KREATİF REKLAM TİC. LTD. ŞTİ., una empresa con sede en Esmirna (İzmir), Turquía. El diseño, el software y la atención a la comunidad salen del mismo equipo."
+      },
+      "why": {
+        "title": "¿Por qué existe Muuvlink?",
+        "body": "Para quien quiere hacer deporte, el mayor obstáculo muchas veces no es el entrenamiento en sí, sino encontrar a alguien con quien hacerlo. Los eventos están repartidos en grupos de mensajería y los equipos en círculos de amigos; quien llega nuevo no sabe dónde apuntarse. Muuvlink reúne todo esto en un solo lugar: ves los eventos cercanos en el mapa, te apuntas con un toque y, si quieres, creas tu propio equipo."
+      },
+      "what": {
+        "title": "¿Qué puedes hacer en Muuvlink?",
+        "items": [
+          "Encontrar eventos públicos a 10–100 km de tu ubicación",
+          "Apuntarte a un evento sin esperar aprobación y hacer preguntas al organizador en los comentarios",
+          "Crear tu propio equipo y anunciar eventos a tus miembros",
+          "Añadir una ruta GPX a eventos como carreras y salidas en bici",
+          "Compartir un evento por WhatsApp, Telegram o en una historia de Instagram"
+        ],
+        "after": "Se pueden crear eventos en más de quince deportes, del baloncesto a la natación. Muuvlink funciona en la web, en iOS y en Android, en siete idiomas."
+      },
+      "care": {
+        "title": "¿Qué cuidamos?",
+        "items": [
+          {
+            "label": "Gratis",
+            "text": "Crear una cuenta, crear un equipo y apuntarte a eventos no cuesta nada. Las organizaciones con la insignia «De pago» pertenecen a organizadores externos y Muuvlink no se queda con parte de esas tarifas."
+          },
+          {
+            "label": "Privacidad",
+            "text": "Quien no forma parte del equipo o del evento no ve los nombres completos ni las fotos de los miembros. Los comentarios de un evento solo los leen quienes participan y los miembros del equipo."
+          },
+          {
+            "label": "Una comunidad segura",
+            "text": "Las expresiones inapropiadas se filtran antes de publicarse. Cualquier evento o comentario se puede denunciar y puedes bloquear a quien no quieras."
+          },
+          {
+            "label": "Tu cuenta es tuya",
+            "text": "Puedes eliminar tu cuenta desde los ajustes cuando quieras; tus datos se borran definitivamente en un plazo de 30 días."
+          }
+        ]
+      },
+      "contact": {
+        "title": "¿Cómo puedes contactarnos?",
+        "body": "Escríbenos desde el formulario de la página de contacto o por Instagram (@muuvlinkapp)."
+      }
+    },
+    "fr": {
+      "nav": "À propos",
+      "title": "À propos",
+      "lead": "Muuvlink est une application gratuite de communauté sportive qui réunit les personnes qui font du sport près de chez toi, les équipes et les événements. Notre objectif est simple : que personne ne reste chez soi faute de trouver quelqu'un avec qui faire du sport.",
+      "metaDesc": "Muuvlink est une application gratuite de communauté sportive qui réunit les sportifs près de chez toi, les équipes et les événements.",
+      "who": {
+        "title": "Qui développe Muuvlink ?",
+        "body": "Muuvlink est développé et publié par SALT KREATİF REKLAM TİC. LTD. ŞTİ., une entreprise basée à Izmir, en Turquie. Le design, le logiciel et le support de la communauté viennent de la même équipe."
+      },
+      "why": {
+        "title": "Pourquoi Muuvlink existe-t-il ?",
+        "body": "Pour qui veut faire du sport, le plus grand obstacle n'est souvent pas l'entraînement lui-même, mais de trouver quelqu'un avec qui le faire. Les événements sont dispersés dans des groupes de messagerie, les équipes dans des cercles d'amis ; les nouveaux venus ne savent pas où se joindre. Muuvlink rassemble tout cela au même endroit : tu vois les événements proches sur la carte, tu participes d'un seul geste et, si tu veux, tu crées ta propre équipe."
+      },
+      "what": {
+        "title": "Que peux-tu faire sur Muuvlink ?",
+        "items": [
+          "Trouver des événements publics dans un rayon de 10 à 100 km autour de toi",
+          "Participer à un événement sans attendre de validation et poser tes questions à l'organisateur dans les commentaires",
+          "Créer ta propre équipe et annoncer des événements à tes membres",
+          "Ajouter un parcours GPX à des événements comme une course ou une sortie vélo",
+          "Partager un événement via WhatsApp, Telegram ou une story Instagram"
+        ],
+        "after": "On peut créer des événements dans plus de quinze sports, du basket à la natation. Muuvlink fonctionne sur le web, sur iOS et sur Android, en sept langues."
+      },
+      "care": {
+        "title": "À quoi faisons-nous attention ?",
+        "items": [
+          {
+            "label": "Gratuit",
+            "text": "Créer un compte, créer une équipe et participer à des événements ne coûte rien. Les organisations avec le badge « Payant » appartiennent à des organisateurs externes, et Muuvlink ne prend aucune part de ces frais."
+          },
+          {
+            "label": "Confidentialité",
+            "text": "Une personne qui ne fait pas partie de l'équipe ou de l'événement ne voit ni le nom complet ni la photo des membres. Les commentaires d'un événement ne sont lus que par les participants et les membres de l'équipe."
+          },
+          {
+            "label": "Une communauté sûre",
+            "text": "Les propos inappropriés sont filtrés avant d'être publiés. Chaque événement et chaque commentaire peut être signalé, et tu peux bloquer qui tu veux."
+          },
+          {
+            "label": "Ton compte t'appartient",
+            "text": "Tu peux supprimer ton compte à tout moment dans les réglages ; tes données sont définitivement supprimées sous 30 jours."
+          }
+        ]
+      },
+      "contact": {
+        "title": "Comment nous contacter ?",
+        "body": "Écris-nous via le formulaire de la page contact ou sur Instagram (@muuvlinkapp)."
+      }
+    },
+    "it": {
+      "nav": "Chi siamo",
+      "title": "Chi siamo",
+      "lead": "Muuvlink è un'app gratuita di community sportiva che mette in contatto le persone che fanno sport vicino a te, le squadre e gli eventi. Il nostro obiettivo è semplice: nessuno che voglia fare sport deve restare a casa perché non trova con chi farlo.",
+      "metaDesc": "Muuvlink è un'app gratuita di community sportiva che mette in contatto le persone che fanno sport vicino a te, le squadre e gli eventi.",
+      "who": {
+        "title": "Chi sviluppa Muuvlink?",
+        "body": "Muuvlink è sviluppato e pubblicato da SALT KREATİF REKLAM TİC. LTD. ŞTİ., un'azienda con sede a Smirne (İzmir), in Turchia. Design, software e supporto alla community arrivano dallo stesso team."
+      },
+      "why": {
+        "title": "Perché esiste Muuvlink?",
+        "body": "Per chi vuole fare sport, l'ostacolo più grande spesso non è l'allenamento in sé, ma trovare qualcuno con cui farlo. Gli eventi sono sparsi nei gruppi di messaggistica e le squadre nelle cerchie di amici; chi arriva per la prima volta non sa dove unirsi. Muuvlink riunisce tutto in un solo posto: vedi gli eventi vicini sulla mappa, partecipi con un tocco e, se vuoi, crei la tua squadra."
+      },
+      "what": {
+        "title": "Cosa puoi fare su Muuvlink?",
+        "items": [
+          "Trovare eventi pubblici entro 10–100 km dalla tua posizione",
+          "Partecipare a un evento senza attendere l'approvazione e fare domande all'organizzatore nei commenti",
+          "Creare la tua squadra e annunciare eventi ai tuoi membri",
+          "Aggiungere un percorso GPX a eventi come corse e uscite in bici",
+          "Condividere un evento su WhatsApp, Telegram o in una storia di Instagram"
+        ],
+        "after": "Si possono creare eventi in più di quindici sport, dal basket al nuoto. Muuvlink funziona sul web, su iOS e su Android, in sette lingue."
+      },
+      "care": {
+        "title": "A cosa facciamo attenzione?",
+        "items": [
+          {
+            "label": "Gratis",
+            "text": "Creare un account, creare una squadra e partecipare agli eventi non costa nulla. Le organizzazioni con il badge «A pagamento» appartengono a organizzatori esterni e Muuvlink non trattiene alcuna quota di queste tariffe."
+          },
+          {
+            "label": "Privacy",
+            "text": "Chi non fa parte della squadra o dell'evento non vede i nomi completi né le foto dei membri. I commenti di un evento li leggono solo i partecipanti e i membri della squadra."
+          },
+          {
+            "label": "Una community sicura",
+            "text": "Le espressioni inappropriate vengono filtrate prima della pubblicazione. Ogni evento e ogni commento può essere segnalato e puoi bloccare chi non vuoi."
+          },
+          {
+            "label": "Il tuo account è tuo",
+            "text": "Puoi eliminare il tuo account dalle impostazioni quando vuoi; i tuoi dati vengono cancellati definitivamente entro 30 giorni."
+          }
+        ]
+      },
+      "contact": {
+        "title": "Come puoi contattarci?",
+        "body": "Scrivici tramite il modulo della pagina contatti o su Instagram (@muuvlinkapp)."
+      }
+    },
+    "tr": {
+      "nav": "Hakkımızda",
+      "title": "Hakkımızda",
+      "lead": "Muuvlink, çevrende spor yapan insanları, takımları ve etkinlikleri bir araya getiren ücretsiz bir spor topluluğu uygulaması. Amacımız basit: spor yapmak isteyen kimse, birlikte yapacak birini bulamadığı için evde kalmasın.",
+      "metaDesc": "Muuvlink, çevrende spor yapan insanları, takımları ve etkinlikleri bir araya getiren ücretsiz bir spor topluluğu uygulaması.",
+      "who": {
+        "title": "Muuvlink'i kim geliştiriyor?",
+        "body": "Muuvlink'i İzmir'de kurulu SALT KREATİF REKLAM TİC. LTD. ŞTİ. geliştiriyor ve yayınlıyor. Uygulamanın tasarımı, yazılımı ve topluluk desteği aynı ekipten çıkıyor."
+      },
+      "why": {
+        "title": "Muuvlink neden var?",
+        "body": "Spor yapmak isteyenlerin önündeki en büyük engel çoğu zaman antrenmanın kendisi değil, birlikte yapacak birini bulmak. Etkinlikler mesajlaşma gruplarına, takımlar arkadaş çevrelerine dağılmış durumda; yeni gelen kişi nereye katılacağını bilemiyor. Muuvlink bu dağınıklığı tek bir yerde topluyor: yakınındaki etkinliği haritada görüyorsun, tek dokunuşla katılıyorsun, istersen kendi takımını kuruyorsun."
+      },
+      "what": {
+        "title": "Muuvlink'te neler yapabilirsin?",
+        "items": [
+          "Konumuna göre 10–100 km içindeki herkese açık etkinlikleri bulmak",
+          "Onay beklemeden etkinliğe katılmak, yorumlarla düzenleyene soru sormak",
+          "Kendi takımını kurmak, üyelerine etkinlik duyurmak",
+          "Koşu ve bisiklet gibi etkinliklere GPX rotası eklemek",
+          "Etkinliği WhatsApp, Telegram ya da Instagram hikâyesiyle paylaşmak"
+        ],
+        "after": "Basketboldan yüzmeye on beşten fazla spor dalında etkinlik açılabiliyor. Muuvlink web'de, iOS'ta ve Android'de, yedi dilde kullanılıyor."
+      },
+      "care": {
+        "title": "Nelere dikkat ediyoruz?",
+        "items": [
+          {
+            "label": "Ücretsiz",
+            "text": "Hesap açmak, takım kurmak ve etkinliğe katılmak için ödeme yapılmaz. \"Ücretli\" rozetli organizasyonlar dış kuruluşlara aittir, Muuvlink bu ücretlerden pay almaz."
+          },
+          {
+            "label": "Gizlilik",
+            "text": "Takımın ya da etkinliğin parçası olmayan biri, üyelerin tam adını ve fotoğrafını görmez. Etkinlik yorumlarını yalnız katılanlar ve takım üyeleri okur."
+          },
+          {
+            "label": "Güvenli topluluk",
+            "text": "Uygunsuz ifadeler yayınlanmadan önce süzülür. Her etkinlik ve yorum şikâyet edilebilir, istemediğin kişiyi engelleyebilirsin."
+          },
+          {
+            "label": "Hesabın senin",
+            "text": "Hesabını istediğin an ayarlardan silebilirsin; verilerin 30 gün içinde kalıcı olarak silinir."
+          }
+        ]
+      },
+      "contact": {
+        "title": "Bize nasıl ulaşırsın?",
+        "body": "İletişim sayfasındaki formdan ya da Instagram'dan (@muuvlinkapp) yazabilirsin."
+      }
+    }
+  },
+  "company": {
+    "legalName": "SALT KREATİF REKLAM TİC. LTD. ŞTİ.",
+    "street": "Çınarlı Mah. 1572 Sk. No:33",
+    "postalCode": "35170",
+    "district": "Konak",
+    "city": "İzmir",
+    "country": "TR",
+    "line": "SALT KREATİF REKLAM TİC. LTD. ŞTİ. · Çınarlı Mah. 1572 Sk. No:33, 35170 Konak/İzmir"
+  },
   "dates": {
     "home": {
       "de": "2026-11-04",
@@ -1140,6 +1508,15 @@
       "tr": "2026-11-04"
     },
     "guide": {
+      "de": "2026-11-04",
+      "el": "2026-11-04",
+      "en": "2026-11-04",
+      "es": "2026-11-04",
+      "fr": "2026-11-04",
+      "it": "2026-11-04",
+      "tr": "2026-11-04"
+    },
+    "about": {
       "de": "2026-11-04",
       "el": "2026-11-04",
       "en": "2026-11-04",

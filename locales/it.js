@@ -729,6 +729,52 @@ export default {
     faqSubtitle: "Qui sotto trovi le risposte alle tue domande.",
   },
 
+  about: {
+    nav: "Chi siamo",
+    title: "Chi siamo",
+    lead: "Muuvlink è un'app gratuita di community sportiva che mette in contatto le persone che fanno sport vicino a te, le squadre e gli eventi. Il nostro obiettivo è semplice: nessuno che voglia fare sport deve restare a casa perché non trova con chi farlo.",
+    metaDesc: "Muuvlink è un'app gratuita di community sportiva che mette in contatto le persone che fanno sport vicino a te, le squadre e gli eventi.",
+    who: {
+      title: "Chi sviluppa Muuvlink?",
+      body: "Muuvlink è sviluppato e pubblicato da SALT KREATİF REKLAM TİC. LTD. ŞTİ., un'azienda con sede a Smirne (İzmir), in Turchia. Design, software e supporto alla community arrivano dallo stesso team.",
+    },
+    why: {
+      title: "Perché esiste Muuvlink?",
+      body: "Per chi vuole fare sport, l'ostacolo più grande spesso non è l'allenamento in sé, ma trovare qualcuno con cui farlo. Gli eventi sono sparsi nei gruppi di messaggistica e le squadre nelle cerchie di amici; chi arriva per la prima volta non sa dove unirsi. Muuvlink riunisce tutto in un solo posto: vedi gli eventi vicini sulla mappa, partecipi con un tocco e, se vuoi, crei la tua squadra.",
+    },
+    what: {
+      title: "Cosa puoi fare su Muuvlink?",
+      i1: "Trovare eventi pubblici entro 10–100 km dalla tua posizione",
+      i2: "Partecipare a un evento senza attendere l'approvazione e fare domande all'organizzatore nei commenti",
+      i3: "Creare la tua squadra e annunciare eventi ai tuoi membri",
+      i4: "Aggiungere un percorso GPX a eventi come corse e uscite in bici",
+      i5: "Condividere un evento su WhatsApp, Telegram o in una storia di Instagram",
+      after: "Si possono creare eventi in più di quindici sport, dal basket al nuoto. Muuvlink funziona sul web, su iOS e su Android, in sette lingue.",
+    },
+    care: {
+      title: "A cosa facciamo attenzione?",
+      p1: {
+        label: "Gratis",
+        text: "Creare un account, creare una squadra e partecipare agli eventi non costa nulla. Le organizzazioni con il badge «A pagamento» appartengono a organizzatori esterni e Muuvlink non trattiene alcuna quota di queste tariffe.",
+      },
+      p2: {
+        label: "Privacy",
+        text: "Chi non fa parte della squadra o dell'evento non vede i nomi completi né le foto dei membri. I commenti di un evento li leggono solo i partecipanti e i membri della squadra.",
+      },
+      p3: {
+        label: "Una community sicura",
+        text: "Le espressioni inappropriate vengono filtrate prima della pubblicazione. Ogni evento e ogni commento può essere segnalato e puoi bloccare chi non vuoi.",
+      },
+      p4: {
+        label: "Il tuo account è tuo",
+        text: "Puoi eliminare il tuo account dalle impostazioni quando vuoi; i tuoi dati vengono cancellati definitivamente entro 30 giorni.",
+      },
+    },
+    contact: {
+      title: "Come puoi contattarci?",
+      body: "Scrivici tramite il modulo della pagina contatti o su Instagram (@muuvlinkapp).",
+    },
+  },
   guide: {
     nav: "Come funziona",
     eyebrow: "Guida",
