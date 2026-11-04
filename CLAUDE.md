@@ -164,6 +164,13 @@ JavaScript ÇALIŞTIRMAZ. Bu yüzden metin sunucudan basılır.
   (`common.search`, `common.back`, `teams.searchPlaceholder`) + etkinlikte `notFound.eventSearch` ("Etkinlik ara…", Melih'in metni); yeni metin Melih
   onayı ister. Denenip bırakılanlar: zıplayan monitör ikonu ("çok kötü
   basit"), Deep Teal kartlı sarı halkalı sürüm.
+- **Detay sayfası şeması** (4 Kasım 2026): bot prerender'ı (`backend-api.js` `seoDetailSchema`) etkinlikte
+  `SportsEvent` (startDate etkinliğin saat diliminde ofsetli — `seoIsoInZone`; yer + koordinat; düzenleyen
+  takım/organizatör; ücretsizse Offer 0), takımda `SportsTeam` + ikisinde `BreadcrumbList` ve Organization basar.
+  Kişi adı/fotoğrafı şemaya GİRMEZ. Emoji avatar logo sayılmaz (yalnız http adresi). Gizli/herkese kapalı
+  kayıt şema almaz (varsayılan kart).
+- **`llms.txt`** `scripts/seo-static.mjs` build'de üretir (`public/llms.txt`): SSS tr+en ve ana sayfalar,
+  metin `i18n.js`'ten. Elle düzenlenmez.
 - **IndexNow anahtar dosyası `public/<key>.txt` silinmemeli** — her bildirimde
   okunuyor. Bing doğrulama etiketi `msvalidate.01` de silinmemeli.
 
