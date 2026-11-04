@@ -3513,8 +3513,8 @@ app.get('/api/sitemap.xml', async (req, res) => {
       if (page === 'home' && lang === 'tr') continue; // zaten yukarıda
       urls.push({
         loc: `${SITE_ORIGIN}${p}`,
-        changefreq: page === 'contact' ? 'monthly' : 'hourly',
-        priority: page === 'home' ? '0.9' : page === 'contact' ? '0.5' : '0.8',
+        changefreq: page === 'contact' || page === 'guide' ? 'monthly' : 'hourly',
+        priority: page === 'home' ? '0.9' : page === 'contact' ? '0.5' : page === 'guide' ? '0.7' : '0.8',
         lastmod: today,
       });
     }
@@ -3678,13 +3678,13 @@ const getSeoContent = () => {
 // sporla-bulusma.jsx içindeki LOCALIZED_PAGE_PATHS ile BİREBİR aynı olmalı
 // (ve nginx'teki liste sayfaları konumu da bu yolları içermeli).
 const SEO_LOCALIZED_PATHS = {
-  tr: { home: '/',   trainings: '/etkinlikler', teams: '/takimlar', contact: '/iletisim' },
-  en: { home: '/en', trainings: '/en/events',   teams: '/en/teams', contact: '/en/contact' },
-  de: { home: '/de', trainings: '/de/events',   teams: '/de/teams', contact: '/de/kontakt' },
-  el: { home: '/el', trainings: '/el/events',   teams: '/el/teams', contact: '/el/contact' },
-  es: { home: '/es', trainings: '/es/eventos',  teams: '/es/equipos', contact: '/es/contacto' },
-  fr: { home: '/fr', trainings: '/fr/evenements', teams: '/fr/equipes', contact: '/fr/contact' },
-  it: { home: '/it', trainings: '/it/eventi',   teams: '/it/squadre', contact: '/it/contatti' },
+  tr: { home: '/',   trainings: '/etkinlikler', teams: '/takimlar', contact: '/iletisim',   guide: '/rehber' },
+  en: { home: '/en', trainings: '/en/events',   teams: '/en/teams', contact: '/en/contact', guide: '/en/guide' },
+  de: { home: '/de', trainings: '/de/events',   teams: '/de/teams', contact: '/de/kontakt', guide: '/de/anleitung' },
+  el: { home: '/el', trainings: '/el/events',   teams: '/el/teams', contact: '/el/contact', guide: '/el/guide' },
+  es: { home: '/es', trainings: '/es/eventos',  teams: '/es/equipos', contact: '/es/contacto', guide: '/es/guia' },
+  fr: { home: '/fr', trainings: '/fr/evenements', teams: '/fr/equipes', contact: '/fr/contact', guide: '/fr/guide' },
+  it: { home: '/it', trainings: '/it/eventi',   teams: '/it/squadre', contact: '/it/contatti', guide: '/it/guida' },
 };
 const SEO_PATH_LOOKUP = Object.fromEntries(
   Object.entries(SEO_LOCALIZED_PATHS).flatMap(([lang, pages]) =>
@@ -4050,6 +4050,50 @@ ${seoFooterLinks(lang, L)}
   };
 };
 
+// Rehber sayfası (/rehber, /en/guide …). Metin i18n.js `guide` bloğundan (seo-content.json);
+// sayfadaki görünür metinle birebir aynı. Şema: her rehber bir HowTo (adımlar görünür metin).
+const seoGuideText = async (lang) => {
+  const c = getSeoContent();
+  const L = c?.seo?.[lang];
+  const G = c?.guide?.[lang];
+  if (!L || !G) throw new Error('seo-content.json yok');
+  const url = `${SITE_ORIGIN}${SEO_LOCALIZED_PATHS[lang].guide}`;
+  const text = `
+    <div style="${SEO_WRAP_STYLE}">
+      <h1 style="${SEO_H1_STYLE}">${htmlAttrEscape(G.title)}</h1>
+      <p style="margin:0 0 26px">${htmlAttrEscape(G.lead)}</p>
+${G.guides.map((g, i) => `      <h2 id="g${i + 1}" style="font-size:1.35rem;color:#114956;margin:34px 0 8px">${htmlAttrEscape(g.title)}</h2>
+      <p style="margin:0 0 12px;font-weight:500">${htmlAttrEscape(g.sum)}</p>
+      <ol style="margin:0 0 12px;padding-left:22px">
+${g.steps.map((st) => `        <li style="margin:0 0 6px">${htmlAttrEscape(st)}</li>`).join('\n')}
+      </ol>${g.note ? `\n      <p style="margin:0;color:#66757A;font-size:.95rem">${htmlAttrEscape(g.note)}</p>` : ''}`).join('\n')}
+${seoFooterLinks(lang, L, true)}
+    </div>`;
+  return {
+    page: 'guide', lang, text,
+    title: `${G.metaTitle} — Muuvlink`,
+    description: G.lead.slice(0, 200),
+    schema: {
+      '@context': 'https://schema.org',
+      '@graph': [
+        { '@type': 'WebPage', '@id': url, url, name: G.title, description: G.lead, inLanguage: lang,
+          publisher: { '@id': `${SITE_ORIGIN}/#organization` },
+          hasPart: G.guides.map((g, i) => ({ '@id': `${url}#g${i + 1}` })) },
+        ...G.guides.map((g, i) => ({
+          '@type': 'HowTo', '@id': `${url}#g${i + 1}`, name: g.title, description: g.sum, inLanguage: lang,
+          step: g.steps.map((st, j) => ({ '@type': 'HowToStep', position: j + 1, text: st, url: `${url}#g${i + 1}` })),
+        })),
+        { '@type': 'BreadcrumbList', itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Muuvlink', item: `${SITE_ORIGIN}${SEO_LOCALIZED_PATHS[lang].home}` },
+          { '@type': 'ListItem', position: 2, name: G.title, item: url },
+        ] },
+        { '@type': 'Organization', '@id': `${SITE_ORIGIN}/#organization`, name: 'Muuvlink', url: SITE_ORIGIN,
+          logo: `${SITE_ORIGIN}/icons/favicon.png`, sameAs: MUUV_SOCIAL.map((x) => x.href) },
+      ],
+    },
+  };
+};
+
 // Ana sayfanın İngilizce/Almanca karşılığı. Türkçe ana sayfa statik
 // index.html'den gelir (nginx), Node yolun dışında kalsın diye.
 const seoHomeText = async (lang) => {
@@ -4100,6 +4144,7 @@ const seoFooterLinks = (lang, L, skipHome = false) => {
       ? `<a href="${SITE_ORIGIN}${P.contact}" style="${SEO_LINK_STYLE}">${htmlAttrEscape(L.navContact)}</a>`
       : `<a href="${SITE_ORIGIN}${P.home}" style="${SEO_LINK_STYLE}">${htmlAttrEscape(L.navHome)}</a>`,
   ];
+  if (L.navGuide) parts.push(`<a href="${SITE_ORIGIN}${P.guide}" style="${SEO_LINK_STYLE}">${htmlAttrEscape(L.navGuide)}</a>`);
   return `      <p style="margin:30px 0 0">${parts.join(' · ')}</p>`;
 };
 
@@ -4124,7 +4169,7 @@ const seoCollectionSchema = (name, url, lang, list) => ({
   },
 });
 
-const SEO_PAGE_BUILDERS = { home: seoHomeText, trainings: seoTrainingsText, teams: seoTeamsText, contact: seoContactText };
+const SEO_PAGE_BUILDERS = { home: seoHomeText, trainings: seoTrainingsText, teams: seoTeamsText, contact: seoContactText, guide: seoGuideText };
 
 // Bot'a açılan yollar: Türkçe ana sayfa HARİÇ (o statik index.html'den gelir,
 // Node insan trafiğinin yolunda kalmasın diye) + eski /antrenmanlar.

@@ -3,12 +3,14 @@ import { detectLang, createT, LANGUAGES, SUPPORTED, localeOf, pickLang } from ".
 import Tour from "./Tour.jsx";
 import FreshBuildWatcher from "./FreshBuildWatcher.jsx";
 import BlurReveal from "./BlurReveal.jsx";
+import GuidePage from "./GuidePage.jsx";
 import { StoreButton } from "./StoreButtons.jsx";
 import { SocialIcons } from "./SocialLinks.jsx";
 import { TaSessionNote, TaDiscoverCard, TaHomeBand, TaCoachTip, TaEmptyState, TaRaceCard, TaFooterStrip, taRaceGuide } from "./TrainingAgentsPromo.jsx";
 import { MetaEvents, newEventId, getMatchSignals, getAttribution, trackPageView, umamiTrack, metaTrackingAllowed, requestIosTracking, iosTrackingUndecided } from "./analytics.js";
 import { reportPage } from "./threshold-page.js";
 import {
+  ArrowRight,
   MapPin,
   Users,
   Calendar,
@@ -982,7 +984,7 @@ function FieldSwitch({ on, onChange, label, hint }) {
 // bu yüzden aynı metin index.html içinde statik olarak da bulunur ve oradaki
 // FAQPage şeması onu işaretler. Metni değiştirirsen ikisini birlikte güncelle.
 // Açılır-kapanır DEĞİL: katlanmış metni arama motorları düşük ağırlıkla sayar.
-function FaqSection({ t }) {
+function FaqSection({ t, guideHref, onGuide }) {
   const items = [1, 2, 3, 4, 5, 6].map((n) => ({
     q: t(`faq.q${n}`),
     a: t(`faq.a${n}`),
@@ -1015,6 +1017,12 @@ function FaqSection({ t }) {
             </div>
           ))}
         </dl>
+        {onGuide && (
+          <a href={guideHref} onClick={(e) => { if (e.metaKey || e.ctrlKey || e.button === 1) return; e.preventDefault(); onGuide(); }}
+            className="mt-10 inline-flex items-center gap-2 text-sm font-semibold text-brand-600 underline underline-offset-4 decoration-brand-200 hover:decoration-brand-600">
+            {t("guide.nav")} <ArrowRight className="w-4 h-4" aria-hidden="true" />
+          </a>
+        )}
       </div>
     </section>
   );
@@ -2169,13 +2177,13 @@ const parseDetailPath = (pathname) => {
 // Detay sayfaları (/takim/, /etkinlik/) bilerek tek adreste bırakıldı:
 // içeriği kullanıcı Türkçe yazıyor, çevirisi yok — üç adres kopya olurdu.
 const LOCALIZED_PAGE_PATHS = {
-  tr: { home: "/",    trainings: "/etkinlikler", teams: "/takimlar",  contact: "/iletisim" },
-  en: { home: "/en",  trainings: "/en/events",   teams: "/en/teams",  contact: "/en/contact" },
-  de: { home: "/de",  trainings: "/de/events",   teams: "/de/teams",  contact: "/de/kontakt" },
-  el: { home: "/el",  trainings: "/el/events",   teams: "/el/teams",  contact: "/el/contact" },
-  es: { home: "/es",  trainings: "/es/eventos",  teams: "/es/equipos", contact: "/es/contacto" },
-  fr: { home: "/fr",  trainings: "/fr/evenements", teams: "/fr/equipes", contact: "/fr/contact" },
-  it: { home: "/it",  trainings: "/it/eventi",   teams: "/it/squadre", contact: "/it/contatti" },
+  tr: { home: "/",    trainings: "/etkinlikler", teams: "/takimlar",  contact: "/iletisim",   guide: "/rehber" },
+  en: { home: "/en",  trainings: "/en/events",   teams: "/en/teams",  contact: "/en/contact", guide: "/en/guide" },
+  de: { home: "/de",  trainings: "/de/events",   teams: "/de/teams",  contact: "/de/kontakt", guide: "/de/anleitung" },
+  el: { home: "/el",  trainings: "/el/events",   teams: "/el/teams",  contact: "/el/contact", guide: "/el/guide" },
+  es: { home: "/es",  trainings: "/es/eventos",  teams: "/es/equipos", contact: "/es/contacto", guide: "/es/guia" },
+  fr: { home: "/fr",  trainings: "/fr/evenements", teams: "/fr/equipes", contact: "/fr/contact", guide: "/fr/guide" },
+  it: { home: "/it",  trainings: "/it/eventi",   teams: "/it/squadre", contact: "/it/contatti", guide: "/it/guida" },
 };
 // Ters tablo: yol → { lang, page }
 const LOCALIZED_PATH_LOOKUP = Object.fromEntries(
@@ -2199,6 +2207,7 @@ export default function Muuvlink() {
     trainings:         "/etkinlikler",
     teams:             "/takimlar",
     contact:           "/iletisim",
+    guide:             "/rehber",
     profile:           "/profil",
     "create-training": "/etkinlik-ekle",
     "create-team":     "/takim-kur",
@@ -2274,6 +2283,7 @@ export default function Muuvlink() {
     trainings:         { title:`${t("trainings.pageTitle")} — Muuvlink`,          desc: t("trainings.pageSubtitle")     },
     teams:             { title:`${t("teams.pageTitle")} — Muuvlink`,              desc: t("teams.pageSubtitle")         },
     contact:           { title:`${t("contact.pageTitle")} — Muuvlink`,            desc: t("contact.pageSubtitle")       },
+    guide:             { title:`${t("guide.metaTitle")} — Muuvlink`,              desc: t("guide.lead")                 },
     profile:           { title:`${t("profile.pageTitle")} — Muuvlink`,            desc: t("profile.pageTitle")          },
     "create-training": { title:`${t("createTraining.pageTitle")} — Muuvlink`,     desc: t("createTraining.pageSubtitle")},
     "create-team":     { title:`${t("createTeam.pageTitle")} — Muuvlink`,         desc: t("createTeam.pageSubtitle")    },
@@ -5823,7 +5833,7 @@ export default function Muuvlink() {
       {/* Training Agents: dost uygulama — Muuvlink'in kendi içeriğinin altında (2 Kasım 2026, Melih) */}
       <TaHomeBand t={t} lang={lang} isNative={isNative} />
 
-      <FaqSection t={t} />
+      <FaqSection t={t} guideHref={LOCALIZED_PAGE_PATHS[lang]?.guide || "/rehber"} onGuide={() => setCurrentPage("guide")} />
 
       {/* ── CTA — Full Bleed Cinematic ── */}
       {!user && (
@@ -9712,6 +9722,16 @@ export default function Muuvlink() {
   // =====================================================
   // CONTACT PAGE
   // =====================================================
+  // Rehberdeki düğmeler: oluşturma sayfaları giriş ister, misafire kayıt penceresi açılır.
+  const openFromGuide = (page) => {
+    if ((page === "create-team" || page === "create-training") && !user) {
+      setAuthMode("register");
+      setIsAuthModalOpen(true);
+      return;
+    }
+    setCurrentPage(page);
+  };
+
   const ContactPage = () => {
     const [contactForm, setContactForm] = React.useState({ name: user?.name || "", email: user?.email || "", subject: "", message: "" });
     const [sending, setSending] = React.useState(false);
@@ -10199,6 +10219,7 @@ Vergi Dairesi: Karşıyaka V.D. | VN: 7420957827<br/>
                   { label: t("nav.trainings"), action: () => setCurrentPage("trainings") },
                   { label: t("nav.teams"),     action: () => setCurrentPage("teams") },
                   { label: t("footer.badges"), action: () => setCurrentPage("badges") },
+                  { label: t("guide.nav"),     action: () => setCurrentPage("guide") },
                   { label: t("nav.contact"),   action: () => setCurrentPage("contact") },
                 ])}
               </ul>
@@ -10472,6 +10493,7 @@ Vergi Dairesi: Karşıyaka V.D. | VN: 7420957827<br/>
       {currentPage === "create-training" && <PageHost key="create-training" render={CreateTrainingPage} />}
       {currentPage === "create-team" && <CreateTeamPage />}
       {currentPage === "contact" && <ContactPage />}
+      {currentPage === "guide" && <GuidePage t={t} onNavigate={openFromGuide} />}
       {currentPage === "reset-password" && <ResetPasswordPage />}
       {currentPage === "not-found" && <PageHost key="not-found" render={NotFoundPage} />}
 

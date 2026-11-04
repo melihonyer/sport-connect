@@ -11,7 +11,7 @@
       },
       {
         "q": "Wie finde ich Sportevents in meiner Nähe?",
-        "a": "Sobald du den Standortzugriff erlaubst, zeigt Muuvlink öffentliche Events im Umkreis von 10, 25, 50 oder 100 Kilometern auf einer Karte und als Liste. Du kannst nach Sportart, Datum und Schwierigkeitsgrad filtern. Vor der Teilnahme kannst du den Veranstalter im Kommentarbereich der Eventseite nach Uhrzeit und Niveau fragen."
+        "a": "Sobald du den Standortzugriff erlaubst, zeigt Muuvlink öffentliche Events im Umkreis von 10, 25, 50 oder 100 Kilometern auf einer Karte und als Liste. Du kannst nach Sportart, Datum und Schwierigkeitsgrad filtern. Nach der Teilnahme kannst du im Kommentarbereich der Eventseite dem Veranstalter und den anderen Teilnehmenden Fragen stellen."
       },
       {
         "q": "Wie gründe ich ein Team?",
@@ -37,7 +37,7 @@
       },
       {
         "q": "Πώς βρίσκω αθλητικές εκδηλώσεις κοντά μου;",
-        "a": "Μόλις επιτρέψεις την πρόσβαση στην τοποθεσία, το Muuvlink δείχνει τις δημόσιες εκδηλώσεις σε ακτίνα 10, 25, 50 ή 100 χιλιομέτρων, σε χάρτη και σε λίστα. Μπορείς να φιλτράρεις ανά άθλημα, ημερομηνία και επίπεδο δυσκολίας. Πριν δηλώσεις συμμετοχή, μπορείς να ρωτήσεις τον διοργανωτή για την ώρα ή το επίπεδο στα σχόλια της σελίδας της εκδήλωσης."
+        "a": "Μόλις επιτρέψεις την πρόσβαση στην τοποθεσία, το Muuvlink δείχνει τις δημόσιες εκδηλώσεις σε ακτίνα 10, 25, 50 ή 100 χιλιομέτρων, σε χάρτη και σε λίστα. Μπορείς να φιλτράρεις ανά άθλημα, ημερομηνία και επίπεδο δυσκολίας. Μόλις δηλώσεις συμμετοχή, μπορείς να κάνεις ερωτήσεις στον διοργανωτή και στους άλλους συμμετέχοντες στα σχόλια της σελίδας της εκδήλωσης."
       },
       {
         "q": "Πώς φτιάχνω ομάδα;",
@@ -63,7 +63,7 @@
       },
       {
         "q": "How do I find sports events near me?",
-        "a": "Once you grant location access, Muuvlink lists public events within a 10, 25, 50 or 100 kilometre radius on a map and as a list. You can filter by sport, date and difficulty level. Before joining, the comment area on the event page lets you ask the organiser about the time or the level."
+        "a": "Once you grant location access, Muuvlink lists public events within a 10, 25, 50 or 100 kilometre radius on a map and as a list. You can filter by sport, date and difficulty level. Once you've joined, the comment area on the event page lets you ask the organiser and other participants questions."
       },
       {
         "q": "How do I start a team?",
@@ -89,7 +89,7 @@
       },
       {
         "q": "¿Cómo encuentro eventos deportivos cerca de mí?",
-        "a": "Cuando das acceso a tu ubicación, Muuvlink muestra en un mapa y en una lista los eventos públicos en un radio de 10, 25, 50 o 100 kilómetros. Puedes filtrar por deporte, fecha y nivel de dificultad. Antes de apuntarte, puedes preguntar al organizador por la hora o el nivel en los comentarios de la página del evento."
+        "a": "Cuando das acceso a tu ubicación, Muuvlink muestra en un mapa y en una lista los eventos públicos en un radio de 10, 25, 50 o 100 kilómetros. Puedes filtrar por deporte, fecha y nivel de dificultad. Después de apuntarte, puedes preguntar al organizador y al resto de participantes en los comentarios de la página del evento."
       },
       {
         "q": "¿Cómo creo un equipo?",
@@ -115,7 +115,7 @@
       },
       {
         "q": "Comment trouver des événements sportifs près de chez moi ?",
-        "a": "Dès que tu autorises la localisation, Muuvlink affiche sur une carte et dans une liste les événements publics dans un rayon de 10, 25, 50 ou 100 kilomètres. Tu peux filtrer par sport, date et niveau de difficulté. Avant de t'inscrire, tu peux poser tes questions à l'organisateur sur l'horaire ou le niveau dans les commentaires de la page de l'événement."
+        "a": "Dès que tu autorises la localisation, Muuvlink affiche sur une carte et dans une liste les événements publics dans un rayon de 10, 25, 50 ou 100 kilomètres. Tu peux filtrer par sport, date et niveau de difficulté. Après ton inscription, tu peux poser tes questions à l'organisateur et aux autres participants dans les commentaires de la page de l'événement."
       },
       {
         "q": "Comment créer une équipe ?",
@@ -141,7 +141,7 @@
       },
       {
         "q": "Come trovo eventi sportivi vicino a me?",
-        "a": "Quando consenti l'accesso alla posizione, Muuvlink mostra su una mappa e in un elenco gli eventi pubblici entro 10, 25, 50 o 100 chilometri. Puoi filtrare per sport, data e livello di difficoltà. Prima di iscriverti puoi chiedere all'organizzatore dell'orario o del livello nei commenti della pagina dell'evento."
+        "a": "Quando consenti l'accesso alla posizione, Muuvlink mostra su una mappa e in un elenco gli eventi pubblici entro 10, 25, 50 o 100 chilometri. Puoi filtrare per sport, data e livello di difficoltà. Dopo l'iscrizione puoi fare domande all'organizzatore e agli altri partecipanti nei commenti della pagina dell'evento."
       },
       {
         "q": "Come creo una squadra?",
@@ -167,7 +167,7 @@
       },
       {
         "q": "Yakınımdaki spor etkinliklerini nasıl bulurum?",
-        "a": "Konum izni verdiğinde Muuvlink 10, 25, 50 veya 100 kilometre yarıçapındaki herkese açık etkinlikleri harita ve liste olarak gösterir. Spor dalına, tarihe ve zorluk seviyesine göre süzebilirsin. Katılmadan önce etkinlik sayfasındaki yorum alanından düzenleyene soru sorabilir, saat ve seviye konusunda anlaşabilirsin."
+        "a": "Konum izni verdiğinde Muuvlink 10, 25, 50 veya 100 kilometre yarıçapındaki herkese açık etkinlikleri harita ve liste olarak gösterir. Spor dalına, tarihe ve zorluk seviyesine göre süzebilirsin. Katıldıktan sonra etkinlik sayfasındaki yorum alanından düzenleyene ve diğer katılanlara soru sorabilirsin."
       },
       {
         "q": "Takım nasıl kurulur?",
@@ -197,7 +197,7 @@
       "eventsTitle": "Kommende Sportevents — Muuvlink",
       "eventsDesc": "{n} kommende öffentliche Sportevents auf Muuvlink: Fußball, Basketball, Laufen, Tennis, Schwimmen und mehr, mit Datum, Ort und Teilnehmerzahl.",
       "teamsH1": "Sportteams",
-      "teamsLead": "Auf Muuvlink gibt es {n} öffentliche Sportteams. Öffentlichen Teams kannst du eine Beitrittsanfrage senden; privaten Teams tritt man nur per Einladung bei, sie erscheinen hier nicht.",
+      "teamsLead": "Auf Muuvlink gibt es {n} öffentliche Sportteams. Öffentlichen Teams trittst du mit „Beitreten“ sofort bei; privaten Teams tritt man nur per Einladung bei, sie erscheinen hier nicht.",
       "teamsSub": "Ein eigenes Team zu gründen ist kostenlos: Name, Sportart, Ort und Sichtbarkeit wählen. Du kannst eine zweite verwaltende Person hinzufügen und allen Mitgliedern gleichzeitig ein Event ankündigen.",
       "teamsEmpty": "Derzeit gibt es keine öffentlichen Teams. Neue Teams erscheinen hier, sobald sie gegründet werden.",
       "teamsTitle": "Sportteams — Muuvlink",
@@ -209,7 +209,8 @@
       "contactTopics": "Worüber du uns schreiben kannst",
       "contactTitle": "Kontakt — Muuvlink",
       "contactDesc": "Kontaktiere Muuvlink: Mitgliedschaft, Teamgründung, Eventfragen, technische Probleme, Zusammenarbeit und Feedback.",
-      "faqTitle": "Häufige Fragen"
+      "faqTitle": "Häufige Fragen",
+      "navGuide": "So funktioniert's"
     },
     "el": {
       "homeH1": "Muuvlink — βρες παρέα για άθληση, φτιάξε ομάδα, πάρε μέρος σε εκδηλώσεις",
@@ -224,7 +225,7 @@
       "eventsTitle": "Προσεχείς αθλητικές εκδηλώσεις — Muuvlink",
       "eventsDesc": "{n} προσεχείς δημόσιες αθλητικές εκδηλώσεις στο Muuvlink: ποδόσφαιρο, μπάσκετ, τρέξιμο, τένις, κολύμβηση και άλλα, με ημερομηνία, τοποθεσία και χωρητικότητα.",
       "teamsH1": "Αθλητικές ομάδες",
-      "teamsLead": "Στο Muuvlink υπάρχουν {n} δημόσιες αθλητικές ομάδες. Σε μια δημόσια ομάδα μπορείς να στείλεις αίτημα συμμετοχής· στις ιδιωτικές ομάδες μπαίνει κανείς μόνο με πρόσκληση και δεν εμφανίζονται σε αυτή τη λίστα.",
+      "teamsLead": "Στο Muuvlink υπάρχουν {n} δημόσιες αθλητικές ομάδες. Σε μια δημόσια ομάδα μπαίνεις αμέσως με το κουμπί «Γίνε μέλος»· στις ιδιωτικές ομάδες μπαίνει κανείς μόνο με πρόσκληση και δεν εμφανίζονται σε αυτή τη λίστα.",
       "teamsSub": "Η δημιουργία δικής σου ομάδας είναι δωρεάν: διαλέγεις όνομα, άθλημα, τοποθεσία και ορατότητα. Μπορείς να προσθέσεις δεύτερο διαχειριστή και να ανακοινώσεις μια εκδήλωση σε όλα τα μέλη με μία κίνηση.",
       "teamsEmpty": "Αυτή τη στιγμή δεν υπάρχουν δημόσιες ομάδες. Οι νέες ομάδες εμφανίζονται σε αυτή τη σελίδα μόλις δημιουργηθούν.",
       "teamsTitle": "Αθλητικές ομάδες — Muuvlink",
@@ -236,7 +237,8 @@
       "contactTopics": "Για ποια θέματα μπορείς να μας γράψεις",
       "contactTitle": "Επικοινωνία — Muuvlink",
       "contactDesc": "Επικοινώνησε με το Muuvlink: λογαριασμός, δημιουργία ομάδας, ερωτήσεις για εκδηλώσεις, τεχνικά προβλήματα, συνεργασίες και σχόλια.",
-      "faqTitle": "Συχνές ερωτήσεις"
+      "faqTitle": "Συχνές ερωτήσεις",
+      "navGuide": "Πώς λειτουργεί"
     },
     "en": {
       "homeH1": "Muuvlink — find a training partner, start a team, join an event",
@@ -251,7 +253,7 @@
       "eventsTitle": "Upcoming Sports Events — Muuvlink",
       "eventsDesc": "{n} upcoming public sports events on Muuvlink: football, basketball, running, tennis, swimming and more, with date, location and capacity.",
       "teamsH1": "Sports teams",
-      "teamsLead": "There are {n} public sports teams on Muuvlink. You can request to join a public team; private teams are invitation-only and do not appear in this list.",
+      "teamsLead": "There are {n} public sports teams on Muuvlink. You join a public team straight away with the Join button; private teams are invitation-only and do not appear in this list.",
       "teamsSub": "Starting your own team is free: pick a name, a sport, a location and the visibility. You can add a second manager and announce an event to all members at once.",
       "teamsEmpty": "There are no public teams right now. New teams appear on this page as they are created.",
       "teamsTitle": "Sports Teams — Muuvlink",
@@ -263,7 +265,8 @@
       "contactTopics": "What you can write to us about",
       "contactTitle": "Contact — Muuvlink",
       "contactDesc": "Get in touch with Muuvlink: membership, starting a team, event questions, technical issues, collaboration and feedback.",
-      "faqTitle": "Frequently asked questions"
+      "faqTitle": "Frequently asked questions",
+      "navGuide": "How it works"
     },
     "es": {
       "homeH1": "Muuvlink — encuentra compañeros para hacer deporte, crea un equipo, apúntate a eventos",
@@ -278,7 +281,7 @@
       "eventsTitle": "Próximos eventos deportivos — Muuvlink",
       "eventsDesc": "{n} próximos eventos deportivos públicos en Muuvlink: fútbol, baloncesto, running, tenis, natación y más, con fecha, lugar y plazas.",
       "teamsH1": "Equipos deportivos",
-      "teamsLead": "En Muuvlink hay {n} equipos deportivos públicos. Puedes pedir unirte a un equipo público; a los privados solo se entra por invitación y no aparecen en esta lista.",
+      "teamsLead": "En Muuvlink hay {n} equipos deportivos públicos. A un equipo público te unes al momento con el botón “Unirme”; a los privados solo se entra por invitación y no aparecen en esta lista.",
       "teamsSub": "Crear tu propio equipo es gratis: eliges un nombre, un deporte, una ubicación y la visibilidad. Puedes añadir un segundo administrador y anunciar un evento a todos los miembros de una vez.",
       "teamsEmpty": "Ahora mismo no hay equipos públicos. Los nuevos equipos aparecen en esta página en cuanto se crean.",
       "teamsTitle": "Equipos deportivos — Muuvlink",
@@ -290,7 +293,8 @@
       "contactTopics": "Sobre qué puedes escribirnos",
       "contactTitle": "Contacto — Muuvlink",
       "contactDesc": "Contacta con Muuvlink: cuenta, crear un equipo, preguntas sobre eventos, problemas técnicos, colaboraciones y sugerencias.",
-      "faqTitle": "Preguntas frecuentes"
+      "faqTitle": "Preguntas frecuentes",
+      "navGuide": "Cómo funciona"
     },
     "fr": {
       "homeH1": "Muuvlink — trouve des partenaires de sport, crée une équipe, participe à des événements",
@@ -305,7 +309,7 @@
       "eventsTitle": "Événements sportifs à venir — Muuvlink",
       "eventsDesc": "{n} événements sportifs publics à venir sur Muuvlink : football, basket, course à pied, tennis, natation et plus, avec date, lieu et nombre de places.",
       "teamsH1": "Équipes sportives",
-      "teamsLead": "Muuvlink compte {n} équipes sportives publiques. Tu peux demander à rejoindre une équipe publique ; les équipes privées se rejoignent uniquement sur invitation et n'apparaissent pas dans cette liste.",
+      "teamsLead": "Muuvlink compte {n} équipes sportives publiques. Tu rejoins une équipe publique tout de suite avec le bouton « Rejoindre » ; les équipes privées se rejoignent uniquement sur invitation et n'apparaissent pas dans cette liste.",
       "teamsSub": "Créer ta propre équipe est gratuit : tu choisis un nom, un sport, un lieu et la visibilité. Tu peux ajouter un second administrateur et annoncer un événement à tous les membres en une fois.",
       "teamsEmpty": "Aucune équipe publique pour le moment. Les nouvelles équipes apparaissent sur cette page dès leur création.",
       "teamsTitle": "Équipes sportives — Muuvlink",
@@ -317,7 +321,8 @@
       "contactTopics": "Pour quels sujets nous écrire",
       "contactTitle": "Contact — Muuvlink",
       "contactDesc": "Contacte Muuvlink : compte, création d'équipe, questions sur les événements, problèmes techniques, partenariats et suggestions.",
-      "faqTitle": "Questions fréquentes"
+      "faqTitle": "Questions fréquentes",
+      "navGuide": "Comment ça marche"
     },
     "it": {
       "homeH1": "Muuvlink — trova compagni per fare sport, crea una squadra, partecipa agli eventi",
@@ -332,7 +337,7 @@
       "eventsTitle": "Prossimi eventi sportivi — Muuvlink",
       "eventsDesc": "{n} prossimi eventi sportivi pubblici su Muuvlink: calcio, basket, corsa, tennis, nuoto e altro, con data, luogo e posti.",
       "teamsH1": "Squadre sportive",
-      "teamsLead": "Su Muuvlink ci sono {n} squadre sportive pubbliche. Puoi chiedere di entrare in una squadra pubblica; nelle squadre private si entra solo su invito e non compaiono in questo elenco.",
+      "teamsLead": "Su Muuvlink ci sono {n} squadre sportive pubbliche. In una squadra pubblica entri subito con il pulsante “Unisciti”; nelle squadre private si entra solo su invito e non compaiono in questo elenco.",
       "teamsSub": "Creare la tua squadra è gratis: scegli un nome, uno sport, un luogo e la visibilità. Puoi aggiungere un secondo amministratore e annunciare un evento a tutti i membri in un colpo solo.",
       "teamsEmpty": "Al momento non ci sono squadre pubbliche. Le nuove squadre compaiono in questa pagina appena vengono create.",
       "teamsTitle": "Squadre sportive — Muuvlink",
@@ -344,7 +349,8 @@
       "contactTopics": "Per cosa puoi scriverci",
       "contactTitle": "Contatti — Muuvlink",
       "contactDesc": "Contatta Muuvlink: account, creazione di una squadra, domande sugli eventi, problemi tecnici, collaborazioni e suggerimenti.",
-      "faqTitle": "Domande frequenti"
+      "faqTitle": "Domande frequenti",
+      "navGuide": "Come funziona"
     },
     "tr": {
       "homeH1": "Muuvlink — spor arkadaşı bul, takım kur, etkinliğe katıl",
@@ -359,7 +365,7 @@
       "eventsTitle": "Yaklaşan Spor Etkinlikleri — Muuvlink",
       "eventsDesc": "Muuvlink'te herkese açık {n} yaklaşan spor etkinliği: futbol, basketbol, koşu, tenis, yüzme ve daha fazlası. Tarih, yer ve kontenjan bilgisiyle.",
       "teamsH1": "Spor takımları",
-      "teamsLead": "Muuvlink'te herkese açık {n} spor takımı var. Herkese açık takımlara katılım isteği gönderilebilir; özel takımlara yalnız davetle katılınır ve bu listede yer almazlar.",
+      "teamsLead": "Muuvlink'te herkese açık {n} spor takımı var. Herkese açık takımlara Katıl düğmesiyle hemen katılınır; özel takımlara yalnız davetle katılınır ve bu listede yer almazlar.",
       "teamsSub": "Kendi takımını kurmak ücretsizdir: isim, spor dalı, konum ve görünürlük seçilir. Takımına ikinci bir yönetici ekleyebilir, üyelerine tek seferde etkinlik duyurusu yapabilirsin.",
       "teamsEmpty": "Şu anda herkese açık takım yok. Yeni takımlar kurulduğunda bu sayfada görünür.",
       "teamsTitle": "Spor Takımları — Muuvlink",
@@ -371,7 +377,8 @@
       "contactTopics": "Hangi konularda yazabilirsiniz",
       "contactTitle": "İletişim — Muuvlink",
       "contactDesc": "Muuvlink ile iletişime geçin: üyelik, takım kurma, etkinlik soruları, teknik sorun, iş birliği ve geri bildirim.",
-      "faqTitle": "Sık sorulan sorular"
+      "faqTitle": "Sık sorulan sorular",
+      "navGuide": "Nasıl kullanılır?"
     }
   },
   "sports": {
@@ -528,6 +535,561 @@
       "Yürüyüş": "Yürüyüş",
       "Yüzme": "Yüzme",
       "Diğer": "Diğer"
+    }
+  },
+  "guide": {
+    "de": {
+      "nav": "So funktioniert's",
+      "title": "So funktioniert Muuvlink",
+      "metaTitle": "So funktioniert Muuvlink: Anleitung Schritt für Schritt",
+      "lead": "Auf Muuvlink Sportevents zu finden, mitzumachen, ein Team zu gründen und Events anzulegen ist kostenlos. Du nutzt es im Web unter muuvlink.app oder auf dem Handy mit der App für iOS und Android. Die folgenden Anleitungen erklären die sechs häufigsten Aufgaben Schritt für Schritt.",
+      "guides": [
+        {
+          "title": "Sportevents in deiner Nähe finden",
+          "sum": "Mit Standortzugriff zeigt Muuvlink öffentliche Events im Umkreis von 10, 25, 50 oder 100 km auf einer Karte und als Liste. Zum Ansehen der Events brauchst du kein Konto.",
+          "steps": [
+            "Öffne die Seite Events oder geh auf der Startseite zum Bereich mit Events in deiner Nähe.",
+            "Wähle die Entfernung (10, 25, 50 oder 100 km) und erlaube den Standortzugriff.",
+            "Filtere die Liste nach Sportart und sortiere „Nach Datum“ oder „Nach Entfernung“.",
+            "Mit „Auf Karte anzeigen“ siehst du die Events auf der Karte; beim Hineinzoomen teilen sich die Gruppen auf.",
+            "Tippst du auf ein Event, siehst du Datum, Uhrzeit, Ort, Teilnehmerzahl und, falls vorhanden, die Route."
+          ],
+          "note": null
+        },
+        {
+          "title": "An einem Event teilnehmen",
+          "sum": "Um an einem Event teilzunehmen, drückst du einfach auf „Mitmachen“; eine Freigabe ist nicht nötig. Jedes Event hat eine begrenzte Teilnehmerzahl, und wenn sie erreicht ist, schließt die Anmeldung.",
+          "steps": [
+            "Melde dich an oder registriere dich kostenlos.",
+            "Drück auf der Eventseite auf „Mitmachen“.",
+            "Das Event landet im Kalender in deinem Profil, und kurz vorher bekommst du eine Erinnerung.",
+            "Nach der Teilnahme öffnet sich der Kommentarbereich; dort kannst du dem Veranstalter und den anderen Teilnehmenden Fragen stellen.",
+            "Wenn du nicht kommen kannst, trag dich auf derselben Seite aus; dein Platz wird für andere frei."
+          ],
+          "note": "Bei Veranstaltungen mit dem Abzeichen „Kostenpflichtig“, etwa Marathons und Turnieren, meldest du dich auf der Website des Veranstalters an. Muuvlink erhält keinen Anteil an diesen Gebühren."
+        },
+        {
+          "title": "Trainingspartner finden",
+          "sum": "Auf Muuvlink findest du Trainingspartner auf drei Wegen: an einem Event in deiner Nähe teilnehmen, einem Team deiner Sportart beitreten oder selbst ein Event anlegen und Leute einladen.",
+          "steps": [
+            "Schau dir Events in deiner Nähe an und mach bei einem mit; so lernst du die Leute kennen, die zur selben Zeit am selben Ort sind.",
+            "Such auf der Seite Teams nach Teams, die zu deiner Sportart und Stadt passen. Öffentlichen Teams trittst du mit „Beitreten“ sofort bei; privaten Teams nur per Einladung.",
+            "Bist du in einem Team, bekommst du bei jedem neuen Event des Teams eine Benachrichtigung.",
+            "Ist nichts Passendes dabei, leg selbst ein Event an und teile den Link (siehe unten)."
+          ],
+          "note": null
+        },
+        {
+          "title": "Ein eigenes Team gründen",
+          "sum": "Ein Team auf Muuvlink zu gründen ist kostenlos und dauert eine Minute. Öffentliche Teams kann jeder finden und ihnen beitreten; privaten Teams treten nur die Leute bei, die du einlädst.",
+          "steps": [
+            "Melde dich an und drück auf der Seite Teams auf „Team gründen“.",
+            "Gib Name, Sportart und Stadt des Teams ein; wenn du willst, ergänze eine kurze Beschreibung und ein Logo.",
+            "Wähle, ob das Team öffentlich oder privat ist.",
+            "Hol die ersten Mitglieder dazu, indem du den Link der Teamseite teilst oder Einladungen per E-Mail schickst.",
+            "Um das Team gemeinsam zu führen, kannst du ein Mitglied zum Redakteur, Trainer oder Kapitän machen."
+          ],
+          "note": null
+        },
+        {
+          "title": "Ein Event anlegen",
+          "sum": "Du kannst ein Event für ein Team anlegen, das du verwaltest, oder als Einzelperson. Legst du es für ein Team an, bekommen alle Mitglieder eine Benachrichtigung.",
+          "steps": [
+            "Drück auf „Event erstellen“ und wähle, für welches Team das Event ist (oder „Einzeln“).",
+            "Gib Titel, Sportart, Datum und Uhrzeit ein.",
+            "Tipp den Ort ein und wähle ihn aus den Vorschlägen. Ein aus der Liste gewählter Ort erscheint auf der Karte und in der Umkreissuche.",
+            "Leg die Teilnehmerzahl fest und schreib, wenn du willst, eine Beschreibung.",
+            "Für Radfahren, Laufen oder Schwimmen kannst du eine GPX-Route hinzufügen; sie wird auf der Karte gezeichnet, damit alle, die unterwegs dazustoßen, sehen, wo sie entlangführt.",
+            "Veröffentlichen. Das Event erscheint gleichzeitig in der Eventliste und auf der Karte."
+          ],
+          "note": "Um ein Event für ein Team anzulegen, musst du dort Teamleiter, Redakteur, Trainer oder Kapitän sein."
+        },
+        {
+          "title": "Dein Event oder Team teilen",
+          "sum": "Jedes Event und jedes öffentliche Team hat einen eigenen Link. Wer ihn öffnet, landet direkt auf dieser Seite: im Browser oder, falls installiert, in der App.",
+          "steps": [
+            "Drück auf der Event- oder Teamseite auf „Teilen“ und schick den Link per WhatsApp, Telegram oder einer anderen App.",
+            "Mit dem Button „Story“ erstellst du ein fertiges Bild für deine Instagram-Story. Der Link wird gleichzeitig kopiert, sodass du ihn als Link-Sticker einfügen kannst.",
+            "Mit „Einladen“ schickst du eine Einladung an eine E-Mail-Adresse. Wer ein Muuvlink-Konto hat, bekommt zusätzlich eine Benachrichtigung in der App.",
+            "Links zu privaten Teams und privaten Events öffnen sich nur für Mitglieder; dazu lädst du per E-Mail ein."
+          ],
+          "note": null
+        }
+      ]
+    },
+    "el": {
+      "nav": "Πώς λειτουργεί",
+      "title": "Πώς χρησιμοποιείται το Muuvlink",
+      "metaTitle": "Πώς χρησιμοποιείται το Muuvlink: οδηγός βήμα βήμα",
+      "lead": "Στο Muuvlink η αναζήτηση αθλητικών εκδηλώσεων, η συμμετοχή, η δημιουργία ομάδας και η δημιουργία εκδήλωσης είναι δωρεάν. Το χρησιμοποιείς στο web στη διεύθυνση muuvlink.app ή στο κινητό με την εφαρμογή για iOS και Android. Οι παρακάτω οδηγοί εξηγούν βήμα βήμα τις έξι πιο συχνές ενέργειες.",
+      "guides": [
+        {
+          "title": "Βρες αθλητικές εκδηλώσεις κοντά σου",
+          "sum": "Όταν επιτρέψεις την πρόσβαση στην τοποθεσία, το Muuvlink δείχνει τις δημόσιες εκδηλώσεις σε ακτίνα 10, 25, 50 ή 100 χλμ. σε χάρτη και σε λίστα. Για να δεις τις εκδηλώσεις δεν χρειάζεσαι λογαριασμό.",
+          "steps": [
+            "Άνοιξε τη σελίδα Εκδηλώσεις ή πήγαινε στην ενότητα με τις εκδηλώσεις κοντά σου στην αρχική σελίδα.",
+            "Διάλεξε απόσταση (10, 25, 50 ή 100 χλμ.) και επίτρεψε την πρόσβαση στην τοποθεσία.",
+            "Φίλτραρε τη λίστα ανά άθλημα και ταξινόμησέ τη «Κατά ημερομηνία» ή «Κατά απόσταση».",
+            "Με το «Προβολή στον χάρτη» βλέπεις τις εκδηλώσεις στον χάρτη· όσο μεγεθύνεις, οι ομάδες σημείων χωρίζονται.",
+            "Πατώντας μια εκδήλωση βλέπεις ημερομηνία, ώρα, τοποθεσία, θέσεις και, αν υπάρχει, τη διαδρομή."
+          ],
+          "note": null
+        },
+        {
+          "title": "Δήλωσε συμμετοχή σε εκδήλωση",
+          "sum": "Για να συμμετάσχεις σε μια εκδήλωση αρκεί να πατήσεις «Συμμετοχή»· δεν χρειάζεται έγκριση. Κάθε εκδήλωση έχει περιορισμένες θέσεις και η συμμετοχή κλείνει όταν γεμίσουν.",
+          "steps": [
+            "Συνδέσου ή κάνε δωρεάν εγγραφή.",
+            "Πάτησε «Συμμετοχή» στη σελίδα της εκδήλωσης.",
+            "Η εκδήλωση μπαίνει στο ημερολόγιο του προφίλ σου και, όταν πλησιάζει, λαμβάνεις ειδοποίηση υπενθύμισης.",
+            "Μόλις δηλώσεις συμμετοχή ανοίγουν τα σχόλια· εκεί μπορείς να κάνεις ερωτήσεις στον διοργανωτή και στους άλλους συμμετέχοντες.",
+            "Αν δεν μπορείς να έρθεις, αποχώρησε από την ίδια σελίδα και η θέση σου ελευθερώνεται για κάποιον άλλο."
+          ],
+          "note": "Για διοργανώσεις με το σήμα «Με πληρωμή», όπως μαραθώνιοι και τουρνουά, η εγγραφή γίνεται στον ιστότοπο του διοργανωτή. Το Muuvlink δεν παίρνει μερίδιο από αυτά τα τέλη."
+        },
+        {
+          "title": "Βρες παρέα για προπόνηση",
+          "sum": "Στο Muuvlink βρίσκεις παρέα για προπόνηση με τρεις τρόπους: συμμετέχεις σε μια εκδήλωση κοντά σου, μπαίνεις σε μια ομάδα του αθλήματός σου ή δημιουργείς δική σου εκδήλωση και καλείς κόσμο.",
+          "steps": [
+            "Δες τις εκδηλώσεις κοντά σου και δήλωσε συμμετοχή σε μία· θα γνωρίσεις όσους θα είναι την ίδια ώρα στο ίδιο μέρος.",
+            "Στη σελίδα Ομάδες βρες ομάδες που ταιριάζουν στο άθλημα και στην πόλη σου. Σε μια δημόσια ομάδα μπαίνεις αμέσως με «Γίνε μέλος»· στις ιδιωτικές ομάδες μπαίνεις μόνο με πρόσκληση.",
+            "Όταν γίνεις μέλος μιας ομάδας, λαμβάνεις ειδοποίηση για κάθε νέα εκδήλωσή της.",
+            "Αν δεν βρίσκεις κάτι που σου ταιριάζει, δημιούργησε εσύ μια εκδήλωση και μοιράσου τον σύνδεσμο (εξηγείται παρακάτω)."
+          ],
+          "note": null
+        },
+        {
+          "title": "Φτιάξε τη δική σου ομάδα",
+          "sum": "Η δημιουργία ομάδας στο Muuvlink είναι δωρεάν και παίρνει ένα λεπτό. Μια δημόσια ομάδα μπορεί να τη βρει και να μπει οποιοσδήποτε· σε μια ιδιωτική μπαίνουν μόνο όσοι προσκαλέσεις.",
+          "steps": [
+            "Συνδέσου και πάτησε «Φτιάξε ομάδα» στη σελίδα Ομάδες.",
+            "Γράψε το όνομα, το άθλημα και την πόλη της ομάδας· αν θέλεις, πρόσθεσε μια σύντομη περιγραφή και λογότυπο.",
+            "Διάλεξε αν η ομάδα θα είναι δημόσια ή ιδιωτική.",
+            "Κάλεσε τα πρώτα μέλη μοιράζοντας τον σύνδεσμο της σελίδας της ομάδας ή στέλνοντας προσκλήσεις με email.",
+            "Για να διαχειρίζεστε την ομάδα μαζί, μπορείς να ορίσεις ένα μέλος ως συντάκτη, προπονητή ή αρχηγό."
+          ],
+          "note": null
+        },
+        {
+          "title": "Δημιούργησε μια εκδήλωση",
+          "sum": "Μπορείς να δημιουργήσεις μια εκδήλωση για μια ομάδα που διαχειρίζεσαι ή ατομικά. Όταν τη δημιουργείς για μια ομάδα, όλα τα μέλη της λαμβάνουν ειδοποίηση.",
+          "steps": [
+            "Πάτησε «Νέα εκδήλωση» και διάλεξε σε ποια ομάδα θα δημοσιευτεί (ή «Ατομική»).",
+            "Συμπλήρωσε τίτλο, άθλημα, ημερομηνία και ώρα.",
+            "Γράψε την τοποθεσία και διάλεξέ τη από τις προτάσεις. Μια τοποθεσία που επιλέγεται από τη λίστα εμφανίζεται στον χάρτη και στην αναζήτηση κοντά σου.",
+            "Όρισε τον αριθμό θέσεων και, αν θέλεις, γράψε μια περιγραφή.",
+            "Για ποδήλατο, τρέξιμο ή κολύμβηση μπορείς να προσθέσεις διαδρομή GPX· σχεδιάζεται στον χάρτη, ώστε όσοι θα έρθουν στην πορεία να βλέπουν από πού περνά.",
+            "Δημοσίευσε. Η εκδήλωση εμφανίζεται ταυτόχρονα στη λίστα εκδηλώσεων και στον χάρτη."
+          ],
+          "note": "Για να δημιουργήσεις εκδήλωση για μια ομάδα, πρέπει να είσαι αρχηγός ομάδας, συντάκτης, προπονητής ή αρχηγός σε αυτήν."
+        },
+        {
+          "title": "Μοιράσου την εκδήλωση ή την ομάδα σου",
+          "sum": "Κάθε εκδήλωση και κάθε δημόσια ομάδα έχει τον δικό της σύνδεσμο. Όποιος τον ανοίξει φτάνει κατευθείαν σε εκείνη τη σελίδα, στον browser ή, αν την έχει, στην εφαρμογή.",
+          "steps": [
+            "Πάτησε «Κοινοποίηση» στη σελίδα της εκδήλωσης ή της ομάδας και στείλε τον σύνδεσμο μέσω WhatsApp, Telegram ή όποιας εφαρμογής θέλεις.",
+            "Με το κουμπί «Story» φτιάχνεις έτοιμη εικόνα για Instagram story. Ο σύνδεσμος αντιγράφεται ταυτόχρονα, ώστε να τον προσθέσεις ως αυτοκόλλητο συνδέσμου.",
+            "Με το «Πρόσκληση» στέλνεις πρόσκληση σε μια διεύθυνση email. Όσοι έχουν λογαριασμό στο Muuvlink λαμβάνουν και ειδοποίηση στην εφαρμογή.",
+            "Οι σύνδεσμοι ιδιωτικών ομάδων και ιδιωτικών εκδηλώσεων ανοίγουν μόνο για μέλη· σε αυτές προσκαλείς με email."
+          ],
+          "note": null
+        }
+      ]
+    },
+    "en": {
+      "nav": "How it works",
+      "title": "How to use Muuvlink",
+      "metaTitle": "How to use Muuvlink: a step-by-step guide",
+      "lead": "Finding a sports event, joining one, starting a team and creating an event on Muuvlink are all free. Use it on the web at muuvlink.app or on your phone with the iOS and Android app. The guides below walk you through the six most common tasks step by step.",
+      "guides": [
+        {
+          "title": "Find sports events near you",
+          "sum": "With location access, Muuvlink shows public events within 10, 25, 50 or 100 km on a map and as a list. You don't need an account to browse events.",
+          "steps": [
+            "Open the Events page or go to the Nearby section on the home page.",
+            "Pick a distance (10, 25, 50 or 100 km) and allow location access.",
+            "Filter the list by sport and sort it “By date” or “By distance”.",
+            "Use “Show on Map” to see events on the map; clusters split up as you zoom in.",
+            "Tap an event to see its date, time, place, capacity and route, if it has one."
+          ],
+          "note": null
+        },
+        {
+          "title": "Join an event",
+          "sum": "To join an event, just press Join; there is no approval step. Every event has a capacity, and joining closes once it is full.",
+          "steps": [
+            "Log in or sign up for free.",
+            "Press “Join” on the event page.",
+            "The event is added to the calendar on your profile, and you get a reminder notification as it gets close.",
+            "Once you've joined, the comments open up so you can ask the organiser and other participants questions.",
+            "If you can't make it, leave from the same page and your spot opens up for someone else."
+          ],
+          "note": "For organised events with a “Paid” badge, such as marathons and tournaments, registration happens on the organiser's own website. Muuvlink takes no share of these fees."
+        },
+        {
+          "title": "Find a training partner",
+          "sum": "There are three ways to find training partners on Muuvlink: join an event near you, join a team in your sport, or create your own event and invite people.",
+          "steps": [
+            "Browse events near you and join one; you'll meet the people who'll be at the same place at the same time.",
+            "On the Teams page, find teams that match your sport and city. You join a public team straight away with “Join”; private teams are invitation-only.",
+            "Once you're in a team, you get a notification for every new event it creates.",
+            "If nothing suits you, create an event yourself and share the link (explained below)."
+          ],
+          "note": null
+        },
+        {
+          "title": "Start your own team",
+          "sum": "Starting a team on Muuvlink is free and takes a minute. Anyone can find and join a public team; only the people you invite can join a private one.",
+          "steps": [
+            "Log in and press “Create Team” on the Teams page.",
+            "Enter the team's name, sport and city; add a short description and a logo if you like.",
+            "Choose whether the team is public or private.",
+            "Bring in your first members by sharing the link on the team page or sending email invitations.",
+            "To run the team together, you can make a member an editor, coach or captain."
+          ],
+          "note": null
+        },
+        {
+          "title": "Create an event",
+          "sum": "You can create an event for a team you manage or on your own. When you create one for a team, every member of the team gets a notification.",
+          "steps": [
+            "Press “Create Event” and choose which team the event is for (or “Individual”).",
+            "Enter the title, sport, date and time.",
+            "Type the location and pick it from the suggestions. A location picked from the list shows up on the map and in Nearby searches.",
+            "Set the capacity and add an optional description.",
+            "For cycling, running or swimming you can add a GPX route; it is drawn on the map so people joining along the way can see where it passes.",
+            "Publish. The event appears in the events list and on the map at the same time."
+          ],
+          "note": "To create an event for a team, you need to be its team leader, editor, coach or captain."
+        },
+        {
+          "title": "Share your event or team",
+          "sum": "Every event and every public team has its own link. Whoever opens it lands straight on that page, in the browser or, if they have it, in the app.",
+          "steps": [
+            "Press “Share” on the event or team page and send the link via WhatsApp, Telegram or any app you like.",
+            "Use the “Story” button to create a ready-made image for an Instagram story. The link is copied at the same time, so you can add it as a link sticker.",
+            "Use “Invite” to send an invitation to an email address. People with a Muuvlink account also get an in-app notification.",
+            "Links to private teams and private events only open for members; invite people to these by email."
+          ],
+          "note": null
+        }
+      ]
+    },
+    "es": {
+      "nav": "Cómo funciona",
+      "title": "Cómo usar Muuvlink",
+      "metaTitle": "Cómo usar Muuvlink: guía paso a paso",
+      "lead": "En Muuvlink, buscar eventos deportivos, apuntarte, crear un equipo y crear un evento es gratis. Puedes usarlo en la web en muuvlink.app o en el móvil con la app para iOS y Android. Estas guías explican paso a paso las seis cosas que más se hacen.",
+      "guides": [
+        {
+          "title": "Encontrar eventos deportivos cerca de ti",
+          "sum": "Cuando das acceso a tu ubicación, Muuvlink muestra en un mapa y en una lista los eventos públicos en un radio de 10, 25, 50 o 100 km. Para ver los eventos no necesitas una cuenta.",
+          "steps": [
+            "Abre la página Eventos o ve a la sección de eventos cerca de ti en la página de inicio.",
+            "Elige la distancia (10, 25, 50 o 100 km) y permite el acceso a tu ubicación.",
+            "Filtra la lista por deporte y ordénala “Por fecha” o “Por distancia”.",
+            "Con “Ver en el mapa” ves los eventos en el mapa; al acercar el zoom, los grupos se separan.",
+            "Al tocar un evento ves la fecha, la hora, el lugar, las plazas y, si la tiene, la ruta."
+          ],
+          "note": null
+        },
+        {
+          "title": "Apuntarte a un evento",
+          "sum": "Para apuntarte a un evento basta con pulsar “Apuntarme”; no hay que esperar aprobación. Cada evento tiene plazas limitadas y la inscripción se cierra cuando se llenan.",
+          "steps": [
+            "Inicia sesión o regístrate gratis.",
+            "Pulsa “Apuntarme” en la página del evento.",
+            "El evento se añade al calendario de tu perfil y, cuando se acerque, recibirás una notificación de recordatorio.",
+            "Después de apuntarte se abren los comentarios; ahí puedes preguntar al organizador y al resto de participantes.",
+            "Si no puedes ir, sal desde la misma página y tu plaza queda libre para otra persona."
+          ],
+          "note": "En las organizaciones con la etiqueta “De pago”, como maratones y torneos, la inscripción se hace en la web del organizador. Muuvlink no se queda con ninguna parte de esas cuotas."
+        },
+        {
+          "title": "Encontrar compañeros para entrenar",
+          "sum": "En Muuvlink hay tres formas de encontrar compañeros para entrenar: apuntarte a un evento cerca de ti, unirte a un equipo de tu deporte o crear tu propio evento e invitar a gente.",
+          "steps": [
+            "Mira los eventos cerca de ti y apúntate a uno; conocerás a quienes estarán a la misma hora en el mismo sitio.",
+            "En la página Equipos, busca equipos de tu deporte y de tu ciudad. A un equipo público te unes al momento con “Unirme”; a los privados solo se entra por invitación.",
+            "Cuando estás en un equipo, recibes una notificación por cada evento nuevo que crea.",
+            "Si no encuentras nada que te encaje, crea tú un evento y comparte el enlace (se explica más abajo)."
+          ],
+          "note": null
+        },
+        {
+          "title": "Crear tu propio equipo",
+          "sum": "Crear un equipo en Muuvlink es gratis y lleva un minuto. Cualquiera puede encontrar un equipo público y unirse; a uno privado solo entran las personas que invites.",
+          "steps": [
+            "Inicia sesión y pulsa “Crear equipo” en la página Equipos.",
+            "Escribe el nombre, el deporte y la ciudad del equipo; si quieres, añade una descripción breve y un logo.",
+            "Elige si el equipo será público o privado.",
+            "Invita a los primeros miembros compartiendo el enlace de la página del equipo o enviando invitaciones por email.",
+            "Para llevar el equipo entre varias personas, puedes dar a un miembro el rol de editor, entrenador o capitán."
+          ],
+          "note": null
+        },
+        {
+          "title": "Crear un evento",
+          "sum": "Puedes crear un evento para un equipo que gestionas o a título individual. Si lo creas para un equipo, todos sus miembros reciben una notificación.",
+          "steps": [
+            "Pulsa “Crear evento” y elige en qué equipo se publica (o “Individual”).",
+            "Escribe el título, el deporte, la fecha y la hora.",
+            "Escribe el lugar y elígelo de la lista de sugerencias. Un lugar elegido de la lista aparece en el mapa y en la búsqueda “Buscar cerca de mí”.",
+            "Fija las plazas y, si quieres, escribe una descripción.",
+            "Para ciclismo, carrera o natación puedes añadir una ruta GPX; se dibuja en el mapa para que quien se una por el camino vea por dónde pasa.",
+            "Publica. El evento aparece a la vez en la lista de eventos y en el mapa."
+          ],
+          "note": "Para crear un evento en nombre de un equipo tienes que tener en él el rol de líder del equipo, editor, entrenador o capitán."
+        },
+        {
+          "title": "Compartir tu evento o tu equipo",
+          "sum": "Cada evento y cada equipo público tiene su propio enlace. Quien lo abre llega directamente a esa página, en el navegador o, si la tiene, en la app.",
+          "steps": [
+            "Pulsa “Compartir” en la página del evento o del equipo y envía el enlace por WhatsApp, Telegram o la app que prefieras.",
+            "Con el botón “Historia” creas una imagen lista para una historia de Instagram. El enlace se copia a la vez, así puedes añadirlo como sticker de enlace.",
+            "Con “Invitar” envías una invitación a una dirección de email. Quien tiene cuenta en Muuvlink recibe también una notificación en la app.",
+            "Los enlaces de equipos privados y eventos privados solo se abren para miembros; a estos se invita por email."
+          ],
+          "note": null
+        }
+      ]
+    },
+    "fr": {
+      "nav": "Comment ça marche",
+      "title": "Comment utiliser Muuvlink",
+      "metaTitle": "Comment utiliser Muuvlink : le guide pas à pas",
+      "lead": "Sur Muuvlink, trouver un événement sportif, y participer, créer une équipe et créer un événement, c'est gratuit. Tu l'utilises sur le web à l'adresse muuvlink.app ou sur ton téléphone avec l'appli iOS et Android. Les guides ci-dessous expliquent pas à pas les six actions les plus courantes.",
+      "guides": [
+        {
+          "title": "Trouver des événements sportifs près de chez toi",
+          "sum": "Quand tu autorises la localisation, Muuvlink affiche sur une carte et dans une liste les événements publics dans un rayon de 10, 25, 50 ou 100 km. Pas besoin de compte pour consulter les événements.",
+          "steps": [
+            "Ouvre la page Événements ou va dans la section des événements autour de toi sur la page d'accueil.",
+            "Choisis la distance (10, 25, 50 ou 100 km) et autorise la localisation.",
+            "Filtre la liste par sport et trie-la « Par date » ou « Par distance ».",
+            "Avec « Voir sur la carte », tu vois les événements sur la carte ; les groupes se séparent quand tu zoomes.",
+            "En touchant un événement, tu vois la date, l'heure, le lieu, le nombre de places et, s'il y en a un, l'itinéraire."
+          ],
+          "note": null
+        },
+        {
+          "title": "Participer à un événement",
+          "sum": "Pour participer à un événement, il suffit d'appuyer sur « Participer » ; aucune validation n'est nécessaire. Chaque événement a un nombre de places limité et les inscriptions ferment quand il est complet.",
+          "steps": [
+            "Connecte-toi ou inscris-toi gratuitement.",
+            "Appuie sur « Participer » sur la page de l'événement.",
+            "L'événement s'ajoute au calendrier de ton profil et tu reçois une notification de rappel quand il approche.",
+            "Après ton inscription, les commentaires s'ouvrent : tu peux poser tes questions à l'organisateur et aux autres participants.",
+            "Si tu ne peux pas venir, retire-toi depuis la même page ; ta place se libère pour quelqu'un d'autre."
+          ],
+          "note": "Pour les événements organisés avec le badge « Payant », comme les marathons et les tournois, l'inscription se fait sur le site de l'organisateur. Muuvlink ne prend aucune part de ces frais."
+        },
+        {
+          "title": "Trouver des partenaires d'entraînement",
+          "sum": "Sur Muuvlink, il y a trois façons de trouver des partenaires d'entraînement : participer à un événement près de chez toi, rejoindre une équipe de ton sport, ou créer ton propre événement et inviter du monde.",
+          "steps": [
+            "Regarde les événements près de chez toi et inscris-toi à l'un d'eux ; tu rencontreras les personnes qui seront au même endroit à la même heure.",
+            "Sur la page Équipes, trouve les équipes de ton sport et de ta ville. Tu rejoins une équipe publique tout de suite avec « Rejoindre » ; les équipes privées se rejoignent uniquement sur invitation.",
+            "Une fois dans une équipe, tu reçois une notification pour chaque nouvel événement qu'elle crée.",
+            "Si rien ne te convient, crée toi-même un événement et partage le lien (voir plus bas)."
+          ],
+          "note": null
+        },
+        {
+          "title": "Créer ta propre équipe",
+          "sum": "Créer une équipe sur Muuvlink est gratuit et prend une minute. Tout le monde peut trouver et rejoindre une équipe publique ; seules les personnes que tu invites peuvent entrer dans une équipe privée.",
+          "steps": [
+            "Connecte-toi et appuie sur « Créer une équipe » sur la page Équipes.",
+            "Indique le nom, le sport et la ville de l'équipe ; si tu veux, ajoute une courte description et un logo.",
+            "Choisis si l'équipe est publique ou privée.",
+            "Fais venir les premiers membres en partageant le lien de la page de l'équipe ou en envoyant des invitations par e-mail.",
+            "Pour gérer l'équipe à plusieurs, tu peux donner à un membre le rôle d'éditeur, de coach ou de capitaine."
+          ],
+          "note": null
+        },
+        {
+          "title": "Créer un événement",
+          "sum": "Tu peux créer un événement pour une équipe que tu gères ou à titre individuel. Si tu le crées pour une équipe, tous ses membres reçoivent une notification.",
+          "steps": [
+            "Appuie sur « Créer un événement » et choisis dans quelle équipe il sera publié (ou « Individuel »).",
+            "Indique le titre, le sport, la date et l'heure.",
+            "Tape le lieu et choisis-le dans les suggestions. Un lieu choisi dans la liste apparaît sur la carte et dans la recherche « Chercher autour de moi ».",
+            "Fixe le nombre de places et ajoute une description si tu veux.",
+            "Pour le vélo, la course ou la natation, tu peux ajouter un itinéraire GPX ; il est tracé sur la carte pour que les personnes qui rejoignent en route voient par où il passe.",
+            "Publie. L'événement apparaît en même temps dans la liste des événements et sur la carte."
+          ],
+          "note": "Pour créer un événement au nom d'une équipe, tu dois y avoir le rôle de chef d'équipe, d'éditeur, de coach ou de capitaine."
+        },
+        {
+          "title": "Partager ton événement ou ton équipe",
+          "sum": "Chaque événement et chaque équipe publique a son propre lien. La personne qui l'ouvre arrive directement sur cette page, dans le navigateur ou, si elle l'a, dans l'appli.",
+          "steps": [
+            "Appuie sur « Partager » sur la page de l'événement ou de l'équipe et envoie le lien par WhatsApp, Telegram ou l'appli de ton choix.",
+            "Avec le bouton « Story », tu crées une image prête pour une story Instagram. Le lien est copié en même temps, tu peux l'ajouter comme sticker lien.",
+            "Avec « Inviter », tu envoies une invitation à une adresse e-mail. Les personnes qui ont un compte Muuvlink reçoivent aussi une notification dans l'appli.",
+            "Les liens des équipes privées et des événements privés ne s'ouvrent que pour les membres ; pour ceux-là, on invite par e-mail."
+          ],
+          "note": null
+        }
+      ]
+    },
+    "it": {
+      "nav": "Come funziona",
+      "title": "Come si usa Muuvlink",
+      "metaTitle": "Come si usa Muuvlink: guida passo passo",
+      "lead": "Su Muuvlink trovare eventi sportivi, partecipare, creare una squadra e creare un evento è gratis. Lo usi sul web all'indirizzo muuvlink.app o sul telefono con l'app per iOS e Android. Le guide qui sotto spiegano passo passo le sei cose che si fanno più spesso.",
+      "guides": [
+        {
+          "title": "Trovare eventi sportivi vicino a te",
+          "sum": "Quando consenti l'accesso alla posizione, Muuvlink mostra su una mappa e in un elenco gli eventi pubblici entro 10, 25, 50 o 100 km. Per guardare gli eventi non serve un account.",
+          "steps": [
+            "Apri la pagina Eventi o vai alla sezione con gli eventi vicino a te nella home.",
+            "Scegli la distanza (10, 25, 50 o 100 km) e consenti l'accesso alla posizione.",
+            "Filtra l'elenco per sport e ordinalo “Per data” o “Per distanza”.",
+            "Con “Vedi sulla mappa” vedi gli eventi sulla mappa; ingrandendo, i gruppi si separano.",
+            "Toccando un evento vedi data, ora, luogo, posti disponibili e, se c'è, il percorso."
+          ],
+          "note": null
+        },
+        {
+          "title": "Partecipare a un evento",
+          "sum": "Per partecipare a un evento basta premere “Partecipa”; non serve nessuna approvazione. Ogni evento ha un numero di posti e le iscrizioni si chiudono quando è pieno.",
+          "steps": [
+            "Accedi o registrati gratis.",
+            "Premi “Partecipa” nella pagina dell'evento.",
+            "L'evento si aggiunge al calendario del tuo profilo e, quando si avvicina, ricevi una notifica di promemoria.",
+            "Dopo l'iscrizione si aprono i commenti: puoi fare domande all'organizzatore e agli altri partecipanti.",
+            "Se non puoi venire, esci dalla stessa pagina e il tuo posto si libera per qualcun altro."
+          ],
+          "note": "Per le manifestazioni con il badge “A pagamento”, come maratone e tornei, l'iscrizione si fa sul sito dell'organizzatore. Muuvlink non trattiene nessuna parte di queste quote."
+        },
+        {
+          "title": "Trovare compagni di allenamento",
+          "sum": "Su Muuvlink ci sono tre modi per trovare compagni di allenamento: partecipare a un evento vicino a te, entrare in una squadra del tuo sport, oppure creare un tuo evento e invitare altre persone.",
+          "steps": [
+            "Guarda gli eventi vicino a te e partecipa a uno; conoscerai chi sarà nello stesso posto alla stessa ora.",
+            "Nella pagina Squadre trova le squadre del tuo sport e della tua città. In una squadra pubblica entri subito con “Unisciti”; in quelle private si entra solo su invito.",
+            "Quando sei in una squadra, ricevi una notifica per ogni nuovo evento che crea.",
+            "Se non trovi niente che faccia per te, crea tu un evento e condividi il link (lo spieghiamo più sotto)."
+          ],
+          "note": null
+        },
+        {
+          "title": "Creare la tua squadra",
+          "sum": "Creare una squadra su Muuvlink è gratis e richiede un minuto. Una squadra pubblica la può trovare chiunque ed entrarci; in una privata entrano solo le persone che inviti.",
+          "steps": [
+            "Accedi e premi “Crea squadra” nella pagina Squadre.",
+            "Scrivi nome, sport e città della squadra; se vuoi, aggiungi una breve descrizione e un logo.",
+            "Scegli se la squadra è pubblica o privata.",
+            "Chiama i primi membri condividendo il link della pagina della squadra o inviando inviti via email.",
+            "Per gestire la squadra insieme, puoi dare a un membro il ruolo di editor, allenatore o capitano."
+          ],
+          "note": null
+        },
+        {
+          "title": "Creare un evento",
+          "sum": "Puoi creare un evento per una squadra che gestisci oppure come evento individuale. Se lo crei per una squadra, tutti i membri ricevono una notifica.",
+          "steps": [
+            "Premi “Crea evento” e scegli in quale squadra pubblicarlo (oppure “Individuale”).",
+            "Inserisci titolo, sport, data e ora.",
+            "Scrivi il luogo e sceglilo dai suggerimenti. Un luogo scelto dall'elenco compare sulla mappa e nella ricerca “Cerca vicino a me”.",
+            "Imposta il numero di posti e, se vuoi, scrivi una descrizione.",
+            "Per ciclismo, corsa o nuoto puoi aggiungere un percorso GPX; viene disegnato sulla mappa così chi si unisce lungo la strada vede dove passa.",
+            "Pubblica. L'evento compare subito nell'elenco degli eventi e sulla mappa."
+          ],
+          "note": "Per creare un evento a nome di una squadra devi avere in essa il ruolo di capo squadra, editor, allenatore o capitano."
+        },
+        {
+          "title": "Condividere il tuo evento o la tua squadra",
+          "sum": "Ogni evento e ogni squadra pubblica ha il suo link. Chi lo apre arriva direttamente a quella pagina, nel browser oppure, se ce l'ha, nell'app.",
+          "steps": [
+            "Premi “Condividi” nella pagina dell'evento o della squadra e invia il link su WhatsApp, Telegram o l'app che preferisci.",
+            "Con il pulsante “Storia” crei un'immagine pronta per una storia di Instagram. Il link viene copiato allo stesso tempo, così puoi aggiungerlo come sticker link.",
+            "Con “Invita” mandi un invito a un indirizzo email. Chi ha un account Muuvlink riceve anche una notifica nell'app.",
+            "I link di squadre private ed eventi privati si aprono solo per i membri; per questi si invita via email."
+          ],
+          "note": null
+        }
+      ]
+    },
+    "tr": {
+      "nav": "Nasıl kullanılır?",
+      "title": "Muuvlink nasıl kullanılır?",
+      "metaTitle": "Muuvlink nasıl kullanılır? Adım adım rehber",
+      "lead": "Muuvlink'te spor etkinliği bulmak, etkinliğe katılmak, takım kurmak ve etkinlik açmak ücretsizdir. Web'de muuvlink.app adresinden, telefonda iOS ve Android uygulamasından kullanılır. Aşağıdaki rehberler en sık yapılan altı işi adım adım anlatıyor.",
+      "guides": [
+        {
+          "title": "Yakınındaki spor etkinliğini bulmak",
+          "sum": "Muuvlink, konum izni verdiğinde 10, 25, 50 veya 100 km içindeki herkese açık etkinlikleri harita ve liste olarak gösterir. Etkinliklere bakmak için hesap açman gerekmez.",
+          "steps": [
+            "Etkinlikler sayfasını aç ya da ana sayfadaki “Yakınımda” bölümüne geç.",
+            "Uzaklığı seç (10, 25, 50 veya 100 km) ve konum iznini ver.",
+            "Listeyi branşa göre süz; sıralamayı “Tarihe göre” ya da “Yakınlığa göre” yap.",
+            "“Haritada Göster” ile etkinlikleri haritada gör; yakınlaştıkça kümeler ayrılır.",
+            "Bir etkinliğe dokununca tarih, saat, yer, kontenjan ve varsa rotası görünür."
+          ],
+          "note": null
+        },
+        {
+          "title": "Etkinliğe katılmak",
+          "sum": "Etkinliğe katılmak için Katıl düğmesine basman yeterli, onay beklemezsin. Her etkinliğin bir kontenjanı vardır ve dolduğunda katılım kapanır.",
+          "steps": [
+            "Hesabına giriş yap ya da ücretsiz kaydol.",
+            "Etkinlik sayfasında “Katıl”a bas.",
+            "Etkinlik profilindeki takvime eklenir; etkinlik yaklaşınca hatırlatma bildirimi gelir.",
+            "Katıldıktan sonra yorum alanı açılır; düzenleyene ve diğer katılanlara soru sorabilirsin.",
+            "Gelemeyeceksen aynı sayfadan ayrıl, yerin başkasına açılır."
+          ],
+          "note": "“Ücretli” rozetli maraton ve turnuva gibi organizasyonlara kayıt, düzenleyenin kendi sitesinden yapılır. Muuvlink bu ücretlerden pay almaz."
+        },
+        {
+          "title": "Spor arkadaşı bulmak",
+          "sum": "Muuvlink'te spor arkadaşı bulmanın üç yolu var: yakınındaki bir etkinliğe katılmak, aynı branştaki bir takıma girmek ya da kendi etkinliğini açıp çağırmak.",
+          "steps": [
+            "Yakınındaki etkinliklere bak ve birine katıl; aynı saatte aynı yerde olacağın kişilerle tanışırsın.",
+            "Takımlar sayfasında branşına ve şehrine uygun takımları bul. Herkese açık takıma “Katıl” ile hemen girersin; özel takımlara yalnız davetle katılınır.",
+            "Takıma girdiğinde takımın açtığı her yeni etkinlik için bildirim alırsın.",
+            "Uygun etkinlik yoksa kendin aç ve linkini paylaş (aşağıda anlatılıyor)."
+          ],
+          "note": null
+        },
+        {
+          "title": "Kendi takımını kurmak",
+          "sum": "Muuvlink'te takım kurmak ücretsizdir ve bir dakika sürer. Herkese açık takımı herkes bulup katılabilir, özel takıma yalnız davet ettiğin kişiler girer.",
+          "steps": [
+            "Giriş yap, Takımlar sayfasında “Takım Kur”a bas.",
+            "Takımın adını, branşını ve şehrini yaz; istersen kısa bir açıklama ve logo ekle.",
+            "Takımın herkese açık mı özel mi olacağını seç.",
+            "Takım sayfasındaki linki paylaşarak ya da e-postayla davet göndererek ilk üyeleri çağır.",
+            "Takımı birlikte yönetmek için bir üyeyi editör, antrenör ya da kaptan yapabilirsin."
+          ],
+          "note": null
+        },
+        {
+          "title": "Etkinlik açmak",
+          "sum": "Etkinliği yönettiğin bir takımın adına ya da bireysel olarak açabilirsin. Takım adına açtığın etkinlikten takımın bütün üyelerine bildirim gider.",
+          "steps": [
+            "“Etkinlik Oluştur”a bas ve etkinliğin hangi takımda yayınlanacağını seç (ya da “Bireysel”).",
+            "Başlık, branş, tarih ve saati gir.",
+            "Konumu yazıp öneri listesinden seç. Listeden seçilen konum haritada ve “Yakınımda” aramasında görünür.",
+            "Kontenjanı belirle, isteğe bağlı bir açıklama yaz.",
+            "Bisiklet, koşu ya da yüzme için GPX rotası ekleyebilirsin; rota haritada çizilir, yol üstünden katılacaklar nereden geçeceğini görür.",
+            "Yayınla. Etkinlik aynı anda etkinlikler listesinde ve haritada çıkar."
+          ],
+          "note": "Bir takımın adına etkinlik açabilmek için o takımın lideri, editörü, antrenörü ya da kaptanı olman gerekir."
+        },
+        {
+          "title": "Etkinliğini ya da takımını paylaşmak",
+          "sum": "Her etkinliğin ve herkese açık takımın kendi linki vardır. Linki açan kişi, uygulaması yoksa tarayıcıda, varsa uygulamada doğrudan o sayfaya gelir.",
+          "steps": [
+            "Etkinlik ya da takım sayfasında “Paylaş” düğmesine bas; linki WhatsApp, Telegram ya da istediğin uygulamayla gönder.",
+            "“Hikâye” düğmesiyle Instagram hikâyesi için hazır bir görsel oluştur. Link aynı anda kopyalanır, hikâyeye link çıkartması olarak ekleyebilirsin.",
+            "“Davet Et” ile e-posta adresine davet gönder. Muuvlink'te hesabı olana uygulama bildirimi de gider.",
+            "Özel takım ve gizli etkinlik linkleri yalnız üyelere açılır; bunlara e-postayla davet gönderilir."
+          ],
+          "note": null
+        }
+      ]
     }
   }
 }

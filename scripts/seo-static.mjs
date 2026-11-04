@@ -43,7 +43,18 @@ const pick = (key, lang) => {
   if (!node || !node[lang]) throw new Error(`i18n anahtarı yok: ${key}.${lang}`);
   return node[lang];
 };
-const content = { faq: {}, seo: {}, sports: {} };
+const content = { faq: {}, seo: {}, sports: {}, guide: {} };
+// Rehber (i18n.js `guide`): g1…g6, adımlar s1…sN, isteğe bağlı note. Sayfa (GuidePage.jsx) ve
+// backend seoGuideText aynı metni okur.
+const guideOf = (l) => ({
+  nav: pick('guide.nav', l), title: pick('guide.title', l), metaTitle: pick('guide.metaTitle', l), lead: pick('guide.lead', l),
+  guides: [1, 2, 3, 4, 5, 6].map((n) => {
+    const g = translations.guide[`g${n}`];
+    const steps = [];
+    for (let i = 1; g[`s${i}`]; i++) steps.push(pick(`guide.g${n}.s${i}`, l));
+    return { title: pick(`guide.g${n}.title`, l), sum: pick(`guide.g${n}.sum`, l), steps, note: g.note ? pick(`guide.g${n}.note`, l) : null };
+  }),
+});
 for (const l of LANGS) {
   // Spor dalı adları DB'de Türkçe duruyor; bot sayfalarında dilin karşılığı yazılsın.
   content.sports[l] = Object.fromEntries(Object.entries(translations.sports).map(([k, v]) => [k, v[l] || v.en || k]));
@@ -51,6 +62,8 @@ for (const l of LANGS) {
   content.faq[l].title = pick('faq.title', l);
   content.seo[l] = Object.fromEntries(Object.keys(translations.seo).map((k) => [k, pick(`seo.${k}`, l)]));
   content.seo[l].faqTitle = pick('faq.title', l);
+  content.guide[l] = guideOf(l);
+  content.seo[l].navGuide = content.guide[l].nav;
 }
 fs.writeFileSync(path.join(ROOT, 'public', 'seo-content.json'), JSON.stringify(content, null, 2));
 
@@ -68,12 +81,23 @@ fs.writeFileSync(path.join(ROOT, 'public', 'seo-content.json'), JSON.stringify(c
     `- [${pick('seo.navEvents', 'tr')}](${ORIGIN}/etkinlikler)`,
     `- [${pick('seo.navTeams', 'tr')}](${ORIGIN}/takimlar)`,
     `- [${pick('seo.navContact', 'tr')}](${ORIGIN}/iletisim)`,
+    `- [${pick('guide.title', 'tr')}](${ORIGIN}/rehber)`,
+    `- [${pick('guide.title', 'en')}](${ORIGIN}/en/guide)`,
     ...LANGUAGES.filter((l) => l.code !== 'tr').map((l) => `- [Muuvlink · ${l.label || l.name || l.code}](${ORIGIN}/${l.code})`),
     `- [Sitemap](${ORIGIN}/sitemap.xml)`, '',
   ];
   for (const l of ['tr', 'en']) {
     lines.push(`## ${pick('faq.title', l)}`, '');
     for (let n = 1; n <= 6; n++) lines.push(`### ${pick(`faq.q${n}`, l)}`, '', pick(`faq.a${n}`, l), '');
+  }
+  // Nasıl yapılır rehberleri (aynı metin /rehber ve /en/guide sayfasında)
+  for (const l of ['tr', 'en']) {
+    const g = guideOf(l);
+    lines.push(`## ${g.title}`, '', g.lead, '');
+    for (const x of g.guides) {
+      lines.push(`### ${x.title}`, '', x.sum, '', ...x.steps.map((st, i) => `${i + 1}. ${st}`), '');
+      if (x.note) lines.push(x.note, '');
+    }
   }
   fs.writeFileSync(path.join(ROOT, 'public', 'llms.txt'), lines.join('\n'));
 }
@@ -97,6 +121,7 @@ const textBlock = `
       <ul style="${S.nav}">
         <li><a style="${S.a}" href="${ORIGIN}/etkinlikler">Etkinlikler</a></li>
         <li><a style="${S.a}" href="${ORIGIN}/takimlar">Takımlar</a></li>
+        <li><a style="${S.a}" href="${ORIGIN}/rehber">${esc(tr('guide.nav'))}</a></li>
         <li><a style="${S.a}" href="${ORIGIN}/iletisim">İletişim</a></li>
       </ul>
       <h2 style="${S.h2}">${esc(tr('faq.title'))}</h2>

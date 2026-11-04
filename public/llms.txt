@@ -8,6 +8,8 @@
 - [Etkinlikler](https://muuvlink.app/etkinlikler)
 - [Takımlar](https://muuvlink.app/takimlar)
 - [İletişim](https://muuvlink.app/iletisim)
+- [Muuvlink nasıl kullanılır?](https://muuvlink.app/rehber)
+- [How to use Muuvlink](https://muuvlink.app/en/guide)
 - [Muuvlink · Deutsch](https://muuvlink.app/de)
 - [Muuvlink · Ελληνικά](https://muuvlink.app/el)
 - [Muuvlink · English](https://muuvlink.app/en)
@@ -28,7 +30,7 @@ Evet, ücretsiz. Hesap açmak, etkinlik oluşturmak, takım kurmak ve etkinlikle
 
 ### Yakınımdaki spor etkinliklerini nasıl bulurum?
 
-Konum izni verdiğinde Muuvlink 10, 25, 50 veya 100 kilometre yarıçapındaki herkese açık etkinlikleri harita ve liste olarak gösterir. Spor dalına, tarihe ve zorluk seviyesine göre süzebilirsin. Katılmadan önce etkinlik sayfasındaki yorum alanından düzenleyene soru sorabilir, saat ve seviye konusunda anlaşabilirsin.
+Konum izni verdiğinde Muuvlink 10, 25, 50 veya 100 kilometre yarıçapındaki herkese açık etkinlikleri harita ve liste olarak gösterir. Spor dalına, tarihe ve zorluk seviyesine göre süzebilirsin. Katıldıktan sonra etkinlik sayfasındaki yorum alanından düzenleyene ve diğer katılanlara soru sorabilirsin.
 
 ### Takım nasıl kurulur?
 
@@ -54,7 +56,7 @@ Yes, it is free. Creating an account, creating an event, starting a team and joi
 
 ### How do I find sports events near me?
 
-Once you grant location access, Muuvlink lists public events within a 10, 25, 50 or 100 kilometre radius on a map and as a list. You can filter by sport, date and difficulty level. Before joining, the comment area on the event page lets you ask the organiser about the time or the level.
+Once you grant location access, Muuvlink lists public events within a 10, 25, 50 or 100 kilometre radius on a map and as a list. You can filter by sport, date and difficulty level. Once you've joined, the comment area on the event page lets you ask the organiser and other participants questions.
 
 ### How do I start a team?
 
@@ -67,3 +69,137 @@ Press the Join button on the event page; no approval step follows. Every event h
 ### Which cities and sports does Muuvlink cover?
 
 Muuvlink works by location rather than from a fixed list of cities: events can be created wherever its users are. The supported sports are basketball, cycling, CrossFit, football, kayaking, running, rowing, padel, pilates, tennis, trekking, triathlon, volleyball, yoga and swimming. The interface is available in Turkish, English, German, Greek, Spanish, French and Italian.
+
+## Muuvlink nasıl kullanılır?
+
+Muuvlink'te spor etkinliği bulmak, etkinliğe katılmak, takım kurmak ve etkinlik açmak ücretsizdir. Web'de muuvlink.app adresinden, telefonda iOS ve Android uygulamasından kullanılır. Aşağıdaki rehberler en sık yapılan altı işi adım adım anlatıyor.
+
+### Yakınındaki spor etkinliğini bulmak
+
+Muuvlink, konum izni verdiğinde 10, 25, 50 veya 100 km içindeki herkese açık etkinlikleri harita ve liste olarak gösterir. Etkinliklere bakmak için hesap açman gerekmez.
+
+1. Etkinlikler sayfasını aç ya da ana sayfadaki “Yakınımda” bölümüne geç.
+2. Uzaklığı seç (10, 25, 50 veya 100 km) ve konum iznini ver.
+3. Listeyi branşa göre süz; sıralamayı “Tarihe göre” ya da “Yakınlığa göre” yap.
+4. “Haritada Göster” ile etkinlikleri haritada gör; yakınlaştıkça kümeler ayrılır.
+5. Bir etkinliğe dokununca tarih, saat, yer, kontenjan ve varsa rotası görünür.
+
+### Etkinliğe katılmak
+
+Etkinliğe katılmak için Katıl düğmesine basman yeterli, onay beklemezsin. Her etkinliğin bir kontenjanı vardır ve dolduğunda katılım kapanır.
+
+1. Hesabına giriş yap ya da ücretsiz kaydol.
+2. Etkinlik sayfasında “Katıl”a bas.
+3. Etkinlik profilindeki takvime eklenir; etkinlik yaklaşınca hatırlatma bildirimi gelir.
+4. Katıldıktan sonra yorum alanı açılır; düzenleyene ve diğer katılanlara soru sorabilirsin.
+5. Gelemeyeceksen aynı sayfadan ayrıl, yerin başkasına açılır.
+
+“Ücretli” rozetli maraton ve turnuva gibi organizasyonlara kayıt, düzenleyenin kendi sitesinden yapılır. Muuvlink bu ücretlerden pay almaz.
+
+### Spor arkadaşı bulmak
+
+Muuvlink'te spor arkadaşı bulmanın üç yolu var: yakınındaki bir etkinliğe katılmak, aynı branştaki bir takıma girmek ya da kendi etkinliğini açıp çağırmak.
+
+1. Yakınındaki etkinliklere bak ve birine katıl; aynı saatte aynı yerde olacağın kişilerle tanışırsın.
+2. Takımlar sayfasında branşına ve şehrine uygun takımları bul. Herkese açık takıma “Katıl” ile hemen girersin; özel takımlara yalnız davetle katılınır.
+3. Takıma girdiğinde takımın açtığı her yeni etkinlik için bildirim alırsın.
+4. Uygun etkinlik yoksa kendin aç ve linkini paylaş (aşağıda anlatılıyor).
+
+### Kendi takımını kurmak
+
+Muuvlink'te takım kurmak ücretsizdir ve bir dakika sürer. Herkese açık takımı herkes bulup katılabilir, özel takıma yalnız davet ettiğin kişiler girer.
+
+1. Giriş yap, Takımlar sayfasında “Takım Kur”a bas.
+2. Takımın adını, branşını ve şehrini yaz; istersen kısa bir açıklama ve logo ekle.
+3. Takımın herkese açık mı özel mi olacağını seç.
+4. Takım sayfasındaki linki paylaşarak ya da e-postayla davet göndererek ilk üyeleri çağır.
+5. Takımı birlikte yönetmek için bir üyeyi editör, antrenör ya da kaptan yapabilirsin.
+
+### Etkinlik açmak
+
+Etkinliği yönettiğin bir takımın adına ya da bireysel olarak açabilirsin. Takım adına açtığın etkinlikten takımın bütün üyelerine bildirim gider.
+
+1. “Etkinlik Oluştur”a bas ve etkinliğin hangi takımda yayınlanacağını seç (ya da “Bireysel”).
+2. Başlık, branş, tarih ve saati gir.
+3. Konumu yazıp öneri listesinden seç. Listeden seçilen konum haritada ve “Yakınımda” aramasında görünür.
+4. Kontenjanı belirle, isteğe bağlı bir açıklama yaz.
+5. Bisiklet, koşu ya da yüzme için GPX rotası ekleyebilirsin; rota haritada çizilir, yol üstünden katılacaklar nereden geçeceğini görür.
+6. Yayınla. Etkinlik aynı anda etkinlikler listesinde ve haritada çıkar.
+
+Bir takımın adına etkinlik açabilmek için o takımın lideri, editörü, antrenörü ya da kaptanı olman gerekir.
+
+### Etkinliğini ya da takımını paylaşmak
+
+Her etkinliğin ve herkese açık takımın kendi linki vardır. Linki açan kişi, uygulaması yoksa tarayıcıda, varsa uygulamada doğrudan o sayfaya gelir.
+
+1. Etkinlik ya da takım sayfasında “Paylaş” düğmesine bas; linki WhatsApp, Telegram ya da istediğin uygulamayla gönder.
+2. “Hikâye” düğmesiyle Instagram hikâyesi için hazır bir görsel oluştur. Link aynı anda kopyalanır, hikâyeye link çıkartması olarak ekleyebilirsin.
+3. “Davet Et” ile e-posta adresine davet gönder. Muuvlink'te hesabı olana uygulama bildirimi de gider.
+4. Özel takım ve gizli etkinlik linkleri yalnız üyelere açılır; bunlara e-postayla davet gönderilir.
+
+## How to use Muuvlink
+
+Finding a sports event, joining one, starting a team and creating an event on Muuvlink are all free. Use it on the web at muuvlink.app or on your phone with the iOS and Android app. The guides below walk you through the six most common tasks step by step.
+
+### Find sports events near you
+
+With location access, Muuvlink shows public events within 10, 25, 50 or 100 km on a map and as a list. You don't need an account to browse events.
+
+1. Open the Events page or go to the Nearby section on the home page.
+2. Pick a distance (10, 25, 50 or 100 km) and allow location access.
+3. Filter the list by sport and sort it “By date” or “By distance”.
+4. Use “Show on Map” to see events on the map; clusters split up as you zoom in.
+5. Tap an event to see its date, time, place, capacity and route, if it has one.
+
+### Join an event
+
+To join an event, just press Join; there is no approval step. Every event has a capacity, and joining closes once it is full.
+
+1. Log in or sign up for free.
+2. Press “Join” on the event page.
+3. The event is added to the calendar on your profile, and you get a reminder notification as it gets close.
+4. Once you've joined, the comments open up so you can ask the organiser and other participants questions.
+5. If you can't make it, leave from the same page and your spot opens up for someone else.
+
+For organised events with a “Paid” badge, such as marathons and tournaments, registration happens on the organiser's own website. Muuvlink takes no share of these fees.
+
+### Find a training partner
+
+There are three ways to find training partners on Muuvlink: join an event near you, join a team in your sport, or create your own event and invite people.
+
+1. Browse events near you and join one; you'll meet the people who'll be at the same place at the same time.
+2. On the Teams page, find teams that match your sport and city. You join a public team straight away with “Join”; private teams are invitation-only.
+3. Once you're in a team, you get a notification for every new event it creates.
+4. If nothing suits you, create an event yourself and share the link (explained below).
+
+### Start your own team
+
+Starting a team on Muuvlink is free and takes a minute. Anyone can find and join a public team; only the people you invite can join a private one.
+
+1. Log in and press “Create Team” on the Teams page.
+2. Enter the team's name, sport and city; add a short description and a logo if you like.
+3. Choose whether the team is public or private.
+4. Bring in your first members by sharing the link on the team page or sending email invitations.
+5. To run the team together, you can make a member an editor, coach or captain.
+
+### Create an event
+
+You can create an event for a team you manage or on your own. When you create one for a team, every member of the team gets a notification.
+
+1. Press “Create Event” and choose which team the event is for (or “Individual”).
+2. Enter the title, sport, date and time.
+3. Type the location and pick it from the suggestions. A location picked from the list shows up on the map and in Nearby searches.
+4. Set the capacity and add an optional description.
+5. For cycling, running or swimming you can add a GPX route; it is drawn on the map so people joining along the way can see where it passes.
+6. Publish. The event appears in the events list and on the map at the same time.
+
+To create an event for a team, you need to be its team leader, editor, coach or captain.
+
+### Share your event or team
+
+Every event and every public team has its own link. Whoever opens it lands straight on that page, in the browser or, if they have it, in the app.
+
+1. Press “Share” on the event or team page and send the link via WhatsApp, Telegram or any app you like.
+2. Use the “Story” button to create a ready-made image for an Instagram story. The link is copied at the same time, so you can add it as a link sticker.
+3. Use “Invite” to send an invitation to an email address. People with a Muuvlink account also get an in-app notification.
+4. Links to private teams and private events only open for members; invite people to these by email.
