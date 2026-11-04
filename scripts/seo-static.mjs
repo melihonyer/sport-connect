@@ -55,6 +55,29 @@ for (const l of LANGS) {
 fs.writeFileSync(path.join(ROOT, 'public', 'seo-content.json'), JSON.stringify(content, null, 2));
 
 
+// ── llms.txt (llmstxt.org) ─────────────────────────────────────────────────
+// Yapay zeka araçlarının siteyi tek dosyada okuması için düz metin özet. Metin
+// yine i18n.js'ten (faq + seo); burada cümle yazılmaz. Türkçe + İngilizce:
+// soru-cevap motorları çoğunlukla İngilizce sorguyla da bakıyor.
+{
+  const lines = [
+    '# Muuvlink', '',
+    `> ${pick('faq.a1', 'tr')}`, '',
+    `> ${pick('faq.a1', 'en')}`, '',
+    `- [${pick('seo.navHome', 'tr')}](${ORIGIN}/)`,
+    `- [${pick('seo.navEvents', 'tr')}](${ORIGIN}/etkinlikler)`,
+    `- [${pick('seo.navTeams', 'tr')}](${ORIGIN}/takimlar)`,
+    `- [${pick('seo.navContact', 'tr')}](${ORIGIN}/iletisim)`,
+    ...LANGUAGES.filter((l) => l.code !== 'tr').map((l) => `- [Muuvlink · ${l.label || l.name || l.code}](${ORIGIN}/${l.code})`),
+    `- [Sitemap](${ORIGIN}/sitemap.xml)`, '',
+  ];
+  for (const l of ['tr', 'en']) {
+    lines.push(`## ${pick('faq.title', l)}`, '');
+    for (let n = 1; n <= 6; n++) lines.push(`### ${pick(`faq.q${n}`, l)}`, '', pick(`faq.a${n}`, l), '');
+  }
+  fs.writeFileSync(path.join(ROOT, 'public', 'llms.txt'), lines.join('\n'));
+}
+
 // ── 1. Görünür metin (#root içine) ─────────────────────────────────────────
 const S = {
   wrap: 'max-width:820px;margin:0 auto;padding:56px 24px 80px;font-family:Montserrat,system-ui,sans-serif;color:#333E40;line-height:1.6',
@@ -144,3 +167,4 @@ fs.writeFileSync(FILE, html);
 const words = faq.map((f) => `${f.q} ${f.a}`).join(' ').split(/\s+/).length;
 console.log(`[seo-static] index.html güncellendi — ${faq.length} soru, ~${words} kelime görünür metin.`);
 console.log(`[seo-static] public/seo-content.json yazıldı — ${LANGS.join(', ')}.`);
+console.log('[seo-static] public/llms.txt yazıldı.');

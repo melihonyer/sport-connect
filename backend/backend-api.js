@@ -3752,6 +3752,39 @@ const injectOgTags = (html, meta) => {
     .replace(/(<meta name="twitter:image" content=")[^"]*(">)/, `$1${I}$2`);
 };
 
+// Detay sayfası şeması (SportsEvent / SportsTeam + içerik yolu). Yalnız kayıttaki
+// veriden kurulur; kişi adı/fotoğrafı girmez (gizlilik kuralı). Etiketler
+// seo-content.json'dan (i18n.js) — burada elle cümle yazılmaz.
+const seoDetailSchema = ({ main, crumbs }) => {
+  const seo = getSeoContent()?.seo?.tr || {};
+  const clean = (o) => JSON.parse(JSON.stringify(o)); // undefined alanları at
+  return clean({
+    '@context': 'https://schema.org',
+    '@graph': [
+      { ...main, publisher: { '@id': `${SITE_ORIGIN}/#organization` } },
+      { '@type': 'BreadcrumbList', itemListElement: crumbs.map(([label, href], i) => ({
+        '@type': 'ListItem', position: i + 1, name: seo[label] || label,
+        item: href.startsWith('http') ? href : `${SITE_ORIGIN}${href}` })) },
+      { '@type': 'Organization', '@id': `${SITE_ORIGIN}/#organization`, name: 'Muuvlink', url: SITE_ORIGIN,
+        logo: `${SITE_ORIGIN}/icons/favicon.png`, sameAs: MUUV_SOCIAL.map((x) => x.href) },
+    ],
+  });
+};
+
+// UTC anını etkinliğin kendi saat diliminde ISO 8601 + ofset olarak yaz (2026-11-06T07:00:00+03:00).
+const seoIsoInZone = (utc, tz) => {
+  try {
+    const d = new Date(utc);
+    if (isNaN(d)) return undefined;
+    const parts = Object.fromEntries(new Intl.DateTimeFormat('en-GB', {
+      timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+      second: '2-digit', hourCycle: 'h23', timeZoneName: 'longOffset',
+    }).formatToParts(d).map((p) => [p.type, p.value]));
+    const off = (parts.timeZoneName || 'GMT').replace('GMT', '') || '+00:00';
+    return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}${off}`;
+  } catch { return undefined; }
+};
+
 app.get(['/takim/*', '/etkinlik/*'], async (req, res, next) => {
   const parsed = parseDetailPathBackend(req.path);
   const html = getIndexHtml();
@@ -3763,7 +3796,7 @@ app.get(['/takim/*', '/etkinlik/*'], async (req, res, next) => {
   const notFound = () => res.status(404).set('Cache-Control', 'public, max-age=300')
     .send(html.replace(/<meta name="robots" content="[^"]*">/, '<meta name="robots" content="noindex">'));
   try {
-    let meta, body = null;
+    let meta, body = null, schema = null;
     if (parsed.kind === 'team') {
       const r = await pool.query(
         `SELECT t.id, t.name, t.description, t.avatar, t.is_private, t.sport, t.location,
@@ -3783,6 +3816,15 @@ app.get(['/takim/*', '/etkinlik/*'], async (req, res, next) => {
       if (t0.sport) bits.push(`Spor dalı: ${htmlAttrEscape(t0.sport)}`);
       if (t0.location) bits.push(`Konum: ${htmlAttrEscape(t0.location)}`);
       bits.push(`Üye sayısı: ${t0.member_count}`);
+      schema = seoDetailSchema({
+        main: {
+          '@type': 'SportsTeam', '@id': `${meta.url}#team`, name: t0.name, url: meta.url,
+          description: t0.description ? String(t0.description).slice(0, 500) : undefined, sport: t0.sport || undefined,
+          logo: /^https?:\/\//.test(t0.avatar || '') ? t0.avatar : undefined,
+          location: t0.location ? { '@type': 'Place', name: t0.location } : undefined,
+        },
+        crumbs: [['Muuvlink', '/'], ['navTeams', '/takimlar'], [t0.name, meta.url]],
+      });
       body = seoDetailBody({
         h1: t0.name,
         lead: t0.description || `${t0.name}, Muuvlink üzerinde herkese açık bir spor takımı.`,
@@ -3793,7 +3835,10 @@ app.get(['/takim/*', '/etkinlik/*'], async (req, res, next) => {
       const r = await pool.query(
         `SELECT t.id, t.title, t.description, t.image_url, t.is_public, t.sport,
                 t.training_date, t.training_time, t.location_name, t.location_address,
-                t.capacity, t.is_paid, t.organizer, teams.name AS team_name,
+                t.capacity, t.is_paid, t.organizer, teams.name AS team_name, t.team_id,
+                t.location_lat, t.location_lng,
+                COALESCE(NULLIF(t.training_timezone, ''), 'Europe/Istanbul') AS tz,
+                ${trainingUtcExpr('t')} AS start_utc,
                 (${trainingUtcExpr('t')} < NOW()) AS is_past
            FROM trainings t LEFT JOIN teams ON t.team_id = teams.id
           WHERE t.id = $1`, [parsed.id]);
@@ -3819,6 +3864,32 @@ app.get(['/takim/*', '/etkinlik/*'], async (req, res, next) => {
       if (e0.team_name) bits.push(`Takım: ${htmlAttrEscape(e0.team_name)}`);
       if (e0.capacity) bits.push(`Kontenjan: ${e0.capacity} kişi`);
       if (e0.organizer) bits.push(`Düzenleyen: ${htmlAttrEscape(e0.organizer)}`);
+      const geo = e0.location_lat != null && e0.location_lng != null
+        ? { '@type': 'GeoCoordinates', latitude: Number(e0.location_lat), longitude: Number(e0.location_lng) } : undefined;
+      const teamUrl = e0.team_id ? `${SITE_ORIGIN}/takim/${slugify(e0.team_name || '')}-${e0.team_id}` : null;
+      schema = seoDetailSchema({
+        main: {
+          '@type': 'SportsEvent', '@id': `${meta.url}#event`, name: e0.title, url: meta.url,
+          description: e0.description ? String(e0.description).slice(0, 500) : undefined, sport: e0.sport || undefined,
+          image: /^https?:\/\//.test(e0.image_url || '') ? e0.image_url : DEFAULT_IMG,
+          startDate: seoIsoInZone(e0.start_utc, e0.tz),
+          eventStatus: 'https://schema.org/EventScheduled',
+          eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+          location: yer || geo ? {
+            '@type': 'Place', name: e0.location_name || e0.location_address || undefined,
+            address: e0.location_address || e0.location_name || undefined, geo,
+          } : undefined,
+          organizer: e0.organizer ? { '@type': 'Organization', name: e0.organizer }
+            : teamUrl ? { '@type': 'SportsTeam', name: e0.team_name, url: teamUrl } : undefined,
+          maximumAttendeeCapacity: e0.capacity || undefined,
+          isAccessibleForFree: e0.is_paid ? undefined : true,
+          offers: e0.is_paid ? undefined : {
+            '@type': 'Offer', price: '0', priceCurrency: 'TRY', url: meta.url,
+            availability: e0.is_past ? 'https://schema.org/SoldOut' : 'https://schema.org/InStock',
+          },
+        },
+        crumbs: [['Muuvlink', '/'], ['navEvents', '/etkinlikler'], [e0.title, meta.url]],
+      });
       body = seoDetailBody({
         h1: e0.title,
         lead: e0.description || `${e0.title}, Muuvlink üzerinde herkese açık bir spor etkinliği.`,
@@ -3835,7 +3906,8 @@ app.get(['/takim/*', '/etkinlik/*'], async (req, res, next) => {
       // Sayfaya ait olmayan SSS metnini ve FAQPage şemasını kaldır: bot bu
       // adreste etkinliğin/takımın kendi bilgisini görsün, genel SSS'i değil.
       out = replaceSeoRegion(out, 'SEO-TEXT', body);
-      out = replaceSeoRegion(out, 'SEO-SCHEMA', '');
+      out = replaceSeoRegion(out, 'SEO-SCHEMA', schema
+        ? `  <script type="application/ld+json">\n${JSON.stringify(schema, null, 2).replace(/</g, '\\u003c')}\n  </script>` : '');
       // Detay adreslerinin dil karşılığı yok; ana sayfanın hreflang'ini
       // burada bırakmak Google'da "alternatif sayfa dönmüyor" hatası verir.
       out = replaceSeoRegion(out, 'SEO-HREFLANG', '');

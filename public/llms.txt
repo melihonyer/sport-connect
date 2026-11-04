@@ -1,0 +1,69 @@
+# Muuvlink
+
+> Muuvlink, çevrendeki spor etkinliklerini bulup katılmanı, kendi takımını kurmanı ve düzenli antrenman planlamanı sağlayan ücretsiz bir spor topluluğu uygulamasıdır. Futbol, basketbol, tenis, koşu, bisiklet, yüzme, yoga ve padel dahil on beşten fazla dalda etkinlik açılabilir. Web'de muuvlink.app adresinden, telefonda iOS ve Android uygulamasıyla kullanılır.
+
+> Muuvlink is a free sports community app for finding and joining sports events near you, starting your own team and planning regular training. Events can be created in more than fifteen disciplines, including football, basketball, tennis, running, cycling, swimming, yoga and padel. It runs on the web at muuvlink.app and as an iOS and Android app.
+
+- [Muuvlink nedir?](https://muuvlink.app/)
+- [Etkinlikler](https://muuvlink.app/etkinlikler)
+- [Takımlar](https://muuvlink.app/takimlar)
+- [İletişim](https://muuvlink.app/iletisim)
+- [Muuvlink · Deutsch](https://muuvlink.app/de)
+- [Muuvlink · Ελληνικά](https://muuvlink.app/el)
+- [Muuvlink · English](https://muuvlink.app/en)
+- [Muuvlink · Español](https://muuvlink.app/es)
+- [Muuvlink · Français](https://muuvlink.app/fr)
+- [Muuvlink · Italiano](https://muuvlink.app/it)
+- [Sitemap](https://muuvlink.app/sitemap.xml)
+
+## Sık sorulan sorular
+
+### Muuvlink nedir?
+
+Muuvlink, çevrendeki spor etkinliklerini bulup katılmanı, kendi takımını kurmanı ve düzenli antrenman planlamanı sağlayan ücretsiz bir spor topluluğu uygulamasıdır. Futbol, basketbol, tenis, koşu, bisiklet, yüzme, yoga ve padel dahil on beşten fazla dalda etkinlik açılabilir. Web'de muuvlink.app adresinden, telefonda iOS ve Android uygulamasıyla kullanılır.
+
+### Muuvlink ücretsiz mi?
+
+Evet, ücretsiz. Hesap açmak, etkinlik oluşturmak, takım kurmak ve etkinliklere katılmak için ödeme yapılmaz; abonelik ya da paket satışı yoktur. Haritada “Ücretli” rozetiyle görünen maraton ve turnuva gibi organizasyonlar dış kuruluşlara aittir, kayıt kendi sitelerinden yapılır ve Muuvlink bu ücretlerden pay almaz.
+
+### Yakınımdaki spor etkinliklerini nasıl bulurum?
+
+Konum izni verdiğinde Muuvlink 10, 25, 50 veya 100 kilometre yarıçapındaki herkese açık etkinlikleri harita ve liste olarak gösterir. Spor dalına, tarihe ve zorluk seviyesine göre süzebilirsin. Katılmadan önce etkinlik sayfasındaki yorum alanından düzenleyene soru sorabilir, saat ve seviye konusunda anlaşabilirsin.
+
+### Takım nasıl kurulur?
+
+Giriş yaptıktan sonra Takımlar sayfasındaki “Takım Oluştur” ile takım açılır: isim, spor dalı, konum ve görünürlük seçilir. Herkese açık takımlar aramada ve arama motorlarında görünür, özel takımlara yalnız davetle katılınır. Takımına ikinci bir yönetici ekleyebilir, üyelerine tek seferde etkinlik duyurusu yapabilirsin.
+
+### Etkinliğe nasıl katılırım?
+
+Etkinlik sayfasındaki Katıl düğmesine basmak yeterlidir, ayrıca onay beklemezsin. Her etkinliğin bir kontenjanı vardır ve dolduğunda katılım kapanır. Katıldığın etkinlik profilindeki takvimde görünür, saatinden önce hatırlatma bildirimi alırsın. Vazgeçersen aynı sayfadan ayrılırsın ve yerin diğer sporculara açılır.
+
+### Muuvlink hangi şehirlerde ve hangi sporlarda kullanılıyor?
+
+Muuvlink konum tabanlı çalışır: sabit bir şehir listesi yoktur, etkinlikler kullanıcıların bulunduğu her şehirde açılabilir. Desteklenen dallar basketbol, bisiklet, crossfit, futbol, kano, koşu, kürek, padel, pilates, tenis, trekking, triatlon, voleybol, yoga ve yüzmedir. Arayüz Türkçe, İngilizce, Almanca, Yunanca, İspanyolca, Fransızca ve İtalyanca sunulur.
+
+## Frequently asked questions
+
+### What is Muuvlink?
+
+Muuvlink is a free sports community app for finding and joining sports events near you, starting your own team and planning regular training. Events can be created in more than fifteen disciplines, including football, basketball, tennis, running, cycling, swimming, yoga and padel. It runs on the web at muuvlink.app and as an iOS and Android app.
+
+### Is Muuvlink free?
+
+Yes, it is free. Creating an account, creating an event, starting a team and joining events all cost nothing, and there is no subscription or paid tier. Organised races and tournaments shown with a “Paid” badge belong to outside organisers; you register on their own site and Muuvlink takes no share of those fees.
+
+### How do I find sports events near me?
+
+Once you grant location access, Muuvlink lists public events within a 10, 25, 50 or 100 kilometre radius on a map and as a list. You can filter by sport, date and difficulty level. Before joining, the comment area on the event page lets you ask the organiser about the time or the level.
+
+### How do I start a team?
+
+After logging in, use “Create Team” on the Teams page: pick a name, a sport, a location and the visibility. Public teams appear in search and in search engines; private teams are joined by invitation only. You can add a second manager to your team and announce an event to all members at once.
+
+### How do I join an event?
+
+Press the Join button on the event page; no approval step follows. Every event has a capacity, and joining closes once it is full. Events you joined appear in the calendar on your profile, and you receive a reminder notification before the start. If you change your mind you can leave from the same page and your spot reopens.
+
+### Which cities and sports does Muuvlink cover?
+
+Muuvlink works by location rather than from a fixed list of cities: events can be created wherever its users are. The supported sports are basketball, cycling, CrossFit, football, kayaking, running, rowing, padel, pilates, tennis, trekking, triathlon, volleyball, yoga and swimming. The interface is available in Turkish, English, German, Greek, Spanish, French and Italian.

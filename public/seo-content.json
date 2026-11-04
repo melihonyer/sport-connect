@@ -11,7 +11,7 @@
       },
       {
         "q": "Wie finde ich Sportevents in meiner Nähe?",
-        "a": "Sobald du den Standortzugriff erlaubst, zeigt Muuvlink öffentliche Events im Umkreis von 5, 10, 25 oder 50 Kilometern auf einer Karte und als Liste. Du kannst nach Sportart, Datum und Schwierigkeitsgrad filtern. Vor der Teilnahme kannst du den Veranstalter im Kommentarbereich der Eventseite nach Uhrzeit und Niveau fragen."
+        "a": "Sobald du den Standortzugriff erlaubst, zeigt Muuvlink öffentliche Events im Umkreis von 10, 25, 50 oder 100 Kilometern auf einer Karte und als Liste. Du kannst nach Sportart, Datum und Schwierigkeitsgrad filtern. Vor der Teilnahme kannst du den Veranstalter im Kommentarbereich der Eventseite nach Uhrzeit und Niveau fragen."
       },
       {
         "q": "Wie gründe ich ein Team?",
@@ -37,7 +37,7 @@
       },
       {
         "q": "Πώς βρίσκω αθλητικές εκδηλώσεις κοντά μου;",
-        "a": "Μόλις επιτρέψεις την πρόσβαση στην τοποθεσία, το Muuvlink δείχνει τις δημόσιες εκδηλώσεις σε ακτίνα 5, 10, 25 ή 50 χιλιομέτρων, σε χάρτη και σε λίστα. Μπορείς να φιλτράρεις ανά άθλημα, ημερομηνία και επίπεδο δυσκολίας. Πριν δηλώσεις συμμετοχή, μπορείς να ρωτήσεις τον διοργανωτή για την ώρα ή το επίπεδο στα σχόλια της σελίδας της εκδήλωσης."
+        "a": "Μόλις επιτρέψεις την πρόσβαση στην τοποθεσία, το Muuvlink δείχνει τις δημόσιες εκδηλώσεις σε ακτίνα 10, 25, 50 ή 100 χιλιομέτρων, σε χάρτη και σε λίστα. Μπορείς να φιλτράρεις ανά άθλημα, ημερομηνία και επίπεδο δυσκολίας. Πριν δηλώσεις συμμετοχή, μπορείς να ρωτήσεις τον διοργανωτή για την ώρα ή το επίπεδο στα σχόλια της σελίδας της εκδήλωσης."
       },
       {
         "q": "Πώς φτιάχνω ομάδα;",
@@ -63,7 +63,7 @@
       },
       {
         "q": "How do I find sports events near me?",
-        "a": "Once you grant location access, Muuvlink lists public events within a 5, 10, 25 or 50 kilometre radius on a map and as a list. You can filter by sport, date and difficulty level. Before joining, the comment area on the event page lets you ask the organiser about the time or the level."
+        "a": "Once you grant location access, Muuvlink lists public events within a 10, 25, 50 or 100 kilometre radius on a map and as a list. You can filter by sport, date and difficulty level. Before joining, the comment area on the event page lets you ask the organiser about the time or the level."
       },
       {
         "q": "How do I start a team?",
@@ -89,7 +89,7 @@
       },
       {
         "q": "¿Cómo encuentro eventos deportivos cerca de mí?",
-        "a": "Cuando das acceso a tu ubicación, Muuvlink muestra en un mapa y en una lista los eventos públicos en un radio de 5, 10, 25 o 50 kilómetros. Puedes filtrar por deporte, fecha y nivel de dificultad. Antes de apuntarte, puedes preguntar al organizador por la hora o el nivel en los comentarios de la página del evento."
+        "a": "Cuando das acceso a tu ubicación, Muuvlink muestra en un mapa y en una lista los eventos públicos en un radio de 10, 25, 50 o 100 kilómetros. Puedes filtrar por deporte, fecha y nivel de dificultad. Antes de apuntarte, puedes preguntar al organizador por la hora o el nivel en los comentarios de la página del evento."
       },
       {
         "q": "¿Cómo creo un equipo?",
@@ -115,7 +115,7 @@
       },
       {
         "q": "Comment trouver des événements sportifs près de chez moi ?",
-        "a": "Dès que tu autorises la localisation, Muuvlink affiche sur une carte et dans une liste les événements publics dans un rayon de 5, 10, 25 ou 50 kilomètres. Tu peux filtrer par sport, date et niveau de difficulté. Avant de t'inscrire, tu peux poser tes questions à l'organisateur sur l'horaire ou le niveau dans les commentaires de la page de l'événement."
+        "a": "Dès que tu autorises la localisation, Muuvlink affiche sur une carte et dans une liste les événements publics dans un rayon de 10, 25, 50 ou 100 kilomètres. Tu peux filtrer par sport, date et niveau de difficulté. Avant de t'inscrire, tu peux poser tes questions à l'organisateur sur l'horaire ou le niveau dans les commentaires de la page de l'événement."
       },
       {
         "q": "Comment créer une équipe ?",
@@ -141,7 +141,7 @@
       },
       {
         "q": "Come trovo eventi sportivi vicino a me?",
-        "a": "Quando consenti l'accesso alla posizione, Muuvlink mostra su una mappa e in un elenco gli eventi pubblici entro 5, 10, 25 o 50 chilometri. Puoi filtrare per sport, data e livello di difficoltà. Prima di iscriverti puoi chiedere all'organizzatore dell'orario o del livello nei commenti della pagina dell'evento."
+        "a": "Quando consenti l'accesso alla posizione, Muuvlink mostra su una mappa e in un elenco gli eventi pubblici entro 10, 25, 50 o 100 chilometri. Puoi filtrare per sport, data e livello di difficoltà. Prima di iscriverti puoi chiedere all'organizzatore dell'orario o del livello nei commenti della pagina dell'evento."
       },
       {
         "q": "Come creo una squadra?",
@@ -167,7 +167,7 @@
       },
       {
         "q": "Yakınımdaki spor etkinliklerini nasıl bulurum?",
-        "a": "Konum izni verdiğinde Muuvlink 5, 10, 25 veya 50 kilometre yarıçapındaki herkese açık etkinlikleri harita ve liste olarak gösterir. Spor dalına, tarihe ve zorluk seviyesine göre süzebilirsin. Katılmadan önce etkinlik sayfasındaki yorum alanından düzenleyene soru sorabilir, saat ve seviye konusunda anlaşabilirsin."
+        "a": "Konum izni verdiğinde Muuvlink 10, 25, 50 veya 100 kilometre yarıçapındaki herkese açık etkinlikleri harita ve liste olarak gösterir. Spor dalına, tarihe ve zorluk seviyesine göre süzebilirsin. Katılmadan önce etkinlik sayfasındaki yorum alanından düzenleyene soru sorabilir, saat ve seviye konusunda anlaşabilirsin."
       },
       {
         "q": "Takım nasıl kurulur?",
@@ -192,7 +192,7 @@
       "navHome": "Was ist Muuvlink?",
       "eventsH1": "Kommende Sportevents",
       "eventsLead": "Muuvlink listet {n} kommende öffentliche Sportevents. Auf jeder Eventseite stehen Datum, Ort und Teilnehmerzahl; zum Mitmachen genügt „Teilnehmen“, eine Freigabe ist nicht nötig.",
-      "eventsSub": "Mit Standortzugriff zeigt die App Events im Umkreis von 5, 10, 25 oder 50 Kilometern auch auf einer Karte. Die Liste ist nach Datum sortiert, vergangene Events fehlen.",
+      "eventsSub": "Mit Standortzugriff zeigt die App Events im Umkreis von 10, 25, 50 oder 100 Kilometern auch auf einer Karte. Die Liste ist nach Datum sortiert, vergangene Events fehlen.",
       "eventsEmpty": "Derzeit gibt es keine kommenden öffentlichen Events. Neue Events erscheinen hier, sobald sie angelegt werden.",
       "eventsTitle": "Kommende Sportevents — Muuvlink",
       "eventsDesc": "{n} kommende öffentliche Sportevents auf Muuvlink: Fußball, Basketball, Laufen, Tennis, Schwimmen und mehr, mit Datum, Ort und Teilnehmerzahl.",
@@ -219,7 +219,7 @@
       "navHome": "Τι είναι το Muuvlink;",
       "eventsH1": "Προσεχείς αθλητικές εκδηλώσεις",
       "eventsLead": "Το Muuvlink παρουσιάζει {n} προσεχείς δημόσιες αθλητικές εκδηλώσεις. Η σελίδα κάθε εκδήλωσης δείχνει ημερομηνία, τοποθεσία και χωρητικότητα· για να συμμετάσχεις πατάς «Συμμετοχή», χωρίς να περιμένεις έγκριση.",
-      "eventsSub": "Με πρόσβαση στην τοποθεσία, η εφαρμογή δείχνει και σε χάρτη τις εκδηλώσεις σε ακτίνα 5, 10, 25 ή 50 χιλιομέτρων. Η λίστα είναι ταξινομημένη κατά ημερομηνία και δεν περιλαμβάνει παλαιότερες εκδηλώσεις.",
+      "eventsSub": "Με πρόσβαση στην τοποθεσία, η εφαρμογή δείχνει και σε χάρτη τις εκδηλώσεις σε ακτίνα 10, 25, 50 ή 100 χιλιομέτρων. Η λίστα είναι ταξινομημένη κατά ημερομηνία και δεν περιλαμβάνει παλαιότερες εκδηλώσεις.",
       "eventsEmpty": "Αυτή τη στιγμή δεν υπάρχουν προσεχείς δημόσιες εκδηλώσεις. Οι νέες εκδηλώσεις εμφανίζονται σε αυτή τη σελίδα μόλις δημιουργηθούν.",
       "eventsTitle": "Προσεχείς αθλητικές εκδηλώσεις — Muuvlink",
       "eventsDesc": "{n} προσεχείς δημόσιες αθλητικές εκδηλώσεις στο Muuvlink: ποδόσφαιρο, μπάσκετ, τρέξιμο, τένις, κολύμβηση και άλλα, με ημερομηνία, τοποθεσία και χωρητικότητα.",
@@ -246,7 +246,7 @@
       "navHome": "What is Muuvlink?",
       "eventsH1": "Upcoming sports events",
       "eventsLead": "Muuvlink lists {n} upcoming public sports events. Each event page shows its date, location and capacity; to take part you press Join, with no approval step.",
-      "eventsSub": "With location access the app also shows events within a 5, 10, 25 or 50 kilometre radius on a map. The list is ordered by date and past events are not included.",
+      "eventsSub": "With location access the app also shows events within a 10, 25, 50 or 100 kilometre radius on a map. The list is ordered by date and past events are not included.",
       "eventsEmpty": "There are no upcoming public events right now. New events appear on this page as they are created.",
       "eventsTitle": "Upcoming Sports Events — Muuvlink",
       "eventsDesc": "{n} upcoming public sports events on Muuvlink: football, basketball, running, tennis, swimming and more, with date, location and capacity.",
@@ -273,7 +273,7 @@
       "navHome": "¿Qué es Muuvlink?",
       "eventsH1": "Próximos eventos deportivos",
       "eventsLead": "Muuvlink reúne {n} próximos eventos deportivos públicos. La página de cada evento muestra la fecha, el lugar y las plazas; para participar pulsas «Apuntarme», sin esperar aprobación.",
-      "eventsSub": "Si das acceso a tu ubicación, la app también muestra en un mapa los eventos en un radio de 5, 10, 25 o 50 kilómetros. La lista está ordenada por fecha y no incluye eventos pasados.",
+      "eventsSub": "Si das acceso a tu ubicación, la app también muestra en un mapa los eventos en un radio de 10, 25, 50 o 100 kilómetros. La lista está ordenada por fecha y no incluye eventos pasados.",
       "eventsEmpty": "Ahora mismo no hay próximos eventos públicos. Los nuevos eventos aparecen en esta página en cuanto se crean.",
       "eventsTitle": "Próximos eventos deportivos — Muuvlink",
       "eventsDesc": "{n} próximos eventos deportivos públicos en Muuvlink: fútbol, baloncesto, running, tenis, natación y más, con fecha, lugar y plazas.",
@@ -300,7 +300,7 @@
       "navHome": "Qu'est-ce que Muuvlink ?",
       "eventsH1": "Événements sportifs à venir",
       "eventsLead": "Muuvlink recense {n} événements sportifs publics à venir. La page de chaque événement indique la date, le lieu et le nombre de places ; pour participer, il suffit de cliquer sur « Participer », sans validation.",
-      "eventsSub": "Si tu autorises la localisation, l'application affiche aussi sur une carte les événements dans un rayon de 5, 10, 25 ou 50 kilomètres. La liste est classée par date et n'inclut pas les événements passés.",
+      "eventsSub": "Si tu autorises la localisation, l'application affiche aussi sur une carte les événements dans un rayon de 10, 25, 50 ou 100 kilomètres. La liste est classée par date et n'inclut pas les événements passés.",
       "eventsEmpty": "Aucun événement public à venir pour le moment. Les nouveaux événements apparaissent sur cette page dès leur création.",
       "eventsTitle": "Événements sportifs à venir — Muuvlink",
       "eventsDesc": "{n} événements sportifs publics à venir sur Muuvlink : football, basket, course à pied, tennis, natation et plus, avec date, lieu et nombre de places.",
@@ -327,7 +327,7 @@
       "navHome": "Che cos'è Muuvlink?",
       "eventsH1": "Prossimi eventi sportivi",
       "eventsLead": "Muuvlink raccoglie {n} prossimi eventi sportivi pubblici. La pagina di ogni evento indica data, luogo e posti disponibili; per partecipare basta premere «Partecipa», senza attendere approvazioni.",
-      "eventsSub": "Se consenti l'accesso alla posizione, l'app mostra anche su una mappa gli eventi entro 5, 10, 25 o 50 chilometri. L'elenco è ordinato per data e non include gli eventi passati.",
+      "eventsSub": "Se consenti l'accesso alla posizione, l'app mostra anche su una mappa gli eventi entro 10, 25, 50 o 100 chilometri. L'elenco è ordinato per data e non include gli eventi passati.",
       "eventsEmpty": "Al momento non ci sono prossimi eventi pubblici. I nuovi eventi compaiono in questa pagina appena vengono creati.",
       "eventsTitle": "Prossimi eventi sportivi — Muuvlink",
       "eventsDesc": "{n} prossimi eventi sportivi pubblici su Muuvlink: calcio, basket, corsa, tennis, nuoto e altro, con data, luogo e posti.",
@@ -354,7 +354,7 @@
       "navHome": "Muuvlink nedir?",
       "eventsH1": "Yaklaşan spor etkinlikleri",
       "eventsLead": "Muuvlink'te herkese açık, yaklaşan {n} spor etkinliği listeleniyor. Her etkinliğin tarihi, yeri ve kontenjanı kendi sayfasında yazar; katılmak için Katıl düğmesine basmak yeterlidir, onay beklenmez.",
-      "eventsSub": "Konum izni verdiğinde uygulama 5, 10, 25 veya 50 kilometre yarıçapındaki etkinlikleri harita üzerinde de gösterir. Liste tarihe göre sıralıdır ve geçmiş etkinlikler yer almaz.",
+      "eventsSub": "Konum izni verdiğinde uygulama 10, 25, 50 veya 100 kilometre yarıçapındaki etkinlikleri harita üzerinde de gösterir. Liste tarihe göre sıralıdır ve geçmiş etkinlikler yer almaz.",
       "eventsEmpty": "Şu anda yaklaşan herkese açık etkinlik yok. Yeni etkinlikler eklendiğinde bu sayfada görünür.",
       "eventsTitle": "Yaklaşan Spor Etkinlikleri — Muuvlink",
       "eventsDesc": "Muuvlink'te herkese açık {n} yaklaşan spor etkinliği: futbol, basketbol, koşu, tenis, yüzme ve daha fazlası. Tarih, yer ve kontenjan bilgisiyle.",
