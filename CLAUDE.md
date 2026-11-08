@@ -1151,10 +1151,19 @@ Konum sunucuya yalnız `/api/trainings/nearby` sorgusunda gider, saklanmaz (ngin
 Play "Veri güvenliği" formunda "Yaklaşık konum" bu yüzden beyan edilir.
 1.3.1 30 Ekim 2026'da incelemeye gönderildi, aynı gün onaylanıp yayınlandı (yönetilen yayınlama
 kapalı → onayda kendiliğinden %100).
-**Play satıcı (trader) durumu:** Google "Kasım 2026'dan itibaren zorunlu" dedi; 30 Ekim'de Console'da
-form henüz yoktu (hesap ayrıntıları, uygulama içeriği, politika durumu, geliştirici profili bakıldı).
-Satıcı seçilirse ad, adres, telefon, e-posta AB kullanıcılarına mağazada açık gösterilir; hesapta kayıtlı
-adres Melih'in ev adresi. Karar ve gönderim Melih'in. Veri güvenliğine "Yaklaşık konum" eklendi: toplanıyor, paylaşılmıyor, kısa süreli değil,
+**Play satıcı (trader) durumu** (Google yardım sayfası "Trader status declaration", 8 Kasım 2026'da okundu):
+HER hesap "satıcı" ya da "satıcı değil" BEYAN eder — gelir olmasa da. Mevcut hesaplar için son gün
+**1 Şubat 2027**; beyan yoksa güncelleme engeli ve dünya genelinde kaldırma. Ücretsiz olmak tek başına
+"satıcı değil" demek değil; Google'ın ölçütleri: kâr amacı (ücretli uygulama, uygulama içi satın alma,
+reklamla desteklenen uygulama), işlem hacmi, işin şirket gibi yürütülmesi, D-U-N-S gibi tüzel statü.
+Yanlış "satıcı değil" beyanı askıya alma sebebi; Google sonradan "güncelle" diyebilir. Satıcı: 1 Mart
+2027'den itibaren iletişim bilgileri (kişisel hesapta telefon + adres dahil) her yerde açık; AB/İngiltere'de
+"Sunan" satırına geliştirici adı; uygulama başına Kullanım Koşulları linki + uygunluk beyanı; uygulama
+düzeyi onay (Uygulama içeriği'nde, yalnız satıcılar). Satıcı değil: AB/İngiltere kullanıcısına yalnız
+"tüketici hakları uygulanmaz" notu. Hesap düzeyi: Hesabı yönet › Hesap ayrıntıları › Hakkınızda. 30 Ekim'de
+form henüz Console'da yoktu. Muuvlink'te iki yön de var: gelir/satın alma yok; ama Salt Kreatif adıyla,
+saltajans.com sitesiyle yayında ve uygulamada Training Agents reklamı var. Hesapta kayıtlı adres Melih'in
+ev adresi. Karar ve gönderim Melih'in. Veri güvenliğine "Yaklaşık konum" eklendi: toplanıyor, paylaşılmıyor, kısa süreli değil,
 isteğe bağlı, amaç uygulama işlevselliği ("Tam konum" önceden beyanlıydı, dokunulmadı). Sürüm notu
 tr+en Melih onaylı. Play uyarıları (engellemez): paket boyutu 4 → 8,7 MB (uygulamaya kopyalanan ama
 kullanılmayan site dosyaları; 1.3.1'den sonra `mobile-shell` ile giderildi) ve yerel hata ayıklama
