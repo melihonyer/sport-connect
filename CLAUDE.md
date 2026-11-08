@@ -1164,9 +1164,12 @@ düzeyi onay (Uygulama içeriği'nde, yalnız satıcılar). Satıcı değil: AB/
 "Tüccar durumu" (5 Kasım 2026'da açıldı; 8 Kasım'da hâlâ beyan edilmemişti). Form: iki seçenek ("Bu bir
 satıcı hesabı" / "değil"); satıcıda önizleme info@saltajans.com + yasal ad "MELİH ÖNYER" + ödeme profilindeki
 ev adresi (değiştirmek için ödeme profili) + SMS ile doğrulanacak telefon — telefonu Melih doğrular.
-**"Satıcı değil"de de** (8 Kasım, Melih bu seçeneği seçti; son adımda durduruldu, gönderilmedi) son adım
-yasal ad + ödeme profilindeki ev adresi + info@saltajans.com'u "Uygulama desteği › Sağlayıcı hakkında"da
-DÜNYA GENELİNDE gösteriyor ve onay kutusu istiyor; telefon istemiyor. Hesap,
+**BEYAN EDİLDİ: "Tacir olmayan"** (8 Kasım 2026, Melih'in kararı ve onayıyla). "Satıcı değil"de de yasal
+ad + ödeme profilindeki ev adresi + info@saltajans.com "Uygulama desteği › Sağlayıcı hakkında"da DÜNYA
+GENELİNDE gösteriliyor (Melih bunu bilerek onayladı); telefon istenmedi. Son adımda ayrıca "Satıcı
+olmadığınızı onaylayın" yasal onayı var. Uygulama düzeyi beyan yalnız satıcılarda; Uygulama içeriği'nde bekleyen
+yok. Durum değişirse (ör. gelir/uygulama içi satış, hesabın şirkete geçmesi) "Satıcı durumunu güncelle"
+ile güncellenir; Google da faaliyete bakıp güncelleme isteyebilir. Adres değişikliği ödeme profilinden. Hesap,
 "SALT KREATİF REKLAM TİCARET LİMİTED ŞİRKETİ" hesap grubunda (%15 hizmet ücreti bildirimi). Muuvlink'te iki yön de var: gelir/satın alma yok; ama Salt Kreatif adıyla,
 saltajans.com sitesiyle yayında ve uygulamada Training Agents reklamı var. Hesapta kayıtlı adres Melih'in
 ev adresi. Karar ve gönderim Melih'in. Veri güvenliğine "Yaklaşık konum" eklendi: toplanıyor, paylaşılmıyor, kısa süreli değil,
