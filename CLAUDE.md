@@ -1160,8 +1160,11 @@ Yanlış "satıcı değil" beyanı askıya alma sebebi; Google sonradan "güncel
 2027'den itibaren iletişim bilgileri (kişisel hesapta telefon + adres dahil) her yerde açık; AB/İngiltere'de
 "Sunan" satırına geliştirici adı; uygulama başına Kullanım Koşulları linki + uygunluk beyanı; uygulama
 düzeyi onay (Uygulama içeriği'nde, yalnız satıcılar). Satıcı değil: AB/İngiltere kullanıcısına yalnız
-"tüketici hakları uygulanmaz" notu. Hesap düzeyi: Hesabı yönet › Hesap ayrıntıları › Hakkınızda. 30 Ekim'de
-form henüz Console'da yoktu. Muuvlink'te iki yön de var: gelir/satın alma yok; ama Salt Kreatif adıyla,
+"tüketici hakları uygulanmaz" notu. Hesap düzeyi: Hesabı yönet › Hesap ayrıntıları › Hakkınızda ›
+"Tüccar durumu" (5 Kasım 2026'da açıldı; 8 Kasım'da hâlâ beyan edilmemişti). Form: iki seçenek ("Bu bir
+satıcı hesabı" / "değil"); satıcıda önizleme info@saltajans.com + yasal ad "MELİH ÖNYER" + ödeme profilindeki
+ev adresi (değiştirmek için ödeme profili) + SMS ile doğrulanacak telefon — telefonu Melih doğrular. Hesap,
+"SALT KREATİF REKLAM TİCARET LİMİTED ŞİRKETİ" hesap grubunda (%15 hizmet ücreti bildirimi). Muuvlink'te iki yön de var: gelir/satın alma yok; ama Salt Kreatif adıyla,
 saltajans.com sitesiyle yayında ve uygulamada Training Agents reklamı var. Hesapta kayıtlı adres Melih'in
 ev adresi. Karar ve gönderim Melih'in. Veri güvenliğine "Yaklaşık konum" eklendi: toplanıyor, paylaşılmıyor, kısa süreli değil,
 isteğe bağlı, amaç uygulama işlevselliği ("Tam konum" önceden beyanlıydı, dokunulmadı). Sürüm notu
