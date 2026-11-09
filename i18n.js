@@ -439,6 +439,7 @@ export const translations = {
 
   // ── TRAINING DETAIL ─────────────────────────────────────
   trainingDetail: {
+    addToCalendar: { tr: "Takvime ekle", en: "Add to calendar", de: "Zum Kalender hinzufügen" },
     weekly: { tr: "Her hafta", en: "Every week", de: "Jede Woche" },
     stopSeries: { tr: "Tekrarı durdur", en: "Stop repeating", de: "Wiederholung beenden" },
     confirmStopSeries: { tr: "Bu etkinlik artık her hafta açılmayacak. İleri tarihli, kimsenin katılmadığı haftalar da silinecek.", en: "This event will no longer open every week. Upcoming weeks nobody has joined will also be deleted.", de: "Dieses Event wird nicht mehr wöchentlich angelegt. Kommende Wochen ohne Teilnehmende werden ebenfalls gelöscht." },
@@ -720,6 +721,9 @@ export const translations = {
 
   // ── TEAM DETAIL ─────────────────────────────────────────
   teamDetail: {
+    pinned: { tr: "Sabit duyuru", en: "Pinned", de: "Angeheftet" },
+    pinPost: { tr: "Duyuruyu sabitle", en: "Pin post", de: "Beitrag anheften" },
+    unpinPost: { tr: "Sabitlemeyi kaldır", en: "Unpin post", de: "Beitrag lösen" },
     wall:           { tr: "Duvar",                        en: "Wall",                    de: "Pinnwand"                },
     membersTab:     { tr: "Üyeler",                       en: "Members",                 de: "Mitglieder"              },
     namesMasked:    { tr: "Üyelerin tam isimlerini takıma katılınca görürsün.", en: "Join the team to see members' full names.", de: "Tritt dem Team bei, um die vollständigen Namen der Mitglieder zu sehen." },

@@ -1072,13 +1072,13 @@ const EMAIL_KIND_TR = {
   act_wu: "Hoş geldin", act_tc: "Takım kuruldu", act_ec: "Etkinlik yayında", act_lc: "Son çağrı",
   act_te: "İlk buluşma", grow: "Büyüme (panelden)", event_new: "Yeni etkinlik (üyelere)",
   event_reminder: "Etkinlik hatırlatma", team_member: "Yeni takım üyesi", event_join: "Yeni katılımcı",
-  comment: "Yorum", event_update: "Etkinlik değişti", wall_post: "Duvar gönderisi", role: "Rol değişti",
+  comment: "Yorum", event_update: "Etkinlik değişti", event_cancel: "Etkinlik iptal", wall_post: "Duvar gönderisi", role: "Rol değişti",
   invite: "Takım daveti", event_invite: "Etkinlik daveti", password_reset: "Şifre sıfırlama", contact_reply: "İletişim yanıtı",
   contact_answer: "Destek cevabı (panelden)",
   contact_admin: "İletişim (bize)", tips: "İpuçları", sample: "Örnek / test", other: "Diğer",
 };
 const NOTIF_KIND_TR = {
-  training: "Yeni etkinlik", training_update: "Etkinlik değişti", training_reminder: "Etkinlik hatırlatma",
+  training: "Yeni etkinlik", training_update: "Etkinlik değişti", training_cancelled: "Etkinlik iptal", training_reminder: "Etkinlik hatırlatma",
   training_join: "Yeni katılımcı", training_comment: "Yorum", comment_like: "Yorum beğenisi",
   team: "Yeni takım üyesi", team_post: "Duvar gönderisi", wall_post_like: "Gönderi beğenisi",
   invitation: "Takım daveti", role_change: "Rol değişti", badge: "Rozet", engagement_nudge: "Hatırlatma (geri çağırma)",

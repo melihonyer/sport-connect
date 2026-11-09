@@ -625,6 +625,15 @@ Takım etkinliği formunda "Her hafta tekrarla" + 4/8/12 hafta. Yalnız takım e
   etkinlikleri sayar). Gün adları `Intl`'den, metin `teams.weeklyTitle/nextEvent`, form `createTraining.repeat*`,
   etkinlik `trainingDetail.weekly/stopSeries/…` (7 dil).
 
+## Küçük paket (9 Kasım 2026, Melih onayladı)
+
+- **İptal haberi:** lider `DELETE /api/trainings/:id` ile İLERİ tarihli etkinliği silince katılanlara uygulama bildirimi + push +
+  e-posta (`training_cancelled`, tercih `event_update`, e-posta türü `event_cancel`, metin `MAIL.cancel*`). Satırlar silinmeden ÖNCE
+  okunur. Silen kişiye, geçmiş etkinliğe, admin silmesine ve takım silmeye gitmez. E-posta iki düğme: yakındaki etkinlikler + kendi etkinliğini aç.
+- **Takvime ekle:** `GET /api/trainings/:id/calendar.ics?k=` oturumsuz açılır (takvim uygulaması/dış tarayıcı), anahtar HMAC
+  (`icsToken`) ve yalnız etkinliği görebilene `calendar_url` ile verilir. JWT KULLANILMAZ: aynı sırla imzalanan jeton `authenticateToken`'dan geçerdi.
+- **Sabit duyuru:** `team_posts.pinned_at`, `POST /api/team-posts/:id/pin` (takım yöneticisi, en çok 3, bildirim yok); duvar sabitler üstte.
+
 ## Silme ve kayıt
 
 - Kullanıcı hesabı **yumuşak** silinir (`users.deleted_at`, 30 gün, sonra purge).

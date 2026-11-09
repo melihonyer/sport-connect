@@ -320,6 +320,7 @@ export default {
   },
 
   trainingDetail: {
+    addToCalendar: "Aggiungi al calendario",
     weekly: "Ogni settimana",
     stopSeries: "Interrompi la ripetizione",
     confirmStopSeries: "Questo evento non si aprirà più ogni settimana. Verranno eliminate anche le prossime settimane senza iscritti.",
@@ -502,6 +503,9 @@ export default {
   },
 
   teamDetail: {
+    pinned: "In evidenza",
+    pinPost: "Metti in evidenza",
+    unpinPost: "Togli dall'evidenza",
     wall: "Bacheca",
     membersTab: "Membri",
     namesMasked: "Vedrai i nomi completi dei membri entrando nella squadra.",

@@ -839,6 +839,7 @@ const NOTIF_TYPE_TO_KEY = {
   role_change:       'role',
   training:          'event_new',
   training_update:   'event_update',
+  training_cancelled: 'event_update',
   training_reminder: 'event_reminder',
   training_join:     'event_join',
   training_comment:  'comment',
@@ -1107,6 +1108,13 @@ const MAIL = {
     updateNotifTitle: (tr) => `${tr} güncellendi`,
     updateNotifMsg: (u) => `${u} etkinlik bilgilerini güncelledi.`,
     updateSubject: (tr) => `${tr} etkinliğinde değişiklik var`,
+    cancelNotifTitle: (tr) => `${tr} iptal edildi`,
+    cancelNotifMsg: (d) => `${d} tarihindeki etkinlik iptal edildi.`,
+    cancelSubject: (tr) => `${tr} iptal edildi`,
+    cancelTitle: `Etkinlik iptal edildi`,
+    cancelBody: (tr, w) => `${tr} (${w}) iptal edildi. İstersen yakınındaki diğer etkinliklere bak ya da kendi etkinliğini aç.`,
+    cancelCta: `Yakınındaki etkinliklere bak`,
+    cancelCtaOwn: `Kendi etkinliğini aç`,
     updateTitle: 'Etkinlik Güncellendi',
     updateBody: (team, tr) => `${mB(team)} takımının ${mB(tr)} etkinliğinde değişiklik yapıldı.`,
     updateCurrent: 'Güncel Bilgiler',
@@ -1218,6 +1226,13 @@ const MAIL = {
     updateNotifTitle: (tr) => `${tr} was updated`,
     updateNotifMsg: (u) => `${u} updated the event details.`,
     updateSubject: (tr) => `${tr} has changed`,
+    cancelNotifTitle: (tr) => `${tr} was cancelled`,
+    cancelNotifMsg: (d) => `The event on ${d} was cancelled.`,
+    cancelSubject: (tr) => `${tr} was cancelled`,
+    cancelTitle: `Event cancelled`,
+    cancelBody: (tr, w) => `${tr} (${w}) was cancelled. You can check out other events near you or set up your own.`,
+    cancelCta: `See events near you`,
+    cancelCtaOwn: `Create your own event`,
     updateTitle: 'Event updated',
     updateBody: (team, tr) => `The event ${mB(tr)} of ${mB(team)} has been changed.`,
     updateCurrent: 'Current details',
@@ -1329,6 +1344,13 @@ const MAIL = {
     updateNotifTitle: (tr) => `${tr} wurde aktualisiert`,
     updateNotifMsg: (u) => `${u} hat die Eventdetails aktualisiert.`,
     updateSubject: (tr) => `Änderung bei ${tr}`,
+    cancelNotifTitle: (tr) => `${tr} wurde abgesagt`,
+    cancelNotifMsg: (d) => `Das Event am ${d} wurde abgesagt.`,
+    cancelSubject: (tr) => `${tr} wurde abgesagt`,
+    cancelTitle: `Event abgesagt`,
+    cancelBody: (tr, w) => `${tr} (${w}) wurde abgesagt. Schau dir andere Events in deiner Nähe an oder erstelle dein eigenes.`,
+    cancelCta: `Events in deiner Nähe ansehen`,
+    cancelCtaOwn: `Eigenes Event erstellen`,
     updateTitle: 'Event aktualisiert',
     updateBody: (team, tr) => `Beim Event ${mB(tr)} des Teams ${mB(team)} gab es Änderungen.`,
     updateCurrent: 'Aktuelle Angaben',
@@ -1440,6 +1462,13 @@ const MAIL = {
     updateNotifTitle: (tr) => `Η εκδήλωση ${tr} ενημερώθηκε`,
     updateNotifMsg: (u) => `Ο/Η ${u} ενημέρωσε τα στοιχεία της εκδήλωσης.`,
     updateSubject: (tr) => `Αλλαγές στην εκδήλωση ${tr}`,
+    cancelNotifTitle: (tr) => `Η εκδήλωση ${tr} ακυρώθηκε`,
+    cancelNotifMsg: (d) => `Η εκδήλωση της ${d} ακυρώθηκε.`,
+    cancelSubject: (tr) => `Η εκδήλωση ${tr} ακυρώθηκε`,
+    cancelTitle: `Η εκδήλωση ακυρώθηκε`,
+    cancelBody: (tr, w) => `Η εκδήλωση ${tr} (${w}) ακυρώθηκε. Δες άλλες εκδηλώσεις κοντά σου ή δημιούργησε τη δική σου.`,
+    cancelCta: `Δες εκδηλώσεις κοντά σου`,
+    cancelCtaOwn: `Δημιούργησε τη δική σου`,
     updateTitle: 'Η εκδήλωση ενημερώθηκε',
     updateBody: (team, tr) => `Έγιναν αλλαγές στην εκδήλωση ${mB(tr)} της ομάδας ${mB(team)}.`,
     updateCurrent: 'Τρέχοντα στοιχεία',
@@ -1551,6 +1580,13 @@ const MAIL = {
     updateNotifTitle: (tr) => `${tr} se ha actualizado`,
     updateNotifMsg: (u) => `${u} ha actualizado los datos del evento.`,
     updateSubject: (tr) => `Cambios en ${tr}`,
+    cancelNotifTitle: (tr) => `${tr} se ha cancelado`,
+    cancelNotifMsg: (d) => `El evento del ${d} se ha cancelado.`,
+    cancelSubject: (tr) => `${tr} se ha cancelado`,
+    cancelTitle: `Evento cancelado`,
+    cancelBody: (tr, w) => `${tr} (${w}) se ha cancelado. Puedes ver otros eventos cerca de ti o crear el tuyo.`,
+    cancelCta: `Ver eventos cerca de ti`,
+    cancelCtaOwn: `Crear tu evento`,
     updateTitle: 'Evento actualizado',
     updateBody: (team, tr) => `Ha habido cambios en el evento ${mB(tr)} de ${mB(team)}.`,
     updateCurrent: 'Datos actuales',
@@ -1662,6 +1698,13 @@ const MAIL = {
     updateNotifTitle: (tr) => `${tr} a été modifié`,
     updateNotifMsg: (u) => `${u} a modifié les informations de l'événement.`,
     updateSubject: (tr) => `Changements pour ${tr}`,
+    cancelNotifTitle: (tr) => `${tr} a été annulé`,
+    cancelNotifMsg: (d) => `L\'événement du ${d} a été annulé.`,
+    cancelSubject: (tr) => `${tr} a été annulé`,
+    cancelTitle: `Événement annulé`,
+    cancelBody: (tr, w) => `${tr} (${w}) a été annulé. Tu peux regarder d’autres événements près de chez toi ou créer le tien.`,
+    cancelCta: `Voir les événements près de chez toi`,
+    cancelCtaOwn: `Créer ton événement`,
     updateTitle: 'Événement modifié',
     updateBody: (team, tr) => `L'événement ${mB(tr)} de ${mB(team)} a été modifié.`,
     updateCurrent: 'Informations à jour',
@@ -1773,6 +1816,13 @@ const MAIL = {
     updateNotifTitle: (tr) => `${tr} è stato aggiornato`,
     updateNotifMsg: (u) => `${u} ha aggiornato i dettagli dell'evento.`,
     updateSubject: (tr) => `Modifiche a ${tr}`,
+    cancelNotifTitle: (tr) => `${tr} è stato annullato`,
+    cancelNotifMsg: (d) => `L\'evento del ${d} è stato annullato.`,
+    cancelSubject: (tr) => `${tr} è stato annullato`,
+    cancelTitle: `Evento annullato`,
+    cancelBody: (tr, w) => `${tr} (${w}) è stato annullato. Puoi dare un’occhiata ad altri eventi vicino a te o crearne uno tuo.`,
+    cancelCta: `Vedi eventi vicino a te`,
+    cancelCtaOwn: `Crea il tuo evento`,
     updateTitle: 'Evento aggiornato',
     updateBody: (team, tr) => `L'evento ${mB(tr)} di ${mB(team)} è stato modificato.`,
     updateCurrent: 'Dettagli aggiornati',
@@ -2198,6 +2248,15 @@ function trainingCommentEmail({ commenterName, commenterAvatar, trainingTitle, t
 }
 
 // Şablon: Etkinlik güncelleme bildirimi
+function trainingCancelledEmail({ title, when }, lang = 'tr') {
+  return emailWrapper(`
+    <h2 style="margin:0 0 10px;color:#1e293b;font-size:22px;">${tm(lang, 'cancelTitle')}</h2>
+    <p style="margin:0 0 24px;color:#475569;font-size:16px;line-height:1.6;">${actEsc(tm(lang, 'cancelBody', title, when))}</p>
+    <a href="${APP_URL}/etkinlikler" style="display:block;text-align:center;background:#114956;border-radius:12px;padding:14px 16px;color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;">${tm(lang, 'cancelCta')}</a>
+    <a href="${APP_URL}/etkinlik-ekle" style="display:block;text-align:center;background:#ffffff;border:1.5px solid #114956;border-radius:12px;padding:12px 16px;margin-top:10px;color:#114956;text-decoration:none;font-weight:700;font-size:15px;">${tm(lang, 'cancelCtaOwn')}</a>
+  `, lang);
+}
+
 function trainingUpdateEmail({ teamName, trainingTitle, trainingDate, trainingTime, location, description, updaterName, trainingId }, lang = 'tr') {
   const trainingLink = trainingId ? `${APP_URL}/etkinlikler?etkinlik=${trainingId}` : `${APP_URL}/etkinlikler`;
   return emailWrapper(`
@@ -3253,6 +3312,7 @@ const SERVER_MSG = {
   'Bu etkinliği yalnızca oluşturan kişi düzenleyebilir.': { en: 'Only the person who created this event can edit it.', de: 'Nur die Person, die das Event erstellt hat, kann es bearbeiten.', el: 'Μόνο όποιος δημιούργησε την εκδήλωση μπορεί να την επεξεργαστεί.', es: 'Solo quien creó este evento puede editarlo.', fr: 'Seule la personne qui a créé cet événement peut le modifier.', it: 'Solo chi ha creato questo evento può modificarlo.' },
   'Etkinliği düzenlemek için takımın sahibi, antrenörü veya kaptanı olmanız gerekiyor.': { en: 'You need to be the team owner, coach or captain to edit the event.', de: 'Um das Event zu bearbeiten, musst du Teamleitung, Trainer oder Kapitän sein.', el: 'Για να επεξεργαστείς την εκδήλωση πρέπει να είσαι ιδιοκτήτης, προπονητής ή αρχηγός της ομάδας.', es: 'Para editar el evento tienes que ser propietario, entrenador o capitán del equipo.', fr: 'Pour modifier l\'événement, tu dois être propriétaire, coach ou capitaine de l\'équipe.', it: 'Per modificare l\'evento devi essere proprietario, allenatore o capitano della squadra.' },
   'Bu etkinliği yalnızca oluşturan kişi silebilir.': { en: 'Only the person who created this event can delete it.', de: 'Nur die Person, die das Event erstellt hat, kann es löschen.', el: 'Μόνο όποιος δημιούργησε την εκδήλωση μπορεί να τη διαγράψει.', es: 'Solo quien creó este evento puede eliminarlo.', fr: 'Seule la personne qui a créé cet événement peut le supprimer.', it: 'Solo chi ha creato questo evento può eliminarlo.' },
+  'En çok 3 duyuru sabitlenebilir.': { en: 'You can pin up to 3 posts.', de: 'Du kannst höchstens 3 Beiträge anheften.', el: 'Μπορείς να καρφιτσώσεις έως 3 αναρτήσεις.', es: 'Puedes fijar hasta 3 publicaciones.', fr: 'Tu peux épingler jusqu’à 3 publications.', it: 'Puoi mettere in evidenza fino a 3 post.' },
   'Etkinliği silmek için takımın sahibi, antrenörü veya kaptanı olmanız gerekiyor.': { en: 'You need to be the team owner, coach or captain to delete the event.', de: 'Um das Event zu löschen, musst du Teamleitung, Trainer oder Kapitän sein.', el: 'Για να διαγράψεις την εκδήλωση πρέπει να είσαι ιδιοκτήτης, προπονητής ή αρχηγός της ομάδας.', es: 'Para eliminar el evento tienes que ser propietario, entrenador o capitán del equipo.', fr: 'Pour supprimer l\'événement, tu dois être propriétaire, coach ou capitaine de l\'équipe.', it: 'Per eliminare l\'evento devi essere proprietario, allenatore o capitano della squadra.' },
   'Hesabınız silinmek üzere kapatıldı.': { en: 'Your account has been closed for deletion.', de: 'Dein Konto wurde zur Löschung geschlossen.', el: 'Ο λογαριασμός σου έκλεισε και θα διαγραφεί.', es: 'Tu cuenta se ha cerrado y se eliminará.', fr: 'Ton compte a été fermé et sera supprimé.', it: 'Il tuo account è stato chiuso e verrà eliminato.' },
   'Geçersiz tercih verisi.': { en: 'Invalid preference data.', de: 'Ungültige Einstellungen.', el: 'Μη έγκυρα δεδομένα προτιμήσεων.', es: 'Datos de preferencias no válidos.', fr: 'Préférences non valides.', it: 'Preferenze non valide.' },
@@ -4940,7 +5000,7 @@ app.get('/api/teams/:id', optionalAuth, async (req, res) => {
        FROM team_posts tp
        JOIN users u ON tp.user_id = u.id
        WHERE tp.team_id = $1 AND tp.is_deleted IS NOT TRUE
-       ORDER BY tp.created_at DESC
+       ORDER BY tp.pinned_at DESC NULLS LAST, tp.created_at DESC
        LIMIT 10`,
       [teamId, req.user?.id || null]
     );
@@ -5650,6 +5710,53 @@ async function createTrainingSeries(training, weeks, route) {
   await generateSeriesOccurrences(r.rows[0].id);
 }
 
+// Takvime ekle: .ics bağlantısı oturumsuz açılır (takvim uygulaması, dış tarayıcı), bu yüzden
+// anahtar taşır. Anahtarı yalnız etkinliği görebilen alır (GET /api/trainings/:id).
+const icsToken = (id) => crypto.createHmac('sha256', process.env.JWT_SECRET).update(`ics:${id}`).digest('hex').slice(0, 32);
+const icsText = (x) => String(x || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+const icsStamp = (d) => new Date(d).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+const icsFold = (line) => {
+  const out = []; let cur = ''; let bytes = 0;
+  for (const ch of line) {
+    const n = Buffer.byteLength(ch);
+    if (bytes + n > 73) { out.push(cur); cur = ' '; bytes = 1; }
+    cur += ch; bytes += n;
+  }
+  out.push(cur);
+  return out.join('\r\n');
+};
+app.get('/api/trainings/:id/calendar.ics', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const given = Buffer.from(String(req.query.k || ''));
+    const want = Buffer.from(Number.isInteger(id) ? icsToken(id) : '');
+    if (!want.length || given.length !== want.length || !crypto.timingSafeEqual(given, want)) {
+      return res.status(404).json({ error: 'Training not found' });
+    }
+    const r = await pool.query(
+      `SELECT id, title, description, location_name, COALESCE(duration_minutes, 60) AS duration, ${trainingUtcExpr('')} AS starts
+         FROM trainings WHERE id = $1`, [id]);
+    const t = r.rows[0];
+    if (!t) return res.status(404).json({ error: 'Training not found' });
+    const url = `${APP_URL}/etkinlik/${slugify(t.title)}-${t.id}`;
+    const lines = [
+      'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Muuvlink//Etkinlik//TR', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
+      'BEGIN:VEVENT', `UID:training-${t.id}@muuvlink.app`, `DTSTAMP:${icsStamp(Date.now())}`,
+      `DTSTART:${icsStamp(t.starts)}`, `DTEND:${icsStamp(new Date(t.starts).getTime() + t.duration * 60000)}`,
+      `SUMMARY:${icsText(t.title)}`, `LOCATION:${icsText(t.location_name)}`,
+      `DESCRIPTION:${icsText([t.description, url].filter(Boolean).join('\n\n'))}`, `URL:${url}`,
+      'END:VEVENT', 'END:VCALENDAR',
+    ];
+    res.set('Content-Type', 'text/calendar; charset=utf-8');
+    res.set('Content-Disposition', `inline; filename="muuvlink-${t.id}.ics"`);
+    res.set('Cache-Control', 'no-store');
+    res.send(lines.map(icsFold).join('\r\n') + '\r\n');
+  } catch (error) {
+    console.error('Calendar error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Tekrarı durdur: yeni hafta açılmaz; ileri tarihli, kurucudan başka katılımcısı ve
 // yorumu olmayan otomatik haftalar silinir. Birinin katıldığı hafta durur.
 app.post('/api/trainings/:id/stop-series', authenticateToken, async (req, res) => {
@@ -6258,6 +6365,7 @@ app.get('/api/trainings/:id', optionalAuth, async (req, res) => {
         training.can_manage = TRAINING_MANAGER_ROLES.includes(training.my_role);
       }
     }
+    training.calendar_url = `/trainings/${training.id}/calendar.ics?k=${icsToken(training.id)}`;
     training.series_active = false;
     if (training.series_id) {
       const sr = await pool.query(
@@ -6903,6 +7011,32 @@ app.post('/api/team-posts/:id/like', authenticateToken, async (req, res) => {
 
 // Takım duvarı gönderisini sil (soft-delete). Yetki: gönderinin sahibi VEYA takım yönetimi
 // (sahip / antrenör / kaptan / editör).
+// Sabit duyuru: takım yöneticisi en çok 3 gönderiyi duvarın üstüne alır. Bildirim gitmez.
+const MAX_PINNED_POSTS = 3;
+app.post('/api/team-posts/:id/pin', authenticateToken, async (req, res) => {
+  try {
+    const p = await pool.query('SELECT id, team_id, pinned_at FROM team_posts WHERE id = $1 AND is_deleted IS NOT TRUE', [req.params.id]);
+    if (!p.rows.length) return res.status(404).json({ error: 'Gönderi bulunamadı.' });
+    const post = p.rows[0];
+    const role = await pool.query('SELECT role FROM team_members WHERE team_id = $1 AND user_id = $2', [post.team_id, req.user.id]);
+    if (!TRAINING_MANAGER_ROLES.includes(role.rows[0]?.role)) return res.status(403).json({ error: 'Bu gönderiyi silme yetkiniz yok.' });
+    if (req.body?.pinned === false) {
+      await pool.query('UPDATE team_posts SET pinned_at = NULL WHERE id = $1', [post.id]);
+      return res.json({ pinned: false });
+    }
+    // Sınır kontrolü ile yazma tek sorguda: aynı anda iki sabitleme sınırı aşamaz.
+    const up = await pool.query(
+      `UPDATE team_posts SET pinned_at = NOW() WHERE id = $1 AND (pinned_at IS NOT NULL OR
+         (SELECT COUNT(*) FROM team_posts x WHERE x.team_id = $2 AND x.pinned_at IS NOT NULL AND x.is_deleted IS NOT TRUE) < $3)
+       RETURNING id`, [post.id, post.team_id, MAX_PINNED_POSTS]);
+    if (!up.rows.length) return res.status(409).json({ error: 'En çok 3 duyuru sabitlenebilir.' });
+    res.json({ pinned: true });
+  } catch (error) {
+    console.error('Pin post error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 app.delete('/api/team-posts/:id', authenticateToken, async (req, res) => {
   try {
     const pRes = await pool.query(
@@ -7058,7 +7192,8 @@ app.delete('/api/trainings/:id', authenticateToken, async (req, res) => {
     const trainingId = req.params.id;
 
     const trainingResult = await pool.query(
-      `SELECT t.team_id, t.created_by, t.title, t.is_public, t.training_date,
+      `SELECT t.team_id, t.created_by, t.title, t.is_public, t.training_date, t.training_time,
+              ${trainingUtcExpr('t')} > NOW() AS upcoming,
               teams.name AS team_name
          FROM trainings t LEFT JOIN teams ON teams.id = t.team_id
         WHERE t.id = $1`,
@@ -7085,8 +7220,30 @@ app.delete('/api/trainings/:id', authenticateToken, async (req, res) => {
       }
     }
 
+    // Silmeden ÖNCE: katılım satırları etkinlikle birlikte gidiyor. Geçmiş etkinliğe haber gitmez.
+    const toTell = trg.upcoming ? (await pool.query(
+      `SELECT u.id, u.email FROM training_attendees ta JOIN users u ON u.id = ta.user_id
+        WHERE ta.training_id = $1 AND ta.user_id != $2 AND u.deleted_at IS NULL`,
+      [trainingId, req.user.id])).rows : [];
+
     await pool.query('DELETE FROM trainings WHERE id = $1', [trainingId]);
     logDeletion('training', { id: trainingId, name: trg.title, meta: { team_name: trg.team_name, training_date: trg.training_date } }, req.user.id, 'self');
+
+    const clock = trg.training_time ? String(trg.training_time).slice(0, 5) : '';
+    for (const a of toTell) {
+      createNotif(a.id, {
+        build: (L) => ({ title: tm(L, 'cancelNotifTitle', trg.title), message: tm(L, 'cancelNotifMsg', formatTrDate(trg.training_date, L)) }),
+        type: 'training_cancelled',
+        url: '/etkinlikler',
+      }).catch((e) => console.error('Cancel notif error:', e.message));
+      sendEmail({
+        to: a.email, userId: a.id, prefKey: 'event_update', kind: 'event_cancel',
+        build: (L) => ({
+          subject: tm(L, 'cancelSubject', trg.title),
+          html: trainingCancelledEmail({ title: trg.title, when: [formatTrDate(trg.training_date, L), clock].filter(Boolean).join(', ') }, L),
+        }),
+      }).catch((e) => console.error('Cancel email error:', e.message));
+    }
 
     res.json({ message: 'Training deleted' });
     indexNowPing(indexNowTrainingUrl({ ...trg, id: trainingId }));
@@ -7539,6 +7696,7 @@ const SUBJECT_KIND = [
   [/ — Yeni Katılımcı: /, 'event_join'],
   [/ etkinliğine yorum yapıldı$/, 'comment'],
   [/ etkinliğinde değişiklik var$/, 'event_update'],
+  [/ iptal edildi$/, 'event_cancel'],
   [/ takımında yeni gönderi var$/, 'wall_post'],
   [/ takımındaki rolün güncellendi$/, 'role'],
   [/ takımına davet etti!?$/, 'invite'],
@@ -11245,6 +11403,7 @@ pool.query(`
 
 // Soft delete kolonları — yoksa ekle
 pool.query(`ALTER TABLE team_posts ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT false`).catch(() => {});
+pool.query(`ALTER TABLE team_posts ADD COLUMN IF NOT EXISTS pinned_at TIMESTAMPTZ`).catch(() => {});
 pool.query(`ALTER TABLE training_comments ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT false`).catch(() => {});
 
 // Mesaj (yorum) beğenileri

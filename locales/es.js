@@ -320,6 +320,7 @@ export default {
   },
 
   trainingDetail: {
+    addToCalendar: "Añadir al calendario",
     weekly: "Cada semana",
     stopSeries: "Dejar de repetir",
     confirmStopSeries: "Este evento dejará de abrirse cada semana. También se borrarán las próximas semanas a las que nadie se haya apuntado.",
@@ -502,6 +503,9 @@ export default {
   },
 
   teamDetail: {
+    pinned: "Fijado",
+    pinPost: "Fijar publicación",
+    unpinPost: "Quitar de fijados",
     wall: "Muro",
     membersTab: "Miembros",
     namesMasked: "Verás los nombres completos de los miembros cuando te unas al equipo.",
