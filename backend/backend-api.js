@@ -3837,7 +3837,7 @@ app.get(['/takim/*', '/etkinlik/*'], async (req, res, next) => {
       const r = await pool.query(
         `SELECT t.id, t.title, t.description, t.image_url, t.is_public, t.sport,
                 t.training_date, t.training_time, t.location_name, t.location_address,
-                t.capacity, t.is_paid, t.organizer, teams.name AS team_name, t.team_id,
+                t.capacity, t.is_paid, t.organizer, t.registration_url, teams.name AS team_name, t.team_id,
                 t.location_lat, t.location_lng,
                 COALESCE(NULLIF(t.training_timezone, ''), 'Europe/Istanbul') AS tz,
                 ${trainingUtcExpr('t')} AS start_utc,
@@ -3881,7 +3881,9 @@ app.get(['/takim/*', '/etkinlik/*'], async (req, res, next) => {
             '@type': 'Place', name: e0.location_name || e0.location_address || undefined,
             address: e0.location_address || e0.location_name || undefined, geo,
           } : undefined,
-          organizer: e0.organizer ? { '@type': 'Organization', name: e0.organizer }
+          // Organizatörün ayrı site alanı yok; kayıt linki onun sayfası (Google organizer.url istiyor).
+          organizer: e0.organizer ? { '@type': 'Organization', name: e0.organizer,
+              url: /^https?:\/\//i.test(e0.registration_url || '') ? e0.registration_url : undefined }
             : teamUrl ? { '@type': 'SportsTeam', name: e0.team_name, url: teamUrl } : undefined,
           maximumAttendeeCapacity: e0.capacity || undefined,
           isAccessibleForFree: e0.is_paid ? undefined : true,
