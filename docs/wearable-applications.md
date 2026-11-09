@@ -87,7 +87,7 @@ summaries to confirm group event attendance and show the member their own histor
 ayrı başvuru şart. §7 API'den gelen coğrafi konumu toplamayı, önbelleklemeyi, saklamayı yasaklıyor: Wahoo'dan başlangıç
 konumu saklanmaz, ısı haritasına Wahoo verisi girmez. §8 giriş yoluyla alınan veriyi o kullanıcıyla sınırlıyor; §7 ise
 kullanıcının önceden açık onayıyla başkasına göstermeye izin veriyor. Takımla paylaşım riskli, başvuru metni paylaşımsız önerildi.
-§6 gizlilik politikasında Wahoo'nun uygulama verisini kullanabileceğini söyleyen zorunlu cümle istiyor; `/en/privacy`'de henüz yok.
+§6 gizlilik politikasında Wahoo'nun uygulama verisini kullanabileceğini söyleyen zorunlu cümle istiyor; `/en/privacy` ve Türkçe metne 9 Kasım 2026'da eklendi (Wahoo istisnasıyla birlikte).
 Kullanıcı isteyince veri silinir; Wahoo isterse 48 saatte, güvenlik olayı 24 saatte bildirilir.
 
 https://developers.wahooligan.com. Başvuru **Production** seçilir (Sandbox sonradan çevrilmiyor).

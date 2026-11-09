@@ -10369,11 +10369,12 @@ export default function Muuvlink() {
 <h4>${no}. Saat ve Spor Hizmeti Verileri</h4>
 <p><em>Bu özellik kullanıma açılıyor.</em> Yalnızca Muuvlink'e bir saat ya da spor hizmeti (Polar, Garmin, Wahoo, Suunto, COROS, Strava) bağlarsan geçerlidir. Bağlamak isteğe bağlıdır; Muuvlink bağlamadan da eksiksiz çalışır.</p>
 <p><strong>Açık rıza:</strong> Herhangi bir veri okunmadan önce, üyelikten ayrı olarak açık rızanı isteriz ve ne zaman verdiğini kaydederiz. Nabız, KVKK'da özel nitelikli kişisel veridir (Madde 6).</p>
-<p><strong>Okunan veriler:</strong> Tamamladığın antrenmanların özeti: spor türü, başlangıç saati ve konumu, süre, mesafe, tırmanış ve ortalama nabız.</p>
+<p><strong>Okunan veriler:</strong> Tamamladığın antrenmanların özeti: spor türü, başlangıç saati ve konumu (Wahoo hariç), süre, mesafe, tırmanış ve ortalama nabız.</p>
 <p><strong>Amaç:</strong> Katıldığın grup etkinliğine gerçekten gittiğini doğrulamak ve kendi antrenman geçmişini sana göstermek.</p>
-<p><strong>Kim görür:</strong> Varsayılan olarak yalnızca sen. Bir antrenman için açarsan takım arkadaşların yalnızca o antrenmanı görür; paylaşım varsayılan olarak kapalıdır. Nabzın diğer üyelere hiçbir zaman gösterilmez. Strava'dan gelen veriler yalnızca sana gösterilir.</p>
+<p><strong>Kim görür:</strong> Varsayılan olarak yalnızca sen. Bir antrenman için açarsan takım arkadaşların yalnızca o antrenmanı görür; paylaşım varsayılan olarak kapalıdır. Nabzın diğer üyelere hiçbir zaman gösterilmez. Strava ve Wahoo'dan gelen veriler yalnızca sana gösterilir.</p>
 <p><strong>İşleyenler:</strong> Yalnızca Güzel Hosting (uygulama sunucusu, Türkiye) ve Supabase (veritabanı, İrlanda). Rızanla bu verilerin İrlanda'da saklanmasını da kabul etmiş olursun. Bu veriler satılmaz, reklam için kullanılmaz, Meta'ya ya da analiz hizmetlerine gönderilmez, başka üçüncü kişiyle paylaşılmaz ve yapay zekâ modeli eğitmek için kullanılmaz.</p>
 <p><strong>Markanın kendi politikası:</strong> Markanın tarafında o markanın gizlilik politikası geçerlidir.</p>
+<p><strong>Wahoo:</strong> Wahoo'dan gelen konum verisini saklamayız. Muuvlink yalnızca antrenman özetlerini okur, antrenman verilerini Wahoo'ya göndermez. Wahoo, bu bağlantı üzerinden Wahoo platformuna gönderilen verileri, Wahoo'nun Gizlilik Politikası'na uygun olarak, iç ya da dış her türlü ticari amaçla kullanabilir; bu kapsamda değiştirebilir, kopyalayabilir ve analiz edebilir.</p>
 <p><strong>Geri alma:</strong> Ayarlar'dan bağlantıyı istediğin an kesip rızanı geri alabilirsin. Bu durumda o hizmetten aldığımız antrenman verilerini, bu veriye dayanan katılım teyidini ve erişim anahtarını sileriz. Hesabını silmek de aynı sonucu doğurur.</p>
 `;
   const legalContent = {
