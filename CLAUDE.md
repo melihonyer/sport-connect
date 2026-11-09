@@ -647,6 +647,7 @@ Grup adı ve tempo `rejectIfObjectionable`'dan geçer.
 
 `teams.tags` (TEXT[]), sabit 8 kod: `TEAM_TAGS` İKİ yerde birebir (backend + sporla-bulusma.jsx), metin `teamTags.<kod>` (7 dil). Takım başına en çok 4;
 bilinmeyen kod atılır. PUT'ta alan yoksa dokunulmaz. Form `TeamTagPicker`; kartta en çok 3 + "+n"; Takımlar süzgecinde yalnız kullanılan etiketler (`teamTag` üst düzey state).
+Takımlar sayfasında etiketsiz takımın SAHİBİ/EDİTÖRÜNE tek satır bilgi (`tagNudgeTeam`, `teams.tagNudge*`; antrenör/kaptan Ayarlar'a giremez): "Etiket ekle" Ayarlar'ı açar, etiket eklenince kaybolur, kapatılırsa o cihazda çıkmaz (`muuv_tag_nudge_off`).
 
 ## Takım atlası: sahiplenme (9 Kasım 2026, Melih onayladı)
 

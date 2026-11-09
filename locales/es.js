@@ -486,6 +486,9 @@ export default {
   },
 
   teams: {
+    tagNudgeTitle: "Haz que encuentren a tu equipo.",
+    tagNudgeBody: "Añade etiquetas que lo describan.",
+    tagNudgeCta: "Añadir etiquetas",
     weeklyTitle: "Programa semanal",
     nextEvent: "Próximo encuentro: {date}",
     featuredTitle: "Equipos destacados",

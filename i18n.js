@@ -697,6 +697,9 @@ export const translations = {
 
   // ── TEAMS PAGE ───────────────────────────────────────────
   teams: {
+    tagNudgeTitle: { tr: "Takımın aranırken bulunsun.", en: "Help people find your team.", de: "Damit dein Team gefunden wird." },
+    tagNudgeBody: { tr: "Takımını anlatan etiketleri ekle.", en: "Add tags that describe it.", de: "Füge passende Tags hinzu." },
+    tagNudgeCta: { tr: "Etiket ekle", en: "Add tags", de: "Tags hinzufügen" },
     weeklyTitle: { tr: "Haftalık program", en: "Weekly schedule", de: "Wochenplan" },
     nextEvent: { tr: "Sonraki buluşma: {date}", en: "Next meetup: {date}", de: "Nächstes Treffen: {date}" },
     featuredTitle:  { tr: "Öne çıkan takımlar", en: "Featured teams", de: "Empfohlene Teams" },

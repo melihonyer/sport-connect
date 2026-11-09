@@ -2480,6 +2480,7 @@ export default function Muuvlink() {
   const claimContactRef = useRef(null);
   const claimNoteRef = useRef(null);
   const [claimBusy, setClaimBusy] = useState(false);
+  const [tagNudgeOff, setTagNudgeOff] = useState(() => { try { return localStorage.getItem("muuv_tag_nudge_off") === "1"; } catch { return false; } });
   const [teamTag, setTeamTag] = useState(""); // Takımlar süzgeci; sıralama gibi üst düzeyde (satır içi sayfa sıfırlanıyor)
   const [trainingSort, setTrainingSort] = useState("date");
   const [locationLoading, setLocationLoading] = useState(false);
@@ -6902,6 +6903,10 @@ export default function Muuvlink() {
     }));
     // Yalnız en az bir takımın kullandığı etiketler süzgeçte çıkar
     const usedTags = TEAM_TAGS.filter((code) => teams.some((tm) => tm.tags?.includes(code)));
+    // Etiketi yalnız sahip/editör ekleyebilir (Ayarlar sekmesi): bilgilendirme de yalnız ona, etiket ekleyince kaybolur
+    const tagNudgeTeam = user && !tagNudgeOff
+      ? teams.find((tm) => ["owner", "editor"].includes(tm.my_role) && !tm.tags?.length && !tm.women_tag_requested && !tm.unclaimed)
+      : null;
     // Arama/süzgeç yokken: önce öne çıkanlar (admin seçer), altında kalanlar
     const filtering = !!(teamSearch || teamSport || teamTag);
     const featuredTeams = filtering ? [] : filteredTeams.filter((tm) => tm.featured);
@@ -6976,6 +6981,21 @@ export default function Muuvlink() {
 
         {/* ── Content ── */}
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-10">
+          {tagNudgeTeam && (
+            <div className="mb-6 flex items-center gap-3 pl-4 pr-1.5 py-1.5 rounded-xl bg-brand-50 border border-brand-100">
+              <p className="flex-1 min-w-0 text-sm text-slate-700">
+                <span className="font-semibold text-brand-900">{t("teams.tagNudgeTitle")}</span> {t("teams.tagNudgeBody")}
+              </p>
+              <button onClick={() => { teamActiveTabRef.current = "settings"; setTeamActiveTab("settings"); fetchTeamDetails(tagNudgeTeam.id); window.scrollTo(0, 0); }}
+                className="flex-shrink-0 min-h-[44px] px-2 text-sm font-semibold text-brand-700 hover:underline">
+                {t("teams.tagNudgeCta")}
+              </button>
+              <button aria-label={t("common.close")} onClick={() => { try { localStorage.setItem("muuv_tag_nudge_off", "1"); } catch {} setTagNudgeOff(true); }}
+                className="w-11 h-11 flex-shrink-0 flex items-center justify-center text-slate-400 hover:text-slate-700">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
           {filteredTeams.length > 0 ? (
             <>
               {featuredTeams.length > 0 && (

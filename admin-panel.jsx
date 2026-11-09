@@ -1072,7 +1072,7 @@ const EMAIL_KIND_TR = {
   act_wu: "Hoş geldin", act_tc: "Takım kuruldu", act_ec: "Etkinlik yayında", act_lc: "Son çağrı",
   act_te: "İlk buluşma", grow: "Büyüme (panelden)", event_new: "Yeni etkinlik (üyelere)",
   event_reminder: "Etkinlik hatırlatma", team_member: "Yeni takım üyesi", event_join: "Yeni katılımcı",
-  comment: "Yorum", event_update: "Etkinlik değişti", event_cancel: "Etkinlik iptal", team_claim: "Takım devri", wall_post: "Duvar gönderisi", role: "Rol değişti",
+  comment: "Yorum", event_update: "Etkinlik değişti", event_cancel: "Etkinlik iptal", team_claim: "Takım devri", leaders_nov: "Liderlere yenilikler", whats_new: "Yenilikler", wall_post: "Duvar gönderisi", role: "Rol değişti",
   invite: "Takım daveti", event_invite: "Etkinlik daveti", password_reset: "Şifre sıfırlama", contact_reply: "İletişim yanıtı",
   contact_answer: "Destek cevabı (panelden)",
   contact_admin: "İletişim (bize)", tips: "İpuçları", sample: "Örnek / test", other: "Diğer",

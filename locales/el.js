@@ -487,6 +487,9 @@ export default {
   },
 
   teams: {
+    tagNudgeTitle: "Βοήθησε να βρεθεί η ομάδα σου.",
+    tagNudgeBody: "Πρόσθεσε ετικέτες που την περιγράφουν.",
+    tagNudgeCta: "Προσθήκη ετικετών",
     weeklyTitle: "Εβδομαδιαίο πρόγραμμα",
     nextEvent: "Επόμενη συνάντηση: {date}",
     featuredTitle: "Προτεινόμενες ομάδες",
