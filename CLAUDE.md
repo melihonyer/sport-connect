@@ -609,6 +609,22 @@ geçtiğini görür (Melih'in fikri; örnek: Urla'dan çıkan sürüşe Balıkl�
   ortak: kopya canlının bağlantılarını yer. İşlem havuzu (6543) + `max: 2` kullanılır, zamanlanmış
   işler (hatırlatma, aktivasyon e-postası, purge) ve e-posta anahtarı kapatılır.
 
+## Haftalık program (9 Kasım 2026, Kailo Clubs'tan uyarlandı)
+
+Takım etkinliği formunda "Her hafta tekrarla" + 4/8/12 hafta. Yalnız takım etkinliği; Training Agents taslağında yok.
+- `training_series` (şablon `template` JSONB, imleç `next_date`, `ends_on`, `stopped_at`) + `trainings.series_id`,
+  `series_auto`. İlk etkinlik normal yoldan açılır (bildirim, Meta, rozet); sonrakileri `generateSeriesOccurrences`
+  üretir (saatte bir + kurulurken), en çok 21 gün ilerisi: liste şişmesin.
+- **Otomatik haftalar sessizdir:** bildirim/push/e-posta yok; `ec`/`lc` maillerine, `created_count` rozetine, pasif
+  kullanıcı sayımına girmez (`series_auto = false` süzgeçleri). Kurucu otomatik katılımcı olur.
+- İmleç atomik ilerler (aynı hafta iki kez üretilmez); silinen hafta geri gelmez; geçmişe etkinlik açılmaz.
+  Şablon sabittir: tek haftayı düzenlemek sonrakileri değiştirmez. Kurucu takımdan çıkar ya da yetkisi giderse seri durur.
+- "Tekrarı durdur" (`POST /api/trainings/:id/stop-series`, takım yöneticisi): yeni hafta açılmaz; ileri tarihli,
+  kurucudan başka katılımcısı ve yorumu olmayan OTOMATİK haftalar silinir (`logDeletion`).
+- Takım kartı: `/api/teams` `next_date` + `weekly_days` (`teamScheduleSql`, 1 = Pazartesi; üye olmayan yalnız herkese açık
+  etkinlikleri sayar). Gün adları `Intl`'den, metin `teams.weeklyTitle/nextEvent`, form `createTraining.repeat*`,
+  etkinlik `trainingDetail.weekly/stopSeries/…` (7 dil).
+
 ## Silme ve kayıt
 
 - Kullanıcı hesabı **yumuşak** silinir (`users.deleted_at`, 30 gün, sonra purge).

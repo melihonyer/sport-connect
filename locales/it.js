@@ -320,6 +320,10 @@ export default {
   },
 
   trainingDetail: {
+    weekly: "Ogni settimana",
+    stopSeries: "Interrompi la ripetizione",
+    confirmStopSeries: "Questo evento non si aprirà più ogni settimana. Verranno eliminate anche le prossime settimane senza iscritti.",
+    seriesStopped: "Ripetizione interrotta.",
     title: "Dettaglio evento",
     joinedList: "Partecipanti",
     namesMasked: "Vedrai i nomi completi partecipando all'evento o entrando nella squadra.",
@@ -421,6 +425,10 @@ export default {
   },
 
   createTraining: {
+    repeatToggle: "Ripeti ogni settimana",
+    repeatHint: "Si apre da solo ogni settimana, stesso giorno, ora e luogo. I membri ricevono l'avviso solo per il primo evento.",
+    repeatDuration: "Per quante settimane?",
+    repeatWeeks: "{n} settimane",
     pageTitle: "Crea evento",
     regToggle: "Voglio condividere un link di iscrizione esterno",
     regToggleHint: "Per l'iscrizione a una gara, un modulo o una pagina di biglietti. La maggior parte degli eventi non ne ha bisogno.",
@@ -465,6 +473,8 @@ export default {
   },
 
   teams: {
+    weeklyTitle: "Programma settimanale",
+    nextEvent: "Prossimo incontro: {date}",
     featuredTitle: "Squadre in evidenza",
     allTitle: "Tutte le squadre",
     pageTitle: "Squadre",

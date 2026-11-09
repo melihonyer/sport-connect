@@ -3359,7 +3359,7 @@ const checkAndAwardBadges = async (userId) => {
         qualified = parseInt(teamCount.rows[0].count) >= badge.requirement_value;
       } else if (badge.requirement_type === 'created_count') {
         const createdCount = await pool.query(
-          'SELECT COUNT(*) FROM trainings WHERE created_by = $1',
+          'SELECT COUNT(*) FROM trainings WHERE created_by = $1 AND series_auto = false',
           [userId]
         );
         qualified = parseInt(createdCount.rows[0].count) >= badge.requirement_value;
@@ -4760,6 +4760,17 @@ async function featuredTeamIds() {
   return ids;
 }
 
+// Takımın sonraki buluşması ve haftalık program günleri (1 = Pazartesi). Üye olmayan
+// yalnız herkese açık etkinlikleri sayar. Tarih metin döner: Date saat dilimiyle kayar.
+const teamScheduleSql = (teamRef, isMemberSql) => `
+  SELECT MIN(tr.training_date)::text AS next_date,
+         ARRAY(SELECT DISTINCT EXTRACT(ISODOW FROM o.training_date)::int
+                 FROM trainings o JOIN training_series s ON s.id = o.series_id AND s.stopped_at IS NULL
+                WHERE o.team_id = ${teamRef} AND ${trainingUtcExpr('o')} >= NOW() AND (o.is_public OR ${isMemberSql})
+                ORDER BY 1) AS weekly_days
+    FROM trainings tr
+   WHERE tr.team_id = ${teamRef} AND ${trainingUtcExpr('tr')} >= NOW() AND (tr.is_public OR ${isMemberSql})`;
+
 app.get('/api/teams', optionalAuth, async (req, res) => {
   try {
     const { sport, search, member_only, can_create_training } = req.query;
@@ -4786,7 +4797,7 @@ app.get('/api/teams', optionalAuth, async (req, res) => {
              u.name as owner_name,
              COUNT(DISTINCT tm.user_id) as member_count,
              my_role.role as my_role,
-             loc.lat, loc.lng
+             loc.lat, loc.lng, nx.next_date, nx.weekly_days
       FROM teams t
       LEFT JOIN users u ON t.owner_id = u.id
       LEFT JOIN team_members tm ON t.id = tm.team_id
@@ -4797,6 +4808,7 @@ app.get('/api/teams', optionalAuth, async (req, res) => {
                  WHERE tr.team_id = t.id AND tr.location_lat IS NOT NULL AND tr.location_lng IS NOT NULL
                  ORDER BY tr.training_datetime_utc DESC NULLS LAST LIMIT 10) x
       ) loc ON true
+      LEFT JOIN LATERAL (${teamScheduleSql('t.id', 'my_role.role IS NOT NULL')}) nx ON true
       WHERE ${whereClause}
     `;
 
@@ -4816,7 +4828,7 @@ app.get('/api/teams', optionalAuth, async (req, res) => {
       params.push(`%${search}%`);
     }
 
-    query += ' GROUP BY t.id, u.name, my_role.role, loc.lat, loc.lng ORDER BY t.created_at DESC';
+    query += ' GROUP BY t.id, u.name, my_role.role, loc.lat, loc.lng, nx.next_date, nx.weekly_days ORDER BY t.created_at DESC';
 
     const [result, featIds] = await Promise.all([pool.query(query, params), featuredTeamIds().catch(() => [])]);
 
@@ -4895,6 +4907,10 @@ app.get('/api/teams/:id', optionalAuth, async (req, res) => {
       return res.status(403).json({ error: 'Access denied to private team' });
     }
     const showNames = viewerIsMember || viewerIsAdmin;
+
+    const sched = await pool.query(teamScheduleSql('$1::int', '$2::boolean'), [teamId, viewerIsMember]);
+    team.next_date = sched.rows[0]?.next_date || null;
+    team.weekly_days = sched.rows[0]?.weekly_days || [];
 
     const membersResult = await pool.query(
       `SELECT u.id, u.name, u.avatar, u.is_admin, tm.role, tm.joined_at
@@ -5543,6 +5559,123 @@ app.post('/api/teams/:id/posts', authenticateToken, async (req, res) => {
 // TRAININGS ROUTES
 // =====================================================
 
+// ── Haftalık program (tekrar eden takım etkinliği) ─────────────────────────
+// Lider ilk etkinliği açarken "her hafta tekrarla" der. İlk etkinlik normal yoldan
+// açılır (bildirim, Meta, rozet); sonrakileri generateSeriesOccurrences üretir ve
+// HİÇBİR bildirim/e-posta göndermez, otomatik maillere ve rozete girmez (series_auto).
+// next_date imleçtir: lider bir haftayı silerse o hafta geri gelmez. Liste şişmesin
+// diye yalnız SERIES_HORIZON_DAYS içindekiler açılır.
+const SERIES_WEEKS = [4, 8, 12];
+const SERIES_HORIZON_DAYS = 21;
+pool.query(`CREATE TABLE IF NOT EXISTS training_series (
+    id SERIAL PRIMARY KEY,
+    team_id INTEGER NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+    created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    template JSONB NOT NULL,
+    next_date DATE NOT NULL,
+    ends_on DATE NOT NULL,
+    stopped_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`).then(() => pool.query(
+  `ALTER TABLE trainings ADD COLUMN IF NOT EXISTS series_id INTEGER REFERENCES training_series(id) ON DELETE SET NULL;
+   ALTER TABLE trainings ADD COLUMN IF NOT EXISTS series_auto BOOLEAN NOT NULL DEFAULT false;
+   CREATE INDEX IF NOT EXISTS trainings_series_id ON trainings (series_id) WHERE series_id IS NOT NULL`))
+  .catch((e) => console.error('training_series:', e.message));
+
+const SERIES_TODAY = `(NOW() AT TIME ZONE 'Europe/Istanbul')::date`;
+
+async function generateSeriesOccurrences(onlyId = null) {
+  const { rows } = await pool.query(
+    `SELECT s.id, s.team_id, s.created_by, s.template, teams.is_private, tm.role, u.deleted_at
+       FROM training_series s
+       JOIN teams ON teams.id = s.team_id
+       LEFT JOIN team_members tm ON tm.team_id = s.team_id AND tm.user_id = s.created_by
+       LEFT JOIN users u ON u.id = s.created_by
+      WHERE s.stopped_at IS NULL AND ($1::int IS NULL OR s.id = $1)`, [onlyId]);
+  let made = 0;
+  for (const s of rows) {
+    // Kuran kişi takımdan çıktıysa ya da yetkisi gittiyse sahipsiz etkinlik üretilmez.
+    if (!s.created_by || s.deleted_at || !TRAINING_MANAGER_ROLES.includes(s.role)) {
+      await pool.query('UPDATE training_series SET stopped_at = NOW() WHERE id = $1 AND stopped_at IS NULL', [s.id]);
+      continue;
+    }
+    const tpl = s.template;
+    for (let guard = 0; guard < 20; guard++) {
+      // İmleci atomik ilerlet: aynı hafta iki kez üretilemez.
+      const claim = await pool.query(
+        `UPDATE training_series SET next_date = next_date + 7
+          WHERE id = $1 AND stopped_at IS NULL AND next_date <= LEAST(ends_on, ${SERIES_TODAY} + ${SERIES_HORIZON_DAYS})
+          RETURNING (next_date - 7)::text AS day, (next_date - 7) < ${SERIES_TODAY} AS past`, [s.id]);
+      if (!claim.rows.length) break;
+      if (claim.rows[0].past) continue; // sunucu kapalı kaldıysa geçmişe etkinlik açılmaz
+      const ins = await pool.query(
+        `INSERT INTO trainings (
+           team_id, sport, created_by, title, description, training_date, training_time, duration_minutes,
+           location_name, location_lat, location_lng, location_address, capacity, is_public, difficulty,
+           training_timezone, registration_url, registration_label, series_id, series_auto
+         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,true) RETURNING id`,
+        [s.team_id, tpl.sport, s.created_by, tpl.title, tpl.description, claim.rows[0].day, tpl.training_time, tpl.duration_minutes,
+         tpl.location_name, tpl.location_lat, tpl.location_lng, tpl.location_address, tpl.capacity,
+         s.is_private ? false : tpl.is_public, tpl.difficulty, tpl.training_timezone, tpl.registration_url, tpl.registration_label, s.id]);
+      const id = ins.rows[0].id;
+      await pool.query(
+        'INSERT INTO training_attendees (training_id, user_id, status) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING',
+        [id, s.created_by, 'confirmed']);
+      if (tpl.route) await saveTrainingRoute(id, tpl.route).catch((e) => console.error('[series] rota:', e.message));
+      made++;
+    }
+  }
+  if (made) console.log(`[SERIES] ${made} etkinlik açıldı`);
+  return made;
+}
+
+async function createTrainingSeries(training, weeks, route) {
+  const template = {
+    sport: training.sport, title: training.title, description: training.description,
+    training_time: training.training_time, duration_minutes: training.duration_minutes,
+    location_name: training.location_name, location_lat: training.location_lat, location_lng: training.location_lng,
+    location_address: training.location_address, capacity: training.capacity, is_public: training.is_public,
+    difficulty: training.difficulty, training_timezone: training.training_timezone,
+    registration_url: training.registration_url, registration_label: training.registration_label,
+    route: route || null,
+  };
+  const r = await pool.query(
+    `INSERT INTO training_series (team_id, created_by, template, next_date, ends_on)
+     VALUES ($1, $2, $3, $4::date + 7, $4::date + $5::int) RETURNING id`,
+    [training.team_id, training.created_by, template, training.training_date, 7 * (weeks - 1)]);
+  await pool.query('UPDATE trainings SET series_id = $1 WHERE id = $2', [r.rows[0].id, training.id]);
+  training.series_id = r.rows[0].id;
+  await generateSeriesOccurrences(r.rows[0].id);
+}
+
+// Tekrarı durdur: yeni hafta açılmaz; ileri tarihli, kurucudan başka katılımcısı ve
+// yorumu olmayan otomatik haftalar silinir. Birinin katıldığı hafta durur.
+app.post('/api/trainings/:id/stop-series', authenticateToken, async (req, res) => {
+  try {
+    const tr = await pool.query('SELECT series_id, team_id FROM trainings WHERE id = $1', [req.params.id]);
+    if (!tr.rows[0]?.series_id) return res.status(404).json({ error: 'Training not found' });
+    const { series_id: seriesId, team_id: teamId } = tr.rows[0];
+    const role = await pool.query('SELECT role FROM team_members WHERE team_id = $1 AND user_id = $2', [teamId, req.user.id]);
+    if (!TRAINING_MANAGER_ROLES.includes(role.rows[0]?.role)) {
+      return res.status(403).json({ error: 'Etkinliği silmek için takımın sahibi, antrenörü veya kaptanı olmanız gerekiyor.' });
+    }
+    await pool.query('UPDATE training_series SET stopped_at = NOW() WHERE id = $1 AND stopped_at IS NULL', [seriesId]);
+    const removed = await pool.query(
+      `DELETE FROM trainings t
+        WHERE t.series_id = $1 AND t.series_auto AND ${trainingUtcExpr('t')} > NOW()
+          AND NOT EXISTS (SELECT 1 FROM training_attendees a WHERE a.training_id = t.id AND a.user_id IS DISTINCT FROM t.created_by)
+          AND NOT EXISTS (SELECT 1 FROM training_comments c WHERE c.training_id = t.id)
+        RETURNING t.id, t.title, t.training_date`, [seriesId]);
+    for (const row of removed.rows) {
+      logDeletion('training', { id: row.id, name: row.title, meta: { training_date: row.training_date, series: true } }, req.user.id, 'self');
+    }
+    res.json({ removed_ids: removed.rows.map((x) => x.id) });
+  } catch (error) {
+    console.error('Stop series error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 app.post('/api/trainings', authenticateToken, async (req, res) => {
   try {
     const {
@@ -5564,6 +5697,7 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
       registration_label,
       source,
       route,
+      repeat_weeks,
     } = req.body;
     if (rejectIfObjectionable(req, res, 'training', title, description)) return;
     const cleanRoute = route ? sanitizeRoute(route) : null;
@@ -5709,6 +5843,13 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
       'INSERT INTO training_attendees (training_id, user_id, status) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING',
       [training.id, req.user.id, 'confirmed']
     );
+
+    // Haftalık program: yalnız takım etkinliği. Kurulamazsa ilk etkinlik yine yayında kalır.
+    const repeatWeeks = Number(repeat_weeks);
+    if (team_id && !trainingSource && SERIES_WEEKS.includes(repeatWeeks)) {
+      await createTrainingSeries(training, repeatWeeks, cleanRoute)
+        .catch((e) => console.error('[series] kurulum:', e.message));
+    }
 
     logActivity('training_create', req.user.id, null, { training_title: title, team_name: team_id ? undefined : 'Bireysel' }, `training_create_${training.id}`);
     // Arz tarafı: etkinlik oluşturanlar ayrı bir Lookalike kaynağı olacak —
@@ -6114,6 +6255,14 @@ app.get('/api/trainings/:id', optionalAuth, async (req, res) => {
         training.my_role = roleResult.rows[0]?.role || null;
         training.can_manage = TRAINING_MANAGER_ROLES.includes(training.my_role);
       }
+    }
+    training.series_active = false;
+    if (training.series_id) {
+      const sr = await pool.query(
+        `SELECT s.stopped_at IS NULL AND (s.next_date <= s.ends_on OR EXISTS (
+            SELECT 1 FROM trainings o WHERE o.series_id = s.id AND ${trainingUtcExpr('o')} >= NOW())) AS active
+           FROM training_series s WHERE s.id = $1`, [training.series_id]);
+      training.series_active = !!sr.rows[0]?.active;
     }
 
     // Kayıt sayfası tıklama sayısı yalnız etkinliği yönetenlere görünür.
@@ -10703,7 +10852,8 @@ async function runActivationEmails() {
                        t.capacity, teams.is_private AS team_private,
                        (SELECT COUNT(*)::int FROM training_attendees ta WHERE ta.training_id = t.id) AS attendees
                   FROM trainings t LEFT JOIN teams ON teams.id = t.team_id
-                 WHERE COALESCE(t.is_organizer_event, false) = false AND COALESCE(t.is_paid, false) = false`;
+                 WHERE COALESCE(t.is_organizer_event, false) = false AND COALESCE(t.is_paid, false) = false
+                   AND t.series_auto = false`;
     // ec — son 6 saatte oluşturulan, henüz başlamamış etkinlikler; alıcılar
     // activationEventRecipients. Aynı kişiye 7 günde en fazla bir kez (her hafta
     // etkinlik açan antrenör her seferinde almasın) — sınır kişi başına.
@@ -10764,6 +10914,10 @@ async function runActivationEmails() {
 }
 setTimeout(() => { runActivationEmails(); setInterval(runActivationEmails, 15 * 60 * 1000); }, 2 * 60 * 1000);
 
+// Haftalık program: saatte bir, açılması gelen haftalar.
+const runSeriesJob = () => generateSeriesOccurrences().catch((e) => console.error('[SERIES] Hata:', e.message));
+setTimeout(() => { runSeriesJob(); setInterval(runSeriesJob, 60 * 60 * 1000); }, 3 * 60 * 1000);
+
 // ── Soft-delete purge — 30 günü dolan hesapları kalıcı sil ──────────────────
 const ACCOUNT_PURGE_DAYS = 30;
 async function purgeSoftDeletedAccounts() {
@@ -10800,7 +10954,7 @@ async function sendEngagementReminders() {
        WHERE EXISTS (SELECT 1 FROM team_members tm WHERE tm.user_id = u.id)
          AND NOT EXISTS (
            SELECT 1 FROM trainings t
-           WHERE t.created_by = u.id AND t.created_at > NOW() - INTERVAL '${ENGAGEMENT_INACTIVE_DAYS} days'
+           WHERE t.created_by = u.id AND t.series_auto = false AND t.created_at > NOW() - INTERVAL '${ENGAGEMENT_INACTIVE_DAYS} days'
          )
          AND NOT EXISTS (
            SELECT 1 FROM training_attendees ta

@@ -439,6 +439,10 @@ export const translations = {
 
   // ── TRAINING DETAIL ─────────────────────────────────────
   trainingDetail: {
+    weekly: { tr: "Her hafta", en: "Every week", de: "Jede Woche" },
+    stopSeries: { tr: "Tekrarı durdur", en: "Stop repeating", de: "Wiederholung beenden" },
+    confirmStopSeries: { tr: "Bu etkinlik artık her hafta açılmayacak. İleri tarihli, kimsenin katılmadığı haftalar da silinecek.", en: "This event will no longer open every week. Upcoming weeks nobody has joined will also be deleted.", de: "Dieses Event wird nicht mehr wöchentlich angelegt. Kommende Wochen ohne Teilnehmende werden ebenfalls gelöscht." },
+    seriesStopped: { tr: "Tekrar durduruldu.", en: "Repeating stopped.", de: "Wiederholung beendet." },
     title:          { tr: "Etkinlik Detayı",             en: "Event Detail",         de: "Event-Details"        },
     joinedList:     { tr: "Katılanlar",                   en: "Participants",            de: "Teilnehmer"              },
     namesMasked:    { tr: "Katılımcıların tam isimlerini etkinliğe ya da takıma katılınca görürsün.", en: "Join the event or the team to see participants' full names.", de: "Nimm an der Veranstaltung teil oder tritt dem Team bei, um die vollständigen Namen zu sehen." },
@@ -608,6 +612,10 @@ export const translations = {
 
   // ── CREATE TRAINING ─────────────────────────────────────
   createTraining: {
+    repeatToggle: { tr: "Her hafta tekrarla", en: "Repeat every week", de: "Jede Woche wiederholen" },
+    repeatHint: { tr: "Aynı gün, saat ve yerde her hafta kendiliğinden açılır. Üyelere bildirim yalnız ilk etkinlik için gider.", en: "Opens automatically every week on the same day, time and place. Members are only notified about the first event.", de: "Wird jede Woche automatisch am selben Tag, zur selben Zeit und am selben Ort angelegt. Mitglieder werden nur über das erste Event benachrichtigt." },
+    repeatDuration: { tr: "Kaç hafta sürsün?", en: "For how many weeks?", de: "Wie viele Wochen?" },
+    repeatWeeks: { tr: "{n} hafta", en: "{n} weeks", de: "{n} Wochen" },
     pageTitle:      { tr: "Etkinlik Oluştur",            en: "Create Event",         de: "Event erstellen"      },
     regToggle:      { tr: "Dış kayıt linki paylaşmak istiyorum",
                       en: "I want to share an external registration link",
@@ -676,6 +684,8 @@ export const translations = {
 
   // ── TEAMS PAGE ───────────────────────────────────────────
   teams: {
+    weeklyTitle: { tr: "Haftalık program", en: "Weekly schedule", de: "Wochenplan" },
+    nextEvent: { tr: "Sonraki buluşma: {date}", en: "Next meetup: {date}", de: "Nächstes Treffen: {date}" },
     featuredTitle:  { tr: "Öne çıkan takımlar", en: "Featured teams", de: "Empfohlene Teams" },
     allTitle:       { tr: "Tüm takımlar", en: "All teams", de: "Alle Teams" },
     pageTitle:      { tr: "Takımlar",                     en: "Teams",                   de: "Teams"                   },

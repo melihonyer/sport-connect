@@ -75,6 +75,7 @@ import {
   SatelliteDish,
   Route,
   ChartColumn,
+  Repeat,
 } from "lucide-react";
 import SharedLocationPicker from "./LocationPicker";
 import RouteField from "./RouteField";
@@ -264,6 +265,15 @@ const fmtDateMed = (d) => d
 // "1 Haz 2026" — kompakt yerler (yorum tarihi, bildirim vb.)
 const fmtDateShort = (d) => d
   ? new Date(d).toLocaleDateString(_dateLocale(), { day:"numeric", month:"short", year:"numeric" })
+  : "";
+
+// Haftalık program günleri: 1 = Pazartesi (2024-01-01 Pazartesi). "Sal · Per"
+const fmtWeekdays = (days) => (days || [])
+  .map((d) => new Date(Date.UTC(2024, 0, d)).toLocaleDateString(_dateLocale(), { timeZone: "UTC", weekday: "short" }))
+  .join(" · ");
+// "Sal 12 Kas" — takım kartındaki sonraki buluşma
+const fmtDayMonth = (d) => d
+  ? new Date(d).toLocaleDateString(_dateLocale(), { timeZone: "UTC", weekday: "short", day: "numeric", month: "short" })
   : "";
 
 // ── Zorluk seviyeleri ───────────────────────────────────────────────────────
@@ -4162,6 +4172,28 @@ export default function Muuvlink() {
     }, { danger: true });
   };
 
+  const handleStopSeries = (trainingId) => {
+    showConfirm(t("trainingDetail.confirmStopSeries"), async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(`${API_URL}/trainings/${trainingId}/stop-series`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) { showToast(data.error || t("toast.createFail"), "error"); return; }
+        showToast(t("trainingDetail.seriesStopped"), "info");
+        fetchTrainings();
+        fetchMyTrainings(token);
+        // Açık sayfa silinen haftalardan biriyse profile dön
+        if ((data.removed_ids || []).includes(trainingId)) setCurrentPage("profile");
+        else setSelectedTraining((s) => (s && s.id === trainingId ? { ...s, series_active: false } : s));
+      } catch (error) {
+        console.error("Stop series error:", error);
+      }
+    }, { danger: true });
+  };
+
   const handleAddComment = async (trainingId, comment) => {
     try {
       const token = localStorage.getItem("token");
@@ -5229,7 +5261,7 @@ export default function Muuvlink() {
     <a
       href={teamPath(team)}
       onClick={(e) => openCardLink(e, () => onClick(team.id))}
-      className="group block bg-white rounded-2xl border border-slate-100 hover:border-brand-200 hover:shadow-xl hover:-translate-y-0.5 active:bg-slate-50 transition-[transform,box-shadow,border-color] duration-200 ease-out cursor-pointer overflow-hidden no-underline text-inherit"
+      className="group flex flex-col h-full bg-white rounded-2xl border border-slate-100 hover:border-brand-200 hover:shadow-xl hover:-translate-y-0.5 active:bg-slate-50 transition-[transform,box-shadow,border-color] duration-200 ease-out cursor-pointer overflow-hidden no-underline text-inherit"
     >
       {/* Başlık açık gri, branşı soldaki renkli ikon kutusu söyler, branş adı sağda (sportStyle.jsx; Melih:
           "başlık açık gri, ikonlar renkli", "ikonlar sola başlık sağa", ikon avatar hizasında). Çok branşlıda "+n". */}
@@ -5247,7 +5279,7 @@ export default function Muuvlink() {
           </div>
         );
       })()}
-      <div className="p-5">
+      <div className="p-5 flex-1 flex flex-col">
         <div className="flex items-start justify-between mb-3 gap-2">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-12 h-12 rounded-xl overflow-hidden flex items-center justify-center text-white text-lg font-bold flex-shrink-0"
@@ -5276,7 +5308,24 @@ export default function Muuvlink() {
           {team.description || (team.is_private ? t("teams.privateDesc") : t("common.noDescription"))}
         </p>
 
-        <div className="flex items-center justify-between pt-3 border-t border-slate-50">
+        {(team.next_date || team.weekly_days?.length > 0) && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-3 text-xs text-slate-600">
+            {team.weekly_days?.length > 0 && (
+              <span className="inline-flex items-center gap-1 font-semibold text-brand-700" title={t("teams.weeklyTitle")}>
+                <Repeat className="w-3.5 h-3.5 text-logo-teal" aria-hidden="true"/>
+                <span className="sr-only">{t("teams.weeklyTitle")}: </span>{fmtWeekdays(team.weekly_days)}
+              </span>
+            )}
+            {team.next_date && (
+              <span className="inline-flex items-center gap-1">
+                <Calendar className="w-3.5 h-3.5 text-slate-400" aria-hidden="true"/>
+                {t("teams.nextEvent").replace("{date}", fmtDayMonth(team.next_date))}
+              </span>
+            )}
+          </div>
+        )}
+
+        <div className="mt-auto flex items-center justify-between pt-3 border-t border-slate-50">
           <div className="flex items-center gap-1.5 text-slate-500 text-sm">
             <Users className="w-4 h-4"/>
             <span className="font-semibold text-slate-700">{team.member_count || 0}</span>
@@ -7136,6 +7185,15 @@ export default function Muuvlink() {
                 <Trash2 className="w-4 h-4" />
                 {t("common.delete")}
               </button>
+              {selectedTraining.series_active && (
+                <button
+                  onClick={() => handleStopSeries(selectedTraining.id)}
+                  className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-semibold hover:bg-slate-200 flex items-center gap-2"
+                >
+                  <Repeat className="w-4 h-4" />
+                  {t("trainingDetail.stopSeries")}
+                </button>
+              )}
               {/* Görüntülenme: sunucu yalnız yönetene gönderir */}
               {typeof selectedTraining.view_count === "number" && (
                 <span title={t("trainingDetail.viewsHint")}
@@ -7460,6 +7518,11 @@ export default function Muuvlink() {
                 <span className="font-semibold min-w-0 [overflow-wrap:anywhere]">{t("common.date")}</span>
               </div>
               <p>{fmtDateFull(selectedTraining.training_date)}</p>
+              {selectedTraining.series_active && (
+                <p className="mt-1 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-700">
+                  <Repeat className="w-4 h-4 text-logo-teal" aria-hidden="true" /> {t("trainingDetail.weekly")}
+                </p>
+              )}
             </div>
             <div className="p-4 bg-gray-50 rounded-xl">
               <div className="flex items-center text-gray-600 mb-2 min-w-0">
@@ -7953,6 +8016,12 @@ export default function Muuvlink() {
                   <span className="truncate">{selectedTeam.location}</span>
                 </span>
               )}
+              {selectedTeam.weekly_days?.length > 0 && (
+                <span className="inline-flex items-center gap-1.5" title={t("teams.weeklyTitle")}>
+                  <Repeat className="w-4 h-4 text-slate-500 flex-shrink-0" aria-hidden="true" />
+                  <span className="sr-only">{t("teams.weeklyTitle")}: </span>{fmtWeekdays(selectedTeam.weekly_days)}
+                </span>
+              )}
             </div>
 
             {selectedTeam.description && (
@@ -8385,6 +8454,7 @@ export default function Muuvlink() {
       registration_url: "", // yalnızca TAKIM etkinliğinde; bireysele geçince temizlenir
       registration_label: "", // buton yazısı; boşsa arayüz varsayılanı kullanır
       route: null, // { points, distance_m } — GPX tarayıcıda okunur (gpxRoute.js)
+      repeat_weeks: 0, // 0 = tekrar yok; 4/8/12 = haftalık program (yalnız takım etkinliği)
     }));
 
     // Seçili takım nesnesini bul (team_id null ise bireysel)
@@ -8400,7 +8470,7 @@ export default function Muuvlink() {
       if (!val) {
         // Bireysel — dalı kullanıcı seçsin
         // Kayıt linki takım etkinliğine ait; bireysele dönünce taşınmasın.
-        setFormData((f) => ({ ...f, team_id: null, is_public: true, sport: "", reg_enabled: false, registration_url: "", registration_label: "" }));
+        setFormData((f) => ({ ...f, team_id: null, is_public: true, sport: "", reg_enabled: false, registration_url: "", registration_label: "", repeat_weeks: 0 }));
         return;
       }
       const team = eligibleTeams.find((t) => t.id === parseInt(val));
@@ -8653,6 +8723,36 @@ export default function Muuvlink() {
                   </div>
                 </div>
               </div>
+
+              {/* Haftalık program — yalnız takım etkinliği, Training Agents taslağında yok */}
+              {!isIndividual && !taCurrent && (
+                <div className="mt-4">
+                  <FieldSwitch
+                    on={formData.repeat_weeks > 0}
+                    onChange={(v) => setFormData({ ...formData, repeat_weeks: v ? 8 : 0 })}
+                    label={t("createTraining.repeatToggle")}
+                    hint={t("createTraining.repeatHint")}
+                  />
+                  {formData.repeat_weeks > 0 && (
+                    <div className="mt-3">
+                      <label className={labelCls}>{t("createTraining.repeatDuration")}</label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[4, 8, 12].map((n) => (
+                          <button
+                            key={n}
+                            type="button"
+                            aria-pressed={formData.repeat_weeks === n}
+                            onClick={() => setFormData({ ...formData, repeat_weeks: n })}
+                            className={`h-11 rounded-xl border text-sm font-semibold transition-colors ${formData.repeat_weeks === n ? "bg-brand-600 border-brand-600 text-white" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+                          >
+                            {t("createTraining.repeatWeeks").replace("{n}", n)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Konum */}
