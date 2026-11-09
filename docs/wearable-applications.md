@@ -110,6 +110,12 @@ logo yüklenince 500 veriyor, logosuz gönderilir.
 
 **Destek e-postası GÖNDERİLDİ: 9 Kasım 2026** (info@saltajans.com → connect-support@developer.garmin.com; ikinci uygulama, takımla paylaşım, Training Agents reklamı soruldu). **Garmin'in cevabı (hazır metin):** Starter self-servis, uygulama değerlendirmesi yapılmıyor, uyumluluk lisans sahibinin sorumluluğunda. İkinci uygulama, takımla paylaşım ve Training Agents reklamı soruları cevapsız kaldı. Bu yüzden Garmin verisi yalnız sahibine gösterilir; ikinci uygulama için Starter formu denenir.
 
+**Starter formu (9 Kasım 2026, henüz gönderilemedi):** Claude doldurdu, Submit açılmadı (reCAPTCHA yanıtı boş; alan doğrulaması geçiyor). Elle doldurulacak değerler: Hizmet `Engagement & Rewards`, sektör `Sports Teams & Athletic Organizations`, API yalnız Activity, kullanıcı `100-1000`, Garmin ile temas `Yes`, kişi `Garmin Connect Developer Program support (connect-support@developer.garmin.com)`, gizlilik `https://muuvlink.app/en/privacy/`.
+
+Overview (paylaşımsız, bunu kullan): Muuvlink is a community platform for finding sports partners, teams and group events, live on the web, the App Store and Google Play. With Garmin's OAuth flow we would receive completed activity summaries to confirm that a member attended the event they joined and to show them their own history. Garmin data is shown only to that member, needs separate explicit consent that can be withdrawn at any time, and is deleted on disconnect.
+
+Business model (bunu kullan): Free for members. Muuvlink shows promotions for our own product, Training Agents. The Garmin connection is free. We do not sell, license or share Garmin data or API access, and Garmin data is never used for advertising or sent to advertising or analytics services.
+
 **Sözleşme okundu: 9 Kasım 2026, Rev H (portalda, gizli; metin repoya konmaz).** Özet:
 - Sözleşme şirketin birden çok uygulamasını kapsıyor, anahtar ise web adresine bağlı. Apps sayfasında yeni uygulama düğmesi YOK: destekten istenir.
 - Veri yalnız Muuvlink içinde, kişinin rızasına uygun gösterilir; başka uygulama ya da uç noktaya yönlendirilemez. Üyeler arası paylaşımı açıkça yasaklayan ya da izin veren madde yok, yazılı sorulmalı.
