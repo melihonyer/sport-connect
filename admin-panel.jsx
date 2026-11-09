@@ -1973,8 +1973,22 @@ function AdminToast({ toasts }) {
 // Takım atlası: "Bu takım benim" talepleri. Onaylanınca takım kişiye geçer.
 function TeamClaimsTab({ api, showToast }) {
   const [rows, setRows] = useState(null);
+  const [tagRows, setTagRows] = useState(null);
   const [busy, setBusy] = useState(null);
-  const load = useCallback(() => { api("/admin/team-claims").then((d) => setRows(d || [])).catch(() => setRows([])); }, [api]);
+  const load = useCallback(() => {
+    api("/admin/team-claims").then((d) => setRows(d || [])).catch(() => setRows([]));
+    api("/admin/women-tag-requests").then((d) => setTagRows(d || [])).catch(() => setTagRows([]));
+  }, [api]);
+  const decideTag = async (tm, decision) => {
+    setBusy(`t${tm.id}`);
+    try {
+      await api(`/admin/women-tag-requests/${tm.id}/${decision}`, { method: "POST" });
+      showToast(decision === "approve" ? "Etiket onaylandı." : "Etiket reddedildi.");
+      load();
+    } catch (e) {
+      showToast(e?.message || "İşlem yapılamadı.", "error");
+    } finally { setBusy(null); }
+  };
   useEffect(() => { load(); }, [load]);
   const decide = async (c, decision) => {
     if (!window.confirm(decision === "approve" ? `${c.team_name} takımı ${c.user_name} kişisine geçsin mi?` : `${c.user_name} kişisinin talebi reddedilsin mi?`)) return;
@@ -1989,6 +2003,30 @@ function TeamClaimsTab({ api, showToast }) {
   };
   const label = { pending: "Bekliyor", approved: "Onaylandı", rejected: "Reddedildi" };
   return (
+    <div className="space-y-4">
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+      <div className="px-4 md:px-6 py-4 border-b border-slate-100">
+        <h2 className="font-medium text-slate-900">"Kadın takımı" etiketi</h2>
+        <p className="text-xs text-slate-500 mt-1">Onaylamadan etiket hiçbir yerde görünmez. Takımı kuran kişiyi ve takımın dışarıdan doğrulanabilir izini kontrol et.</p>
+      </div>
+      {tagRows === null ? <p className="p-6 text-sm text-slate-500">Yükleniyor…</p> : tagRows.length === 0 ? <p className="p-6 text-sm text-slate-500">Bekleyen istek yok.</p> : (
+        <div className="divide-y divide-slate-100">
+          {tagRows.map((tm) => (
+            <div key={tm.id} className="px-4 md:px-6 py-4 flex flex-wrap items-start gap-3">
+              <div className="flex-1 min-w-[240px] text-sm">
+                <div className="font-medium text-slate-900">{tm.name} <span className="text-slate-400 font-normal">· {tm.location || "konum yok"} · {tm.members} üye{tm.is_private ? " · gizli" : ""}</span></div>
+                <div className="text-slate-600 mt-1">{tm.owner_name} · {tm.owner_email}</div>
+                {tm.description && <div className="text-slate-500 mt-1 whitespace-pre-wrap">{tm.description}</div>}
+              </div>
+              <div className="flex gap-2">
+                <button disabled={busy === `t${tm.id}`} onClick={() => decideTag(tm, "approve")} className="px-3 py-2 rounded-lg text-xs font-semibold bg-brand-600 text-white disabled:opacity-50">Onayla</button>
+                <button disabled={busy === `t${tm.id}`} onClick={() => decideTag(tm, "reject")} className="px-3 py-2 rounded-lg text-xs font-semibold bg-red-50 text-red-600 disabled:opacity-50">Reddet</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
       <div className="px-4 md:px-6 py-4 border-b border-slate-100">
         <h2 className="font-medium text-slate-900">Sahiplenme talepleri</h2>
@@ -2015,6 +2053,7 @@ function TeamClaimsTab({ api, showToast }) {
           ))}
         </div>
       )}
+    </div>
     </div>
   );
 }
@@ -2554,7 +2593,7 @@ export default function AdminPanel() {
     { label: "Topluluk", items: [
       { id: "users",     label: "Kullanıcılar", icon: Users,        badge: B.users,     kind: "new" },
       { id: "teams",     label: "Takımlar",     icon: Shield,       badge: B.teams,     kind: "new" },
-      { id: "claims",    label: "Sahiplenme",   icon: Flag,         badge: B.claims,    kind: "alert" },
+      { id: "claims",    label: "Onaylar",      icon: Flag,         badge: B.claims,    kind: "alert" },
       { id: "trainings", label: "Etkinlikler",  icon: CalendarDays, badge: B.trainings, kind: "new" },
     ]},
     { label: "Dış Etkinlikler", items: [
@@ -4027,7 +4066,7 @@ export default function AdminPanel() {
                         r.content_type === "wall_post"? "bg-orange-100 text-orange-600" :
                         "bg-slate-100 text-slate-600"
                       }`}>
-                        {{ training: "Etkinlik", comment: "Yorum", wall_post: "Duvar Gönderisi", user: "Kullanıcı" }[r.content_type] || r.content_type} #{r.content_id}
+                        {{ training: "Etkinlik", comment: "Yorum", wall_post: "Duvar Gönderisi", user: "Kullanıcı", team: "Takım" }[r.content_type] || r.content_type} #{r.content_id}
                       </span>
                     </div>
                     {r.content_preview && (

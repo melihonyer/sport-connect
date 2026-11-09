@@ -101,7 +101,8 @@ const buildTeamEditForm = (team) => ({
   description: team?.description || "",
   location: team?.location || "",
   avatar: team?.avatar || "",
-  tags: Array.isArray(team?.tags) ? team.tags : [],
+  // Bekleyen "Kadın takımı" isteği formda seçili görünür, onaylanana kadar yayında değildir
+  tags: [...(Array.isArray(team?.tags) ? team.tags : []), ...(team?.women_tag_requested ? ["women"] : [])],
   is_private: team?.is_private === true,
 });
 
@@ -975,7 +976,7 @@ function GallerySection({ items, t, setCurrentPage, titleOverride, subtitleOverr
 
 // Keşif etiketleri: backend TEAM_TAGS ile AYNI liste; metin `teamTags.<kod>` (7 dil).
 const TEAM_TAGS = ["beginner", "all_levels", "women", "coached", "race", "social", "coffee", "family"];
-function TeamTagPicker({ value, onChange, t, labelCls }) {
+function TeamTagPicker({ value, onChange, t, labelCls, womenApproved = false }) {
   const toggle = (code) => {
     if (value.includes(code)) onChange(value.filter((x) => x !== code));
     else if (value.length < 4) onChange([...value, code]);
@@ -996,6 +997,7 @@ function TeamTagPicker({ value, onChange, t, labelCls }) {
         })}
       </div>
       <p className="mt-2 text-xs text-slate-500">{t("createTeam.tagsHint")}</p>
+      {value.includes("women") && !womenApproved && <p className="mt-1 text-xs font-medium text-brand-700">{t("createTeam.tagsWomenHint")}</p>}
     </div>
   );
 }
@@ -8333,6 +8335,15 @@ export default function Muuvlink() {
               <Share2 className="w-3.5 h-3.5 mt-px flex-shrink-0" />
               <span>{t("tips.shareTeamMobile")}</span>
             </p>
+            {user && !canManage && (
+              <div className="mt-1 -mb-1 flex justify-end">
+                <button onClick={() => setReportModal({ type: "team", id: selectedTeam.id })}
+                  title={t("report.btn")} aria-label={t("report.btn")}
+                  className="w-11 h-11 rounded-full flex items-center justify-center text-white/40 hover:text-red-400 hover:bg-white/10 transition-colors">
+                  <Flag className="w-4 h-4" />
+                </button>
+              </div>
+            )}
           </div>
 
         </div>
@@ -8632,7 +8643,7 @@ export default function Muuvlink() {
                   className={iCls} />
               </div>
 
-              <TeamTagPicker value={editForm.tags || []} onChange={(tags) => setEditForm((f) => ({ ...f, tags }))} t={t} labelCls={lCls} />
+              <TeamTagPicker value={editForm.tags || []} onChange={(tags) => setEditForm((f) => ({ ...f, tags }))} t={t} labelCls={lCls} womenApproved={!!selectedTeam.tags?.includes("women")} />
 
               <div className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-colors ${editForm.is_private ? "border-slate-200 bg-slate-50" : "border-brand-200 bg-brand-50"}`}>
                 <div>
@@ -10478,6 +10489,7 @@ Vergi Dairesi: Karşıyaka V.D. | VN: 7420957827<br/>
     training:  ["fake_event", "spam", "inappropriate", "unsafe", "other"],
     comment:   ["inappropriate", "spam", "harassment", "other"],
     wall_post: ["inappropriate", "spam", "harassment", "other"],
+    team:      ["unsafe", "inappropriate", "spam", "other"],
   };
 
   const ReportModal = () => {

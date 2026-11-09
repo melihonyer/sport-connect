@@ -589,6 +589,7 @@ export default {
     family: "Adatto alle famiglie",
   },
   createTeam: {
+    tagsWomenHint: "L’etichetta «Squadra femminile» apparirà dopo la nostra verifica.",
     tagsLabel: "Etichette",
     tagsHint: "Scegli fino a 4 etichette che descrivono la tua squadra. Nella pagina Squadre si può filtrare con queste.",
     uploadPhoto: "Carica foto",

@@ -1123,6 +1123,10 @@ const MAIL = {
     claimOkHeading: `Takım artık sende`,
     claimOkBody: (n) => `${n} takımının yönetimi artık sende. İlk etkinliğini aç, üyelerini davet et.`,
     claimOkCta: `Takımına git`,
+    tagOkTitle: (n) => `Etiket onaylandı: ${n}`,
+    tagOkMsg: `Kadın takımı etiketi artık takımında görünüyor.`,
+    tagNoTitle: (n) => `Etiket eklenmedi: ${n}`,
+    tagNoMsg: `Bir yanlışlık olduğunu düşünüyorsan iletişim sayfasından bize yaz.`,
     updateTitle: 'Etkinlik Güncellendi',
     updateBody: (team, tr) => `${mB(team)} takımının ${mB(tr)} etkinliğinde değişiklik yapıldı.`,
     updateCurrent: 'Güncel Bilgiler',
@@ -1248,6 +1252,10 @@ const MAIL = {
     claimOkHeading: `The team is yours`,
     claimOkBody: (n) => `You now manage ${n}. Create your first event and invite your members.`,
     claimOkCta: `Go to your team`,
+    tagOkTitle: (n) => `Tag approved: ${n}`,
+    tagOkMsg: `The Women's team tag now appears on your team.`,
+    tagNoTitle: (n) => `Tag not added: ${n}`,
+    tagNoMsg: `If you think this is a mistake, write to us from the contact page.`,
     updateTitle: 'Event updated',
     updateBody: (team, tr) => `The event ${mB(tr)} of ${mB(team)} has been changed.`,
     updateCurrent: 'Current details',
@@ -1373,6 +1381,10 @@ const MAIL = {
     claimOkHeading: `Das Team gehört dir`,
     claimOkBody: (n) => `Du verwaltest jetzt ${n}. Erstelle dein erstes Event und lade deine Mitglieder ein.`,
     claimOkCta: `Zu deinem Team`,
+    tagOkTitle: (n) => `Tag bestätigt: ${n}`,
+    tagOkMsg: `Das Tag „Frauenteam“ wird jetzt bei deinem Team angezeigt.`,
+    tagNoTitle: (n) => `Tag nicht hinzugefügt: ${n}`,
+    tagNoMsg: `Wenn das ein Irrtum ist, schreib uns über die Kontaktseite.`,
     updateTitle: 'Event aktualisiert',
     updateBody: (team, tr) => `Beim Event ${mB(tr)} des Teams ${mB(team)} gab es Änderungen.`,
     updateCurrent: 'Aktuelle Angaben',
@@ -1498,6 +1510,10 @@ const MAIL = {
     claimOkHeading: `Η ομάδα είναι δική σου`,
     claimOkBody: (n) => `Τώρα διαχειρίζεσαι την ομάδα ${n}. Δημιούργησε την πρώτη σου εκδήλωση και προσκάλεσε τα μέλη σου.`,
     claimOkCta: `Πήγαινε στην ομάδα σου`,
+    tagOkTitle: (n) => `Η ετικέτα εγκρίθηκε: ${n}`,
+    tagOkMsg: `Η ετικέτα «Γυναικεία ομάδα» εμφανίζεται πλέον στην ομάδα σου.`,
+    tagNoTitle: (n) => `Η ετικέτα δεν προστέθηκε: ${n}`,
+    tagNoMsg: `Αν νομίζεις ότι είναι λάθος, γράψε μας από τη σελίδα επικοινωνίας.`,
     updateTitle: 'Η εκδήλωση ενημερώθηκε',
     updateBody: (team, tr) => `Έγιναν αλλαγές στην εκδήλωση ${mB(tr)} της ομάδας ${mB(team)}.`,
     updateCurrent: 'Τρέχοντα στοιχεία',
@@ -1623,6 +1639,10 @@ const MAIL = {
     claimOkHeading: `El equipo ya es tuyo`,
     claimOkBody: (n) => `Ahora gestionas ${n}. Crea tu primer evento e invita a tus miembros.`,
     claimOkCta: `Ir a tu equipo`,
+    tagOkTitle: (n) => `Etiqueta aprobada: ${n}`,
+    tagOkMsg: `La etiqueta «Equipo femenino» ya aparece en tu equipo.`,
+    tagNoTitle: (n) => `Etiqueta no añadida: ${n}`,
+    tagNoMsg: `Si crees que es un error, escríbenos desde la página de contacto.`,
     updateTitle: 'Evento actualizado',
     updateBody: (team, tr) => `Ha habido cambios en el evento ${mB(tr)} de ${mB(team)}.`,
     updateCurrent: 'Datos actuales',
@@ -1748,6 +1768,10 @@ const MAIL = {
     claimOkHeading: `L’équipe est à toi`,
     claimOkBody: (n) => `Tu gères maintenant ${n}. Crée ton premier événement et invite tes membres.`,
     claimOkCta: `Aller à ton équipe`,
+    tagOkTitle: (n) => `Étiquette approuvée : ${n}`,
+    tagOkMsg: `L’étiquette « Équipe féminine » apparaît maintenant sur ton équipe.`,
+    tagNoTitle: (n) => `Étiquette non ajoutée : ${n}`,
+    tagNoMsg: `Si tu penses que c’est une erreur, écris-nous depuis la page de contact.`,
     updateTitle: 'Événement modifié',
     updateBody: (team, tr) => `L'événement ${mB(tr)} de ${mB(team)} a été modifié.`,
     updateCurrent: 'Informations à jour',
@@ -1873,6 +1897,10 @@ const MAIL = {
     claimOkHeading: `La squadra è tua`,
     claimOkBody: (n) => `Ora gestisci ${n}. Crea il tuo primo evento e invita i tuoi membri.`,
     claimOkCta: `Vai alla tua squadra`,
+    tagOkTitle: (n) => `Etichetta approvata: ${n}`,
+    tagOkMsg: `L’etichetta «Squadra femminile» ora appare sulla tua squadra.`,
+    tagNoTitle: (n) => `Etichetta non aggiunta: ${n}`,
+    tagNoMsg: `Se pensi sia un errore, scrivici dalla pagina contatti.`,
     updateTitle: 'Evento aggiornato',
     updateBody: (team, tr) => `L'evento ${mB(tr)} di ${mB(team)} è stato modificato.`,
     updateCurrent: 'Dettagli aggiornati',
@@ -4838,6 +4866,40 @@ function teamClaimApprovedEmail({ teamName, teamUrl }, L = 'tr') {
   `, L);
 }
 
+app.get('/api/admin/women-tag-requests', isAdmin, async (req, res) => {
+  try {
+    const r = await pool.query(
+      `SELECT t.id, t.name, t.location, t.description, t.is_private, u.name AS owner_name, u.email AS owner_email,
+              (SELECT COUNT(*)::int FROM team_members m WHERE m.team_id = t.id) AS members
+         FROM teams t LEFT JOIN users u ON u.id = t.owner_id
+        WHERE t.women_tag_requested ORDER BY t.updated_at DESC`);
+    res.json(r.rows);
+  } catch (e) { res.status(500).json({ error: 'İstekler alınamadı.' }); }
+});
+
+app.post('/api/admin/women-tag-requests/:teamId/:decision', isAdmin, async (req, res) => {
+  try {
+    const { teamId, decision } = req.params;
+    if (!['approve', 'reject'].includes(decision)) return res.status(400).json({ error: 'Geçersiz işlem.' });
+    const r = await pool.query(
+      `UPDATE teams SET women_tag_requested = false,
+              tags = CASE WHEN $2 AND NOT ('women' = ANY(tags)) THEN array_append(tags, 'women') ELSE tags END
+        WHERE id = $1 AND women_tag_requested RETURNING id, name, owner_id`, [teamId, decision === 'approve']);
+    if (!r.rows.length) return res.status(409).json({ error: 'Bu istek zaten sonuçlanmış.' });
+    const t = r.rows[0];
+    createNotif(t.owner_id, {
+      build: (L) => (decision === 'approve'
+        ? { title: tm(L, 'tagOkTitle', t.name), message: tm(L, 'tagOkMsg') }
+        : { title: tm(L, 'tagNoTitle', t.name), message: tm(L, 'tagNoMsg') }),
+      type: 'team_claim', refId: t.id, url: decision === 'approve' ? `/takimlar?takim=${t.id}` : '/iletisim',
+    }).catch(() => {});
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('Women tag decision error:', e);
+    res.status(500).json({ error: 'İşlem yapılamadı.' });
+  }
+});
+
 app.post('/api/admin/team-claims/:id/:decision', isAdmin, async (req, res) => {
   const client = await pool.connect();
   try {
@@ -4895,6 +4957,13 @@ app.post('/api/admin/team-claims/:id/:decision', isAdmin, async (req, res) => {
 // Keşif etiketleri: sabit liste (sporla-bulusma.jsx TEAM_TAGS ile aynı), takım başına en çok 4. Bilinmeyen kod atılır.
 const TEAM_TAGS = ['beginner', 'all_levels', 'women', 'coached', 'race', 'social', 'coffee', 'family'];
 const sanitizeTeamTags = (raw) => [...new Set((Array.isArray(raw) ? raw : []).filter((x) => TEAM_TAGS.includes(x)))].slice(0, 4);
+// "Kadın takımı" güven veren bir etiket: admin onaylamadan tags'e girmez, görünmez. Onaylıysa kalır.
+function splitWomenTag(raw, currentTags = []) {
+  const clean = sanitizeTeamTags(raw);
+  const wants = clean.includes('women');
+  const approved = currentTags.includes('women');
+  return { tags: wants && !approved ? clean.filter((x) => x !== 'women') : clean, requested: wants && !approved };
+}
 
 app.post('/api/teams', authenticateToken, async (req, res) => {
   try {
@@ -4910,8 +4979,8 @@ app.post('/api/teams', authenticateToken, async (req, res) => {
     const primarySport = sportsArr[0]; // tekil `sport` = birincil dal (mevcut gösterimlerle uyum)
 
     const teamResult = await pool.query(
-      `INSERT INTO teams (name, sport, sports, description, location, is_private, owner_id, avatar, subscription_end, tags)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      `INSERT INTO teams (name, sport, sports, description, location, is_private, owner_id, avatar, subscription_end, tags, women_tag_requested)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        RETURNING *`,
       [
         name,
@@ -4923,7 +4992,8 @@ app.post('/api/teams', authenticateToken, async (req, res) => {
         req.user.id,
         avatar || '⚽',
         new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        sanitizeTeamTags(tags),
+        splitWomenTag(tags).tags,
+        splitWomenTag(tags).requested,
       ]
     );
 
@@ -5090,6 +5160,7 @@ app.get('/api/teams', optionalAuth, async (req, res) => {
       return {
         ...(t.my_role ? t : { ...t, owner_name: maskPersonName(t.owner_name) }),
         ...(ap ? { lat: ap[0], lng: ap[1], approx: true } : {}),
+        women_tag_requested: t.my_role ? t.women_tag_requested : false,
         featured: !t.is_private && featIds.includes(t.id),
       };
     });
@@ -5144,6 +5215,7 @@ app.get('/api/teams/:id', optionalAuth, async (req, res) => {
     const showNames = viewerIsMember || viewerIsAdmin;
 
     const sched = await pool.query(teamScheduleSql('$1::int', '$2::boolean'), [teamId, viewerIsMember]);
+    if (!viewerIsMember && !viewerIsAdmin) team.women_tag_requested = false;
     team.my_claim_pending = false;
     if (team.unclaimed && req.user) {
       team.my_claim_pending = (await pool.query(`SELECT 1 FROM team_claims WHERE team_id = $1 AND user_id = $2 AND status = 'pending'`, [teamId, req.user.id])).rows.length > 0;
@@ -5489,11 +5561,13 @@ app.put('/api/teams/:id', authenticateToken, async (req, res) => {
     const { name, sport, sports, description, location, is_private, tags } = req.body;
     if (rejectIfObjectionable(req, res, 'team', name, description)) return;
 
-    const ownerCheck = await pool.query('SELECT owner_id FROM teams WHERE id = $1', [teamId]);
+    const ownerCheck = await pool.query('SELECT owner_id, tags FROM teams WHERE id = $1', [teamId]);
     if (!ownerCheck.rows.length) return res.status(404).json({ error: 'Team not found' });
     if (!(await canManageTeam(teamId, req.user.id))) {
       return res.status(403).json({ error: 'Only team owner/editor can edit the team' });
     }
+    const tagsSent = Object.prototype.hasOwnProperty.call(req.body, 'tags');
+    const tagSplit = tagsSent ? splitWomenTag(tags, ownerCheck.rows[0].tags || []) : null;
 
     // Takım gizli yapılırsa tüm etkinlikleri da gizle
     if (is_private === true) {
@@ -5511,10 +5585,10 @@ app.put('/api/teams/:id', authenticateToken, async (req, res) => {
 
     const result = await pool.query(
       `UPDATE teams SET name=$1, sport=$2, sports=$3, description=$4, location=$5,
-              is_private=COALESCE($6, is_private), tags=COALESCE($8::text[], tags), updated_at=CURRENT_TIMESTAMP
+              is_private=COALESCE($6, is_private), tags=COALESCE($8::text[], tags), women_tag_requested=COALESCE($9, women_tag_requested), updated_at=CURRENT_TIMESTAMP
        WHERE id=$7 RETURNING *`,
       [name, primarySport, (sportsArr.length ? sportsArr : null), description, location, privacyArg, teamId,
-       Object.prototype.hasOwnProperty.call(req.body, 'tags') ? sanitizeTeamTags(tags) : null]
+       tagSplit ? tagSplit.tags : null, tagSplit ? tagSplit.requested : null]
     );
 
     res.json({ message: 'Team updated', team: result.rows[0] });
@@ -10051,7 +10125,7 @@ app.get('/api/admin/badges', isAdmin, async (req, res) => {
     const count = (sql, params = []) => pool.query(sql, params).then((r) => r.rows[0]?.n || 0);
     const sUsers = since('users'), sTrainings = since('trainings'), sTeams = since('teams');
     const [claims, messages, reports, discovery, users, trainings, teams] = await Promise.all([
-      count("SELECT COUNT(*)::int AS n FROM team_claims WHERE status = 'pending'").catch(() => 0),
+      count("SELECT ((SELECT COUNT(*) FROM team_claims WHERE status = 'pending') + (SELECT COUNT(*) FROM teams WHERE women_tag_requested))::int AS n").catch(() => 0),
       count('SELECT COUNT(*)::int AS n FROM contact_messages WHERE is_read = false'),
       count('SELECT COUNT(*)::int AS n FROM content_reports WHERE resolved = false'),
       count("SELECT COUNT(*)::int AS n FROM event_candidates WHERE status = 'pending'").catch(() => 0),
@@ -10634,7 +10708,7 @@ pool.query(`ALTER TABLE teams ADD COLUMN IF NOT EXISTS sports TEXT[]`).catch(() 
 // Öne çıkan takımlar (2 Kasım 2026): elle seçim bu sütunda; rastgele seçim app_settings'te
 pool.query(`ALTER TABLE teams ADD COLUMN IF NOT EXISTS featured BOOLEAN NOT NULL DEFAULT false`).catch(() => {});
 pool.query(`ALTER TABLE teams ADD COLUMN IF NOT EXISTS tags TEXT[] NOT NULL DEFAULT '{}'`).catch(() => {});
-pool.query(`ALTER TABLE teams ADD COLUMN IF NOT EXISTS unclaimed BOOLEAN NOT NULL DEFAULT false, ADD COLUMN IF NOT EXISTS external_url TEXT, ADD COLUMN IF NOT EXISTS meet_note TEXT`).catch(() => {});
+pool.query(`ALTER TABLE teams ADD COLUMN IF NOT EXISTS unclaimed BOOLEAN NOT NULL DEFAULT false, ADD COLUMN IF NOT EXISTS external_url TEXT, ADD COLUMN IF NOT EXISTS meet_note TEXT, ADD COLUMN IF NOT EXISTS women_tag_requested BOOLEAN NOT NULL DEFAULT false`).catch(() => {});
 pool.query(`CREATE TABLE IF NOT EXISTS app_settings (
     key TEXT PRIMARY KEY,
     value JSONB NOT NULL,
@@ -11659,7 +11733,7 @@ pool.query(`
   CREATE TABLE IF NOT EXISTS content_reports (
     id           SERIAL PRIMARY KEY,
     reporter_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    content_type TEXT NOT NULL, -- 'training', 'comment', 'wall_post', 'user'
+    content_type TEXT NOT NULL, -- 'training', 'comment', 'wall_post', 'user', 'team'
     content_id   INTEGER NOT NULL,
     reason       TEXT NOT NULL,
     resolved     BOOLEAN DEFAULT false,
@@ -11853,6 +11927,7 @@ app.get('/api/admin/flags', isAdmin, async (req, res) => {
           WHEN cr.content_type = 'wall_post'  THEN (SELECT message FROM team_posts WHERE id = cr.content_id)
           WHEN cr.content_type = 'comment'    THEN (SELECT comment FROM training_comments WHERE id = cr.content_id)
           WHEN cr.content_type = 'training'   THEN (SELECT title FROM trainings WHERE id = cr.content_id)
+          WHEN cr.content_type = 'team'       THEN (SELECT name FROM teams WHERE id = cr.content_id)
           WHEN cr.content_type = 'user'       THEN (SELECT name FROM users WHERE id = cr.content_id)
         END AS content_preview
       FROM content_reports cr

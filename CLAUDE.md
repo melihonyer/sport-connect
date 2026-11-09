@@ -652,8 +652,15 @@ bilinmeyen kod atılır. PUT'ta alan yoksa dokunulmaz. Form `TeamTagPicker`; kar
 
 Herkese açık bilgiden eklenen, sahibi olmayan takımlar: `teams.unclaimed`, `meet_note`, `external_url` (yalnız ad + şehir, logo yok). Katılınmaz (`/join` 409);
 site haritasına, "Takım" sayacına ve `tc`/`te` maillerine girmez. "Bu takım benim" → `POST /api/teams/:id/claim` (`team_claims`, iletişim zorunlu, saatte 5, kişi+takım başına bir bekleyen).
-Admin › Sahiplenme (`TeamClaimsTab`, rozet `claims`): onay takımı kişiye geçirir, sahip yapar, diğer talepleri reddeder, bildirim + e-posta (`team_claim`, tercih `role`,
+Admin › Onaylar (`TeamClaimsTab`, rozet `claims`): onay takımı kişiye geçirir, sahip yapar, diğer talepleri reddeder, bildirim + e-posta (`team_claim`, tercih `role`,
 `MAIL.claim*`); ret yalnız bildirim. Onaydan önce kişinin gerçek yönetici olduğu elle doğrulanır. Gerçek grup eklemek Melih'in onayladığı listeyle yapılır; kaynaklar eskiyse aktifliği kontrol edilmeden eklenmez.
+
+## "Kadın takımı" etiketi ve takım şikayeti (9 Kasım 2026, Melih onayladı)
+
+Melih "Kadınlar"ı kaba buldu → "Kadın takımı" (`teamTags.women`). Kötü niyetli kullanım riski için admin onaylı: `women` kodu onay olmadan `teams.tags`'e girmez,
+`teams.women_tag_requested` tutulur (`splitWomenTag`); onaylıysa düzenlemede kalır, lider kaldırırsa yeniden onay ister. Admin › Onaylar (eski "Sahiplenme"; `TeamClaimsTab`,
+`GET/POST /api/admin/women-tag-requests`), karar lidere uygulama bildirimi (`MAIL.tag*`). Takım sayfasında herkese "şikayet" bayrağı (`content_type: 'team'`, nedenler unsafe/inappropriate/spam/other; yöneticiye görünmez).
+Bilerek YOK: bu takımlarda güvenlik uyarısı notu ("korkutucu", Melih), kimlik/cinsiyet doğrulaması, "güvenli/doğrulanmış" vaadi.
 
 ## Silme ve kayıt
 

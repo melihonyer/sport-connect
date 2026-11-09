@@ -814,6 +814,7 @@ export const translations = {
     family: { tr: "Aile dostu", en: "Family friendly", de: "Familienfreundlich" },
   },
   createTeam: {
+    tagsWomenHint: { tr: "Kadın takımı etiketi, ekibimiz inceledikten sonra görünür.", en: "The Women's team tag appears after our team reviews it.", de: "Das Tag „Frauenteam“ erscheint nach unserer Prüfung." },
     tagsLabel: { tr: "Etiketler", en: "Tags", de: "Tags" },
     tagsHint: { tr: "Takımını anlatan en çok 4 etiket seç. Takımlar sayfasında bunlara göre süzülür.", en: "Pick up to 4 tags that describe your team. People can filter by them on the Teams page.", de: "Wähle bis zu 4 Tags, die dein Team beschreiben. Auf der Teams-Seite kann danach gefiltert werden." },
     uploadPhoto:    { tr: "Fotoğraf yükle", en: "Upload photo", de: "Foto hochladen" },

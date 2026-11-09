@@ -589,6 +589,7 @@ export default {
     family: "Familles bienvenues",
   },
   createTeam: {
+    tagsWomenHint: "L’étiquette « Équipe féminine » apparaîtra après vérification.",
     tagsLabel: "Étiquettes",
     tagsHint: "Choisis jusqu'à 4 étiquettes qui décrivent ton équipe. On peut filtrer avec sur la page Équipes.",
     uploadPhoto: "Ajouter une photo",
