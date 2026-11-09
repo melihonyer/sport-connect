@@ -78,6 +78,13 @@ Sözleşme: üyenin açık izni olmadan veri dışarı verilmez, Polar'a rakip h
 
 ## 2. Wahoo: Production
 
+**Sözleşme maddeleri (9 Kasım 2026, wahoo-api-agreement okundu), başvurudan önce:** token uygulama başına (§3), yani Muuvlink'e
+ayrı başvuru şart. §7 API'den gelen coğrafi konumu toplamayı, önbelleklemeyi, saklamayı yasaklıyor: Wahoo'dan başlangıç
+konumu saklanmaz, ısı haritasına Wahoo verisi girmez. §8 giriş yoluyla alınan veriyi o kullanıcıyla sınırlıyor; §7 ise
+kullanıcının önceden açık onayıyla başkasına göstermeye izin veriyor. Takımla paylaşım riskli, başvuru metni paylaşımsız önerildi.
+§6 gizlilik politikasında Wahoo'nun uygulama verisini kullanabileceğini söyleyen zorunlu cümle istiyor; `/en/privacy`'de henüz yok.
+Kullanıcı isteyince veri silinir; Wahoo isterse 48 saatte, güvenlik olayı 24 saatte bildirilir.
+
 https://developers.wahooligan.com. Başvuru **Production** seçilir (Sandbox sonradan çevrilmiyor).
 
 Form tuzakları (Training Agents'ta yaşandı): açıklama en çok 191 karakter ve aşılınca form sıfırlanıyor;
@@ -138,6 +145,11 @@ Redirect: `https://muuvlink.app/api/wearable/suunto/callback`. Onay gelirse söz
 Suunto uyumluluğu + suunto.com bağlantısı zorunlu. Reklam ağına aktarım ve kullanıcı kimliği paylaşımı yasak.
 
 ## 5. COROS: api@coros.com
+
+**Yeni e-posta GÖNDERİLMEZ** (9 Kasım 2026'da görüldü): COROS 28 Eylül'de TA başvurusuna cevap verdi: Partner API
+yerleşik ticari platformlara öncelikli, başvuru formu ayrı (support.coros.com, "Submit an API Application"); MCP
+bağlayıcı başvuru istemiyor, sporcu kendi hesabını bağlıyor, antrenman özetlerini okuyor. Muuvlink için önce MCP denenir.
+Aşağıdaki metin Partner API formu gerekirse diye duruyor.
 
 Konu: `API access request: Muuvlink (sports community platform, Turkey)`
 
