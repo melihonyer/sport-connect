@@ -13,7 +13,7 @@ Training Agents'ın anahtarları ve uygulamaları burada KULLANILMAZ; her marka 
 
 | # | İş | Neden | Kim |
 |---|---|---|---|
-| 1 | ~~İngilizce gizlilik sayfası + saat verisi bölümü~~ **yayında, 9 Kasım 2026:** `https://muuvlink.app/en/privacy` (hukuki kontrolsüz, Melih'in kararı) | İnceleyen açıp bakıyor | Tamam |
+| 1 | ~~İngilizce gizlilik sayfası + saat verisi bölümü~~ **yayında, 9 Kasım 2026:** `https://muuvlink.app/en/privacy/` (hukuki kontrolsüz, Melih'in kararı) | İnceleyen açıp bakıyor | Tamam |
 | 2 | Garmin v9 sözleşmesini portaldan okumak | Kullanıcılar arası paylaşım maddesi doğrulanmadı; "paylaşım" ve "ısı haritası" cümleleri buna göre kalır ya da çıkar | Melih portalı açar |
 | 3 | Saat verisi için ayrı açık rıza akışı | Nabız KVKK'da özel nitelikli veri; metinler bunu vaat ediyor, kodda olmalı | Kod işi, onaydan sonra |
 
@@ -91,7 +91,7 @@ logo yüklenince 500 veriyor, logosuz gönderilir.
 | Redirect URI | `https://muuvlink.app/api/wearable/wahoo/callback` |
 | Confidential | Yes |
 | Scopes | `user_read`, `workouts_read` (yazma izni istenmez; kalıcı erişim için formda `offline_data` varsa o da) |
-| Privacy policy | `https://muuvlink.app/en/privacy` |
+| Privacy policy | `https://muuvlink.app/en/privacy/` |
 
 ## 3. Garmin: Connect Developer Program, Starter
 
@@ -103,7 +103,7 @@ https://www.garmin.com/en-US/forms/StarterGarminConnectDeveloperAccess/ ya da co
 |---|---|
 | Company | `SALT KREATİF REKLAM TİCARET LİMİTED ŞİRKETİ` |
 | Website | `https://muuvlink.app` |
-| Privacy Policy URL | `https://muuvlink.app/en/privacy` |
+| Privacy Policy URL | `https://muuvlink.app/en/privacy/` |
 | Contact | `Melih Önyer`, `Digital Product Manager`, `melih@saltajans.com` |
 | Address | `Çınarlı Mah. 1572 Sok. No:33, Konak`, `İzmir`, `35170`, Turkey |
 | APIs | Activity API (Training API istenmez) |
