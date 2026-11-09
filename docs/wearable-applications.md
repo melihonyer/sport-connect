@@ -108,7 +108,7 @@ logo yüklenince 500 veriyor, logosuz gönderilir.
 
 ## 3. Garmin: Connect Developer Program, Starter
 
-**Destek e-postası GÖNDERİLDİ: 9 Kasım 2026** (info@saltajans.com → connect-support@developer.garmin.com; ikinci uygulama, takımla paylaşım, Training Agents reklamı soruldu). Cevap bekleniyor; cevapsız Garmin kodu ve paylaşımı açılmaz.
+**Destek e-postası GÖNDERİLDİ: 9 Kasım 2026** (info@saltajans.com → connect-support@developer.garmin.com; ikinci uygulama, takımla paylaşım, Training Agents reklamı soruldu). **Garmin'in cevabı (hazır metin):** Starter self-servis, uygulama değerlendirmesi yapılmıyor, uyumluluk lisans sahibinin sorumluluğunda. İkinci uygulama, takımla paylaşım ve Training Agents reklamı soruları cevapsız kaldı. Bu yüzden Garmin verisi yalnız sahibine gösterilir; ikinci uygulama için Starter formu denenir.
 
 **Sözleşme okundu: 9 Kasım 2026, Rev H (portalda, gizli; metin repoya konmaz).** Özet:
 - Sözleşme şirketin birden çok uygulamasını kapsıyor, anahtar ise web adresine bağlı. Apps sayfasında yeni uygulama düğmesi YOK: destekten istenir.
