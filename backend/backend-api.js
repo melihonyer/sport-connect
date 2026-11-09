@@ -2227,7 +2227,7 @@ function roleChangeEmail({ teamName, teamId, newRoleLabel, changerName, avatar }
 
     <div style="text-align:center;">
       <a href="${APP_URL}?takim=${teamId}"
-         style="display:inline-block;background:linear-gradient(135deg,#114956,#0e3c47);color:#ffffff;text-decoration:none;
+         style="display:inline-block;background:#114956;color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;letter-spacing:0.2px;">
         ${tm(lang, 'btnViewTeam')}
       </a>
@@ -2237,7 +2237,7 @@ function roleChangeEmail({ teamName, teamId, newRoleLabel, changerName, avatar }
 
 // Şablon 3: Duvar gönderisi bildirimi
 // Avatar URL'sini <img> tag'ine, değilse baş harfe çevirir
-function avatarHtml(avatarValue, name, size = 40, gradient = 'linear-gradient(135deg,#114956,#0e3c47)') {
+function avatarHtml(avatarValue, name, size = 40, gradient = '#114956') {
   const isUrl = avatarValue && (avatarValue.startsWith('http') || avatarValue.startsWith('/uploads/'));
   const src = isUrl ? (avatarValue.startsWith('/uploads/') ? `${APP_URL}${avatarValue}` : avatarValue) : null;
   if (src) {
@@ -2261,7 +2261,7 @@ function wallPostEmail({ teamName, teamId, posterName, posterAvatar, message, po
 
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:24px;margin-bottom:28px;">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-        ${avatarHtml(posterAvatar, posterName, 40, 'linear-gradient(135deg,#114956,#0e3c47)')}
+        ${avatarHtml(posterAvatar, posterName, 40, '#114956')}
         <div>
           <div style="font-weight:600;color:#1e293b;font-size:15px;">${posterName}</div>
           <div style="color:#94a3b8;font-size:13px;">${postDate}</div>
@@ -2274,7 +2274,7 @@ function wallPostEmail({ teamName, teamId, posterName, posterAvatar, message, po
 
     <div style="text-align:center;">
       <a href="${APP_URL}/takimlar?takim=${teamId}&tab=duvar"
-         style="display:inline-block;background:linear-gradient(135deg,#114956,#0e3c47);color:#ffffff;text-decoration:none;
+         style="display:inline-block;background:#114956;color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
         ${tm(lang, 'btnGoWall')}
       </a>
@@ -2304,7 +2304,7 @@ function trainingCommentEmail({ commenterName, commenterAvatar, trainingTitle, t
 
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin-bottom:28px;">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-        ${avatarHtml(commenterAvatar, commenterName, 36, 'linear-gradient(135deg,#114956,#0e3c47)')}
+        ${avatarHtml(commenterAvatar, commenterName, 36, '#114956')}
         <div>
           <div style="font-weight:600;color:#1e293b;font-size:15px;">${commenterName}</div>
           <div style="color:#94a3b8;font-size:13px;">${postDate}</div>
@@ -2317,7 +2317,7 @@ function trainingCommentEmail({ commenterName, commenterAvatar, trainingTitle, t
 
     <div style="text-align:center;">
       <a href="${trainingLink}"
-         style="display:inline-block;background:linear-gradient(135deg,#114956,#0e3c47);color:#ffffff;text-decoration:none;
+         style="display:inline-block;background:#114956;color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
         ${tm(lang, 'btnViewEvent')}
       </a>
@@ -2357,7 +2357,7 @@ function trainingUpdateEmail({ teamName, trainingTitle, trainingDate, trainingTi
 
     <div style="text-align:center;">
       <a href="${trainingLink}"
-         style="display:inline-block;background:linear-gradient(135deg,#114956,#0e3c47);color:#ffffff;text-decoration:none;
+         style="display:inline-block;background:#114956;color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
         ${tm(lang, 'btnViewEvent')}
       </a>
@@ -2401,7 +2401,7 @@ function newTrainingEmail({ teamName, trainingTitle, trainingDate, trainingTime,
 
     <div style="text-align:center;">
       <a href="${trainingLink}"
-         style="display:inline-block;background:linear-gradient(135deg,#114956,#0e3c47);color:#ffffff;text-decoration:none;
+         style="display:inline-block;background:#114956;color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
         ${tm(lang, 'btnViewEvent')}
       </a>
@@ -2432,7 +2432,7 @@ function trainingReminderEmail({ teamName, trainingTitle, trainingDate, training
 
     <div style="text-align:center;">
       <a href="${trainingLink}"
-         style="display:inline-block;background:linear-gradient(135deg,#114956,#0e3c47);color:#ffffff;text-decoration:none;
+         style="display:inline-block;background:#114956;color:#ffffff;text-decoration:none;
                 padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
         ${tm(lang, 'btnViewEventLong')}
       </a>
@@ -5344,12 +5344,12 @@ app.post('/api/teams/:id/join', authenticateToken, async (req, res) => {
             ${tm(L, 'joinTeamBody', joinerName, team.name)}
           </p>
           <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:24px;margin-bottom:28px;text-align:center;">
-            <div style="width:56px;height:56px;background:linear-gradient(135deg,#114956,#0e3c47);border-radius:50%;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;line-height:56px;text-align:center;">U</div>
+            <div style="width:56px;height:56px;background:#114956;border-radius:50%;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;line-height:56px;text-align:center;">U</div>
             <div style="font-size:18px;font-weight:700;color:#0e3c47;">${joinerName}</div>
           </div>
           <div style="text-align:center;">
             <a href="${process.env.APP_URL || 'https://muuvlink.app'}/takimlar?takim=${teamId}"
-               style="display:inline-block;background:linear-gradient(135deg,#114956,#0e3c47);color:#ffffff;text-decoration:none;
+               style="display:inline-block;background:#114956;color:#ffffff;text-decoration:none;
                       padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
               ${tm(L, 'btnViewTeam')}
             </a>
@@ -6902,7 +6902,7 @@ app.post('/api/trainings/:id/join', authenticateToken, async (req, res) => {
           </p>
           <div style="text-align:center;">
             <a href="${APP_URL}/etkinlikler?etkinlik=${trainingId}"
-               style="display:inline-block;background:linear-gradient(135deg,#114956,#0e3c47);color:#ffffff;text-decoration:none;
+               style="display:inline-block;background:#114956;color:#ffffff;text-decoration:none;
                       padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;">
               ${tm(L, 'btnViewEventLong')}
             </a>
@@ -8880,7 +8880,7 @@ app.post('/api/contact', optionalAuth, async (req, res) => {
           </div>
           <div style="margin-top:24px;text-align:center;">
             <a href="${APP_URL}/admin.html?tab=messages"
-               style="display:inline-block;background:linear-gradient(135deg,#114956,#0e3c47);color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;">
+               style="display:inline-block;background:#114956;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;">
               Panelde Görüntüle →
             </a>
           </div>
@@ -11121,7 +11121,7 @@ app.post('/api/auth/forgot-password', authLimiter, async (req, res) => {
         <p style="color:#334155;margin:0 0 12px">${tm(L, 'resetHello', user.name)}</p>
         <p style="color:#334155;margin:0 0 24px">${tm(L, 'resetBody')}</p>
         <a href="${resetLink}"
-           style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#114956,#0e3c47);color:#fff;border-radius:12px;text-decoration:none;font-weight:700;font-size:15px;">
+           style="display:inline-block;padding:12px 28px;background:#114956;color:#fff;border-radius:12px;text-decoration:none;font-weight:700;font-size:15px;">
           ${tm(L, 'btnResetPw')}
         </a>
         <p style="color:#94a3b8;font-size:13px;margin:24px 0 0;">${tm(L, 'resetIgnore')}</p>
