@@ -564,6 +564,20 @@ export default {
     joinTeam: "Unisciti alla squadra",
   },
 
+  atlas: {
+    unclaimed: "Non ancora rivendicata",
+    infoTitle: "Gestisci questa squadra?",
+    infoBody: "Questa pagina è stata creata da informazioni pubbliche; la squadra non è ancora su Muuvlink. Se è tua, prendila in gestione e annuncia qui i tuoi eventi.",
+    claimBtn: "È la mia squadra",
+    pending: "La tua richiesta è in revisione",
+    sourceLink: "Pagina della squadra",
+    modalTitle: "Rivendica la squadra",
+    modalHint: "Dobbiamo confermare che gestisci questa squadra. Aggiungi l’account Instagram della squadra o un altro modo per contattarti.",
+    contactLabel: "Account Instagram o telefono",
+    noteLabel: "Vuoi aggiungere qualcosa?",
+    submit: "Invia richiesta",
+    sent: "Richiesta ricevuta. La esamineremo e ti faremo sapere.",
+  },
   teamTags: {
     beginner: "Adatto ai principianti",
     all_levels: "Tutti i livelli",

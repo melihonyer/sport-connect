@@ -789,6 +789,20 @@ export const translations = {
   },
 
   // ── CREATE TEAM ─────────────────────────────────────────
+  atlas: {
+    unclaimed: { tr: "Henüz sahiplenilmedi", en: "Not claimed yet", de: "Noch nicht beansprucht" },
+    infoTitle: { tr: "Bu takımın sahibi misin?", en: "Do you run this team?", de: "Leitest du dieses Team?" },
+    infoBody: { tr: "Bu sayfa herkese açık bilgilerden hazırlandı; takım henüz Muuvlink'te değil. Sahibiysen devral, etkinliklerini buradan duyur.", en: "This page was created from public information; the team is not on Muuvlink yet. If it is yours, take it over and announce your events here.", de: "Diese Seite basiert auf öffentlichen Informationen; das Team ist noch nicht bei Muuvlink. Wenn es deins ist, übernimm es und kündige hier deine Events an." },
+    claimBtn: { tr: "Bu takım benim", en: "This is my team", de: "Das ist mein Team" },
+    pending: { tr: "Talebin inceleniyor", en: "Your request is being reviewed", de: "Deine Anfrage wird geprüft" },
+    sourceLink: { tr: "Takımın sayfası", en: "Team page", de: "Seite des Teams" },
+    modalTitle: { tr: "Takımı sahiplen", en: "Claim team", de: "Team beanspruchen" },
+    modalHint: { tr: "Takımın yöneticisi olduğunu doğrulamamız gerekiyor. Takımın Instagram hesabını ya da sana ulaşabileceğimiz bir bilgiyi yaz.", en: "We need to confirm that you run this team. Add the team’s Instagram account or another way to reach you.", de: "Wir müssen bestätigen, dass du dieses Team leitest. Gib das Instagram-Konto des Teams oder eine andere Kontaktmöglichkeit an." },
+    contactLabel: { tr: "Instagram hesabı ya da telefon", en: "Instagram account or phone", de: "Instagram-Konto oder Telefon" },
+    noteLabel: { tr: "Eklemek istediğin bir şey var mı?", en: "Anything to add?", de: "Möchtest du etwas ergänzen?" },
+    submit: { tr: "Talebi gönder", en: "Send request", de: "Anfrage senden" },
+    sent: { tr: "Talebin alındı. İnceleyip sana haber vereceğiz.", en: "Request received. We'll review it and let you know.", de: "Anfrage erhalten. Wir prüfen sie und geben dir Bescheid." },
+  },
   teamTags: {
     beginner: { tr: "Yeni başlayana uygun", en: "Beginner friendly", de: "Anfängerfreundlich" },
     all_levels: { tr: "Her seviyeye açık", en: "All levels welcome", de: "Alle Levels willkommen" },

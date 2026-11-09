@@ -840,6 +840,7 @@ const NOTIF_TYPE_TO_KEY = {
   training:          'event_new',
   training_update:   'event_update',
   training_cancelled: 'event_update',
+  team_claim:        'role',
   training_reminder: 'event_reminder',
   training_join:     'event_join',
   training_comment:  'comment',
@@ -1115,6 +1116,13 @@ const MAIL = {
     cancelBody: (tr, w) => `${tr} (${w}) iptal edildi. İstersen yakınındaki diğer etkinliklere bak ya da kendi etkinliğini aç.`,
     cancelCta: `Yakınındaki etkinliklere bak`,
     cancelCtaOwn: `Kendi etkinliğini aç`,
+    claimOkTitle: (n) => `Takım artık sende: ${n}`,
+    claimOkMsg: `Takım sayfasından etkinlik açabilir, üyelerini davet edebilirsin.`,
+    claimNoTitle: (n) => `Sahiplenme talebin onaylanmadı: ${n}`,
+    claimNoMsg: `Bir yanlışlık olduğunu düşünüyorsan iletişim sayfasından bize yaz.`,
+    claimOkHeading: `Takım artık sende`,
+    claimOkBody: (n) => `${n} takımının yönetimi artık sende. İlk etkinliğini aç, üyelerini davet et.`,
+    claimOkCta: `Takımına git`,
     updateTitle: 'Etkinlik Güncellendi',
     updateBody: (team, tr) => `${mB(team)} takımının ${mB(tr)} etkinliğinde değişiklik yapıldı.`,
     updateCurrent: 'Güncel Bilgiler',
@@ -1233,6 +1241,13 @@ const MAIL = {
     cancelBody: (tr, w) => `${tr} (${w}) was cancelled. You can check out other events near you or set up your own.`,
     cancelCta: `See events near you`,
     cancelCtaOwn: `Create your own event`,
+    claimOkTitle: (n) => `The team is yours: ${n}`,
+    claimOkMsg: `You can create events and invite members from the team page.`,
+    claimNoTitle: (n) => `Your claim was not approved: ${n}`,
+    claimNoMsg: `If you think this is a mistake, write to us from the contact page.`,
+    claimOkHeading: `The team is yours`,
+    claimOkBody: (n) => `You now manage ${n}. Create your first event and invite your members.`,
+    claimOkCta: `Go to your team`,
     updateTitle: 'Event updated',
     updateBody: (team, tr) => `The event ${mB(tr)} of ${mB(team)} has been changed.`,
     updateCurrent: 'Current details',
@@ -1351,6 +1366,13 @@ const MAIL = {
     cancelBody: (tr, w) => `${tr} (${w}) wurde abgesagt. Schau dir andere Events in deiner Nähe an oder erstelle dein eigenes.`,
     cancelCta: `Events in deiner Nähe ansehen`,
     cancelCtaOwn: `Eigenes Event erstellen`,
+    claimOkTitle: (n) => `Das Team gehört dir: ${n}`,
+    claimOkMsg: `Auf der Teamseite kannst du Events erstellen und Mitglieder einladen.`,
+    claimNoTitle: (n) => `Deine Anfrage wurde nicht bestätigt: ${n}`,
+    claimNoMsg: `Wenn das ein Irrtum ist, schreib uns über die Kontaktseite.`,
+    claimOkHeading: `Das Team gehört dir`,
+    claimOkBody: (n) => `Du verwaltest jetzt ${n}. Erstelle dein erstes Event und lade deine Mitglieder ein.`,
+    claimOkCta: `Zu deinem Team`,
     updateTitle: 'Event aktualisiert',
     updateBody: (team, tr) => `Beim Event ${mB(tr)} des Teams ${mB(team)} gab es Änderungen.`,
     updateCurrent: 'Aktuelle Angaben',
@@ -1469,6 +1491,13 @@ const MAIL = {
     cancelBody: (tr, w) => `Η εκδήλωση ${tr} (${w}) ακυρώθηκε. Δες άλλες εκδηλώσεις κοντά σου ή δημιούργησε τη δική σου.`,
     cancelCta: `Δες εκδηλώσεις κοντά σου`,
     cancelCtaOwn: `Δημιούργησε τη δική σου`,
+    claimOkTitle: (n) => `Η ομάδα είναι δική σου: ${n}`,
+    claimOkMsg: `Από τη σελίδα της ομάδας μπορείς να δημιουργείς εκδηλώσεις και να προσκαλείς μέλη.`,
+    claimNoTitle: (n) => `Το αίτημά σου δεν εγκρίθηκε: ${n}`,
+    claimNoMsg: `Αν νομίζεις ότι είναι λάθος, γράψε μας από τη σελίδα επικοινωνίας.`,
+    claimOkHeading: `Η ομάδα είναι δική σου`,
+    claimOkBody: (n) => `Τώρα διαχειρίζεσαι την ομάδα ${n}. Δημιούργησε την πρώτη σου εκδήλωση και προσκάλεσε τα μέλη σου.`,
+    claimOkCta: `Πήγαινε στην ομάδα σου`,
     updateTitle: 'Η εκδήλωση ενημερώθηκε',
     updateBody: (team, tr) => `Έγιναν αλλαγές στην εκδήλωση ${mB(tr)} της ομάδας ${mB(team)}.`,
     updateCurrent: 'Τρέχοντα στοιχεία',
@@ -1587,6 +1616,13 @@ const MAIL = {
     cancelBody: (tr, w) => `${tr} (${w}) se ha cancelado. Puedes ver otros eventos cerca de ti o crear el tuyo.`,
     cancelCta: `Ver eventos cerca de ti`,
     cancelCtaOwn: `Crear tu evento`,
+    claimOkTitle: (n) => `El equipo ya es tuyo: ${n}`,
+    claimOkMsg: `Desde la página del equipo puedes crear eventos e invitar a miembros.`,
+    claimNoTitle: (n) => `Tu solicitud no se ha aprobado: ${n}`,
+    claimNoMsg: `Si crees que es un error, escríbenos desde la página de contacto.`,
+    claimOkHeading: `El equipo ya es tuyo`,
+    claimOkBody: (n) => `Ahora gestionas ${n}. Crea tu primer evento e invita a tus miembros.`,
+    claimOkCta: `Ir a tu equipo`,
     updateTitle: 'Evento actualizado',
     updateBody: (team, tr) => `Ha habido cambios en el evento ${mB(tr)} de ${mB(team)}.`,
     updateCurrent: 'Datos actuales',
@@ -1705,6 +1741,13 @@ const MAIL = {
     cancelBody: (tr, w) => `${tr} (${w}) a été annulé. Tu peux regarder d’autres événements près de chez toi ou créer le tien.`,
     cancelCta: `Voir les événements près de chez toi`,
     cancelCtaOwn: `Créer ton événement`,
+    claimOkTitle: (n) => `L’équipe est à toi : ${n}`,
+    claimOkMsg: `Depuis la page de l’équipe, tu peux créer des événements et inviter des membres.`,
+    claimNoTitle: (n) => `Ta demande n’a pas été approuvée : ${n}`,
+    claimNoMsg: `Si tu penses que c’est une erreur, écris-nous depuis la page de contact.`,
+    claimOkHeading: `L’équipe est à toi`,
+    claimOkBody: (n) => `Tu gères maintenant ${n}. Crée ton premier événement et invite tes membres.`,
+    claimOkCta: `Aller à ton équipe`,
     updateTitle: 'Événement modifié',
     updateBody: (team, tr) => `L'événement ${mB(tr)} de ${mB(team)} a été modifié.`,
     updateCurrent: 'Informations à jour',
@@ -1823,6 +1866,13 @@ const MAIL = {
     cancelBody: (tr, w) => `${tr} (${w}) è stato annullato. Puoi dare un’occhiata ad altri eventi vicino a te o crearne uno tuo.`,
     cancelCta: `Vedi eventi vicino a te`,
     cancelCtaOwn: `Crea il tuo evento`,
+    claimOkTitle: (n) => `La squadra è tua: ${n}`,
+    claimOkMsg: `Dalla pagina della squadra puoi creare eventi e invitare i membri.`,
+    claimNoTitle: (n) => `La tua richiesta non è stata approvata: ${n}`,
+    claimNoMsg: `Se pensi sia un errore, scrivici dalla pagina contatti.`,
+    claimOkHeading: `La squadra è tua`,
+    claimOkBody: (n) => `Ora gestisci ${n}. Crea il tuo primo evento e invita i tuoi membri.`,
+    claimOkCta: `Vai alla tua squadra`,
     updateTitle: 'Evento aggiornato',
     updateBody: (team, tr) => `L'evento ${mB(tr)} di ${mB(team)} è stato modificato.`,
     updateCurrent: 'Dettagli aggiornati',
@@ -3312,6 +3362,11 @@ const SERVER_MSG = {
   'Bu etkinliği yalnızca oluşturan kişi düzenleyebilir.': { en: 'Only the person who created this event can edit it.', de: 'Nur die Person, die das Event erstellt hat, kann es bearbeiten.', el: 'Μόνο όποιος δημιούργησε την εκδήλωση μπορεί να την επεξεργαστεί.', es: 'Solo quien creó este evento puede editarlo.', fr: 'Seule la personne qui a créé cet événement peut le modifier.', it: 'Solo chi ha creato questo evento può modificarlo.' },
   'Etkinliği düzenlemek için takımın sahibi, antrenörü veya kaptanı olmanız gerekiyor.': { en: 'You need to be the team owner, coach or captain to edit the event.', de: 'Um das Event zu bearbeiten, musst du Teamleitung, Trainer oder Kapitän sein.', el: 'Για να επεξεργαστείς την εκδήλωση πρέπει να είσαι ιδιοκτήτης, προπονητής ή αρχηγός της ομάδας.', es: 'Para editar el evento tienes que ser propietario, entrenador o capitán del equipo.', fr: 'Pour modifier l\'événement, tu dois être propriétaire, coach ou capitaine de l\'équipe.', it: 'Per modificare l\'evento devi essere proprietario, allenatore o capitano della squadra.' },
   'Bu etkinliği yalnızca oluşturan kişi silebilir.': { en: 'Only the person who created this event can delete it.', de: 'Nur die Person, die das Event erstellt hat, kann es löschen.', el: 'Μόνο όποιος δημιούργησε την εκδήλωση μπορεί να τη διαγράψει.', es: 'Solo quien creó este evento puede eliminarlo.', fr: 'Seule la personne qui a créé cet événement peut le supprimer.', it: 'Solo chi ha creato questo evento può eliminarlo.' },
+  'Bu takım henüz sahiplenilmedi.': { en: 'This team has not been claimed yet.', de: 'Dieses Team wurde noch nicht beansprucht.', el: 'Αυτή η ομάδα δεν έχει διεκδικηθεί ακόμη.', es: 'Este equipo aún no tiene responsable.', fr: 'Cette équipe n’a pas encore été revendiquée.', it: 'Questa squadra non è ancora stata rivendicata.' },
+  'Bu takım zaten sahiplenilmiş.': { en: 'This team has already been claimed.', de: 'Dieses Team wurde bereits beansprucht.', el: 'Αυτή η ομάδα έχει ήδη διεκδικηθεί.', es: 'Este equipo ya tiene responsable.', fr: 'Cette équipe a déjà été revendiquée.', it: 'Questa squadra è già stata rivendicata.' },
+  'Bu takım için talebin zaten alındı.': { en: 'We already received your request for this team.', de: 'Deine Anfrage für dieses Team liegt uns bereits vor.', el: 'Έχουμε ήδη λάβει το αίτημά σου για αυτή την ομάδα.', es: 'Ya hemos recibido tu solicitud para este equipo.', fr: 'Nous avons déjà reçu ta demande pour cette équipe.', it: 'Abbiamo già ricevuto la tua richiesta per questa squadra.' },
+  'Bir iletişim bilgisi yazmalısın.': { en: 'Please add a way to contact you.', de: 'Bitte gib eine Kontaktmöglichkeit an.', el: 'Πρόσθεσε έναν τρόπο επικοινωνίας.', es: 'Añade una forma de contactarte.', fr: 'Ajoute un moyen de te contacter.', it: 'Aggiungi un modo per contattarti.' },
+  'Çok fazla talep gönderdin, biraz sonra dene.': { en: 'Too many requests, please try again later.', de: 'Zu viele Anfragen, bitte versuche es später erneut.', el: 'Πάρα πολλά αιτήματα, δοκίμασε ξανά αργότερα.', es: 'Demasiadas solicitudes, inténtalo más tarde.', fr: 'Trop de demandes, réessaie plus tard.', it: 'Troppe richieste, riprova più tardi.' },
   'Gruplar geçersiz: en az 2, en çok 5 grup olmalı.': { en: 'Invalid groups: use 2 to 5 groups.', de: 'Ungültige Gruppen: 2 bis 5 Gruppen sind möglich.', el: 'Μη έγκυρες ομάδες: επίτρεπονται 2 έως 5 ομάδες.', es: 'Grupos no válidos: usa entre 2 y 5 grupos.', fr: 'Groupes non valides : de 2 à 5 groupes.', it: 'Gruppi non validi: da 2 a 5 gruppi.' },
   'Geçersiz grup.': { en: 'Invalid group.', de: 'Ungültige Gruppe.', el: 'Μη έγκυρη ομάδα.', es: 'Grupo no válido.', fr: 'Groupe non valide.', it: 'Gruppo non valido.' },
   'Önce etkinliğe katılmalısın.': { en: 'Join the event first.', de: 'Nimm zuerst am Event teil.', el: 'Πρώτα δήλωσε συμμετοχή στην εκδήλωση.', es: 'Primero únete al evento.', fr: 'Rejoins d’abord l’événement.', it: 'Prima partecipa all’evento.' },
@@ -3587,7 +3642,7 @@ app.get('/api/sitemap.xml', async (req, res) => {
   try {
     // Herkese açık takımlar (özel olanlar hariç)
     const teams = await pool.query(
-      `SELECT id, name, updated_at FROM teams WHERE is_private = false ORDER BY updated_at DESC LIMIT 20000`
+      `SELECT id, name, updated_at FROM teams WHERE is_private = false AND unclaimed = false ORDER BY updated_at DESC LIMIT 20000`
     );
     for (const t of teams.rows) {
       urls.push({
@@ -4727,6 +4782,116 @@ app.put('/api/auth/password', authenticateToken, async (req, res) => {
 // TEAMS ROUTES
 // =====================================================
 
+// Takım atlası: herkese açık bilgiden eklenen, henüz sahibi olmayan takımlar (unclaimed).
+// Katılınmaz, sitemap'e ve sayaca girmez. Sahibi "Bu takım benim" der, admin elle onaylar.
+pool.query(`CREATE TABLE IF NOT EXISTS team_claims (
+    id SERIAL PRIMARY KEY,
+    team_id INTEGER NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    contact TEXT NOT NULL,
+    note TEXT,
+    status TEXT NOT NULL DEFAULT 'pending',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    decided_at TIMESTAMPTZ
+  )`).then(() => pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS team_claims_pending ON team_claims (team_id, user_id) WHERE status = 'pending'`))
+  .catch((e) => console.error('team_claims:', e.message));
+
+app.post('/api/teams/:id/claim', authenticateToken, async (req, res) => {
+  try {
+    const contact = String(req.body?.contact || '').trim().slice(0, 120);
+    const note = String(req.body?.note || '').trim().slice(0, 500);
+    if (!contact) return res.status(400).json({ error: 'Bir iletişim bilgisi yazmalısın.' });
+    if (rejectIfObjectionable(req, res, 'team', contact, note)) return;
+    const t = await pool.query('SELECT unclaimed FROM teams WHERE id = $1', [req.params.id]);
+    if (!t.rows.length) return res.status(404).json({ error: 'Team not found' });
+    if (!t.rows[0].unclaimed) return res.status(409).json({ error: 'Bu takım zaten sahiplenilmiş.' });
+    const recent = await pool.query(`SELECT COUNT(*)::int AS n FROM team_claims WHERE user_id = $1 AND created_at > NOW() - INTERVAL '1 hour'`, [req.user.id]);
+    if (recent.rows[0].n >= 5) return res.status(429).json({ error: 'Çok fazla talep gönderdin, biraz sonra dene.' });
+    const ins = await pool.query(
+      `INSERT INTO team_claims (team_id, user_id, contact, note) VALUES ($1, $2, $3, $4)
+       ON CONFLICT (team_id, user_id) WHERE status = 'pending' DO NOTHING RETURNING id`,
+      [req.params.id, req.user.id, contact, note || null]);
+    if (!ins.rows.length) return res.status(409).json({ error: 'Bu takım için talebin zaten alındı.' });
+    res.status(201).json({ ok: true });
+  } catch (error) {
+    console.error('Team claim error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/admin/team-claims', isAdmin, async (req, res) => {
+  try {
+    const r = await pool.query(
+      `SELECT c.id, c.contact, c.note, c.status, c.created_at, t.id AS team_id, t.name AS team_name, t.location AS team_location,
+              t.external_url, u.id AS user_id, u.name AS user_name, u.email AS user_email
+         FROM team_claims c JOIN teams t ON t.id = c.team_id JOIN users u ON u.id = c.user_id
+        ORDER BY (c.status = 'pending') DESC, c.created_at DESC LIMIT 100`);
+    res.json(r.rows);
+  } catch (e) { res.status(500).json({ error: 'Talepler alınamadı.' }); }
+});
+
+function teamClaimApprovedEmail({ teamName, teamUrl }, L = 'tr') {
+  return emailWrapper(`
+    <h2 style="margin:0 0 10px;color:#1e293b;font-size:22px;">${tm(L, 'claimOkHeading')}</h2>
+    <p style="margin:0 0 24px;color:#475569;font-size:16px;line-height:1.6;">${actEsc(tm(L, 'claimOkBody', teamName))}</p>
+    <a href="${teamUrl}" style="display:block;text-align:center;background:#114956;border-radius:12px;padding:14px 16px;color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;">${tm(L, 'claimOkCta')}</a>
+  `, L);
+}
+
+app.post('/api/admin/team-claims/:id/:decision', isAdmin, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { id, decision } = req.params;
+    if (!['approve', 'reject'].includes(decision)) return res.status(400).json({ error: 'Geçersiz işlem.' });
+    await client.query('BEGIN');
+    const c = (await client.query(
+      `SELECT c.id, c.team_id, c.user_id, c.status, t.name AS team_name, t.unclaimed, u.email
+         FROM team_claims c JOIN teams t ON t.id = c.team_id JOIN users u ON u.id = c.user_id
+        WHERE c.id = $1 FOR UPDATE OF c, t`, [id])).rows[0];
+    if (!c) { await client.query('ROLLBACK'); return res.status(404).json({ error: 'Talep bulunamadı.' }); }
+    if (c.status !== 'pending' || (decision === 'approve' && !c.unclaimed)) {
+      await client.query('ROLLBACK'); return res.status(409).json({ error: 'Bu talep zaten sonuçlanmış.' });
+    }
+    if (decision === 'reject') {
+      await client.query(`UPDATE team_claims SET status = 'rejected', decided_at = NOW() WHERE id = $1`, [id]);
+    } else {
+      await client.query(`UPDATE teams SET owner_id = $1, unclaimed = false, updated_at = CURRENT_TIMESTAMP WHERE id = $2`, [c.user_id, c.team_id]);
+      await client.query(
+        `INSERT INTO team_members (team_id, user_id, role) VALUES ($1, $2, 'owner')
+         ON CONFLICT (team_id, user_id) DO UPDATE SET role = 'owner'`, [c.team_id, c.user_id]);
+      await client.query(`UPDATE team_claims SET status = 'approved', decided_at = NOW() WHERE id = $1`, [id]);
+      await client.query(`UPDATE team_claims SET status = 'rejected', decided_at = NOW() WHERE team_id = $1 AND status = 'pending'`, [c.team_id]);
+    }
+    await client.query('COMMIT');
+    const teamUrl = `${APP_URL}/takim/${slugify(c.team_name)}-${c.team_id}`;
+    if (decision === 'approve') {
+      createNotif(c.user_id, {
+        build: (L) => ({ title: tm(L, 'claimOkTitle', c.team_name), message: tm(L, 'claimOkMsg') }),
+        type: 'team_claim', refId: c.team_id, url: `/takimlar?takim=${c.team_id}`,
+      }).catch(() => {});
+      sendEmail({
+        to: c.email, userId: c.user_id, prefKey: 'role', kind: 'team_claim',
+        build: (L) => ({
+          subject: tm(L, 'claimOkTitle', c.team_name),
+          html: teamClaimApprovedEmail({ teamName: c.team_name, teamUrl }, L),
+        }),
+      }).catch((e) => console.error('Claim email error:', e.message));
+    } else {
+      createNotif(c.user_id, {
+        build: (L) => ({ title: tm(L, 'claimNoTitle', c.team_name), message: tm(L, 'claimNoMsg') }),
+        type: 'team_claim', refId: c.team_id, url: '/iletisim',
+      }).catch(() => {});
+    }
+    res.json({ ok: true });
+  } catch (e) {
+    await client.query('ROLLBACK').catch(() => {});
+    console.error('Claim decision error:', e);
+    res.status(500).json({ error: 'İşlem yapılamadı.' });
+  } finally {
+    client.release();
+  }
+});
+
 // Keşif etiketleri: sabit liste (sporla-bulusma.jsx TEAM_TAGS ile aynı), takım başına en çok 4. Bilinmeyen kod atılır.
 const TEAM_TAGS = ['beginner', 'all_levels', 'women', 'coached', 'race', 'social', 'coffee', 'family'];
 const sanitizeTeamTags = (raw) => [...new Set((Array.isArray(raw) ? raw : []).filter((x) => TEAM_TAGS.includes(x)))].slice(0, 4);
@@ -4979,6 +5144,10 @@ app.get('/api/teams/:id', optionalAuth, async (req, res) => {
     const showNames = viewerIsMember || viewerIsAdmin;
 
     const sched = await pool.query(teamScheduleSql('$1::int', '$2::boolean'), [teamId, viewerIsMember]);
+    team.my_claim_pending = false;
+    if (team.unclaimed && req.user) {
+      team.my_claim_pending = (await pool.query(`SELECT 1 FROM team_claims WHERE team_id = $1 AND user_id = $2 AND status = 'pending'`, [teamId, req.user.id])).rows.length > 0;
+    }
     team.next_date = sched.rows[0]?.next_date || null;
     team.weekly_days = sched.rows[0]?.weekly_days || [];
 
@@ -5052,6 +5221,7 @@ app.post('/api/teams/:id/join', authenticateToken, async (req, res) => {
     if (memberCheck.rows.length > 0) {
       return res.status(409).json({ error: 'Already a member of this team' });
     }
+    if (team.unclaimed) return res.status(409).json({ error: 'Bu takım henüz sahiplenilmedi.' });
 
     // Gizli takıma yalnız davetle girilir (accept-invite). Bu kontrol yokken takım
     // numarasını bilen herkes gizli takıma üye olup üye adlarını ve duvarı görebiliyordu.
@@ -7662,7 +7832,7 @@ app.get('/api/admin/stats', isAdmin, async (req, res) => {
     const [userCount, trainingCount, teamCount, completedTrainings, contactCount, recentUsers] = await Promise.all([
       pool.query('SELECT COUNT(*) FROM users'),
       pool.query('SELECT COUNT(*) FROM trainings'),
-      pool.query('SELECT COUNT(*) FROM teams'),
+      pool.query('SELECT COUNT(*) FROM teams WHERE unclaimed = false'),
       pool.query(`SELECT COUNT(*) FROM trainings WHERE ${trainingUtcExpr('')} < NOW()`),
       pool.query("SELECT COUNT(*) FROM contact_messages WHERE is_read = false"),
       pool.query("SELECT id, name, email, created_at FROM users ORDER BY created_at DESC LIMIT 5"),
@@ -9880,7 +10050,8 @@ app.get('/api/admin/badges', isAdmin, async (req, res) => {
     };
     const count = (sql, params = []) => pool.query(sql, params).then((r) => r.rows[0]?.n || 0);
     const sUsers = since('users'), sTrainings = since('trainings'), sTeams = since('teams');
-    const [messages, reports, discovery, users, trainings, teams] = await Promise.all([
+    const [claims, messages, reports, discovery, users, trainings, teams] = await Promise.all([
+      count("SELECT COUNT(*)::int AS n FROM team_claims WHERE status = 'pending'").catch(() => 0),
       count('SELECT COUNT(*)::int AS n FROM contact_messages WHERE is_read = false'),
       count('SELECT COUNT(*)::int AS n FROM content_reports WHERE resolved = false'),
       count("SELECT COUNT(*)::int AS n FROM event_candidates WHERE status = 'pending'").catch(() => 0),
@@ -9896,7 +10067,7 @@ app.get('/api/admin/badges', isAdmin, async (req, res) => {
     ]);
     res.json({
       now,
-      messages, reports, discovery, users, trainings, teams,
+      claims, messages, reports, discovery, users, trainings, teams,
       live: { members: liveOnlineIds(now).size, guests: liveActiveGuestCount(now) },
     });
   } catch (e) {
@@ -10463,6 +10634,7 @@ pool.query(`ALTER TABLE teams ADD COLUMN IF NOT EXISTS sports TEXT[]`).catch(() 
 // Öne çıkan takımlar (2 Kasım 2026): elle seçim bu sütunda; rastgele seçim app_settings'te
 pool.query(`ALTER TABLE teams ADD COLUMN IF NOT EXISTS featured BOOLEAN NOT NULL DEFAULT false`).catch(() => {});
 pool.query(`ALTER TABLE teams ADD COLUMN IF NOT EXISTS tags TEXT[] NOT NULL DEFAULT '{}'`).catch(() => {});
+pool.query(`ALTER TABLE teams ADD COLUMN IF NOT EXISTS unclaimed BOOLEAN NOT NULL DEFAULT false, ADD COLUMN IF NOT EXISTS external_url TEXT, ADD COLUMN IF NOT EXISTS meet_note TEXT`).catch(() => {});
 pool.query(`CREATE TABLE IF NOT EXISTS app_settings (
     key TEXT PRIMARY KEY,
     value JSONB NOT NULL,
@@ -11093,7 +11265,7 @@ async function runActivationEmails() {
     // tc — son 6 saatte kurulan takımlar (en az 10 dk önce: kurucu ilk ayarları yapsın)
     const teams = (await pool.query(
       `SELECT t.id, t.name, t.is_private, u.id AS uid, u.email FROM teams t JOIN users u ON u.id = t.owner_id
-        WHERE t.created_at BETWEEN NOW() - INTERVAL '6 hours' AND NOW() - INTERVAL '10 minutes' AND ${USER_OK}
+        WHERE t.created_at BETWEEN NOW() - INTERVAL '6 hours' AND NOW() - INTERVAL '10 minutes' AND ${USER_OK} AND t.unclaimed = false
           AND NOT EXISTS (SELECT 1 FROM activation_email_log a WHERE a.kind = 'tc' AND a.ref_id = t.id)`)).rows;
     for (const t of teams) {
       const id = await claimActivation('tc', t.id, t.uid); if (!id) continue;
@@ -11149,7 +11321,7 @@ async function runActivationEmails() {
     // açılışta eski, terk edilmiş takımlara toplu gönderim olmasın).
     const tes = (await pool.query(
       `SELECT t.id, t.name, t.is_private, u.id AS uid, u.email FROM teams t JOIN users u ON u.id = t.owner_id
-        WHERE t.created_at BETWEEN NOW() - INTERVAL '7 days' AND NOW() - INTERVAL '3 days' AND ${USER_OK}
+        WHERE t.created_at BETWEEN NOW() - INTERVAL '7 days' AND NOW() - INTERVAL '3 days' AND ${USER_OK} AND t.unclaimed = false
           AND NOT EXISTS (SELECT 1 FROM trainings tr WHERE tr.team_id = t.id)
           AND NOT EXISTS (SELECT 1 FROM activation_email_log a WHERE a.kind = 'te' AND a.ref_id = t.id)`)).rows;
     for (const t of tes) {

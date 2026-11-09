@@ -564,6 +564,20 @@ export default {
     joinTeam: "Rejoindre l'équipe",
   },
 
+  atlas: {
+    unclaimed: "Pas encore revendiquée",
+    infoTitle: "Tu gères cette équipe ?",
+    infoBody: "Cette page a été créée à partir d’informations publiques ; l’équipe n’est pas encore sur Muuvlink. Si c’est la tienne, reprends-la et annonce tes événements ici.",
+    claimBtn: "C'est mon équipe",
+    pending: "Ta demande est en cours d’examen",
+    sourceLink: "Page de l'équipe",
+    modalTitle: "Revendiquer l'équipe",
+    modalHint: "Nous devons confirmer que tu gères cette équipe. Ajoute le compte Instagram de l’équipe ou un autre moyen de te contacter.",
+    contactLabel: "Compte Instagram ou téléphone",
+    noteLabel: "Quelque chose à ajouter ?",
+    submit: "Envoyer la demande",
+    sent: "Demande reçue. Nous l’examinons et te tenons au courant.",
+  },
   teamTags: {
     beginner: "Débutants bienvenus",
     all_levels: "Tous niveaux",

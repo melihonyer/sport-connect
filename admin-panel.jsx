@@ -1072,13 +1072,13 @@ const EMAIL_KIND_TR = {
   act_wu: "Hoş geldin", act_tc: "Takım kuruldu", act_ec: "Etkinlik yayında", act_lc: "Son çağrı",
   act_te: "İlk buluşma", grow: "Büyüme (panelden)", event_new: "Yeni etkinlik (üyelere)",
   event_reminder: "Etkinlik hatırlatma", team_member: "Yeni takım üyesi", event_join: "Yeni katılımcı",
-  comment: "Yorum", event_update: "Etkinlik değişti", event_cancel: "Etkinlik iptal", wall_post: "Duvar gönderisi", role: "Rol değişti",
+  comment: "Yorum", event_update: "Etkinlik değişti", event_cancel: "Etkinlik iptal", team_claim: "Takım devri", wall_post: "Duvar gönderisi", role: "Rol değişti",
   invite: "Takım daveti", event_invite: "Etkinlik daveti", password_reset: "Şifre sıfırlama", contact_reply: "İletişim yanıtı",
   contact_answer: "Destek cevabı (panelden)",
   contact_admin: "İletişim (bize)", tips: "İpuçları", sample: "Örnek / test", other: "Diğer",
 };
 const NOTIF_KIND_TR = {
-  training: "Yeni etkinlik", training_update: "Etkinlik değişti", training_cancelled: "Etkinlik iptal", training_reminder: "Etkinlik hatırlatma",
+  training: "Yeni etkinlik", training_update: "Etkinlik değişti", training_cancelled: "Etkinlik iptal", team_claim: "Takım devri", training_reminder: "Etkinlik hatırlatma",
   training_join: "Yeni katılımcı", training_comment: "Yorum", comment_like: "Yorum beğenisi",
   team: "Yeni takım üyesi", team_post: "Duvar gönderisi", wall_post_like: "Gönderi beğenisi",
   invitation: "Takım daveti", role_change: "Rol değişti", badge: "Rozet", engagement_nudge: "Hatırlatma (geri çağırma)",
@@ -1970,6 +1970,55 @@ function AdminToast({ toasts }) {
 // ─── Menü rozetleri ─────────────────────────────────────────
 // Bu sekmelerde rozet "son baktığından beri yeni" demek. Son bakış anı tarayıcıda
 // (localStorage) sunucu saatiyle tutulur; sekme açılınca sıfırlanır.
+// Takım atlası: "Bu takım benim" talepleri. Onaylanınca takım kişiye geçer.
+function TeamClaimsTab({ api, showToast }) {
+  const [rows, setRows] = useState(null);
+  const [busy, setBusy] = useState(null);
+  const load = useCallback(() => { api("/admin/team-claims").then((d) => setRows(d || [])).catch(() => setRows([])); }, [api]);
+  useEffect(() => { load(); }, [load]);
+  const decide = async (c, decision) => {
+    if (!window.confirm(decision === "approve" ? `${c.team_name} takımı ${c.user_name} kişisine geçsin mi?` : `${c.user_name} kişisinin talebi reddedilsin mi?`)) return;
+    setBusy(c.id);
+    try {
+      await api(`/admin/team-claims/${c.id}/${decision}`, { method: "POST" });
+      showToast(decision === "approve" ? "Takım devredildi." : "Talep reddedildi.");
+      load();
+    } catch (e) {
+      showToast(e?.message || "İşlem yapılamadı.", "error");
+    } finally { setBusy(null); }
+  };
+  const label = { pending: "Bekliyor", approved: "Onaylandı", rejected: "Reddedildi" };
+  return (
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+      <div className="px-4 md:px-6 py-4 border-b border-slate-100">
+        <h2 className="font-medium text-slate-900">Sahiplenme talepleri</h2>
+        <p className="text-xs text-slate-500 mt-1">Onaylamadan önce kişinin takımın gerçek yöneticisi olduğunu doğrula (ör. takımın Instagram hesabından mesaj).</p>
+      </div>
+      {rows === null ? <p className="p-6 text-sm text-slate-500">Yükleniyor…</p> : rows.length === 0 ? <p className="p-6 text-sm text-slate-500">Talep yok.</p> : (
+        <div className="divide-y divide-slate-100">
+          {rows.map((c) => (
+            <div key={c.id} className="px-4 md:px-6 py-4 flex flex-wrap items-start gap-3">
+              <div className="flex-1 min-w-[240px] text-sm">
+                <div className="font-medium text-slate-900">{c.team_name} <span className="text-slate-400 font-normal">· {c.team_location || "konum yok"}</span></div>
+                <div className="text-slate-600 mt-1">{c.user_name} · {c.user_email}</div>
+                <div className="text-slate-600 mt-1">İletişim: <span className="font-medium">{c.contact}</span></div>
+                {c.note && <div className="text-slate-500 mt-1 whitespace-pre-wrap">{c.note}</div>}
+                {c.external_url && <a href={c.external_url} target="_blank" rel="noopener noreferrer" className="text-brand-700 underline text-xs mt-1 inline-block">Takımın sayfası</a>}
+              </div>
+              {c.status === "pending" ? (
+                <div className="flex gap-2">
+                  <button disabled={busy === c.id} onClick={() => decide(c, "approve")} className="px-3 py-2 rounded-lg text-xs font-semibold bg-brand-600 text-white disabled:opacity-50">Onayla</button>
+                  <button disabled={busy === c.id} onClick={() => decide(c, "reject")} className="px-3 py-2 rounded-lg text-xs font-semibold bg-red-50 text-red-600 disabled:opacity-50">Reddet</button>
+                </div>
+              ) : <span className="text-xs text-slate-500">{label[c.status] || c.status}</span>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const ADMIN_SEEN_TABS = ["users", "trainings", "teams"];
 const ADMIN_SEEN_KEY = "admin_seen_v1";
 const ADMIN_TITLE = "Muuvlink - Admin Panel";
@@ -2505,6 +2554,7 @@ export default function AdminPanel() {
     { label: "Topluluk", items: [
       { id: "users",     label: "Kullanıcılar", icon: Users,        badge: B.users,     kind: "new" },
       { id: "teams",     label: "Takımlar",     icon: Shield,       badge: B.teams,     kind: "new" },
+      { id: "claims",    label: "Sahiplenme",   icon: Flag,         badge: B.claims,    kind: "alert" },
       { id: "trainings", label: "Etkinlikler",  icon: CalendarDays, badge: B.trainings, kind: "new" },
     ]},
     { label: "Dış Etkinlikler", items: [
@@ -3389,6 +3439,8 @@ export default function AdminPanel() {
           )}
 
           {/* ── TEAMS ────────────────────────────────────── */}
+          {tab === "claims" && <TeamClaimsTab api={api} showToast={showToast} />}
+
           {!loading && tab === "teams" && (
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
               <div className="px-4 md:px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">

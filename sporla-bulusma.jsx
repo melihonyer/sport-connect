@@ -2474,6 +2474,10 @@ export default function Muuvlink() {
   // Sıralama (sayfa yeniden çizilince sıfırlanmasın diye üst düzeyde). teamSort boşsa: konum varsa
   // yakınlık, yoksa yeni kurulan. Etkinlikler varsayılan tarih (sunucu da tarih sırasıyla verir).
   const [teamSort, setTeamSort] = useState("");
+  const [claimTeam, setClaimTeam] = useState(null); // "Bu takım benim" penceresi: { id, name }
+  const claimContactRef = useRef(null);
+  const claimNoteRef = useRef(null);
+  const [claimBusy, setClaimBusy] = useState(false);
   const [teamTag, setTeamTag] = useState(""); // Takımlar süzgeci; sıralama gibi üst düzeyde (satır içi sayfa sıfırlanıyor)
   const [trainingSort, setTrainingSort] = useState("date");
   const [locationLoading, setLocationLoading] = useState(false);
@@ -3507,6 +3511,7 @@ export default function Muuvlink() {
     if (storySpec)         { setStorySpec(null);         return true; }
     if (legalModal)        { setLegalModal(null);        return true; }
     if (reportModal)       { setReportModal(null);       return true; }
+    if (claimTeam)         { setClaimTeam(null);          return true; }
     if (confirmModal)      { setConfirmModal(null);       return true; }
     if (myMsgs)            { setMyMsgs(null);             return true; } // ayarların/bildirimlerin üstünde açılır
     if (showDeleteModal)   { setShowDeleteModal(false);   return true; }
@@ -4945,6 +4950,50 @@ export default function Muuvlink() {
 
   // Mesajların penceresi. Düz fonksiyon (bileşen değil): üst-render'da sökülmesin.
   // Bildirimden açılınca o mesaja kaydırılır ve çerçevelenir.
+  const submitClaim = async () => {
+    const contact = claimContactRef.current?.value.trim() || "";
+    if (!contact || claimBusy) { if (!contact) claimContactRef.current?.focus(); return; }
+    setClaimBusy(true);
+    try {
+      const res = await fetch(`${API_URL}/teams/${claimTeam.id}/claim`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("token")}` },
+        body: JSON.stringify({ contact, note: claimNoteRef.current?.value || "" }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) { showToast(d.error || t("toast.networkError"), "error"); return; }
+      const id = claimTeam.id;
+      setClaimTeam(null);
+      showToast(t("atlas.sent"), "success");
+      fetchTeamDetails(id);
+    } catch {
+      showToast(t("toast.networkError"), "error");
+    } finally { setClaimBusy(false); }
+  };
+
+  const renderClaimModal = () => !claimTeam ? null : (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 overflow-y-auto overscroll-contain" style={{ zIndex: 1000001 }}
+      onClick={() => setClaimTeam(null)} role="dialog" aria-modal="true" aria-label={t("atlas.modalTitle")}>
+      <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl w-full max-w-md my-auto p-6">
+        <div className="flex items-start gap-3 mb-3">
+          <h3 className="flex-1 min-w-0 font-semibold text-lg text-slate-900 leading-snug [overflow-wrap:anywhere]">{t("atlas.modalTitle")}: {claimTeam.name}</h3>
+          <button onClick={() => setClaimTeam(null)} aria-label={t("common.close")} className="w-11 h-11 -m-2.5 flex items-center justify-center text-slate-500 hover:text-slate-800 flex-shrink-0">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <p className="text-sm text-slate-600 leading-relaxed mb-4">{t("atlas.modalHint")}</p>
+        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">{t("atlas.contactLabel")}</label>
+        <input ref={claimContactRef} type="text" maxLength={120} className="w-full h-12 px-4 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-300 mb-4" />
+        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">{t("atlas.noteLabel")} <span className="normal-case font-normal">({t("common.optional")})</span></label>
+        <textarea ref={claimNoteRef} rows={3} maxLength={500} className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-300 mb-5" />
+        <button data-btn="solid" onClick={submitClaim} disabled={claimBusy}
+          className="w-full h-12 rounded-xl text-sm font-semibold text-white disabled:opacity-60 flex items-center justify-center gap-2" style={{ background: "#114956" }}>
+          {claimBusy && <Loader2 className="w-4 h-4 animate-spin" />} {t("atlas.submit")}
+        </button>
+      </div>
+    </div>
+  );
+
   const renderMyMessages = () => !myMsgs ? null : (
     // Kutu ekrana sığar (çentik/ana çubuk payı dahil), başlık sabit, liste içinde kayar.
     // min-h-0 şart: yoksa flex çocuğu küçülmüyor, kutu ekrandan taşıp çentiğin altına giriyordu (iOS).
@@ -5414,6 +5463,13 @@ export default function Muuvlink() {
           {team.description || (team.is_private ? t("teams.privateDesc") : t("common.noDescription"))}
         </p>
 
+        {team.meet_note && (
+          <div className="flex items-start gap-1 mb-3 text-xs text-slate-600">
+            <Calendar className="w-3.5 h-3.5 mt-px flex-shrink-0 text-slate-400" aria-hidden="true"/>
+            <span className="min-w-0 [overflow-wrap:anywhere]">{team.meet_note}</span>
+          </div>
+        )}
+
         {team.tags?.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-3">
             {team.tags.slice(0, 3).map((code) => (
@@ -5442,9 +5498,13 @@ export default function Muuvlink() {
 
         <div className="mt-auto flex items-center justify-between pt-3 border-t border-slate-50">
           <div className="flex items-center gap-1.5 text-slate-500 text-sm">
+            {team.unclaimed ? (
+              <span className="text-xs font-medium text-slate-500">{t("atlas.unclaimed")}</span>
+            ) : (<>
             <Users className="w-4 h-4"/>
             <span className="font-semibold text-slate-700">{team.member_count || 0}</span>
             <span>{t("teams.members")}</span>
+            </>)}
             {distanceKm != null && (
               <span className="flex items-center gap-1 ml-1.5 text-xs text-slate-500 whitespace-nowrap">
                 <MapPin className="w-3.5 h-3.5 text-logo-teal"/>
@@ -8112,7 +8172,7 @@ export default function Muuvlink() {
 
     const tabs = [
       { id: "wall",    label: t("teamDetail.wall"),       icon: <MessageSquare className="w-4 h-4" />, show: isMember },
-      { id: "members", label: t("teamDetail.membersTab"), icon: <Users className="w-4 h-4" />,        show: canSeeMembers },
+      { id: "members", label: t("teamDetail.membersTab"), icon: <Users className="w-4 h-4" />,        show: canSeeMembers && !selectedTeam.unclaimed },
       { id: "settings",label: t("common.settings"),      icon: <Settings className="w-4 h-4" />,     show: canAdmin },
     ].filter((t) => t.show);
 
@@ -8278,7 +8338,29 @@ export default function Muuvlink() {
         </div>
 
         {/* KATIL butonu — başlığın hemen altında, tam genişlik ve büyük */}
-        {!isMember && !selectedTeam.is_private && (
+        {selectedTeam.unclaimed && (
+          <div className="mb-4 p-5 bg-white rounded-2xl border border-slate-200">
+            <h3 className="font-semibold text-slate-900">{t("atlas.infoTitle")}</h3>
+            <p className="mt-1.5 text-sm text-slate-600 leading-relaxed">{t("atlas.infoBody")}</p>
+            {selectedTeam.meet_note && <p className="mt-2 text-sm text-slate-700 flex items-start gap-1.5"><Calendar className="w-4 h-4 mt-0.5 flex-shrink-0 text-slate-400" aria-hidden="true" /><span>{selectedTeam.meet_note}</span></p>}
+            <div className="mt-4 flex flex-wrap gap-2">
+              {selectedTeam.my_claim_pending ? (
+                <span className="h-11 px-4 inline-flex items-center rounded-xl bg-slate-100 text-sm font-semibold text-slate-600">{t("atlas.pending")}</span>
+              ) : (
+                <button data-btn="pop" onClick={() => { if (!user) { setAuthMode("login"); setIsAuthModalOpen(true); return; } setClaimTeam({ id: selectedTeam.id, name: selectedTeam.name }); }}
+                  className="h-11 px-4 rounded-xl bg-pop-400 text-ink-900 text-sm font-bold">{t("atlas.claimBtn")}</button>
+              )}
+              {selectedTeam.external_url && (
+                <a href={selectedTeam.external_url} target="_blank" rel="noopener noreferrer nofollow"
+                  className="h-11 px-4 inline-flex items-center gap-1.5 rounded-xl border border-slate-200 text-sm font-semibold text-brand-700 hover:bg-brand-50">
+                  <ExternalLink className="w-4 h-4" /> {t("atlas.sourceLink")}
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+
+        {!isMember && !selectedTeam.is_private && !selectedTeam.unclaimed && (
           <button onClick={() => handleJoinTeam(selectedTeam.id)}
             disabled={joiningTeamId === selectedTeam.id}
             className="w-full h-14 mb-4 bg-pop-400 hover:bg-pop-300 text-ink-900 rounded-2xl font-bold text-base transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
@@ -8289,7 +8371,7 @@ export default function Muuvlink() {
         )}
 
         {/* SEKMELER */}
-        {tabs.length > 0 && (
+        {tabs.length > 0 && !(selectedTeam.unclaimed && !canAdmin) && (
           <div className="flex gap-1 bg-slate-100 p-1 rounded-2xl mb-4">
             {tabs.map((tab) => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
@@ -8304,8 +8386,8 @@ export default function Muuvlink() {
           </div>
         )}
 
-        {/* İÇERİK */}
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+        {/* İÇERİK — sahiplenilmemiş takımda gösterilecek bir şey yok (yönetici Ayarlar'ı görür) */}
+        <div className={`bg-white rounded-3xl border border-slate-100 shadow-sm p-6 ${selectedTeam.unclaimed && !canAdmin ? "hidden" : ""}`}>
 
           {/* DUVAR */}
           {activeTab === "wall" && isMember && (
@@ -8400,7 +8482,7 @@ export default function Muuvlink() {
           )}
 
           {/* ÜYELER */}
-          {activeTab === "members" && canSeeMembers && (
+          {activeTab === "members" && canSeeMembers && !selectedTeam.unclaimed && (
             <div>
               <div className="flex items-center justify-between mb-5">
                 <div>
@@ -10827,6 +10909,7 @@ Vergi Dairesi: Karşıyaka V.D. | VN: 7420957827<br/>
       />}
       {showNotifications && <NotificationsPanel />}
       {renderMyMessages()}
+      {renderClaimModal()}
       {showProfileEdit && <ProfileEditModal />}
       {(showInviteModal || inviteTrainingId) && <InviteModal />}
       {renderTeamSuggest()}

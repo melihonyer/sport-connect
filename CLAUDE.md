@@ -648,6 +648,13 @@ Grup adı ve tempo `rejectIfObjectionable`'dan geçer.
 `teams.tags` (TEXT[]), sabit 8 kod: `TEAM_TAGS` İKİ yerde birebir (backend + sporla-bulusma.jsx), metin `teamTags.<kod>` (7 dil). Takım başına en çok 4;
 bilinmeyen kod atılır. PUT'ta alan yoksa dokunulmaz. Form `TeamTagPicker`; kartta en çok 3 + "+n"; Takımlar süzgecinde yalnız kullanılan etiketler (`teamTag` üst düzey state).
 
+## Takım atlası: sahiplenme (9 Kasım 2026, Melih onayladı)
+
+Herkese açık bilgiden eklenen, sahibi olmayan takımlar: `teams.unclaimed`, `meet_note`, `external_url` (yalnız ad + şehir, logo yok). Katılınmaz (`/join` 409);
+site haritasına, "Takım" sayacına ve `tc`/`te` maillerine girmez. "Bu takım benim" → `POST /api/teams/:id/claim` (`team_claims`, iletişim zorunlu, saatte 5, kişi+takım başına bir bekleyen).
+Admin › Sahiplenme (`TeamClaimsTab`, rozet `claims`): onay takımı kişiye geçirir, sahip yapar, diğer talepleri reddeder, bildirim + e-posta (`team_claim`, tercih `role`,
+`MAIL.claim*`); ret yalnız bildirim. Onaydan önce kişinin gerçek yönetici olduğu elle doğrulanır. Gerçek grup eklemek Melih'in onayladığı listeyle yapılır; kaynaklar eskiyse aktifliği kontrol edilmeden eklenmez.
+
 ## Silme ve kayıt
 
 - Kullanıcı hesabı **yumuşak** silinir (`users.deleted_at`, 30 gün, sonra purge).
