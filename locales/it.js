@@ -391,7 +391,7 @@ export default {
     cardTitle: "Il sapere di allenatori esperti, ora nel tuo piano settimanale.",
     cardBody: "La corsa della domenica è fissata. E i sei giorni in mezzo? {brand} scrive la tua settimana in base alle ore che hai davvero.",
     cardCta: "Inizia gratis la prima settimana",
-    coachTitle: "Lascia che il coach Training Agents scriva il piano della squadra. Tu pensa all'allenamento.",
+    coachTitle: "Lascia che il coach Training Agents scriva il piano della squadra. Tu pensa a divertirti.",
     coachBody: "Scrivere il piano settimanale ti ruba ore? {brand} lo scrive, tu lo pubblichi qui come evento con un tocco.",
     coachCta: "Scopri come funziona",
     emptyTitle: "Affida la settimana vuota al tuo coach Training Agents.",
