@@ -107,6 +107,13 @@ logo yüklenince 500 veriyor, logosuz gönderilir.
 
 ## 3. Garmin: Connect Developer Program, Starter
 
+**Sözleşme okundu: 9 Kasım 2026, Rev H (portalda, gizli; metin repoya konmaz).** Özet:
+- Sözleşme şirketin birden çok uygulamasını kapsıyor, anahtar ise web adresine bağlı. Apps sayfasında yeni uygulama düğmesi YOK: destekten istenir.
+- Veri yalnız Muuvlink içinde, kişinin rızasına uygun gösterilir; başka uygulama ya da uç noktaya yönlendirilemez. Üyeler arası paylaşımı açıkça yasaklayan ya da izin veren madde yok, yazılı sorulmalı.
+- Garmin verisi gösterilen her yeni ekran için 30 gün önceden örnek görselle bildirim + marka atfı.
+- Garmin'le rekabet eden ürün reklamı Muuvlink'in hiçbir yerinde gösterilemez (5.2t): Training Agents reklamları açısından sorulmalı.
+- Rıza kolay geri alınabilmeli; yapay zekâ eğitimi yasak; barındırma ve hizmet sağlayıcılar bildirilir; güvenlik olayı 24 saat.
+
 Önce portalda (developerportal.garmin.com, melih@saltajans.com) ikinci uygulama açılabiliyor mu bakılır.
 Starter "tek client ID" diye geçiyor; açılamıyorsa
 https://www.garmin.com/en-US/forms/StarterGarminConnectDeveloperAccess/ ya da connect-support@developer.garmin.com.
