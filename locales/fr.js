@@ -320,6 +320,12 @@ export default {
   },
 
   trainingDetail: {
+    groupsTitle: "Groupes",
+    groupGoing: "{n} inscrits",
+    joinGroup: "Rejoindre",
+    moveGroup: "Passer dans ce groupe",
+    yourGroup: "Ton groupe",
+    groupChanged: "Ton groupe a changé.",
     addToCalendar: "Ajouter au calendrier",
     weekly: "Chaque semaine",
     stopSeries: "Arrêter la répétition",
@@ -426,6 +432,12 @@ export default {
   },
 
   createTraining: {
+    groupsToggle: "Répartir en groupes d'allure",
+    groupsHint: "Pour des distances ou allures différentes dans le même événement. Chacun choisit le groupe qui lui convient.",
+    groupNamePh: "Nom du groupe (ex. Petit tour · 5 km)",
+    groupPacePh: "Allure (ex. 6:30/km)",
+    addGroup: "Ajouter un groupe",
+    removeGroup: "Retirer le groupe",
     repeatToggle: "Répéter chaque semaine",
     repeatHint: "S'ouvre automatiquement chaque semaine, même jour, même heure, même lieu. Les membres ne sont prévenus que pour le premier événement.",
     repeatDuration: "Pendant combien de semaines ?",

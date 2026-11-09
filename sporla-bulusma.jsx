@@ -972,6 +972,48 @@ function GallerySection({ items, t, setCurrentPage, titleOverride, subtitleOverr
   );
 }
 
+// Tempo grupları: form alanı (oluşturma + düzenleme). Kapatılınca gruplar temizlenir.
+function GroupsField({ groups, onChange, t, inputCls }) {
+  const set = (i, patch) => onChange(groups.map((g, x) => (x === i ? { ...g, ...patch } : g)));
+  return (
+    <div>
+      <FieldSwitch
+        on={groups.length > 0}
+        onChange={(v) => onChange(v ? [{ name: "", pace: "" }, { name: "", pace: "" }] : [])}
+        label={t("createTraining.groupsToggle")}
+        hint={t("createTraining.groupsHint")}
+      />
+      {groups.length > 0 && (
+        <div className="mt-3 space-y-2">
+          {groups.map((g, i) => (
+            <div key={g.id || `n${i}`} className="flex items-start gap-2">
+              <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-[2fr_1fr] gap-2">
+                <input type="text" value={g.name} maxLength={40} onChange={(e) => set(i, { name: e.target.value })}
+                  className={inputCls} placeholder={t("createTraining.groupNamePh")} aria-label={t("createTraining.groupNamePh")} />
+                <input type="text" value={g.pace || ""} maxLength={30} onChange={(e) => set(i, { pace: e.target.value })}
+                  className={inputCls} placeholder={t("createTraining.groupPacePh")} aria-label={t("createTraining.groupPacePh")} />
+              </div>
+              {groups.length > 2 && (
+                <button type="button" onClick={() => onChange(groups.filter((_, x) => x !== i))}
+                  aria-label={t("createTraining.removeGroup")} title={t("createTraining.removeGroup")}
+                  className="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          ))}
+          {groups.length < 5 && (
+            <button type="button" onClick={() => onChange([...groups, { name: "", pace: "" }])}
+              className="h-11 px-4 inline-flex items-center gap-1.5 rounded-xl text-sm font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 transition-colors">
+              <Plus className="w-4 h-4" /> {t("createTraining.addGroup")}
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── HERO BANNER SLİDER ─────────────────────────────────────
 // Küçük aç/kapa anahtarı. Nadiren kullanılan alanları formda gizlemek için:
 // alan kapalıyken hiç görünmez, açılınca belirir. Kapatıldığında içerik
@@ -4017,7 +4059,7 @@ export default function Muuvlink() {
   const errText = (data, fallback) =>
     data?.code === "training_past" ? t("trainingDetail.pastToast") : (data?.error || fallback);
 
-  const handleJoinTraining = async (trainingId) => {
+  const handleJoinTraining = async (trainingId, groupId = null) => {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -4030,7 +4072,7 @@ export default function Muuvlink() {
       const response = await fetch(`${API_URL}/trainings/${trainingId}/join`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ _eid: eventId, ...getMatchSignals() }),
+        body: JSON.stringify({ _eid: eventId, ...getMatchSignals(), ...(groupId ? { group_id: groupId } : {}) }),
       });
 
       if (response.ok) {
@@ -4061,6 +4103,23 @@ export default function Muuvlink() {
       showToast(t("toast.networkError"), "error");
     } finally {
       setJoiningTrainingId(null);
+    }
+  };
+
+  const handleChangeGroup = async (trainingId, groupId) => {
+    try {
+      const response = await fetch(`${API_URL}/trainings/${trainingId}/my-group`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ group_id: groupId }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) { showToast(data.error || t("toast.networkError"), "error"); return; }
+      showToast(t("trainingDetail.groupChanged"), "success");
+      fetchTrainingDetails(trainingId);
+    } catch (error) {
+      console.error("Change group error:", error);
+      showToast(t("toast.networkError"), "error");
     }
   };
 
@@ -7036,7 +7095,12 @@ export default function Muuvlink() {
       // Rota yalnız elle değiştirildiyse gönderilir: selectedTraining önce liste
       // verisiyle (rotasız) dolabiliyor; her kayıtta göndermek rotayı silebilirdi.
       routeTouched: false,
+      groups: selectedTraining.groups || [],
+      groupsTouched: false, // rota gibi: liste verisi grupsuz gelebilir, yalnız elle değişince gönderilir
     });
+    useEffect(() => {
+      setEditData((d) => (d.groupsTouched ? d : { ...d, groups: selectedTraining.groups || [] }));
+    }, [selectedTraining.groups]);
 
     const saveEdit = () => {
       const u = (editData.registration_url || "").trim();
@@ -7044,8 +7108,8 @@ export default function Muuvlink() {
         showToast(t("createTraining.regUrlInvalid"), "error");
         return;
       }
-      const { route, routeTouched, ...rest } = editData;
-      handleUpdateTraining(selectedTraining.id, { ...rest, registration_url: u, ...(routeTouched ? { route } : {}) });
+      const { route, routeTouched, groups, groupsTouched, ...rest } = editData;
+      handleUpdateTraining(selectedTraining.id, { ...rest, registration_url: u, ...(routeTouched ? { route } : {}), ...(groupsTouched ? { groups } : {}) });
       setEditLocAttention(false);
       setEditMode(false);
     };
@@ -7344,6 +7408,10 @@ export default function Muuvlink() {
                   </div>
                 </div>
 
+                {!isOrg && (
+                  <GroupsField groups={editData.groups} onChange={(groups) => setEditData((d) => ({ ...d, groups, groupsTouched: true }))} t={t} inputCls={iCls} />
+                )}
+
                 {/* Dış kayıt adresi — yalnız takım etkinliğinde. Boş bırakılıp
                     kaydedilirse mevcut link silinir (backend regTouched'a bakar). */}
                 {selectedTraining.team_id && (
@@ -7606,6 +7674,42 @@ export default function Muuvlink() {
             </div>
           )}
 
+          {!isOrg && selectedTraining.groups?.length > 0 && (() => {
+            const myGroup = user ? selectedTraining.attendees?.find((a) => a.id === user.id)?.group_id : null;
+            return (
+              <div className="mb-6">
+                <h3 className="text-xl font-medium mb-4">{t("trainingDetail.groupsTitle")}</h3>
+                <div className="space-y-2">
+                  {selectedTraining.groups.map((g) => (
+                    <div key={g.id} className={`flex items-center gap-3 p-3 rounded-xl ${myGroup === g.id ? "bg-brand-50 border border-brand-100" : "bg-gray-50"}`}>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold [overflow-wrap:anywhere]">{g.name}</div>
+                        <div className="text-sm text-gray-600">
+                          {[g.pace, t("trainingDetail.groupGoing").replace("{n}", g.going)].filter(Boolean).join(" · ")}
+                        </div>
+                      </div>
+                      {!isPast && (myGroup === g.id ? (
+                        <span className="flex-shrink-0 inline-flex items-center gap-1 text-sm font-semibold text-brand-700">
+                          <CheckCircle className="w-4 h-4" aria-hidden="true" /> {t("trainingDetail.yourGroup")}
+                        </span>
+                      ) : isParticipant ? (
+                        <button onClick={() => handleChangeGroup(selectedTraining.id, g.id)}
+                          className="flex-shrink-0 min-h-[44px] px-3 rounded-xl text-sm font-semibold text-brand-700 bg-white border border-slate-200 hover:bg-brand-50 transition-colors">
+                          {t("trainingDetail.moveGroup")}
+                        </button>
+                      ) : !isFull && (
+                        <button onClick={() => handleJoinTraining(selectedTraining.id, g.id)} disabled={joiningTrainingId === selectedTraining.id}
+                          className="flex-shrink-0 min-h-[44px] px-3 rounded-xl text-sm font-semibold text-white bg-brand-600 disabled:opacity-60 transition-colors" data-btn="solid">
+                          {t("trainingDetail.joinGroup")}
+                        </button>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+
           {!isOrg && (
           <div className="mb-6">
             <h3 className={`text-xl font-medium ${selectedTraining.names_masked ? "mb-1" : "mb-4"}`}>
@@ -7623,7 +7727,9 @@ export default function Muuvlink() {
                     </div>
                     <div className="flex-1">
                       <div className="font-semibold">{attendee.name}</div>
-                      <div className="text-sm text-gray-600">{fmtDateShort(attendee.joined_at)}</div>
+                      <div className="text-sm text-gray-600">
+                        {[fmtDateShort(attendee.joined_at), selectedTraining.groups?.find((g) => g.id === attendee.group_id)?.name].filter(Boolean).join(" · ")}
+                      </div>
                     </div>
                     {user && attendee.id !== user.id && (
                       <button
@@ -8494,6 +8600,7 @@ export default function Muuvlink() {
       registration_label: "", // buton yazısı; boşsa arayüz varsayılanı kullanır
       route: null, // { points, distance_m } — GPX tarayıcıda okunur (gpxRoute.js)
       repeat_weeks: 0, // 0 = tekrar yok; 4/8/12 = haftalık program (yalnız takım etkinliği)
+      groups: [], // tempo grupları: { name, pace }
     }));
 
     // Seçili takım nesnesini bul (team_id null ise bireysel)
@@ -8841,6 +8948,8 @@ export default function Muuvlink() {
                   t={t}
                 />
               </div>
+
+              <GroupsField groups={formData.groups} onChange={(groups) => setFormData((f) => ({ ...f, groups }))} t={t} inputCls={inputCls} />
 
               {/* Dış kayıt adresi — YALNIZ takım etkinliğinde. Bireysel
                   etkinliklerde alan hiç görünmez, backend de yok sayar. */}

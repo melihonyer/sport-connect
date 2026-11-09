@@ -3312,6 +3312,9 @@ const SERVER_MSG = {
   'Bu etkinliği yalnızca oluşturan kişi düzenleyebilir.': { en: 'Only the person who created this event can edit it.', de: 'Nur die Person, die das Event erstellt hat, kann es bearbeiten.', el: 'Μόνο όποιος δημιούργησε την εκδήλωση μπορεί να την επεξεργαστεί.', es: 'Solo quien creó este evento puede editarlo.', fr: 'Seule la personne qui a créé cet événement peut le modifier.', it: 'Solo chi ha creato questo evento può modificarlo.' },
   'Etkinliği düzenlemek için takımın sahibi, antrenörü veya kaptanı olmanız gerekiyor.': { en: 'You need to be the team owner, coach or captain to edit the event.', de: 'Um das Event zu bearbeiten, musst du Teamleitung, Trainer oder Kapitän sein.', el: 'Για να επεξεργαστείς την εκδήλωση πρέπει να είσαι ιδιοκτήτης, προπονητής ή αρχηγός της ομάδας.', es: 'Para editar el evento tienes que ser propietario, entrenador o capitán del equipo.', fr: 'Pour modifier l\'événement, tu dois être propriétaire, coach ou capitaine de l\'équipe.', it: 'Per modificare l\'evento devi essere proprietario, allenatore o capitano della squadra.' },
   'Bu etkinliği yalnızca oluşturan kişi silebilir.': { en: 'Only the person who created this event can delete it.', de: 'Nur die Person, die das Event erstellt hat, kann es löschen.', el: 'Μόνο όποιος δημιούργησε την εκδήλωση μπορεί να τη διαγράψει.', es: 'Solo quien creó este evento puede eliminarlo.', fr: 'Seule la personne qui a créé cet événement peut le supprimer.', it: 'Solo chi ha creato questo evento può eliminarlo.' },
+  'Gruplar geçersiz: en az 2, en çok 5 grup olmalı.': { en: 'Invalid groups: use 2 to 5 groups.', de: 'Ungültige Gruppen: 2 bis 5 Gruppen sind möglich.', el: 'Μη έγκυρες ομάδες: επίτρεπονται 2 έως 5 ομάδες.', es: 'Grupos no válidos: usa entre 2 y 5 grupos.', fr: 'Groupes non valides : de 2 à 5 groupes.', it: 'Gruppi non validi: da 2 a 5 gruppi.' },
+  'Geçersiz grup.': { en: 'Invalid group.', de: 'Ungültige Gruppe.', el: 'Μη έγκυρη ομάδα.', es: 'Grupo no válido.', fr: 'Groupe non valide.', it: 'Gruppo non valido.' },
+  'Önce etkinliğe katılmalısın.': { en: 'Join the event first.', de: 'Nimm zuerst am Event teil.', el: 'Πρώτα δήλωσε συμμετοχή στην εκδήλωση.', es: 'Primero únete al evento.', fr: 'Rejoins d’abord l’événement.', it: 'Prima partecipa all’evento.' },
   'En çok 3 duyuru sabitlenebilir.': { en: 'You can pin up to 3 posts.', de: 'Du kannst höchstens 3 Beiträge anheften.', el: 'Μπορείς να καρφιτσώσεις έως 3 αναρτήσεις.', es: 'Puedes fijar hasta 3 publicaciones.', fr: 'Tu peux épingler jusqu’à 3 publications.', it: 'Puoi mettere in evidenza fino a 3 post.' },
   'Etkinliği silmek için takımın sahibi, antrenörü veya kaptanı olmanız gerekiyor.': { en: 'You need to be the team owner, coach or captain to delete the event.', de: 'Um das Event zu löschen, musst du Teamleitung, Trainer oder Kapitän sein.', el: 'Για να διαγράψεις την εκδήλωση πρέπει να είσαι ιδιοκτήτης, προπονητής ή αρχηγός της ομάδας.', es: 'Para eliminar el evento tienes que ser propietario, entrenador o capitán del equipo.', fr: 'Pour supprimer l\'événement, tu dois être propriétaire, coach ou capitaine de l\'équipe.', it: 'Per eliminare l\'evento devi essere proprietario, allenatore o capitano della squadra.' },
   'Hesabınız silinmek üzere kapatıldı.': { en: 'Your account has been closed for deletion.', de: 'Dein Konto wurde zur Löschung geschlossen.', el: 'Ο λογαριασμός σου έκλεισε και θα διαγραφεί.', es: 'Tu cuenta se ha cerrado y se eliminará.', fr: 'Ton compte a été fermé et sera supprimé.', it: 'Il tuo account è stato chiuso e verrà eliminato.' },
@@ -5621,6 +5624,65 @@ app.post('/api/teams/:id/posts', authenticateToken, async (req, res) => {
 // TRAININGS ROUTES
 // =====================================================
 
+// ── Tempo grupları ────────────────────────────────────────────────────────
+// Bir etkinlikte 2–5 grup (ad + isteğe bağlı tempo). Katılan grubunu seçer; seçmeden de katılabilir.
+pool.query(`CREATE TABLE IF NOT EXISTS training_groups (
+    id SERIAL PRIMARY KEY,
+    training_id INTEGER NOT NULL REFERENCES trainings(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    pace TEXT,
+    position INTEGER NOT NULL DEFAULT 0
+  )`).then(() => pool.query(
+  `CREATE INDEX IF NOT EXISTS training_groups_training ON training_groups (training_id);
+   ALTER TABLE training_attendees ADD COLUMN IF NOT EXISTS group_id INTEGER REFERENCES training_groups(id) ON DELETE SET NULL`))
+  .catch((e) => console.error('training_groups:', e.message));
+
+const GROUPS_INVALID_MSG = 'Gruplar geçersiz: en az 2, en çok 5 grup olmalı.';
+// null = geçersiz, [] = grup yok. Adı boş satırlar yok sayılır.
+function sanitizeGroups(raw) {
+  if (raw === undefined || raw === null) return [];
+  if (!Array.isArray(raw)) return null;
+  const clean = raw
+    .map((g) => ({ id: Number.isInteger(g?.id) ? g.id : null, name: String(g?.name || '').trim().slice(0, 40), pace: String(g?.pace || '').trim().slice(0, 30) }))
+    .filter((g) => g.name);
+  if (clean.length === 0) return [];
+  return clean.length >= 2 && clean.length <= 5 ? clean : null;
+}
+const groupTexts = (groups) => groups.flatMap((g) => [g.name, g.pace]);
+
+// Yeni satır eklenir, gelen id'ler güncellenir, gelmeyenler silinir (katılanların grubu boşalır).
+async function saveTrainingGroups(trainingId, groups) {
+  const keep = groups.map((g) => g.id).filter(Boolean);
+  await pool.query('DELETE FROM training_groups WHERE training_id = $1 AND NOT (id = ANY($2::int[]))', [trainingId, keep]);
+  for (const [i, g] of groups.entries()) {
+    const up = g.id ? await pool.query(
+      'UPDATE training_groups SET name = $1, pace = $2, position = $3 WHERE id = $4 AND training_id = $5 RETURNING id',
+      [g.name, g.pace || null, i, g.id, trainingId]) : { rows: [] };
+    if (!up.rows.length) {
+      await pool.query('INSERT INTO training_groups (training_id, name, pace, position) VALUES ($1, $2, $3, $4)', [trainingId, g.name, g.pace || null, i]);
+    }
+  }
+}
+
+// Katılmış kişi grubunu değiştirir; group_id null = gruptan çık. Bildirim gitmez.
+app.post('/api/trainings/:id/my-group', authenticateToken, async (req, res) => {
+  try {
+    const trainingId = req.params.id;
+    const groupId = req.body?.group_id ?? null;
+    if (await isTrainingPast(trainingId)) return res.status(409).json({ error: PAST_TRAINING_MSG, code: 'training_past' });
+    if (groupId !== null) {
+      const g = await pool.query('SELECT 1 FROM training_groups WHERE id = $1 AND training_id = $2', [groupId, trainingId]);
+      if (!g.rows.length) return res.status(400).json({ error: 'Geçersiz grup.' });
+    }
+    const up = await pool.query('UPDATE training_attendees SET group_id = $1 WHERE training_id = $2 AND user_id = $3 RETURNING id', [groupId, trainingId, req.user.id]);
+    if (!up.rows.length) return res.status(409).json({ error: 'Önce etkinliğe katılmalısın.' });
+    res.json({ group_id: groupId });
+  } catch (error) {
+    console.error('My group error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // ── Haftalık program (tekrar eden takım etkinliği) ─────────────────────────
 // Lider ilk etkinliği açarken "her hafta tekrarla" der. İlk etkinlik normal yoldan
 // açılır (bildirim, Meta, rozet); sonrakileri generateSeriesOccurrences üretir ve
@@ -5684,6 +5746,7 @@ async function generateSeriesOccurrences(onlyId = null) {
         'INSERT INTO training_attendees (training_id, user_id, status) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING',
         [id, s.created_by, 'confirmed']);
       if (tpl.route) await saveTrainingRoute(id, tpl.route).catch((e) => console.error('[series] rota:', e.message));
+      if (tpl.groups?.length) await saveTrainingGroups(id, tpl.groups).catch((e) => console.error('[series] grup:', e.message));
       made++;
     }
   }
@@ -5691,7 +5754,7 @@ async function generateSeriesOccurrences(onlyId = null) {
   return made;
 }
 
-async function createTrainingSeries(training, weeks, route) {
+async function createTrainingSeries(training, weeks, route, groups = []) {
   const template = {
     sport: training.sport, title: training.title, description: training.description,
     training_time: training.training_time, duration_minutes: training.duration_minutes,
@@ -5700,6 +5763,7 @@ async function createTrainingSeries(training, weeks, route) {
     difficulty: training.difficulty, training_timezone: training.training_timezone,
     registration_url: training.registration_url, registration_label: training.registration_label,
     route: route || null,
+    groups: groups.map((g) => ({ name: g.name, pace: g.pace })),
   };
   const r = await pool.query(
     `INSERT INTO training_series (team_id, created_by, template, next_date, ends_on)
@@ -5807,8 +5871,11 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
       source,
       route,
       repeat_weeks,
+      groups,
     } = req.body;
-    if (rejectIfObjectionable(req, res, 'training', title, description)) return;
+    const cleanGroups = sanitizeGroups(groups);
+    if (!cleanGroups) return res.status(400).json({ error: GROUPS_INVALID_MSG });
+    if (rejectIfObjectionable(req, res, 'training', title, description, ...groupTexts(cleanGroups))) return;
     const cleanRoute = route ? sanitizeRoute(route) : null;
     if (route && !cleanRoute) return res.status(400).json({ error: ROUTE_INVALID_MSG });
     const trainingSource = source === 'training-agents' ? 'training-agents' : null;
@@ -5898,6 +5965,10 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
       await saveTrainingRoute(training.id, cleanRoute)
         .catch((e) => console.error('[route] kayıt:', e.message));
     }
+    if (cleanGroups.length) {
+      await saveTrainingGroups(training.id, cleanGroups.map((g) => ({ ...g, id: null })))
+        .catch((e) => console.error('[groups] kayıt:', e.message));
+    }
 
     // Takım etkinliğiyse takım üyelerine haber ver. Bireysel etkinlikte bildirilecek takım yok.
     if (team_id) {
@@ -5956,7 +6027,7 @@ app.post('/api/trainings', authenticateToken, async (req, res) => {
     // Haftalık program: yalnız takım etkinliği. Kurulamazsa ilk etkinlik yine yayında kalır.
     const repeatWeeks = Number(repeat_weeks);
     if (team_id && !trainingSource && SERIES_WEEKS.includes(repeatWeeks)) {
-      await createTrainingSeries(training, repeatWeeks, cleanRoute)
+      await createTrainingSeries(training, repeatWeeks, cleanRoute, cleanGroups)
         .catch((e) => console.error('[series] kurulum:', e.message));
     }
 
@@ -6384,7 +6455,7 @@ app.get('/api/trainings/:id', optionalAuth, async (req, res) => {
     training.route = routeRes.rows[0] || null;
 
     const attendeesResult = await pool.query(
-      `SELECT u.id, u.name, u.avatar, ta.status, ta.joined_at
+      `SELECT u.id, u.name, u.avatar, ta.status, ta.joined_at, ta.group_id
        FROM training_attendees ta
        JOIN users u ON ta.user_id = u.id
        WHERE ta.training_id = $1
@@ -6409,9 +6480,14 @@ app.get('/api/trainings/:id', optionalAuth, async (req, res) => {
       showAttendees = r.member || r.attendee || r.admin || training.created_by === req.user.id;
     }
     if (!showAttendees) {
-      training.attendees = training.attendees.map((a) => ({ ...a, name: maskPersonName(a.name), avatar: null }));
+      training.attendees = training.attendees.map((a) => ({ ...a, name: maskPersonName(a.name), avatar: null, group_id: null }));
     }
     training.names_masked = !showAttendees;
+
+    // Gruplar ve sayıları herkese açık; kimin hangi grupta olduğu isimle aynı kurala bağlı (yukarıda).
+    training.groups = (await pool.query(
+      `SELECT g.id, g.name, g.pace, (SELECT COUNT(*)::int FROM training_attendees a WHERE a.group_id = g.id) AS going
+         FROM training_groups g WHERE g.training_id = $1 ORDER BY g.position, g.id`, [trainingId])).rows;
 
     // Görüntülenme: yönetmeyen gerçek ziyaretçiyi kaydet; sayıyı yalnız yönetene ver.
     const viewerIsAdmin = !!(req.user && (await pool.query('SELECT is_admin FROM users WHERE id = $1', [req.user.id])).rows[0]?.is_admin);
@@ -6510,6 +6586,12 @@ app.post('/api/trainings/:id/join', authenticateToken, async (req, res) => {
       }
     }
 
+    const joinGroupId = req.body?.group_id ?? null;
+    if (joinGroupId !== null) {
+      const g = await pool.query('SELECT 1 FROM training_groups WHERE id = $1 AND training_id = $2', [joinGroupId, trainingId]);
+      if (!g.rows.length) return res.status(400).json({ error: 'Geçersiz grup.' });
+    }
+
     const attendeeCount = await pool.query(
       'SELECT COUNT(*) FROM training_attendees WHERE training_id = $1',
       [trainingId]
@@ -6529,8 +6611,8 @@ app.post('/api/trainings/:id/join', authenticateToken, async (req, res) => {
     }
 
     await pool.query(
-      'INSERT INTO training_attendees (training_id, user_id, status) VALUES ($1, $2, $3)',
-      [trainingId, req.user.id, 'confirmed']
+      'INSERT INTO training_attendees (training_id, user_id, status, group_id) VALUES ($1, $2, $3, $4)',
+      [trainingId, req.user.id, 'confirmed', joinGroupId]
     );
 
     await updateUserStats(req.user.id);
@@ -7067,8 +7149,12 @@ app.delete('/api/team-posts/:id', authenticateToken, async (req, res) => {
 app.put('/api/trainings/:id', authenticateToken, async (req, res) => {
   try {
     const trainingId = req.params.id;
-    const { title, description, training_date, training_time, location_name, location_lat, location_lng, capacity, difficulty, sport, registration_url, registration_label, route } = req.body;
-    if (rejectIfObjectionable(req, res, 'training', title, description)) return;
+    const { title, description, training_date, training_time, location_name, location_lat, location_lng, capacity, difficulty, sport, registration_url, registration_label, route, groups } = req.body;
+    // Alan hiç gelmediyse gruplara dokunulmaz; [] = grupları kaldır.
+    const groupsTouched = Object.prototype.hasOwnProperty.call(req.body, 'groups');
+    const cleanGroups = groupsTouched ? sanitizeGroups(groups) : [];
+    if (!cleanGroups) return res.status(400).json({ error: GROUPS_INVALID_MSG });
+    if (rejectIfObjectionable(req, res, 'training', title, description, ...groupTexts(cleanGroups))) return;
     // Alan hiç gelmediyse (eski istemci) rotaya dokunulmaz; null = rotayı kaldır.
     const routeTouched = Object.prototype.hasOwnProperty.call(req.body, 'route');
     const cleanRoute = route ? sanitizeRoute(route) : null;
@@ -7128,6 +7214,7 @@ app.put('/api/trainings/:id', authenticateToken, async (req, res) => {
 
     const updated = result.rows[0];
     if (routeTouched) await saveTrainingRoute(trainingId, cleanRoute);
+    if (groupsTouched) await saveTrainingGroups(trainingId, cleanGroups);
     indexNowPing(indexNowTrainingUrl(updated));
 
     // Güncelleyenin adını çek

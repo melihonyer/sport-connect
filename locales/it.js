@@ -320,6 +320,12 @@ export default {
   },
 
   trainingDetail: {
+    groupsTitle: "Gruppi",
+    groupGoing: "{n} iscritti",
+    joinGroup: "Partecipa",
+    moveGroup: "Passa a questo gruppo",
+    yourGroup: "Il tuo gruppo",
+    groupChanged: "Il tuo gruppo è cambiato.",
     addToCalendar: "Aggiungi al calendario",
     weekly: "Ogni settimana",
     stopSeries: "Interrompi la ripetizione",
@@ -426,6 +432,12 @@ export default {
   },
 
   createTraining: {
+    groupsToggle: "Dividi in gruppi di ritmo",
+    groupsHint: "Per distanze o ritmi diversi nello stesso evento. Ognuno sceglie il gruppo giusto.",
+    groupNamePh: "Nome del gruppo (es. Giro corto · 5 km)",
+    groupPacePh: "Ritmo (es. 6:30/km)",
+    addGroup: "Aggiungi gruppo",
+    removeGroup: "Rimuovi gruppo",
     repeatToggle: "Ripeti ogni settimana",
     repeatHint: "Si apre da solo ogni settimana, stesso giorno, ora e luogo. I membri ricevono l'avviso solo per il primo evento.",
     repeatDuration: "Per quante settimane?",

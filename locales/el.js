@@ -321,6 +321,12 @@ export default {
   },
 
   trainingDetail: {
+    groupsTitle: "Ομάδες",
+    groupGoing: "{n} άτομα",
+    joinGroup: "Συμμετοχή",
+    moveGroup: "Μετάβαση σε αυτή την ομάδα",
+    yourGroup: "Η ομάδα σου",
+    groupChanged: "Η ομάδα σου άλλαξε.",
     addToCalendar: "Προσθήκη στο ημερολόγιο",
     weekly: "Κάθε εβδομάδα",
     stopSeries: "Διακοπή επανάληψης",
@@ -427,6 +433,12 @@ export default {
   },
 
   createTraining: {
+    groupsToggle: "Χωρισμός σε ομάδες ρυθμού",
+    groupsHint: "Για διαφορετικές αποστάσεις ή ρυθμούς στην ίδια εκδήλωση. Ο καθένας επιλέγει την ομάδα που του ταιριάζει.",
+    groupNamePh: "Όνομα ομάδας (π.χ. Μικρή διαδρομή · 5 km)",
+    groupPacePh: "Ρυθμός (π.χ. 6:30/km)",
+    addGroup: "Προσθήκη ομάδας",
+    removeGroup: "Αφαίρεση ομάδας",
     repeatToggle: "Επανάληψη κάθε εβδομάδα",
     repeatHint: "Ανοίγει αυτόματα κάθε εβδομάδα την ίδια μέρα, ώρα και τοποθεσία. Τα μέλη ειδοποιούνται μόνο για την πρώτη εκδήλωση.",
     repeatDuration: "Για πόσες εβδομάδες;",

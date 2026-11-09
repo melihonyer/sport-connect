@@ -439,6 +439,12 @@ export const translations = {
 
   // ── TRAINING DETAIL ─────────────────────────────────────
   trainingDetail: {
+    groupsTitle: { tr: "Gruplar", en: "Groups", de: "Gruppen" },
+    groupGoing: { tr: "{n} kişi", en: "{n} going", de: "{n} dabei" },
+    joinGroup: { tr: "Katıl", en: "Join", de: "Teilnehmen" },
+    moveGroup: { tr: "Bu gruba geç", en: "Switch to this group", de: "In diese Gruppe wechseln" },
+    yourGroup: { tr: "Grubun", en: "Your group", de: "Deine Gruppe" },
+    groupChanged: { tr: "Grubun değişti.", en: "Your group was changed.", de: "Deine Gruppe wurde geändert." },
     addToCalendar: { tr: "Takvime ekle", en: "Add to calendar", de: "Zum Kalender hinzufügen" },
     weekly: { tr: "Her hafta", en: "Every week", de: "Jede Woche" },
     stopSeries: { tr: "Tekrarı durdur", en: "Stop repeating", de: "Wiederholung beenden" },
@@ -613,6 +619,12 @@ export const translations = {
 
   // ── CREATE TRAINING ─────────────────────────────────────
   createTraining: {
+    groupsToggle: { tr: "Tempo gruplarına ayır", en: "Split into pace groups", de: "In Tempogruppen aufteilen" },
+    groupsHint: { tr: "Aynı etkinlikte farklı mesafe ya da tempolar varsa. Katılanlar kendine uygun grubu seçer.", en: "For different distances or paces at the same event. People pick the group that suits them.", de: "Für unterschiedliche Distanzen oder Tempi im selben Event. Alle wählen die passende Gruppe." },
+    groupNamePh: { tr: "Grup adı (örn. Kısa tur · 5 km)", en: "Group name (e.g. Short loop · 5 km)", de: "Gruppenname (z. B. Kurze Runde · 5 km)" },
+    groupPacePh: { tr: "Tempo (örn. 6:30/km)", en: "Pace (e.g. 6:30/km)", de: "Tempo (z. B. 6:30/km)" },
+    addGroup: { tr: "Grup ekle", en: "Add group", de: "Gruppe hinzufügen" },
+    removeGroup: { tr: "Grubu kaldır", en: "Remove group", de: "Gruppe entfernen" },
     repeatToggle: { tr: "Her hafta tekrarla", en: "Repeat every week", de: "Jede Woche wiederholen" },
     repeatHint: { tr: "Aynı gün, saat ve yerde her hafta kendiliğinden açılır. Üyelere bildirim yalnız ilk etkinlik için gider.", en: "Opens automatically every week on the same day, time and place. Members are only notified about the first event.", de: "Wird jede Woche automatisch am selben Tag, zur selben Zeit und am selben Ort angelegt. Mitglieder werden nur über das erste Event benachrichtigt." },
     repeatDuration: { tr: "Kaç hafta sürsün?", en: "For how many weeks?", de: "Wie viele Wochen?" },

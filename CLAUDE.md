@@ -634,6 +634,15 @@ Takım etkinliği formunda "Her hafta tekrarla" + 4/8/12 hafta. Yalnız takım e
   (`icsToken`) ve yalnız etkinliği görebilene `calendar_url` ile verilir. JWT KULLANILMAZ: aynı sırla imzalanan jeton `authenticateToken`'dan geçerdi.
 - **Sabit duyuru:** `team_posts.pinned_at`, `POST /api/team-posts/:id/pin` (takım yöneticisi, en çok 3, bildirim yok); duvar sabitler üstte.
 
+## Tempo grupları (9 Kasım 2026, Melih onayladı)
+
+Etkinlikte 2–5 grup (ad ≤40 + isteğe bağlı tempo ≤30): `training_groups`, `training_attendees.group_id`. Etkinlik detayı `groups`
+(+ `going`) döner; sayılar herkese açık, kişinin grubu (`attendees[].group_id`) ismin kuralına bağlı (maskeli görene `null`).
+`POST /join` isteğe bağlı `group_id` alır (grup seçmeden de katılınır); `POST /api/trainings/:id/my-group` grubu değiştirir, bildirim
+yok. PUT'ta `groups` alanı yoksa dokunulmaz, `[]` kaldırır; id'si gelen grup korunur (katılanın grubu kalır), silinen grupta kişi
+etkinlikte kalır. Form `GroupsField` (modül düzeyinde), düzenlemede `groupsTouched` (rota gibi). Haftalık programda şablona girer, her haftaya açılır.
+Grup adı ve tempo `rejectIfObjectionable`'dan geçer.
+
 ## Silme ve kayıt
 
 - Kullanıcı hesabı **yumuşak** silinir (`users.deleted_at`, 30 gün, sonra purge).
