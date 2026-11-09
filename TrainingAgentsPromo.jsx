@@ -174,7 +174,7 @@ export function TaDiscoverCard({ t, lang, isNative, medium = "kesfet-karti" }) {
   );
 }
 
-// ── Ana sayfa bandı: Ai koç + 6 disiplin ──────────────────────────────────
+// ── Ana sayfa bandı: Training Agents koç + 6 disiplin ──────────────────────────────────
 // Melih, 8 Ekim 2026: Training Agents'ın kurumsal renkleri, tek dekupe fotoğraf; sonra
 // "çok renkli ve karmaşık, sadeleştir": renkli disiplin etiketleri yerine tek satır sade
 // yazı, telefonda görsel üstte + tek düğme (doğrudan mağazaya), masaüstünde düğme + rozetler.

@@ -1024,7 +1024,7 @@ olan kullanıcı.
 Training Agents lansmanı için Muuvlink'te "dost uygulama" alanları. Kaynak: Training
 Agents'ın marka özeti (`muuvlink-tanitim-brief.md`, Melih verdi). Training Agents bu
 sayfada **misafir**: logosu küçük, renginden yalnız ana mavi (`ta-blue` #2458ea, düğme +
-marka adı), her bölümde tek CTA, fiyat/"2 hafta"/birebir koçluk/saat markası yok, "Ai".
+marka adı), her bölümde tek CTA, fiyat/"2 hafta"/birebir koçluk/saat markası yok.
 - Kod: `TrainingAgentsPromo.jsx` (bileşenler + bağlantılar), metinler `i18n.js` `taPromo`
   + `locales/<kod>.js` (7 dil; tr/en özetten aynen, diğerleri Melih onaylı çeviri).
   Varlıklar `public/partners/training-agents/` (resmî rozetler + logolar; e-posta PNG'leri `mail/`).
@@ -1055,12 +1055,11 @@ marka adı), her bölümde tek CTA, fiyat/"2 hafta"/birebir koçluk/saat markas�
   boy/çerçevede durmuyordu). E-postadaki PNG'ler bu tasarımdan üretildi (`icons/mail/storebtn-*`);
   tasarım değişirse PNG'ler de yeniden üretilir. Tanıtım düğmesi de aynı boy (h-12).
   Hover yalnız imleçli cihazda (`.store-btn`, `data-btn="ta"|"ta-light"`, `.ta-chip`).
-- **Metinler kanca odaklı** (9 Ekim 2026, Melih onayladı): başlıklar satış kancası, "milli
-  antrenörlerin deneyimi" vurgusu (özetteki kanıt cümlesine dayanır: Ai "milli antrenörlerin ve
-  sporcuların saha deneyimiyle geliştirildi" — "milli antrenörler yazdı/geliştirdi" YAZILMAZ),
-  alt metinler soruyla açılır; düğme "İlk haftanı ücretsiz başlat". Boş durum ve yarış kartında
-  ayrı başlık (`emptyTitle`, `raceTitle`). Alt bilgi/e-posta şeridinde marka adı metinde yok
-  (logo yanında); `withBrand`/`taEmailStrip` `{brand}` yoksa ad eklemez. Bu metinler Training
+- **Metinler kanca odaklı** (9 Ekim 2026, Melih onayladı; **ton revizesi 9 Kasım 2026, Melih**): "Ai koç" DEĞİL "Training Agents koç",
+  "milli antrenör" DEĞİL "alanında tecrübeli antrenörler" (Training Agents sitesiyle aynı dil: "alanında tecrübeli antrenörlerle
+  geliştirilen"). Başlıklar satış kancası, alt metinler soruyla açılır; düğme "İlk haftanı ücretsiz başlat". Boş durum ve yarış
+  kartında ayrı başlık (`emptyTitle`, `raceTitle`). Aynı metin üç yerde: `i18n.js` `taPromo` + `locales/<kod>.js`, `backend-api.js`
+  `taStrip` (e-posta alt bilgisi), `public/link/index.html`. Alt bilgi/e-posta şeridinde `{brand}` yok, marka adı metnin içinde (logo yanında); `withBrand`/`taEmailStrip` `{brand}` yoksa ad eklemez. Bu metinler Training
   Agents özetindeki hazır cümlelerden ayrıldı; özet dosyası (TT COACH APP) güncellenmedi.
 - `trainings.source`: yalnız Training Agents taslağından yayınlanan etkinlikte yazılır
   (arayüz `taCurrent` varken gönderir, backend yalnız bu değeri kabul eder). 8 Ekim
