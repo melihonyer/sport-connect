@@ -147,6 +147,8 @@ garanti edilmeli. Yeni ekranlar için 30 gün önceden örnek görselle bildirim
 
 ## 4. Suunto: Partner Program
 
+**Soru GÖNDERİLDİ: 9 Kasım 2026** (info@saltajans.com → partners@suunto.com; mevcut sözleşmeye eklenebilir mi, ayrı başvuru mu). Cevap bekleniyor.
+
 Form: https://survey.alchemer.eu/s3/90553908/PARTNER-Become-a-Suunto-Partner. Şirket zaten partner olduğu
 için önce partners@suunto.com'a sorulur:
 
