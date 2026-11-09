@@ -10362,12 +10362,26 @@ export default function Muuvlink() {
   // =====================================================
   // LEGAL MODAL
   // =====================================================
+  // Saat verisi ve Threshold bölümleri KVKK + Gizlilik metninde aynı (9 Kasım 2026, Melih yayınlattı).
+  // İngilizcesi public/en/privacy/index.html; biri değişirse öteki de değişir.
+  const legalThresholdHtml = `<p><strong>Threshold (dahili etkinlik paneli):</strong> Oturum açmış üyelerin adı soyadı, görüntülenen sayfa ve etkinlik kayıtları; hizmetin nasıl kullanıldığını görmek için. E-posta adresi, telefon numarası ve mesaj içeriği gönderilmez.</p>`;
+  const legalWearableHtml = (no) => `
+<h4>${no}. Saat ve Spor Hizmeti Verileri</h4>
+<p><em>Bu özellik kullanıma açılıyor.</em> Yalnızca Muuvlink'e bir saat ya da spor hizmeti (Polar, Garmin, Wahoo, Suunto, COROS, Strava) bağlarsan geçerlidir. Bağlamak isteğe bağlıdır; Muuvlink bağlamadan da eksiksiz çalışır.</p>
+<p><strong>Açık rıza:</strong> Herhangi bir veri okunmadan önce, üyelikten ayrı olarak açık rızanı isteriz ve ne zaman verdiğini kaydederiz. Nabız, KVKK'da özel nitelikli kişisel veridir (Madde 6).</p>
+<p><strong>Okunan veriler:</strong> Tamamladığın antrenmanların özeti: spor türü, başlangıç saati ve konumu, süre, mesafe, tırmanış ve ortalama nabız.</p>
+<p><strong>Amaç:</strong> Katıldığın grup etkinliğine gerçekten gittiğini doğrulamak ve kendi antrenman geçmişini sana göstermek.</p>
+<p><strong>Kim görür:</strong> Varsayılan olarak yalnızca sen. Bir antrenman için açarsan takım arkadaşların yalnızca o antrenmanı görür; paylaşım varsayılan olarak kapalıdır. Nabzın diğer üyelere hiçbir zaman gösterilmez. Strava'dan gelen veriler yalnızca sana gösterilir.</p>
+<p><strong>İşleyenler:</strong> Yalnızca Güzel Hosting (uygulama sunucusu, Türkiye) ve Supabase (veritabanı, İrlanda). Rızanla bu verilerin İrlanda'da saklanmasını da kabul etmiş olursun. Bu veriler satılmaz, reklam için kullanılmaz, Meta'ya ya da analiz hizmetlerine gönderilmez, başka üçüncü kişiyle paylaşılmaz ve yapay zekâ modeli eğitmek için kullanılmaz.</p>
+<p><strong>Markanın kendi politikası:</strong> Markanın tarafında o markanın gizlilik politikası geçerlidir.</p>
+<p><strong>Geri alma:</strong> Ayarlar'dan bağlantıyı istediğin an kesip rızanı geri alabilirsin. Bu durumda o hizmetten aldığımız antrenman verilerini, bu veriye dayanan katılım teyidini ve erişim anahtarını sileriz. Hesabını silmek de aynı sonucu doğurur.</p>
+`;
   const legalContent = {
     kvkk: {
       title: t("footer.kvkk"),
       body: `
 <h3>Kişisel Verilerin İşlenmesi Hakkında Aydınlatma Metni</h3>
-<p>Son güncelleme: Ekim 2026</p>
+<p>Son güncelleme: Kasım 2026</p>
 <p>SALT KREATİF REKLAM TİC. LTD. ŞTİ. ("Şirket") olarak, Muuvlink platformu aracılığıyla 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") kapsamında veri sorumlusu sıfatıyla kişisel verilerinizi aşağıda açıklanan amaçlar doğrultusunda işlemekteyiz.</p>
 
 <h4>1. Veri Sorumlusu</h4>
@@ -10377,23 +10391,24 @@ Vergi Dairesi: Karşıyaka V.D. | VN: 7420957827<br/>
 İletişim: Uygulama içi iletişim formu aracılığıyla ulaşabilirsiniz.</p>
 
 <h4>2. İşlenen Kişisel Veriler</h4>
-<p>Ad, soyad, e-posta adresi, profil fotoğrafı, konum bilgisi (yalnızca kullanıcı izni ile), etkinlik ve takım verileri, uygulama kullanım geçmişi; reklam ölçümü verileri (Meta pikseli); çerezsiz ziyaret istatistiği.</p>
+<p>Ad, soyad, e-posta adresi, telefon numarası (girildiyse), profil fotoğrafı, konum bilgisi (yalnızca kullanıcı izni ile), etkinlik ve takım verileri, uygulama kullanım geçmişi; reklam ölçümü verileri (Meta pikseli); çerezsiz ziyaret istatistiği.</p>
 
 <h4>3. İşleme Amaçları</h4>
 <p>Üyelik oluşturma ve kimlik doğrulama; platform hizmetlerinin (etkinlik oluşturma, takım yönetimi, spor arkadaşı eşleştirme) sunulması; bildirim ve e-posta gönderimi; platform güvenliğinin sağlanması; reklamlarımızın sonucunun ölçülmesi ve reklamların gösterileceği kitlenin belirlenmesi; sayfaların kaç kez açıldığının ve ziyaretlerin hangi kampanyadan geldiğinin sayılması (çerez yazılmaz, IP adresi saklanmaz); yasal yükümlülüklerin yerine getirilmesi.</p>
 
 <h4>4. Hukuki Dayanak</h4>
-<p>KVKK Madde 5/2-c uyarınca sözleşmenin ifası; Madde 5/2-ç uyarınca hukuki yükümlülük; Madde 5/2-f uyarınca meşru menfaat (reklam ölçümü ve çerezsiz ziyaret istatistiği dahil); gerektiğinde Madde 5/1 uyarınca açık rıza.</p>
+<p>KVKK Madde 5/2-c uyarınca sözleşmenin ifası; Madde 5/2-ç uyarınca hukuki yükümlülük; Madde 5/2-f uyarınca meşru menfaat (reklam ölçümü ve çerezsiz ziyaret istatistiği dahil); gerektiğinde Madde 5/1 ve Madde 6 uyarınca açık rıza.</p>
 
 <h4>5. Veri Aktarımı</h4>
 <p>Kişisel verileriniz; yalnızca hizmet sunumu için zorunlu olan altyapı ve e-posta hizmet sağlayıcılarıyla ve yasal zorunluluk halinde yetkili kamu kurumlarıyla paylaşılabilir. Bu sağlayıcılar, gizlilik yükümlülükleriyle bağlıdır ve verilerinizi kendi amaçları için kullanamazlar.</p>
 <p><strong>Meta Platforms Ireland Ltd. (reklam ölçümü):</strong> görüntülenen sayfalar ile kayıt olma, etkinliğe ve takıma katılma adımları; kayıt ve katılım anlarında SHA-256 ile özetlenmiş (hash) e-posta adresi, telefon numarası ve ad, IP adresi ve tarayıcı bilgisi. Bu veriler web sitesinde ve mobil uygulamada toplanır ve Meta'nın yurt dışındaki sunucularında işlenir.</p>
 <p><strong>Umami Software, Inc. (Umami Cloud, veriler Avrupa Birliği'ndeki sunucularda):</strong> ziyaret edilen sayfa (kampanya etiketleri dışındaki parametreler çıkarılarak), geldiğiniz kaynak, tarayıcı ve cihaz türü, IP adresinden türetilen ülke. Çerez yazılmaz, IP adresi saklanmaz.</p>
-
-<h4>6. Saklama Süresi</h4>
+${legalThresholdHtml}
+${legalWearableHtml(6)}
+<h4>7. Saklama Süresi</h4>
 <p>Kişisel verileriniz, hesabınız aktif olduğu sürece ve hesabın silinmesinden itibaren ilgili mevzuatta öngörülen süreler boyunca saklanır. Hesabınızı silmeniz halinde verileriniz 30 gün içinde anonimleştirilir veya kalıcı olarak silinir.</p>
 
-<h4>7. Haklarınız (KVKK Madde 11)</h4>
+<h4>8. Haklarınız (KVKK Madde 11)</h4>
 <p>Veri sorumlusuna başvurarak kişisel verilerinize erişme, düzeltme, silme veya yok etme talep etme, işlemenin kısıtlanmasını isteme, veri taşınabilirliği talep etme ve otomatik işleme dayalı kararlara itiraz etme haklarına sahipsiniz. Talepleriniz için uygulama içi iletişim formumuzu kullanabilirsiniz.</p>
       `
     },
@@ -10401,13 +10416,13 @@ Vergi Dairesi: Karşıyaka V.D. | VN: 7420957827<br/>
       title: t("footer.privacy"),
       body: `
 <h3>Gizlilik Politikası</h3>
-<p>Son güncelleme: Ekim 2026</p>
+<p>Son güncelleme: Kasım 2026 · <a href="/en/privacy" style="text-decoration:underline">English version</a></p>
 <p>SALT KREATİF REKLAM TİC. LTD. ŞTİ. olarak, Muuvlink platformu üzerinden kullanıcı gizliliğini en temel önceliklerimizden biri olarak kabul ediyoruz. Bu politika, hangi verileri topladığımızı, nasıl kullandığımızı ve nasıl koruduğumuzu açıklamaktadır.</p>
 
 <h4>1. Topladığımız Bilgiler</h4>
-<p><strong>Doğrudan sağladığınız bilgiler:</strong> Kayıt sırasında girdiğiniz ad, e-posta adresi ve şifre; profil sayfasında eklediğiniz fotoğraf ve biyografi.<br/>
+<p><strong>Doğrudan sağladığınız bilgiler:</strong> Kayıt sırasında girdiğiniz ad, e-posta adresi, şifre ve (girildiyse) telefon numarası; profil sayfasında eklediğiniz fotoğraf ve biyografi.<br/>
 <strong>Platform kullanım verileri:</strong> Oluşturduğunuz veya katıldığınız etkinlikler, takım üyelikleri, rozet bilgileri.<br/>
-<strong>Konum verisi:</strong> Yalnızca tarayıcı izni verdiğinizde ve yalnızca yakın etkinlikleri listelemek için kullanılır. Sunucularımızda kalıcı olarak saklanmaz.<br/>
+<strong>Konum verisi:</strong> Yalnızca tarayıcı izni verdiğinizde ve yalnızca yakın etkinlikleri listelemek için kullanılır. Sunucularımızda kalıcı olarak saklanmaz. Antrenmanların başlangıç konumu Saat ve Spor Hizmeti Verileri bölümüne tabidir.<br/>
 <strong>Teknik veriler:</strong> Oturum bilgileri, reklam ölçümü çerezleri (Meta pikseli) ve çerezsiz ziyaret istatistiği (detaylar için Çerez Politikamıza bakınız).</p>
 
 <h4>2. Verilerin Kullanımı</h4>
@@ -10420,11 +10435,12 @@ Vergi Dairesi: Karşıyaka V.D. | VN: 7420957827<br/>
 <p>Platform; altyapı (sunucu barındırma) ve e-posta bildirimleri için güvenilir üçüncü taraf sağlayıcılar kullanmaktadır. Bu sağlayıcılara yalnızca hizmet sunumu için gereken minimum veri aktarılır ve sağlayıcılar verilerinizi kendi amaçları için kullanamaz.<br/>
 <strong>Meta Platforms Ireland Ltd.:</strong> reklamlarımızın sonucunu ölçmek için Meta pikseli (web sitesinde ve mobil uygulamada). Görüntülenen sayfalar ile kayıt ve katılım adımları; bu anlarda SHA-256 ile özetlenmiş e-posta, telefon ve ad, IP adresi ve tarayıcı bilgisi Meta'ya iletilir ve yurt dışında işlenir. Meta bu verileri reklam sonuçlarını ölçmek ve reklamların gösterileceği kitleyi belirlemek için kullanır.<br/>
 <strong>Umami Software, Inc. (Umami Cloud, veriler Avrupa Birliği'nde):</strong> web sitesinde çerezsiz ziyaret istatistiği — hangi sayfanın kaç kez açıldığı ve ziyaretin hangi kampanyadan geldiği. Çerez yazılmaz, IP adresi saklanmaz.</p>
-
-<h4>5. Haklarınız</h4>
+${legalThresholdHtml}
+${legalWearableHtml(5)}
+<h4>6. Haklarınız</h4>
 <p>Verilerinize erişim, düzeltme veya silinmesini talep etme hakkına sahipsiniz. Hesap silme işlemi; profil sayfası → Ayarlar üzerinden yapılabilir. Ek talepler için uygulama içi iletişim formumuzu kullanabilirsiniz.</p>
 
-<h4>6. Politika Güncellemeleri</h4>
+<h4>7. Politika Güncellemeleri</h4>
 <p>Bu politika güncellenebildiğinde kullanıcılara bildirim gönderilir. Güncel politikaya her zaman bu sayfa üzerinden ulaşabilirsiniz.</p>
       `
     },

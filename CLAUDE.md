@@ -243,8 +243,7 @@ GR ülke kodu; hreflang da `el` ister).
   menüde (giriş yapmadan da). **Uygulamada** giriş öncesi menü yok: giriş/kayıt
   penceresinin sol üstünde dil açılır menüsü (`AuthModal` `onLangChange`, yalnız
   `isNative`; 5 Ekim 2026, Melih). Web penceresine konmadı.
-- Yasal metinler (KVKK, gizlilik, koşullar) yalnız Türkçe; çevirisi hukuki
-  kontrol ister, kod işi değil.
+- Yasal metinler (KVKK, koşullar) yalnız Türkçe; çevirisi hukuki kontrol ister, kod işi değil. **İstisna: İngilizce gizlilik sayfası `/en/privacy`** (`public/en/privacy/index.html`, statik; 9 Kasım 2026, saat markası başvuruları için, Melih hukuki kontrolsüz yayınlattı). Türkçe karşılığı `legalContent` (`legalWearableHtml`, `legalThresholdHtml`); biri değişirse öteki de değişir. Bölüm 5 saat bağlantısı için söz veriyor (ayrı açık rıza, kesince silme, paylaşım varsayılan kapalı, nabız kimseye gösterilmez, Strava yalnız sahibine, Meta/analitik yok): kod bunları karşılamadan özellik açılmaz. Başvuru durumu `docs/wearable-applications.md`.
 - **Hesap dili `users.lang`.** Yalnız kayıtta ve kullanıcı dili ELLE
   değiştirince (`PUT /api/users/me/lang`) yazılır. **Boş = Türkçe**: bu işten
   önceki hesapların hepsi boş, onlara giden hiçbir şey değişmedi. Girişte
