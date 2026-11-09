@@ -2038,7 +2038,7 @@ function emailWrapper(content, lang = 'tr') {
       <table width="600" cellpadding="0" cellspacing="0" class="mv-card" style="width:100%;max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
         <!-- Header -->
         <tr>
-          <td class="mv-head" style="background:linear-gradient(135deg,#114956,#0e3c47);padding:32px 40px;text-align:center;">
+          <td class="mv-head" style="background:#114956;padding:32px 40px;text-align:center;">
             <img src="https://muuvlink.app/icons/favicon.png" width="56" height="56" alt="Muuvlink" style="border-radius:14px;margin-bottom:14px;display:inline-block;box-shadow:0 4px 16px rgba(0,0,0,0.15);" />
             <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;letter-spacing:-0.5px;">Muuvlink</h1>
             <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">${tm(L, 'wrapTagline')}</p>
