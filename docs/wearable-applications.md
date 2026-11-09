@@ -78,6 +78,11 @@ Sözleşme: üyenin açık izni olmadan veri dışarı verilmez, Polar'a rakip h
 
 ## 2. Wahoo: Production
 
+**GÖNDERİLDİ: 9 Kasım 2026** (melihonyer@gmail.com portalı; API Agreement'ı Melih onayladı). Wahoo 5-7 gün içinde inceliyor,
+durum Developer Portal'da "pending". Gönderilen açıklama paylaşımsız: "Sports community app. Reads a member's completed workout
+summaries to confirm group event attendance and show the member their own history. Data is shown only to that member." İzinler
+`user_read`, `workouts_read`, `offline_data`; webhook kapalı; logosuz.
+
 **Sözleşme maddeleri (9 Kasım 2026, wahoo-api-agreement okundu), başvurudan önce:** token uygulama başına (§3), yani Muuvlink'e
 ayrı başvuru şart. §7 API'den gelen coğrafi konumu toplamayı, önbelleklemeyi, saklamayı yasaklıyor: Wahoo'dan başlangıç
 konumu saklanmaz, ısı haritasına Wahoo verisi girmez. §8 giriş yoluyla alınan veriyi o kullanıcıyla sınırlıyor; §7 ise
@@ -93,7 +98,7 @@ logo yüklenince 500 veriyor, logosuz gönderilir.
 | Alan | Değer |
 |---|---|
 | Application name | `Muuvlink` |
-| Description | `Sports community app. Reads a member's completed workout summaries to confirm group event attendance and show their own history. Sharing with teammates is opt-in.` |
+| Description | `Sports community app. Reads a member's completed workout summaries to confirm group event attendance and show the member their own history. Data is shown only to that member.` |
 | Website | `https://muuvlink.app` |
 | Redirect URI | `https://muuvlink.app/api/wearable/wahoo/callback` |
 | Confidential | Yes |
