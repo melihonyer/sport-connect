@@ -101,6 +101,7 @@ const buildTeamEditForm = (team) => ({
   description: team?.description || "",
   location: team?.location || "",
   avatar: team?.avatar || "",
+  tags: Array.isArray(team?.tags) ? team.tags : [],
   is_private: team?.is_private === true,
 });
 
@@ -969,6 +970,33 @@ function GallerySection({ items, t, setCurrentPage, titleOverride, subtitleOverr
         </div>
       )}
     </section>
+  );
+}
+
+// Keşif etiketleri: backend TEAM_TAGS ile AYNI liste; metin `teamTags.<kod>` (7 dil).
+const TEAM_TAGS = ["beginner", "all_levels", "women", "coached", "race", "social", "coffee", "family"];
+function TeamTagPicker({ value, onChange, t, labelCls }) {
+  const toggle = (code) => {
+    if (value.includes(code)) onChange(value.filter((x) => x !== code));
+    else if (value.length < 4) onChange([...value, code]);
+  };
+  return (
+    <div>
+      <label className={labelCls}>{t("createTeam.tagsLabel")} <span className="normal-case font-normal text-slate-500">({t("common.optional")})</span></label>
+      <div className="flex flex-wrap gap-2">
+        {TEAM_TAGS.map((code) => {
+          const on = value.includes(code);
+          return (
+            <button key={code} type="button" aria-pressed={on} onClick={() => toggle(code)}
+              disabled={!on && value.length >= 4}
+              className={`min-h-[44px] px-3.5 rounded-full border text-sm font-medium transition-colors disabled:opacity-40 ${on ? "bg-brand-600 border-brand-600 text-white" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+              {t(`teamTags.${code}`)}
+            </button>
+          );
+        })}
+      </div>
+      <p className="mt-2 text-xs text-slate-500">{t("createTeam.tagsHint")}</p>
+    </div>
   );
 }
 
@@ -2446,6 +2474,7 @@ export default function Muuvlink() {
   // Sıralama (sayfa yeniden çizilince sıfırlanmasın diye üst düzeyde). teamSort boşsa: konum varsa
   // yakınlık, yoksa yeni kurulan. Etkinlikler varsayılan tarih (sunucu da tarih sırasıyla verir).
   const [teamSort, setTeamSort] = useState("");
+  const [teamTag, setTeamTag] = useState(""); // Takımlar süzgeci; sıralama gibi üst düzeyde (satır içi sayfa sıfırlanıyor)
   const [trainingSort, setTrainingSort] = useState("date");
   const [locationLoading, setLocationLoading] = useState(false);
   const [nearbyLoading, setNearbyLoading] = useState(false);
@@ -5385,6 +5414,15 @@ export default function Muuvlink() {
           {team.description || (team.is_private ? t("teams.privateDesc") : t("common.noDescription"))}
         </p>
 
+        {team.tags?.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {team.tags.slice(0, 3).map((code) => (
+              <span key={code} className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-medium">{t(`teamTags.${code}`)}</span>
+            ))}
+            {team.tags.length > 3 && <span className="px-1.5 py-1 text-slate-500 text-xs font-medium">+{team.tags.length - 3}</span>}
+          </div>
+        )}
+
         {(team.next_date || team.weekly_days?.length > 0) && (
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-3 text-xs text-slate-600">
             {team.weekly_days?.length > 0 && (
@@ -6797,10 +6835,13 @@ export default function Muuvlink() {
       const q = teamSearch.toLowerCase();
       const matchesSearch = !q || t.name?.toLowerCase().includes(q) || t.description?.toLowerCase().includes(q) || t.location?.toLowerCase().includes(q);
       const matchesSport = !teamSport || t.sport === teamSport || (Array.isArray(t.sports) && t.sports.includes(teamSport));
-      return matchesSearch && matchesSport;
+      const matchesTag = !teamTag || (Array.isArray(t.tags) && t.tags.includes(teamTag));
+      return matchesSearch && matchesSport && matchesTag;
     }));
+    // Yalnız en az bir takımın kullandığı etiketler süzgeçte çıkar
+    const usedTags = TEAM_TAGS.filter((code) => teams.some((tm) => tm.tags?.includes(code)));
     // Arama/süzgeç yokken: önce öne çıkanlar (admin seçer), altında kalanlar
-    const filtering = !!(teamSearch || teamSport);
+    const filtering = !!(teamSearch || teamSport || teamTag);
     const featuredTeams = filtering ? [] : filteredTeams.filter((tm) => tm.featured);
     const restTeams = filtering ? filteredTeams : filteredTeams.filter((tm) => !tm.featured);
 
@@ -6850,14 +6891,24 @@ export default function Muuvlink() {
               </select>
               <SortSelect label={t("sort.label")} value={sortKey} onChange={onTeamSort} busy={teamsLocLoading}
                 options={[["distance", t("sort.distance")], ["new", t("sort.newTeams")], ["members", t("sort.members")], ["name", t("sort.name")]]} />
-              {(teamSearch || teamSport) && (
-                <button onClick={() => { setTeamSearch(""); setTeamSport(""); }}
+              {(teamSearch || teamSport || teamTag) && (
+                <button onClick={() => { setTeamSearch(""); setTeamSport(""); setTeamTag(""); }}
                   className="flex items-center gap-1 px-3 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-medium text-slate-600 transition">
                   <X className="w-3.5 h-3.5"/> {t("trainings.clearFilters")}
                 </button>
               )}
               <span className="ml-auto text-xs text-slate-500 font-semibold">{filteredTeams.length} {t("teams.teamsCount")}</span>
             </div>
+            {usedTags.length > 0 && (
+              <div className="flex gap-2 mt-2.5 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap [scrollbar-width:none]">
+                {usedTags.map((code) => (
+                  <button key={code} aria-pressed={teamTag === code} onClick={() => setTeamTag((v) => (v === code ? "" : code))}
+                    className={`flex-shrink-0 min-h-[36px] px-3 rounded-full border text-xs font-medium transition-colors ${teamTag === code ? "bg-brand-600 border-brand-600 text-white" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                    {t(`teamTags.${code}`)}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -8154,6 +8205,13 @@ export default function Muuvlink() {
               )}
             </div>
 
+            {selectedTeam.tags?.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {selectedTeam.tags.map((code) => (
+                  <span key={code} className="px-2.5 py-1 rounded-full bg-white/10 text-white/90 text-xs font-medium">{t(`teamTags.${code}`)}</span>
+                ))}
+              </div>
+            )}
             {selectedTeam.description && (
               <p className="mt-3.5 text-sm text-slate-300 leading-relaxed whitespace-pre-line [overflow-wrap:anywhere]"><LinkText text={selectedTeam.description} linkClassName="text-white decoration-white/40 hover:decoration-white" /></p>
             )}
@@ -8491,6 +8549,8 @@ export default function Muuvlink() {
                   placeholder={t("createTeam.locationPlaceholder")}
                   className={iCls} />
               </div>
+
+              <TeamTagPicker value={editForm.tags || []} onChange={(tags) => setEditForm((f) => ({ ...f, tags }))} t={t} labelCls={lCls} />
 
               <div className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-colors ${editForm.is_private ? "border-slate-200 bg-slate-50" : "border-brand-200 bg-brand-50"}`}>
                 <div>
@@ -9040,6 +9100,7 @@ export default function Muuvlink() {
       description: "",
       location: "",
       is_private: false,
+      tags: [],
     });
 
     const handleSubmit = (e) => {
@@ -9111,6 +9172,11 @@ export default function Muuvlink() {
                   className={inputCls}
                   placeholder={t("createTeam.locationPlaceholder")}
                 />
+              </div>
+
+              {/* Keşif etiketleri */}
+              <div className="p-5">
+                <TeamTagPicker value={formData.tags} onChange={(tags) => setFormData((f) => ({ ...f, tags }))} t={t} labelCls={labelCls} />
               </div>
 
               {/* Gizlilik */}

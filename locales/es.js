@@ -564,7 +564,19 @@ export default {
     joinTeam: "Unirme al equipo",
   },
 
+  teamTags: {
+    beginner: "Para principiantes",
+    all_levels: "Todos los niveles",
+    women: "Mujeres",
+    coached: "Con entrenador",
+    race: "Preparación de carreras",
+    social: "Social",
+    coffee: "Café después",
+    family: "Apto para familias",
+  },
   createTeam: {
+    tagsLabel: "Etiquetas",
+    tagsHint: "Elige hasta 4 etiquetas que describan a tu equipo. En la página de equipos se puede filtrar por ellas.",
     uploadPhoto: "Subir foto",
     pageTitle: "Crear equipo",
     pageSubtitle: "Crea tu propio equipo deportivo e invita a miembros.",

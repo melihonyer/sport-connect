@@ -643,6 +643,11 @@ yok. PUT'ta `groups` alanı yoksa dokunulmaz, `[]` kaldırır; id'si gelen grup 
 etkinlikte kalır. Form `GroupsField` (modül düzeyinde), düzenlemede `groupsTouched` (rota gibi). Haftalık programda şablona girer, her haftaya açılır.
 Grup adı ve tempo `rejectIfObjectionable`'dan geçer.
 
+## Keşif etiketleri (9 Kasım 2026, Melih onayladı)
+
+`teams.tags` (TEXT[]), sabit 8 kod: `TEAM_TAGS` İKİ yerde birebir (backend + sporla-bulusma.jsx), metin `teamTags.<kod>` (7 dil). Takım başına en çok 4;
+bilinmeyen kod atılır. PUT'ta alan yoksa dokunulmaz. Form `TeamTagPicker`; kartta en çok 3 + "+n"; Takımlar süzgecinde yalnız kullanılan etiketler (`teamTag` üst düzey state).
+
 ## Silme ve kayıt
 
 - Kullanıcı hesabı **yumuşak** silinir (`users.deleted_at`, 30 gün, sonra purge).

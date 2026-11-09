@@ -789,7 +789,19 @@ export const translations = {
   },
 
   // ── CREATE TEAM ─────────────────────────────────────────
+  teamTags: {
+    beginner: { tr: "Yeni başlayana uygun", en: "Beginner friendly", de: "Anfängerfreundlich" },
+    all_levels: { tr: "Her seviyeye açık", en: "All levels welcome", de: "Alle Levels willkommen" },
+    women: { tr: "Kadınlar", en: "Women", de: "Frauen" },
+    coached: { tr: "Antrenörlü", en: "Coached", de: "Mit Trainer" },
+    race: { tr: "Yarışa hazırlık", en: "Race training", de: "Wettkampfvorbereitung" },
+    social: { tr: "Sosyal", en: "Social", de: "Gesellig" },
+    coffee: { tr: "Sonrasında kahve", en: "Coffee after", de: "Kaffee danach" },
+    family: { tr: "Aile dostu", en: "Family friendly", de: "Familienfreundlich" },
+  },
   createTeam: {
+    tagsLabel: { tr: "Etiketler", en: "Tags", de: "Tags" },
+    tagsHint: { tr: "Takımını anlatan en çok 4 etiket seç. Takımlar sayfasında bunlara göre süzülür.", en: "Pick up to 4 tags that describe your team. People can filter by them on the Teams page.", de: "Wähle bis zu 4 Tags, die dein Team beschreiben. Auf der Teams-Seite kann danach gefiltert werden." },
     uploadPhoto:    { tr: "Fotoğraf yükle", en: "Upload photo", de: "Foto hochladen" },
     pageTitle:      { tr: "Takım Kur",                    en: "Create Team",             de: "Team gründen"            },
     pageSubtitle:   { tr: "Kendi spor takımını oluştur ve üyelerini davet et.",

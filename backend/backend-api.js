@@ -4727,9 +4727,13 @@ app.put('/api/auth/password', authenticateToken, async (req, res) => {
 // TEAMS ROUTES
 // =====================================================
 
+// Keşif etiketleri: sabit liste (sporla-bulusma.jsx TEAM_TAGS ile aynı), takım başına en çok 4. Bilinmeyen kod atılır.
+const TEAM_TAGS = ['beginner', 'all_levels', 'women', 'coached', 'race', 'social', 'coffee', 'family'];
+const sanitizeTeamTags = (raw) => [...new Set((Array.isArray(raw) ? raw : []).filter((x) => TEAM_TAGS.includes(x)))].slice(0, 4);
+
 app.post('/api/teams', authenticateToken, async (req, res) => {
   try {
-    const { name, sport, sports, description, location, is_private, avatar } = req.body;
+    const { name, sport, sports, description, location, is_private, avatar, tags } = req.body;
 
     // Çoklu spor dalı; geriye dönük olarak tekil `sport` da kabul edilir.
     const sportsArr = (Array.isArray(sports) ? sports : []).filter(Boolean);
@@ -4741,8 +4745,8 @@ app.post('/api/teams', authenticateToken, async (req, res) => {
     const primarySport = sportsArr[0]; // tekil `sport` = birincil dal (mevcut gösterimlerle uyum)
 
     const teamResult = await pool.query(
-      `INSERT INTO teams (name, sport, sports, description, location, is_private, owner_id, avatar, subscription_end)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      `INSERT INTO teams (name, sport, sports, description, location, is_private, owner_id, avatar, subscription_end, tags)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        RETURNING *`,
       [
         name,
@@ -4754,6 +4758,7 @@ app.post('/api/teams', authenticateToken, async (req, res) => {
         req.user.id,
         avatar || '⚽',
         new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        sanitizeTeamTags(tags),
       ]
     );
 
@@ -5311,7 +5316,7 @@ app.put('/api/teams/:id', authenticateToken, async (req, res) => {
     const teamId = req.params.id;
     // Not: avatar burada GÜNCELLENMEZ — fotoğraf yalnızca POST /teams/:id/avatar
     // ile yönetilir. Aksi halde formdaki bayat avatar değeri yeni fotoğrafı geri alabilir.
-    const { name, sport, sports, description, location, is_private } = req.body;
+    const { name, sport, sports, description, location, is_private, tags } = req.body;
     if (rejectIfObjectionable(req, res, 'team', name, description)) return;
 
     const ownerCheck = await pool.query('SELECT owner_id FROM teams WHERE id = $1', [teamId]);
@@ -5336,9 +5341,10 @@ app.put('/api/teams/:id', authenticateToken, async (req, res) => {
 
     const result = await pool.query(
       `UPDATE teams SET name=$1, sport=$2, sports=$3, description=$4, location=$5,
-              is_private=COALESCE($6, is_private), updated_at=CURRENT_TIMESTAMP
+              is_private=COALESCE($6, is_private), tags=COALESCE($8::text[], tags), updated_at=CURRENT_TIMESTAMP
        WHERE id=$7 RETURNING *`,
-      [name, primarySport, (sportsArr.length ? sportsArr : null), description, location, privacyArg, teamId]
+      [name, primarySport, (sportsArr.length ? sportsArr : null), description, location, privacyArg, teamId,
+       Object.prototype.hasOwnProperty.call(req.body, 'tags') ? sanitizeTeamTags(tags) : null]
     );
 
     res.json({ message: 'Team updated', team: result.rows[0] });
@@ -10456,6 +10462,7 @@ pool.query(`ALTER TABLE trainings ADD COLUMN IF NOT EXISTS featured_at TIMESTAMP
 pool.query(`ALTER TABLE teams ADD COLUMN IF NOT EXISTS sports TEXT[]`).catch(() => {});
 // Öne çıkan takımlar (2 Kasım 2026): elle seçim bu sütunda; rastgele seçim app_settings'te
 pool.query(`ALTER TABLE teams ADD COLUMN IF NOT EXISTS featured BOOLEAN NOT NULL DEFAULT false`).catch(() => {});
+pool.query(`ALTER TABLE teams ADD COLUMN IF NOT EXISTS tags TEXT[] NOT NULL DEFAULT '{}'`).catch(() => {});
 pool.query(`CREATE TABLE IF NOT EXISTS app_settings (
     key TEXT PRIMARY KEY,
     value JSONB NOT NULL,

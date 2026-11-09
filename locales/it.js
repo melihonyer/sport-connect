@@ -564,7 +564,19 @@ export default {
     joinTeam: "Unisciti alla squadra",
   },
 
+  teamTags: {
+    beginner: "Adatto ai principianti",
+    all_levels: "Tutti i livelli",
+    women: "Donne",
+    coached: "Con allenatore",
+    race: "Preparazione gare",
+    social: "Sociale",
+    coffee: "Caffè dopo",
+    family: "Adatto alle famiglie",
+  },
   createTeam: {
+    tagsLabel: "Etichette",
+    tagsHint: "Scegli fino a 4 etichette che descrivono la tua squadra. Nella pagina Squadre si può filtrare con queste.",
     uploadPhoto: "Carica foto",
     pageTitle: "Crea squadra",
     pageSubtitle: "Crea la tua squadra sportiva e invita i membri.",
