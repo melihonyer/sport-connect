@@ -1410,6 +1410,35 @@ export const translations = {
   },
 
   // ── SPORTS LIST ──────────────────────────────────────────
+  // Saat ve spor uygulamaları (WearablePanel.jsx). el/es/fr/it locales/<kod>.js'te.
+  wearable: {
+    title: { tr: "Saat ve spor uygulamaları", en: "Watches and sports apps", de: "Uhren und Sport-Apps" },
+    consentTitle: { tr: "Önce iznini istiyoruz", en: "We need your permission first", de: "Zuerst brauchen wir deine Erlaubnis" },
+    consentBody: { tr: "Bir saat bağlarsan tamamladığın antrenmanların özetini okuruz: spor türü, başlangıç saati, süre, mesafe ve ortalama nabız. Bunu, katıldığın etkinliğe gittiğini doğrulamak ve geçmişini sana göstermek için kullanırız.", en: "If you connect a watch, we read summaries of your completed workouts: sport, start time, duration, distance and average heart rate. We use them to confirm that you attended an event you joined and to show you your history.", de: "Wenn du eine Uhr verbindest, lesen wir Zusammenfassungen deiner abgeschlossenen Trainings: Sportart, Startzeit, Dauer, Distanz und durchschnittliche Herzfrequenz. Damit bestätigen wir deine Teilnahme an Events und zeigen dir deinen Verlauf." },
+    point1: { tr: "Antrenmanlarını yalnızca sen görürsün.", en: "Only you can see your workouts.", de: "Nur du siehst deine Trainings." },
+    point2: { tr: "Nabzın diğer üyelere gösterilmez.", en: "Your heart rate is never shown to other members.", de: "Deine Herzfrequenz wird anderen Mitgliedern nie gezeigt." },
+    point3: { tr: "Veriler satılmaz, reklam için kullanılmaz.", en: "Your data is never sold or used for advertising.", de: "Deine Daten werden nie verkauft oder für Werbung genutzt." },
+    point4: { tr: "Bağlantıyı kesince bu veriler silinir.", en: "Disconnecting deletes this data.", de: "Wenn du die Verbindung trennst, werden diese Daten gelöscht." },
+    consentCheck: { tr: "Nabız dahil antrenman verilerimin bu amaçlarla işlenmesine ve İrlanda'daki sunucularda saklanmasına açık rıza veriyorum.", en: "I give my explicit consent to my workout data, including heart rate, being processed for these purposes and stored on servers in Ireland.", de: "Ich willige ausdrücklich ein, dass meine Trainingsdaten, einschließlich Herzfrequenz, zu diesen Zwecken verarbeitet und auf Servern in Irland gespeichert werden." },
+    continue: { tr: "Devam et", en: "Continue", de: "Weiter" },
+    connect: { tr: "Bağla", en: "Connect", de: "Verbinden" },
+    connected: { tr: "Bağlı", en: "Connected", de: "Verbunden" },
+    notConnected: { tr: "Bağlı değil", en: "Not connected", de: "Nicht verbunden" },
+    reconnect: { tr: "Yeniden bağlanman gerekiyor", en: "You need to connect again", de: "Du musst dich neu verbinden" },
+    lastSync: { tr: "Son alım: {date}", en: "Last updated: {date}", de: "Zuletzt aktualisiert: {date}" },
+    syncNow: { tr: "Şimdi al", en: "Update now", de: "Jetzt aktualisieren" },
+    disconnect: { tr: "Bağlantıyı kes", en: "Disconnect", de: "Trennen" },
+    disconnectConfirm: { tr: "Bu hizmetten aldığımız antrenmanlar, onlara dayanan katılım teyitleri ve erişim anahtarı silinir.", en: "The workouts we imported from this service, attendance confirmations based on them and the access token will be deleted.", de: "Die von diesem Dienst importierten Trainings, darauf basierende Teilnahmebestätigungen und der Zugriffsschlüssel werden gelöscht." },
+    disconnected: { tr: "Bağlantı kesildi, verilerin silindi.", en: "Disconnected. Your data has been deleted.", de: "Getrennt. Deine Daten wurden gelöscht." },
+    historyTitle: { tr: "Antrenmanların", en: "Your workouts", de: "Deine Trainings" },
+    onlyYou: { tr: "Bu listeyi yalnızca sen görüyorsun.", en: "Only you can see this list.", de: "Nur du siehst diese Liste." },
+    empty: { tr: "Henüz antrenman yok. Saatini kendi uygulamasıyla eşitledikten sonra burada görünür.", en: "No workouts yet. They appear here after you sync your watch with its own app.", de: "Noch keine Trainings. Sie erscheinen hier, sobald du deine Uhr mit ihrer App synchronisierst." },
+    workout: { tr: "Antrenman", en: "Workout", de: "Training" },
+    attended: { tr: "Katıldığın etkinlik: {title}", en: "Event you attended: {title}", de: "Besuchtes Event: {title}" },
+    error: { tr: "Bir sorun oluştu, yeniden dene.", en: "Something went wrong. Please try again.", de: "Etwas ist schiefgelaufen. Bitte versuche es erneut." },
+    connectedToast: { tr: "Bağlantı kuruldu.", en: "Connected.", de: "Verbunden." },
+  },
+
   sports: {
     Basketbol:  { tr: "Basketbol",  en: "Basketball",  de: "Basketball"  },
     Bikejoring: { tr: "Bikejoring", en: "Bikejoring",  de: "Bikejöring"  },

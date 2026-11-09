@@ -4,7 +4,7 @@
     "details": [
       {
         "appID": "MZ46V34M5Y.app.muuvlink",
-        "paths": ["NOT /admin", "NOT /admin.html", "NOT /admin/*", "*"]
+        "paths": ["NOT /admin", "NOT /admin.html", "NOT /admin/*", "NOT /api/*", "*"]
       }
     ]
   }

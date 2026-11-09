@@ -662,6 +662,17 @@ Melih "Kadınlar"ı kaba buldu → "Kadın takımı" (`teamTags.women`). Kötü 
 `GET/POST /api/admin/women-tag-requests`), karar lidere uygulama bildirimi (`MAIL.tag*`). Takım sayfasında herkese "şikayet" bayrağı (`content_type: 'team'`, nedenler unsafe/inappropriate/spam/other; yöneticiye görünmez).
 Bilerek YOK: bu takımlarda güvenlik uyarısı notu ("korkutucu", Melih), kimlik/cinsiyet doğrulaması, "güvenli/doğrulanmış" vaadi.
 
+## Saat ve spor servisi bağlantısı (9 Kasım 2026, Melih onayladı)
+
+`backend/wearable.js` (backend ile birlikte scp edilir) + `WearablePanel.jsx`, metin `wearable.*` (7 dil). Şimdilik yalnız Polar; yeni marka `PROVIDERS`'a eklenir.
+Başvuru durumu ve her markanın sözleşme kuralları `docs/wearable-applications.md`.
+- **Görünürlük:** `POLAR_CLIENT_ID` + `POLAR_CLIENT_SECRET` yoksa hiç görünmez; varsa yalnız platform admini görür; herkese açmak `WEARABLE_PUBLIC=1`. Profil › Hızlı Erişim satırı ve pencere `GET /api/wearable/status` `available`'a bakar.
+- **Akış:** ayrı açık rıza (`wearable_consents`, sürümlü) → `POST /api/wearable/:provider/connect` tek kullanımlık, 10 dk'lık `state` üretir → markanın ekranı → oturumsuz `GET .../callback`. Web dönüşü `/?wearable=ok|cancelled|error`; uygulamada sistem tarayıcısında düz sayfa, kullanıcı dönünce pencere tazelenir (`native`). App Links dönüşü `appUrlOpen`'da işlenir, AASA'da `NOT /api/*`.
+- **Sözler koda bağlı:** jeton AES-GCM şifreli (anahtar JWT_SECRET'tan türer; değişirse herkes yeniden bağlanır). Kesince/rıza geri alınınca/hesap silinince (`wipeUser`, 30 gün beklemez) antrenman, katılım teyidi, jeton silinir, marka kaydı en iyi çabayla kaldırılır. Veri yalnız sahibine döner. Bu dosya Meta, Threshold, bildirim çağırmaz; çağırmamalı. Takımla paylaşım bilerek YOK (Garmin ve Wahoo cevabı bekleniyor).
+- Etkinlik eşleşmesi: kişinin katıldığı etkinliğin başlangıcından 60 dk önce–120 dk sonra başlayan antrenman, en yakını (`training_id`). Konum okunmuyor (Polar özetinde yok).
+- Senkron: bağlanınca, "Şimdi al" (60 sn sınır), 6 saatte bir `runSyncJob`. Polar son 30 günü verir, `external_id` tekil.
+- Test: sunucuda sahte `fetchFn` + geçici kullanıcı ve kendi gizli etkinliği (9 Kasım'da 33 kontrol geçti, kayıtlar silindi). Yeni kullanıcı oluştururken `created_at` eski verilir, yoksa hoş geldin maili işine girer.
+
 ## Silme ve kayıt
 
 - Kullanıcı hesabı **yumuşak** silinir (`users.deleted_at`, 30 gün, sonra purge).

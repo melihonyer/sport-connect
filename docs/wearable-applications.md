@@ -66,6 +66,7 @@ https://admin.polaraccesslink.com. Polar Flow hesabıyla girilir, client id + se
 **İSTEMCİ AÇILDI: 9 Kasım 2026** (melihonyer@gmail.com hesabında, Training Agents'tan ayrı; AccessLink
 sözleşmesini Melih kabul etti). Yalnız Exercise data açık; gerçek bağlantı kodu henüz yazılmadı. Bilgi notu:
 açıklamadaki rıza, silme ve paylaşım vaatleri kod yazılırken karşılanmak zorunda.
+**Kod yayında, kapalı: 9 Kasım 2026** (`backend/wearable.js`, `WearablePanel.jsx`). Anahtarlar sunucuya girince yalnız admin görür.
 
 | Alan | Değer |
 |---|---|

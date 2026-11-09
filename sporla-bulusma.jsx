@@ -4,6 +4,7 @@ import Tour from "./Tour.jsx";
 import FreshBuildWatcher from "./FreshBuildWatcher.jsx";
 import BlurReveal from "./BlurReveal.jsx";
 import GuidePage from "./GuidePage.jsx";
+import WearablePanel from "./WearablePanel.jsx";
 import AboutPage from "./AboutPage.jsx";
 import { StoreButton } from "./StoreButtons.jsx";
 import { SocialIcons } from "./SocialLinks.jsx";
@@ -11,6 +12,7 @@ import { TaSessionNote, TaDiscoverCard, TaHomeBand, TaCoachTip, TaEmptyState, Ta
 import { MetaEvents, newEventId, getMatchSignals, getAttribution, trackPageView, umamiTrack, metaTrackingAllowed, requestIosTracking, iosTrackingUndecided } from "./analytics.js";
 import { reportPage } from "./threshold-page.js";
 import {
+  Watch,
   ArrowRight,
   MapPin,
   Users,
@@ -2439,6 +2441,9 @@ export default function Muuvlink() {
   // "Muuvlink'e mesajların": iletişim formundan yazdıkları + cevaplarımız. Bildirim silinse de
   // cevap burada kalır. null = kapalı; { focusId, loading, error, items }.
   const [myMsgs, setMyMsgs] = useState(null);
+  // Saat ve spor uygulamaları: sunucu "available" dönmezse satır da pencere de yok (backend/wearable.js).
+  const [showWearable, setShowWearable] = useState(false);
+  const [wearableAvailable, setWearableAvailable] = useState(false);
   const myMsgsScrolledRef = useRef(false);
   const myMsgReplyRef = useRef(null); // "Cevap yaz" kutusu (kontrolsüz: her harfte ana bileşen çizilmesin)
   const openMyMessagesRef = useRef(() => {});
@@ -2973,6 +2978,11 @@ export default function Muuvlink() {
           // kullanıcı ana sayfada kalıyordu.
           const taTok = params.get("ta");
           if (taTok) { handleTaToken(taTok); return; }
+          // Marka dönüşü uygulamaya düştüyse (App Links) isteği uygulama yapar, sonra pencere tazelenir.
+          if (pathname.startsWith("/api/wearable/")) {
+            fetch(event.url).catch(() => {}).finally(() => { setShowWearable(true); window.dispatchEvent(new Event("muuv:wearable-refresh")); });
+            return;
+          }
           if (params.get("hikaye") === "1") storyParamRef.current = true;
 
           // E-postadaki "Linki kopyala" statik bir sayfa (public/kopyala/); SPA'da
@@ -3517,6 +3527,7 @@ export default function Muuvlink() {
     if (claimTeam)         { setClaimTeam(null);          return true; }
     if (confirmModal)      { setConfirmModal(null);       return true; }
     if (myMsgs)            { setMyMsgs(null);             return true; } // ayarların/bildirimlerin üstünde açılır
+    if (showWearable)      { setShowWearable(false);      return true; }
     if (showDeleteModal)   { setShowDeleteModal(false);   return true; }
     if (showManualLocation){ setShowManualLocation(false);return true; }
     if (showInviteModal)   { setShowInviteModal(false);   return true; }
@@ -4916,6 +4927,29 @@ export default function Muuvlink() {
   };
   openMyMessagesRef.current = openMyMessages;
 
+  // Saat bağlantısı bu kullanıcıya açık mı? Kapalıysa profilde satır çıkmaz.
+  useEffect(() => {
+    if (!user) { setWearableAvailable(false); return; }
+    let live = true;
+    fetch(`${API_URL}/wearable/status`, { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (live) setWearableAvailable(Boolean(j?.available?.length)); })
+      .catch(() => {});
+    return () => { live = false; };
+  }, [user?.id]);
+
+  // Markanın izin ekranından web dönüşü: /?wearable=ok|cancelled|error (yalnız bu iş için, adres hemen temizlenir).
+  useEffect(() => {
+    const u = new URL(window.location.href);
+    const result = u.searchParams.get("wearable");
+    if (!result) return;
+    u.searchParams.delete("wearable");
+    window.history.replaceState(window.history.state, "", u.pathname + u.search + u.hash);
+    setShowWearable(true);
+    if (result === "ok") showToast(t("wearable.connectedToast"), "success");
+    else if (result === "error") showToast(t("wearable.error"), "error");
+  }, []);
+
   // Yazışmaya karşılık: sunucu güncel mesajı döner, kart yerinde tazelenir.
   const sendMyReply = async (id) => {
     const text = (myMsgReplyRef.current?.value || "").trim();
@@ -6249,6 +6283,7 @@ export default function Muuvlink() {
               {label: t("badges.pageTitle"),         icon:Trophy, page:"badges",          tone:"pop"},
               // Muuvlink'e yazdıkları + cevaplarımız (Ayarlar penceresinin dibinde bulunmuyordu — Melih)
               {label: t("myMessages.title"),         icon:MessageSquare, onClick: () => openMyMessages(), tone:"outline"},
+              ...(wearableAvailable ? [{label: t("wearable.title"), icon:Watch, onClick: () => setShowWearable(true), tone:"outline"}] : []),
             ].map((a) => (
               <button key={a.label} onClick={() => (a.onClick ? a.onClick() : setCurrentPage(a.page))}
                 data-btn={a.tone === "outline" ? undefined : a.tone}
@@ -10977,6 +11012,11 @@ ${legalWearableHtml(5)}
       )}
       <ConfirmModal />
       {showDeleteModal && <PageHost key="delete-account" render={DeleteAccountModal} />}
+      {showWearable && user && (
+        <WearablePanel apiUrl={API_URL} t={t} isNative={isNative} showToast={showToast} sportLabel={sportLabel}
+          onClose={() => setShowWearable(false)} onOpenPrivacy={() => setLegalModal("gizlilik")}
+          onOpenTraining={(id) => { setShowWearable(false); fetchTrainingDetails(id); }} />
+      )}
       {showNotifPrefs && <NotifPrefsModal />}
       <LegalModal />
       <ReportModal />

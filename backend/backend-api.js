@@ -2,6 +2,7 @@
 require('dotenv').config();
 // Threshold: Melih'in kişisel bildirim merkezi (beklenmez, hata fırlatmaz, ayar yoksa susar).
 const { threshold, touchUser, personName } = require('./threshold');
+const { mountWearable } = require('./wearable');
 // Render'da IPv6 üzerinden SMTP bağlantısı çalışmıyor — IPv4 öncelikli yap
 const dns = require('dns');
 dns.setDefaultResultOrder('ipv4first');
@@ -8208,6 +8209,8 @@ app.delete('/api/users/me', authenticateToken, async (req, res) => {
       body: reason ? `Neden: ${reason}` : null,
       dedupe_key: `hesap-silme-${req.user.id}-${new Date().toISOString().slice(0, 10)}`,
     });
+    // Gizlilik metni: hesabı silmek saat verisini de siler (30 günlük geri gelme penceresini beklemeden).
+    wearable.wipeUser(req.user.id).catch((e) => console.error('[WEARABLE] Hesap silme:', e.message));
     res.json({ message: 'Hesabınız silinmek üzere kapatıldı.' });
   } catch (error) {
     console.error('Self-delete error:', error.message);
@@ -12014,6 +12017,10 @@ app.delete('/api/admin/flags/:id/content', isAdmin, async (req, res) => {
 
 // Yükleme hataları (multer): boyut aşımı ve dosya türü. Eskiden yakalanmıyordu, Express
 // varsayılanı HTML 500 dönüyordu; kullanıcı yalnız "Yükleme hatası (500)" görüyordu.
+// Saat ve spor servisi bağlantıları: ayrı dosya, kurallar orada.
+const wearable = mountWearable(app, { pool, authenticateToken, jwtSecret: JWT_SECRET });
+setTimeout(() => { wearable.runSyncJob(); setInterval(wearable.runSyncJob, 6 * 60 * 60 * 1000); }, 10 * 60 * 1000);
+
 app.use((err, req, res, next) => {
   if (!err) return next();
   if (err instanceof multer.MulterError) {
