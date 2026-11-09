@@ -91,6 +91,11 @@ kullanıcının önceden açık onayıyla başkasına göstermeye izin veriyor. 
 §6 gizlilik politikasında Wahoo'nun uygulama verisini kullanabileceğini söyleyen zorunlu cümle istiyor; `/en/privacy` ve Türkçe metne 9 Kasım 2026'da eklendi (Wahoo istisnasıyla birlikte).
 Kullanıcı isteyince veri silinir; Wahoo isterse 48 saatte, güvenlik olayı 24 saatte bildirilir.
 
+**Kod hazır, kapalı (9 Kasım 2026).** `backend/wearable.js` `wahooProvider`. Anahtar gelince sunucu `.env`'ine `WAHOO_CLIENT_ID` ve `WAHOO_CLIENT_SECRET` yazılır, `pm2 restart muuvlink-api`; önce yalnız platform adminine görünür. Training Agents'ın anahtarı kullanılmaz (§3).
+Çekme yöntemi, webhook yok: bağlanınca, "Şimdi al" ve 6 saatte bir; son 30 gün. Erişim jetonu ~2 saat, senkronda yenilenir (yeni jeton API çağrısından önce yazılır, aynı anda tek senkron); düzenli yenilendiği için Wahoo'nun 60 günlük silmesi bizi etkilemez.
+Yalnız kimlik, tür, başlangıç, süre, mesafe, ortalama nabız okunur; FIT dosyası, rota ve antrenman adı alınmaz. Erişim Wahoo tarafında kaldırılırsa antrenmanlar ve jetonlar silinir; bağlantı kesilince Wahoo'daki izin de kaldırılır.
+Sahte Wahoo yanıtlarıyla sunucuda 53 kontrol geçti. **Denenmedi:** gerçek Wahoo hesabı ve gerçek antrenman (belge listede özetin dolu gelip gelmediğini söylemiyor; boşsa özet ayrıca istenir, kişi başına senkronda en çok 10). Yayından önce Media Kit'teki atıf biçimine bakılacak; şimdilik antrenman satırında düz metin "Wahoo" yazıyor.
+
 https://developers.wahooligan.com. Başvuru **Production** seçilir (Sandbox sonradan çevrilmiyor).
 
 Form tuzakları (Training Agents'ta yaşandı): açıklama en çok 191 karakter ve aşılınca form sıfırlanıyor;

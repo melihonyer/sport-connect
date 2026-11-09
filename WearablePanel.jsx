@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { X, Watch, Loader2, RefreshCw, CalendarCheck, ShieldCheck } from "lucide-react";
 
-const BRAND_NAME = { polar: "Polar" };
+const BRAND_NAME = { polar: "Polar", wahoo: "Wahoo" };
 
 const authHeaders = () => ({ "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("token")}` });
 
@@ -130,6 +130,7 @@ export default function WearablePanel({ apiUrl, t, isNative, showToast, sportLab
 
         {data && data.available?.length > 0 && data.consented && (
           <div>
+            <div className="space-y-3">
             {data.available.map((p) => {
               const c = connOf(p);
               const on = c?.status === "connected";
@@ -172,6 +173,7 @@ export default function WearablePanel({ apiUrl, t, isNative, showToast, sportLab
                 </div>
               );
             })}
+            </div>
 
             <h3 className="mt-6 mb-2 font-semibold text-slate-800">{t("wearable.historyTitle")}</h3>
             <p className="text-xs text-slate-500 mb-3">{t("wearable.onlyYou")}</p>
@@ -184,7 +186,7 @@ export default function WearablePanel({ apiUrl, t, isNative, showToast, sportLab
                     <span className="text-xs text-slate-500 flex-shrink-0">{fmtDate(a.started_at)}</span>
                   </div>
                   <div className="mt-0.5 text-xs text-slate-600">
-                    {[fmtDuration(a.duration_sec), a.distance_m ? `${(a.distance_m / 1000).toFixed(1)} km` : null, a.avg_hr ? `${a.avg_hr} bpm` : null].filter(Boolean).join(" · ")}
+                    {[fmtDuration(a.duration_sec), a.distance_m ? `${(a.distance_m / 1000).toFixed(1)} km` : null, a.avg_hr ? `${a.avg_hr} bpm` : null, BRAND_NAME[a.provider]].filter(Boolean).join(" · ")}
                   </div>
                   {a.training_id && (
                     <button onClick={() => onOpenTraining(a.training_id)} className="mt-1.5 flex w-full min-w-0 items-center gap-1.5 text-left text-xs font-medium text-brand-600">

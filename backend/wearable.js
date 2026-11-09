@@ -1,7 +1,7 @@
-// Saat ve spor servisi bağlantıları (9 Kasım 2026). Şimdilik yalnız Polar; yeni marka PROVIDERS'a eklenir.
+// Saat ve spor servisi bağlantıları (9 Kasım 2026). Polar ve Wahoo; yeni marka PROVIDERS'a eklenir.
 //
-// Görünürlük: anahtar (POLAR_CLIENT_ID + POLAR_CLIENT_SECRET) yoksa hiç görünmez. Anahtar varsa önce yalnız
-// platform adminine görünür; herkese açmak için WEARABLE_PUBLIC=1.
+// Görünürlük: markanın anahtarı (POLAR_CLIENT_ID/SECRET, WAHOO_CLIENT_ID/SECRET) yoksa o marka hiç görünmez.
+// Anahtar varsa önce yalnız platform adminine görünür; herkese açmak için WEARABLE_PUBLIC=1.
 //
 // Gizlilik metninde verilen sözler (public/en/privacy, sporla-bulusma.jsx legalWearableHtml) burada tutulur:
 //  - okumadan önce ayrı açık rıza, zaman damgasıyla (wearable_consents);
@@ -50,6 +50,131 @@ function polarToActivity(e) {
     distance_m: typeof e.distance === 'number' ? Math.round(e.distance) : null,
     avg_hr: Number.isFinite(e['heart-rate']?.average) ? Math.round(e['heart-rate'].average) : null,
     sport: sportFromRaw(raw),
+  };
+}
+
+// Wahoo'nun antrenman türü numarasından sitedeki branş adı. Ada göre eşlenmez: WALKING_TREADMILL "treadmill"
+// üzerinden koşu, BIKING_MOTOCYCLING "bik" üzerinden bisiklet olurdu.
+const WAHOO_SPORTS = [
+  ['Bisiklet', [0, 11, 12, 13, 14, 15, 16, 21, 49, 61, 64, 68, 70]],
+  ['Koşu', [1, 3, 4, 5, 19, 67, 71]],
+  ['Yüzme', [25, 26]],
+  ['Yürüyüş', [6, 7, 8, 56]],
+  ['Trekking', [9]],
+  ['Kürek', [22, 39]],
+  ['Kano', [37, 38, 41]],
+  ['Yoga', [66]],
+];
+const WAHOO_SPORT_BY_ID = new Map(WAHOO_SPORTS.flatMap(([name, ids]) => ids.map((id) => [id, name])));
+const WAHOO_TRANSITION = 63;
+
+// Ondalıklar metin gelir ("133.0"); ölçülmemiş değer 0 ya da boş gelebilir, ikisi de "yok" demektir.
+function wahooMeasured(v) {
+  const n = typeof v === 'string' ? Number(v) : v;
+  return typeof n === 'number' && Number.isFinite(n) && n > 0 ? Math.round(n) : null;
+}
+
+// Yalnız bu alanlar okunur. Wahoo sözleşmesi konum saklamayı yasaklıyor: FIT dosyası (`file`, GPS izini taşır),
+// rota (`route_id`) ve kullanıcının yazdığı ad bilerek alınmaz.
+function wahooToActivity(w, summary) {
+  if (!w || w.id == null || !w.starts || !summary || w.workout_type_id === WAHOO_TRANSITION) return null;
+  const ms = Date.parse(w.starts);
+  if (Number.isNaN(ms)) return null;
+  return {
+    external_id: String(w.id),
+    started_at: new Date(ms).toISOString(),
+    duration_sec: wahooMeasured(summary.duration_active_accum) ?? wahooMeasured(summary.duration_total_accum),
+    distance_m: wahooMeasured(summary.distance_accum),
+    avg_hr: wahooMeasured(summary.heart_rate_avg),
+    sport: WAHOO_SPORT_BY_ID.get(w.workout_type_id) || null,
+  };
+}
+
+function wahooProvider(env, fetchFn) {
+  const API = 'https://api.wahooligan.com';
+  const clientId = env.WAHOO_CLIENT_ID;
+  const clientSecret = env.WAHOO_CLIENT_SECRET;
+  const redirectUri = 'https://muuvlink.app/api/wearable/wahoo/callback';
+  const WINDOW_DAYS = 30;
+  const MAX_SUMMARY_LOOKUPS = 10;
+  const bearer = (t) => ({ Authorization: `Bearer ${t}`, Accept: 'application/json' });
+  const tokenRequest = (body) => fetchFn(`${API}/oauth/token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
+    body: new URLSearchParams({ ...body, client_id: clientId, client_secret: clientSecret }).toString(),
+  });
+  const readTokens = async (res, label) => {
+    if (!res.ok) {
+      console.error(`[WEARABLE] Wahoo ${label} hatası:`, res.status, (await res.text().catch(() => '')).slice(0, 200));
+      return null;
+    }
+    const j = await res.json().catch(() => null);
+    if (!j?.access_token) return null;
+    return {
+      accessToken: j.access_token,
+      refreshToken: j.refresh_token || null,
+      // Bir dakika pay: bitişe saniyeler kala çıkan istek bitişten sonra varır.
+      expiresAt: j.expires_in ? new Date(Date.now() + (j.expires_in - 60) * 1000) : null,
+    };
+  };
+  return {
+    configured: Boolean(clientId && clientSecret),
+    // Wahoo erişimi kaldırılınca kişinin verisinin de silinmesini istiyor (Polar'da bağlantı "yeniden bağlan"da kalır).
+    deleteOnRevoke: true,
+    authorizeUrl(state) {
+      const q = new URLSearchParams({ client_id: clientId, redirect_uri: redirectUri, response_type: 'code', scope: 'user_read workouts_read offline_data', state });
+      return `${API}/oauth/authorize?${q}`;
+    },
+    async exchange(code) {
+      const t = await readTokens(await tokenRequest({ grant_type: 'authorization_code', code, redirect_uri: redirectUri }), 'token');
+      if (!t) return null;
+      // Profilden yalnız kimlik alınır; ad, kilo, doğum tarihi okunmaz.
+      const res = await fetchFn(`${API}/v1/user`, { headers: bearer(t.accessToken) });
+      const u = res.ok ? await res.json().catch(() => null) : null;
+      if (u?.id == null) {
+        console.error('[WEARABLE] Wahoo kullanıcı kimliği alınamadı:', res.status);
+        return null;
+      }
+      return { ...t, providerUserId: String(u.id) };
+    },
+    async register() { return true; },
+    // Erişim jetonu yaklaşık 2 saat geçerli. 'revoked' = Wahoo yenilemeyi reddetti; null = geçici hata.
+    async refresh(refreshToken) {
+      const res = await tokenRequest({ grant_type: 'refresh_token', refresh_token: refreshToken });
+      if (res.status === 400 || res.status === 401) {
+        console.error('[WEARABLE] Wahoo yenileme reddedildi:', res.status);
+        return 'revoked';
+      }
+      return readTokens(res, 'yenileme');
+    },
+    // Son 30 gün. Belge, listede özetin dolu gelip gelmediğini söylemiyor: boş gelen geçmiş kayıt için özet ayrıca
+    // istenir (zaten kayıtlı olanlar için istenmez; sınır, uygulama geneli istek kotasını korur).
+    async fetchActivities(accessToken, known = new Set()) {
+      const res = await fetchFn(`${API}/v1/workouts?page=1&per_page=30`, { headers: bearer(accessToken) });
+      if (res.status === 401) return 'revoked';
+      if (!res.ok) return null;
+      const j = await res.json().catch(() => null);
+      const since = Date.now() - WINDOW_DAYS * 86400000;
+      const out = [];
+      let lookups = 0;
+      for (const w of j?.workouts || []) {
+        const ms = Date.parse(w?.starts);
+        if (w?.id == null || Number.isNaN(ms) || ms < since || ms > Date.now() || known.has(String(w.id))) continue;
+        let summary = w.workout_summary;
+        if (!summary && lookups < MAX_SUMMARY_LOOKUPS) {
+          lookups += 1;
+          const r = await fetchFn(`${API}/v1/workouts/${encodeURIComponent(w.id)}/workout_summary`, { headers: bearer(accessToken) });
+          summary = r.ok ? await r.json().catch(() => null) : null;
+        }
+        const a = wahooToActivity(w, summary);
+        if (a) out.push(a);
+      }
+      return out;
+    },
+    async deregister(accessToken) {
+      const res = await fetchFn(`${API}/v1/permissions`, { method: 'DELETE', headers: bearer(accessToken) });
+      if (!res.ok && res.status !== 404) throw new Error(`HTTP ${res.status}`);
+    },
   };
 }
 
@@ -133,7 +258,7 @@ function doneHtml(lang, ok) {
 }
 
 function mountWearable(app, { pool, authenticateToken, jwtSecret, env = process.env, fetchFn = fetch }) {
-  const PROVIDERS = { polar: polarProvider(env, fetchFn) };
+  const PROVIDERS = { polar: polarProvider(env, fetchFn), wahoo: wahooProvider(env, fetchFn) };
   const tokenKey = crypto.createHash('sha256').update(`wearable-token:${jwtSecret}`).digest();
 
   const encrypt = (plain) => {
@@ -169,6 +294,7 @@ function mountWearable(app, { pool, authenticateToken, jwtSecret, env = process.
       last_sync_at TIMESTAMPTZ,
       PRIMARY KEY (user_id, provider)
     );
+    ALTER TABLE wearable_connections ADD COLUMN IF NOT EXISTS refresh_token_enc TEXT;
     CREATE TABLE IF NOT EXISTS wearable_oauth_states (
       state TEXT PRIMARY KEY,
       user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -224,25 +350,69 @@ function mountWearable(app, { pool, authenticateToken, jwtSecret, env = process.
     ) m
     WHERE a.id = m.id`, [userId]);
 
-  const syncConnection = async (userId, provider) => {
+  // Yeni jeton API çağrısından ÖNCE yazılır: Wahoo eskisini, yenisiyle yapılan ilk başarılı çağrıda iptal eder.
+  const rotateToken = async (userId, provider, refreshEnc) => {
+    const t = await PROVIDERS[provider].refresh(decrypt(refreshEnc));
+    if (!t || t === 'revoked') return t;
+    await pool.query(
+      `UPDATE wearable_connections SET access_token_enc = $3, refresh_token_enc = COALESCE($4, refresh_token_enc), expires_at = $5
+       WHERE user_id = $1 AND provider = $2`,
+      [userId, provider, encrypt(t.accessToken), t.refreshToken ? encrypt(t.refreshToken) : null, t.expiresAt]
+    );
+    return t.accessToken;
+  };
+
+  const markRevoked = async (userId, provider) => {
+    if (PROVIDERS[provider].deleteOnRevoke) {
+      await pool.query('DELETE FROM wearable_activities WHERE user_id = $1 AND provider = $2', [userId, provider]);
+      await pool.query(
+        `UPDATE wearable_connections SET status = 'revoked', access_token_enc = NULL, refresh_token_enc = NULL, expires_at = NULL
+         WHERE user_id = $1 AND provider = $2`, [userId, provider]
+      );
+    } else {
+      await pool.query(`UPDATE wearable_connections SET status = 'revoked' WHERE user_id = $1 AND provider = $2`, [userId, provider]);
+    }
+    return { ok: false, reason: 'revoked' };
+  };
+
+  const runSync = async (userId, provider) => {
     const p = PROVIDERS[provider];
     if (!p?.configured || !(await hasConsent(userId))) return { ok: false, reason: 'not_allowed' };
     const c = await pool.query(
-      `SELECT access_token_enc FROM wearable_connections WHERE user_id = $1 AND provider = $2 AND status = 'connected'`,
+      `SELECT access_token_enc, refresh_token_enc, expires_at FROM wearable_connections WHERE user_id = $1 AND provider = $2 AND status = 'connected'`,
       [userId, provider]
     );
-    if (!c.rows[0]?.access_token_enc) return { ok: false, reason: 'not_connected' };
-    const list = await p.fetchActivities(decrypt(c.rows[0].access_token_enc));
-    if (list === 'revoked') {
-      await pool.query(`UPDATE wearable_connections SET status = 'revoked' WHERE user_id = $1 AND provider = $2`, [userId, provider]);
-      return { ok: false, reason: 'revoked' };
+    const conn = c.rows[0];
+    if (!conn?.access_token_enc) return { ok: false, reason: 'not_connected' };
+    const canRefresh = Boolean(p.refresh && conn.refresh_token_enc);
+    let token = decrypt(conn.access_token_enc);
+    let rotated = false;
+    if (canRefresh && !(conn.expires_at && new Date(conn.expires_at) > new Date())) {
+      token = await rotateToken(userId, provider, conn.refresh_token_enc);
+      rotated = true;
+      if (token === 'revoked') return markRevoked(userId, provider);
+      if (!token) return { ok: false, reason: 'provider_error' };
     }
+    const knownRows = await pool.query('SELECT external_id FROM wearable_activities WHERE user_id = $1 AND provider = $2', [userId, provider]);
+    const known = new Set(knownRows.rows.map((r) => r.external_id));
+    let list = await p.fetchActivities(token, known);
+    // Saatimize göre geçerli jeton reddedildiyse önce yenilemeyi dene: tek bir 401 yüzünden veri silinmesin.
+    if (list === 'revoked' && canRefresh && !rotated) {
+      token = await rotateToken(userId, provider, conn.refresh_token_enc);
+      if (token === 'revoked') return markRevoked(userId, provider);
+      if (!token) return { ok: false, reason: 'provider_error' };
+      list = await p.fetchActivities(token, known);
+    }
+    if (list === 'revoked') return markRevoked(userId, provider);
     if (!list) return { ok: false, reason: 'provider_error' };
     let saved = 0;
     for (const a of list) {
+      // Senkron sürerken bağlantı kesildiyse satır yazılmaz: kesince silme sözü bozulmasın.
       const r = await pool.query(
         `INSERT INTO wearable_activities (user_id, provider, external_id, started_at, duration_sec, distance_m, avg_hr, sport)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT (user_id, provider, external_id) DO NOTHING`,
+         SELECT $1::int, $2::text, $3::text, $4::timestamptz, $5::int, $6::int, $7::int, $8::text
+         WHERE EXISTS (SELECT 1 FROM wearable_connections c WHERE c.user_id = $1 AND c.provider = $2 AND c.status = 'connected')
+         ON CONFLICT (user_id, provider, external_id) DO NOTHING`,
         [userId, provider, a.external_id, a.started_at, a.duration_sec, a.distance_m, a.avg_hr, a.sport]
       );
       saved += r.rowCount;
@@ -252,18 +422,34 @@ function mountWearable(app, { pool, authenticateToken, jwtSecret, env = process.
     return { ok: true, read: list.length, saved };
   };
 
+  // Aynı kişi ve marka için aynı anda tek senkron: iki yenileme aynı anda koşarsa biri iptal edilmiş jetonla kalır.
+  const inflight = new Map();
+  const syncConnection = (userId, provider) => {
+    const key = `${userId}:${provider}`;
+    if (!inflight.has(key)) inflight.set(key, runSync(userId, provider).finally(() => inflight.delete(key)));
+    return inflight.get(key);
+  };
+
   // Kişinin o markadaki bütün izlerini siler. Markanın tarafındaki kayıt en iyi çabayla kaldırılır;
   // o istek düşse de bizdeki veri ve jeton mutlaka silinir.
   const wipeProvider = async (userId, provider) => {
     const c = await pool.query(
-      'SELECT access_token_enc, provider_user_id FROM wearable_connections WHERE user_id = $1 AND provider = $2',
+      'SELECT access_token_enc, refresh_token_enc, expires_at, provider_user_id FROM wearable_connections WHERE user_id = $1 AND provider = $2',
       [userId, provider]
     );
     const row = c.rows[0];
     await pool.query('DELETE FROM wearable_activities WHERE user_id = $1 AND provider = $2', [userId, provider]);
     await pool.query('DELETE FROM wearable_connections WHERE user_id = $1 AND provider = $2', [userId, provider]);
     if (row?.access_token_enc && row.provider_user_id && PROVIDERS[provider]?.configured) {
-      try { await PROVIDERS[provider].deregister(decrypt(row.access_token_enc), row.provider_user_id); }
+      try {
+        const p = PROVIDERS[provider];
+        let token = decrypt(row.access_token_enc);
+        if (p.refresh && row.refresh_token_enc && !(row.expires_at && new Date(row.expires_at) > new Date())) {
+          const t = await p.refresh(decrypt(row.refresh_token_enc));
+          token = t && t !== 'revoked' ? t.accessToken : null;
+        }
+        if (token) await p.deregister(token, row.provider_user_id);
+      }
       catch (e) { console.error('[WEARABLE] Marka kaydı silinemedi:', provider, e.message); }
     }
   };
@@ -358,11 +544,11 @@ function mountWearable(app, { pool, authenticateToken, jwtSecret, env = process.
       const t = await p.exchange(code);
       if (!t || !(await p.register(t.accessToken, row.user_id))) return done('error');
       await pool.query(
-        `INSERT INTO wearable_connections (user_id, provider, status, provider_user_id, access_token_enc, expires_at, connected_at, last_sync_at)
-         VALUES ($1,$2,'connected',$3,$4,$5,NOW(),NULL)
+        `INSERT INTO wearable_connections (user_id, provider, status, provider_user_id, access_token_enc, refresh_token_enc, expires_at, connected_at, last_sync_at)
+         VALUES ($1,$2,'connected',$3,$4,$5,$6,NOW(),NULL)
          ON CONFLICT (user_id, provider) DO UPDATE SET status='connected', provider_user_id=EXCLUDED.provider_user_id,
-           access_token_enc=EXCLUDED.access_token_enc, expires_at=EXCLUDED.expires_at, connected_at=NOW()`,
-        [row.user_id, provider, t.providerUserId, encrypt(t.accessToken), t.expiresAt]
+           access_token_enc=EXCLUDED.access_token_enc, refresh_token_enc=EXCLUDED.refresh_token_enc, expires_at=EXCLUDED.expires_at, connected_at=NOW()`,
+        [row.user_id, provider, t.providerUserId, encrypt(t.accessToken), t.refreshToken ? encrypt(t.refreshToken) : null, t.expiresAt]
       );
       syncConnection(row.user_id, provider).catch((e) => console.error('[WEARABLE] ilk senkron:', e.message));
       done('ok');
@@ -412,4 +598,4 @@ function mountWearable(app, { pool, authenticateToken, jwtSecret, env = process.
   return { ready, wipeUser, runSyncJob, syncConnection };
 }
 
-module.exports = { mountWearable, polarToActivity, parseIsoDuration, sportFromRaw };
+module.exports = { mountWearable, polarToActivity, wahooToActivity, parseIsoDuration, sportFromRaw };

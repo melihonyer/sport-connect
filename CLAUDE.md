@@ -668,13 +668,14 @@ Bilerek YOK: bu takımlarda güvenlik uyarısı notu ("korkutucu", Melih), kimli
 
 ## Saat ve spor servisi bağlantısı (9 Kasım 2026, Melih onayladı)
 
-`backend/wearable.js` (backend ile birlikte scp edilir) + `WearablePanel.jsx`, metin `wearable.*` (7 dil). Şimdilik yalnız Polar; yeni marka `PROVIDERS`'a eklenir.
+`backend/wearable.js` (backend ile birlikte scp edilir) + `WearablePanel.jsx`, metin `wearable.*` (7 dil). Polar ve Wahoo; yeni marka `PROVIDERS`'a eklenir.
 Başvuru durumu ve her markanın sözleşme kuralları `docs/wearable-applications.md`.
-- **Görünürlük:** `POLAR_CLIENT_ID` + `POLAR_CLIENT_SECRET` yoksa hiç görünmez; varsa yalnız platform admini görür; herkese açmak `WEARABLE_PUBLIC=1`. Profil › Hızlı Erişim satırı ve pencere `GET /api/wearable/status` `available`'a bakar.
+- **Görünürlük:** markanın anahtarı (`POLAR_CLIENT_ID`/`SECRET`, `WAHOO_CLIENT_ID`/`SECRET`) yoksa o marka hiç görünmez; varsa yalnız platform admini görür; herkese açmak `WEARABLE_PUBLIC=1`. Profil › Hızlı Erişim satırı ve pencere `GET /api/wearable/status` `available`'a bakar.
 - **Akış:** ayrı açık rıza (`wearable_consents`, sürümlü) → `POST /api/wearable/:provider/connect` tek kullanımlık, 10 dk'lık `state` üretir → markanın ekranı → oturumsuz `GET .../callback`. Web dönüşü `/?wearable=ok|cancelled|error`; uygulamada sistem tarayıcısında düz sayfa, kullanıcı dönünce pencere tazelenir (`native`). App Links dönüşü `appUrlOpen`'da işlenir, AASA'da `NOT /api/*`.
 - **Sözler koda bağlı:** jeton AES-GCM şifreli (anahtar JWT_SECRET'tan türer; değişirse herkes yeniden bağlanır). Kesince/rıza geri alınınca/hesap silinince (`wipeUser`, 30 gün beklemez) antrenman, katılım teyidi, jeton silinir, marka kaydı en iyi çabayla kaldırılır. Veri yalnız sahibine döner. Bu dosya Meta, Threshold, bildirim çağırmaz; çağırmamalı. Takımla paylaşım bilerek YOK (Garmin ve Wahoo cevabı bekleniyor).
-- Etkinlik eşleşmesi: kişinin katıldığı etkinliğin başlangıcından 60 dk önce–120 dk sonra başlayan antrenman, en yakını (`training_id`). Konum okunmuyor (Polar özetinde yok).
+- Etkinlik eşleşmesi: kişinin katıldığı etkinliğin başlangıcından 60 dk önce–120 dk sonra başlayan antrenman, en yakını (`training_id`). Konum okunmuyor (Polar özetinde yok; Wahoo'da FIT dosyası ve rota bilerek alınmaz, sözleşme konum saklamayı yasaklıyor).
 - Senkron: bağlanınca, "Şimdi al" (60 sn sınır), 6 saatte bir `runSyncJob`. Polar son 30 günü verir, `external_id` tekil.
+- **Süresi dolan jeton (Wahoo, ~2 saat):** markada `refresh` varsa senkron başında yenilenir; yeni jeton API çağrısından ÖNCE yazılır (eskisi ilk başarılı çağrıda iptal oluyor), kişi+marka başına aynı anda tek senkron (`inflight`; pm2 tek süreç, küme moduna geçilirse değişmeli). Tek 401 veriyi silmez: önce yenileme denenir. `deleteOnRevoke`: Wahoo'da erişim kaldırılınca antrenman ve jetonlar silinir.
 - Test: sunucuda sahte `fetchFn` + geçici kullanıcı ve kendi gizli etkinliği (9 Kasım'da 33 kontrol geçti, kayıtlar silindi). Yeni kullanıcı oluştururken `created_at` eski verilir, yoksa hoş geldin maili işine girer.
 
 ## Silme ve kayıt
