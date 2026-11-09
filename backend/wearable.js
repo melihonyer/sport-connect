@@ -74,7 +74,10 @@ function polarProvider(env, fetchFn) {
         },
         body: new URLSearchParams({ grant_type: 'authorization_code', code, redirect_uri: redirectUri }).toString(),
       });
-      if (!res.ok) return null;
+      if (!res.ok) {
+        console.error('[WEARABLE] Polar token hatası:', res.status, (await res.text().catch(() => '')).slice(0, 200));
+        return null;
+      }
       const j = await res.json().catch(() => null);
       if (!j?.access_token || j.x_user_id == null) return null;
       return {
@@ -90,7 +93,9 @@ function polarProvider(env, fetchFn) {
         headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify({ 'member-id': `muuv-${userId}` }),
       });
-      return res.ok || res.status === 409;
+      if (res.ok || res.status === 409) return true;
+      console.error('[WEARABLE] Polar kullanıcı kaydı hatası:', res.status, (await res.text().catch(() => '')).slice(0, 200));
+      return false;
     },
     // Son 30 gün. 204 = yeni veri yok (başarı). null = geçici hata. 'revoked' = izin kalkmış.
     async fetchActivities(accessToken) {
