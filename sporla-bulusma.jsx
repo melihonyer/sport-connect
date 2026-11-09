@@ -2483,6 +2483,10 @@ export default function Muuvlink() {
   const [teamSort, setTeamSort] = useState("");
   const [claimTeam, setClaimTeam] = useState(null); // "Bu takım benim" penceresi: { id, name }
   const claimContactRef = useRef(null);
+  const [removeTeam, setRemoveTeam] = useState(null); // "Bu takım burada olmasın" penceresi: { id, name }
+  const [removeBusy, setRemoveBusy] = useState(false);
+  const removeContactRef = useRef(null);
+  const removeNoteRef = useRef(null);
   const claimNoteRef = useRef(null);
   const [claimBusy, setClaimBusy] = useState(false);
   const [tagNudgeOff, setTagNudgeOff] = useState(() => { try { return localStorage.getItem("muuv_tag_nudge_off") === "1"; } catch { return false; } });
@@ -3525,6 +3529,7 @@ export default function Muuvlink() {
     if (legalModal)        { setLegalModal(null);        return true; }
     if (reportModal)       { setReportModal(null);       return true; }
     if (claimTeam)         { setClaimTeam(null);          return true; }
+    if (removeTeam)        { setRemoveTeam(null);         return true; }
     if (confirmModal)      { setConfirmModal(null);       return true; }
     if (myMsgs)            { setMyMsgs(null);             return true; } // ayarların/bildirimlerin üstünde açılır
     if (showWearable)      { setShowWearable(false);      return true; }
@@ -5026,6 +5031,48 @@ export default function Muuvlink() {
         <button data-btn="solid" onClick={submitClaim} disabled={claimBusy}
           className="w-full h-12 rounded-xl text-sm font-semibold text-white disabled:opacity-60 flex items-center justify-center gap-2" style={{ background: "#114956" }}>
           {claimBusy && <Loader2 className="w-4 h-4 animate-spin" />} {t("atlas.submit")}
+        </button>
+      </div>
+    </div>
+  );
+
+  // Üye olmayan da isteyebilir: giriş istenmez.
+  const submitRemoval = async () => {
+    if (removeBusy) return;
+    setRemoveBusy(true);
+    try {
+      const res = await fetch(`${API_URL}/teams/${removeTeam.id}/removal-request`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(localStorage.getItem("token") ? { Authorization: `Bearer ${localStorage.getItem("token")}` } : {}) },
+        body: JSON.stringify({ contact: removeContactRef.current?.value || "", note: removeNoteRef.current?.value || "" }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) { showToast(d.error || t("toast.networkError"), "error"); return; }
+      setRemoveTeam(null);
+      showToast(t("atlas.removeSent"), "success");
+    } catch {
+      showToast(t("toast.networkError"), "error");
+    } finally { setRemoveBusy(false); }
+  };
+
+  const renderRemoveModal = () => !removeTeam ? null : (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 overflow-y-auto overscroll-contain" style={{ zIndex: 1000001 }}
+      onClick={() => setRemoveTeam(null)} role="dialog" aria-modal="true" aria-label={t("atlas.removeTitle")}>
+      <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl w-full max-w-md my-auto p-6">
+        <div className="flex items-start gap-3 mb-3">
+          <h3 className="flex-1 min-w-0 font-semibold text-lg text-slate-900 leading-snug [overflow-wrap:anywhere]">{t("atlas.removeTitle")}: {removeTeam.name}</h3>
+          <button onClick={() => setRemoveTeam(null)} aria-label={t("common.close")} className="w-11 h-11 -m-2.5 flex items-center justify-center text-slate-500 hover:text-slate-800 flex-shrink-0">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <p className="text-sm text-slate-600 leading-relaxed mb-4">{t("atlas.removeHint")}</p>
+        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">{t("atlas.removeContactLabel")} <span className="normal-case font-normal">({t("common.optional")})</span></label>
+        <input ref={removeContactRef} type="text" maxLength={120} className="w-full h-12 px-4 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-300 mb-4" />
+        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">{t("atlas.noteLabel")} <span className="normal-case font-normal">({t("common.optional")})</span></label>
+        <textarea ref={removeNoteRef} rows={3} maxLength={500} className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-300 mb-5" />
+        <button data-btn="solid" onClick={submitRemoval} disabled={removeBusy}
+          className="w-full h-12 rounded-xl text-sm font-semibold text-white disabled:opacity-60 flex items-center justify-center gap-2" style={{ background: "#114956" }}>
+          {removeBusy && <Loader2 className="w-4 h-4 animate-spin" />} {t("atlas.removeSubmit")}
         </button>
       </div>
     </div>
@@ -8423,6 +8470,8 @@ export default function Muuvlink() {
                 </a>
               )}
             </div>
+            <button onClick={() => setRemoveTeam({ id: selectedTeam.id, name: selectedTeam.name })}
+              className="mt-2 -mb-1 min-h-[44px] text-left text-sm text-slate-500 underline underline-offset-2 hover:text-slate-800">{t("atlas.removeLink")}</button>
           </div>
         )}
 
@@ -10994,6 +11043,7 @@ ${legalWearableHtml(5)}
       {showNotifications && <NotificationsPanel />}
       {renderMyMessages()}
       {renderClaimModal()}
+      {renderRemoveModal()}
       {showProfileEdit && <ProfileEditModal />}
       {(showInviteModal || inviteTrainingId) && <InviteModal />}
       {renderTeamSuggest()}

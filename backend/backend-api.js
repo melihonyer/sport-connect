@@ -4955,6 +4955,143 @@ app.post('/api/admin/team-claims/:id/:decision', isAdmin, async (req, res) => {
   }
 });
 
+// Atlas takımlarına elle ulaşma + "bu takım burada olmasın" isteği.
+// Sunucudan mail GİTMEZ: Resend soğuk erişimi yasaklıyor, mesajı admin kendi hesabından yollar.
+// İletişim ayrı tabloda: `t.*` çeken uçlara hiç girmesin, yalnız admin görür.
+pool.query(`CREATE TABLE IF NOT EXISTS team_atlas_outreach (
+    team_id INTEGER PRIMARY KEY REFERENCES teams(id) ON DELETE CASCADE,
+    contact TEXT,
+    contacted_at TIMESTAMPTZ,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`).catch((e) => console.error('team_atlas_outreach:', e.message));
+pool.query(`CREATE TABLE IF NOT EXISTS team_removal_requests (
+    id SERIAL PRIMARY KEY,
+    team_id INTEGER NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    contact TEXT,
+    note TEXT,
+    status TEXT NOT NULL DEFAULT 'pending',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    decided_at TIMESTAMPTZ
+  )`).catch((e) => console.error('team_removal_requests:', e.message));
+
+// Üye olmayan da isteyebilir: kendisine sorulmadan eklenen grubun yöneticisinden hesap açması beklenmez.
+const teamRemovalLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  message: { error: 'Çok fazla talep gönderdin, biraz sonra dene.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.post('/api/teams/:id/removal-request', teamRemovalLimiter, optionalAuth, async (req, res) => {
+  try {
+    const contact = String(req.body?.contact || '').trim().slice(0, 120);
+    const note = String(req.body?.note || '').trim().slice(0, 500);
+    if (rejectIfObjectionable(req, res, 'team', contact, note)) return;
+    const t = await pool.query('SELECT unclaimed FROM teams WHERE id = $1', [req.params.id]);
+    if (!t.rows.length) return res.status(404).json({ error: 'Team not found' });
+    if (!t.rows[0].unclaimed) return res.status(409).json({ error: 'Bu takım zaten sahiplenilmiş.' });
+    await pool.query(
+      `INSERT INTO team_removal_requests (team_id, user_id, contact, note) VALUES ($1, $2, $3, $4)`,
+      [req.params.id, req.user?.id || null, contact || null, note || null]);
+    res.status(201).json({ ok: true });
+  } catch (error) {
+    console.error('Team removal request error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/admin/atlas-teams', isAdmin, async (req, res) => {
+  try {
+    const r = await pool.query(
+      `SELECT t.id, t.name, t.location, t.external_url, t.meet_note, t.created_at, o.contact, o.contacted_at,
+              (SELECT COUNT(*)::int FROM team_claims c WHERE c.team_id = t.id AND c.status = 'pending') AS pending_claims,
+              (SELECT COUNT(*)::int FROM team_removal_requests q WHERE q.team_id = t.id AND q.status = 'pending') AS pending_removals
+         FROM teams t LEFT JOIN team_atlas_outreach o ON o.team_id = t.id
+        WHERE t.unclaimed ORDER BY t.created_at DESC`);
+    res.json(r.rows.map((x) => ({ ...x, team_url: `${APP_URL}/takim/${slugify(x.name)}-${x.id}` })));
+  } catch (e) { res.status(500).json({ error: 'Takımlar alınamadı.' }); }
+});
+
+app.post('/api/admin/atlas-teams', isAdmin, async (req, res) => {
+  try {
+    const name = String(req.body?.name || '').trim().slice(0, 100);
+    const sport = String(req.body?.sport || '').trim().slice(0, 40);
+    const location = String(req.body?.location || '').trim().slice(0, 120);
+    const meetNote = String(req.body?.meet_note || '').trim().slice(0, 200);
+    const externalUrl = String(req.body?.external_url || '').trim().slice(0, 300);
+    const contact = String(req.body?.contact || '').trim().slice(0, 200);
+    if (!name || !sport || !location) return res.status(400).json({ error: 'Ad, branş ve şehir zorunlu.' });
+    if (externalUrl && !/^https?:\/\//i.test(externalUrl)) return res.status(400).json({ error: 'Bağlantı http ile başlamalı.' });
+    const ins = await pool.query(
+      `INSERT INTO teams (name, sport, sports, location, is_private, unclaimed, external_url, meet_note)
+       VALUES ($1, $2, ARRAY[$2]::text[], $3, false, true, $4, $5) RETURNING id`,
+      [name, sport, location, externalUrl || null, meetNote || null]);
+    if (contact) await pool.query(`INSERT INTO team_atlas_outreach (team_id, contact) VALUES ($1, $2)`, [ins.rows[0].id, contact]);
+    res.status(201).json({ id: ins.rows[0].id });
+  } catch (e) {
+    console.error('Atlas team create error:', e);
+    res.status(500).json({ error: 'İşlem yapılamadı.' });
+  }
+});
+
+// Gövdede hangi alan geldiyse o değişir: iletişimi yazmak "ulaşıldı" bilgisini silmesin.
+app.put('/api/admin/atlas-teams/:id/outreach', isAdmin, async (req, res) => {
+  try {
+    const t = await pool.query('SELECT unclaimed FROM teams WHERE id = $1', [req.params.id]);
+    if (!t.rows[0]?.unclaimed) return res.status(404).json({ error: 'Team not found' });
+    const hasContact = typeof req.body?.contact === 'string';
+    const contact = hasContact ? req.body.contact.trim().slice(0, 200) : null;
+    const hasContacted = typeof req.body?.contacted === 'boolean';
+    await pool.query(
+      `INSERT INTO team_atlas_outreach (team_id, contact, contacted_at)
+       VALUES ($1, $2, CASE WHEN $4 THEN NOW() END)
+       ON CONFLICT (team_id) DO UPDATE SET
+         contact = CASE WHEN $3 THEN EXCLUDED.contact ELSE team_atlas_outreach.contact END,
+         contacted_at = CASE WHEN $5 THEN (CASE WHEN $4 THEN NOW() END) ELSE team_atlas_outreach.contacted_at END,
+         updated_at = NOW()`,
+      [req.params.id, contact || null, hasContact, req.body?.contacted === true, hasContacted]);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('Atlas outreach error:', e);
+    res.status(500).json({ error: 'İşlem yapılamadı.' });
+  }
+});
+
+app.get('/api/admin/team-removal-requests', isAdmin, async (req, res) => {
+  try {
+    const r = await pool.query(
+      `SELECT q.id, q.team_id, q.contact, q.note, q.status, q.created_at, t.name AS team_name, t.location AS team_location,
+              t.external_url, u.name AS user_name, u.email AS user_email
+         FROM team_removal_requests q JOIN teams t ON t.id = q.team_id LEFT JOIN users u ON u.id = q.user_id
+        ORDER BY (q.status = 'pending') DESC, q.created_at DESC LIMIT 100`);
+    res.json(r.rows);
+  } catch (e) { res.status(500).json({ error: 'İstekler alınamadı.' }); }
+});
+
+app.post('/api/admin/team-removal-requests/:id/:decision', isAdmin, async (req, res) => {
+  try {
+    const { id, decision } = req.params;
+    if (!['approve', 'reject'].includes(decision)) return res.status(400).json({ error: 'Geçersiz işlem.' });
+    const q = (await pool.query(`SELECT team_id, status FROM team_removal_requests WHERE id = $1`, [id])).rows[0];
+    if (!q) return res.status(404).json({ error: 'Talep bulunamadı.' });
+    if (q.status !== 'pending') return res.status(409).json({ error: 'Bu istek zaten sonuçlanmış.' });
+    if (decision === 'reject') {
+      await pool.query(`UPDATE team_removal_requests SET status = 'rejected', decided_at = NOW() WHERE id = $1 AND status = 'pending'`, [id]);
+      return res.json({ ok: true });
+    }
+    // Yalnız sahipsiz takım silinir: bu arada sahiplenildiyse gerçek bir takım gitmesin.
+    const gone = await pool.query('DELETE FROM teams WHERE id = $1 AND unclaimed RETURNING name', [q.team_id]);
+    if (!gone.rows.length) return res.status(409).json({ error: 'Bu takım zaten sahiplenilmiş.' });
+    logDeletion('team', { id: q.team_id, name: gone.rows[0].name, meta: { atlas: true, removal_request: true } }, req.user.id, 'admin');
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('Team removal decision error:', e);
+    res.status(500).json({ error: 'İşlem yapılamadı.' });
+  }
+});
+
 // Keşif etiketleri: sabit liste (sporla-bulusma.jsx TEAM_TAGS ile aynı), takım başına en çok 4. Bilinmeyen kod atılır.
 const TEAM_TAGS = ['beginner', 'all_levels', 'women', 'coached', 'race', 'social', 'coffee', 'family'];
 const sanitizeTeamTags = (raw) => [...new Set((Array.isArray(raw) ? raw : []).filter((x) => TEAM_TAGS.includes(x)))].slice(0, 4);
@@ -10128,7 +10265,7 @@ app.get('/api/admin/badges', isAdmin, async (req, res) => {
     const count = (sql, params = []) => pool.query(sql, params).then((r) => r.rows[0]?.n || 0);
     const sUsers = since('users'), sTrainings = since('trainings'), sTeams = since('teams');
     const [claims, messages, reports, discovery, users, trainings, teams] = await Promise.all([
-      count("SELECT ((SELECT COUNT(*) FROM team_claims WHERE status = 'pending') + (SELECT COUNT(*) FROM teams WHERE women_tag_requested))::int AS n").catch(() => 0),
+      count("SELECT ((SELECT COUNT(*) FROM team_claims WHERE status = 'pending') + (SELECT COUNT(*) FROM team_removal_requests WHERE status = 'pending') + (SELECT COUNT(*) FROM teams WHERE women_tag_requested))::int AS n").catch(() => 0),
       count('SELECT COUNT(*)::int AS n FROM contact_messages WHERE is_read = false'),
       count('SELECT COUNT(*)::int AS n FROM content_reports WHERE resolved = false'),
       count("SELECT COUNT(*)::int AS n FROM event_candidates WHERE status = 'pending'").catch(() => 0),

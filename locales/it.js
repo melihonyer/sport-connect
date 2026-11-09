@@ -580,6 +580,12 @@ export default {
     noteLabel: "Vuoi aggiungere qualcosa?",
     submit: "Invia richiesta",
     sent: "Richiesta ricevuta. La esamineremo e ti faremo sapere.",
+    removeLink: "Non voglio che questa squadra compaia qui",
+    removeTitle: "Chiedi di rimuovere questa pagina",
+    removeHint: "Questa pagina è stata creata da informazioni pubbliche. Esaminiamo la tua richiesta e la rimuoviamo; non serve registrarsi.",
+    removeContactLabel: "Come possiamo contattarti?",
+    removeSubmit: "Richiedi la rimozione",
+    removeSent: "Richiesta ricevuta. La esamineremo e rimuoveremo la pagina.",
   },
   teamTags: {
     beginner: "Adatto ai principianti",

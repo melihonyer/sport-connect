@@ -655,6 +655,10 @@ site haritasına, "Takım" sayacına ve `tc`/`te` maillerine girmez. "Bu takım 
 Admin › Onaylar (`TeamClaimsTab`, rozet `claims`): onay takımı kişiye geçirir, sahip yapar, diğer talepleri reddeder, bildirim + e-posta (`team_claim`, tercih `role`,
 `MAIL.claim*`); ret yalnız bildirim. Onaydan önce kişinin gerçek yönetici olduğu elle doğrulanır. Gerçek grup eklemek Melih'in onayladığı listeyle yapılır; kaynaklar eskiyse aktifliği kontrol edilmeden eklenmez.
 
+**Gruba ulaşma ve kaldırma isteği** (9 Kasım 2026, Melih onayladı). Admin › Onaylar › "Atlas takımları": ekleme formu (`POST /api/admin/atlas-teams`), iletişim ve "Ulaşıldı" (`team_atlas_outreach`, ayrı tablo: `t.*` uçlarına girmesin, yalnız admin görür).
+**Sunucudan mail GİTMEZ:** Resend kuralı soğuk erişimi ve internetten toplanmış iletişim verisini yasaklıyor, tek kişilik de olsa; hesap Training Agents ile ortak, kapanırsa ikisi de durur. "E-postayı aç" admin'in posta programında dolu `mailto` açar, Instagram/web için "Mesajı kopyala"; mesaj `atlasOutreachMessage` (admin-panel.jsx, Melih onaylı, yalnız Türkçe). Yalnız grubun kendi yayınladığı kanal yazılır, kişisel numara/e-posta yazılmaz; her gruba tek mesaj.
+"Bu takımın burada olmasını istemiyorum" (`atlas.remove*`, 7 dil) → `POST /api/teams/:id/removal-request`: giriş istemez (sorulmadan eklenen grubun yöneticisinden hesap beklenmez), IP başına saatte 5. Admin › Onaylar "Kaldırma istekleri" (rozet `claims`): onay takımı siler (`logDeletion`), yalnız hâlâ sahipsizse. Otomatik bildirim yok; kişiye elle dönülür.
+
 ## "Kadın takımı" etiketi ve takım şikayeti (9 Kasım 2026, Melih onayladı)
 
 Melih "Kadınlar"ı kaba buldu → "Kadın takımı" (`teamTags.women`). Kötü niyetli kullanım riski için admin onaylı: `women` kodu onay olmadan `teams.tags`'e girmez,

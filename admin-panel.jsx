@@ -8,7 +8,7 @@ import {
   Trophy, User, ClipboardList, CheckCircle2, DoorOpen, UserMinus, Sparkles, Target, Flag,
   Ticket, MapPin, ExternalLink, MousePointerClick,
   Radar, ScanSearch, RefreshCw, Loader2, XCircle, ListChecks, Star, Zap, Bell,
-  CalendarDays, ScrollText, Send, Check, ArrowLeft,
+  CalendarDays, ScrollText, Send, Check, ArrowLeft, Copy,
 } from "lucide-react";
 import LocationPicker from "./LocationPicker";
 import FreshBuildWatcher from "./FreshBuildWatcher.jsx";
@@ -1970,15 +1970,145 @@ function AdminToast({ toasts }) {
 // ─── Menü rozetleri ─────────────────────────────────────────
 // Bu sekmelerde rozet "son baktığından beri yeni" demek. Son bakış anı tarayıcıda
 // (localStorage) sunucu saatiyle tutulur; sekme açılınca sıfırlanır.
+// Takım atlası: gruba elle ulaşma. Sunucudan mail GİTMEZ (Resend soğuk erişimi yasaklıyor);
+// "E-postayı aç" admin'in kendi posta programında dolu mesaj açar.
+const atlasOutreachMessage = (tm) => ({
+  subject: `${tm.name} Muuvlink'te`,
+  body: `Merhaba,
+
+Muuvlink, sporcuların yakınındaki takımları ve etkinlikleri bulduğu ücretsiz bir uygulama. ${tm.name} grubunu herkese açık bilgilerden bir sayfa olarak ekledik:
+
+${tm.team_url}
+
+Bu grubu sen yönetiyorsan sayfadaki "Bu takım benim" ile devralabilir, etkinliklerini buradan duyurabilirsin.
+
+Burada olmasını istemiyorsan aynı sayfadaki "Bu takımın burada olmasını istemiyorum" bağlantısına basman ya da bu mesaja cevap yazman yeterli, sayfayı kaldırırız.
+
+Bu tek seferlik bir mesaj, tekrar yazmayacağız.
+
+Muuvlink ekibi`,
+});
+
+// E-posta → mailto, adres ya da @hesap → sayfa. Telefon gibi diğerleri yalnız kopyalanır.
+const atlasContactLink = (raw, tm) => {
+  const c = (raw || "").trim();
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c)) {
+    const m = atlasOutreachMessage(tm);
+    return { kind: "email", href: `mailto:${c}?subject=${encodeURIComponent(m.subject)}&body=${encodeURIComponent(m.body)}` };
+  }
+  if (/^https?:\/\/\S+$/i.test(c)) return { kind: "link", href: c };
+  if (/^@[\w.]+$/.test(c)) return { kind: "link", href: `https://www.instagram.com/${c.slice(1)}/` };
+  return null;
+};
+
+function AtlasTeamRow({ tm, api, showToast, onChanged }) {
+  const [contact, setContact] = useState(tm.contact || "");
+  const [busy, setBusy] = useState(false);
+  const save = async (body, done) => {
+    setBusy(true);
+    try {
+      await api(`/admin/atlas-teams/${tm.id}/outreach`, { method: "PUT", body: JSON.stringify(body) });
+      showToast(done);
+      onChanged();
+    } catch (e) {
+      showToast(e?.message || "İşlem yapılamadı.", "error");
+    } finally { setBusy(false); }
+  };
+  const copyMessage = async () => {
+    try {
+      await navigator.clipboard.writeText(atlasOutreachMessage(tm).body);
+      showToast("Mesaj kopyalandı.");
+    } catch { showToast("Kopyalanamadı.", "error"); }
+  };
+  const link = atlasContactLink(contact, tm);
+  const dirty = contact.trim() !== (tm.contact || "");
+  const btn = "h-9 px-3 inline-flex items-center gap-1.5 rounded-lg text-xs font-semibold disabled:opacity-50";
+  return (
+    <div className="px-4 md:px-6 py-4 text-sm">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <a href={tm.team_url} target="_blank" rel="noopener noreferrer" className="font-medium text-slate-900 hover:underline [overflow-wrap:anywhere]">{tm.name}</a>
+        <span className="text-slate-400">· {tm.location || "konum yok"}</span>
+        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${tm.contacted_at ? "bg-brand-50 text-brand-700" : "bg-slate-100 text-slate-600"}`}>
+          {tm.contacted_at ? `Ulaşıldı · ${new Date(tm.contacted_at).toLocaleDateString("tr-TR")}` : "Ulaşılmadı"}
+        </span>
+        {tm.pending_claims > 0 && <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-pop-400 text-ink-900">Sahiplenme talebi</span>}
+        {tm.pending_removals > 0 && <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-red-50 text-red-600">Kaldırma isteği</span>}
+      </div>
+      <div className="mt-2 flex flex-col sm:flex-row gap-2">
+        <input value={contact} onChange={(e) => setContact(e.target.value)} maxLength={200} aria-label={`${tm.name} iletişim`}
+          placeholder="Grubun yayınladığı e-posta, @instagram ya da web adresi"
+          className="flex-1 min-w-0 h-9 px-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
+        {dirty && <button disabled={busy} onClick={() => save({ contact }, "İletişim kaydedildi.")} className={`${btn} justify-center bg-brand-600 text-white`}>Kaydet</button>}
+      </div>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {link?.kind === "email" && <a href={link.href} className={`${btn} bg-brand-600 text-white`}><Mail className="w-3.5 h-3.5" /> E-postayı aç</a>}
+        {link?.kind === "link" && <a href={link.href} target="_blank" rel="noopener noreferrer" className={`${btn} bg-brand-600 text-white`}><ExternalLink className="w-3.5 h-3.5" /> Sayfayı aç</a>}
+        <button onClick={copyMessage} className={`${btn} border border-slate-200 text-slate-700`}><Copy className="w-3.5 h-3.5" /> Mesajı kopyala</button>
+        <button disabled={busy} onClick={() => save({ contacted: !tm.contacted_at }, tm.contacted_at ? "Geri alındı." : "Ulaşıldı olarak işaretlendi.")}
+          className={`${btn} border border-slate-200 text-slate-700`}><Check className="w-3.5 h-3.5" /> {tm.contacted_at ? "Ulaşıldı işaretini kaldır" : "Ulaşıldı"}</button>
+      </div>
+    </div>
+  );
+}
+
+function AtlasAddForm({ api, showToast, onAdded }) {
+  const empty = { name: "", sport: SPORT_TYPES[0], location: "", meet_note: "", external_url: "", contact: "" };
+  const [f, setF] = useState(empty);
+  const [busy, setBusy] = useState(false);
+  const set = (k) => (e) => setF((p) => ({ ...p, [k]: e.target.value }));
+  const add = async () => {
+    if (!f.name.trim() || !f.location.trim()) { showToast("Ad ve şehir zorunlu.", "error"); return; }
+    setBusy(true);
+    try {
+      await api("/admin/atlas-teams", { method: "POST", body: JSON.stringify(f) });
+      showToast("Takım eklendi.");
+      setF(empty);
+      onAdded();
+    } catch (e) {
+      showToast(e?.message || "İşlem yapılamadı.", "error");
+    } finally { setBusy(false); }
+  };
+  const input = "w-full h-9 px-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-300";
+  return (
+    <div data-admin-form className="px-4 md:px-6 py-4 border-b border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <input value={f.name} onChange={set("name")} maxLength={100} placeholder="Takım adı" aria-label="Takım adı" className={input} />
+      <select value={f.sport} onChange={set("sport")} aria-label="Branş" className={input}>
+        {SPORT_TYPES.map((s) => <option key={s} value={s}>{s}</option>)}
+      </select>
+      <input value={f.location} onChange={set("location")} maxLength={120} placeholder="Şehir" aria-label="Şehir" className={input} />
+      <input value={f.meet_note} onChange={set("meet_note")} maxLength={200} placeholder="Buluşma notu (ör. Pazar sabahları)" aria-label="Buluşma notu" className={input} />
+      <input value={f.external_url} onChange={set("external_url")} maxLength={300} placeholder="Takımın sayfası (https://…)" aria-label="Takımın sayfası" className={input} />
+      <input value={f.contact} onChange={set("contact")} maxLength={200} placeholder="İletişim (yalnız sen görürsün)" aria-label="İletişim" className={input} />
+      <button disabled={busy} onClick={add} className="sm:col-span-2 h-9 rounded-lg text-xs font-semibold bg-brand-600 text-white disabled:opacity-50">Takımı ekle</button>
+    </div>
+  );
+}
+
 // Takım atlası: "Bu takım benim" talepleri. Onaylanınca takım kişiye geçer.
 function TeamClaimsTab({ api, showToast }) {
   const [rows, setRows] = useState(null);
   const [tagRows, setTagRows] = useState(null);
+  const [removals, setRemovals] = useState(null);
+  const [atlas, setAtlas] = useState(null);
+  const [showAdd, setShowAdd] = useState(false);
   const [busy, setBusy] = useState(null);
   const load = useCallback(() => {
     api("/admin/team-claims").then((d) => setRows(d || [])).catch(() => setRows([]));
     api("/admin/women-tag-requests").then((d) => setTagRows(d || [])).catch(() => setTagRows([]));
+    api("/admin/team-removal-requests").then((d) => setRemovals(d || [])).catch(() => setRemovals([]));
+    api("/admin/atlas-teams").then((d) => setAtlas(d || [])).catch(() => setAtlas([]));
   }, [api]);
+  const decideRemoval = async (q, decision) => {
+    if (!window.confirm(decision === "approve" ? `${q.team_name} takımı silinsin mi? Geri alınamaz.` : "Bu istek reddedilsin mi?")) return;
+    setBusy(`r${q.id}`);
+    try {
+      await api(`/admin/team-removal-requests/${q.id}/${decision}`, { method: "POST" });
+      showToast(decision === "approve" ? "Takım silindi." : "İstek reddedildi.");
+      load();
+    } catch (e) {
+      showToast(e?.message || "İşlem yapılamadı.", "error");
+    } finally { setBusy(null); }
+  };
   const decideTag = async (tm, decision) => {
     setBusy(`t${tm.id}`);
     try {
@@ -2051,6 +2181,49 @@ function TeamClaimsTab({ api, showToast }) {
               ) : <span className="text-xs text-slate-500">{label[c.status] || c.status}</span>}
             </div>
           ))}
+        </div>
+      )}
+    </div>
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+      <div className="px-4 md:px-6 py-4 border-b border-slate-100">
+        <h2 className="font-medium text-slate-900">Kaldırma istekleri</h2>
+        <p className="text-xs text-slate-500 mt-1">Sahipsiz takımın sayfasından gelir, üye olmak gerekmez. Onaylarsan takım silinir.</p>
+      </div>
+      {removals === null ? <p className="p-6 text-sm text-slate-500">Yükleniyor…</p> : removals.length === 0 ? <p className="p-6 text-sm text-slate-500">İstek yok.</p> : (
+        <div className="divide-y divide-slate-100">
+          {removals.map((q) => (
+            <div key={q.id} className="px-4 md:px-6 py-4 flex flex-wrap items-start gap-3">
+              <div className="flex-1 min-w-[240px] text-sm">
+                <div className="font-medium text-slate-900">{q.team_name} <span className="text-slate-400 font-normal">· {q.team_location || "konum yok"}</span></div>
+                {q.user_name && <div className="text-slate-600 mt-1">{q.user_name} · {q.user_email}</div>}
+                <div className="text-slate-600 mt-1">İletişim: <span className="font-medium">{q.contact || "yazılmamış"}</span></div>
+                {q.note && <div className="text-slate-500 mt-1 whitespace-pre-wrap">{q.note}</div>}
+              </div>
+              {q.status === "pending" ? (
+                <div className="flex gap-2">
+                  <button disabled={busy === `r${q.id}`} onClick={() => decideRemoval(q, "approve")} className="px-3 py-2 rounded-lg text-xs font-semibold bg-red-600 text-white disabled:opacity-50">Takımı sil</button>
+                  <button disabled={busy === `r${q.id}`} onClick={() => decideRemoval(q, "reject")} className="px-3 py-2 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 disabled:opacity-50">Reddet</button>
+                </div>
+              ) : <span className="text-xs text-slate-500">{label[q.status] || q.status}</span>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+      <div className="px-4 md:px-6 py-4 border-b border-slate-100 flex flex-wrap items-start gap-3">
+        <div className="flex-1 min-w-[240px]">
+          <h2 className="font-medium text-slate-900">Atlas takımları</h2>
+          <p className="text-xs text-slate-500 mt-1">Yalnız grubun kendi yayınladığı kanalı yaz, kişisel numara ya da e-posta yazma. Her gruba tek mesaj, kendi hesabından gönder.</p>
+        </div>
+        <button onClick={() => setShowAdd((v) => !v)} className="h-9 px-3 inline-flex items-center gap-1.5 rounded-lg text-xs font-semibold border border-slate-200 text-slate-700">
+          <Plus className="w-3.5 h-3.5" /> Takım ekle
+        </button>
+      </div>
+      {showAdd && <AtlasAddForm api={api} showToast={showToast} onAdded={load} />}
+      {atlas === null ? <p className="p-6 text-sm text-slate-500">Yükleniyor…</p> : atlas.length === 0 ? <p className="p-6 text-sm text-slate-500">Henüz takım yok.</p> : (
+        <div className="divide-y divide-slate-100">
+          {atlas.map((tm) => <AtlasTeamRow key={tm.id} tm={tm} api={api} showToast={showToast} onChanged={load} />)}
         </div>
       )}
     </div>

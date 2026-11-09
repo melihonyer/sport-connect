@@ -805,6 +805,12 @@ export const translations = {
     noteLabel: { tr: "Eklemek istediğin bir şey var mı?", en: "Anything to add?", de: "Möchtest du etwas ergänzen?" },
     submit: { tr: "Talebi gönder", en: "Send request", de: "Anfrage senden" },
     sent: { tr: "Talebin alındı. İnceleyip sana haber vereceğiz.", en: "Request received. We'll review it and let you know.", de: "Anfrage erhalten. Wir prüfen sie und geben dir Bescheid." },
+    removeLink: { tr: "Bu takımın burada olmasını istemiyorum", en: "I don't want this team listed here", de: "Dieses Team soll hier nicht erscheinen" },
+    removeTitle: { tr: "Sayfanın kaldırılmasını iste", en: "Ask us to remove this page", de: "Entfernung dieser Seite anfragen" },
+    removeHint: { tr: "Bu sayfa herkese açık bilgilerden hazırlandı. İsteğini inceleyip sayfayı kaldırıyoruz; üye olman gerekmez.", en: "This page was created from public information. We review your request and remove it; you don't need an account.", de: "Diese Seite wurde aus öffentlichen Informationen erstellt. Wir prüfen deine Anfrage und entfernen sie; du brauchst kein Konto." },
+    removeContactLabel: { tr: "Sana nasıl ulaşabiliriz?", en: "How can we reach you?", de: "Wie erreichen wir dich?" },
+    removeSubmit: { tr: "Kaldırılmasını iste", en: "Request removal", de: "Entfernung anfragen" },
+    removeSent: { tr: "İsteğin alındı. İnceleyip sayfayı kaldıracağız.", en: "Request received. We'll review it and remove the page.", de: "Anfrage erhalten. Wir prüfen sie und entfernen die Seite." },
   },
   teamTags: {
     beginner: { tr: "Yeni başlayana uygun", en: "Beginner friendly", de: "Anfängerfreundlich" },
