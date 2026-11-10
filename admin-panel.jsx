@@ -1989,6 +1989,12 @@ Bu tek seferlik bir mesaj, tekrar yazmayacağız.
 Muuvlink ekibi`,
 });
 
+// "Webde ara": takım adı tırnak içinde (tam eşleşme) + şehir; site verilirse yalnız o sitede.
+const atlasSearchUrl = (tm, site) => {
+  const q = [site ? `site:${site}` : "", `"${tm.name}"`, tm.location || ""].filter(Boolean).join(" ");
+  return `https://www.google.com/search?q=${encodeURIComponent(q)}`;
+};
+
 // E-posta → mailto, adres ya da @hesap → sayfa. Telefon gibi diğerleri yalnız kopyalanır.
 const atlasContactLink = (raw, tm) => {
   const c = (raw || "").trim();
@@ -2041,6 +2047,9 @@ function AtlasTeamRow({ tm, api, showToast, onChanged }) {
         {dirty && <button disabled={busy} onClick={() => save({ contact }, "İletişim kaydedildi.")} className={`${btn} justify-center bg-brand-600 text-white`}>Kaydet</button>}
       </div>
       <div className="mt-2 flex flex-wrap gap-2">
+        {/* Arama yalnız sende açılır; sunucu web'de arama yapmaz. Bulduğunu kontrol edip alana yapıştırırsın. */}
+        <a href={atlasSearchUrl(tm)} target="_blank" rel="noopener noreferrer" className={`${btn} border border-slate-200 text-slate-700`}><Search className="w-3.5 h-3.5" /> Webde ara</a>
+        <a href={atlasSearchUrl(tm, "instagram.com")} target="_blank" rel="noopener noreferrer" className={`${btn} border border-slate-200 text-slate-700`}><Search className="w-3.5 h-3.5" /> Instagram'da ara</a>
         {link?.kind === "email" && <a href={link.href} className={`${btn} bg-brand-600 text-white`}><Mail className="w-3.5 h-3.5" /> E-postayı aç</a>}
         {link?.kind === "link" && <a href={link.href} target="_blank" rel="noopener noreferrer" className={`${btn} bg-brand-600 text-white`}><ExternalLink className="w-3.5 h-3.5" /> Sayfayı aç</a>}
         <button onClick={copyMessage} className={`${btn} border border-slate-200 text-slate-700`}><Copy className="w-3.5 h-3.5" /> Mesajı kopyala</button>
