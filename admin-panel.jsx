@@ -2243,7 +2243,9 @@ function TeamClaimsTab({ api, showToast }) {
 // ─── Takım Keşfi ─────────────────────────────────────────────
 // Webde aktif amatör grupları arar, aday listesi üretir; onaylanan aday sahipsiz atlas takımı olur.
 // Maliyet şehir × branş sayısıyla orantılı: seçim kadar arama yapılır, üst sınır sunucuda.
-const TD_CITIES = ["İstanbul", "Ankara", "İzmir", "Bursa", "Antalya", "Muğla", "Eskişehir", "Kocaeli", "Mersin", "Adana", "Konya", "Samsun", "Trabzon", "Denizli", "Aydın", "Çanakkale"];
+// İl listesi sunucudan gelir (status.provinces, tek kaynak backend TR_PROVINCES). Eşleştirme harf/büyüklük farkını yok sayar.
+const trFold = (s) => String(s || "").toLocaleLowerCase("tr")
+  .replace(/[çğıöşü]/g, (c) => ({ "ç": "c", "ğ": "g", "ı": "i", "ö": "o", "ş": "s", "ü": "u" }[c])).trim();
 const TD_SPORTS_DEFAULT = ["Koşu", "Bisiklet", "Triatlon", "Yüzme", "Trekking", "Kürek"];
 
 function TeamCandidateRow({ c, api, showToast, onDone }) {
@@ -2324,7 +2326,8 @@ function TeamCandidateRow({ c, api, showToast, onDone }) {
 
 function TeamDiscoveryTab({ api, showToast, onQueueChange }) {
   const [status, setStatus] = useState(null);
-  const [cities, setCities] = useState("İzmir");
+  const [cityList, setCityList] = useState(["İzmir"]);
+  const [cityQuery, setCityQuery] = useState("");
   const [sports, setSports] = useState(["Koşu"]);
   const [filter, setFilter] = useState("pending");
   const [list, setList] = useState(null);
@@ -2348,7 +2351,14 @@ function TeamDiscoveryTab({ api, showToast, onQueueChange }) {
   useEffect(() => { poll(); return () => clearTimeout(pollRef.current); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { loadList(filter); }, [filter, loadList]);
 
-  const cityList = [...new Set(cities.split(",").map((s) => s.trim()).filter((s) => s.length >= 2))];
+  const provinces = status?.provinces || [];
+  const qk = trFold(cityQuery);
+  const citySuggestions = qk
+    ? [...provinces.filter((p) => trFold(p).startsWith(qk)), ...provinces.filter((p) => !trFold(p).startsWith(qk) && trFold(p).includes(qk))]
+        .filter((p) => !cityList.includes(p)).slice(0, 8)
+    : [];
+  const addCity = (c) => { if (c && !cityList.includes(c)) setCityList((p) => [...p, c]); setCityQuery(""); };
+  const removeCity = (c) => setCityList((p) => p.filter((x) => x !== c));
   const pairs = cityList.length * sports.length;
   const maxPairs = status?.maxPairs || 20;
   const start = async () => {
@@ -2361,7 +2371,6 @@ function TeamDiscoveryTab({ api, showToast, onQueueChange }) {
     } catch (e) { showToast(e?.message || "Tarama başlatılamadı.", "error"); }
   };
   const toggleSport = (s) => setSports((p) => (p.includes(s) ? p.filter((x) => x !== s) : [...p, s]));
-  const addCity = (c) => setCities((p) => (cityList.includes(c) ? cityList.filter((x) => x !== c) : [...cityList, c]).join(", "));
   const chip = (on) => `h-9 px-3 rounded-full text-xs font-semibold border ${on ? "bg-brand-600 text-white border-brand-600" : "bg-white text-slate-700 border-slate-200"}`;
   const usd = (n) => `$${Number(n || 0).toFixed(Number(n) < 1 ? 3 : 2)}`;
   const S = status;
@@ -2379,11 +2388,32 @@ function TeamDiscoveryTab({ api, showToast, onQueueChange }) {
           </p>
         </div>
         <div>
-          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Şehirler</label>
-          <input value={cities} onChange={(e) => setCities(e.target.value)} placeholder="İzmir, Ankara" aria-label="Şehirler"
-            className="w-full h-10 px-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {TD_CITIES.map((c) => <button key={c} onClick={() => addCity(c)} className={chip(cityList.includes(c))}>{c}</button>)}
+          <label htmlFor="td-city" className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">İller ({provinces.length || 81})</label>
+          {cityList.length > 0 && (
+            <div className="mb-2 flex flex-wrap gap-1.5">
+              {cityList.map((c) => (
+                <button key={c} onClick={() => removeCity(c)} aria-label={`${c} kaldır`}
+                  className="h-9 pl-3 pr-2 inline-flex items-center gap-1 rounded-full text-xs font-semibold bg-brand-600 text-white">
+                  {c} <X className="w-3.5 h-3.5" />
+                </button>
+              ))}
+              {cityList.length > 1 && <button onClick={() => setCityList([])} className="h-9 px-3 text-xs font-semibold text-slate-500 underline underline-offset-2">Temizle</button>}
+            </div>
+          )}
+          <div className="relative">
+            <input id="td-city" value={cityQuery} onChange={(e) => setCityQuery(e.target.value)} autoComplete="off"
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCity(citySuggestions[0]); } else if (e.key === "Escape") setCityQuery(""); }}
+              placeholder="İl yaz (ör. ordu, giresun)" role="combobox" aria-expanded={citySuggestions.length > 0} aria-controls="td-city-list"
+              className="w-full h-10 px-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
+            {citySuggestions.length > 0 && (
+              <div id="td-city-list" role="listbox" className="absolute z-10 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                {citySuggestions.map((p) => (
+                  <button key={p} role="option" aria-selected="false" onMouseDown={(e) => e.preventDefault()} onClick={() => addCity(p)}
+                    className="block w-full text-left px-3 h-10 text-sm text-slate-800 hover:bg-slate-50">{p}</button>
+                ))}
+              </div>
+            )}
+            {qk && citySuggestions.length === 0 && <p className="mt-1 text-xs text-slate-500">Eşleşen il yok.</p>}
           </div>
         </div>
         <div>

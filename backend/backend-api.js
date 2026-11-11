@@ -10139,6 +10139,16 @@ const teamDiscoveryCost = (u) => {
   return ((u.input_tokens || 0) * (big ? 0.5 : 0.1) + (u.output_tokens || 0) * (big ? 2.5 : 0.5)) / 1e6
     + (u.server_tool_use?.web_search_requests || 0) * 0.01;
 };
+// 81 il — admin paneli de buradan alır (status.provinces). Tarama yalnız bu adlarla yapılır: yazım farkı
+// ("Izmir"/"İzmir") tekrar kontrolünü bozmasın.
+const TR_PROVINCES = ['Adana','Adıyaman','Afyonkarahisar','Ağrı','Aksaray','Amasya','Ankara','Antalya','Ardahan','Artvin','Aydın',
+  'Balıkesir','Bartın','Batman','Bayburt','Bilecik','Bingöl','Bitlis','Bolu','Burdur','Bursa','Çanakkale','Çankırı','Çorum',
+  'Denizli','Diyarbakır','Düzce','Edirne','Elazığ','Erzincan','Erzurum','Eskişehir','Gaziantep','Giresun','Gümüşhane','Hakkari',
+  'Hatay','Iğdır','Isparta','İstanbul','İzmir','Kahramanmaraş','Karabük','Karaman','Kars','Kastamonu','Kayseri','Kilis',
+  'Kırıkkale','Kırklareli','Kırşehir','Kocaeli','Konya','Kütahya','Malatya','Manisa','Mardin','Mersin','Muğla','Muş','Nevşehir',
+  'Niğde','Ordu','Osmaniye','Rize','Sakarya','Samsun','Şanlıurfa','Siirt','Sinop','Şırnak','Sivas','Tekirdağ','Tokat','Trabzon',
+  'Tunceli','Uşak','Van','Yalova','Yozgat','Zonguldak'];
+const provinceByKey = new Map(TR_PROVINCES.map((p) => [slugKey(p), p]));
 const TEAM_DISCOVERY_MAX_PAIRS = 20;   // tek taramada şehir × branş üst sınırı (maliyet kapısı)
 const TEAM_ACTIVE_DAYS = 183;          // son hareketi bundan eski olan grup listeye girmez
 
@@ -10382,8 +10392,10 @@ async function runTeamDiscovery(pairs, userId) {
 app.post('/api/admin/team-discovery/scan', isAdmin, async (req, res) => {
   if (teamDiscoveryState.running) return res.status(409).json({ error: 'Zaten devam eden bir tarama var.' });
   if (!getAnthropic()) return res.status(400).json({ error: 'ANTHROPIC_API_KEY sunucuda tanımlı değil.' });
-  const cities = [...new Set((Array.isArray(req.body?.cities) ? req.body.cities : [])
-    .map((c) => String(c || '').trim().slice(0, 40)).filter((c) => c.length >= 2))];
+  const rawCities = (Array.isArray(req.body?.cities) ? req.body.cities : []).map((c) => String(c || '').trim().slice(0, 40)).filter(Boolean);
+  const unknown = rawCities.filter((c) => !provinceByKey.has(slugKey(c)));
+  if (unknown.length) return res.status(400).json({ error: `İl adı tanınmadı: ${unknown.slice(0, 5).join(', ')}` });
+  const cities = [...new Set(rawCities.map((c) => provinceByKey.get(slugKey(c))))];
   const sports = [...new Set((Array.isArray(req.body?.sports) ? req.body.sports : []).filter((s) => DISCOVERY_SPORTS.includes(s)))];
   if (!cities.length || !sports.length) return res.status(400).json({ error: 'En az bir şehir ve bir branş seç.' });
   const pairs = cities.flatMap((city) => sports.map((sport) => ({ city, sport })));
@@ -10401,7 +10413,7 @@ app.get('/api/admin/team-discovery/status', isAdmin, async (req, res) => {
               skipped_old, skipped_dup, error FROM team_discovery_runs ORDER BY id DESC LIMIT 10`);
     const total = await pool.query(`SELECT COALESCE(SUM(cost_usd), 0)::float AS usd FROM team_discovery_runs`);
     res.json({ ...teamDiscoveryState, configured: !!getAnthropic(), model: TEAM_DISCOVERY_MODEL,
-      sports: DISCOVERY_SPORTS, maxPairs: TEAM_DISCOVERY_MAX_PAIRS, runs: runs.rows, totalCost: total.rows[0].usd });
+      sports: DISCOVERY_SPORTS, provinces: TR_PROVINCES, maxPairs: TEAM_DISCOVERY_MAX_PAIRS, runs: runs.rows, totalCost: total.rows[0].usd });
   } catch (e) { res.status(500).json({ error: 'Durum alınamadı.' }); }
 });
 
