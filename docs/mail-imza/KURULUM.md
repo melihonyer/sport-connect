@@ -21,11 +21,12 @@ Bu dosyalar silinir ya da adı değişirse imza bozulur.
 2. Mail'den tamamen çık (Cmd+Q).
 3. Terminal:
    ```bash
-   cd ~/Desktop/Melih/WORK/SALT/APPS/SPORT-CONNECT && python3 ~/Desktop/Melih/WORK/SALT/APPS/SALT_KREATİF/mail-imza/kur.py "Muuvlink" docs/mail-imza/muuvlink-imza.html
+   python3 ~/Desktop/Melih/WORK/SALT/APPS/SALT_KREATİF/mail-imza/kur.py "Muuvlink" ~/Desktop/Melih/WORK/SALT/APPS/SPORT-CONNECT/docs/mail-imza/muuvlink-imza.html
    ```
 4. Mail'i aç, yeni bir mail açıp imzayı kontrol et.
 
-`kur.py` SALT imzası için yazıldı; dosyadaki `<!-- SIGNATURE START -->` / `END` arasını Apple Mail'in imza
+`kur.py` SALT imzası için yazıldı ve dosya yolunu KENDİ klasörüne göre çözer: imza dosyası tam yolla verilir (göreli yol
+"No such file" verir; 11 Kasım 2026). Dosyayı ASCII olarak okur, Türkçe harfler HTML karşılığıyla yazılı olmalı. dosyadaki `<!-- SIGNATURE START -->` / `END` arasını Apple Mail'in imza
 dosyasına yazar, eskisini `yedek/`e alır.
 
 ## Gmail (kopyala-yapıştır)
