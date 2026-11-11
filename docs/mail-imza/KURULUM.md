@@ -1,12 +1,15 @@
 # Muuvlink mail imzası: kurulum
 
 `muuvlink-imza.html`: açık kart, üstte Muuvlink logosu, iletişim, Muuvlink mağaza düğmeleri; altında
-"dost uygulama" kutusunda Training Agents (mağaza bağlantıları `utm_medium=imza`, `ct=muuvlink-imza`);
-en altta Deep Teal şerit ve sosyal medya ikonları. SALT imzasının (K · Black Icon) yapısıyla aynı.
+gri kutuda Training Agents: logo, tek cümle, mağaza düğmeleri (`utm_medium=imza`, `ct=muuvlink-imza`) ve
+kendi sosyal medya hesapları (Training Agents mavisi kare + beyaz ikon, `TT COACH APP/src/lib/socials.ts`
+ile aynı liste); en altta Deep Teal şerit ve Muuvlink'in sosyal medya ikonları. SALT imzasının (K · Black Icon)
+yapısıyla aynı. "Dost uygulama" etiketi bilerek yok (Melih, 11 Kasım 2026).
 
 Görseller sitede duruyor, imza onları adresten çeker:
 `https://muuvlink.app/icons/favicon.png`, `icons/mail/imza-wordmark.png` (logo-yatay.svg'den 3x PNG),
-`icons/mail/storebtn-*-tr.png`, `partners/training-agents/mail/logo-black.png`, `icons/social-*.png`.
+`icons/mail/storebtn-*-tr.png`, `partners/training-agents/mail/logo-black.png`, `icons/social-*.png`;
+Training Agents ikonları kendi sitesinden: `https://trainingagentsapp.com/email/icons/<instagram|tiktok|youtube|x|facebook>.png`.
 Bu dosyalar silinir ya da adı değişirse imza bozulur.
 
 ## Apple Mail (birebir)
@@ -34,3 +37,4 @@ dosyasına yazar, eskisini `yedek/`e alır.
 - E-posta adresi: dosyada `muuvlinkapp@gmail.com` iki yerde (`mailto:` ve görünen metin).
 - Kişi adı eklemek: logonun altındaki "Spor arkadaşı bul…" satırının üstüne bir satır.
 - Training Agents metni e-posta alt bilgisindeki şeritle aynı (`backend-api.js` `taStrip`); o değişirse burası da değişir.
+- Sosyal medya hesabı eklenirse: Muuvlink için `MUUV_SOCIAL` (CLAUDE.md'deki dört yer) ve bu dosya; Training Agents için `socials.ts` ve bu dosya.
