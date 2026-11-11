@@ -665,7 +665,8 @@ Yarış Keşfi'nin kalıbı, atlas için: Admin › Topluluk › Takım Keşfi. 
 (`claude-haiku-5-5`, `TEAM_DISCOVERY_MODEL` ile değişir; `web_search_20260209` en çok 5 arama, effort low, JSON şeması).
 Tek taramada en çok 20 şehir × branş (maliyet kapısı). Aday tablosu `team_candidates`, her tarama `team_discovery_runs`
 (token, web araması, tahmini $; panelde gösterilir). Ölçülen: tek aramalık sorgu ~26 bin token, ~8 sn.
-- Listeye girmez: son 6 ayda izi olmayan (`last_activity` boş ya da eski — model tarih uyduramaz, boş bırakır) ve
+- Listeye girmez: son hareketi bilinen ve 6 aydan eski olan; tarihi görülemeyen "aktiflik doğrulanmadı" etiketiyle en sona
+  girer (11 Kasım denemesi: arama sonuçlarında tarih yok, Instagram webden okunmuyor, hepsi tarihsizdi) ve
   Muuvlink'te/aday listesinde zaten olan (ad+şehir anahtarı ya da şehir içi kelime örtüşmesi ≥0,7; branş ve şehir adı
   kelimede kalır). Reddedilen aday tekrar gelmez.
 - İletişim yalnız grubun KENDİ yayınladığı kanal (sistem metninde yazılı). Onay: sahipsiz atlas takımı açılır (herkese

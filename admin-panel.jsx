@@ -2302,7 +2302,9 @@ function TeamCandidateRow({ c, api, showToast, onDone }) {
           {!c.email && !c.instagram && !c.website && <span className="text-slate-500">İletişim bulunamadı</span>}
         </div>
         <div className="text-xs text-slate-500">
-          Son hareket: {c.last_activity ? new Date(c.last_activity).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" }) : "—"}
+          {c.last_activity
+            ? <>Son hareket: {new Date(c.last_activity).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}</>
+            : <span className="font-semibold text-amber-700">Aktiflik doğrulanmadı</span>}
           {c.activity_note && <> · {c.activity_note}</>}
           {c.confidence != null && <> · güven %{Math.round(Number(c.confidence) * 100)}</>}
         </div>
@@ -2371,7 +2373,8 @@ function TeamDiscoveryTab({ api, showToast, onQueueChange }) {
         <div>
           <h2 className="font-medium text-slate-900">Takım Keşfi</h2>
           <p className="text-xs text-slate-500 mt-1">
-            Seçtiğin şehir ve branşlarda webde aktif amatör grupları arar. Son 6 ayda izi olmayanlar ve Muuvlink'te zaten olanlar listeye girmez.
+            Seçtiğin şehir ve branşlarda webde aktif amatör grupları arar. Son hareketi 6 aydan eski olanlar ve Muuvlink'te zaten olanlar listeye girmez;
+            son hareketi görülemeyenler "aktiflik doğrulanmadı" etiketiyle en sonda durur. Model başka şehrin bilgisini karıştırabilir, eklemeden önce kaynağa bak.
             Hiçbir aday kendiliğinden yayınlanmaz; sunucu kimseye yazmaz. Model: {S?.model || "—"}
           </p>
         </div>
@@ -2404,7 +2407,7 @@ function TeamDiscoveryTab({ api, showToast, onQueueChange }) {
         {S && (S.running || S.log?.length > 0) && (
           <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 text-xs text-slate-600 space-y-1">
             <div className="font-semibold text-slate-700">
-              {S.running ? `Taranıyor: ${S.current} (${S.done}/${S.total})` : "Son tarama"} · {S.added} yeni aday · {S.skippedOld} eski/izsiz · {S.skippedDup} zaten var · tahmini {usd(S.cost)}
+              {S.running ? `Taranıyor: ${S.current} (${S.done}/${S.total})` : "Son tarama"} · {S.added} yeni aday · {S.skippedOld} eski · {S.skippedDup} zaten var · tahmini {usd(S.cost)}
             </div>
             <div className="max-h-40 overflow-y-auto overscroll-contain font-mono space-y-0.5">
               {S.log.slice(-30).map((l, i) => <div key={i} className="[overflow-wrap:anywhere]">{l}</div>)}

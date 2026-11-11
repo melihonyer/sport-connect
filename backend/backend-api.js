@@ -10140,7 +10140,7 @@ const teamDiscoveryCost = (u) => {
     + (u.server_tool_use?.web_search_requests || 0) * 0.01;
 };
 const TEAM_DISCOVERY_MAX_PAIRS = 20;   // tek taramada şehir × branş üst sınırı (maliyet kapısı)
-const TEAM_ACTIVE_DAYS = 183;          // son 6 ayda izi olmayan grup listeye girmez
+const TEAM_ACTIVE_DAYS = 183;          // son hareketi bundan eski olan grup listeye girmez
 
 const TEAM_DISCOVERY_SCHEMA = {
   type: 'object',
@@ -10178,6 +10178,7 @@ const TEAM_DISCOVERY_SYSTEM = [
   '',
   'KURALLAR:',
   '- Yalnız istenen şehir ve branştaki, birlikte antrenmana çıkan grupları yaz.',
+  '- Başka şehre ait bilgiyi (buluşma yeri, ilçe) istenen şehrin grubuna yazma; emin değilsen alanı boş bırak.',
   '- ALMA: ticari spor salonu/stüdyo, tek bir koçun kişisel hesabı, mağaza, yarış organizasyonu/yarışın kendisi,',
   '  federasyon/il müdürlüğü, okul ya da profesyonel lig takımı, Muuvlink\'in kendisi.',
   '- Yalnız HÂLÂ AKTİF gruplar: son 6 ay içinde paylaşım, etkinlik ya da duyuru izi olmalı.',
@@ -10232,13 +10233,15 @@ async function teamDiscoveryModelCall(prompt) {
     addUsage(resp.usage);
   }
   if (resp.stop_reason === 'refusal') throw Object.assign(new Error('Model isteği reddetti.'), { usage });
+  if (resp.stop_reason === 'max_tokens') throw Object.assign(new Error('Model cevabı yarıda kesildi (max_tokens).'), { usage });
   const text = resp.content.filter((b) => b.type === 'text').map((b) => b.text).join('').trim();
   let data = null;
   try { data = JSON.parse(text); } catch {
     const raw = extractFirstJsonObject(text);
     try { data = raw ? JSON.parse(raw) : null; } catch { data = null; }
   }
-  return { teams: Array.isArray(data?.teams) ? data.teams : [], usage };
+  if (!Array.isArray(data?.teams)) throw Object.assign(new Error(`Model cevabı okunamadı (stop: ${resp.stop_reason}, ${text.length} karakter).`), { usage });
+  return { teams: data.teams, usage };
 }
 
 // Aynı grup farklı yazılabiliyor ("Adım Adım İzmir" / "AdımAdım İzmir Koşu Grubu"): şehir içinde kelime kümesi örtüşmesi.
@@ -10290,7 +10293,10 @@ async function saveTeamCandidate(t, { city: wantedCity, sport: wantedSport, labe
   if (name.length < 2) return 'bad';
   const city = String(t.city || '').trim().slice(0, 60) || wantedCity;
   const last = /^\d{4}-\d{2}-\d{2}$/.test(String(t.last_activity || '').trim()) ? new Date(`${t.last_activity.trim()}T00:00:00Z`) : null;
-  if (!last || isNaN(last) || last > new Date(Date.now() + 864e5) || Date.now() - last.getTime() > TEAM_ACTIVE_DAYS * 864e5) return 'old';
+  // Tarih biliniyor ve eskiyse elenir. Tarih görülemediyse (arama sonuçlarında çoğu zaman yok, Instagram webden
+  // okunmuyor) aday "aktiflik doğrulanmadı" olarak girer; karar admin'in (11 Kasım denemesinde hepsi tarihsizdi).
+  const lastOk = last && !isNaN(last) && last <= new Date(Date.now() + 864e5) ? last : null;
+  if (lastOk && Date.now() - lastOk.getTime() > TEAM_ACTIVE_DAYS * 864e5) return 'old';
   if (isDuplicateTeam(index, name, city)) return 'dup';
   const key = `${slugKey(name).slice(0, 60)}|${slugKey(city)}`;
   index.keys.add(key);
@@ -10303,7 +10309,7 @@ async function saveTeamCandidate(t, { city: wantedCity, sport: wantedSport, labe
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) ON CONFLICT (dedupe_key) DO NOTHING RETURNING id`,
     [name, sport, city, String(t.district || '').trim().slice(0, 60) || null,
      String(t.meet_note || '').trim().slice(0, 200) || null, cleanHttpUrl(t.website), cleanInstagram(t.instagram),
-     cleanEmail(t.email), cleanHttpUrl(t.source_url), last.toISOString().slice(0, 10),
+     cleanEmail(t.email), cleanHttpUrl(t.source_url), lastOk ? lastOk.toISOString().slice(0, 10) : null,
      String(t.activity_note || '').trim().slice(0, 200) || null,
      Math.max(0, Math.min(1, Number(t.confidence) || 0.5)), key, label]);
   return r.rows.length ? 'added' : 'dup';
@@ -10347,7 +10353,7 @@ async function runTeamDiscovery(pairs, userId) {
           if (res in c) c[res]++;
         }
         S.added += c.added; S.skippedOld += c.old; S.skippedDup += c.dup;
-        tdlog(`${label} — ${teams.length} grup, ${c.added} yeni aday, ${c.old} eski/izsiz, ${c.dup} zaten var`);
+        tdlog(`${label} — ${teams.length} grup, ${c.added} yeni aday, ${c.old} eski, ${c.dup} zaten var`);
       } catch (e) {
         if (e.usage) { S.cost += teamDiscoveryCost(e.usage); totals.input_tokens += e.usage.input_tokens; totals.output_tokens += e.usage.output_tokens; totals.web += e.usage.server_tool_use.web_search_requests; }
         tdlog(`${label} — hata: ${String(e.message || e).slice(0, 200)}`);
@@ -10402,7 +10408,7 @@ app.get('/api/admin/team-discovery/candidates', isAdmin, async (req, res) => {
     const status = ['pending', 'approved', 'rejected'].includes(req.query.status) ? req.query.status : 'pending';
     const r = await pool.query(
       `SELECT c.*, t.name AS team_name FROM team_candidates c LEFT JOIN teams t ON t.id = c.team_id
-        WHERE c.status = $1 ORDER BY c.city, c.confidence DESC NULLS LAST, c.id DESC LIMIT 500`, [status]);
+        WHERE c.status = $1 ORDER BY (c.last_activity IS NULL), c.city, c.confidence DESC NULLS LAST, c.id DESC LIMIT 500`, [status]);
     const counts = await pool.query(`SELECT status, COUNT(*)::int AS n FROM team_candidates GROUP BY status`);
     res.json({ items: r.rows, counts: counts.rows.reduce((a, x) => (a[x.status] = x.n, a), {}) });
   } catch (e) { res.status(500).json({ error: 'Adaylar alınamadı.' }); }
