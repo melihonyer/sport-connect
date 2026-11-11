@@ -3,7 +3,8 @@
 `muuvlink-imza.html`: açık kart, üstte Muuvlink logosu, iletişim, Muuvlink mağaza düğmeleri; altında
 gri kutuda Training Agents: logo, tek cümle, mağaza düğmeleri (`utm_medium=imza`, `ct=muuvlink-imza`) ve
 kendi sosyal medya hesapları (Training Agents mavisi kare + beyaz ikon, `TT COACH APP/src/lib/socials.ts`
-ile aynı liste); en altta Deep Teal şerit ve Muuvlink'in sosyal medya ikonları. SALT imzasının (K · Black Icon)
+ile aynı liste). Muuvlink'in sosyal medya ikonları kendi mağaza düğmelerinin yanında (Melih, 11 Kasım 2026);
+en altta Deep Teal şeritte slogan ve muuvlink.app. SALT imzasının (K · Black Icon)
 yapısıyla aynı. "Dost uygulama" etiketi bilerek yok (Melih, 11 Kasım 2026).
 
 Görseller sitede duruyor, imza onları adresten çeker:
