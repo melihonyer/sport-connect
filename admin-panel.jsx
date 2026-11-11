@@ -2007,6 +2007,14 @@ const atlasContactLink = (raw, tm) => {
   return null;
 };
 
+// E-posta bulunan grup listede bir bakışta seçilsin (Melih): adın yanında yeşil zarf.
+const EmailFoundIcon = () => (
+  // sr-only değil aria-label: kayan listede sr-only metin sayfayı kaydırıyordu (CLAUDE.md).
+  <span role="img" aria-label="E-posta bulundu" title="E-posta bulundu" className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-50 align-middle">
+    <Mail className="w-3.5 h-3.5 text-emerald-600" aria-hidden="true" />
+  </span>
+);
+
 function AtlasTeamRow({ tm, api, showToast, onChanged }) {
   const [contact, setContact] = useState(tm.contact || "");
   const [busy, setBusy] = useState(false);
@@ -2033,6 +2041,7 @@ function AtlasTeamRow({ tm, api, showToast, onChanged }) {
     <div className="px-4 md:px-6 py-4 text-sm">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <a href={tm.team_url} target="_blank" rel="noopener noreferrer" className="font-medium text-slate-900 hover:underline [overflow-wrap:anywhere]">{tm.name}</a>
+        {/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(tm.contact || "") && <EmailFoundIcon />}
         <span className="text-slate-400">· {tm.location || "konum yok"}</span>
         <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${tm.contacted_at ? "bg-brand-50 text-brand-700" : "bg-slate-100 text-slate-600"}`}>
           {tm.contacted_at ? `Ulaşıldı · ${new Date(tm.contacted_at).toLocaleDateString("tr-TR")}` : "Ulaşılmadı"}
@@ -2295,7 +2304,7 @@ function TeamCandidateRow({ c, api, showToast, onDone }) {
     <div className="px-4 md:px-6 py-4 text-sm flex flex-wrap items-start gap-3">
       <div className="flex-1 min-w-[240px] space-y-1">
         <div className="font-medium text-slate-900 [overflow-wrap:anywhere]">
-          {c.name} <span className="text-slate-400 font-normal">· {[c.district, c.city].filter(Boolean).join(", ")} · {c.sport}</span>
+          {c.name} {c.email && <EmailFoundIcon />} <span className="text-slate-400 font-normal">· {[c.district, c.city].filter(Boolean).join(", ")} · {c.sport}</span>
         </div>
         {c.meet_note && <div className="text-slate-600">{c.meet_note}</div>}
         <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
