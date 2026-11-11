@@ -4924,7 +4924,11 @@ app.post('/api/admin/team-claims/:id/:decision', isAdmin, async (req, res) => {
          ON CONFLICT (team_id, user_id) DO UPDATE SET role = 'owner'`, [c.team_id, c.user_id]);
       await client.query(`UPDATE team_claims SET status = 'approved', decided_at = NOW() WHERE id = $1`, [id]);
       // Sahibi geldi: dışarıdan bulunan iletişim bilgisi artık gerekmiyor, tutulmaz.
-      await client.query(`DELETE FROM team_atlas_outreach WHERE team_id = $1`, [c.team_id]).catch(() => {});
+      // Takım adına etkinlik açan admin editörlükten çıkar (sahibi kendisi değilse); açtığı etkinlikler takımda kalır.
+      await client.query(
+        `DELETE FROM team_members WHERE team_id = $1 AND role = 'editor' AND user_id <> $2
+           AND user_id = (SELECT helper_user_id FROM team_atlas_outreach WHERE team_id = $1)`, [c.team_id, c.user_id]);
+      await client.query(`DELETE FROM team_atlas_outreach WHERE team_id = $1`, [c.team_id]);
       await client.query(`UPDATE team_claims SET status = 'rejected', decided_at = NOW() WHERE team_id = $1 AND status = 'pending'`, [c.team_id]);
     }
     await client.query('COMMIT');
@@ -4965,7 +4969,10 @@ pool.query(`CREATE TABLE IF NOT EXISTS team_atlas_outreach (
     contact TEXT,
     contacted_at TIMESTAMPTZ,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-  )`).catch((e) => console.error('team_atlas_outreach:', e.message));
+  )`).then(() => pool.query(`ALTER TABLE team_atlas_outreach ADD COLUMN IF NOT EXISTS stage TEXT, ADD COLUMN IF NOT EXISTS helper_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL`))
+  .catch((e) => console.error('team_atlas_outreach:', e.message));
+// Ulaşma aşaması: null = ulaşılmadı. Sahiplenilen takım atlastan çıkar, kaldırılan silinir; o yüzden burada yoklar.
+const ATLAS_STAGES = ['contacted', 'replied', 'not_interested'];
 pool.query(`CREATE TABLE IF NOT EXISTS team_removal_requests (
     id SERIAL PRIMARY KEY,
     team_id INTEGER NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
@@ -5007,11 +5014,13 @@ app.post('/api/teams/:id/removal-request', teamRemovalLimiter, optionalAuth, asy
 app.get('/api/admin/atlas-teams', isAdmin, async (req, res) => {
   try {
     const r = await pool.query(
-      `SELECT t.id, t.name, t.location, t.external_url, t.meet_note, t.created_at, o.contact, o.contacted_at,
+      `SELECT t.id, t.name, t.location, t.external_url, t.meet_note, t.created_at, o.contact, o.contacted_at, o.stage,
+              (o.helper_user_id = $1) AS i_am_helper, o.helper_user_id IS NOT NULL AS has_helper,
+              (SELECT COUNT(*)::int FROM trainings tr WHERE tr.team_id = t.id) AS event_count,
               (SELECT COUNT(*)::int FROM team_claims c WHERE c.team_id = t.id AND c.status = 'pending') AS pending_claims,
               (SELECT COUNT(*)::int FROM team_removal_requests q WHERE q.team_id = t.id AND q.status = 'pending') AS pending_removals
          FROM teams t LEFT JOIN team_atlas_outreach o ON o.team_id = t.id
-        WHERE t.unclaimed ORDER BY t.created_at DESC`);
+        WHERE t.unclaimed ORDER BY t.created_at DESC`, [req.user.id]);
     res.json(r.rows.map((x) => ({ ...x, team_url: `${APP_URL}/takim/${slugify(x.name)}-${x.id}` })));
   } catch (e) { res.status(500).json({ error: 'Takımlar alınamadı.' }); }
 });
@@ -5045,20 +5054,63 @@ app.put('/api/admin/atlas-teams/:id/outreach', isAdmin, async (req, res) => {
     if (!t.rows[0]?.unclaimed) return res.status(404).json({ error: 'Team not found' });
     const hasContact = typeof req.body?.contact === 'string';
     const contact = hasContact ? req.body.contact.trim().slice(0, 200) : null;
-    const hasContacted = typeof req.body?.contacted === 'boolean';
+    // Aşama: 'contacted' | 'replied' | 'not_interested' | null. Eski istemci `contacted` boolean gönderir.
+    let stage;
+    if ('stage' in (req.body || {})) {
+      stage = req.body.stage === null ? null : String(req.body.stage);
+      if (stage !== null && !ATLAS_STAGES.includes(stage)) return res.status(400).json({ error: 'Geçersiz aşama.' });
+    } else if (typeof req.body?.contacted === 'boolean') {
+      stage = req.body.contacted ? 'contacted' : null;
+    }
+    const hasContacted = stage !== undefined;
     await pool.query(
-      `INSERT INTO team_atlas_outreach (team_id, contact, contacted_at)
-       VALUES ($1, $2, CASE WHEN $4 THEN NOW() END)
+      `INSERT INTO team_atlas_outreach (team_id, contact, contacted_at, stage)
+       VALUES ($1, $2, CASE WHEN $4::text IS NOT NULL THEN NOW() END, $4::text)
        ON CONFLICT (team_id) DO UPDATE SET
          contact = CASE WHEN $3 THEN EXCLUDED.contact ELSE team_atlas_outreach.contact END,
-         contacted_at = CASE WHEN $5 THEN (CASE WHEN $4 THEN NOW() END) ELSE team_atlas_outreach.contacted_at END,
+         stage = CASE WHEN $5 THEN $4::text ELSE team_atlas_outreach.stage END,
+         -- İlk ulaşma tarihi korunur; aşama sıfırlanırsa tarih de silinir.
+         contacted_at = CASE WHEN NOT $5 THEN team_atlas_outreach.contacted_at
+                             WHEN $4::text IS NULL THEN NULL
+                             ELSE COALESCE(team_atlas_outreach.contacted_at, NOW()) END,
          updated_at = NOW()`,
-      [req.params.id, contact || null, hasContact, req.body?.contacted === true, hasContacted]);
+      [req.params.id, contact || null, hasContact, hasContacted ? stage : null, hasContacted]);
     res.json({ ok: true });
   } catch (e) {
     console.error('Atlas outreach error:', e);
     res.status(500).json({ error: 'İşlem yapılamadı.' });
   }
+});
+
+// "Takım adına etkinlik aç": isteyen admin sahipsiz takıma editör olur, mevcut etkinlik formu/düzenleme/silme çalışır.
+// Grup takımı sahiplenince editörlük kalkar (sahiplenme onayı), açılan etkinlikler takımda kalır.
+app.post('/api/admin/atlas-teams/:id/helper', isAdmin, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const on = req.body?.on === true;
+    await client.query('BEGIN');
+    const t = (await client.query('SELECT unclaimed FROM teams WHERE id = $1 FOR UPDATE', [req.params.id])).rows[0];
+    if (!t?.unclaimed) { await client.query('ROLLBACK'); return res.status(404).json({ error: 'Team not found' }); }
+    const o = (await client.query('SELECT helper_user_id FROM team_atlas_outreach WHERE team_id = $1', [req.params.id])).rows[0];
+    if (on) {
+      if (o?.helper_user_id && o.helper_user_id !== req.user.id) {
+        await client.query('ROLLBACK'); return res.status(409).json({ error: 'Bu takımda başka bir admin editör.' });
+      }
+      await client.query(`INSERT INTO team_members (team_id, user_id, role) VALUES ($1, $2, 'editor') ON CONFLICT (team_id, user_id) DO NOTHING`, [req.params.id, req.user.id]);
+      await client.query(`INSERT INTO team_atlas_outreach (team_id, helper_user_id) VALUES ($1, $2)
+        ON CONFLICT (team_id) DO UPDATE SET helper_user_id = $2, updated_at = NOW()`, [req.params.id, req.user.id]);
+    } else {
+      if (o?.helper_user_id !== req.user.id) { await client.query('ROLLBACK'); return res.status(409).json({ error: 'Bu takımda editör değilsin.' }); }
+      await client.query(`DELETE FROM team_members WHERE team_id = $1 AND user_id = $2 AND role = 'editor'`, [req.params.id, req.user.id]);
+      await client.query(`UPDATE team_atlas_outreach SET helper_user_id = NULL, updated_at = NOW() WHERE team_id = $1`, [req.params.id]);
+    }
+    await client.query('COMMIT');
+    res.json({ ok: true });
+  } catch (e) {
+    await client.query('ROLLBACK').catch(() => {});
+    console.error('Atlas helper error:', e);
+    res.status(500).json({ error: 'İşlem yapılamadı.' });
+  } finally { client.release(); }
 });
 
 app.get('/api/admin/team-removal-requests', isAdmin, async (req, res) => {
@@ -6773,6 +6825,7 @@ app.get('/api/trainings/:id', optionalAuth, async (req, res) => {
               teams.avatar as team_avatar,
               teams.owner_id as team_owner_id,
               teams.is_private as team_is_private,
+              COALESCE(teams.unclaimed, false) as team_unclaimed,
               creator.name as creator_name,
               COUNT(DISTINCT ta.user_id) as attendee_count
        FROM trainings t
@@ -6780,7 +6833,7 @@ app.get('/api/trainings/:id', optionalAuth, async (req, res) => {
        LEFT JOIN users creator ON creator.id = t.created_by
        LEFT JOIN training_attendees ta ON t.id = ta.training_id
        WHERE t.id = $1
-       GROUP BY t.id, teams.name, teams.sport, teams.avatar, teams.owner_id, teams.is_private, creator.name`,
+       GROUP BY t.id, teams.name, teams.sport, teams.avatar, teams.owner_id, teams.is_private, teams.unclaimed, creator.name`,
       [trainingId]
     );
 

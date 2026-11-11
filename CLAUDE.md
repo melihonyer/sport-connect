@@ -657,6 +657,14 @@ Admin › Onaylar (`TeamClaimsTab`, rozet `claims`): onay takımı kişiye geçi
 
 **Gruba ulaşma ve kaldırma isteği** (9 Kasım 2026, Melih onayladı). Admin › Onaylar › "Atlas takımları": ekleme formu (`POST /api/admin/atlas-teams`), iletişim ve "Ulaşıldı" (`team_atlas_outreach`, ayrı tablo: `t.*` uçlarına girmesin, yalnız admin görür).
 **Sunucudan mail GİTMEZ:** Resend kuralı soğuk erişimi ve internetten toplanmış iletişim verisini yasaklıyor, tek kişilik de olsa; hesap Training Agents ile ortak, kapanırsa ikisi de durur. "E-postayı aç" admin'in posta programında dolu `mailto` açar, Instagram/web için "Mesajı kopyala"; mesaj `atlasOutreachMessage` (admin-panel.jsx, Melih onaylı, yalnız Türkçe). Yalnız grubun kendi yayınladığı kanal yazılır, kişisel numara/e-posta yazılmaz; her gruba tek mesaj.
+**Mesaj şablonu ve takip** (11 Kasım 2026, Melih onayladı): `atlasOutreachMessage` "sistemi anlatan" şablon, gruba "siz" diye
+yazılır, sonda "ilk etkinliklerinizi ekibimiz girebilir" notu. Şablondaki özellikler (hatırlatma, haftalık program, tempo grupları,
+GPX rota, iptal haberi) üründe olmalı; davranış değişirse metin de değişir. Gönderim yine admin'in kendi posta kutusundan, cevaplar
+oraya gelir; Atlas satırında aşama `team_atlas_outreach.stage`: Ulaşılmadı · Ulaşıldı · Cevap geldi · İlgilenmedi (ilk ulaşma tarihi korunur).
+**Takım adına etkinlik:** "Takım adına etkinlik aç" (`POST /api/admin/atlas-teams/:id/helper`) isteyen admini sahipsiz takıma
+`editor` yapar (`helper_user_id`, takım başına bir admin); site tarafında normal etkinlik formu/düzenleme çalışır. Sahiplenme onayında
+o editörlük silinir, açılan etkinlikler takımda kalır, yeni sahip yönetir. Sahipsiz takımın etkinliğine katılana "takıma da katıl"
+önerisi çıkmaz (`team_unclaimed`, takıma katılınamıyor). Otomatik mailler (ec/lc) platform admine gitmediği için bu etkinliklerde kimseye gitmez.
 "Bu takımın burada olmasını istemiyorum" (`atlas.remove*`, 7 dil) → `POST /api/teams/:id/removal-request`: giriş istemez (sorulmadan eklenen grubun yöneticisinden hesap beklenmez), IP başına saatte 5. Admin › Onaylar "Kaldırma istekleri" (rozet `claims`): onay takımı siler (`logDeletion`), yalnız hâlâ sahipsizse. Otomatik bildirim yok; kişiye elle dönülür.
 
 ## Takım Keşfi (11 Kasım 2026, Melih onayladı)

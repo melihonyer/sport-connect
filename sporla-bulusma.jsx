@@ -4136,7 +4136,7 @@ export default function Muuvlink() {
         let suggestOff = [];
         try { suggestOff = JSON.parse(localStorage.getItem("muuv_team_suggest_off") || "[]"); } catch {}
         if (tr?.team_id && tr.team_name && !myTeams.some((tm) => tm.id === tr.team_id)
-            && !tr.team_is_private && !tr.is_organizer_event && !tr.is_paid && !suggestOff.includes(tr.team_id)) {
+            && !tr.team_is_private && !tr.team_unclaimed && !tr.is_organizer_event && !tr.is_paid && !suggestOff.includes(tr.team_id)) {
           setTeamSuggest({ id: tr.team_id, name: tr.team_name, avatar: tr.team_avatar, sport: tr.team_sport });
         } else {
           showToast(t("toast.joinTraining"), "success");

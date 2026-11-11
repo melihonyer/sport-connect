@@ -1972,19 +1972,29 @@ function AdminToast({ toasts }) {
 // (localStorage) sunucu saatiyle tutulur; sekme açılınca sıfırlanır.
 // Takım atlası: gruba elle ulaşma. Sunucudan mail GİTMEZ (Resend soğuk erişimi yasaklıyor);
 // "E-postayı aç" admin'in kendi posta programında dolu mesaj açar.
+// Melih onaylı şablon (11 Kasım 2026, "sistemi anlatan" + ilk etkinlik notu). Gruba "siz" diye yazılır.
+// Anlatılan her özellik üründe olmalı; davranış değişirse metin de değişir.
 const atlasOutreachMessage = (tm) => ({
   subject: `${tm.name} Muuvlink'te`,
   body: `Merhaba,
 
-Muuvlink, sporcuların yakınındaki takımları ve etkinlikleri bulduğu ücretsiz bir uygulama. ${tm.name} grubunu herkese açık bilgilerden bir sayfa olarak ekledik:
+Muuvlink, birlikte spor yapan grupların etkinliklerini tek yerden yönettiği ücretsiz bir uygulama. ${tm.name} grubunu herkese açık bilgilerden bir sayfa olarak ekledik:
 
 ${tm.team_url}
 
-Bu grubu sen yönetiyorsan sayfadaki "Bu takım benim" ile devralabilir, etkinliklerini buradan duyurabilirsin.
+Grubu devralırsanız:
+- Kim geliyor tek listede görünür, katılanlara hatırlatma gider.
+- Düzenli antrenmanlar her hafta kendiliğinden açılır.
+- Farklı tempolar için gruplar kurabilirsiniz; herkes kendi grubunu seçer.
+- Rota dosyası (GPX) eklersiniz, katılacaklar yolu haritada görür.
+- Etkinlik iptal olursa katılanlara haber gider.
+- Yakındaki yeni sporcular grubunuzu Muuvlink'te bulur.
 
-Burada olmasını istemiyorsan aynı sayfadaki "Bu takımın burada olmasını istemiyorum" bağlantısına basman ya da bu mesaja cevap yazman yeterli, sayfayı kaldırırız.
+Devralmak için sayfadaki "Bu takım benim"e basmanız yeterli.
 
-Bu tek seferlik bir mesaj, tekrar yazmayacağız.
+Nasıl çalıştığını görmek isterseniz ilk etkinliklerinizi ekibimiz de Muuvlink'e girebilir; tarih ve yeri bu mesaja yazmanız yeterli.
+
+Burada olmasını istemiyorsanız bu mesaja "kaldırın" yazın, sayfayı kaldırırız. Bu tek seferlik bir mesaj, tekrar yazmayacağız.
 
 Muuvlink ekibi`,
 });
@@ -2015,6 +2025,9 @@ const EmailFoundIcon = () => (
   </span>
 );
 
+const ATLAS_STAGE_LABEL = { "": "Ulaşılmadı", contacted: "Ulaşıldı", replied: "Cevap geldi", not_interested: "İlgilenmedi" };
+const ATLAS_STAGE_STYLE = { "": "bg-slate-100 text-slate-600", contacted: "bg-brand-50 text-brand-700", replied: "bg-emerald-50 text-emerald-700", not_interested: "bg-slate-100 text-slate-500" };
+
 function AtlasTeamRow({ tm, api, showToast, onChanged }) {
   const [contact, setContact] = useState(tm.contact || "");
   const [busy, setBusy] = useState(false);
@@ -2023,6 +2036,18 @@ function AtlasTeamRow({ tm, api, showToast, onChanged }) {
     try {
       await api(`/admin/atlas-teams/${tm.id}/outreach`, { method: "PUT", body: JSON.stringify(body) });
       showToast(done);
+      onChanged();
+    } catch (e) {
+      showToast(e?.message || "İşlem yapılamadı.", "error");
+    } finally { setBusy(false); }
+  };
+  // Seni bu sahipsiz takıma editör yapar: site tarafında normal etkinlik formu açılır. Grup sahiplenince kalkar.
+  const helper = async (on) => {
+    if (on && !window.confirm(`${tm.name} takımına editör olarak ekleneceksin; takım sayfasından etkinlik açabileceksin. Grup takımı sahiplenince editörlüğün kalkar. Devam edilsin mi?`)) return;
+    setBusy(true);
+    try {
+      await api(`/admin/atlas-teams/${tm.id}/helper`, { method: "POST", body: JSON.stringify({ on }) });
+      showToast(on ? "Editör oldun. Takım sayfasında etkinlik açabilirsin." : "Editörlükten çıktın.");
       onChanged();
     } catch (e) {
       showToast(e?.message || "İşlem yapılamadı.", "error");
@@ -2043,9 +2068,10 @@ function AtlasTeamRow({ tm, api, showToast, onChanged }) {
         <a href={tm.team_url} target="_blank" rel="noopener noreferrer" className="font-medium text-slate-900 hover:underline [overflow-wrap:anywhere]">{tm.name}</a>
         {/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(tm.contact || "") && <EmailFoundIcon />}
         <span className="text-slate-400">· {tm.location || "konum yok"}</span>
-        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${tm.contacted_at ? "bg-brand-50 text-brand-700" : "bg-slate-100 text-slate-600"}`}>
-          {tm.contacted_at ? `Ulaşıldı · ${new Date(tm.contacted_at).toLocaleDateString("tr-TR")}` : "Ulaşılmadı"}
+        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${ATLAS_STAGE_STYLE[tm.stage || ""]}`}>
+          {ATLAS_STAGE_LABEL[tm.stage || ""]}{tm.contacted_at ? ` · ${new Date(tm.contacted_at).toLocaleDateString("tr-TR")}` : ""}
         </span>
+        {tm.event_count > 0 && <span className="text-xs text-slate-500">{tm.event_count} etkinlik</span>}
         {tm.pending_claims > 0 && <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-pop-400 text-ink-900">Sahiplenme talebi</span>}
         {tm.pending_removals > 0 && <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-red-50 text-red-600">Kaldırma isteği</span>}
       </div>
@@ -2062,8 +2088,23 @@ function AtlasTeamRow({ tm, api, showToast, onChanged }) {
         {link?.kind === "email" && <a href={link.href} className={`${btn} bg-brand-600 text-white`}><Mail className="w-3.5 h-3.5" /> E-postayı aç</a>}
         {link?.kind === "link" && <a href={link.href} target="_blank" rel="noopener noreferrer" className={`${btn} bg-brand-600 text-white`}><ExternalLink className="w-3.5 h-3.5" /> Sayfayı aç</a>}
         <button onClick={copyMessage} className={`${btn} border border-slate-200 text-slate-700`}><Copy className="w-3.5 h-3.5" /> Mesajı kopyala</button>
-        <button disabled={busy} onClick={() => save({ contacted: !tm.contacted_at }, tm.contacted_at ? "Geri alındı." : "Ulaşıldı olarak işaretlendi.")}
-          className={`${btn} border border-slate-200 text-slate-700`}><Check className="w-3.5 h-3.5" /> {tm.contacted_at ? "Ulaşıldı işaretini kaldır" : "Ulaşıldı"}</button>
+        <select value={tm.stage || ""} disabled={busy} aria-label={`${tm.name} aşama`}
+          onChange={(e) => save({ stage: e.target.value || null }, `Aşama: ${ATLAS_STAGE_LABEL[e.target.value]}`)}
+          className="h-9 px-2 rounded-lg text-xs font-semibold border border-slate-200 text-slate-700 bg-white">
+          {Object.entries(ATLAS_STAGE_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+        </select>
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+        {tm.i_am_helper ? (
+          <>
+            <a href={tm.team_url} target="_blank" rel="noopener noreferrer" className={`${btn} bg-pop-400 text-ink-900`}><CalendarDays className="w-3.5 h-3.5" /> Takım sayfasında etkinlik aç</a>
+            <button disabled={busy} onClick={() => helper(false)} className="underline underline-offset-2">Editörlükten çık</button>
+          </>
+        ) : tm.has_helper ? (
+          <span>Başka bir admin bu takım adına etkinlik açıyor.</span>
+        ) : (
+          <button disabled={busy} onClick={() => helper(true)} className={`${btn} border border-slate-200 text-slate-700`}><CalendarDays className="w-3.5 h-3.5" /> Takım adına etkinlik aç</button>
+        )}
       </div>
     </div>
   );
