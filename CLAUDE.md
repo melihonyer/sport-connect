@@ -659,6 +659,23 @@ Admin › Onaylar (`TeamClaimsTab`, rozet `claims`): onay takımı kişiye geçi
 **Sunucudan mail GİTMEZ:** Resend kuralı soğuk erişimi ve internetten toplanmış iletişim verisini yasaklıyor, tek kişilik de olsa; hesap Training Agents ile ortak, kapanırsa ikisi de durur. "E-postayı aç" admin'in posta programında dolu `mailto` açar, Instagram/web için "Mesajı kopyala"; mesaj `atlasOutreachMessage` (admin-panel.jsx, Melih onaylı, yalnız Türkçe). Yalnız grubun kendi yayınladığı kanal yazılır, kişisel numara/e-posta yazılmaz; her gruba tek mesaj.
 "Bu takımın burada olmasını istemiyorum" (`atlas.remove*`, 7 dil) → `POST /api/teams/:id/removal-request`: giriş istemez (sorulmadan eklenen grubun yöneticisinden hesap beklenmez), IP başına saatte 5. Admin › Onaylar "Kaldırma istekleri" (rozet `claims`): onay takımı siler (`logDeletion`), yalnız hâlâ sahipsizse. Otomatik bildirim yok; kişiye elle dönülür.
 
+## Takım Keşfi (11 Kasım 2026, Melih onayladı)
+
+Yarış Keşfi'nin kalıbı, atlas için: Admin › Topluluk › Takım Keşfi. Seçilen şehir × branş başına bir model çağrısı
+(`claude-haiku-5-5`, `TEAM_DISCOVERY_MODEL` ile değişir; `web_search_20260209` en çok 5 arama, effort low, JSON şeması).
+Tek taramada en çok 20 şehir × branş (maliyet kapısı). Aday tablosu `team_candidates`, her tarama `team_discovery_runs`
+(token, web araması, tahmini $; panelde gösterilir). Ölçülen: tek aramalık sorgu ~26 bin token, ~8 sn.
+- Listeye girmez: son 6 ayda izi olmayan (`last_activity` boş ya da eski — model tarih uyduramaz, boş bırakır) ve
+  Muuvlink'te/aday listesinde zaten olan (ad+şehir anahtarı ya da şehir içi kelime örtüşmesi ≥0,7; branş ve şehir adı
+  kelimede kalır). Reddedilen aday tekrar gelmez.
+- İletişim yalnız grubun KENDİ yayınladığı kanal (sistem metninde yazılı). Onay: sahipsiz atlas takımı açılır (herkese
+  açık), iletişim `team_atlas_outreach`'e taşınır, adaydaki e-posta silinir; ret de e-postayı siler. Sahiplenme
+  onaylanınca `team_atlas_outreach` satırı silinir.
+- Sunucu kimseye yazmaz; gruba ulaşma Atlas takımları bölümünden elle.
+- **Test:** onay ucu `pool.connect()` + `client.query` kullanıyor; yerel testte açık takımı gizliye çeviren kanca
+  `pg.Client.prototype.query`'yi de sarmalı. 11 Kasım'da yalnız Pool sarıldığı için test takımı ~3 sn açık yazıldı
+  (o aralıkta canlıda takım listesi isteği yoktu, kimse görmedi).
+
 ## "Kadın takımı" etiketi ve takım şikayeti (9 Kasım 2026, Melih onayladı)
 
 Melih "Kadınlar"ı kaba buldu → "Kadın takımı" (`teamTags.women`). Kötü niyetli kullanım riski için admin onaylı: `women` kodu onay olmadan `teams.tags`'e girmez,

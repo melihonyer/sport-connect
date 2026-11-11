@@ -4923,6 +4923,8 @@ app.post('/api/admin/team-claims/:id/:decision', isAdmin, async (req, res) => {
         `INSERT INTO team_members (team_id, user_id, role) VALUES ($1, $2, 'owner')
          ON CONFLICT (team_id, user_id) DO UPDATE SET role = 'owner'`, [c.team_id, c.user_id]);
       await client.query(`UPDATE team_claims SET status = 'approved', decided_at = NOW() WHERE id = $1`, [id]);
+      // Sahibi geldi: dışarıdan bulunan iletişim bilgisi artık gerekmiyor, tutulmaz.
+      await client.query(`DELETE FROM team_atlas_outreach WHERE team_id = $1`, [c.team_id]).catch(() => {});
       await client.query(`UPDATE team_claims SET status = 'rejected', decided_at = NOW() WHERE team_id = $1 AND status = 'pending'`, [c.team_id]);
     }
     await client.query('COMMIT');
@@ -10083,6 +10085,404 @@ app.delete('/api/admin/discovery/sources/:id', isAdmin, async (req, res) => {
 });
 
 // =====================================================
+// TAKIM KEŞFİ — webde aktif amatör spor gruplarını arayıp admin onayına düşen
+// aday listesi üretir (Yarış Keşfi'nin kalıbı). Onaylanan aday sahipsiz atlas
+// takımı olur. Hiçbir aday kendiliğinden yayına girmez; sunucu kimseye yazmaz.
+// İletişim yalnız grubun KENDİ yayınladığı kanal; aday onaylanınca ya da
+// reddedilince e-posta aday satırından silinir (iz bırakılmaz).
+// =====================================================
+pool.query(`CREATE TABLE IF NOT EXISTS team_candidates (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    sport TEXT,
+    city TEXT,
+    district TEXT,
+    meet_note TEXT,
+    website TEXT,
+    instagram TEXT,
+    email TEXT,
+    source_url TEXT,
+    last_activity DATE,
+    activity_note TEXT,
+    confidence NUMERIC(4,3),
+    dedupe_key TEXT UNIQUE,
+    status TEXT NOT NULL DEFAULT 'pending',
+    team_id INTEGER REFERENCES teams(id) ON DELETE SET NULL,
+    reviewed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    reviewed_at TIMESTAMPTZ,
+    scan_label TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`).catch((e) => console.error('team_candidates:', e.message));
+pool.query(`CREATE TABLE IF NOT EXISTS team_discovery_runs (
+    id SERIAL PRIMARY KEY,
+    started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    finished_at TIMESTAMPTZ,
+    started_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    pairs TEXT[],
+    model TEXT,
+    input_tokens INTEGER NOT NULL DEFAULT 0,
+    output_tokens INTEGER NOT NULL DEFAULT 0,
+    web_searches INTEGER NOT NULL DEFAULT 0,
+    cost_usd NUMERIC(8,4) NOT NULL DEFAULT 0,
+    found INTEGER NOT NULL DEFAULT 0,
+    added INTEGER NOT NULL DEFAULT 0,
+    skipped_old INTEGER NOT NULL DEFAULT 0,
+    skipped_dup INTEGER NOT NULL DEFAULT 0,
+    error TEXT
+  )`).catch((e) => console.error('team_discovery_runs:', e.message));
+
+const TEAM_DISCOVERY_MODEL = process.env.TEAM_DISCOVERY_MODEL || 'claude-haiku-5-5';
+// Tahmini maliyet (panelde "yaklaşık" diye gösterilir). Haiku 5.5: 100K'ya kadar istek
+// $0.10 / $0.50, üstü $0.50 / $2.50 (1M token başına); web araması aranma başına ~$0.01.
+const teamDiscoveryCost = (u) => {
+  const big = (u.input_tokens || 0) > 100000;
+  return ((u.input_tokens || 0) * (big ? 0.5 : 0.1) + (u.output_tokens || 0) * (big ? 2.5 : 0.5)) / 1e6
+    + (u.server_tool_use?.web_search_requests || 0) * 0.01;
+};
+const TEAM_DISCOVERY_MAX_PAIRS = 20;   // tek taramada şehir × branş üst sınırı (maliyet kapısı)
+const TEAM_ACTIVE_DAYS = 183;          // son 6 ayda izi olmayan grup listeye girmez
+
+const TEAM_DISCOVERY_SCHEMA = {
+  type: 'object',
+  properties: {
+    teams: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          name:          { type: 'string' },
+          sport:         { type: 'string', enum: DISCOVERY_SPORTS },
+          city:          { type: 'string' },
+          district:      { type: 'string' },
+          meet_note:     { type: 'string' },
+          website:       { type: 'string' },
+          instagram:     { type: 'string' },
+          email:         { type: 'string' },
+          source_url:    { type: 'string' },
+          last_activity: { type: 'string' },
+          activity_note: { type: 'string' },
+          confidence:    { type: 'number' },
+        },
+        required: ['name', 'sport', 'city', 'district', 'meet_note', 'website', 'instagram', 'email', 'source_url', 'last_activity', 'activity_note', 'confidence'],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ['teams'],
+  additionalProperties: false,
+};
+
+const TEAM_DISCOVERY_SYSTEM = [
+  'Türkiye\'de düzenli olarak birlikte spor yapan AMATÖR grupları (koşu grubu, bisiklet grubu,',
+  'triatlon kulübü, yüzme/kürek topluluğu vb.) web aramasıyla bulup yapılandırılmış veriye çeviren bir araştırmacısın.',
+  '',
+  'KURALLAR:',
+  '- Yalnız istenen şehir ve branştaki, birlikte antrenmana çıkan grupları yaz.',
+  '- ALMA: ticari spor salonu/stüdyo, tek bir koçun kişisel hesabı, mağaza, yarış organizasyonu/yarışın kendisi,',
+  '  federasyon/il müdürlüğü, okul ya da profesyonel lig takımı, Muuvlink\'in kendisi.',
+  '- Yalnız HÂLÂ AKTİF gruplar: son 6 ay içinde paylaşım, etkinlik ya da duyuru izi olmalı.',
+  '  last_activity bu izin tarihi (YYYY-MM-DD; yalnız ay biliniyorsa ayın 1\'i). Göremediysen "" yaz, tahmin etme.',
+  '  activity_note: o izin ne olduğu, kısa (ör. "Instagram\'da 12 Ekim koşu duyurusu").',
+  '- email: YALNIZ grubun kendi sitesinde/profilinde grubun iletişim adresi olarak yayınlanmış e-posta.',
+  '  Bir kişinin adresini, tahmini ya da kalıptan üretilmiş adresi yazma. Bulamadıysan "".',
+  '- instagram: grubun profilinin tam adresi (https://www.instagram.com/kullaniciadi/); yoksa "".',
+  '- website: grubun kendi sitesi ya da Strava kulübü / Facebook grubu sayfası; yoksa "".',
+  '- meet_note: grubun kendi yazdığı düzenli buluşma bilgisi (gün, saat, yer), en fazla 120 karakter; yoksa "".',
+  '  Slogan yazma.',
+  '- district: grubun ilçesi biliniyorsa (ör. "Karşıyaka"), değilse "".',
+  '- source_url: bilgiyi gördüğün sayfanın adresi. Uydurma adres yazma.',
+  '- sport alanı verilen listeden tam bir değer olmalı.',
+  '- Verilen "zaten var" listesindeki grupları yazma. Aynı grubu bir kez yaz.',
+  '- confidence: grubun gerçekten var ve aktif olduğuna dair 0–1 arası güven.',
+  '- Grup bulamazsan boş liste döndür.',
+].join('\n');
+
+const teamDiscoveryState = {
+  running: false, startedAt: null, finishedAt: null, total: 0, done: 0,
+  found: 0, added: 0, skippedOld: 0, skippedDup: 0, cost: 0, current: '', log: [], error: null, runId: null,
+};
+const tdlog = (msg) => {
+  teamDiscoveryState.log.push(`${new Date().toISOString().slice(11, 19)} · ${msg}`);
+  if (teamDiscoveryState.log.length > 200) teamDiscoveryState.log.shift();
+};
+
+async function teamDiscoveryModelCall(prompt) {
+  const client = getAnthropic();
+  if (!client) throw new Error('ANTHROPIC_API_KEY tanımlı değil — tarama yapılamıyor.');
+  const messages = [{ role: 'user', content: prompt }];
+  const base = {
+    model: TEAM_DISCOVERY_MODEL,
+    max_tokens: 16000,
+    system: TEAM_DISCOVERY_SYSTEM,
+    output_config: { effort: 'low', format: { type: 'json_schema', schema: TEAM_DISCOVERY_SCHEMA } },
+    tools: [{ type: 'web_search_20260209', name: 'web_search', max_uses: 5 }],
+  };
+  const usage = { input_tokens: 0, output_tokens: 0, server_tool_use: { web_search_requests: 0 } };
+  const addUsage = (u) => {
+    usage.input_tokens += (u?.input_tokens || 0) + (u?.cache_read_input_tokens || 0) + (u?.cache_creation_input_tokens || 0);
+    usage.output_tokens += u?.output_tokens || 0;
+    usage.server_tool_use.web_search_requests += u?.server_tool_use?.web_search_requests || 0;
+  };
+  let resp = await client.messages.create({ ...base, messages });
+  addUsage(resp.usage);
+  let guard = 0;
+  while (resp.stop_reason === 'pause_turn' && guard++ < 5) {
+    messages.push({ role: 'assistant', content: resp.content });
+    resp = await client.messages.create({ ...base, messages });
+    addUsage(resp.usage);
+  }
+  if (resp.stop_reason === 'refusal') throw Object.assign(new Error('Model isteği reddetti.'), { usage });
+  const text = resp.content.filter((b) => b.type === 'text').map((b) => b.text).join('').trim();
+  let data = null;
+  try { data = JSON.parse(text); } catch {
+    const raw = extractFirstJsonObject(text);
+    try { data = raw ? JSON.parse(raw) : null; } catch { data = null; }
+  }
+  return { teams: Array.isArray(data?.teams) ? data.teams : [], usage };
+}
+
+// Aynı grup farklı yazılabiliyor ("Adım Adım İzmir" / "AdımAdım İzmir Koşu Grubu"): şehir içinde kelime kümesi örtüşmesi.
+// Yalnız genel kelimeler atılır; branş ve şehir adı kalır, yoksa "İzmir Koşu Grubu" ile "İzmir Bisiklet Grubu" aynı sayılırdı.
+const TEAM_NAME_STOPWORDS = new Set(['grubu', 'grup', 'takimi', 'takim', 'kulubu', 'kulup', 'club', 'team']);
+const teamNameTokens = (name) => new Set(
+  String(name || '').toLocaleLowerCase('tr')
+    .replace(/[çğıöşü]/g, (c) => ({ 'ç': 'c', 'ğ': 'g', 'ı': 'i', 'ö': 'o', 'ş': 's', 'ü': 'u' }[c]))
+    .split(/[^a-z0-9]+/).filter((w) => w.length > 1 && !TEAM_NAME_STOPWORDS.has(w))
+);
+async function loadTeamDiscoveryIndex() {
+  const keys = new Set();
+  const byCity = new Map();
+  const add = (name, city) => {
+    const ck = slugKey(city);
+    keys.add(`${slugKey(name).slice(0, 60)}|${ck}`);
+    const arr = byCity.get(ck) || [];
+    arr.push(teamNameTokens(name));
+    byCity.set(ck, arr);
+  };
+  // Takımın şehri `location` içinde ("Karşıyaka, İzmir" / "İzmir"): her parçayı şehir say.
+  const t = await pool.query('SELECT name, location FROM teams');
+  for (const row of t.rows) {
+    const parts = String(row.location || '').split(/[,/]/).map((s) => s.trim()).filter(Boolean);
+    for (const p of (parts.length ? parts : [''])) add(row.name, p);
+  }
+  const c = await pool.query('SELECT name, city, dedupe_key FROM team_candidates');
+  for (const row of c.rows) { add(row.name, row.city); if (row.dedupe_key) keys.add(row.dedupe_key); }
+  return { keys, byCity };
+}
+const isDuplicateTeam = (index, name, city) => {
+  if (index.keys.has(`${slugKey(name).slice(0, 60)}|${slugKey(city)}`)) return true;
+  const tok = teamNameTokens(name);
+  if (!tok.size) return false;
+  return (index.byCity.get(slugKey(city)) || []).some((prev) => tokenOverlap(tok, prev) >= NEAR_DUPLICATE_THRESHOLD);
+};
+
+const cleanHttpUrl = (u) => { const s = String(u || '').trim(); return /^https?:\/\/[^\s]+$/i.test(s) ? s.slice(0, 300) : null; };
+const cleanInstagram = (u) => {
+  const s = String(u || '').trim();
+  const m = s.match(/^(?:https?:\/\/)?(?:www\.)?instagram\.com\/([A-Za-z0-9._]{1,30})\/?(?:\?.*)?$/i) || s.match(/^@([A-Za-z0-9._]{1,30})$/);
+  return m ? `https://www.instagram.com/${m[1]}/` : null;
+};
+const cleanEmail = (e) => { const s = String(e || '').trim().toLowerCase(); return /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/.test(s) && s.length <= 120 ? s : null; };
+
+// 'added' | 'old' | 'dup' | 'bad'
+async function saveTeamCandidate(t, { city: wantedCity, sport: wantedSport, label }, index) {
+  const name = String(t.name || '').trim().slice(0, 100);
+  if (name.length < 2) return 'bad';
+  const city = String(t.city || '').trim().slice(0, 60) || wantedCity;
+  const last = /^\d{4}-\d{2}-\d{2}$/.test(String(t.last_activity || '').trim()) ? new Date(`${t.last_activity.trim()}T00:00:00Z`) : null;
+  if (!last || isNaN(last) || last > new Date(Date.now() + 864e5) || Date.now() - last.getTime() > TEAM_ACTIVE_DAYS * 864e5) return 'old';
+  if (isDuplicateTeam(index, name, city)) return 'dup';
+  const key = `${slugKey(name).slice(0, 60)}|${slugKey(city)}`;
+  index.keys.add(key);
+  const ck = slugKey(city);
+  index.byCity.set(ck, [...(index.byCity.get(ck) || []), teamNameTokens(name)]);
+  const sport = DISCOVERY_SPORTS.includes(t.sport) ? t.sport : wantedSport;
+  const r = await pool.query(
+    `INSERT INTO team_candidates (name, sport, city, district, meet_note, website, instagram, email, source_url,
+       last_activity, activity_note, confidence, dedupe_key, scan_label)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) ON CONFLICT (dedupe_key) DO NOTHING RETURNING id`,
+    [name, sport, city, String(t.district || '').trim().slice(0, 60) || null,
+     String(t.meet_note || '').trim().slice(0, 200) || null, cleanHttpUrl(t.website), cleanInstagram(t.instagram),
+     cleanEmail(t.email), cleanHttpUrl(t.source_url), last.toISOString().slice(0, 10),
+     String(t.activity_note || '').trim().slice(0, 200) || null,
+     Math.max(0, Math.min(1, Number(t.confidence) || 0.5)), key, label]);
+  return r.rows.length ? 'added' : 'dup';
+}
+
+async function runTeamDiscovery(pairs, userId) {
+  const S = teamDiscoveryState;
+  Object.assign(S, {
+    running: true, startedAt: new Date().toISOString(), finishedAt: null, total: pairs.length, done: 0,
+    found: 0, added: 0, skippedOld: 0, skippedDup: 0, cost: 0, current: '', log: [], error: null, runId: null,
+  });
+  const totals = { input_tokens: 0, output_tokens: 0, web: 0 };
+  try {
+    const run = await pool.query(
+      `INSERT INTO team_discovery_runs (started_by, pairs, model) VALUES ($1, $2, $3) RETURNING id`,
+      [userId, pairs.map((p) => `${p.city} · ${p.sport}`), TEAM_DISCOVERY_MODEL]);
+    S.runId = run.rows[0].id;
+    tdlog(`Tarama başladı (${pairs.length} arama, ${TEAM_DISCOVERY_MODEL})`);
+    const index = await loadTeamDiscoveryIndex();
+    for (const p of pairs) {
+      const label = `${p.city} · ${p.sport}`;
+      S.current = label;
+      // Şehirde zaten bilinen adlar: model tekrar getirmesin, arama boşa gitmesin.
+      const known = [...new Set((await pool.query(
+        `SELECT name FROM teams WHERE location ILIKE $1 UNION SELECT name FROM team_candidates WHERE city ILIKE $1 LIMIT 80`,
+        [`%${p.city}%`])).rows.map((r) => r.name))];
+      const today = new Date().toISOString().slice(0, 10);
+      try {
+        const { teams, usage } = await teamDiscoveryModelCall(
+          `Bugünün tarihi: ${today}\nŞehir: ${p.city}\nBranş: ${p.sport}\n\n` +
+          `Webde ara ve bu şehirde bu branşta birlikte antrenman yapan, hâlâ aktif amatör grupları bul ` +
+          `(Instagram, Strava kulüpleri, Facebook grupları, grup siteleri). Her grup için iletişim kanalını ve son aktivite izini yaz.\n\n` +
+          `Zaten var (yazma): ${known.length ? known.join('; ') : '—'}`);
+        totals.input_tokens += usage.input_tokens; totals.output_tokens += usage.output_tokens;
+        totals.web += usage.server_tool_use.web_search_requests;
+        S.cost += teamDiscoveryCost(usage);
+        S.found += teams.length;
+        const c = { added: 0, old: 0, dup: 0 };
+        for (const t of teams) {
+          const res = await saveTeamCandidate(t, { ...p, label }, index);
+          if (res in c) c[res]++;
+        }
+        S.added += c.added; S.skippedOld += c.old; S.skippedDup += c.dup;
+        tdlog(`${label} — ${teams.length} grup, ${c.added} yeni aday, ${c.old} eski/izsiz, ${c.dup} zaten var`);
+      } catch (e) {
+        if (e.usage) { S.cost += teamDiscoveryCost(e.usage); totals.input_tokens += e.usage.input_tokens; totals.output_tokens += e.usage.output_tokens; totals.web += e.usage.server_tool_use.web_search_requests; }
+        tdlog(`${label} — hata: ${String(e.message || e).slice(0, 200)}`);
+      }
+      S.done++;
+      await sleep(800);
+    }
+    tdlog(`Bitti — ${S.added} yeni aday onay bekliyor, tahmini maliyet $${S.cost.toFixed(3)}`);
+  } catch (e) {
+    S.error = e.message || 'Tarama başarısız';
+    tdlog(`Tarama durdu: ${S.error}`);
+  } finally {
+    S.running = false; S.current = ''; S.finishedAt = new Date().toISOString();
+    if (S.runId) {
+      await pool.query(
+        `UPDATE team_discovery_runs SET finished_at = NOW(), input_tokens = $2, output_tokens = $3, web_searches = $4,
+           cost_usd = $5, found = $6, added = $7, skipped_old = $8, skipped_dup = $9, error = $10 WHERE id = $1`,
+        [S.runId, totals.input_tokens, totals.output_tokens, totals.web, S.cost.toFixed(4), S.found, S.added,
+         S.skippedOld, S.skippedDup, S.error]).catch(() => {});
+    }
+  }
+}
+
+app.post('/api/admin/team-discovery/scan', isAdmin, async (req, res) => {
+  if (teamDiscoveryState.running) return res.status(409).json({ error: 'Zaten devam eden bir tarama var.' });
+  if (!getAnthropic()) return res.status(400).json({ error: 'ANTHROPIC_API_KEY sunucuda tanımlı değil.' });
+  const cities = [...new Set((Array.isArray(req.body?.cities) ? req.body.cities : [])
+    .map((c) => String(c || '').trim().slice(0, 40)).filter((c) => c.length >= 2))];
+  const sports = [...new Set((Array.isArray(req.body?.sports) ? req.body.sports : []).filter((s) => DISCOVERY_SPORTS.includes(s)))];
+  if (!cities.length || !sports.length) return res.status(400).json({ error: 'En az bir şehir ve bir branş seç.' });
+  const pairs = cities.flatMap((city) => sports.map((sport) => ({ city, sport })));
+  if (pairs.length > TEAM_DISCOVERY_MAX_PAIRS) {
+    return res.status(400).json({ error: `Tek taramada en çok ${TEAM_DISCOVERY_MAX_PAIRS} şehir × branş seçilebilir (şu an ${pairs.length}).` });
+  }
+  runTeamDiscovery(pairs, req.user.id); // bilerek await edilmiyor
+  res.json({ started: true, pairs: pairs.length, model: TEAM_DISCOVERY_MODEL });
+});
+
+app.get('/api/admin/team-discovery/status', isAdmin, async (req, res) => {
+  try {
+    const runs = await pool.query(
+      `SELECT id, started_at, finished_at, pairs, input_tokens, output_tokens, web_searches, cost_usd, found, added,
+              skipped_old, skipped_dup, error FROM team_discovery_runs ORDER BY id DESC LIMIT 10`);
+    const total = await pool.query(`SELECT COALESCE(SUM(cost_usd), 0)::float AS usd FROM team_discovery_runs`);
+    res.json({ ...teamDiscoveryState, configured: !!getAnthropic(), model: TEAM_DISCOVERY_MODEL,
+      sports: DISCOVERY_SPORTS, maxPairs: TEAM_DISCOVERY_MAX_PAIRS, runs: runs.rows, totalCost: total.rows[0].usd });
+  } catch (e) { res.status(500).json({ error: 'Durum alınamadı.' }); }
+});
+
+app.get('/api/admin/team-discovery/candidates', isAdmin, async (req, res) => {
+  try {
+    const status = ['pending', 'approved', 'rejected'].includes(req.query.status) ? req.query.status : 'pending';
+    const r = await pool.query(
+      `SELECT c.*, t.name AS team_name FROM team_candidates c LEFT JOIN teams t ON t.id = c.team_id
+        WHERE c.status = $1 ORDER BY c.city, c.confidence DESC NULLS LAST, c.id DESC LIMIT 500`, [status]);
+    const counts = await pool.query(`SELECT status, COUNT(*)::int AS n FROM team_candidates GROUP BY status`);
+    res.json({ items: r.rows, counts: counts.rows.reduce((a, x) => (a[x.status] = x.n, a), {}) });
+  } catch (e) { res.status(500).json({ error: 'Adaylar alınamadı.' }); }
+});
+
+// Onaydan önce düzeltme. Gövdede gelen alan değişir.
+app.put('/api/admin/team-discovery/candidates/:id', isAdmin, async (req, res) => {
+  try {
+    const b = req.body || {};
+    const has = (k) => typeof b[k] === 'string';
+    if (has('name') && b.name.trim().length < 2) return res.status(400).json({ error: 'Takım adı boş olamaz.' });
+    if (has('sport') && !DISCOVERY_SPORTS.includes(b.sport)) return res.status(400).json({ error: 'Geçersiz branş.' });
+    if (has('website') && b.website.trim() && !cleanHttpUrl(b.website)) return res.status(400).json({ error: 'Site adresi http ile başlamalı.' });
+    if (has('instagram') && b.instagram.trim() && !cleanInstagram(b.instagram)) return res.status(400).json({ error: 'Instagram adresi geçersiz.' });
+    if (has('email') && b.email.trim() && !cleanEmail(b.email)) return res.status(400).json({ error: 'E-posta geçersiz.' });
+    const r = await pool.query(
+      `UPDATE team_candidates SET
+         name = CASE WHEN $2 THEN $3 ELSE name END, sport = CASE WHEN $4 THEN $5 ELSE sport END,
+         city = CASE WHEN $6 THEN $7 ELSE city END, district = CASE WHEN $8 THEN $9 ELSE district END,
+         meet_note = CASE WHEN $10 THEN $11 ELSE meet_note END, website = CASE WHEN $12 THEN $13 ELSE website END,
+         instagram = CASE WHEN $14 THEN $15 ELSE instagram END, email = CASE WHEN $16 THEN $17 ELSE email END
+       WHERE id = $1 AND status = 'pending' RETURNING *`,
+      [req.params.id,
+       has('name'), has('name') ? b.name.trim().slice(0, 100) : null,
+       has('sport'), has('sport') ? b.sport : null,
+       has('city'), has('city') ? b.city.trim().slice(0, 60) || null : null,
+       has('district'), has('district') ? b.district.trim().slice(0, 60) || null : null,
+       has('meet_note'), has('meet_note') ? b.meet_note.trim().slice(0, 200) || null : null,
+       has('website'), has('website') ? cleanHttpUrl(b.website) : null,
+       has('instagram'), has('instagram') ? cleanInstagram(b.instagram) : null,
+       has('email'), has('email') ? cleanEmail(b.email) : null]);
+    if (!r.rows[0]) return res.status(404).json({ error: 'Aday bulunamadı.' });
+    res.json(r.rows[0]);
+  } catch (e) {
+    console.error('Team candidate update error:', e);
+    res.status(500).json({ error: 'Aday güncellenemedi.' });
+  }
+});
+
+// Onay: sahipsiz atlas takımı açılır, iletişim yalnız admin'in gördüğü tabloya taşınır, adaydaki e-posta silinir.
+app.post('/api/admin/team-discovery/candidates/:id/approve', isAdmin, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const c = (await client.query(`SELECT * FROM team_candidates WHERE id = $1 FOR UPDATE`, [req.params.id])).rows[0];
+    if (!c) { await client.query('ROLLBACK'); return res.status(404).json({ error: 'Aday bulunamadı.' }); }
+    if (c.status !== 'pending') { await client.query('ROLLBACK'); return res.status(409).json({ error: 'Bu aday zaten sonuçlanmış.' }); }
+    if (!c.city) { await client.query('ROLLBACK'); return res.status(400).json({ error: 'Şehir boş, önce düzenle.' }); }
+    const location = c.district ? `${c.district}, ${c.city}` : c.city;
+    const sport = DISCOVERY_SPORTS.includes(c.sport) ? c.sport : 'Diğer';
+    const t = await client.query(
+      `INSERT INTO teams (name, sport, sports, location, is_private, unclaimed, external_url, meet_note)
+       VALUES ($1, $2, ARRAY[$2]::text[], $3, false, true, $4, $5) RETURNING id`,
+      [c.name, sport, location, c.instagram || c.website || c.source_url || null, c.meet_note || null]);
+    const contact = c.email || c.instagram || c.website || null;
+    if (contact) await client.query(`INSERT INTO team_atlas_outreach (team_id, contact) VALUES ($1, $2)`, [t.rows[0].id, contact]);
+    await client.query(
+      `UPDATE team_candidates SET status = 'approved', team_id = $2, email = NULL, reviewed_by = $3, reviewed_at = NOW() WHERE id = $1`,
+      [c.id, t.rows[0].id, req.user.id]);
+    await client.query('COMMIT');
+    res.json({ ok: true, team_id: t.rows[0].id });
+  } catch (e) {
+    await client.query('ROLLBACK').catch(() => {});
+    console.error('Team candidate approve error:', e);
+    res.status(500).json({ error: 'İşlem yapılamadı.' });
+  } finally { client.release(); }
+});
+
+// Ret: ad kalır (tekrar önerilmesin), iletişim silinir.
+app.post('/api/admin/team-discovery/candidates/:id/reject', isAdmin, async (req, res) => {
+  try {
+    const r = await pool.query(
+      `UPDATE team_candidates SET status = 'rejected', email = NULL, reviewed_by = $2, reviewed_at = NOW()
+        WHERE id = $1 AND status = 'pending' RETURNING id`, [req.params.id, req.user.id]);
+    if (!r.rows.length) return res.status(409).json({ error: 'Bu aday zaten sonuçlanmış.' });
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: 'İşlem yapılamadı.' }); }
+});
+
+// =====================================================
 // HOME NEWS
 // =====================================================
 
@@ -10264,6 +10664,7 @@ app.get('/api/admin/badges', isAdmin, async (req, res) => {
     };
     const count = (sql, params = []) => pool.query(sql, params).then((r) => r.rows[0]?.n || 0);
     const sUsers = since('users'), sTrainings = since('trainings'), sTeams = since('teams');
+    const teamDiscovery = await count("SELECT COUNT(*)::int AS n FROM team_candidates WHERE status = 'pending'").catch(() => 0);
     const [claims, messages, reports, discovery, users, trainings, teams] = await Promise.all([
       count("SELECT ((SELECT COUNT(*) FROM team_claims WHERE status = 'pending') + (SELECT COUNT(*) FROM team_removal_requests WHERE status = 'pending') + (SELECT COUNT(*) FROM teams WHERE women_tag_requested))::int AS n").catch(() => 0),
       count('SELECT COUNT(*)::int AS n FROM contact_messages WHERE is_read = false'),
@@ -10281,7 +10682,7 @@ app.get('/api/admin/badges', isAdmin, async (req, res) => {
     ]);
     res.json({
       now,
-      claims, messages, reports, discovery, users, trainings, teams,
+      claims, messages, reports, discovery, teamDiscovery, users, trainings, teams,
       live: { members: liveOnlineIds(now).size, guests: liveActiveGuestCount(now) },
     });
   } catch (e) {

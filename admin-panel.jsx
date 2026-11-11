@@ -2240,6 +2240,203 @@ function TeamClaimsTab({ api, showToast }) {
   );
 }
 
+// ─── Takım Keşfi ─────────────────────────────────────────────
+// Webde aktif amatör grupları arar, aday listesi üretir; onaylanan aday sahipsiz atlas takımı olur.
+// Maliyet şehir × branş sayısıyla orantılı: seçim kadar arama yapılır, üst sınır sunucuda.
+const TD_CITIES = ["İstanbul", "Ankara", "İzmir", "Bursa", "Antalya", "Muğla", "Eskişehir", "Kocaeli", "Mersin", "Adana", "Konya", "Samsun", "Trabzon", "Denizli", "Aydın", "Çanakkale"];
+const TD_SPORTS_DEFAULT = ["Koşu", "Bisiklet", "Triatlon", "Yüzme", "Trekking", "Kürek"];
+
+function TeamCandidateRow({ c, api, showToast, onDone }) {
+  const [edit, setEdit] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const pending = c.status === "pending";
+  const act = async (path, body, done) => {
+    setBusy(true);
+    try {
+      await api(path, { method: body ? "PUT" : "POST", ...(body ? { body: JSON.stringify(body) } : {}) });
+      showToast(done);
+      setEdit(null);
+      onDone();
+    } catch (e) {
+      showToast(e?.message || "İşlem yapılamadı.", "error");
+    } finally { setBusy(false); }
+  };
+  const approve = () => {
+    if (!window.confirm(`${c.name} atlasa eklensin mi? Takım hemen Takımlar listesinde herkese görünür.`)) return;
+    act(`/admin/team-discovery/candidates/${c.id}/approve`, null, "Atlasa eklendi.");
+  };
+  const input = "w-full h-9 px-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-300";
+  const btn = "h-9 px-3 inline-flex items-center gap-1.5 rounded-lg text-xs font-semibold disabled:opacity-50";
+  const link = (href, text) => href && <a href={href} target="_blank" rel="noopener noreferrer" className="text-brand-700 underline underline-offset-2 [overflow-wrap:anywhere]">{text}</a>;
+  if (edit) {
+    const set = (k) => (e) => setEdit((p) => ({ ...p, [k]: e.target.value }));
+    return (
+      <div data-admin-form className="px-4 md:px-6 py-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <input value={edit.name} onChange={set("name")} maxLength={100} aria-label="Takım adı" placeholder="Takım adı" className={input} />
+        <select value={edit.sport} onChange={set("sport")} aria-label="Branş" className={input}>
+          {SPORT_TYPES.map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
+        <input value={edit.city} onChange={set("city")} maxLength={60} aria-label="Şehir" placeholder="Şehir" className={input} />
+        <input value={edit.district} onChange={set("district")} maxLength={60} aria-label="İlçe" placeholder="İlçe" className={input} />
+        <input value={edit.meet_note} onChange={set("meet_note")} maxLength={200} aria-label="Buluşma notu" placeholder="Buluşma notu (gün, saat, yer)" className={`${input} sm:col-span-2`} />
+        <input value={edit.instagram} onChange={set("instagram")} maxLength={300} aria-label="Instagram" placeholder="https://www.instagram.com/…" className={input} />
+        <input value={edit.website} onChange={set("website")} maxLength={300} aria-label="Site" placeholder="https://…" className={input} />
+        <input value={edit.email} onChange={set("email")} maxLength={120} aria-label="E-posta" placeholder="Grubun e-postası" className={`${input} sm:col-span-2`} />
+        <div className="sm:col-span-2 flex gap-2">
+          <button disabled={busy} onClick={() => act(`/admin/team-discovery/candidates/${c.id}`, edit, "Aday güncellendi.")} className={`${btn} bg-brand-600 text-white`}>Kaydet</button>
+          <button disabled={busy} onClick={() => setEdit(null)} className={`${btn} border border-slate-200 text-slate-700`}>Vazgeç</button>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="px-4 md:px-6 py-4 text-sm flex flex-wrap items-start gap-3">
+      <div className="flex-1 min-w-[240px] space-y-1">
+        <div className="font-medium text-slate-900 [overflow-wrap:anywhere]">
+          {c.name} <span className="text-slate-400 font-normal">· {[c.district, c.city].filter(Boolean).join(", ")} · {c.sport}</span>
+        </div>
+        {c.meet_note && <div className="text-slate-600">{c.meet_note}</div>}
+        <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
+          {link(c.instagram, "Instagram")}{link(c.website, "Site")}{link(c.source_url, "Kaynak")}
+          {c.email && <span className="text-slate-700">E-posta: <span className="font-medium">{c.email}</span></span>}
+          {!c.email && !c.instagram && !c.website && <span className="text-slate-500">İletişim bulunamadı</span>}
+        </div>
+        <div className="text-xs text-slate-500">
+          Son hareket: {c.last_activity ? new Date(c.last_activity).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" }) : "—"}
+          {c.activity_note && <> · {c.activity_note}</>}
+          {c.confidence != null && <> · güven %{Math.round(Number(c.confidence) * 100)}</>}
+        </div>
+        {c.status === "approved" && c.team_id && <div className="text-xs text-brand-700">Atlasta: {c.team_name || `#${c.team_id}`}</div>}
+      </div>
+      {pending && (
+        <div className="flex flex-wrap gap-2">
+          <button disabled={busy} onClick={approve} className={`${btn} bg-brand-600 text-white`}><Check className="w-3.5 h-3.5" /> Atlasa ekle</button>
+          <button disabled={busy} onClick={() => setEdit({ name: c.name || "", sport: c.sport || "Koşu", city: c.city || "", district: c.district || "", meet_note: c.meet_note || "", instagram: c.instagram || "", website: c.website || "", email: c.email || "" })}
+            className={`${btn} border border-slate-200 text-slate-700`}><Edit2 className="w-3.5 h-3.5" /> Düzenle</button>
+          <button disabled={busy} onClick={() => act(`/admin/team-discovery/candidates/${c.id}/reject`, null, "Aday reddedildi.")} className={`${btn} bg-red-50 text-red-600`}>Reddet</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TeamDiscoveryTab({ api, showToast, onQueueChange }) {
+  const [status, setStatus] = useState(null);
+  const [cities, setCities] = useState("İzmir");
+  const [sports, setSports] = useState(["Koşu"]);
+  const [filter, setFilter] = useState("pending");
+  const [list, setList] = useState(null);
+  const pollRef = useRef(null);
+  const filterRef = useRef(filter);
+  filterRef.current = filter;
+
+  const loadList = useCallback((st) => {
+    api(`/admin/team-discovery/candidates?status=${st}`).then((d) => setList(d || { items: [], counts: {} })).catch(() => setList({ items: [], counts: {} }));
+  }, [api]);
+  const poll = useCallback(async () => {
+    clearTimeout(pollRef.current);
+    try {
+      const s = await api("/admin/team-discovery/status");
+      if (!s) return;
+      setStatus(s);
+      if (s.running) { pollRef.current = setTimeout(poll, 2500); loadList(filterRef.current); }
+      else { loadList(filterRef.current); onQueueChange?.(); }
+    } catch { /* geçici hata */ }
+  }, [api, loadList, onQueueChange]);
+  useEffect(() => { poll(); return () => clearTimeout(pollRef.current); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { loadList(filter); }, [filter, loadList]);
+
+  const cityList = [...new Set(cities.split(",").map((s) => s.trim()).filter((s) => s.length >= 2))];
+  const pairs = cityList.length * sports.length;
+  const maxPairs = status?.maxPairs || 20;
+  const start = async () => {
+    if (!pairs) { showToast("En az bir şehir ve bir branş seç.", "error"); return; }
+    if (pairs > maxPairs) { showToast(`Tek taramada en çok ${maxPairs} şehir × branş.`, "error"); return; }
+    try {
+      await api("/admin/team-discovery/scan", { method: "POST", body: JSON.stringify({ cities: cityList, sports }) });
+      showToast("Tarama başladı.");
+      poll();
+    } catch (e) { showToast(e?.message || "Tarama başlatılamadı.", "error"); }
+  };
+  const toggleSport = (s) => setSports((p) => (p.includes(s) ? p.filter((x) => x !== s) : [...p, s]));
+  const addCity = (c) => setCities((p) => (cityList.includes(c) ? cityList.filter((x) => x !== c) : [...cityList, c]).join(", "));
+  const chip = (on) => `h-9 px-3 rounded-full text-xs font-semibold border ${on ? "bg-brand-600 text-white border-brand-600" : "bg-white text-slate-700 border-slate-200"}`;
+  const usd = (n) => `$${Number(n || 0).toFixed(Number(n) < 1 ? 3 : 2)}`;
+  const S = status;
+  const counts = list?.counts || {};
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 md:p-6 space-y-4">
+        <div>
+          <h2 className="font-medium text-slate-900">Takım Keşfi</h2>
+          <p className="text-xs text-slate-500 mt-1">
+            Seçtiğin şehir ve branşlarda webde aktif amatör grupları arar. Son 6 ayda izi olmayanlar ve Muuvlink'te zaten olanlar listeye girmez.
+            Hiçbir aday kendiliğinden yayınlanmaz; sunucu kimseye yazmaz. Model: {S?.model || "—"}
+          </p>
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Şehirler</label>
+          <input value={cities} onChange={(e) => setCities(e.target.value)} placeholder="İzmir, Ankara" aria-label="Şehirler"
+            className="w-full h-10 px-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {TD_CITIES.map((c) => <button key={c} onClick={() => addCity(c)} className={chip(cityList.includes(c))}>{c}</button>)}
+          </div>
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Branşlar</label>
+          <div className="flex flex-wrap gap-1.5">
+            {[...new Set([...TD_SPORTS_DEFAULT, ...(S?.sports || []).filter((s) => s !== "Diğer")])].map((s) => (
+              <button key={s} onClick={() => toggleSport(s)} className={chip(sports.includes(s))}>{s}</button>
+            ))}
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <button onClick={start} disabled={S?.running || !S?.configured || !pairs || pairs > maxPairs}
+            className="h-10 px-4 inline-flex items-center gap-2 rounded-lg text-sm font-semibold bg-brand-600 text-white disabled:opacity-50">
+            {S?.running ? <Loader2 className="w-4 h-4 animate-spin" /> : <Radar className="w-4 h-4" />} Taramayı başlat
+          </button>
+          <span className={`text-xs ${pairs > maxPairs ? "text-red-600" : "text-slate-500"}`}>
+            {pairs} arama (en çok {maxPairs}) · tahmini {usd(pairs * 0.03)}–{usd(pairs * 0.08)}
+          </span>
+          {S && !S.configured && <span className="text-xs text-red-600">Sunucuda ANTHROPIC_API_KEY yok.</span>}
+        </div>
+        {S && (S.running || S.log?.length > 0) && (
+          <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 text-xs text-slate-600 space-y-1">
+            <div className="font-semibold text-slate-700">
+              {S.running ? `Taranıyor: ${S.current} (${S.done}/${S.total})` : "Son tarama"} · {S.added} yeni aday · {S.skippedOld} eski/izsiz · {S.skippedDup} zaten var · tahmini {usd(S.cost)}
+            </div>
+            <div className="max-h-40 overflow-y-auto overscroll-contain font-mono space-y-0.5">
+              {S.log.slice(-30).map((l, i) => <div key={i} className="[overflow-wrap:anywhere]">{l}</div>)}
+            </div>
+          </div>
+        )}
+        {S?.runs?.length > 0 && (
+          <div className="text-xs text-slate-500">
+            Şimdiye kadar tahmini toplam {usd(S.totalCost)} · son taramalar:{" "}
+            {S.runs.slice(0, 3).map((r) => `${new Date(r.started_at).toLocaleDateString("tr-TR")} ${r.pairs?.length || 0} arama, ${r.web_searches} web araması, ${usd(r.cost_usd)}`).join(" · ")}
+          </div>
+        )}
+      </div>
+
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="px-4 md:px-6 py-3 border-b border-slate-100 flex flex-wrap gap-2">
+          {[["pending", "Bekleyen"], ["approved", "Eklenen"], ["rejected", "Reddedilen"]].map(([k, l]) => (
+            <button key={k} onClick={() => setFilter(k)} className={chip(filter === k)}>{l} {counts[k] ? `(${counts[k]})` : ""}</button>
+          ))}
+        </div>
+        {list === null ? <p className="p-6 text-sm text-slate-500">Yükleniyor…</p> : list.items.length === 0 ? (
+          <p className="p-6 text-sm text-slate-500">{filter === "pending" ? "Bekleyen aday yok. Yukarıdan bir tarama başlat." : "Kayıt yok."}</p>
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {list.items.map((c) => <TeamCandidateRow key={c.id} c={c} api={api} showToast={showToast} onDone={() => { loadList(filterRef.current); onQueueChange?.(); }} />)}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 const ADMIN_SEEN_TABS = ["users", "trainings", "teams"];
 const ADMIN_SEEN_KEY = "admin_seen_v1";
 const ADMIN_TITLE = "Muuvlink - Admin Panel";
@@ -2776,6 +2973,7 @@ export default function AdminPanel() {
       { id: "users",     label: "Kullanıcılar", icon: Users,        badge: B.users,     kind: "new" },
       { id: "teams",     label: "Takımlar",     icon: Shield,       badge: B.teams,     kind: "new" },
       { id: "claims",    label: "Onaylar",      icon: Flag,         badge: B.claims,    kind: "alert" },
+      { id: "team-discovery", label: "Takım Keşfi", icon: Radar,   badge: B.teamDiscovery, kind: "queue" },
       { id: "trainings", label: "Etkinlikler",  icon: CalendarDays, badge: B.trainings, kind: "new" },
     ]},
     { label: "Dış Etkinlikler", items: [
@@ -4218,6 +4416,10 @@ export default function AdminPanel() {
           {/* ── DISCOVERY ────────────────────────────────── */}
           {!loading && tab === "discovery" && (
             <DiscoveryTab api={api} showToast={showToast} onQueueChange={refreshBadges} />
+          )}
+
+          {!loading && tab === "team-discovery" && (
+            <TeamDiscoveryTab api={api} showToast={showToast} onQueueChange={refreshBadges} />
           )}
 
           {/* ── LOGS ─────────────────────────────────────── */}
