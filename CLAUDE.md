@@ -662,7 +662,9 @@ Admin › Onaylar (`TeamClaimsTab`, rozet `claims`): onay takımı kişiye geçi
 ## Takım Keşfi (11 Kasım 2026, Melih onayladı)
 
 Yarış Keşfi'nin kalıbı, atlas için: Admin › Topluluk › Takım Keşfi. Seçilen şehir × branş başına bir model çağrısı
-(`claude-haiku-5-5`, `TEAM_DISCOVERY_MODEL` ile değişir; `web_search_20260209` en çok 5 arama, effort low, JSON şeması).
+(`claude-haiku-5-5`, `TEAM_DISCOVERY_MODEL` ile değişir; `web_search_20260209` en çok 5 arama, JSON şeması). **Effort `medium`:**
+`low`'da model arayıp boş liste dönüyordu (11 Kasım denemesi); `medium` ~74 bin token + 4 arama ≈ 5 sent/sorgu. Modele giden
+"zaten var" listesine gizli takım adı girmez.
 Tek taramada en çok 20 şehir × branş (maliyet kapısı). Aday tablosu `team_candidates`, her tarama `team_discovery_runs`
 (token, web araması, tahmini $; panelde gösterilir). Ölçülen: tek aramalık sorgu ~26 bin token, ~8 sn.
 - Listeye girmez: son hareketi bilinen ve 6 aydan eski olan; tarihi görülemeyen "aktiflik doğrulanmadı" etiketiyle en sona

@@ -2400,7 +2400,7 @@ function TeamDiscoveryTab({ api, showToast, onQueueChange }) {
             {S?.running ? <Loader2 className="w-4 h-4 animate-spin" /> : <Radar className="w-4 h-4" />} Taramayı başlat
           </button>
           <span className={`text-xs ${pairs > maxPairs ? "text-red-600" : "text-slate-500"}`}>
-            {pairs} arama (en çok {maxPairs}) · tahmini {usd(pairs * 0.03)}–{usd(pairs * 0.08)}
+            {pairs} arama (en çok {maxPairs}) · tahmini {usd(pairs * 0.04)}–{usd(pairs * 0.10)}
           </span>
           {S && !S.configured && <span className="text-xs text-red-600">Sunucuda ANTHROPIC_API_KEY yok.</span>}
         </div>

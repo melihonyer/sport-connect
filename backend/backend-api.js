@@ -10215,7 +10215,8 @@ async function teamDiscoveryModelCall(prompt) {
     model: TEAM_DISCOVERY_MODEL,
     max_tokens: 16000,
     system: TEAM_DISCOVERY_SYSTEM,
-    output_config: { effort: 'low', format: { type: 'json_schema', schema: TEAM_DISCOVERY_SCHEMA } },
+    // 'low' eforda model arayıp yine de boş liste dönüyordu (11 Kasım, İzmir · Koşu); 'medium' 4 arama, 7 grup.
+    output_config: { effort: 'medium', format: { type: 'json_schema', schema: TEAM_DISCOVERY_SCHEMA } },
     tools: [{ type: 'web_search_20260209', name: 'web_search', max_uses: 5 }],
   };
   const usage = { input_tokens: 0, output_tokens: 0, server_tool_use: { web_search_requests: 0 } };
@@ -10334,7 +10335,8 @@ async function runTeamDiscovery(pairs, userId) {
       S.current = label;
       // Şehirde zaten bilinen adlar: model tekrar getirmesin, arama boşa gitmesin.
       const known = [...new Set((await pool.query(
-        `SELECT name FROM teams WHERE location ILIKE $1 UNION SELECT name FROM team_candidates WHERE city ILIKE $1 LIMIT 80`,
+        // Gizli takımın adı modele (dışarıya) gitmez; tekrar kontrolü yine tüm takımlara bakar.
+        `SELECT name FROM teams WHERE location ILIKE $1 AND NOT is_private UNION SELECT name FROM team_candidates WHERE city ILIKE $1 LIMIT 80`,
         [`%${p.city}%`])).rows.map((r) => r.name))];
       const today = new Date().toISOString().slice(0, 10);
       try {
