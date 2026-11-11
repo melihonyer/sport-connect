@@ -11,6 +11,8 @@ Görseller sitede duruyor, imza onları adresten çeker:
 `https://muuvlink.app/icons/favicon.png`, `icons/mail/imza-wordmark.png` (logo-yatay.svg'den 3x PNG),
 `icons/mail/storebtn-*-tr.png`, `partners/training-agents/mail/logo-black.png`, `icons/social-*.png`;
 Training Agents ikonları kendi sitesinden: `https://trainingagentsapp.com/email/icons/<instagram|tiktok|youtube|x|facebook>.png`.
+Muuvlink'in sade ikonları (Deep Teal kare + beyaz çizim): `icons/mail/imza-<instagram|tiktok|youtube|facebook|threads>.png`;
+ilk dördü Training Agents'ın e-posta ikonlarının kopyası, Threads `icons/social-threads.png`'den ayıklandı.
 Bu dosyalar silinir ya da adı değişirse imza bozulur.
 
 ## Apple Mail (birebir)
