@@ -91,6 +91,12 @@ Kart 7178 Training Agents ile ortak; Meta'nın "kart başına reklam hesabı" s�
 - Reklamlar zaten §4'teki UTM'yi taşıyor (`utm_source=meta&utm_medium=paid`, kampanya ve
   reklam adı) → `users.utm_campaign` / `utm_content` reklam bazında eşleşiyor.
 
+**11.11.2026 kontrolü (son 30 gün, 12.10–10.11; Ads MCP + kendi verimiz):** yalnız `MUUV | Kayit | Web` açık, 100 ₺/gün.
+Meta: 2.923,60 ₺ · 54 kayıt · 54,14 ₺/kayıt · CPM 145 ₺ · CTR %3,05 · sıklık 2,16. Haftalık (Meta): 16 / 9 / 18 / 8 kayıt,
+CPA 42 / 77 / 38 / 87 ₺; CTR %3,41 → %2,58 (V9 yorgunluğu). Son 7 günde harcamanın ~%92'si V9'da (8 kayıt, 78 ₺); V5, V8, V11
+neredeyse teslim almıyor. Kendi verimiz: 90 kayıt, `utm_source=meta` 22 (V9 20, V5 2; hepsi web) → gerçek ≈ 133 ₺/kayıt.
+Bu 22 kişiden 3'ü etkinliğe katıldı, 5'i takıma girdi, 2'si etkinlik açtı (diğer kaynaklar: 68 kişiden 6 / 11).
+
 **Kendi verimiz (aynı 30 gün):** toplam 75 kayıt; `utm_source=meta` 20 (+1 yalnız fbclid).
 Reklam bazında: V9 12 · V5 3 · V11 3 · V8 2. Meta 34 diyor (rıza/iOS/atıf penceresi farkı +
 uygulamadan kayıtlar). Gerçek kayıt başı ≈ 113 ₺. Bu 21 kişiden **yalnız 2'si** bir
