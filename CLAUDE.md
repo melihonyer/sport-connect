@@ -725,6 +725,24 @@ LICENSE.md, 13 Kasım'da okundu). **Arayüzde kaynak/lisans satırı YAZILMAZ** 
   eski `{id}` isteği de kabul ediliyor.
 - Test: geçici kullanıcı + kendi profili; depoya yüklenen test dosyası da silinir (Supabase listelemede dosya adı `search` ile, `prefix` klasör adı).
 
+## Profil özelleştirme (13 Kasım 2026, Melih onayladı; metinler `profileStyle.*`, 7 dil)
+
+Melih'in seçtiği 7 madde: 1 Branşlarım, 2 seviye + tempo, 3 kapak, 5 öne çıkan rozetler, 7 aylık hedef, 9 harf rengi, 10 saat özeti.
+**Kurulanlar: 1, 2, 9.** Sırada 3, 5, 7, sonra 10. Başkasının profil sayfası YOK; kapak/rozet/hedef/saat yalnız sahibine görünür.
+- Veri `users.avatar_color` (deep|ana1|ana2|carbon) ve `users.profile_sports` JSONB `[{sport, level, pace?}]`; yazma tek uç
+  `PUT /api/users/me/profile-style` (gönderilmeyen alana dokunulmaz). En çok 5 branş, `DISCOVERY_SPORTS`'tan; seviye
+  beginner|regular|racing; tempo yalnız Koşu'da 3:00–9:00, 15 sn adım. Kodlar İKİ yerde aynı: backend `AVATAR_COLORS`/
+  `PROFILE_LEVELS`/`validPace`, site `AVATAR_COLOR_CLASS`/`PROFILE_LEVELS`/`PACE_OPTIONS`.
+- **Görünürlük A (Melih):** branş + seviye takım üye ve etkinlik katılımcı listesinde (`ProfileSportsLine`), yalnız tam adı
+  görene. Maskeleme fotoğrafla aynı satırda: maskeli görene `avatar_color: null, profile_sports: []`. Yorum ve duvar zaten
+  yalnız izinliye gidiyor (`user_avatar_color`). Yeni bir uç kişi listesi döndürürse bu iki alan da aynı kurala bağlanır.
+- Harf rengi `renderAvatar(avatar, name, cls, color)` + kendi resminin dört yeri (`avatarBgClass`). Ana1 teal zeminde harf
+  Carbon (beyaz ~3:1 kalıyordu). E-posta şablonları harf rengini bilmez (düz Deep Teal).
+- Tempo grubu önerisi: Koşu etkinliğinde kişinin temposuna en yakın grup (≤30 sn, grubun `pace` metnindeki ilk m:ss) en üstte
+  ve "Temponla uyuşan grup" işaretli; seçim yine kişide. Grup temposu serbest metin; sayı yazılmamışsa öneri çıkmaz.
+- `ProfileSportsEditor` modül düzeyinde (kendi durumu), Esc/geri `closeTopOverlayRef`, yarım iş `hasUnsavedWork`.
+- Takım üye satırında ad sütunu `basis-48`: dar ekranda rol seçimi + sil düğmesi adı harf harf sıkıştırıyordu.
+
 ## Silme ve kayıt
 
 - Kullanıcı hesabı **yumuşak** silinir (`users.deleted_at`, 30 gün, sonra purge).

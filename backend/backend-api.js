@@ -3394,6 +3394,7 @@ const SERVER_MSG = {
   'Bu takım henüz sahiplenilmedi.': { en: 'This team has not been claimed yet.', de: 'Dieses Team wurde noch nicht beansprucht.', el: 'Αυτή η ομάδα δεν έχει διεκδικηθεί ακόμη.', es: 'Este equipo aún no tiene responsable.', fr: 'Cette équipe n’a pas encore été revendiquée.', it: 'Questa squadra non è ancora stata rivendicata.' },
   'Bu takım zaten sahiplenilmiş.': { en: 'This team has already been claimed.', de: 'Dieses Team wurde bereits beansprucht.', el: 'Αυτή η ομάδα έχει ήδη διεκδικηθεί.', es: 'Este equipo ya tiene responsable.', fr: 'Cette équipe a déjà été revendiquée.', it: 'Questa squadra è già stata rivendicata.' },
   'Bu takım için talebin zaten alındı.': { en: 'We already received your request for this team.', de: 'Deine Anfrage für dieses Team liegt uns bereits vor.', el: 'Έχουμε ήδη λάβει το αίτημά σου για αυτή την ομάδα.', es: 'Ya hemos recibido tu solicitud para este equipo.', fr: 'Nous avons déjà reçu ta demande pour cette équipe.', it: 'Abbiamo già ricevuto la tua richiesta per questa squadra.' },
+  'Geçersiz değer.': { en: 'Invalid value.', de: 'Ungültiger Wert.', el: 'Μη έγκυρη τιμή.', es: 'Valor no válido.', fr: 'Valeur non valide.', it: 'Valore non valido.' },
   'Geçersiz çizim.': { en: 'Invalid illustration.', de: 'Ungültige Illustration.', el: 'Μη έγκυρο σκίτσο.', es: 'Ilustración no válida.', fr: 'Illustration non valide.', it: 'Illustrazione non valida.' },
   'Bir iletişim bilgisi yazmalısın.': { en: 'Please add a way to contact you.', de: 'Bitte gib eine Kontaktmöglichkeit an.', el: 'Πρόσθεσε έναν τρόπο επικοινωνίας.', es: 'Añade una forma de contactarte.', fr: 'Ajoute un moyen de te contacter.', it: 'Aggiungi un modo per contattarti.' },
   'Çok fazla talep gönderdin, biraz sonra dene.': { en: 'Too many requests, please try again later.', de: 'Zu viele Anfragen, bitte versuche es später erneut.', el: 'Πάρα πολλά αιτήματα, δοκίμασε ξανά αργότερα.', es: 'Demasiadas solicitudes, inténtalo más tarde.', fr: 'Trop de demandes, réessaie plus tard.', it: 'Troppe richieste, riprova più tardi.' },
@@ -4570,7 +4571,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
                           utm_source, utm_medium, utm_campaign, utm_content, utm_term,
                           fbclid, acquisition_platform, landing_page, referrer, lang)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-       RETURNING id, name, email, avatar, created_at, notif_prefs, lang`,
+       RETURNING id, name, email, avatar, avatar_color, profile_sports, created_at, notif_prefs, lang`,
       [name, email, passwordHash, phone, JSON.stringify(DEFAULT_NOTIF_PREFS),
        trim255(attr.utm_source), trim255(attr.utm_medium), trim255(attr.utm_campaign),
        trim255(attr.utm_content), trim255(attr.utm_term), trim255(attr.fbclid),
@@ -4636,7 +4637,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     }
 
     const result = await pool.query(
-      'SELECT id, name, email, password_hash, avatar, deleted_at, lang FROM users WHERE email = $1',
+      'SELECT id, name, email, password_hash, avatar, avatar_color, profile_sports, deleted_at, lang FROM users WHERE email = $1',
       [email]
     );
 
@@ -4681,7 +4682,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
 app.get('/api/auth/me', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, name, email, phone, avatar, is_admin, created_at, notif_prefs, onboarding_done, lang FROM users WHERE id = $1',
+      'SELECT id, name, email, phone, avatar, avatar_color, profile_sports, is_admin, created_at, notif_prefs, onboarding_done, lang FROM users WHERE id = $1',
       [req.user.id]
     );
 
@@ -4717,7 +4718,7 @@ app.put('/api/auth/profile', authenticateToken, async (req, res) => {
     const result = await pool.query(
       `UPDATE users SET name = $1, phone = $2, avatar = $3, updated_at = CURRENT_TIMESTAMP
        WHERE id = $4
-       RETURNING id, name, email, phone, avatar`,
+       RETURNING id, name, email, phone, avatar, avatar_color, profile_sports`,
       [name, phone, avatar, req.user.id]
     );
 
@@ -4738,12 +4739,64 @@ app.post('/api/auth/avatar', authenticateToken, uploadAvatar.single('avatar'), a
     const avatarUrl = await uploadToSupabase('avatars', fileName, webpBuffer, 'image/webp');
     const result = await pool.query(
       `UPDATE users SET avatar = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2
-       RETURNING id, name, email, phone, avatar`,
+       RETURNING id, name, email, phone, avatar, avatar_color, profile_sports`,
       [avatarUrl, req.user.id]
     );
     res.json({ message: 'Avatar güncellendi', user: result.rows[0] });
   } catch (error) {
     console.error('Avatar upload error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Profil özelleştirme (13 Kasım 2026, Melih). Kişi yalnız kendi alanlarını yazar; gönderilmeyen alana dokunulmaz.
+// - avatar_color: fotoğrafı yoksa baş harfin zemini (site AVATAR_COLOR_CLASS ile aynı kodlar). Fotoğrafla aynı gizlilik kuralı.
+// - profile_sports: en çok 5 branş [{ sport, level, pace? }]; level beginner|regular|racing; pace yalnız Koşu'da, 3:00–9:00
+//   arası 15 sn adım (site PACE_OPTIONS ile aynı). Takım üye ve katılımcı listesinde tam adı görene gider (Melih: A seçeneği).
+const AVATAR_COLORS = ['deep', 'ana1', 'ana2', 'carbon'];
+const PROFILE_LEVELS = ['beginner', 'regular', 'racing'];
+const PROFILE_SPORT_MAX = 5;
+const validPace = (p) => {
+  const m = /^([3-9]):(00|15|30|45)$/.exec(String(p || ''));
+  return !!m && (Number(m[1]) < 9 || m[2] === '00');
+};
+app.put('/api/users/me/profile-style', authenticateToken, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const sets = [];
+    const vals = [];
+    if ('avatar_color' in body) {
+      const c = body.avatar_color;
+      if (c !== null && !AVATAR_COLORS.includes(c)) return res.status(400).json({ error: 'Geçersiz değer.' });
+      vals.push(c); sets.push(`avatar_color = $${vals.length}`);
+    }
+    if ('sports' in body) {
+      const raw = body.sports;
+      if (!Array.isArray(raw) || raw.length > PROFILE_SPORT_MAX) return res.status(400).json({ error: 'Geçersiz değer.' });
+      const seen = new Set();
+      const clean = [];
+      for (const x of raw) {
+        const sport = String(x?.sport || '');
+        if (!DISCOVERY_SPORTS.includes(sport) || seen.has(sport)) return res.status(400).json({ error: 'Geçersiz değer.' });
+        if (!PROFILE_LEVELS.includes(x?.level)) return res.status(400).json({ error: 'Geçersiz değer.' });
+        seen.add(sport);
+        const item = { sport, level: x.level };
+        if (sport === 'Koşu' && x.pace) {
+          if (!validPace(x.pace)) return res.status(400).json({ error: 'Geçersiz değer.' });
+          item.pace = x.pace;
+        }
+        clean.push(item);
+      }
+      vals.push(JSON.stringify(clean)); sets.push(`profile_sports = $${vals.length}::jsonb`);
+    }
+    if (!sets.length) return res.status(400).json({ error: 'Geçersiz değer.' });
+    vals.push(req.user.id);
+    const r = await pool.query(
+      `UPDATE users SET ${sets.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = $${vals.length}
+       RETURNING id, name, email, phone, avatar, avatar_color, profile_sports`, vals);
+    res.json({ user: r.rows[0] });
+  } catch (error) {
+    console.error('Profile style error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -4813,7 +4866,7 @@ app.post('/api/auth/avatar/illustration', authenticateToken, async (req, res) =>
     }
     const result = await pool.query(
       `UPDATE users SET avatar = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2
-       RETURNING id, name, email, phone, avatar`,
+       RETURNING id, name, email, phone, avatar, avatar_color, profile_sports`,
       [avatarUrl, req.user.id]
     );
     res.json({ message: 'Avatar güncellendi', user: result.rows[0] });
@@ -5492,7 +5545,7 @@ app.get('/api/teams/:id', optionalAuth, async (req, res) => {
     team.weekly_days = sched.rows[0]?.weekly_days || [];
 
     const membersResult = await pool.query(
-      `SELECT u.id, u.name, u.avatar, u.is_admin, tm.role, tm.joined_at
+      `SELECT u.id, u.name, u.avatar, u.avatar_color, u.profile_sports, u.is_admin, tm.role, tm.joined_at
        FROM team_members tm
        JOIN users u ON tm.user_id = u.id
        WHERE tm.team_id = $1
@@ -5504,7 +5557,7 @@ app.get('/api/teams/:id', optionalAuth, async (req, res) => {
 
     // Get team posts (+ beğeni bilgileri; giriş yoksa $2 null → liked_by_me false)
     const postsResult = await pool.query(
-      `SELECT tp.*, u.name as user_name, u.avatar as user_avatar,
+      `SELECT tp.*, u.name as user_name, u.avatar as user_avatar, u.avatar_color as user_avatar_color,
               (SELECT COUNT(*) FROM team_post_likes pl WHERE pl.post_id = tp.id)::int as like_count,
               (($2::int IS NOT NULL) AND EXISTS (
                  SELECT 1 FROM team_post_likes pl WHERE pl.post_id = tp.id AND pl.user_id = $2
@@ -5529,7 +5582,7 @@ app.get('/api/teams/:id', optionalAuth, async (req, res) => {
     // id'ler kalıyor — arayüz "üye miyim / sahibi kim" kararını id ile veriyor.
     if (!showNames) {
       team.owner_name = maskPersonName(team.owner_name);
-      team.members = team.members.map((m) => ({ ...m, name: maskPersonName(m.name), avatar: null }));
+      team.members = team.members.map((m) => ({ ...m, name: maskPersonName(m.name), avatar: null, avatar_color: null, profile_sports: [] }));
       team.posts = [];
     }
     team.names_masked = !showNames;
@@ -6053,7 +6106,7 @@ app.post('/api/teams/:id/posts', authenticateToken, async (req, res) => {
 
     // Üyelik kontrolü + göndericinin bilgilerini çek
     const memberCheck = await pool.query(
-      `SELECT tm.id, u.name as user_name, u.avatar as user_avatar
+      `SELECT tm.id, u.name as user_name, u.avatar as user_avatar, u.avatar_color as user_avatar_color
        FROM team_members tm
        JOIN users u ON u.id = tm.user_id
        WHERE tm.team_id = $1 AND tm.user_id = $2`,
@@ -6131,7 +6184,7 @@ app.post('/api/teams/:id/posts', authenticateToken, async (req, res) => {
     // Bildirimleri bekle ama mail'i background'da çalıştır
     await Promise.allSettled(notifAndMailPromises);
 
-    res.json({ post: { ...post, user_name: poster.user_name, user_avatar: poster.user_avatar } });
+    res.json({ post: { ...post, user_name: poster.user_name, user_avatar: poster.user_avatar, user_avatar_color: poster.user_avatar_color } });
   } catch (error) {
     console.error('Post error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -6974,7 +7027,7 @@ app.get('/api/trainings/:id', optionalAuth, async (req, res) => {
     training.route = routeRes.rows[0] || null;
 
     const attendeesResult = await pool.query(
-      `SELECT u.id, u.name, u.avatar, ta.status, ta.joined_at, ta.group_id
+      `SELECT u.id, u.name, u.avatar, u.avatar_color, u.profile_sports, ta.status, ta.joined_at, ta.group_id
        FROM training_attendees ta
        JOIN users u ON ta.user_id = u.id
        WHERE ta.training_id = $1
@@ -6999,7 +7052,7 @@ app.get('/api/trainings/:id', optionalAuth, async (req, res) => {
       showAttendees = r.member || r.attendee || r.admin || training.created_by === req.user.id;
     }
     if (!showAttendees) {
-      training.attendees = training.attendees.map((a) => ({ ...a, name: maskPersonName(a.name), avatar: null, group_id: null }));
+      training.attendees = training.attendees.map((a) => ({ ...a, name: maskPersonName(a.name), avatar: null, avatar_color: null, profile_sports: [], group_id: null }));
     }
     training.names_masked = !showAttendees;
 
@@ -7028,7 +7081,7 @@ app.get('/api/trainings/:id', optionalAuth, async (req, res) => {
 
     // Get comments (+ beğeni sayısı, kullanıcı beğenmiş mi, beğenenler)
     const commentsResult = await pool.query(
-      `SELECT tc.*, u.name as user_name, u.avatar as user_avatar,
+      `SELECT tc.*, u.name as user_name, u.avatar as user_avatar, u.avatar_color as user_avatar_color,
               (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = tc.id)::int as like_count,
               ($2::int IS NOT NULL AND EXISTS(
                  SELECT 1 FROM comment_likes cl WHERE cl.comment_id = tc.id AND cl.user_id = $2
@@ -11366,6 +11419,8 @@ pool.query(`ALTER TABLE trainings ADD COLUMN IF NOT EXISTS is_paid BOOLEAN DEFAU
 // Kullanıcının arayüz dili. BOŞ = hiç seçmedi → e-posta/bildirim Türkçe (eski davranış).
 // Yalnız kayıt olurken ya da dili elle değiştirince yazılır; mevcut hesaplar boş kalır.
 pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS lang VARCHAR(5)`).catch(() => {});
+// Profil özelleştirme (13 Kasım 2026, Melih): harf rengi + branşlarım (seviye, koşu temposu).
+pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_color VARCHAR(12), ADD COLUMN IF NOT EXISTS profile_sports JSONB NOT NULL DEFAULT '[]'::jsonb`).catch(() => {});
 // Admin'in "büyüme maili" gönderimleri: hangi takım/etkinlik, ne zaman, kaç kişiye.
 pool.query(`CREATE TABLE IF NOT EXISTS grow_email_log (
     id SERIAL PRIMARY KEY,

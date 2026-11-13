@@ -1557,6 +1557,22 @@ export const translations = {
   // (scripts/seo-static.mjs → seo-content.json → backend seoGuideText). Melih onayladı, 4 Kasım 2026.
   // Hakkımızda sayfası (/hakkimizda, /en/about …; 4 Kasım 2026, TR metin Melih onayladı). Sayfa AboutPage.jsx,
   // bot metni + AboutPage şeması backend seoAboutText. Şirket bilgisi COMPANY (dosyanın başı).
+  // Profil özelleştirme (13 Kasım 2026, Melih onayladı): Branşlarım, seviye, koşu temposu, harf rengi.
+  profileStyle: {
+    sportsTitle: { tr: "Branşlarım", en: "My sports", de: "Meine Sportarten" },
+    sportsEmpty: { tr: "Hangi sporları yapıyorsun? En çok 5 branş seçebilirsin.", en: "Which sports do you do? You can pick up to 5.", de: "Welche Sportarten machst du? Du kannst bis zu 5 auswählen." },
+    addSport: { tr: "Branş ekle", en: "Add a sport", de: "Sportart hinzufügen" },
+    paceLabel: { tr: "Koşu temposu (isteğe bağlı)", en: "Running pace (optional)", de: "Lauftempo (optional)" },
+    paceUnit: { tr: "/km", en: "/km", de: "/km" },
+    paceMatch: { tr: "Temponla uyuşan grup", en: "Matches your pace", de: "Passt zu deinem Tempo" },
+    letterColor: { tr: "Harf rengi", en: "Letter color", de: "Buchstabenfarbe" },
+    letterColorHelp: { tr: "Fotoğrafın yoksa adının baş harfi bu renkte görünür.", en: "If you have no photo, your initial appears in this color.", de: "Wenn du kein Foto hast, erscheint dein Anfangsbuchstabe in dieser Farbe." },
+    levels: {
+      beginner: { tr: "Yeni başlıyorum", en: "Just starting", de: "Ich fange gerade an" },
+      regular: { tr: "Düzenli yapıyorum", en: "Doing it regularly", de: "Ich mache es regelmäßig" },
+      racing: { tr: "Yarışıyorum", en: "Racing", de: "Ich nehme an Wettkämpfen teil" },
+    },
+  },
   about: {
     nav: { tr: "Hakkımızda",
       en: "About us",

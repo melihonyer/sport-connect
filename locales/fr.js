@@ -804,6 +804,21 @@ export default {
     faqSubtitle: "Trouve ci-dessous les réponses à tes questions.",
   },
 
+  profileStyle: {
+    sportsTitle: "Mes sports",
+    sportsEmpty: "Quels sports pratiques-tu ? Tu peux en choisir jusqu'à 5.",
+    addSport: "Ajouter un sport",
+    paceLabel: "Allure de course (facultatif)",
+    paceUnit: "/km",
+    paceMatch: "Correspond à ton allure",
+    letterColor: "Couleur de l'initiale",
+    letterColorHelp: "Si tu n'as pas de photo, ton initiale apparaît dans cette couleur.",
+    levels: {
+      beginner: "Je débute",
+      regular: "Je pratique régulièrement",
+      racing: "Je fais de la compétition",
+    },
+  },
   about: {
     nav: "À propos",
     title: "À propos",

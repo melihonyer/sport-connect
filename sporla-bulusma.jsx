@@ -2264,6 +2264,135 @@ const parseDetailPath = (pathname) => {
 // İngilizce ve Almanca yalnız bu DÖRT sabit sayfa için önek alır.
 // Detay sayfaları (/takim/, /etkinlik/) bilerek tek adreste bırakıldı:
 // içeriği kullanıcı Türkçe yazıyor, çevirisi yok — üç adres kopya olurdu.
+// ── Profil özelleştirme (13 Kasım 2026, Melih) ─────────────────────────────
+// Harf rengi: backend AVATAR_COLORS ile aynı kodlar; renk token'ları tailwind.config.js'te.
+// Harf rengi zeminle okunur olsun (WCAG): Ana1 teal üstünde beyaz ~3:1 kalıyordu, orada harf Carbon.
+const AVATAR_COLOR_CLASS = { deep: "bg-brand-600 text-white", ana1: "bg-logo-teal text-ink-900", ana2: "bg-logo-purple text-white", carbon: "bg-ink-900 text-white" };
+const AVATAR_COLOR_KEYS = Object.keys(AVATAR_COLOR_CLASS);
+const avatarBgClass = (color) => AVATAR_COLOR_CLASS[color] || AVATAR_COLOR_CLASS.deep;
+// Branşlarım: en çok 5; seviye backend PROFILE_LEVELS ile aynı; tempo yalnız Koşu'da, 3:00–9:00, 15 sn adım (backend validPace).
+const PROFILE_SPORT_MAX = 5;
+const PROFILE_LEVELS = ["beginner", "regular", "racing"];
+const PACE_OPTIONS = Array.from({ length: 25 }, (_, i) => { const t = 180 + i * 15; return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`; });
+const paceSec = (str) => { const m = /(\d{1,2})[:.](\d{2})/.exec(String(str || "")); return m ? Number(m[1]) * 60 + Number(m[2]) : null; };
+// Tempo grupları içinde kişinin koşu temposuna en yakın grup (en çok 30 sn fark); yoksa null.
+const paceMatchedGroupId = (groups, pace) => {
+  const mine = paceSec(pace);
+  if (mine == null || !Array.isArray(groups)) return null;
+  let best = null;
+  for (const g of groups) {
+    const gs = paceSec(g.pace);
+    if (gs == null) continue;
+    const d = Math.abs(gs - mine);
+    if (d <= 30 && (!best || d < best.d)) best = { id: g.id, d };
+  }
+  return best?.id ?? null;
+};
+
+// Kişinin branş + seviye satırı (takım üye ve katılımcı listelerinde; sunucu yalnız tam adı görene gönderir).
+function ProfileSportsLine({ sports, t, sportLabel, max = 2 }) {
+  if (!Array.isArray(sports) || !sports.length) return null;
+  const shown = sports.slice(0, max);
+  return (
+    <div className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-xs text-slate-600">
+      {shown.map((x) => {
+        const st = sportStyle(x.sport);
+        const Icon = st.Icon;
+        return (
+          <span key={x.sport} className="inline-flex items-center gap-1" title={sportLabel(x.sport)}>
+            <Icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: st.color }} aria-hidden="true" />
+            <span className="sr-only">{sportLabel(x.sport)}: </span>
+            {t(`profileStyle.levels.${x.level}`)}
+          </span>
+        );
+      })}
+      {sports.length > max && <span className="text-slate-400">+{sports.length - max}</span>}
+    </div>
+  );
+}
+
+// Profildeki "Branşlarım" düzenleyicisi. Modül düzeyinde: kendi durumu üst çizimlerde sıfırlanmasın.
+function ProfileSportsEditor({ t, initial, sportLabel, onSave, onClose, saving }) {
+  const [list, setList] = React.useState(() => (Array.isArray(initial) ? initial.map((x) => ({ ...x })) : []));
+  const has = (sp) => list.some((x) => x.sport === sp);
+  const toggle = (sp) => setList((l) => (l.some((x) => x.sport === sp) ? l.filter((x) => x.sport !== sp)
+    : l.length >= PROFILE_SPORT_MAX ? l : [...l, { sport: sp, level: "regular" }]));
+  const patch = (sp, p) => setList((l) => l.map((x) => (x.sport === sp ? { ...x, ...p } : x)));
+  return (
+    <div className="fixed inset-0 bg-black/50 flex justify-center overflow-y-auto overscroll-contain p-4" style={{ zIndex: 1000000 }}
+      role="dialog" aria-modal="true" aria-label={t("profileStyle.sportsTitle")} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="bg-white rounded-3xl w-full max-w-lg my-auto p-6 sm:p-8 shadow-2xl">
+        <div className="flex items-start justify-between gap-3 mb-2">
+          <h2 className="text-2xl font-semibold text-brand-900">{t("profileStyle.sportsTitle")}</h2>
+          <button type="button" onClick={onClose} aria-label={t("common.cancel")} className="w-11 h-11 -mr-2 -mt-2 flex items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <p className="text-sm text-slate-500 mb-4">{t("profileStyle.sportsEmpty")}</p>
+        <div className="flex flex-wrap gap-2 mb-5">
+          {SPORT_TYPES.map((sp) => {
+            const on = has(sp);
+            const st = sportStyle(sp);
+            const Icon = st.Icon;
+            const full = !on && list.length >= PROFILE_SPORT_MAX;
+            return (
+              <button key={sp} type="button" onClick={() => toggle(sp)} disabled={full} aria-pressed={on}
+                className={`inline-flex items-center gap-1.5 min-h-[40px] px-3 rounded-xl text-sm font-medium border transition-colors disabled:opacity-40 ${on ? "border-brand-600 bg-brand-50 text-brand-900" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`}>
+                <Icon className="w-4 h-4 flex-shrink-0" style={{ color: st.color }} aria-hidden="true" /> {sportLabel(sp)}
+              </button>
+            );
+          })}
+        </div>
+        {list.length > 0 && (
+          <div className="space-y-3 mb-6">
+            {list.map((x) => {
+              const st = sportStyle(x.sport);
+              const Icon = st.Icon;
+              return (
+                <div key={x.sport} className="rounded-2xl border border-slate-200 p-3.5">
+                  <div className="flex items-center gap-2 font-semibold text-slate-800 mb-2.5">
+                    <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: st.color }}>
+                      <Icon className="w-4 h-4" style={{ color: st.text }} aria-hidden="true" />
+                    </span>
+                    {sportLabel(x.sport)}
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5" role="radiogroup" aria-label={sportLabel(x.sport)}>
+                    {PROFILE_LEVELS.map((lv) => (
+                      <button key={lv} type="button" role="radio" aria-checked={x.level === lv} onClick={() => patch(x.sport, { level: lv })}
+                        className={`min-h-[40px] px-2 rounded-lg text-xs font-semibold transition-colors ${x.level === lv ? "bg-brand-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
+                        {t(`profileStyle.levels.${lv}`)}
+                      </button>
+                    ))}
+                  </div>
+                  {x.sport === "Koşu" && (
+                    <label className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm text-slate-600">
+                      {t("profileStyle.paceLabel")}
+                      <select value={x.pace || ""} onChange={(e) => patch(x.sport, { pace: e.target.value || undefined })}
+                        className="min-h-[40px] px-3 rounded-lg border border-slate-200 bg-white text-slate-800">
+                        <option value="">—</option>
+                        {PACE_OPTIONS.map((pc) => <option key={pc} value={pc}>{pc} {t("profileStyle.paceUnit")}</option>)}
+                      </select>
+                    </label>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+        <div className="flex gap-3">
+          <button type="button" onClick={onClose} className="flex-1 min-h-[48px] rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50">
+            {t("common.cancel")}
+          </button>
+          <button type="button" onClick={() => onSave(list)} disabled={saving} data-btn="solid"
+            className="flex-1 min-h-[48px] rounded-xl bg-brand-600 text-white font-semibold disabled:opacity-60">
+            {t("common.save")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Hazır profil çizimleri (SALTASK'taki gibi yenilenebilir): set adları backend AVATAR_STYLES ile aynı. Önizleme
 // sunucuda üretilir (/api/avatar-illustrations/<set>/<tohum>, uzantısız); "Başka örnekler" yeni tohum çeker.
 const AVATAR_ILLUSTRATION_SETS = ["notionists", "lorelei", "openPeeps", "thumbs", "glass", "shapes"];
@@ -2504,6 +2633,8 @@ export default function Muuvlink() {
   const openMyMessagesRef = useRef(() => {});
   const [showNotifPrefs, setShowNotifPrefs] = useState(false);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
+  const [showSportsEditor, setShowSportsEditor] = useState(false);
+  const [sportsSaving, setSportsSaving] = useState(false);
   // Hazır çizim seçici üst düzeyde: ProfileEditModal satır içi bileşen, her üst çizimde sıfırlanıyor.
   const [showIllus, setShowIllus] = useState(false);
   const illusMemoRef = useRef({ set: "notionists", seeds: illusFirstSeeds() });
@@ -2600,12 +2731,16 @@ export default function Muuvlink() {
   const [nearbyUsed, setNearbyUsed] = useState(() => localStorage.getItem("nearbyUsed") === "true");
 
   // Avatar'ı render et: URL ise <img>, değilse emoji/harf
-  const renderAvatar = (avatar, name, className = "") => {
+  const renderAvatar = (avatar, name, className = "", color = null) => {
     if (avatar?.startsWith("/uploads/") || avatar?.startsWith("http")) {
       const src = avatar.startsWith("http") ? avatar : `${BASE_URL}${avatar}`;
       return <img loading="lazy" decoding="async" src={src} alt="" className={`w-full h-full object-cover ${className}`} />;
     }
     const letter = name?.[0]?.toLocaleUpperCase("en-US") ?? "?";
+    // Harf rengi (kişinin seçtiği; yoksa kutunun kendi zemini).
+    if (color && AVATAR_COLOR_CLASS[color]) {
+      return <span className={`w-full h-full flex items-center justify-center font-bold ${AVATAR_COLOR_CLASS[color]}`}>{letter}</span>;
+    }
     return <span className="text-inherit font-bold">{letter}</span>;
   };
 
@@ -3315,7 +3450,7 @@ export default function Muuvlink() {
   // sayfası, açık pencere ya da içine bir şey yazılmış alan varsa "yarım iş" sayılır.
   const hasUnsavedWork = () => {
     if (["create-training", "create-team", "contact", "reset-password"].includes(currentPage)) return true;
-    if (isAuthModalOpen || showProfileEdit || showInviteModal || showManualLocation || showDeleteModal || storySpec || confirmModal) return true;
+    if (isAuthModalOpen || showProfileEdit || showSportsEditor || showInviteModal || showManualLocation || showDeleteModal || storySpec || confirmModal) return true;
     if (currentPage === "training-detail" && trainingEditModeRef.current) return true;
     if (currentPage === "team-detail" && teamActiveTabRef.current === "settings") return true;
     const a = document.activeElement;
@@ -3590,6 +3725,7 @@ export default function Muuvlink() {
     if (removeTeam)        { setRemoveTeam(null);         return true; }
     if (confirmModal)      { setConfirmModal(null);       return true; }
     if (myMsgs)            { setMyMsgs(null);             return true; } // ayarların/bildirimlerin üstünde açılır
+    if (showSportsEditor)  { setShowSportsEditor(false);  return true; }
     if (showWearable)      { setShowWearable(false);      return true; }
     if (showDeleteModal)   { setShowDeleteModal(false);   return true; }
     if (showManualLocation){ setShowManualLocation(false);return true; }
@@ -6299,8 +6435,8 @@ export default function Muuvlink() {
             {/* Avatar + name */}
             <div className="flex items-center gap-5">
               <div className="relative cursor-pointer group" onClick={() => setShowProfileEdit(true)} title={t("profile.editTitle")}>
-                <div className="w-20 h-20 rounded-2xl overflow-hidden flex items-center justify-center text-white text-2xl font-bold flex-shrink-0"
-                  style={{background:"#114956", boxShadow:"0 2px 8px rgba(17,73,86,0.18)"}}>
+                <div className={`w-20 h-20 rounded-2xl overflow-hidden flex items-center justify-center text-2xl font-bold flex-shrink-0 ${avatarBgClass(user?.avatar_color)}`}
+                  style={{boxShadow:"0 2px 8px rgba(17,73,86,0.18)"}}>
                   {(user?.avatar?.startsWith("/uploads/") || user?.avatar?.startsWith("http")) ? (
                     <img src={user.avatar.startsWith("http") ? user.avatar : `${BASE_URL}${user.avatar}`} alt="avatar" className="w-full h-full object-cover" />
                   ) : (
@@ -6359,8 +6495,48 @@ export default function Muuvlink() {
             </div>
           </div>
 
+          {/* Branşlarım (13 Kasım 2026): branş + seviye + koşu temposu; takım/etkinlik listelerinde de görünür */}
+          <div className="mt-5">
+            <div className="flex items-center justify-between gap-3 mb-2">
+              <div className="text-sm font-semibold text-brand-900">{t("profileStyle.sportsTitle")}</div>
+              {user?.profile_sports?.length > 0 && (
+                <button type="button" onClick={() => setShowSportsEditor(true)}
+                  className="min-h-[36px] px-3 rounded-lg text-xs font-semibold text-brand-700 bg-white/70 border border-brand-100 hover:bg-white">
+                  {t("common.edit")}
+                </button>
+              )}
+            </div>
+            {user?.profile_sports?.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {user.profile_sports.map((x) => {
+                  const st = sportStyle(x.sport);
+                  const Icon = st.Icon;
+                  return (
+                    <div key={x.sport} className="inline-flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-xl bg-white border border-brand-100">
+                      <span className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: st.color }}>
+                        <Icon className="w-4 h-4" style={{ color: st.text }} aria-hidden="true" />
+                      </span>
+                      <span className="text-sm text-slate-700">
+                        <span className="font-semibold text-slate-800">{sportLabel(x.sport)}</span>
+                        {" · "}{t(`profileStyle.levels.${x.level}`)}{x.pace ? ` · ${x.pace} ${t("profileStyle.paceUnit")}` : ""}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center gap-3">
+                <p className="text-sm text-slate-600">{t("profileStyle.sportsEmpty")}</p>
+                <button type="button" onClick={() => setShowSportsEditor(true)}
+                  className="inline-flex items-center gap-1.5 min-h-[40px] px-4 rounded-xl text-sm font-semibold text-white bg-brand-600" data-btn="solid">
+                  <Plus className="w-4 h-4" aria-hidden="true" /> {t("profileStyle.addSport")}
+                </button>
+              </div>
+            )}
+          </div>
+
           {/* Stats strip */}
-          <div className="grid grid-cols-3 gap-3 mt-10">
+          <div className="grid grid-cols-3 gap-3 mt-8">
             {[
               {val: userStats?.total_trainings || 0, label: t("home.statTrainings"), accent:"#114956"},
               {val: myTeams.length,                  label: t("home.statTeams"),     accent:"#00a499"},
@@ -7949,13 +8125,22 @@ export default function Muuvlink() {
 
           {!isOrg && selectedTraining.groups?.length > 0 && (() => {
             const myGroup = user ? selectedTraining.attendees?.find((a) => a.id === user.id)?.group_id : null;
+            // Koşuda kişinin profilindeki tempoya en yakın grup en üstte ve işaretli (seçim yine kişide).
+            const myPace = selectedTraining.sport === "Koşu" ? user?.profile_sports?.find((x) => x.sport === "Koşu")?.pace : null;
+            const paceGroupId = !myGroup && !isPast ? paceMatchedGroupId(selectedTraining.groups, myPace) : null;
+            const groupsShown = paceGroupId ? [...selectedTraining.groups].sort((a, b) => (a.id === paceGroupId ? -1 : b.id === paceGroupId ? 1 : 0)) : selectedTraining.groups;
             return (
               <div className="mb-6">
                 <h3 className="text-xl font-medium mb-4">{t("trainingDetail.groupsTitle")}</h3>
                 <div className="space-y-2">
-                  {selectedTraining.groups.map((g) => (
-                    <div key={g.id} className={`flex items-center gap-3 p-3 rounded-xl ${myGroup === g.id ? "bg-brand-50 border border-brand-100" : "bg-gray-50"}`}>
+                  {groupsShown.map((g) => (
+                    <div key={g.id} className={`flex items-center gap-3 p-3 rounded-xl ${myGroup === g.id ? "bg-brand-50 border border-brand-100" : paceGroupId === g.id ? "bg-white border-2 border-logo-teal" : "bg-gray-50"}`}>
                       <div className="flex-1 min-w-0">
+                        {paceGroupId === g.id && (
+                          <div className="inline-flex items-center gap-1 mb-1 text-xs font-semibold text-brand-700">
+                            <Sparkles className="w-3.5 h-3.5 text-logo-teal" aria-hidden="true" /> {t("profileStyle.paceMatch")}
+                          </div>
+                        )}
                         <div className="font-semibold [overflow-wrap:anywhere]">{g.name}</div>
                         <div className="text-sm text-gray-600">
                           {[g.pace, t("trainingDetail.groupGoing").replace("{n}", g.going)].filter(Boolean).join(" · ")}
@@ -7996,13 +8181,14 @@ export default function Muuvlink() {
                 {selectedTraining.attendees.filter(a => !blockedUsers.some(b => b.id === a.id)).map((attendee) => (
                   <div key={attendee.id} className="flex items-center p-3 bg-gray-50 rounded-xl">
                     <div className="w-10 h-10 bg-brand-600 rounded-full overflow-hidden flex items-center justify-center text-white font-medium mr-3 flex-shrink-0">
-                      {renderAvatar(attendee.avatar, attendee.name)}
+                      {renderAvatar(attendee.avatar, attendee.name, "", attendee.avatar_color)}
                     </div>
                     <div className="flex-1">
                       <div className="font-semibold">{attendee.name}</div>
                       <div className="text-sm text-gray-600">
                         {[fmtDateShort(attendee.joined_at), selectedTraining.groups?.find((g) => g.id === attendee.group_id)?.name].filter(Boolean).join(" · ")}
                       </div>
+                      <ProfileSportsLine sports={attendee.profile_sports} t={t} sportLabel={sportLabel} />
                     </div>
                     {user && attendee.id !== user.id && (
                       <button
@@ -8055,7 +8241,7 @@ export default function Muuvlink() {
                   <div key={c.id} className="p-3 bg-gray-50 rounded-xl">
                     <div className="flex items-center mb-2">
                       <div className="w-8 h-8 bg-brand-600 rounded-full overflow-hidden flex items-center justify-center text-white font-medium mr-2 flex-shrink-0">
-                        {renderAvatar(c.user_avatar, c.user_name)}
+                        {renderAvatar(c.user_avatar, c.user_name, "", c.user_avatar_color)}
                       </div>
                       <div className="flex-1">
                         <div className="font-semibold text-sm">{c.user_name}</div>
@@ -8590,7 +8776,7 @@ export default function Muuvlink() {
                       )}
                       <div className="flex items-center gap-3 mb-2">
                         <div className="w-9 h-9 bg-brand-600 rounded-full overflow-hidden flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
-                          {renderAvatar(post.user_avatar, post.user_name)}
+                          {renderAvatar(post.user_avatar, post.user_name, "", post.user_avatar_color)}
                         </div>
                         <div className="flex-1">
                           <div className="font-semibold text-sm text-slate-800">{post.user_name}</div>
@@ -8710,9 +8896,10 @@ export default function Muuvlink() {
                   return (
                     <div key={member.id}
                       className="flex flex-wrap items-center justify-between gap-2 p-3.5 rounded-2xl border border-transparent hover:bg-slate-50 hover:border-slate-100 transition-colors">
-                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                      {/* basis-48: dar ekranda ad sütunu sıfıra sıkışıp harf harf kırılmasın; kontroller alt satıra iner */}
+                      <div className="flex items-center gap-3 min-w-0 flex-1 basis-48">
                         <div className="w-11 h-11 bg-brand-600 rounded-full overflow-hidden flex items-center justify-center text-white font-semibold flex-shrink-0">
-                          {renderAvatar(member.avatar, member.name)}
+                          {renderAvatar(member.avatar, member.name, "", member.avatar_color)}
                         </div>
                         <div className="min-w-0">
                           <div className="font-semibold text-slate-800 flex flex-wrap items-center gap-x-1.5 [overflow-wrap:anywhere]">
@@ -8720,6 +8907,7 @@ export default function Muuvlink() {
                             {isMe && <span className="text-xs text-slate-500 font-normal">({t("teamDetail.me")})</span>}
                           </div>
                           <div className="mt-0.5">{roleBadge(member)}</div>
+                          <ProfileSportsLine sports={member.profile_sports} t={t} sportLabel={sportLabel} />
                         </div>
                       </div>
 
@@ -9670,6 +9858,22 @@ export default function Muuvlink() {
     const [activeTab, setActiveTab] = useState("profile");
     const avatarInputRef = useRef(null);
 
+    // Harf rengi anında kaydedilir.
+    const saveLetterColor = async (c) => {
+      try {
+        const res = await fetch(`${API_URL}/users/me/profile-style`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("token")}` },
+          body: JSON.stringify({ avatar_color: c }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.user) setUser(u => ({ ...u, ...data.user }));
+        else showToast(data.error || t("toast.updateFail"), "error");
+      } catch {
+        showToast(t("toast.networkError"), "error");
+      }
+    };
+
     // Hazır çizim: sunucu set + tohumdan çizimi üretip profil resmi olarak kaydeder.
     const pickIllustration = async (set, seed) => {
       setAvatarLoading(true);
@@ -9792,8 +9996,7 @@ export default function Muuvlink() {
               {/* Avatar fotoğrafı */}
               <div className="flex flex-col items-center gap-3 pb-2">
                 <div className="relative">
-                  <div className="w-24 h-24 rounded-2xl overflow-hidden flex items-center justify-center text-white text-3xl font-bold shadow-lg"
-                    style={{background:"#114956"}}>
+                  <div className={`w-24 h-24 rounded-2xl overflow-hidden flex items-center justify-center text-3xl font-bold shadow-lg ${avatarBgClass(user?.avatar_color)}`}>
                     {(formData.avatar?.startsWith("/uploads/") || formData.avatar?.startsWith("http")) ? (
                       <img src={formData.avatar.startsWith("http") ? formData.avatar : `${BASE_URL}${formData.avatar}`} alt="avatar" className="w-full h-full object-cover" />
                     ) : (
@@ -9820,6 +10023,22 @@ export default function Muuvlink() {
                 {showIllus && (
                   <IllustrationPicker t={t} apiUrl={API_URL} disabled={avatarLoading} onPick={pickIllustration} memo={illusMemoRef.current} />
                 )}
+                <div className="w-full rounded-2xl border border-slate-200 p-3.5">
+                  <div className="text-sm font-semibold text-slate-800">{t("profileStyle.letterColor")}</div>
+                  <p className="text-xs text-slate-500 mt-0.5 mb-2.5">{t("profileStyle.letterColorHelp")}</p>
+                  <div className="flex gap-2.5">
+                    {AVATAR_COLOR_KEYS.map((c, i) => {
+                      const on = (user?.avatar_color || "deep") === c;
+                      return (
+                        <button key={c} type="button" onClick={() => saveLetterColor(c)} aria-pressed={on}
+                          aria-label={`${t("profileStyle.letterColor")} ${i + 1}`}
+                          className={`w-11 h-11 rounded-full flex items-center justify-center font-bold ring-2 ring-offset-2 transition-shadow ${AVATAR_COLOR_CLASS[c]} ${on ? "ring-brand-600" : "ring-transparent hover:ring-slate-300"}`}>
+                          {user?.name?.[0]?.toLocaleUpperCase("en-US") || "?"}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
 
               <div>
@@ -10177,8 +10396,7 @@ export default function Muuvlink() {
 
                   <button onClick={() => setCurrentPage("profile")}
                     className="flex items-center gap-2 pl-1 pr-3 py-1.5 rounded-xl hover:bg-slate-100 transition-colors">
-                    <div className="w-7 h-7 rounded-lg overflow-hidden flex items-center justify-center text-white font-medium text-xs flex-shrink-0"
-                      style={{background:"#114956"}}>
+                    <div className={`w-7 h-7 rounded-lg overflow-hidden flex items-center justify-center font-medium text-xs flex-shrink-0 ${avatarBgClass(user.avatar_color)}`}>
                       {(user.avatar?.startsWith("/uploads/") || user.avatar?.startsWith("http")) ? (
                         <img src={user.avatar.startsWith("http") ? user.avatar : `${BASE_URL}${user.avatar}`} alt="" className="w-full h-full object-cover" />
                       ) : (
@@ -10262,8 +10480,7 @@ export default function Muuvlink() {
                     onClick={() => { setCurrentPage("profile"); setMobileOpen(false); }}
                     className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
                   >
-                    <div className="w-5 h-5 rounded-md overflow-hidden flex items-center justify-center text-white text-[10px] font-medium flex-shrink-0"
-                      style={{background:"#114956"}}>
+                    <div className={`w-5 h-5 rounded-md overflow-hidden flex items-center justify-center text-[10px] font-medium flex-shrink-0 ${avatarBgClass(user.avatar_color)}`}>
                       {(user.avatar?.startsWith("/uploads/") || user.avatar?.startsWith("http")) ? (
                         <img src={user.avatar.startsWith("http") ? user.avatar : `${BASE_URL}${user.avatar}`} alt="" className="w-full h-full object-cover" />
                       ) : (user.avatar || (user.name?.[0] || "?").toLocaleUpperCase("en-US"))}
@@ -11136,6 +11353,30 @@ ${legalWearableHtml(5)}
       {renderClaimModal()}
       {renderRemoveModal()}
       {showProfileEdit && <ProfileEditModal />}
+      {showSportsEditor && user && (
+        <ProfileSportsEditor t={t} initial={user.profile_sports} sportLabel={sportLabel} saving={sportsSaving}
+          onClose={() => setShowSportsEditor(false)}
+          onSave={async (list) => {
+            setSportsSaving(true);
+            try {
+              const res = await fetch(`${API_URL}/users/me/profile-style`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("token")}` },
+                body: JSON.stringify({ sports: list.map(({ sport, level, pace }) => ({ sport, level, ...(sport === "Koşu" && pace ? { pace } : {}) })) }),
+              });
+              const data = await res.json().catch(() => ({}));
+              if (res.ok && data.user) {
+                setUser(u => ({ ...u, ...data.user }));
+                setShowSportsEditor(false);
+                showToast(t("toast.profileUpdated"), "success");
+              } else showToast(data.error || t("toast.updateFail"), "error");
+            } catch {
+              showToast(t("toast.networkError"), "error");
+            } finally {
+              setSportsSaving(false);
+            }
+          }} />
+      )}
       {(showInviteModal || inviteTrainingId) && <InviteModal />}
       {renderTeamSuggest()}
       {renderAttIntro()}
