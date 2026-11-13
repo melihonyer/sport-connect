@@ -69,6 +69,7 @@ import {
   Ticket,
   Flag,
   Sparkles,
+  RefreshCw,
   CalendarX2,
   SearchX,
   Compass,
@@ -2263,9 +2264,59 @@ const parseDetailPath = (pathname) => {
 // İngilizce ve Almanca yalnız bu DÖRT sabit sayfa için önek alır.
 // Detay sayfaları (/takim/, /etkinlik/) bilerek tek adreste bırakıldı:
 // içeriği kullanıcı Türkçe yazıyor, çevirisi yok — üç adres kopya olurdu.
-// Hazır profil çizimi setleri (public/avatars/<set>-<nn>.webp; scripts/avatar-illustrations.mjs, backend
-// AVATAR_ILLUSTRATION_RE ile aynı): Notionists, Lorelei, Open Peeps, Thumbs, Glass, Shapes. CC0.
-const AVATAR_ILLUSTRATION_SETS = ["nt", "lo", "op", "th", "gl", "sh"];
+// Hazır profil çizimleri (SALTASK'taki gibi yenilenebilir): set adları backend AVATAR_STYLES ile aynı. Önizleme
+// sunucuda üretilir (/api/avatar-illustrations/<set>/<tohum>, uzantısız); "Başka örnekler" yeni tohum çeker.
+const AVATAR_ILLUSTRATION_SETS = ["notionists", "lorelei", "openPeeps", "thumbs", "glass", "shapes"];
+const ILLUS_COUNT = 24; // 4 ve 6 sütunda tam satır
+const illusFirstSeeds = () => Array.from({ length: ILLUS_COUNT }, (_, i) => `muuvlink-${i + 1}`);
+const illusRandomSeeds = () => Array.from({ length: ILLUS_COUNT }, () =>
+  (globalThis.crypto?.randomUUID?.() || `${Math.random()}${Math.random()}`).replace(/[^a-z0-9]/g, "").slice(0, 10));
+
+// Seçici kendi durumunu taşır: sekme/yenileme yalnız bu bileşeni çizer (ayarlar penceresi satır içi bileşen, üst
+// çizimde baştan kurulup başa kayıyordu). `memo` üst bileşendeki ref: pencere yine de kurulursa set ve tohumlar kalır.
+function IllustrationPicker({ t, apiUrl, disabled, onPick, memo }) {
+  const [set, setSet] = React.useState(memo.set);
+  const [seeds, setSeeds] = React.useState(memo.seeds);
+  const chooseSet = (x) => { memo.set = x; setSet(x); };
+  const refresh = () => { const n = illusRandomSeeds(); memo.seeds = n; setSeeds(n); };
+  const setName = (x) => t(`profile.illusSet.${x}`);
+  const tabsRef = React.useRef(null);
+  // Pencere yeniden kurulunca seçili sekme yana kaymış kalmasın.
+  React.useEffect(() => {
+    const el = tabsRef.current?.querySelector('[aria-selected="true"]');
+    if (el && tabsRef.current) tabsRef.current.scrollLeft = Math.max(0, el.offsetLeft - 8);
+  }, []);
+  return (
+    <div className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3">
+      <p className="text-xs text-slate-500 mb-2.5">{t("profile.illusDesc")}</p>
+      <div ref={tabsRef} role="tablist" aria-label={t("profile.illusSets")} className="relative flex gap-1.5 overflow-x-auto pb-2 -mx-1 px-1">
+        {AVATAR_ILLUSTRATION_SETS.map(x => (
+          <button key={x} type="button" role="tab" aria-selected={set === x} onClick={() => chooseSet(x)}
+            className={`flex-shrink-0 min-h-[36px] px-3 rounded-lg text-xs font-semibold transition-colors ${set === x ? "bg-brand-600 text-white" : "bg-white text-slate-600 border border-slate-200 hover:bg-brand-50"}`}>
+            {setName(x)}
+          </button>
+        ))}
+      </div>
+      <div className="max-h-72 overflow-y-auto overscroll-contain">
+        <div className="grid grid-cols-4 sm:grid-cols-6 gap-2.5 p-1">
+          {seeds.map((seed, i) => (
+            <button key={`${set}-${seed}`} type="button" onClick={() => onPick(set, seed)} disabled={disabled}
+              aria-label={t("profile.illusPick").replace("{set}", setName(set)).replace("{n}", i + 1)}
+              className="aspect-square rounded-full overflow-hidden bg-white ring-2 ring-transparent hover:ring-brand-200 focus-visible:ring-brand-600 transition-shadow disabled:opacity-60">
+              <img src={`${apiUrl}/avatar-illustrations/${set}/${seed}`} alt="" loading="lazy" width="64" height="64" className="w-full h-full object-cover" />
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="flex justify-end mt-2.5">
+        <button type="button" onClick={refresh}
+          className="flex items-center gap-1.5 min-h-[40px] px-3.5 rounded-xl text-sm font-semibold text-brand-700 bg-white border border-brand-200 hover:bg-brand-50 transition-colors">
+          <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" /> {t("profile.illusMore")}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 const LOCALIZED_PAGE_PATHS = {
   tr: { home: "/",    trainings: "/etkinlikler", teams: "/takimlar",  contact: "/iletisim",   guide: "/rehber", about: "/hakkimizda" },
@@ -2453,6 +2504,9 @@ export default function Muuvlink() {
   const openMyMessagesRef = useRef(() => {});
   const [showNotifPrefs, setShowNotifPrefs] = useState(false);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
+  // Hazır çizim seçici üst düzeyde: ProfileEditModal satır içi bileşen, her üst çizimde sıfırlanıyor.
+  const [showIllus, setShowIllus] = useState(false);
+  const illusMemoRef = useRef({ set: "notionists", seeds: illusFirstSeeds() });
   const [showInviteModal, setShowInviteModal] = useState(false);
   // Etkinliğe e-postayla davet: aynı pencere, hedef etkinlik (21 Ekim 2026)
   const [inviteTrainingId, setInviteTrainingId] = useState(null);
@@ -9615,21 +9669,20 @@ export default function Muuvlink() {
     const [avatarLoading, setAvatarLoading] = useState(false);
     const [activeTab, setActiveTab] = useState("profile");
     const avatarInputRef = useRef(null);
-    const [showIllus, setShowIllus] = useState(false);
 
-    // Hazır çizim (public/avatars, backend AVATAR_ILLUSTRATION_RE ile aynı kodlar).
-    const pickIllustration = async (id) => {
+    // Hazır çizim: sunucu set + tohumdan çizimi üretip profil resmi olarak kaydeder.
+    const pickIllustration = async (set, seed) => {
       setAvatarLoading(true);
       try {
         const res = await fetch(`${API_URL}/auth/avatar/illustration`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("token")}` },
-          body: JSON.stringify({ id }),
+          body: JSON.stringify({ set, seed }),
         });
         const data = await res.json().catch(() => ({}));
         if (res.ok && data.user) {
           setFormData(f => ({ ...f, avatar: data.user.avatar }));
-          setUser(data.user);
+          setUser(u => ({ ...u, ...data.user }));
           showToast(t("toast.photoUpdated"), "success");
         } else {
           showToast(data.error || t("toast.uploadFail"), "error");
@@ -9765,22 +9818,7 @@ export default function Muuvlink() {
                   </button>
                 </div>
                 {showIllus && (
-                  <div className="w-full max-h-72 overflow-y-auto overscroll-contain rounded-2xl border border-slate-200 bg-slate-50 p-3 space-y-3">
-                    {AVATAR_ILLUSTRATION_SETS.map(set => (
-                      <div key={set} className="grid grid-cols-4 sm:grid-cols-6 gap-2.5">
-                        {Array.from({ length: 12 }, (_, i) => `${set}-${String(i + 1).padStart(2, "0")}`).map(id => {
-                          const selected = formData.avatar?.endsWith(`/avatars/${id}.webp`);
-                          return (
-                            <button key={id} type="button" onClick={() => pickIllustration(id)} disabled={avatarLoading}
-                              aria-label={`${t("profile.pickIllustration")} ${id}`} aria-pressed={!!selected}
-                              className={`aspect-square rounded-full overflow-hidden ring-2 ring-offset-2 ring-offset-slate-50 transition-shadow disabled:opacity-60 ${selected ? "ring-brand-600" : "ring-transparent hover:ring-brand-200"}`}>
-                              <img src={`/avatars/${id}.webp`} alt="" loading="lazy" width="64" height="64" className="w-full h-full object-cover" />
-                            </button>
-                          );
-                        })}
-                      </div>
-                    ))}
-                  </div>
+                  <IllustrationPicker t={t} apiUrl={API_URL} disabled={avatarLoading} onPick={pickIllustration} memo={illusMemoRef.current} />
                 )}
               </div>
 

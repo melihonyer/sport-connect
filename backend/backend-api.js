@@ -4748,18 +4748,73 @@ app.post('/api/auth/avatar', authenticateToken, uploadAvatar.single('avatar'), a
   }
 });
 
-// Hazır profil çizimi (13 Kasım 2026, Melih). 6 set × 12 çizim, dosyalar sitede: public/avatars/<set>-<nn>.webp
-// (scripts/avatar-illustrations.mjs üretir; set kodları orada da aynı). Profil fotoğrafı gibi users.avatar'a
-// tam adres yazılır: e-posta, admin, isim gizleme kuralı fotoğraftaki gibi çalışır. Lisans CC0 (DiceBear).
-const AVATAR_ILLUSTRATION_RE = /^(nt|lo|op|th|gl|sh)-(0[1-9]|1[0-2])$/;
+// Hazır profil çizimleri (13 Kasım 2026, Melih; SALTASK'taki gibi yenilenebilir). DiceBear'ın altı stili, hepsi CC0
+// (@dicebear/styles LICENSE.md; atıf gerekmez — arayüzde kaynak/lisans satırı YAZILMAZ, Melih). Önizleme sunucuda
+// üretilen SVG; seçilen çizim sunucuda yeniden üretilip WebP olarak depoya yüklenir ve users.avatar'a fotoğraf gibi yazılır
+// (e-posta SVG göstermiyor; isim gizleme kuralı fotoğraftakiyle aynı). Aynı set + tohum her zaman aynı çizimi verir.
+// Sabah kurulan sabit 72 dosya (public/avatars/<kod>-<nn>.webp) seçenler için yerinde kalır; eski {id} isteği de kabul edilir.
+const AVATAR_PASTEL = ['#e6f7f5', '#f2ecf7', '#fdfee0', '#c2ede9', '#f4f4f4', '#e3d8ee']; // brand-50, purple-50, pop-50, brand-100, smoke, purple-100
+const AVATAR_STYLES = {
+  notionists: ['notionists', AVATAR_PASTEL],
+  lorelei: ['lorelei', AVATAR_PASTEL],
+  openPeeps: ['open-peeps', AVATAR_PASTEL],
+  thumbs: ['thumbs', ['#114956', '#00a499', '#643e87']], // Deep Teal, Ana1, Ana2
+  glass: ['glass', null],
+  shapes: ['shapes', null],
+};
+const AVATAR_SEED_RE = /^[a-z0-9-]{1,32}$/;
+const AVATAR_ILLUSTRATION_RE = /^(nt|lo|op|th|gl|sh)-(0[1-9]|1[0-2])$/; // eski sabit dosyalar
+let diceCore = null;
+const diceStyles = {};
+const illustrationCache = new Map(); // set:tohum → SVG (en çok 600)
+async function illustrationSvg(set, seed) {
+  const key = `${set}:${seed}`;
+  const hit = illustrationCache.get(key);
+  if (hit) return hit;
+  if (!diceCore) diceCore = await import('@dicebear/core'); // ES modülü
+  const [file, bg] = AVATAR_STYLES[set];
+  if (!diceStyles[set]) diceStyles[set] = new diceCore.Style(require(`@dicebear/styles/${file}.json`));
+  const svg = new diceCore.Avatar(diceStyles[set], { seed, ...(bg ? { backgroundColor: bg } : {}) }).toString();
+  if (illustrationCache.size >= 600) illustrationCache.delete(illustrationCache.keys().next().value);
+  illustrationCache.set(key, svg);
+  return svg;
+}
+const validIllustration = (set, seed) => Object.prototype.hasOwnProperty.call(AVATAR_STYLES, set) && AVATAR_SEED_RE.test(seed);
+
+app.get('/api/avatar-illustrations/:set/:seed', async (req, res) => {
+  const { set, seed } = req.params;
+  if (!validIllustration(set, seed)) return res.status(404).end();
+  try {
+    const svg = await illustrationSvg(set, seed);
+    res.set('Content-Type', 'image/svg+xml; charset=utf-8');
+    res.set('Cache-Control', 'public, max-age=31536000, immutable');
+    res.set('X-Content-Type-Options', 'nosniff');
+    res.set('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'");
+    res.send(svg);
+  } catch (e) {
+    console.error('Çizim önizleme hatası:', e.message);
+    res.status(500).end();
+  }
+});
+
 app.post('/api/auth/avatar/illustration', authenticateToken, async (req, res) => {
   try {
-    const id = String(req.body?.id || '');
-    if (!AVATAR_ILLUSTRATION_RE.test(id)) return res.status(400).json({ error: 'Geçersiz çizim.' });
+    let avatarUrl;
+    const set = String(req.body?.set || '');
+    const seed = String(req.body?.seed || '');
+    if (validIllustration(set, seed)) {
+      const svg = await illustrationSvg(set, seed);
+      const webp = await sharp(Buffer.from(svg), { density: 144 }).resize(256, 256).webp({ quality: 86 }).toBuffer();
+      avatarUrl = await uploadToSupabase('avatars', `avatar-${req.user.id}-${Date.now()}.webp`, webp, 'image/webp');
+    } else if (AVATAR_ILLUSTRATION_RE.test(String(req.body?.id || ''))) {
+      avatarUrl = `${SITE_ORIGIN}/avatars/${req.body.id}.webp`;
+    } else {
+      return res.status(400).json({ error: 'Geçersiz çizim.' });
+    }
     const result = await pool.query(
       `UPDATE users SET avatar = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2
        RETURNING id, name, email, phone, avatar`,
-      [`${SITE_ORIGIN}/avatars/${id}.webp`, req.user.id]
+      [avatarUrl, req.user.id]
     );
     res.json({ message: 'Avatar güncellendi', user: result.rows[0] });
   } catch (error) {

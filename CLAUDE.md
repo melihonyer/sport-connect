@@ -706,19 +706,24 @@ Başvuru durumu ve her markanın sözleşme kuralları `docs/wearable-applicatio
 - **Süresi dolan jeton (Wahoo, ~2 saat):** markada `refresh` varsa senkron başında yenilenir; yeni jeton API çağrısından ÖNCE yazılır (eskisi ilk başarılı çağrıda iptal oluyor), kişi+marka başına aynı anda tek senkron (`inflight`; pm2 tek süreç, küme moduna geçilirse değişmeli). Tek 401 veriyi silmez: önce yenileme denenir. `deleteOnRevoke`: Wahoo'da erişim kaldırılınca antrenman ve jetonlar silinir.
 - Test: sunucuda sahte `fetchFn` + geçici kullanıcı ve kendi gizli etkinliği (9 Kasım'da 33 kontrol geçti, kayıtlar silindi). Yeni kullanıcı oluştururken `created_at` eski verilir, yoksa hoş geldin maili işine girer.
 
-## Hazır profil çizimleri (13 Kasım 2026, Melih)
+## Hazır profil çizimleri (13 Kasım 2026, Melih; SALTASK'taki gibi yenilenebilir)
 
-Profil düzenleme penceresinde "Fotoğraf Değiştir"in yanında "Hazır çizim seç" (`profile.pickIllustration`, 7 dil): 6 set × 12 =
-72 çizim — Notionists (Zoish), Lorelei (Lisa Wischofsky), Open Peeps (Pablo Stanley), Thumbs, Glass, Shapes (DiceBear). Hepsi
-**CC0** (atıf zorunlu değil). VIBE TO GEO 4 setini kullanıyor (Lorelei ve Open Peeps yok); burada altısı da var (Melih).
-- Dosyalar `public/avatars/<set>-<nn>.webp` (256 px), `scripts/avatar-illustrations.mjs` elle üretir; DiceBear paketleri yalnız
-  devDependency, site paketine girmez. Zemin: Notionists/Lorelei/Open Peeps kurumsal açık tonlar, Thumbs ana renkler, Glass ve
-  Shapes kendi renkleri (Glass degradeli — kullanıcının seçtiği profil resmi, fotoğraf gibi sayılır).
-- Seçim `POST /api/auth/avatar/illustration {id}` → `users.avatar` = `https://muuvlink.app/avatars/<id>.webp`. Fotoğrafla aynı
-  alan: e-posta, admin, isim gizleme kuralı (maskeli görene fotoğraf gitmez) değişmeden çalışır. Set kodları ÜÇ yerde aynı:
-  betik `SETS`, backend `AVATAR_ILLUSTRATION_RE`, site `AVATAR_ILLUSTRATION_SETS`.
-- Betikteki tohum/renk değişirse dosyaların üzerine yazılır ve seçmiş kişilerin resmi de değişir; yeni çizim eklenecekse yeni
-  numara/set kodu verilir.
+Profil düzenleme penceresinde "Fotoğraf Değiştir"in yanında "Hazır çizim seç": altı set sekmesi (Çizgi karakter, Yumuşak yüz,
+Elle çizim, Sevimli, Cam, Geometrik = Notionists, Lorelei, Open Peeps, Thumbs, Glass, Shapes), 24 örnek, "Başka örnekler" yeni
+tohum çeker. Metinler `profile.pickIllustration/illus*` (7 dil; SALTASK'taki metnin "sen" hali). Hepsi **CC0** (`@dicebear/styles`
+LICENSE.md, 13 Kasım'da okundu). **Arayüzde kaynak/lisans satırı YAZILMAZ** (Melih).
+- Sunucuda üretilir (`backend/backend-api.js`, `@dicebear/core` 10.7.0 + `@dicebear/styles` 10.6.0 — backend `package.json`'da
+  sabit sürüm, sunucuda kurulu; core ES modülü, dinamik `import`). Önizleme `GET /api/avatar-illustrations/<set>/<tohum>`
+  (**`.svg` uzantısı YOK**: nginx'in statik dosya kuralı uzantılı adresi yakalayıp 404 veriyordu), 1 yıl önbellek, bellek içi 600'lük önbellek.
+- Seçim `POST /api/auth/avatar/illustration {set, seed}` → SVG sunucuda yeniden üretilir, WebP'ye çevrilip `avatars` deposuna
+  yüklenir, `users.avatar`'a fotoğraf gibi yazılır (e-posta SVG göstermiyor; isim gizleme kuralı fotoğraftakiyle aynı). İstemciden SVG alınmaz.
+- Set adları İKİ yerde aynı: backend `AVATAR_STYLES`, site `AVATAR_ILLUSTRATION_SETS`. Zeminler: çizgi setleri kurumsal açık tonlar,
+  Thumbs ana renkler, Glass/Shapes kendi renkleri. Renk/stil değişirse yalnız YENİ seçimler değişir (kayıtlı dosya sabit).
+- Seçici `IllustrationPicker` modül düzeyinde, kendi durumuyla; set/tohum üst bileşendeki `illusMemoRef`'te (ayarlar penceresi
+  satır içi bileşen, her üst çizimde kurulup başa kayıyordu).
+- Sabah kurulan ilk sürümün 72 sabit dosyası (`public/avatars/<kod>-<nn>.webp`) **silinmez**: 13 Kasım'da 46 kişi seçmişti;
+  eski `{id}` isteği de kabul ediliyor.
+- Test: geçici kullanıcı + kendi profili; depoya yüklenen test dosyası da silinir (Supabase listelemede dosya adı `search` ile, `prefix` klasör adı).
 
 ## Silme ve kayıt
 
