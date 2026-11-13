@@ -826,6 +826,9 @@ export default {
     goalSet: "Imposta un obiettivo",
     goalChange: "Cambia obiettivo",
     goalRemove: "Rimuovi obiettivo",
+    watchTitle: "Ultimi 7 giorni",
+    watchLine: "{n} allenamenti · {h} h {m} min · {km} km",
+    watchPrivate: "Lo vedi solo tu.",
     levels: {
       beginner: "Sto iniziando",
       regular: "Lo pratico regolarmente",

@@ -2536,6 +2536,30 @@ function MonthlyGoalCard({ t, goal, done, onSave, saving }) {
   );
 }
 
+// 10 (13 Kasım 2026): saat özeti — son 7 günün antrenman sayısı, süresi, mesafesi. Kaynak /api/wearable/status
+// (yalnız sahibine, son 30 antrenman). Nabız GÖSTERİLMEZ (gizlilik sözü, /en/privacy bölüm 5). Bağlantı yoksa kart yok.
+function WatchSummaryCard({ t, status, lang, onOpen }) {
+  if (!status?.connections?.length) return null;
+  const since = Date.now() - 7 * 24 * 3600 * 1000;
+  const acts = (status.activities || []).filter((a) => new Date(a.started_at).getTime() >= since);
+  const sec = acts.reduce((x, a) => x + (Number(a.duration_sec) || 0), 0);
+  const km = acts.reduce((x, a) => x + (Number(a.distance_m) || 0), 0) / 1000;
+  const line = t("profileStyle.watchLine")
+    .replace("{n}", acts.length).replace("{h}", Math.floor(sec / 3600)).replace("{m}", Math.floor((sec % 3600) / 60))
+    .replace("{km}", km.toLocaleString(lang || "tr", { maximumFractionDigits: 1 }));
+  return (
+    <button type="button" onClick={onOpen} className="w-full text-left bg-white rounded-2xl border border-slate-200 p-5 hover:border-brand-200 transition-colors">
+      <div className="flex items-center gap-2 text-xs font-semibold tracking-[0.25em] text-slate-500 uppercase mb-3">
+        <Watch className="w-4 h-4 text-logo-teal" aria-hidden="true" /> {t("profileStyle.watchTitle")}
+      </div>
+      <div className="font-semibold text-slate-800 tabular-nums">{line}</div>
+      <p className="mt-2 flex items-center gap-1.5 text-xs text-slate-500">
+        <Lock className="w-3.5 h-3.5" aria-hidden="true" /> {t("profileStyle.watchPrivate")}
+      </p>
+    </button>
+  );
+}
+
 // Hazır profil çizimleri (SALTASK'taki gibi yenilenebilir): set adları backend AVATAR_STYLES ile aynı. Önizleme
 // sunucuda üretilir (/api/avatar-illustrations/<set>/<tohum>, uzantısız); "Başka örnekler" yeni tohum çeker.
 const AVATAR_ILLUSTRATION_SETS = ["notionists", "lorelei", "openPeeps", "thumbs", "glass", "shapes"];
@@ -2771,6 +2795,7 @@ export default function Muuvlink() {
   // Saat ve spor uygulamaları: sunucu "available" dönmezse satır da pencere de yok (backend/wearable.js).
   const [showWearable, setShowWearable] = useState(false);
   const [wearableAvailable, setWearableAvailable] = useState(false);
+  const [wearableStatus, setWearableStatus] = useState(null); // profil saat özeti (yalnız sahibine)
   const myMsgsScrolledRef = useRef(false);
   const myMsgReplyRef = useRef(null); // "Cevap yaz" kutusu (kontrolsüz: her harfte ana bileşen çizilmesin)
   const openMyMessagesRef = useRef(() => {});
@@ -5274,16 +5299,19 @@ export default function Muuvlink() {
   };
   openMyMessagesRef.current = openMyMessages;
 
-  // Saat bağlantısı bu kullanıcıya açık mı? Kapalıysa profilde satır çıkmaz.
+  // Saat bağlantısı bu kullanıcıya açık mı? Kapalıysa profilde satır çıkmaz. Yanıt profil saat özeti için de
+  // saklanır; profil açılınca ve saat penceresinden sonra ("muuv:wearable-refresh") tazelenir.
   useEffect(() => {
-    if (!user) { setWearableAvailable(false); return; }
+    if (!user) { setWearableAvailable(false); setWearableStatus(null); return; }
     let live = true;
-    fetch(`${API_URL}/wearable/status`, { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } })
+    const load = () => fetch(`${API_URL}/wearable/status`, { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } })
       .then((r) => (r.ok ? r.json() : null))
-      .then((j) => { if (live) setWearableAvailable(Boolean(j?.available?.length)); })
+      .then((j) => { if (live) { setWearableAvailable(Boolean(j?.available?.length)); setWearableStatus(j); } })
       .catch(() => {});
-    return () => { live = false; };
-  }, [user?.id]);
+    load();
+    window.addEventListener("muuv:wearable-refresh", load);
+    return () => { live = false; window.removeEventListener("muuv:wearable-refresh", load); };
+  }, [user?.id, currentPage === "profile", showWearable]);
 
   // Markanın izin ekranından web dönüşü: /?wearable=ok|cancelled|error (yalnız bu iş için, adres hemen temizlenir).
   useEffect(() => {
@@ -6754,6 +6782,7 @@ export default function Muuvlink() {
           <div className="md:col-span-2 space-y-6 min-w-0">
             <MonthlyGoalCard t={t} goal={user?.monthly_goal} done={goalInfo?.done} saving={styleSaving}
               onSave={async (g) => { const ok = await saveProfileStyle({ monthly_goal: g }); if (ok) loadGoal(); return ok; }} />
+            <WatchSummaryCard t={t} status={wearableStatus} lang={lang} onOpen={() => setShowWearable(true)} />
             {/* Chart */}
             <div className="bg-white rounded-2xl p-6 border border-slate-100 overflow-hidden min-w-0">
               {/* Başlık + özet */}

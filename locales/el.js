@@ -827,6 +827,9 @@ export default {
     goalSet: "Όρισε στόχο",
     goalChange: "Άλλαξε στόχο",
     goalRemove: "Αφαίρεση στόχου",
+    watchTitle: "Τελευταίες 7 ημέρες",
+    watchLine: "{n} προπονήσεις · {h} ώρ. {m} λεπ. · {km} km",
+    watchPrivate: "Το βλέπεις μόνο εσύ.",
     levels: {
       beginner: "Μόλις ξεκινάω",
       regular: "Το κάνω τακτικά",

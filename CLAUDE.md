@@ -728,7 +728,7 @@ LICENSE.md, 13 Kasım'da okundu). **Arayüzde kaynak/lisans satırı YAZILMAZ** 
 ## Profil özelleştirme (13 Kasım 2026, Melih onayladı; metinler `profileStyle.*`, 7 dil)
 
 Melih'in seçtiği 7 madde: 1 Branşlarım, 2 seviye + tempo, 3 kapak, 5 öne çıkan rozetler, 7 aylık hedef, 9 harf rengi, 10 saat özeti.
-**Kurulanlar: 1, 2, 9 (1. parça); 3, 5, 7 (2. parça).** Sırada 10 (saat özeti). Başkasının profil sayfası YOK; kapak/rozet/hedef/saat yalnız sahibine görünür.
+**Yedisi de kuruldu:** 1, 2, 9 (1. parça); 3, 5, 7 (2. parça); 10 (3. parça). Başkasının profil sayfası YOK; kapak/rozet/hedef/saat yalnız sahibine görünür.
 - Veri `users.avatar_color` (deep|ana1|ana2|carbon) ve `users.profile_sports` JSONB `[{sport, level, pace?}]`; yazma tek uç
   `PUT /api/users/me/profile-style` (gönderilmeyen alana dokunulmaz). En çok 5 branş, `DISCOVERY_SPORTS`'tan; seviye
   beginner|regular|racing; tempo yalnız Koşu'da 3:00–9:00, 15 sn adım. Kodlar İKİ yerde aynı: backend `AVATAR_COLORS`/
@@ -752,6 +752,10 @@ Melih'in seçtiği 7 madde: 1 Branşlarım, 2 seviye + tempo, 3 kapak, 5 öne ç
   nesnesinde (`/auth/me`, giriş, kayıt) — başkasına giden hiçbir uca eklenmez.
 - Profil/fotoğraf güncellemesi kullanıcı nesnesini artık birleştirerek günceller (`setUser(u => ({ ...u, ...data.user }))`): uçlar
   daha az alan döndürünce yeni alanlar sayfada siliniyordu.
+- **10 saat özeti** (`WatchSummaryCard`, aylık hedefin altında): son 7 günün antrenman sayısı, süresi, mesafesi; kaynak mevcut
+  `GET /api/wearable/status` (yalnız sahibine, son 30 antrenman — yeni sunucu ucu yok). Bağlantı yoksa kart yok; saat
+  bağlantısı herkese açılana (`WEARABLE_PUBLIC=1`) kadar yalnız adminler görür. **Nabız gösterilmez** (`/en/privacy` bölüm 5).
+  Karta dokununca saat penceresi açılır; durum profil açılınca ve pencere kapanınca tazelenir.
 - Takım üye satırında ad sütunu `basis-48`: dar ekranda rol seçimi + sil düğmesi adı harf harf sıkıştırıyordu.
 
 ## Silme ve kayıt

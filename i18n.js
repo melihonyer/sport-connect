@@ -1580,6 +1580,9 @@ export const translations = {
     goalSet: { tr: "Hedef koy", en: "Set a goal", de: "Ziel setzen" },
     goalChange: { tr: "Hedefi değiştir", en: "Change goal", de: "Ziel ändern" },
     goalRemove: { tr: "Hedefi kaldır", en: "Remove goal", de: "Ziel entfernen" },
+    watchTitle: { tr: "Son 7 gün", en: "Last 7 days", de: "Letzte 7 Tage" },
+    watchLine: { tr: "{n} antrenman · {h} sa {m} dk · {km} km", en: "{n} workouts · {h} h {m} min · {km} km", de: "{n} Trainings · {h} Std. {m} Min. · {km} km" },
+    watchPrivate: { tr: "Yalnız sen görürsün.", en: "Only you can see this.", de: "Nur du siehst das." },
     levels: {
       beginner: { tr: "Yeni başlıyorum", en: "Just starting", de: "Ich fange gerade an" },
       regular: { tr: "Düzenli yapıyorum", en: "Doing it regularly", de: "Ich mache es regelmäßig" },
