@@ -2263,6 +2263,10 @@ const parseDetailPath = (pathname) => {
 // İngilizce ve Almanca yalnız bu DÖRT sabit sayfa için önek alır.
 // Detay sayfaları (/takim/, /etkinlik/) bilerek tek adreste bırakıldı:
 // içeriği kullanıcı Türkçe yazıyor, çevirisi yok — üç adres kopya olurdu.
+// Hazır profil çizimi setleri (public/avatars/<set>-<nn>.webp; scripts/avatar-illustrations.mjs, backend
+// AVATAR_ILLUSTRATION_RE ile aynı): Notionists, Lorelei, Open Peeps, Thumbs, Glass, Shapes. CC0.
+const AVATAR_ILLUSTRATION_SETS = ["nt", "lo", "op", "th", "gl", "sh"];
+
 const LOCALIZED_PAGE_PATHS = {
   tr: { home: "/",    trainings: "/etkinlikler", teams: "/takimlar",  contact: "/iletisim",   guide: "/rehber", about: "/hakkimizda" },
   en: { home: "/en",  trainings: "/en/events",   teams: "/en/teams",  contact: "/en/contact", guide: "/en/guide", about: "/en/about" },
@@ -9611,6 +9615,31 @@ export default function Muuvlink() {
     const [avatarLoading, setAvatarLoading] = useState(false);
     const [activeTab, setActiveTab] = useState("profile");
     const avatarInputRef = useRef(null);
+    const [showIllus, setShowIllus] = useState(false);
+
+    // Hazır çizim (public/avatars, backend AVATAR_ILLUSTRATION_RE ile aynı kodlar).
+    const pickIllustration = async (id) => {
+      setAvatarLoading(true);
+      try {
+        const res = await fetch(`${API_URL}/auth/avatar/illustration`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("token")}` },
+          body: JSON.stringify({ id }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.user) {
+          setFormData(f => ({ ...f, avatar: data.user.avatar }));
+          setUser(data.user);
+          showToast(t("toast.photoUpdated"), "success");
+        } else {
+          showToast(data.error || t("toast.uploadFail"), "error");
+        }
+      } catch {
+        showToast(t("toast.networkError"), "error");
+      } finally {
+        setAvatarLoading(false);
+      }
+    };
 
     const handleAvatarUpload = async (e) => {
       const file = e.target.files?.[0];
@@ -9725,10 +9754,34 @@ export default function Muuvlink() {
                   )}
                 </div>
                 <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
-                <button type="button" onClick={() => avatarInputRef.current?.click()} disabled={avatarLoading}
-                  className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl border border-brand-200 text-brand-700 hover:bg-brand-50 transition-colors disabled:opacity-50">
-                  <Image className="w-3.5 h-3.5" /> {t("profile.changePhoto")}
-                </button>
+                <div className="flex flex-wrap justify-center gap-2">
+                  <button type="button" onClick={() => avatarInputRef.current?.click()} disabled={avatarLoading}
+                    className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl border border-brand-200 text-brand-700 hover:bg-brand-50 transition-colors disabled:opacity-50">
+                    <Image className="w-3.5 h-3.5" /> {t("profile.changePhoto")}
+                  </button>
+                  <button type="button" onClick={() => setShowIllus(v => !v)} disabled={avatarLoading} aria-expanded={showIllus}
+                    className={`flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl border transition-colors disabled:opacity-50 ${showIllus ? "border-brand-600 bg-brand-50 text-brand-700" : "border-brand-200 text-brand-700 hover:bg-brand-50"}`}>
+                    <Sparkles className="w-3.5 h-3.5" /> {t("profile.pickIllustration")}
+                  </button>
+                </div>
+                {showIllus && (
+                  <div className="w-full max-h-72 overflow-y-auto overscroll-contain rounded-2xl border border-slate-200 bg-slate-50 p-3 space-y-3">
+                    {AVATAR_ILLUSTRATION_SETS.map(set => (
+                      <div key={set} className="grid grid-cols-4 sm:grid-cols-6 gap-2.5">
+                        {Array.from({ length: 12 }, (_, i) => `${set}-${String(i + 1).padStart(2, "0")}`).map(id => {
+                          const selected = formData.avatar?.endsWith(`/avatars/${id}.webp`);
+                          return (
+                            <button key={id} type="button" onClick={() => pickIllustration(id)} disabled={avatarLoading}
+                              aria-label={`${t("profile.pickIllustration")} ${id}`} aria-pressed={!!selected}
+                              className={`aspect-square rounded-full overflow-hidden ring-2 ring-offset-2 ring-offset-slate-50 transition-shadow disabled:opacity-60 ${selected ? "ring-brand-600" : "ring-transparent hover:ring-brand-200"}`}>
+                              <img src={`/avatars/${id}.webp`} alt="" loading="lazy" width="64" height="64" className="w-full h-full object-cover" />
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div>

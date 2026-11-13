@@ -633,6 +633,7 @@ export default {
     editProfile: "Modifica profilo",
     language: "Lingua",
     changePhoto: "Cambia foto",
+    pickIllustration: "Scegli un'illustrazione",
     noTrainings: "Non hai ancora creato eventi.",
     noJoined: "Non hai ancora partecipato a nessun evento.",
     noTeams: "Non fai ancora parte di nessuna squadra.",

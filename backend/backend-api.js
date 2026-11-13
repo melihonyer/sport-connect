@@ -3394,6 +3394,7 @@ const SERVER_MSG = {
   'Bu takım henüz sahiplenilmedi.': { en: 'This team has not been claimed yet.', de: 'Dieses Team wurde noch nicht beansprucht.', el: 'Αυτή η ομάδα δεν έχει διεκδικηθεί ακόμη.', es: 'Este equipo aún no tiene responsable.', fr: 'Cette équipe n’a pas encore été revendiquée.', it: 'Questa squadra non è ancora stata rivendicata.' },
   'Bu takım zaten sahiplenilmiş.': { en: 'This team has already been claimed.', de: 'Dieses Team wurde bereits beansprucht.', el: 'Αυτή η ομάδα έχει ήδη διεκδικηθεί.', es: 'Este equipo ya tiene responsable.', fr: 'Cette équipe a déjà été revendiquée.', it: 'Questa squadra è già stata rivendicata.' },
   'Bu takım için talebin zaten alındı.': { en: 'We already received your request for this team.', de: 'Deine Anfrage für dieses Team liegt uns bereits vor.', el: 'Έχουμε ήδη λάβει το αίτημά σου για αυτή την ομάδα.', es: 'Ya hemos recibido tu solicitud para este equipo.', fr: 'Nous avons déjà reçu ta demande pour cette équipe.', it: 'Abbiamo già ricevuto la tua richiesta per questa squadra.' },
+  'Geçersiz çizim.': { en: 'Invalid illustration.', de: 'Ungültige Illustration.', el: 'Μη έγκυρο σκίτσο.', es: 'Ilustración no válida.', fr: 'Illustration non valide.', it: 'Illustrazione non valida.' },
   'Bir iletişim bilgisi yazmalısın.': { en: 'Please add a way to contact you.', de: 'Bitte gib eine Kontaktmöglichkeit an.', el: 'Πρόσθεσε έναν τρόπο επικοινωνίας.', es: 'Añade una forma de contactarte.', fr: 'Ajoute un moyen de te contacter.', it: 'Aggiungi un modo per contattarti.' },
   'Çok fazla talep gönderdin, biraz sonra dene.': { en: 'Too many requests, please try again later.', de: 'Zu viele Anfragen, bitte versuche es später erneut.', el: 'Πάρα πολλά αιτήματα, δοκίμασε ξανά αργότερα.', es: 'Demasiadas solicitudes, inténtalo más tarde.', fr: 'Trop de demandes, réessaie plus tard.', it: 'Troppe richieste, riprova più tardi.' },
   'Gruplar geçersiz: en az 2, en çok 5 grup olmalı.': { en: 'Invalid groups: use 2 to 5 groups.', de: 'Ungültige Gruppen: 2 bis 5 Gruppen sind möglich.', el: 'Μη έγκυρες ομάδες: επίτρεπονται 2 έως 5 ομάδες.', es: 'Grupos no válidos: usa entre 2 y 5 grupos.', fr: 'Groupes non valides : de 2 à 5 groupes.', it: 'Gruppi non validi: da 2 a 5 gruppi.' },
@@ -4743,6 +4744,26 @@ app.post('/api/auth/avatar', authenticateToken, uploadAvatar.single('avatar'), a
     res.json({ message: 'Avatar güncellendi', user: result.rows[0] });
   } catch (error) {
     console.error('Avatar upload error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Hazır profil çizimi (13 Kasım 2026, Melih). 6 set × 12 çizim, dosyalar sitede: public/avatars/<set>-<nn>.webp
+// (scripts/avatar-illustrations.mjs üretir; set kodları orada da aynı). Profil fotoğrafı gibi users.avatar'a
+// tam adres yazılır: e-posta, admin, isim gizleme kuralı fotoğraftaki gibi çalışır. Lisans CC0 (DiceBear).
+const AVATAR_ILLUSTRATION_RE = /^(nt|lo|op|th|gl|sh)-(0[1-9]|1[0-2])$/;
+app.post('/api/auth/avatar/illustration', authenticateToken, async (req, res) => {
+  try {
+    const id = String(req.body?.id || '');
+    if (!AVATAR_ILLUSTRATION_RE.test(id)) return res.status(400).json({ error: 'Geçersiz çizim.' });
+    const result = await pool.query(
+      `UPDATE users SET avatar = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2
+       RETURNING id, name, email, phone, avatar`,
+      [`${SITE_ORIGIN}/avatars/${id}.webp`, req.user.id]
+    );
+    res.json({ message: 'Avatar güncellendi', user: result.rows[0] });
+  } catch (error) {
+    console.error('Avatar illustration error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

@@ -706,6 +706,20 @@ Başvuru durumu ve her markanın sözleşme kuralları `docs/wearable-applicatio
 - **Süresi dolan jeton (Wahoo, ~2 saat):** markada `refresh` varsa senkron başında yenilenir; yeni jeton API çağrısından ÖNCE yazılır (eskisi ilk başarılı çağrıda iptal oluyor), kişi+marka başına aynı anda tek senkron (`inflight`; pm2 tek süreç, küme moduna geçilirse değişmeli). Tek 401 veriyi silmez: önce yenileme denenir. `deleteOnRevoke`: Wahoo'da erişim kaldırılınca antrenman ve jetonlar silinir.
 - Test: sunucuda sahte `fetchFn` + geçici kullanıcı ve kendi gizli etkinliği (9 Kasım'da 33 kontrol geçti, kayıtlar silindi). Yeni kullanıcı oluştururken `created_at` eski verilir, yoksa hoş geldin maili işine girer.
 
+## Hazır profil çizimleri (13 Kasım 2026, Melih)
+
+Profil düzenleme penceresinde "Fotoğraf Değiştir"in yanında "Hazır çizim seç" (`profile.pickIllustration`, 7 dil): 6 set × 12 =
+72 çizim — Notionists (Zoish), Lorelei (Lisa Wischofsky), Open Peeps (Pablo Stanley), Thumbs, Glass, Shapes (DiceBear). Hepsi
+**CC0** (atıf zorunlu değil). VIBE TO GEO 4 setini kullanıyor (Lorelei ve Open Peeps yok); burada altısı da var (Melih).
+- Dosyalar `public/avatars/<set>-<nn>.webp` (256 px), `scripts/avatar-illustrations.mjs` elle üretir; DiceBear paketleri yalnız
+  devDependency, site paketine girmez. Zemin: Notionists/Lorelei/Open Peeps kurumsal açık tonlar, Thumbs ana renkler, Glass ve
+  Shapes kendi renkleri (Glass degradeli — kullanıcının seçtiği profil resmi, fotoğraf gibi sayılır).
+- Seçim `POST /api/auth/avatar/illustration {id}` → `users.avatar` = `https://muuvlink.app/avatars/<id>.webp`. Fotoğrafla aynı
+  alan: e-posta, admin, isim gizleme kuralı (maskeli görene fotoğraf gitmez) değişmeden çalışır. Set kodları ÜÇ yerde aynı:
+  betik `SETS`, backend `AVATAR_ILLUSTRATION_RE`, site `AVATAR_ILLUSTRATION_SETS`.
+- Betikteki tohum/renk değişirse dosyaların üzerine yazılır ve seçmiş kişilerin resmi de değişir; yeni çizim eklenecekse yeni
+  numara/set kodu verilir.
+
 ## Silme ve kayıt
 
 - Kullanıcı hesabı **yumuşak** silinir (`users.deleted_at`, 30 gün, sonra purge).

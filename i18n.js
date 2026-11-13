@@ -861,6 +861,7 @@ export const translations = {
     editProfile:    { tr: "Profili Düzenle",              en: "Edit Profile",            de: "Profil bearbeiten"       },
     language:       { tr: "Dil",                          en: "Language",                de: "Sprache"                 },
     changePhoto:    { tr: "Fotoğraf Değiştir",            en: "Change Photo",            de: "Foto ändern"             },
+    pickIllustration: { tr: "Hazır çizim seç", en: "Choose an illustration", de: "Illustration wählen" },
     noTrainings:    { tr: "Henüz etkinlik oluşturmadınız.", en: "You haven't created any events yet.", de: "Noch keine Events erstellt." },
     noJoined:       { tr: "Henüz bir etkinliğe katılmadınız.", en: "You haven't joined any events yet.", de: "Noch an keinem Event teilgenommen." },
     noTeams:        { tr: "Henüz bir takıma üye değilsiniz.", en: "You haven't joined any teams yet.", de: "Noch keinem Team beigetreten." },
