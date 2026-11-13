@@ -2393,6 +2393,149 @@ function ProfileSportsEditor({ t, initial, sportLabel, onSave, onClose, saving }
   );
 }
 
+// 2. parça (13 Kasım 2026): kapak, öne çıkan rozetler, aylık hedef — yalnız sahibine görünür.
+// Kapak kodları backend PROFILE_COVER_PHOTOS/COLORS ile aynı; fotoğraflar public/covers (scripts/profile-covers.mjs).
+const PROFILE_COVER_PHOTOS = ["basketbol", "bikejoring", "bisiklet", "canicross", "crossfit", "diger", "futbol", "kano", "kosu", "kurek",
+  "padel", "pilates", "tenis", "trekking", "triatlon", "voleybol", "yoga", "yuruyus", "yuzme"];
+// Kapak dosyası → branş adı (ekran okuyucu etiketi görenin dilinde).
+const PROFILE_COVER_SPORT = { basketbol: "Basketbol", bikejoring: "Bikejoring", bisiklet: "Bisiklet", canicross: "Canicross", crossfit: "Crossfit",
+  diger: "Diğer", futbol: "Futbol", kano: "Kano", kosu: "Koşu", kurek: "Kürek", padel: "Padel", pilates: "Pilates", tenis: "Tenis",
+  trekking: "Trekking", triatlon: "Triatlon", voleybol: "Voleybol", yoga: "Yoga", yuruyus: "Yürüyüş", yuzme: "Yüzme" };
+const PROFILE_COVER_COLOR_CLASS = { deep: "bg-brand-600", ana1: "bg-logo-teal", ana2: "bg-logo-purple", light: "bg-brand-100" };
+const PINNED_BADGES_MAX = 3;
+const MONTHLY_GOAL_MAX = 20;
+const parseCover = (c) => { const m = /^(photo|color):([a-z0-9]+)$/.exec(String(c || "")); return m ? { kind: m[1], key: m[2] } : null; };
+
+function CoverPicker({ t, value, onPick, disabled, sportLabel }) {
+  const cur = parseCover(value);
+  const [tab, setTab] = React.useState(cur?.kind === "color" ? "color" : "photo");
+  return (
+    <div className="w-full rounded-2xl border border-slate-200 p-3.5">
+      <div className="flex items-center justify-between gap-2 mb-2.5">
+        <div className="text-sm font-semibold text-slate-800">{t("profileStyle.coverTitle")}</div>
+        {cur && (
+          <button type="button" onClick={() => onPick(null)} disabled={disabled} className="min-h-[36px] px-2.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100">
+            {t("profileStyle.coverRemove")}
+          </button>
+        )}
+      </div>
+      <div role="tablist" className="flex gap-1.5 mb-2.5">
+        {["photo", "color"].map((k) => (
+          <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
+            className={`min-h-[36px] px-3 rounded-lg text-xs font-semibold transition-colors ${tab === k ? "bg-brand-600 text-white" : "bg-white text-slate-600 border border-slate-200 hover:bg-brand-50"}`}>
+            {t(k === "photo" ? "profileStyle.coverPhoto" : "profileStyle.coverColor")}
+          </button>
+        ))}
+      </div>
+      {tab === "photo" ? (
+        <div className="max-h-56 overflow-y-auto overscroll-contain grid grid-cols-2 sm:grid-cols-3 gap-2 p-0.5">
+          {PROFILE_COVER_PHOTOS.map((k) => {
+            const on = cur?.kind === "photo" && cur.key === k;
+            return (
+              <button key={k} type="button" onClick={() => onPick(`photo:${k}`)} disabled={disabled} aria-pressed={on}
+                aria-label={`${t("profileStyle.coverTitle")}: ${sportLabel ? sportLabel(PROFILE_COVER_SPORT[k]) : k}`}
+                className={`aspect-[3/1] rounded-lg overflow-hidden ring-2 ring-offset-1 transition-shadow disabled:opacity-60 ${on ? "ring-brand-600" : "ring-transparent hover:ring-brand-200"}`}>
+                <img src={`/covers/${k}.webp`} alt="" loading="lazy" className="w-full h-full object-cover" />
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="grid grid-cols-4 gap-2">
+          {Object.keys(PROFILE_COVER_COLOR_CLASS).map((k, i) => {
+            const on = cur?.kind === "color" && cur.key === k;
+            return (
+              <button key={k} type="button" onClick={() => onPick(`color:${k}`)} disabled={disabled} aria-pressed={on}
+                aria-label={`${t("profileStyle.coverColor")} ${i + 1}`}
+                className={`h-12 rounded-lg ring-2 ring-offset-1 transition-shadow ${PROFILE_COVER_COLOR_CLASS[k]} ${on ? "ring-brand-600" : "ring-transparent hover:ring-slate-300"}`} />
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PinnedBadgesPicker({ t, earned, value, onChange, disabled }) {
+  if (!earned?.length) return null;
+  const sel = Array.isArray(value) ? value : [];
+  return (
+    <div className="w-full rounded-2xl border border-slate-200 p-3.5">
+      <div className="text-sm font-semibold text-slate-800">{t("profileStyle.pinnedTitle")}</div>
+      <p className="text-xs text-slate-500 mt-0.5 mb-2.5">{t("profileStyle.pinnedHelp")}</p>
+      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+        {earned.map((b) => {
+          const on = sel.includes(b.id);
+          const full = !on && sel.length >= PINNED_BADGES_MAX;
+          return (
+            <button key={b.id} type="button" disabled={disabled || full} aria-pressed={on}
+              onClick={() => onChange(on ? sel.filter((x) => x !== b.id) : [...sel, b.id])}
+              className={`flex flex-col items-center gap-1 p-2 rounded-xl border text-[11px] font-medium leading-tight text-center transition-colors disabled:opacity-40 ${on ? "border-brand-600 bg-brand-50 text-brand-900" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"}`}>
+              <span className="w-10 h-10 block" aria-hidden="true" dangerouslySetInnerHTML={{ __html: buildBadgeSvg(b.name, true, 40) }} />
+              <span className="[overflow-wrap:anywhere]">{b.name}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function MonthlyGoalCard({ t, goal, done, onSave, saving }) {
+  const [editing, setEditing] = React.useState(false);
+  const [val, setVal] = React.useState(goal || 4);
+  const line = (n) => t("profileStyle.goalLine").replace("{n}", n);
+  const pct = goal ? Math.min(1, (done || 0) / goal) : 0;
+  const reached = goal && (done || 0) >= goal;
+  const R = 26, C = 2 * Math.PI * R;
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200 p-5">
+      <div className="text-xs font-semibold tracking-[0.25em] text-slate-500 uppercase mb-3">{t("profileStyle.goalTitle")}</div>
+      {editing ? (
+        <div className="space-y-3">
+          <select value={val} onChange={(e) => setVal(Number(e.target.value))} aria-label={t("profileStyle.goalTitle")}
+            className="w-full min-h-[44px] px-3 rounded-xl border border-slate-200 bg-white text-slate-800">
+            {Array.from({ length: MONTHLY_GOAL_MAX }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{line(n)}</option>)}
+          </select>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => setEditing(false)} className="flex-1 min-h-[44px] rounded-xl border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50">{t("common.cancel")}</button>
+            <button type="button" disabled={saving} onClick={async () => { if (await onSave(val)) setEditing(false); }} data-btn="solid"
+              className="flex-1 min-h-[44px] rounded-xl bg-brand-600 text-white text-sm font-semibold disabled:opacity-60">{t("common.save")}</button>
+          </div>
+        </div>
+      ) : goal ? (
+        <div>
+          <div className="flex items-center gap-4">
+            <svg width="64" height="64" viewBox="0 0 64 64" className="flex-shrink-0" aria-hidden="true">
+              <circle cx="32" cy="32" r={R} fill="none" strokeWidth="7" className="stroke-brand-100" />
+              <circle cx="32" cy="32" r={R} fill="none" strokeWidth="7" strokeLinecap="round" className={reached ? "stroke-logo-teal" : "stroke-brand-600"}
+                strokeDasharray={C} strokeDashoffset={C * (1 - pct)} transform="rotate(-90 32 32)" />
+            </svg>
+            <div className="min-w-0">
+              <div className="font-semibold text-slate-800">{line(goal)}</div>
+              <div className="text-sm text-slate-500 tabular-nums">{t("profileStyle.goalProgress").replace("{done}", done || 0).replace("{n}", goal)}</div>
+            </div>
+          </div>
+          {reached && (
+            <p className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-brand-700">
+              <CheckCircle className="w-4 h-4 text-logo-teal" aria-hidden="true" /> {t("profileStyle.goalReached")}
+            </p>
+          )}
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button type="button" onClick={() => { setVal(goal); setEditing(true); }} className="min-h-[40px] px-3.5 rounded-xl text-sm font-semibold text-brand-700 border border-brand-200 hover:bg-brand-50">{t("profileStyle.goalChange")}</button>
+            <button type="button" disabled={saving} onClick={() => onSave(null)} className="min-h-[40px] px-3.5 rounded-xl text-sm font-semibold text-slate-500 hover:bg-slate-100">{t("profileStyle.goalRemove")}</button>
+          </div>
+        </div>
+      ) : (
+        <button type="button" onClick={() => setEditing(true)} data-btn="solid"
+          className="inline-flex items-center gap-1.5 min-h-[44px] px-4 rounded-xl text-sm font-semibold text-white bg-brand-600">
+          <Plus className="w-4 h-4" aria-hidden="true" /> {t("profileStyle.goalSet")}
+        </button>
+      )}
+    </div>
+  );
+}
+
 // Hazır profil çizimleri (SALTASK'taki gibi yenilenebilir): set adları backend AVATAR_STYLES ile aynı. Önizleme
 // sunucuda üretilir (/api/avatar-illustrations/<set>/<tohum>, uzantısız); "Başka örnekler" yeni tohum çeker.
 const AVATAR_ILLUSTRATION_SETS = ["notionists", "lorelei", "openPeeps", "thumbs", "glass", "shapes"];
@@ -2635,6 +2778,11 @@ export default function Muuvlink() {
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [showSportsEditor, setShowSportsEditor] = useState(false);
   const [sportsSaving, setSportsSaving] = useState(false);
+  const [goalInfo, setGoalInfo] = useState(null); // { goal, done } — profil açılınca tazelenir
+  const [styleSaving, setStyleSaving] = useState(false);
+  // Profil açılınca aylık hedef ilerlemesini tazele (loadGoal aşağıda tanımlı; etki çizimden sonra çalışır).
+  useEffect(() => { if (currentPage === "profile" && user?.id) loadGoalRef.current(); }, [currentPage, user?.id]);
+  const loadGoalRef = useRef(() => {});
   // Hazır çizim seçici üst düzeyde: ProfileEditModal satır içi bileşen, her üst çizimde sıfırlanıyor.
   const [showIllus, setShowIllus] = useState(false);
   const illusMemoRef = useRef({ set: "notionists", seeds: illusFirstSeeds() });
@@ -4077,7 +4225,7 @@ export default function Muuvlink() {
 
       if (response.ok) {
         const data = await response.json();
-        setUser(data.user);
+        setUser(u => ({ ...u, ...data.user }));
         setShowProfileEdit(false);
         showToast(t("toast.profileUpdated"), "success");
       } else {
@@ -6430,7 +6578,18 @@ export default function Muuvlink() {
           style={{backgroundImage:"linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px)", backgroundSize:"50px 50px"}}/>
         <div className="absolute inset-0 pointer-events-none"
           style={{background:"radial-gradient(ellipse at 30% center,rgba(17,73,86,0.18) 0%,transparent 65%)"}}/>
-        <div className="relative max-w-5xl mx-auto px-4 sm:px-8 py-12">
+        {/* Kapak görseli (yalnız sahibine; dokununca ayarlar açılır) */}
+        {(() => {
+          const cv = parseCover(user?.profile_cover);
+          if (!cv) return null;
+          return (
+            <button type="button" onClick={() => setShowProfileEdit(true)} aria-label={t("profileStyle.coverTitle")}
+              className={`relative block w-full max-w-5xl mx-auto aspect-[3/1] sm:aspect-[4/1] overflow-hidden sm:rounded-b-3xl ${cv.kind === "color" ? PROFILE_COVER_COLOR_CLASS[cv.key] : "bg-brand-100"}`}>
+              {cv.kind === "photo" && <img src={`/covers/${cv.key}.webp`} alt="" className="w-full h-full object-cover" />}
+            </button>
+          );
+        })()}
+        <div className={`relative max-w-5xl mx-auto px-4 sm:px-8 ${parseCover(user?.profile_cover) ? "pt-8 pb-12" : "py-12"}`}>
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
             {/* Avatar + name */}
             <div className="flex items-center gap-5">
@@ -6450,6 +6609,20 @@ export default function Muuvlink() {
               <div>
                 <h1 className="font-display font-bold text-brand-900" style={{fontSize:"2rem", letterSpacing:"-0.01em"}}>{user?.name}</h1>
                 <p className="text-slate-500 text-sm mt-0.5">{user?.email}</p>
+                {(() => {
+                  const pinned = (user?.pinned_badges || []).map((id) => userBadges.find((b) => b.id === id)).filter(Boolean);
+                  if (!pinned.length) return null;
+                  return (
+                    <div className="mt-2 flex flex-wrap gap-1.5" aria-label={t("profileStyle.pinnedTitle")}>
+                      {pinned.map((b) => (
+                        <span key={b.id} className="inline-flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full bg-white border border-brand-100 text-xs font-semibold text-slate-700">
+                          <span className="w-6 h-6 block" aria-hidden="true" dangerouslySetInnerHTML={{ __html: buildBadgeSvg(b.name, true, 24) }} />
+                          {b.name}
+                        </span>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
             <div className="flex items-center gap-2.5">
@@ -6579,6 +6752,8 @@ export default function Muuvlink() {
 
           {/* Right: Activity + Lists */}
           <div className="md:col-span-2 space-y-6 min-w-0">
+            <MonthlyGoalCard t={t} goal={user?.monthly_goal} done={goalInfo?.done} saving={styleSaving}
+              onSave={async (g) => { const ok = await saveProfileStyle({ monthly_goal: g }); if (ok) loadGoal(); return ok; }} />
             {/* Chart */}
             <div className="bg-white rounded-2xl p-6 border border-slate-100 overflow-hidden min-w-0">
               {/* Başlık + özet */}
@@ -9846,6 +10021,32 @@ export default function Muuvlink() {
     );
   };
 
+  // Profil özelleştirme alanlarını kaydeder (kapak, rozetler, hedef); başarıda true.
+  const saveProfileStyle = async (patch) => {
+    setStyleSaving(true);
+    try {
+      const res = await fetch(`${API_URL}/users/me/profile-style`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("token")}` },
+        body: JSON.stringify(patch),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.user) { setUser(u => ({ ...u, ...data.user })); return true; }
+      showToast(data.error || t("toast.updateFail"), "error");
+    } catch {
+      showToast(t("toast.networkError"), "error");
+    } finally {
+      setStyleSaving(false);
+    }
+    return false;
+  };
+  const loadGoal = async () => {
+    try {
+      const res = await fetch(`${API_URL}/users/me/goal`, { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } });
+      if (res.ok) setGoalInfo(await res.json());
+    } catch { /* sessiz: kart son bilinen değerle kalır */ }
+  };
+  loadGoalRef.current = loadGoal;
   const ProfileEditModal = () => {
     const [formData, setFormData] = useState({
       name: user?.name || "",
@@ -9913,7 +10114,7 @@ export default function Muuvlink() {
         });
         if (res.ok) {
           const data = await res.json();
-          setUser(data.user);
+          setUser(u => ({ ...u, ...data.user }));
           setFormData(f => ({ ...f, avatar: data.user.avatar }));
           showToast(t("toast.photoUpdated"), "success");
         } else {
@@ -10039,6 +10240,9 @@ export default function Muuvlink() {
                     })}
                   </div>
                 </div>
+                <CoverPicker t={t} value={user?.profile_cover} disabled={styleSaving} sportLabel={sportLabel} onPick={(c) => saveProfileStyle({ cover: c })} />
+                <PinnedBadgesPicker t={t} earned={userBadges} value={user?.pinned_badges} disabled={styleSaving}
+                  onChange={(ids) => saveProfileStyle({ pinned_badges: ids })} />
               </div>
 
               <div>

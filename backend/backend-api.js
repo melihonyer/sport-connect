@@ -4571,7 +4571,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
                           utm_source, utm_medium, utm_campaign, utm_content, utm_term,
                           fbclid, acquisition_platform, landing_page, referrer, lang)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-       RETURNING id, name, email, avatar, avatar_color, profile_sports, created_at, notif_prefs, lang`,
+       RETURNING id, name, email, avatar, avatar_color, profile_sports, profile_cover, pinned_badges, monthly_goal, created_at, notif_prefs, lang`,
       [name, email, passwordHash, phone, JSON.stringify(DEFAULT_NOTIF_PREFS),
        trim255(attr.utm_source), trim255(attr.utm_medium), trim255(attr.utm_campaign),
        trim255(attr.utm_content), trim255(attr.utm_term), trim255(attr.fbclid),
@@ -4637,7 +4637,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     }
 
     const result = await pool.query(
-      'SELECT id, name, email, password_hash, avatar, avatar_color, profile_sports, deleted_at, lang FROM users WHERE email = $1',
+      'SELECT id, name, email, password_hash, avatar, avatar_color, profile_sports, profile_cover, pinned_badges, monthly_goal, deleted_at, lang FROM users WHERE email = $1',
       [email]
     );
 
@@ -4682,7 +4682,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
 app.get('/api/auth/me', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, name, email, phone, avatar, avatar_color, profile_sports, is_admin, created_at, notif_prefs, onboarding_done, lang FROM users WHERE id = $1',
+      'SELECT id, name, email, phone, avatar, avatar_color, profile_sports, profile_cover, pinned_badges, monthly_goal, is_admin, created_at, notif_prefs, onboarding_done, lang FROM users WHERE id = $1',
       [req.user.id]
     );
 
@@ -4756,6 +4756,16 @@ app.post('/api/auth/avatar', authenticateToken, uploadAvatar.single('avatar'), a
 const AVATAR_COLORS = ['deep', 'ana1', 'ana2', 'carbon'];
 const PROFILE_LEVELS = ['beginner', 'regular', 'racing'];
 const PROFILE_SPORT_MAX = 5;
+// 2. parça (13 Kasım 2026). Kapak: public/covers/<ad>.webp (scripts/profile-covers.mjs) ya da düz renk; site PROFILE_COVER_* ile aynı.
+const PROFILE_COVER_PHOTOS = ['basketbol', 'bikejoring', 'bisiklet', 'canicross', 'crossfit', 'diger', 'futbol', 'kano', 'kosu', 'kurek',
+  'padel', 'pilates', 'tenis', 'trekking', 'triatlon', 'voleybol', 'yoga', 'yuruyus', 'yuzme'];
+const PROFILE_COVER_COLORS = ['deep', 'ana1', 'ana2', 'light']; // Carbon büyük zemin olmaz (renk kuralı)
+const validCover = (c) => {
+  const m = /^(photo|color):([a-z0-9]+)$/.exec(String(c || ''));
+  return !!m && (m[1] === 'photo' ? PROFILE_COVER_PHOTOS : PROFILE_COVER_COLORS).includes(m[2]);
+};
+const PINNED_BADGES_MAX = 3;
+const MONTHLY_GOAL_MAX = 20;
 const validPace = (p) => {
   const m = /^([3-9]):(00|15|30|45)$/.exec(String(p || ''));
   return !!m && (Number(m[1]) < 9 || m[2] === '00');
@@ -4789,14 +4799,51 @@ app.put('/api/users/me/profile-style', authenticateToken, async (req, res) => {
       }
       vals.push(JSON.stringify(clean)); sets.push(`profile_sports = $${vals.length}::jsonb`);
     }
+    if ('cover' in body) {
+      const c = body.cover;
+      if (c !== null && !validCover(c)) return res.status(400).json({ error: 'Geçersiz değer.' });
+      vals.push(c); sets.push(`profile_cover = $${vals.length}`);
+    }
+    if ('pinned_badges' in body) {
+      const raw = body.pinned_badges;
+      if (!Array.isArray(raw) || raw.length > PINNED_BADGES_MAX || raw.some((x) => !Number.isInteger(x))) return res.status(400).json({ error: 'Geçersiz değer.' });
+      const ids = [...new Set(raw)];
+      if (ids.length) {
+        // Yalnız kişinin kazandığı rozet öne çıkarılır.
+        const own = await pool.query('SELECT badge_id FROM user_badges WHERE user_id = $1 AND badge_id = ANY($2::int[])', [req.user.id, ids]);
+        if (own.rows.length !== ids.length) return res.status(400).json({ error: 'Geçersiz değer.' });
+      }
+      vals.push(ids); sets.push(`pinned_badges = $${vals.length}::int[]`);
+    }
+    if ('monthly_goal' in body) {
+      const g = body.monthly_goal;
+      if (g !== null && !(Number.isInteger(g) && g >= 1 && g <= MONTHLY_GOAL_MAX)) return res.status(400).json({ error: 'Geçersiz değer.' });
+      vals.push(g); sets.push(`monthly_goal = $${vals.length}`);
+    }
     if (!sets.length) return res.status(400).json({ error: 'Geçersiz değer.' });
     vals.push(req.user.id);
     const r = await pool.query(
       `UPDATE users SET ${sets.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = $${vals.length}
-       RETURNING id, name, email, phone, avatar, avatar_color, profile_sports`, vals);
+       RETURNING id, name, email, phone, avatar, avatar_color, profile_sports, profile_cover, pinned_badges, monthly_goal`, vals);
     res.json({ user: r.rows[0] });
   } catch (error) {
     console.error('Profile style error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Aylık hedef ilerlemesi: bu ay (İstanbul) başlama saati geçmiş, katıldığı etkinlikler (updateUserStats ile aynı sayım).
+app.get('/api/users/me/goal', authenticateToken, async (req, res) => {
+  try {
+    const r = await pool.query(
+      `SELECT u.monthly_goal AS goal,
+              (SELECT COUNT(*)::int FROM training_attendees ta JOIN trainings t ON t.id = ta.training_id
+                WHERE ta.user_id = u.id AND ${trainingUtcExpr('t')} < NOW()
+                  AND ${trainingUtcExpr('t')} >= (date_trunc('month', NOW() AT TIME ZONE 'Europe/Istanbul') AT TIME ZONE 'Europe/Istanbul')) AS done
+         FROM users u WHERE u.id = $1`, [req.user.id]);
+    res.json(r.rows[0] || { goal: null, done: 0 });
+  } catch (error) {
+    console.error('Goal error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -11421,6 +11468,8 @@ pool.query(`ALTER TABLE trainings ADD COLUMN IF NOT EXISTS is_paid BOOLEAN DEFAU
 pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS lang VARCHAR(5)`).catch(() => {});
 // Profil özelleştirme (13 Kasım 2026, Melih): harf rengi + branşlarım (seviye, koşu temposu).
 pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_color VARCHAR(12), ADD COLUMN IF NOT EXISTS profile_sports JSONB NOT NULL DEFAULT '[]'::jsonb`).catch(() => {});
+// 2. parça: kapak görseli, öne çıkan rozetler (en çok 3), aylık etkinlik hedefi. Yalnız sahibine görünür.
+pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_cover VARCHAR(40), ADD COLUMN IF NOT EXISTS pinned_badges INTEGER[] NOT NULL DEFAULT '{}', ADD COLUMN IF NOT EXISTS monthly_goal SMALLINT`).catch(() => {});
 // Admin'in "büyüme maili" gönderimleri: hangi takım/etkinlik, ne zaman, kaç kişiye.
 pool.query(`CREATE TABLE IF NOT EXISTS grow_email_log (
     id SERIAL PRIMARY KEY,

@@ -728,7 +728,7 @@ LICENSE.md, 13 Kasım'da okundu). **Arayüzde kaynak/lisans satırı YAZILMAZ** 
 ## Profil özelleştirme (13 Kasım 2026, Melih onayladı; metinler `profileStyle.*`, 7 dil)
 
 Melih'in seçtiği 7 madde: 1 Branşlarım, 2 seviye + tempo, 3 kapak, 5 öne çıkan rozetler, 7 aylık hedef, 9 harf rengi, 10 saat özeti.
-**Kurulanlar: 1, 2, 9.** Sırada 3, 5, 7, sonra 10. Başkasının profil sayfası YOK; kapak/rozet/hedef/saat yalnız sahibine görünür.
+**Kurulanlar: 1, 2, 9 (1. parça); 3, 5, 7 (2. parça).** Sırada 10 (saat özeti). Başkasının profil sayfası YOK; kapak/rozet/hedef/saat yalnız sahibine görünür.
 - Veri `users.avatar_color` (deep|ana1|ana2|carbon) ve `users.profile_sports` JSONB `[{sport, level, pace?}]`; yazma tek uç
   `PUT /api/users/me/profile-style` (gönderilmeyen alana dokunulmaz). En çok 5 branş, `DISCOVERY_SPORTS`'tan; seviye
   beginner|regular|racing; tempo yalnız Koşu'da 3:00–9:00, 15 sn adım. Kodlar İKİ yerde aynı: backend `AVATAR_COLORS`/
@@ -741,6 +741,17 @@ Melih'in seçtiği 7 madde: 1 Branşlarım, 2 seviye + tempo, 3 kapak, 5 öne ç
 - Tempo grubu önerisi: Koşu etkinliğinde kişinin temposuna en yakın grup (≤30 sn, grubun `pace` metnindeki ilk m:ss) en üstte
   ve "Temponla uyuşan grup" işaretli; seçim yine kişide. Grup temposu serbest metin; sayı yazılmamışsa öneri çıkmaz.
 - `ProfileSportsEditor` modül düzeyinde (kendi durumu), Esc/geri `closeTopOverlayRef`, yarım iş `hasUnsavedWork`.
+- **2. parça** (kapak, öne çıkan rozetler, aylık hedef — yalnız sahibine): `users.profile_cover` (`photo:<ad>` | `color:<deep|ana1|ana2|light>`;
+  Carbon büyük zemin olmaz), `pinned_badges` INT[] (en çok 3, yalnız kazanılmış rozet — sunucu `user_badges`'tan kontrol eder),
+  `monthly_goal` (1–20). Aynı `PUT /api/users/me/profile-style`. Kapak fotoğrafları `public/covers/<ad>.webp` (1080×360, 3:1),
+  `scripts/profile-covers.mjs` hikâye fotoğraflarından sharp "attention" kırpmasıyla üretir (sabit kırpma sporcuları kesiyordu).
+  Bant içerik genişliğinde, telefonda 3:1, masaüstünde 4:1 (tam genişlikte 7:1 olup yalnız bacaklar görünüyordu). Kapak ve rozet
+  seçimi Ayarlar penceresinde (`CoverPicker`, `PinnedBadgesPicker`), rozetler adın altında. Aylık hedef `GET /api/users/me/goal`:
+  bu ay (İstanbul) başlama saati geçmiş, katıldığı etkinlikler — `updateUserStats` ile aynı sayım; kart `MonthlyGoalCard` sağ sütunun
+  başında. Hedefe ulaşınca bildirim YOK, yalnız kartta yazar. `profile_cover`/`pinned_badges`/`monthly_goal` yalnız kendi kullanıcı
+  nesnesinde (`/auth/me`, giriş, kayıt) — başkasına giden hiçbir uca eklenmez.
+- Profil/fotoğraf güncellemesi kullanıcı nesnesini artık birleştirerek günceller (`setUser(u => ({ ...u, ...data.user }))`): uçlar
+  daha az alan döndürünce yeni alanlar sayfada siliniyordu.
 - Takım üye satırında ad sütunu `basis-48`: dar ekranda rol seçimi + sil düğmesi adı harf harf sıkıştırıyordu.
 
 ## Silme ve kayıt
