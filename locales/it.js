@@ -835,6 +835,12 @@ export default {
       racing: "Faccio gare",
     },
   },
+  teamAvatar: {
+    title: "Immagine della squadra",
+    tabEmblem: "Emblema dello sport",
+    tabIllustration: "Illustrazione",
+    illusDesc: "Tocca un'illustrazione per usarla come immagine della squadra; puoi cambiarla quando vuoi.",
+  },
   about: {
     nav: "Chi siamo",
     title: "Chi siamo",

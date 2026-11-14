@@ -725,6 +725,15 @@ LICENSE.md, 13 Kasım'da okundu). **Arayüzde kaynak/lisans satırı YAZILMAZ** 
   eski `{id}` isteği de kabul ediliyor.
 - Test: geçici kullanıcı + kendi profili; depoya yüklenen test dosyası da silinir (Supabase listelemede dosya adı `search` ile, `prefix` klasör adı).
 
+## Takım görseli penceresi (14 Kasım 2026, Melih: "ikisini birlikte yapalım, isteyen istediğini seçsin")
+
+Takım sayfasındaki kamera düğmesi (yalnız `canManageTeam`) `TeamAvatarModal`'ı açar, metinler `teamAvatar.*` (7 dil). Üç sekme:
+fotoğraf yükle · branş amblemi · hazır çizim. **Yeni sunucu ucu yok:** üçü de mevcut `POST /api/teams/:id/avatar`'a dosya gönderir
+(sunucu WebP'ye çevirir). Amblem tarayıcıda SVG → 400 px PNG (`svgToPngBlob`; `new window.Image()` — dosyada `Image` lucide ikonu,
+düz `new Image()` sessizce bozuluyordu). Amblem satırları takımın branşları (branş rengi + `EMBLEM_PALETTE`: Deep Teal, Ana1 + Carbon,
+Ana2) ve en altta takım baş harfleri. Hazır çizim `IllustrationPicker`'ı yalnız `TEAM_ILLUSTRATION_SETS` (shapes, glass, thumbs —
+insan yüzü olmayanlar) ile kullanır; çizim önizleme ucundan alınıp PNG'ye çevrilir. Seçim durumu `teamIllusMemoRef`. Kaynak/lisans satırı yazılmaz.
+
 ## Profil özelleştirme (13 Kasım 2026, Melih onayladı; metinler `profileStyle.*`, 7 dil)
 
 Melih'in seçtiği 7 madde: 1 Branşlarım, 2 seviye + tempo, 3 kapak, 5 öne çıkan rozetler, 7 aylık hedef, 9 harf rengi, 10 saat özeti.

@@ -835,6 +835,12 @@ export default {
       racing: "Compito",
     },
   },
+  teamAvatar: {
+    title: "Imagen del equipo",
+    tabEmblem: "Emblema del deporte",
+    tabIllustration: "Ilustración",
+    illusDesc: "Toca una ilustración para usarla como imagen del equipo; puedes cambiarla cuando quieras.",
+  },
   about: {
     nav: "Sobre nosotros",
     title: "Sobre nosotros",

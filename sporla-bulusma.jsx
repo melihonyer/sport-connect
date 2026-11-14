@@ -2579,6 +2579,143 @@ function WatchSummaryCard({ t, status, lang, onOpen }) {
   );
 }
 
+// ── Takım görseli (14 Kasım 2026, Melih) ─────────────────────────────────────
+// Kamera düğmesi bu pencereyi açar (tek yol): fotoğraf yükle · branş amblemi · hazır çizim (yüzsüz setler).
+// Amblem ve çizim tarayıcıda PNG'ye çevrilip mevcut POST /api/teams/:id/avatar ucuna yüklenir (sunucu WebP'ye
+// çevirip depoya koyar, yetki canManageTeam) — yeni sunucu ucu yok. Çizim SVG'si aynı alan adından gelir (tuval kirlenmez).
+const TEAM_ILLUSTRATION_SETS = ["shapes", "glass", "thumbs"];
+// Amblem zeminleri: branşın kendi rengi + kurumsal Deep Teal / Ana1 / Ana2 (tailwind.config.js token değerleri).
+// SVG dosyasına yazıldığı için hex gerekiyor; renk değişirse tailwind.config.js ile birlikte değişir.
+const EMBLEM_PALETTE = [
+  { key: "deep", bg: "#114956", fg: "#FFFFFF" },
+  { key: "ana1", bg: "#00a499", fg: "#1F2121" },
+  { key: "ana2", bg: "#643e87", fg: "#FFFFFF" },
+];
+const teamInitials = (name) => {
+  const w = String(name || "").trim().split(/\s+/).filter(Boolean);
+  const two = w.length > 1 ? w[0][0] + w[1][0] : (w[0] || "T").slice(0, 2);
+  return two.toLocaleUpperCase("tr-TR");
+};
+// SVG metnini PNG'ye çevirir (yazı tipi SVG içinde gömülü değil: harfler Arial/Helvetica, önizlemeyle aynı).
+const svgToPngBlob = (svgText, size = 512) => new Promise((resolve, reject) => {
+  const url = URL.createObjectURL(new Blob([svgText], { type: "image/svg+xml" }));
+  const img = new window.Image(); // `Image` bu dosyada lucide ikonu (içe aktarım): tarayıcınınkini açıkça al
+  img.onload = () => {
+    try {
+      const c = document.createElement("canvas"); c.width = size; c.height = size;
+      c.getContext("2d").drawImage(img, 0, 0, size, size);
+      URL.revokeObjectURL(url);
+      c.toBlob((b) => (b ? resolve(b) : reject(new Error("toBlob"))), "image/png");
+    } catch (e) { URL.revokeObjectURL(url); reject(e); }
+  };
+  img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("svg load")); };
+  img.src = url;
+});
+
+function TeamEmblemTile({ sport, bg, fg, initials, onPick, disabled, label }) {
+  const ref = React.useRef(null);
+  const Icon = sport ? sportStyle(sport).Icon : null;
+  return (
+    <button type="button" disabled={disabled} aria-label={label} onClick={() => onPick(ref.current?.outerHTML)}
+      className="aspect-square rounded-2xl overflow-hidden ring-2 ring-transparent hover:ring-brand-200 focus-visible:ring-brand-600 transition-shadow disabled:opacity-60">
+      <svg ref={ref} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" className="w-full h-full block">
+        <rect width="256" height="256" fill={bg} />
+        {Icon ? <Icon x="56" y="56" width="144" height="144" color={fg} stroke={fg} strokeWidth={1.75} />
+          : <text x="128" y="128" dominantBaseline="central" textAnchor="middle" fill={fg}
+              fontFamily="Arial, Helvetica, sans-serif" fontWeight="700" fontSize={initials.length > 1 ? 104 : 128}>{initials}</text>}
+      </svg>
+    </button>
+  );
+}
+
+function TeamAvatarModal({ t, team, apiUrl, sportLabel, onClose, onUploadFile, busy, memo }) {
+  const [tab, setTab] = React.useState("emblem");
+  const fileRef = React.useRef(null);
+  const sports = (team.sports?.length ? team.sports : [team.sport]).filter(Boolean);
+  const initials = teamInitials(team.name);
+  const pickSvg = async (svgText) => {
+    if (!svgText) return;
+    try { await onUploadFile(new File([await svgToPngBlob(svgText)], "team-image.png", { type: "image/png" })); }
+    catch { onUploadFile(null); }
+  };
+  const pickIllustration = async (set, seed) => {
+    try {
+      const r = await fetch(`${apiUrl}/avatar-illustrations/${set}/${seed}`);
+      if (!r.ok) throw new Error("svg");
+      await pickSvg(await r.text());
+    } catch { onUploadFile(null); }
+  };
+  const tabs = [["upload", t("createTeam.uploadPhoto")], ["emblem", t("teamAvatar.tabEmblem")], ["illustration", t("teamAvatar.tabIllustration")]];
+  return (
+    <div className="fixed inset-0 bg-black/50 flex justify-center overflow-y-auto overscroll-contain p-4" style={{ zIndex: 1000000 }}
+      role="dialog" aria-modal="true" aria-label={t("teamAvatar.title")} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="bg-white rounded-3xl w-full max-w-lg my-auto p-6 sm:p-8 shadow-2xl">
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <h2 className="text-2xl font-semibold text-brand-900">{t("teamAvatar.title")}</h2>
+          <button type="button" onClick={onClose} aria-label={t("common.close")} className="w-11 h-11 -mr-2 -mt-2 flex items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div role="tablist" className="grid grid-cols-3 gap-1 p-1 bg-slate-100 rounded-xl mb-4">
+          {tabs.map(([k, label]) => (
+            <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
+              className={`min-h-[40px] px-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors ${tab === k ? "bg-white shadow text-brand-700" : "text-slate-500"}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className="relative">
+          {tab === "upload" && (
+            <div className="py-6 flex justify-center">
+              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onUploadFile(f); }} />
+              <button type="button" disabled={busy} onClick={() => fileRef.current?.click()} data-btn="solid"
+                className="inline-flex items-center gap-2 min-h-[48px] px-5 rounded-xl bg-brand-600 text-white font-semibold disabled:opacity-60">
+                <Image className="w-4 h-4" aria-hidden="true" /> {t("createTeam.uploadPhoto")}
+              </button>
+            </div>
+          )}
+          {tab === "emblem" && (
+            <div className="space-y-4">
+              {sports.map((sp) => {
+                const own = sportStyle(sp);
+                const pal = [{ key: "sport", bg: own.color, fg: own.text }, ...EMBLEM_PALETTE];
+                return (
+                  <div key={sp}>
+                    <div className="text-xs font-semibold text-slate-500 mb-2">{sportLabel(sp)}</div>
+                    <div className="grid grid-cols-4 gap-2.5">
+                      {pal.map((c) => (
+                        <TeamEmblemTile key={c.key} sport={sp} bg={c.bg} fg={c.fg} onPick={pickSvg} disabled={busy}
+                          label={`${t("teamAvatar.tabEmblem")}: ${sportLabel(sp)}`} />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="pt-1">
+                <div className="grid grid-cols-4 gap-2.5">
+                  {[...(sports[0] ? [{ key: "sport", bg: sportStyle(sports[0]).color, fg: sportStyle(sports[0]).text }] : []), ...EMBLEM_PALETTE].map((c) => (
+                    <TeamEmblemTile key={c.key} initials={initials} bg={c.bg} fg={c.fg} onPick={pickSvg} disabled={busy}
+                      label={`${t("teamAvatar.tabEmblem")}: ${initials}`} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+          {tab === "illustration" && (
+            <IllustrationPicker t={t} apiUrl={apiUrl} disabled={busy} onPick={pickIllustration} memo={memo}
+              sets={TEAM_ILLUSTRATION_SETS} desc={t("teamAvatar.illusDesc")} />
+          )}
+          {busy && (
+            <div className="absolute inset-0 bg-white/60 flex items-center justify-center rounded-xl">
+              <Loader2 className="w-6 h-6 text-brand-600 animate-spin" aria-hidden="true" />
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Hazır profil çizimleri (SALTASK'taki gibi yenilenebilir): set adları backend AVATAR_STYLES ile aynı. Önizleme
 // sunucuda üretilir (/api/avatar-illustrations/<set>/<tohum>, uzantısız); "Başka örnekler" yeni tohum çeker.
 const AVATAR_ILLUSTRATION_SETS = ["notionists", "lorelei", "openPeeps", "thumbs", "glass", "shapes"];
@@ -2589,7 +2726,7 @@ const illusRandomSeeds = () => Array.from({ length: ILLUS_COUNT }, () =>
 
 // Seçici kendi durumunu taşır: sekme/yenileme yalnız bu bileşeni çizer (ayarlar penceresi satır içi bileşen, üst
 // çizimde baştan kurulup başa kayıyordu). `memo` üst bileşendeki ref: pencere yine de kurulursa set ve tohumlar kalır.
-function IllustrationPicker({ t, apiUrl, disabled, onPick, memo }) {
+function IllustrationPicker({ t, apiUrl, disabled, onPick, memo, sets = AVATAR_ILLUSTRATION_SETS, desc }) {
   const [set, setSet] = React.useState(memo.set);
   const [seeds, setSeeds] = React.useState(memo.seeds);
   const chooseSet = (x) => { memo.set = x; setSet(x); };
@@ -2603,9 +2740,9 @@ function IllustrationPicker({ t, apiUrl, disabled, onPick, memo }) {
   }, []);
   return (
     <div className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-3">
-      <p className="text-xs text-slate-500 mb-2.5">{t("profile.illusDesc")}</p>
+      <p className="text-xs text-slate-500 mb-2.5">{desc || t("profile.illusDesc")}</p>
       <div ref={tabsRef} role="tablist" aria-label={t("profile.illusSets")} className="relative flex gap-1.5 overflow-x-auto pb-2 -mx-1 px-1">
-        {AVATAR_ILLUSTRATION_SETS.map(x => (
+        {sets.map(x => (
           <button key={x} type="button" role="tab" aria-selected={set === x} onClick={() => chooseSet(x)}
             className={`flex-shrink-0 min-h-[36px] px-3 rounded-lg text-xs font-semibold transition-colors ${set === x ? "bg-brand-600 text-white" : "bg-white text-slate-600 border border-slate-200 hover:bg-brand-50"}`}>
             {setName(x)}
@@ -2821,6 +2958,9 @@ export default function Muuvlink() {
   const [showNotifPrefs, setShowNotifPrefs] = useState(false);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [showSportsEditor, setShowSportsEditor] = useState(false);
+  const [teamAvatarOpen, setTeamAvatarOpen] = useState(false);
+  const [teamAvatarBusy, setTeamAvatarBusy] = useState(false);
+  const teamIllusMemoRef = useRef({ set: "shapes", seeds: illusFirstSeeds() });
   const [sportsSaving, setSportsSaving] = useState(false);
   const [goalInfo, setGoalInfo] = useState(null); // { goal, done } — profil açılınca tazelenir
   const [styleSaving, setStyleSaving] = useState(false);
@@ -3920,6 +4060,7 @@ export default function Muuvlink() {
     if (confirmModal)      { setConfirmModal(null);       return true; }
     if (myMsgs)            { setMyMsgs(null);             return true; } // ayarların/bildirimlerin üstünde açılır
     if (showSportsEditor)  { setShowSportsEditor(false);  return true; }
+    if (teamAvatarOpen)    { setTeamAvatarOpen(false);    return true; }
     if (showWearable)      { setShowWearable(false);      return true; }
     if (showDeleteModal)   { setShowDeleteModal(false);   return true; }
     if (showManualLocation){ setShowManualLocation(false);return true; }
@@ -8771,23 +8912,11 @@ export default function Muuvlink() {
                       : (selectedTeam.name?.[0]?.toLocaleUpperCase("en-US") || "T")}
                   </div>
                   {canAdmin && (
-                    <label className="absolute -bottom-1 -right-1 w-6 h-6 bg-white ring-1 ring-slate-200 rounded-full flex items-center justify-center cursor-pointer shadow-sm hover:bg-brand-50 transition-colors" title={t("createTeam.uploadPhoto")}>
-                      <Image className="w-3 h-3 text-brand-600" />
-                      <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        const fd = new FormData();
-                        fd.append("avatar", file);
-                        const token = localStorage.getItem("token");
-                        const res = await fetch(`${API_URL}/teams/${selectedTeam.id}/avatar`, { method:"POST", headers:{ Authorization:`Bearer ${token}` }, body:fd });
-                        if (res.ok) {
-                          const data = await res.json();
-                          setSelectedTeam(t => ({ ...t, avatar: data.avatar }));
-                          setTeams(ts => ts.map(t => t.id === selectedTeam.id ? { ...t, avatar: data.avatar } : t));
-                          showToast(t("toast.teamPhotoUpdated"), "success");
-                        } else showToast(t("toast.uploadFail"), "error");
-                      }} />
-                    </label>
+                    // Takım görseli penceresi: fotoğraf yükle · branş amblemi · hazır çizim (14 Kasım 2026).
+                    <button type="button" onClick={() => setTeamAvatarOpen(true)} aria-label={t("teamAvatar.title")}
+                      className="absolute -bottom-2 -right-2 w-8 h-8 bg-white ring-1 ring-slate-200 rounded-full flex items-center justify-center shadow-sm hover:bg-brand-50 transition-colors">
+                      <Image className="w-3.5 h-3.5 text-brand-600" />
+                    </button>
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -11607,6 +11736,30 @@ ${legalWearableHtml(5)}
       {renderClaimModal()}
       {renderRemoveModal()}
       {showProfileEdit && <ProfileEditModal />}
+      {teamAvatarOpen && selectedTeam && (
+        <TeamAvatarModal t={t} team={selectedTeam} apiUrl={API_URL} sportLabel={sportLabel} busy={teamAvatarBusy}
+          memo={teamIllusMemoRef.current} onClose={() => setTeamAvatarOpen(false)}
+          onUploadFile={async (file) => {
+            if (!file) { showToast(t("toast.uploadFail"), "error"); return; }
+            setTeamAvatarBusy(true);
+            try {
+              const fd = new FormData();
+              fd.append("avatar", file);
+              const res = await fetch(`${API_URL}/teams/${selectedTeam.id}/avatar`, { method: "POST", headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }, body: fd });
+              if (res.ok) {
+                const data = await res.json();
+                setSelectedTeam(tm => ({ ...tm, avatar: data.avatar }));
+                setTeams(ts => ts.map(tm => tm.id === selectedTeam.id ? { ...tm, avatar: data.avatar } : tm));
+                setTeamAvatarOpen(false);
+                showToast(t("toast.teamPhotoUpdated"), "success");
+              } else showToast(t("toast.uploadFail"), "error");
+            } catch {
+              showToast(t("toast.networkError"), "error");
+            } finally {
+              setTeamAvatarBusy(false);
+            }
+          }} />
+      )}
       {showSportsEditor && user && (
         <ProfileSportsEditor t={t} initial={user.profile_sports} sportLabel={sportLabel} saving={sportsSaving}
           onClose={() => setShowSportsEditor(false)}

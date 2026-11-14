@@ -1589,6 +1589,13 @@ export const translations = {
       racing: { tr: "Yarışıyorum", en: "Racing", de: "Ich nehme an Wettkämpfen teil" },
     },
   },
+  // Takım görseli penceresi (14 Kasım 2026, Melih: fotoğraf + branş amblemi + hazır çizim, isteyen istediğini seçsin).
+  teamAvatar: {
+    title: { tr: "Takım görseli", en: "Team image", de: "Teambild" },
+    tabEmblem: { tr: "Branş amblemi", en: "Sport emblem", de: "Sport-Emblem" },
+    tabIllustration: { tr: "Hazır çizim", en: "Illustration", de: "Illustration" },
+    illusDesc: { tr: "Bir çizime dokununca takımın görseli olur; istediğin zaman değiştirebilirsin.", en: "Tap an illustration to make it your team's image; you can change it any time.", de: "Tippe auf eine Illustration, um sie als Teambild zu nehmen; du kannst sie jederzeit ändern." },
+  },
   about: {
     nav: { tr: "Hakkımızda",
       en: "About us",
