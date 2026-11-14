@@ -297,8 +297,9 @@ Kurallar:
   Deep Teal'dir. Açık tonları koyudan türetme — griye kaçar.
 - Degrade kullanılmaz; yüzeyler düz renktir.
 - **Branş renkleri — bilinçli istisna** (2 Kasım 2026, Melih: "kart bir bakışta hangi branş olduğunu
-  söylesin"): `sportStyle.jsx` `SPORT_STYLE` her branşa düz bir renk + ikon verir (lucide; basketbol,
-  tenis, futbol, padel, koşu, kürek için aynı çizgi stilinde elle çizilmiş). TEK kaynak orası; JSX'e branş
+  söylesin"): `sportStyle.jsx` `SPORT_STYLE` her branşa düz bir renk + ikon verir. **İkonlar Google Material
+  Symbols Rounded** (Apache 2.0, yalnız kullanılan yollar dosyada; 14 Kasım 2026, Melih: elle çizilmiş/lucide karışımı "komik"
+  duruyordu). Yeni branş ikonu da bu setten alınır, elle çizilmez. TEK kaynak orası; JSX'e branş
   rengi yazılmaz. **Kartta renk yalnız ikonda** (Melih: "başlık açık gri, ikonlar renkli"): takım
   kartının başlığı (h-11) gri `SPORT_HEAD_BG` (#CDD0D4, slate-100'ün %15 koyusu; Melih): solda branş renginde ikon kutusu takım avatarının hizasında
   ve genişliğinde (`left-5 w-12`; gövde `p-5`, avatar `w-12` değişirse bu da değişir), sağda gri
