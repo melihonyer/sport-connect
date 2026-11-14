@@ -752,8 +752,10 @@ Melih'in seçtiği 7 madde: 1 Branşlarım, 2 seviye + tempo, 3 kapak, 5 öne ç
 - `ProfileSportsEditor` modül düzeyinde (kendi durumu), Esc/geri `closeTopOverlayRef`, yarım iş `hasUnsavedWork`.
 - **2. parça** (kapak, öne çıkan rozetler, aylık hedef — yalnız sahibine): `users.profile_cover` (`photo:<ad>` | `color:<deep|ana1|ana2|light>`;
   Carbon büyük zemin olmaz), `pinned_badges` INT[] (en çok 3, yalnız kazanılmış rozet — sunucu `user_badges`'tan kontrol eder),
-  `monthly_goal` (1–20). Aynı `PUT /api/users/me/profile-style`. Kapak fotoğrafları `public/covers/<ad>.webp` (1080×360, 3:1),
-  `scripts/profile-covers.mjs` hikâye fotoğraflarından sharp "attention" kırpmasıyla üretir (sabit kırpma sporcuları kesiyordu).
+  `monthly_goal` (1–20). Aynı `PUT /api/users/me/profile-style`. Kapak görselleri `public/covers/<ad>.webp` (1584×528, 3:1) + seçici
+  için `covers/thumb/` (480×160). **14 Kasım 2026, Melih: kişi fotoğrafı değil, branşın oynandığı yer** — sinematik, davetkâr,
+  insansız (ışıklı saha, sahil yolu, zirve patikası…). Gemini ile üretildi (21:9), kaynaklar `store-assets/covers-gemini/` (repoya
+  girmez); `scripts/profile-covers.mjs` ortadan kırpar. Eski hâl (hikâye fotoğraflarından 1080 px) bulanıktı.
   Bant içerik genişliğinde, telefonda 3:1, masaüstünde 4:1 (tam genişlikte 7:1 olup yalnız bacaklar görünüyordu). Kapak ve rozet
   seçimi Ayarlar penceresinde (`CoverPicker`, `PinnedBadgesPicker`), rozetler adın altında. Aylık hedef `GET /api/users/me/goal`:
   bu ay (İstanbul) başlama saati geçmiş, katıldığı etkinlikler — `updateUserStats` ile aynı sayım; kart `MonthlyGoalCard` sağ sütunun

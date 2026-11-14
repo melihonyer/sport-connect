@@ -2453,7 +2453,7 @@ function CoverPicker({ t, value, onPick, disabled, sportLabel }) {
               <button key={k} type="button" onClick={() => onPick(`photo:${k}`)} disabled={disabled} aria-pressed={on}
                 aria-label={`${t("profileStyle.coverTitle")}: ${sportLabel ? sportLabel(PROFILE_COVER_SPORT[k]) : k}`}
                 className={`aspect-[3/1] rounded-lg overflow-hidden ring-2 ring-offset-1 transition-shadow disabled:opacity-60 ${on ? "ring-brand-600" : "ring-transparent hover:ring-brand-200"}`}>
-                <img src={`/covers/${k}.webp`} alt="" loading="lazy" className="w-full h-full object-cover" />
+                <img src={`/covers/thumb/${k}.webp`} alt="" loading="lazy" className="w-full h-full object-cover" />
               </button>
             );
           })}
