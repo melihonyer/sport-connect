@@ -2481,16 +2481,17 @@ function PinnedBadgesPicker({ t, earned, value, onChange, disabled }) {
     <div className="w-full rounded-2xl border border-slate-200 p-3.5">
       <div className="text-sm font-semibold text-slate-800">{t("profileStyle.pinnedTitle")}</div>
       <p className="text-xs text-slate-500 mt-0.5 mb-2.5">{t("profileStyle.pinnedHelp")}</p>
-      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         {earned.map((b) => {
           const on = sel.includes(b.id);
           const full = !on && sel.length >= PINNED_BADGES_MAX;
           return (
             <button key={b.id} type="button" disabled={disabled || full} aria-pressed={on}
               onClick={() => onChange(on ? sel.filter((x) => x !== b.id) : [...sel, b.id])}
-              className={`flex flex-col items-center gap-1 p-2 rounded-xl border text-[11px] font-medium leading-tight text-center transition-colors disabled:opacity-40 ${on ? "border-brand-600 bg-brand-50 text-brand-900" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"}`}>
-              <span className="w-10 h-10 block" aria-hidden="true" dangerouslySetInnerHTML={{ __html: buildBadgeSvg(b.name, true, 40) }} />
-              <span className="[overflow-wrap:anywhere]">{b.name}</span>
+              className={`flex flex-col items-center gap-1.5 p-2 rounded-xl border text-[11px] font-medium leading-tight text-center transition-colors disabled:opacity-40 ${on ? "border-brand-600 bg-brand-50 text-brand-900" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"}`}>
+              {/* buildBadgeSvg dikey çizer (yükseklik = 1,4 × genişlik): kutu 40 × 56 */}
+              <span className="block w-10 h-14 flex-shrink-0" aria-hidden="true" dangerouslySetInnerHTML={{ __html: buildBadgeSvg(b.name, true, 40) }} />
+              <span className="w-full break-words hyphens-auto">{b.name}</span>
             </button>
           );
         })}
@@ -6664,7 +6665,7 @@ export default function Muuvlink() {
                     <div className="mt-2 flex flex-wrap gap-1.5" aria-label={t("profileStyle.pinnedTitle")}>
                       {pinned.map((b) => (
                         <span key={b.id} className="inline-flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full bg-white border border-brand-100 text-xs font-semibold text-slate-700">
-                          <span className="w-6 h-6 block" aria-hidden="true" dangerouslySetInnerHTML={{ __html: buildBadgeSvg(b.name, true, 24) }} />
+                          <span className="block w-5 h-7 flex-shrink-0" aria-hidden="true" dangerouslySetInnerHTML={{ __html: buildBadgeSvg(b.name, true, 20) }} />
                           {b.name}
                         </span>
                       ))}
