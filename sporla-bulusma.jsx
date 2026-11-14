@@ -2087,7 +2087,7 @@ const STORY_BG_BY_SPORT = {
 };
 const STORY_DARK_BG = new Set(["tenis", "futbol", "kurek"]);
 const storyBgFor = (sport) => STORY_BG_BY_SPORT[sport] || "diger";
-async function storyCardBlob({ kicker, title, lines = [], lang = "tr", sport }) {
+async function storyCardBlob({ kicker, title, org, lines = [], lang = "tr", sport }) {
   const W = 1080, H = 1920, MAXW = 920, FONT = "MuuvStory, MuuvStoryGr, sans-serif";
   await loadStoryFonts();
   const canvas = document.createElement("canvas");
@@ -2147,6 +2147,24 @@ async function storyCardBlob({ kicker, title, lines = [], lang = "tr", sport }) 
   spaced("0px");
   y += (rows.length - 1) * size * 1.02 + size * 0.2 + 40;
 
+  // Kimin etkinliği (14 Kasım 2026, Melih): takım ya da organizatör adı, yazıldığı haliyle, en çok 2 satır.
+  // Logo çizilmez: başka alan adındaki görsel tuvali kirletip dışa aktarmayı engelleyebilir.
+  const orgName = String(org || "").replace(/\s+/g, " ").trim();
+  if (orgName) {
+    x.fillStyle = BRAND;
+    let os = 50;
+    for (; os > 36; os -= 2) { x.font = `700 ${os}px ${FONT}`; if (x.measureText(orgName).width <= MAXW) break; }
+    const ow = orgName.split(" "), orows = [];
+    let cur = "";
+    for (const w of ow) { const nx = cur ? `${cur} ${w}` : w; if (!cur || x.measureText(nx).width <= MAXW) cur = nx; else { orows.push(cur); cur = w; } }
+    if (cur) orows.push(cur);
+    const shown = orows.slice(0, 2);
+    if (orows.length > 2) shown[1] = `${shown[1].replace(/\s+\S*$/, "")}…`;
+    y -= 6;
+    shown.forEach((r, i) => x.fillText(r, W / 2, y + os * 0.9 + i * os * 1.15, MAXW));
+    y += os * 0.9 + (shown.length - 1) * os * 1.15 + 44;
+  }
+
   x.fillStyle = "#F4F818"; roundRectPath(x, W / 2 - 60, y, 120, 10, 5); x.fill();
   y += 10 + 44 + 30;
 
@@ -2185,7 +2203,7 @@ function StoryShareModal({ spec, onClose, t, showToast }) {
       .then((b) => { if (!alive) return; obj = URL.createObjectURL(b); setBlob(b); setPreview(obj); })
       .catch((e) => { console.error("Story card error:", e); if (alive) setFailed(true); });
     return () => { alive = false; if (obj) URL.revokeObjectURL(obj); };
-  }, [spec.url, spec.title]);
+  }, [spec.url, spec.title, spec.org]);
   const go = async () => {
     copyPlainLink(spec.url).then((r) => setCopied(r === "copied"));
     const r = await sharePngFile(blob, spec.filename);
@@ -2896,6 +2914,8 @@ export default function Muuvlink() {
       tr.training_time ? String(tr.training_time).slice(0, 5) : ""].filter(Boolean).join(" · ");
     setStorySpec({
       kicker: t("story.kickerEvent"), title: tr.title, lang, sport: tr.sport || tr.team_sport,
+      // Takım etkinliğinde takım, organizasyon etkinliğinde organizatör; bireysel etkinlikte kişi adı YAZILMAZ (herkese açık görsel).
+      org: tr.team_name || ((tr.is_organizer_event || tr.is_paid) ? tr.organizer : null) || null,
       lines: [when, String(tr.location_name || "").replace(/\s+/g, " ").replace(/\s*,\s*/g, ", ").trim()],
       url: `${window.location.origin}${trainingPath(tr)}`, filename: `muuvlink-${urlSlug(tr.title)}.png`,
     });

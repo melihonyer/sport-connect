@@ -1054,6 +1054,9 @@ sayfa kartı kendisi açar (uygulamada `appUrlOpen` de bu parametreyi okur).
   (anahtar `sports.*` ile aynı). Listede olmayan branş → `diger.jpg`. Fotoğraflar
   Canva ile üretildi (telifsiz, markasız kıyafet). **Sporcular alt yarıda olmalı**:
   logo ve başlık üst yarıda duruyor. Yeni branş fotoğrafı da bu kuralla üretilir.
+- **Etkinlik kartında kimin etkinliği** (14 Kasım 2026, Melih: "kimin etkinliği olduğu belli değil"): başlığın altında,
+  sarı çizginin üstünde takım adı (`spec.org`; organizasyon etkinliğinde organizatör), yazıldığı haliyle, en çok 2 satır.
+  Bireysel etkinlikte kişi adı YAZILMAZ (herkese açık görsel). Takım logosu çizilmez (başka alan adındaki görsel tuvali kirletir).
 - Koyu zeminde yazılar beyaz: `STORY_DARK_BG` (tenis, futbol, kürek).
 - Logo dikey: üstte M amblemi (`icons/favicon.png`), altında yazı logosu.
 - **Yazı tipi `MuuvStory`** (`public/fonts/montserrat-*.woff2`, `FontFace` ile).
