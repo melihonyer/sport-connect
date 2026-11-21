@@ -3941,6 +3941,10 @@ app.get(['/takim/*', '/etkinlik/*'], async (req, res, next) => {
   const html = getIndexHtml();
   if (!parsed || !html) return next();
   const DEFAULT_IMG = `${SITE_ORIGIN}/og-image.jpg`;
+  // Görsel alanı emoji ('⚽') olabiliyor; og:image'e yazılınca Google /⚽ adresini tarayıp
+  // soft 404 sayıyordu (21 Kasım 2026). Yalnız http ve /uploads/ adresi görsel sayılır.
+  const imgUrl = (v) => (/^https?:\/\//.test(v || '') ? v
+    : String(v || '').startsWith('/uploads/') ? `${SITE_ORIGIN}${v}` : DEFAULT_IMG);
   res.set('Content-Type', 'text/html; charset=utf-8');
   // Silinmiş kayıt: 404 + noindex. 200 dönünce Google adresi "yönlendirmeli" /
   // soft 404 sayıp listede tutuyordu. Gizli (var olan) kayıt bu yola girmez.
@@ -3961,7 +3965,7 @@ app.get(['/takim/*', '/etkinlik/*'], async (req, res, next) => {
         title: `${t0.name} — Muuvlink`,
         description: (t0.description || 'Çevrende spor yapan insanları bul, kendi takımını kur, etkinlikler planla.').slice(0, 200),
         url: `${SITE_ORIGIN}/takim/${slugify(t0.name)}-${t0.id}`,
-        image: t0.avatar || DEFAULT_IMG,
+        image: imgUrl(t0.avatar),
       };
       const bits = [];
       if (t0.sport) bits.push(`Spor dalı: ${htmlAttrEscape(t0.sport)}`);
@@ -4004,7 +4008,7 @@ app.get(['/takim/*', '/etkinlik/*'], async (req, res, next) => {
         description: ((e0.is_past ? 'Bu etkinlik tamamlandı. ' : '') +
           (e0.description || 'Muuvlink etkinliği — katıl, birlikte spor yap.')).slice(0, 200),
         url: `${SITE_ORIGIN}/etkinlik/${slugify(e0.title)}-${e0.id}`,
-        image: e0.image_url || DEFAULT_IMG,
+        image: imgUrl(e0.image_url),
       };
       const bits = [];
       if (e0.sport) bits.push(`Spor dalı: ${htmlAttrEscape(e0.sport)}`);
@@ -6431,6 +6435,8 @@ app.get('/api/trainings/:id/calendar.ics', async (req, res) => {
     ];
     res.set('Content-Type', 'text/calendar; charset=utf-8');
     res.set('Content-Disposition', `inline; filename="muuvlink-${t.id}.ics"`);
+    // Takvim dosyası arama sonucu değildir; Google bunları tarayıp listeliyordu (21 Kasım 2026).
+    res.set('X-Robots-Tag', 'noindex');
     res.set('Cache-Control', 'no-store');
     res.send(lines.map(icsFold).join('\r\n') + '\r\n');
   } catch (error) {
