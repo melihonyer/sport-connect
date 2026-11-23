@@ -1595,7 +1595,7 @@ export const translations = {
   upload: {
     dropTitle: { tr: "Görseli buraya sürükle", en: "Drag an image here", de: "Bild hierher ziehen" },
     dropOr: { tr: "ya da seçmek için tıkla", en: "or click to choose one", de: "oder klicke zum Auswählen" },
-    dropHint: { tr: "JPG, PNG, WebP ya da GIF · en çok 20 MB", en: "JPG, PNG, WebP or GIF · up to 20 MB", de: "JPG, PNG, WebP oder GIF · bis 20 MB" },
+    dropHint: { tr: "JPG, PNG, WebP ya da GIF", en: "JPG, PNG, WebP or GIF", de: "JPG, PNG, WebP oder GIF" },
     dropHere: { tr: "Bırakınca yüklenir", en: "Drop to upload", de: "Zum Hochladen loslassen" },
   },
   teamAvatar: {

@@ -838,7 +838,7 @@ export default {
   upload: {
     dropTitle: "Trascina un'immagine qui",
     dropOr: "oppure clicca per sceglierne una",
-    dropHint: "JPG, PNG, WebP o GIF · fino a 20 MB",
+    dropHint: "JPG, PNG, WebP o GIF",
     dropHere: "Rilascia per caricare",
   },
   teamAvatar: {

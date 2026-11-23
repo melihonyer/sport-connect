@@ -839,7 +839,7 @@ export default {
   upload: {
     dropTitle: "Σύρε μια εικόνα εδώ",
     dropOr: "ή κάνε κλικ για να επιλέξεις",
-    dropHint: "JPG, PNG, WebP ή GIF · έως 20 MB",
+    dropHint: "JPG, PNG, WebP ή GIF",
     dropHere: "Άφησέ το για να ανέβει",
   },
   teamAvatar: {
