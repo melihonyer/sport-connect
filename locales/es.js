@@ -835,6 +835,12 @@ export default {
       racing: "Compito",
     },
   },
+  upload: {
+    dropTitle: "Arrastra una imagen aquí",
+    dropOr: "o haz clic para elegir una",
+    dropHint: "JPG, PNG, WebP o GIF · hasta 20 MB",
+    dropHere: "Suelta para subir",
+  },
   teamAvatar: {
     title: "Imagen del equipo",
     tabEmblem: "Emblema del deporte",
@@ -1136,6 +1142,7 @@ export default {
   },
 
   route: {
+    drop: "Arrastra un archivo GPX aquí o haz clic",
     label: "Ruta (GPX)",
     add: "Añadir archivo GPX",
     hint: "Opcional. Añade un GPX de Strava, Garmin o Komoot para que quien venga vea en el mapa por dónde pasa la ruta.",

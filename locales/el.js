@@ -836,6 +836,12 @@ export default {
       racing: "Συμμετέχω σε αγώνες",
     },
   },
+  upload: {
+    dropTitle: "Σύρε μια εικόνα εδώ",
+    dropOr: "ή κάνε κλικ για να επιλέξεις",
+    dropHint: "JPG, PNG, WebP ή GIF · έως 20 MB",
+    dropHere: "Άφησέ το για να ανέβει",
+  },
   teamAvatar: {
     title: "Εικόνα ομάδας",
     tabEmblem: "Έμβλημα αθλήματος",
@@ -1137,6 +1143,7 @@ export default {
   },
 
   route: {
+    drop: "Σύρε ένα αρχείο GPX εδώ ή κάνε κλικ",
     label: "Διαδρομή (GPX)",
     add: "Πρόσθεσε αρχείο GPX",
     hint: "Προαιρετικό. Πρόσθεσε ένα GPX από Strava, Garmin ή Komoot, ώστε όσοι θα έρθουν να βλέπουν στον χάρτη από πού περνά η διαδρομή.",

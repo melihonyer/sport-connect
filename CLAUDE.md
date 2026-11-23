@@ -345,6 +345,10 @@ Kurallar:
   yakalayıcı 413/400 + `SERVER_MSG` mesajıyla döner (eskiden HTML 500). Dikkat: `toWebP`
   dönüştüremediği veriyi OLDUĞU GİBİ yükler — test için sahte bayt göndermek Supabase'e dosya
   bırakır (9 Ekim'de bırakıldı, silindi).
+- **Sürükle-bırak yükleme** (23 Kasım 2026, Melih): `FileDrop.jsx` — `useFileDrop` (bırakma hedefi) + `DropZone` (kesik çizgili büyük alan,
+  tıklayınca dosya seçici). Kullanılan yerler: takım görseli penceresi, profil fotoğrafı (fotoğraf + düğmeler bölümü), GPX rota alanı
+  (yüklü rotanın üstüne bırakmak değiştirir), admin `ImageUploadBtn` (haber/galeri/organizasyon) ve `BannerImageDrop`. Dokunmatikte
+  "sürükle" yazılmaz (`hover: hover` yoksa yalnız "Fotoğraf yükle"). Metinler `upload.*`, `route.drop` (7 dil). Yeni bir dosya alanı da bununla yazılır.
 - **Uygunsuz ifade süzgeci** (19 Ekim 2026, App Store 1.2): `findObjectionable` + `rejectIfObjectionable`
   (backend-api.js). Yorum, duvar, takım adı/açıklaması, etkinlik adı/açıklaması, kişi adı (kayıt +
   profil) — 9 uç; yazmadan ÖNCE kontrol, eşleşirse 400 `code:'objectionable'` + `OBJECTIONABLE_MSG`

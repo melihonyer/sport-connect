@@ -3,12 +3,16 @@
 import React, { useRef, useState } from "react";
 import { Route, Upload, X } from "lucide-react";
 import { gpxToRoute, formatRouteDistance, ROUTE_MAX_FILE_BYTES } from "./gpxRoute.js";
+import { useFileDrop } from "./FileDrop";
 
 // MapView: sporla-bulusma.jsx'teki lazyWithReload(RouteMap) — parça 404'ünde sayfa bir kez yenilenir.
 export default function RouteField({ t, lang, value, onChange, meeting, labelCls, MapView }) {
   const inputRef = useRef(null);
   const [error, setError] = useState("");
   const [fileName, setFileName] = useState("");
+  // Sürükle-bırak (23 Kasım 2026): dosya alanın üstüne (ya da yüklü rotanın üstüne, değiştirmek için) bırakılabilir.
+  const drop = useFileDrop((f) => pick(f));
+  const canHover = typeof window !== "undefined" && window.matchMedia?.("(hover: hover) and (pointer: fine)").matches;
 
   const pick = async (file) => {
     setError("");
@@ -25,7 +29,7 @@ export default function RouteField({ t, lang, value, onChange, meeting, labelCls
   };
 
   return (
-    <div>
+    <div {...drop.bind}>
       <label className={labelCls}>{t("route.label")}</label>
       <input
         ref={inputRef}
@@ -37,7 +41,7 @@ export default function RouteField({ t, lang, value, onChange, meeting, labelCls
         onChange={(e) => { pick(e.target.files?.[0]); e.target.value = ""; }}
       />
       {value?.points?.length > 1 ? (
-        <div className="space-y-2">
+        <div className={`space-y-2 rounded-xl ${drop.dragging ? "ring-2 ring-brand-600 ring-offset-2" : ""}`}>
           <React.Suspense fallback={<div className="h-48 rounded-xl bg-slate-100 animate-pulse" />}>
             <MapView points={value.points} meeting={meeting} className="h-48" />
           </React.Suspense>
@@ -59,8 +63,9 @@ export default function RouteField({ t, lang, value, onChange, meeting, labelCls
         </div>
       ) : (
         <button type="button" onClick={() => inputRef.current?.click()}
-          className="w-full flex items-center justify-center gap-2 h-12 rounded-xl border border-dashed border-slate-300 text-sm font-semibold text-brand-600 hover:border-brand-400 hover:bg-brand-50/50 transition-colors">
-          <Upload className="w-4 h-4" /> {t("route.add")}
+          className={`w-full flex items-center justify-center gap-2 min-h-[56px] px-3 rounded-xl border-2 border-dashed text-sm font-semibold text-brand-600 transition-colors ${
+            drop.dragging ? "border-brand-600 bg-brand-50" : "border-slate-300 hover:border-brand-400 hover:bg-brand-50/50"}`}>
+          <Upload className="w-4 h-4 flex-shrink-0" /> {canHover ? t("route.drop") : t("route.add")}
         </button>
       )}
       {error

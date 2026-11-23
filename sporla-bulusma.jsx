@@ -12,6 +12,7 @@ import { TaSessionNote, TaDiscoverCard, TaHomeBand, TaCoachTip, TaEmptyState, Ta
 import { MetaEvents, newEventId, getMatchSignals, getAttribution, trackPageView, umamiTrack, metaTrackingAllowed, requestIosTracking, iosTrackingUndecided } from "./analytics.js";
 import { reportPage } from "./threshold-page.js";
 import {
+  Upload,
   Watch,
   ArrowRight,
   MapPin,
@@ -85,6 +86,7 @@ import {
 import SharedLocationPicker from "./LocationPicker";
 import RouteField from "./RouteField";
 import { sportStyle, SPORT_HEAD_BG } from "./sportStyle";
+import { DropZone, useFileDrop } from "./FileDrop";
 import RouteAnnounce, { ROUTE_ANNOUNCE_UNTIL, ROUTE_ANNOUNCE_KEY, ROUTE_ANNOUNCE_RESUME } from "./RouteAnnounce";
 import { formatRouteDistance, routeToGpx } from "./gpxRoute.js";
 // Ağır kütüphaneler lazy yüklenir — ilk bundle'ı küçültür
@@ -2630,7 +2632,6 @@ function TeamEmblemTile({ sport, bg, fg, initials, onPick, disabled, label }) {
 
 function TeamAvatarModal({ t, team, apiUrl, sportLabel, onClose, onUploadFile, busy, memo }) {
   const [tab, setTab] = React.useState("emblem");
-  const fileRef = React.useRef(null);
   const sports = (team.sports?.length ? team.sports : [team.sport]).filter(Boolean);
   const initials = teamInitials(team.name);
   const pickSvg = async (svgText) => {
@@ -2666,13 +2667,9 @@ function TeamAvatarModal({ t, team, apiUrl, sportLabel, onClose, onUploadFile, b
         </div>
         <div className="relative">
           {tab === "upload" && (
-            <div className="py-6 flex justify-center">
-              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onUploadFile(f); }} />
-              <button type="button" disabled={busy} onClick={() => fileRef.current?.click()} data-btn="solid"
-                className="inline-flex items-center gap-2 min-h-[48px] px-5 rounded-xl bg-brand-600 text-white font-semibold disabled:opacity-60">
-                <Image className="w-4 h-4" aria-hidden="true" /> {t("createTeam.uploadPhoto")}
-              </button>
-            </div>
+            <DropZone onFile={onUploadFile} accept="image/*" busy={busy} icon={Upload}
+              title={t("upload.dropTitle")} touchTitle={t("createTeam.uploadPhoto")} orText={t("upload.dropOr")}
+              hint={t("upload.dropHint")} dropText={t("upload.dropHere")} />
           )}
           {tab === "emblem" && (
             <div className="space-y-4">
@@ -10278,8 +10275,9 @@ export default function Muuvlink() {
       }
     };
 
-    const handleAvatarUpload = async (e) => {
-      const file = e.target.files?.[0];
+    const handleAvatarUpload = (e) => { uploadAvatarFile(e.target.files?.[0]); e.target.value = ""; };
+    // Sürükle-bırak: fotoğraf avatar kutusunun üstüne bırakılınca yüklenir (FileDrop.jsx).
+    const uploadAvatarFile = async (file) => {
       if (!file) return;
       setAvatarLoading(true);
       try {
@@ -10306,6 +10304,8 @@ export default function Muuvlink() {
         setAvatarLoading(false);
       }
     };
+
+    const avatarDrop = useFileDrop(uploadAvatarFile, { disabled: avatarLoading });
 
     const handleSubmit = (e) => {
       e.preventDefault();
@@ -10374,9 +10374,9 @@ export default function Muuvlink() {
           {activeTab === "profile" ? (
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Avatar fotoğrafı */}
-              <div className="flex flex-col items-center gap-3 pb-2">
+              <div className="flex flex-col items-center gap-3 pb-2" {...avatarDrop.bind}>
                 <div className="relative">
-                  <div className={`w-24 h-24 rounded-2xl overflow-hidden flex items-center justify-center text-3xl font-bold shadow-lg ${avatarBgClass(user?.avatar_color)}`}>
+                  <div className={`w-24 h-24 rounded-2xl overflow-hidden flex items-center justify-center text-3xl font-bold shadow-lg ${avatarBgClass(user?.avatar_color)} ${avatarDrop.dragging ? "ring-4 ring-brand-600 ring-offset-2" : ""}`}>
                     {(formData.avatar?.startsWith("/uploads/") || formData.avatar?.startsWith("http")) ? (
                       <img src={formData.avatar.startsWith("http") ? formData.avatar : `${BASE_URL}${formData.avatar}`} alt="avatar" className="w-full h-full object-cover" />
                     ) : (

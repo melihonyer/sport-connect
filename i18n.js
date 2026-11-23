@@ -1373,6 +1373,7 @@ export const translations = {
   // ── ROTA (GPX) — 23 Ekim 2026 ───────────────────────────
   route: {
     label:      { tr: "Rota (GPX)",              en: "Route (GPX)",              de: "Route (GPX)" },
+    drop:       { tr: "GPX dosyasını buraya sürükle ya da tıkla", en: "Drag a GPX file here or click", de: "GPX-Datei hierher ziehen oder klicken" },
     add:        { tr: "GPX dosyası ekle",        en: "Add a GPX file",           de: "GPX-Datei hinzufügen" },
     hint:       { tr: "İsteğe bağlı. Strava, Garmin ya da Komoot'tan indirdiğin GPX'i ekle; katılacaklar yolun nereden geçtiğini haritada görsün.",
                   en: "Optional. Add a GPX from Strava, Garmin or Komoot so people can see on the map where the route goes.",
@@ -1590,6 +1591,13 @@ export const translations = {
     },
   },
   // Takım görseli penceresi (14 Kasım 2026, Melih: fotoğraf + branş amblemi + hazır çizim, isteyen istediğini seçsin).
+  // Sürükle-bırak yükleme alanı (FileDrop.jsx, 23 Kasım 2026).
+  upload: {
+    dropTitle: { tr: "Görseli buraya sürükle", en: "Drag an image here", de: "Bild hierher ziehen" },
+    dropOr: { tr: "ya da seçmek için tıkla", en: "or click to choose one", de: "oder klicke zum Auswählen" },
+    dropHint: { tr: "JPG, PNG, WebP ya da GIF · en çok 20 MB", en: "JPG, PNG, WebP or GIF · up to 20 MB", de: "JPG, PNG, WebP oder GIF · bis 20 MB" },
+    dropHere: { tr: "Bırakınca yüklenir", en: "Drop to upload", de: "Zum Hochladen loslassen" },
+  },
   teamAvatar: {
     title: { tr: "Takım görseli", en: "Team image", de: "Teambild" },
     tabEmblem: { tr: "Branş amblemi", en: "Sport emblem", de: "Sport-Emblem" },

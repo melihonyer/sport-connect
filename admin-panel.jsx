@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useFileDrop } from "./FileDrop";
 import {
   LayoutDashboard, Users, Activity, Shield, MessageSquare,
   LogOut, Trash2, Eye, EyeOff, CheckCheck, Mail,
@@ -33,8 +34,10 @@ const BASE_URL = import.meta.env.VITE_BASE_URL ?? (import.meta.env.DEV ? "http:/
 function ImageUploadBtn({ itemId, endpoint, token, onUploaded, onError, currentUrl }) {
   const [uploading, setUploading] = React.useState(false);
   const ref = React.useRef(null);
-  const handleFile = async (e) => {
-    const file = e.target.files?.[0]; if (!file) return;
+  const handleFile = (e) => { uploadFile(e.target.files?.[0]); e.target.value = ''; };
+  // Sürükle-bırak (23 Kasım 2026): görsel düğmenin üstüne bırakılınca yüklenir.
+  const uploadFile = async (file) => {
+    if (!file) return;
     setUploading(true);
     try {
       const fd = new FormData(); fd.append('image', file);
@@ -49,17 +52,35 @@ function ImageUploadBtn({ itemId, endpoint, token, onUploaded, onError, currentU
       }
     } catch(e) {
       onError?.(`Bağlantı hatası: ${e.message}`, 'error');
-    } finally { setUploading(false); e.target.value=''; }
+    } finally { setUploading(false); }
   };
+  const drop = useFileDrop(uploadFile, { disabled: uploading });
   return (
     <>
       <input ref={ref} type="file" accept="image/*" className="hidden" onChange={handleFile}/>
-      <button type="button" onClick={()=>ref.current?.click()} disabled={uploading}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 hover:bg-slate-50 transition text-slate-600 disabled:opacity-50">
+      <button type="button" onClick={()=>ref.current?.click()} disabled={uploading} {...drop.bind} title="Tıkla ya da görseli buraya sürükle"
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition text-slate-600 disabled:opacity-50 ${drop.dragging ? "border-brand-600 border-dashed bg-brand-50 text-brand-700" : "border-slate-200 hover:bg-slate-50"}`}>
         <Upload className="w-3.5 h-3.5"/>
-        {uploading ? "Yükleniyor…" : currentUrl ? "Resmi Değiştir" : "Resim Yükle"}
+        {uploading ? "Yükleniyor…" : drop.dragging ? "Bırak" : currentUrl ? "Resmi Değiştir" : "Resim Yükle"}
       </button>
     </>
+  );
+}
+
+// Banner satırındaki "Görsel" düğmesi: tıkla ya da görseli üstüne sürükle (liste içinde hook için ayrı bileşen).
+function BannerImageDrop({ busy, onFile }) {
+  const drop = useFileDrop(onFile, { disabled: busy });
+  return (
+    <label className="relative cursor-pointer" {...drop.bind} title="Tıkla ya da görseli buraya sürükle">
+      <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only"
+        onChange={e => { if (e.target.files[0]) onFile(e.target.files[0]); e.target.value=""; }}/>
+      <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition whitespace-nowrap ${busy ? "bg-brand-100 text-brand-500" : drop.dragging ? "bg-brand-50 text-brand-700 ring-2 ring-brand-600" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
+        {busy
+          ? <div className="w-3 h-3 border-2 border-brand-300 border-t-brand-600 rounded-full animate-spin"/>
+          : <Upload className="w-3 h-3"/>}
+        {drop.dragging ? "Bırak" : "Görsel"}
+      </span>
+    </label>
   );
 }
 
@@ -4433,16 +4454,7 @@ export default function AdminPanel() {
 
                       {/* Alt satır: aksiyonlar (her zaman tam genişlik, kaymaz) */}
                       <div className="flex items-center gap-2 flex-wrap">
-                        <label className="relative cursor-pointer">
-                          <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only"
-                            onChange={e => { if (e.target.files[0]) uploadBannerImage(b.id, e.target.files[0]); e.target.value=""; }}/>
-                          <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition whitespace-nowrap ${uploadingId === b.id ? "bg-brand-100 text-brand-500" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
-                            {uploadingId === b.id
-                              ? <div className="w-3 h-3 border-2 border-brand-300 border-t-brand-600 rounded-full animate-spin"/>
-                              : <Upload className="w-3 h-3"/>}
-                            Görsel
-                          </span>
-                        </label>
+                        <BannerImageDrop busy={uploadingId === b.id} onFile={(f) => uploadBannerImage(b.id, f)} />
                         <button onClick={() => toggleBannerActive(b)}
                           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition whitespace-nowrap ${b.is_active ? "bg-brand-50 text-brand-700 hover:bg-brand-100" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}>
                           {b.is_active ? <ToggleRight className="w-3.5 h-3.5"/> : <ToggleLeft className="w-3.5 h-3.5"/>}
