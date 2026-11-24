@@ -4557,7 +4557,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       return res.status(400).json({ error: 'İsim en az 2 karakter olmalıdır.' });
     }
 
-    const userExists = await pool.query('SELECT id FROM users WHERE email = $1', [email.toLowerCase().trim()]);
+    const userExists = await pool.query('SELECT id FROM users WHERE lower(email) = lower(trim($1))', [email]);
 
     if (userExists.rows.length > 0) {
       return res.status(409).json({ error: 'Email already registered' });
@@ -4576,7 +4576,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
                           fbclid, acquisition_platform, landing_page, referrer, lang)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
        RETURNING id, name, email, avatar, avatar_color, profile_sports, profile_cover, pinned_badges, monthly_goal, created_at, notif_prefs, lang`,
-      [name, email, passwordHash, phone, JSON.stringify(DEFAULT_NOTIF_PREFS),
+      [name, String(email).trim().toLowerCase(), passwordHash, phone, JSON.stringify(DEFAULT_NOTIF_PREFS),
        trim255(attr.utm_source), trim255(attr.utm_medium), trim255(attr.utm_campaign),
        trim255(attr.utm_content), trim255(attr.utm_term), trim255(attr.fbclid),
        trim255(platform), trim255(attr.landing_page), trim255(attr.referrer), regLang]
@@ -4641,8 +4641,8 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     }
 
     const result = await pool.query(
-      'SELECT id, name, email, password_hash, avatar, avatar_color, profile_sports, profile_cover, pinned_badges, monthly_goal, deleted_at, lang FROM users WHERE email = $1',
-      [email]
+      'SELECT id, name, email, password_hash, avatar, avatar_color, profile_sports, profile_cover, pinned_badges, monthly_goal, deleted_at, lang FROM users WHERE lower(email) = lower(trim($1))',
+      [String(email)]
     );
 
     if (result.rows.length === 0) {
@@ -5803,7 +5803,7 @@ app.post('/api/teams/:id/invite', authenticateToken, async (req, res) => {
 
     // Kullanıcı kayıtlı mı kontrol et
     const userResult = await pool.query(
-      'SELECT id, name FROM users WHERE email = $1',
+      'SELECT id, name FROM users WHERE lower(email) = lower(trim($1))',
       [email]
     );
 
@@ -11894,7 +11894,9 @@ app.post('/api/auth/forgot-password', authLimiter, async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: 'E-posta gerekli.' });
   try {
-    const result = await pool.query('SELECT id, name FROM users WHERE email = $1', [email]);
+    // Büyük/küçük harf ve kenar boşluğu fark etmez (24 Kasım 2026: telefon klavyesi ilk harfi büyük
+    // yazınca hesap bulunmuyor, mail hiç gitmiyordu). Mail kayıtlı adrese gider, yazılana değil.
+    const result = await pool.query('SELECT id, name, email FROM users WHERE lower(email) = lower(trim($1))', [String(email)]);
     // Güvenlik: kullanıcı bulunsun ya da bulunmasın aynı yanıtı dön
     if (result.rows.length === 0) return res.json({ message: 'E-posta gönderildi.' });
 
@@ -11912,7 +11914,7 @@ app.post('/api/auth/forgot-password', authLimiter, async (req, res) => {
     const resetLink = `${APP_URL}?reset_token=${token}`;
     await sendEmail({
       kind: 'password_reset',
-      to: email,
+      to: user.email,
       userId: user.id,
       build: (L) => ({
         subject: tm(L, 'resetSubject'),
