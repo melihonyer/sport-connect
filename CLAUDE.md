@@ -1092,6 +1092,15 @@ sayfa kartı kendisi açar (uygulamada `appUrlOpen` de bu parametreyi okur).
   `?hikaye=1` ile açıp önizleme görselini kaydetmek. Kod içine test kancası
   bırakılmaz.
 
+## Giriş güvenliği kaydı (27 Kasım 2026, Melih)
+
+Belçika'dan (Proximus, Android uygulaması) 14 başarısız giriş + Melih'in adresine şifre sıfırlama isteği geldi; hangi hesaba
+denendiği bilinmiyordu (sıfırlama bağlantısı Melih'in onayıyla geçersiz kılındı). Artık `activity_logs`'a: `login_failed`
+(`reason`: wrong_password | no_account), `password_reset_request`, `password_reset_done`; meta `ip` + `device` (`authDevice`:
+model · uygulama/tarayıcı). Hesap bulunduysa `user_id`; **yazılan e-posta SAKLANMAZ**. 90 gün sonra silinir (günlük iş).
+Admin › Kayıtlar "Giriş güvenliği" süzgeci (`AUTH_EVENTS`, `logDetail`). Threshold'a gitmez. E-posta eşleşmesi giriş/kayıt/
+sıfırlama/davette büyük-küçük harf ve boşluktan bağımsız (24 Kasım 2026, Erdal Caner'in sıfırlama maili gitmiyordu).
+
 ## Süresi dolmuş oturum
 
 Oturum anahtarı 30 gün geçerli. Süresi dolunca sunucu 403 `Invalid token` döner.

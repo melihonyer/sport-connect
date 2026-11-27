@@ -6,7 +6,7 @@ import {
   TrendingUp, Calendar, AlertTriangle, Search, X,
   ChevronRight, Lock, Globe, Image, Plus, Edit2, ToggleLeft, ToggleRight,
   Upload, GripVertical, ChevronUp, ChevronDown, Newspaper, GalleryHorizontal, Menu,
-  Trophy, User, ClipboardList, CheckCircle2, DoorOpen, UserMinus, Sparkles, Target, Flag,
+  Trophy, User, ClipboardList, CheckCircle2, DoorOpen, UserMinus, KeyRound, LockKeyhole, ShieldCheck, Sparkles, Target, Flag,
   Ticket, MapPin, ExternalLink, MousePointerClick,
   Radar, ScanSearch, RefreshCw, Loader2, XCircle, ListChecks, Star, Zap, Bell,
   CalendarDays, ScrollText, Send, Check, ArrowLeft, Copy,
@@ -3227,6 +3227,24 @@ export default function AdminPanel() {
     training_leave:   { icon: DoorOpen,      label: "Etkinlik Ayrıldı",     color: "bg-orange-100 text-orange-700" },
     team_leave:       { icon: DoorOpen,      label: "Takımdan Ayrıldı",     color: "bg-orange-100 text-orange-700" },
     team_remove:      { icon: UserMinus,     label: "Takımdan Çıkarıldı",   color: "bg-rose-100 text-rose-700" },
+    // Giriş güvenliği (27 Kasım 2026): başarısız giriş, şifre sıfırlama isteği ve tamamlanan sıfırlama.
+    login_failed:           { icon: LockKeyhole, label: "Başarısız Giriş",       color: "bg-red-100 text-red-700" },
+    password_reset_request: { icon: KeyRound,    label: "Şifre Sıfırlama İsteği", color: "bg-amber-100 text-amber-800" },
+    password_reset_done:    { icon: ShieldCheck, label: "Şifre Değiştirildi",    color: "bg-emerald-100 text-emerald-700" },
+  };
+  const AUTH_EVENTS = ["login_failed", "password_reset_request", "password_reset_done"];
+  const AUTH_REASON = { wrong_password: "yanlış şifre", no_account: "kayıtlı hesap yok" };
+  // Liste ve tablo aynı detay satırını kullanır.
+  const logDetail = (log) => {
+    const meta = log.meta || {};
+    if (AUTH_EVENTS.includes(log.event_type)) {
+      return [AUTH_REASON[meta.reason], meta.ip && `IP ${meta.ip}`, meta.device].filter(Boolean).join(" · ");
+    }
+    // Etkinlik başlığı önce gelir: bireysel etkinliklerde team_name hep "Bireysel" olduğu için,
+    // farklı etkinlikler listede aynı görünüyordu.
+    return meta.training_title
+      ? (meta.team_name ? `${meta.training_title} · ${meta.team_name}` : meta.training_title)
+      : (meta.team_name || meta.email || "");
   };
 
   const LOG_FILTERS = [
@@ -3237,6 +3255,7 @@ export default function AdminPanel() {
     { id: "team_leave",     label: "Takım Ayrıl" },
     { id: "training_create",label: "Etkinlik" },
     { id: "training_join",  label: "Katılım" },
+    { id: "auth",           label: "Giriş güvenliği" },
   ];
 
   const PERIOD_LABELS = { daily: "Günlük", weekly: "Haftalık", monthly: "Aylık" };
@@ -3245,7 +3264,8 @@ export default function AdminPanel() {
     const chartData = analytics?.[chartPeriod] || [];
     const filteredLogs = logFilter === "all"
       ? logs.slice(0, 100)
-      : logs.filter(l => l.event_type === logFilter || (logFilter === "team_leave" && l.event_type === "team_remove")).slice(0, 100);
+      : logs.filter(l => l.event_type === logFilter || (logFilter === "team_leave" && l.event_type === "team_remove")
+          || (logFilter === "auth" && AUTH_EVENTS.includes(l.event_type))).slice(0, 100);
 
     const periodKey = chartPeriod === "monthly" ? 7 : 5;
 
@@ -3362,12 +3382,7 @@ export default function AdminPanel() {
             )}
             {filteredLogs.map(log => {
               const cfg = EVENT_CONFIG[log.event_type] || { icon: Activity, label: log.event_type, color: "bg-slate-100 text-slate-600" };
-              const meta = log.meta || {};
-              // Etkinlik başlığı önce gelir: bireysel etkinliklerde team_name hep
-              // "Bireysel" olduğu için, farklı etkinlikler listede aynı görünüyordu.
-              const detail = meta.training_title
-                ? (meta.team_name ? `${meta.training_title} · ${meta.team_name}` : meta.training_title)
-                : (meta.team_name || meta.email || "");
+              const detail = logDetail(log);
               const CfgIcon = cfg.icon;
               return (
                 <div key={log.id} className="flex items-start gap-3 px-4 py-3.5">
@@ -3402,12 +3417,7 @@ export default function AdminPanel() {
                 )}
                 {filteredLogs.map(log => {
                   const cfg = EVENT_CONFIG[log.event_type] || { icon: Activity, label: log.event_type, color: "bg-slate-100 text-slate-600" };
-                  const meta = log.meta || {};
-                  // Etkinlik başlığı önce gelir: bireysel etkinliklerde team_name hep
-              // "Bireysel" olduğu için, farklı etkinlikler listede aynı görünüyordu.
-              const detail = meta.training_title
-                ? (meta.team_name ? `${meta.training_title} · ${meta.team_name}` : meta.training_title)
-                : (meta.team_name || meta.email || "");
+                  const detail = logDetail(log);
                   const CfgIconTbl = cfg.icon;
                   return (
                     <tr key={log.id} className="hover:bg-slate-50/50 transition-colors">

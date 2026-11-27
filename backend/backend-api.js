@@ -4646,6 +4646,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     );
 
     if (result.rows.length === 0) {
+      logAuthEvent(req, 'login_failed', null, 'no_account');
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
@@ -4653,6 +4654,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     const validPassword = await bcrypt.compare(password, user.password_hash);
 
     if (!validPassword) {
+      logAuthEvent(req, 'login_failed', user, 'wrong_password');
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
@@ -11730,6 +11732,25 @@ const THRESHOLD_EVENTS = {
   training_delete: (n, m) => ({ type: 'event.deleted', title: 'Etkinlik silindi', body: m.name || null }),
 };
 
+// Giriş güvenliği kaydı (27 Kasım 2026, Melih: Belçika'dan 14 başarısız giriş + Melih'in adresine şifre
+// sıfırlama isteği geldi, hangi hesaba denendiği bilinmiyordu). Başarısız giriş ve şifre sıfırlama isteği
+// activity_logs'a yazılır, admin › Kayıtlar "Giriş güvenliği" süzgecinde görünür. Hesap bulunduysa user_id;
+// yazılan e-posta SAKLANMAZ (hesabı olmayan adres kişisel veri olur). IP + cihaz özeti 90 gün tutulur.
+function authDevice(req) {
+  const ua = String(req.get('user-agent') || '');
+  const m = ua.match(/Android [\d.]+; ([^;)]+?)(?: Build|\))/) || ua.match(/\((iPhone|iPad|Macintosh|Windows NT [\d.]+|X11)[;)]/);
+  const app = /src=app/.test(String(req.get('referer') || '')) || /; wv\)/.test(ua) ? 'uygulama' : 'tarayıcı';
+  return [m ? m[1].trim() : (ua.slice(0, 40) || null), app].filter(Boolean).join(' · ');
+}
+function logAuthEvent(req, event_type, user, reason) {
+  logActivity(event_type, user?.id || null, user?.name || null,
+    { ip: req.ip || null, device: authDevice(req), ...(reason ? { reason } : {}) });
+}
+setInterval(() => {
+  pool.query(`DELETE FROM activity_logs WHERE event_type IN ('login_failed', 'password_reset_request', 'password_reset_done')
+              AND created_at < NOW() - INTERVAL '90 days'`).catch(() => {});
+}, 24 * 60 * 60 * 1000).unref?.();
+
 async function logActivity(event_type, user_id, user_name, meta = {}, source_ref = null) {
   try {
     const r = await pool.query(
@@ -11898,9 +11919,13 @@ app.post('/api/auth/forgot-password', authLimiter, async (req, res) => {
     // yazınca hesap bulunmuyor, mail hiç gitmiyordu). Mail kayıtlı adrese gider, yazılana değil.
     const result = await pool.query('SELECT id, name, email FROM users WHERE lower(email) = lower(trim($1))', [String(email)]);
     // Güvenlik: kullanıcı bulunsun ya da bulunmasın aynı yanıtı dön
-    if (result.rows.length === 0) return res.json({ message: 'E-posta gönderildi.' });
+    if (result.rows.length === 0) {
+      logAuthEvent(req, 'password_reset_request', null, 'no_account');
+      return res.json({ message: 'E-posta gönderildi.' });
+    }
 
     const user = result.rows[0];
+    logAuthEvent(req, 'password_reset_request', user);
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 saat
 
@@ -11958,6 +11983,7 @@ app.post('/api/auth/reset-password', async (req, res) => {
     const hash = await bcrypt.hash(password, 10);
     await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, user_id]);
     await pool.query('UPDATE password_reset_tokens SET used = true WHERE token = $1', [token]);
+    logAuthEvent(req, 'password_reset_done', { id: user_id });
 
     res.json({ message: 'Şifre başarıyla güncellendi.' });
   } catch (err) {
